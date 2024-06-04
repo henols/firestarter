@@ -1,0 +1,12 @@
+{
+    "cmake.configureOnOpen": true,
+    "files.associations": {
+        "memory.h": "c",
+        "chip.h": "c",
+        "firestarter.h": "c",
+        "arduino.h": "c",
+        "wstring.h": "c",
+        "rurp_shield.h": "c",
+        "string.h": "c"
+    }
+}
