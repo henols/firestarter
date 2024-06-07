@@ -54,7 +54,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
             uint16_t chip_id = eprom_get_chip_id(handle);
             if (chip_id != handle->chip_id) {
                 handle->response_code = RESPONSE_CODE_ERROR;
-                sprintf(handle->response_msg, "Chip ID %u does not match %u", chip_id, handle->chip_id);
+                sprintf(handle->response_msg, "Chip ID %#x does not match %#x", chip_id, handle->chip_id);
                 return;
             }
         }
@@ -79,68 +79,40 @@ void eprom_write_data(firestarter_handle_t* handle) {
         handle->firestarter_set_control_register(handle, REGULATOR, 1);
         delay(100);
     }
-    handle->firestarter_set_control_register(handle, VPE_TO_VPP, 1);
-    delay(10);
-    handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
-
-    for (uint32_t i = 0; i < DATA_BUFFER_SIZE; i++) {
-        handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+    uint8_t mismatch_bitmask[DATA_BUFFER_SIZE / 8];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)
+    uint8_t mismatch = 0;
+    for (int i = 0; i < DATA_BUFFER_SIZE / 8; i++) {
+        mismatch_bitmask[i] = 0xFF;
     }
+    for (int w = 0; w < 20; w++) {
+        mismatch = 0;
+        handle->firestarter_set_control_register(handle, VPE_TO_VPP, 1);
+        delay(50);
+        handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
+        // Iterate through the mismatch bitmask to find all mismatched positions
 
-    handle->firestarter_set_control_register(handle, VPE_TO_VPP | VPE_ENABLE, 0);
+        for (uint32_t i = 0; i < DATA_BUFFER_SIZE; i++) {
+            if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
+                handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+            }
+        }
+        handle->firestarter_set_control_register(handle, VPE_TO_VPP | VPE_ENABLE, 0);
 
-
-#ifdef EPROM_WRITE_CHECK
-    for (uint32_t i = 0; i < DATA_BUFFER_SIZE; i++) {
-        uint8_t byte = handle->firestarter_get_data(handle, handle->address + i);
-        if (byte != handle->data_buffer[i]) {
-            handle->response_code = RESPONSE_CODE_ERROR;
-            sprintf(handle->response_msg, "Got: %#x, exp: %#x, at %#x", byte, handle->data_buffer[i] , handle->address + i);
+        for (int i = 0; i < DATA_BUFFER_SIZE; i++) {
+            if (handle->firestarter_get_data(handle, handle->address + i) != handle->data_buffer[i]) {
+                mismatch++;
+                mismatch_bitmask[i / 8] |= (1 << (i % 8));
+            }
+            else {
+                mismatch_bitmask[i / 8] &= ~(1 << (i % 8));
+            }
+        }
+        if (!mismatch) {
+            handle->response_code = RESPONSE_CODE_OK;
             return;
         }
     }
-#endif
-
-    // uint8_t mismatch_bitmask[32];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)
-    // uint8_t mismatch = 0;
-    // for (int i = 0; i < 32; i++) {
-    //     mismatch_bitmask[i] = 0xFF;
-    // }
-    // for (int w = 0; w < 10; w++) {
-    //     mismatch = 0;
-    //     handle->firestarter_set_control_register(handle, VPE_TO_VPP | REGULATOR, 1);
-    //     delay(50);
-    //     handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
-    //     // Iterate through the mismatch bitmask to find all mismatched positions
-    //     for (int byte_index = 0; byte_index < 32; byte_index++) {
-    //         for (int bit_index = 0; bit_index < 8; bit_index++) {
-    //             if (mismatch_bitmask[byte_index] & (1 << bit_index)) {
-    //                 // Calculate the original position in the data buffer
-    //                 int pos = (byte_index * 8) + bit_index;
-    //                 handle->firestarter_set_data(handle, handle->address + pos, handle->data_buffer[pos]);
-    //             }
-    //         }
-    //     }
-    //     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP | VPE_ENABLE, 0);
-
-    //     for (int i = 0; i < 32; i++) {
-    //         mismatch_bitmask[i] = 0;
-    //     }
-
-    //     for (int i = 0; i < DATA_BUFFER_SIZE; i++) {
-    //         if (handle->firestarter_get_data(handle, handle->address + i) != handle->data_buffer[i]) {
-    //             mismatch++;
-    //             mismatch_bitmask[i / 8] |= (1 << (i % 8));
-    //         }
-    //     }
-    //     if (!mismatch) {
-    //         handle->response_code = RESPONSE_CODE_OK;
-    //         return;
-    //     }
-    // }
-    // sprintf(handle->response_msg, "Failed to write memory, at 0x%x, nr %d", handle->address, mismatch);
-    // handle->response_code = RESPONSE_CODE_ERROR;
-    handle->response_code = RESPONSE_CODE_OK;
-
+    sprintf(handle->response_msg, "Failed to write memory, at 0x%x, nr %d", handle->address, mismatch);
+    handle->response_code = RESPONSE_CODE_ERROR;
 }
 

@@ -90,7 +90,7 @@ void memory_read_data(firestarter_handle_t* handle)
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address)
 {
 
-#ifdef memory_REMAP_ADDRESS_BUS
+#ifdef MEMORY_REMAP_ADDRESS_BUS
     if (handle->bus_config.address_lines[0] != 0xff || handle->bus_config.rw_line != 0xff) {
         address = remap_address_bus(&handle->bus_config, address, READ_FLAG);
     }
@@ -128,9 +128,9 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
 
     handle->firestarter_set_address(handle, address);
     write_data_buffer(data);
+    // delayMicroseconds(1);   
     set_control_pin(CHIP_ENABLE, 0);
     delayMicroseconds(handle->pulse_delay);
     set_control_pin(CHIP_ENABLE, 1);
-    delayMicroseconds(1);
-
+    
 }
