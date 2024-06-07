@@ -40,9 +40,9 @@ void setup()
 {
   rurp_setup();
 
-  write_to_register(RLSB_LE, 0xF1);
-  delay(500);
-  write_to_register(RLSB_LE, 0x00);
+  // write_to_register(LEAST_SIGNIFICANT_BYTE, 0xF1);
+  // delay(500);
+  // write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
 
 
   setComunicationMode();
@@ -77,10 +77,10 @@ void readProm(firestarter_handle_t* handle) {
   Serial.print("DATA:  0x");
   Serial.print(handle->address, 16);
   Serial.print(" - 0x");
-  Serial.println((handle->address + handle->data_buffer_size), 16);
-  Serial.write(handle->data_buffer, handle->data_buffer_size);
+  Serial.println((handle->address + DATA_BUFFER_SIZE), 16);
+  Serial.write(handle->data_buffer, DATA_BUFFER_SIZE);
   Serial.flush();
-  handle->address += handle->data_buffer_size;
+  handle->address += DATA_BUFFER_SIZE;
   if (handle->address == handle->mem_size)
   {
     Serial.print("OK: Read data from address 0x00 to 0x");
@@ -101,8 +101,8 @@ void writeProm(firestarter_handle_t* handle)
   }
 
   int len;
-  while ((len = Serial.readBytes(handle->data_buffer, handle->data_buffer_size)) > 0) {
-    if (len < handle->data_buffer_size) {
+  while ((len = Serial.readBytes(handle->data_buffer, DATA_BUFFER_SIZE)) > 0) {
+    if (len < DATA_BUFFER_SIZE) {
       logError("Not enough data");
       return;
     }
@@ -111,10 +111,14 @@ void writeProm(firestarter_handle_t* handle)
       return;
     }
     resetTimeout();
+    Serial.print("INFO: Write to address 0x");
+    Serial.println(handle->address, 16);
+    Serial.flush();
 
     setProgramerMode();
     handle->firestarter_write_data(handle);
     setComunicationMode();
+
     if (handle->response_code == RESPONSE_CODE_ERROR) {
       logError(handle->response_msg);
       return;
@@ -123,9 +127,8 @@ void writeProm(firestarter_handle_t* handle)
     Serial.println(handle->address, 16);
 
     Serial.print(" - 0x");
-    Serial.println((handle->address + handle->data_buffer_size), 16);
-
-    handle->address += handle->data_buffer_size;
+    handle->address += DATA_BUFFER_SIZE;
+    Serial.println(handle->address, 16);
 
     if (handle->address == handle->mem_size) {
       Serial.println("OK: Memory written");
@@ -140,9 +143,9 @@ void writeProm(firestarter_handle_t* handle)
 }
 
 void readVpp(firestarter_handle_t* handle) {
+  uint8_t ctrl = read_from_register(CONTROL_REGISTER);
   if (handle->init) {
-    uint8_t ctrl = read_from_register(CTRL_LE);
-    write_to_register(CTRL_LE, ctrl | REG_DISABLE);
+    write_to_register(CONTROL_REGISTER, ctrl | REGULATOR);
     handle->init = 0;
     resetTimeout();
   }
@@ -157,11 +160,20 @@ void readVpp(firestarter_handle_t* handle) {
   }
 
   // delay(100);
+
+  write_to_register(CONTROL_REGISTER, ctrl & ~VPE_TO_VPP);
+  delay(50);
   float vpp = get_voltage_average();
-  // write_to_register(CTRL_LE, ctrl & ~REG_DISABLE);
+  // write_to_register(CONTROL_REGISTER, ctrl & ~REGULATOR);
+  write_to_register(CONTROL_REGISTER, ctrl | VPE_TO_VPP);
+  delay(50);
+  float vpe = get_voltage_average();
 
   Serial.print("DATA: VPP voltage: ");
-  Serial.println(vpp);
+  Serial.print(vpp);
+  Serial.print("v, VPE voltage: ");
+  Serial.print(vpe);
+  Serial.println("v");
   Serial.flush();
   resetTimeout();
 }
@@ -190,7 +202,6 @@ void setupProm(firestarter_handle_t* handle) {
   handle->init = 1;
   handle->state = (uint8_t)doc["state"];
   if (handle->state < 5) {
-    handle->data_buffer_size = DATA_BUFFER_SIZE;
     handle->address = 0;
 
     // handle->name = doc["name"];
@@ -226,9 +237,9 @@ void setupProm(firestarter_handle_t* handle) {
       handle->state = STATE_ERROR;
       return;
     }
-    Serial.print("INFO: EPROM memory size ");
-    Serial.println(handle->mem_size, 10);
   }
+  Serial.print("INFO: EPROM memory size ");
+  Serial.println(handle->mem_size, 10);
   Serial.print("OK: state ");
   Serial.println(handle->state, 10);
   Serial.flush();
@@ -240,12 +251,11 @@ void setupProm(firestarter_handle_t* handle) {
 
 void loop()
 {
-  if (handle.state != STATE_IDLE && timeout < millis())
-  {
+  if (handle.state != STATE_IDLE && timeout < millis()) {
     setProgramerMode();
-    write_to_register(RLSB_LE, 0xFF);
+    // write_to_register(MOST_SIGNIFICANT_BYTE, 0xFF);
     delay(500);
-    write_to_register(RLSB_LE, 0x00);
+    // write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
 
     setComunicationMode();
     logError("Timeout");
@@ -267,9 +277,9 @@ void loop()
     eraseProm(&handle);
     break;
   case STATE_DONE:
-    set_control_pin(ROM_CE, 1);
-    set_control_pin(ROM_OE, 1);
-    write_to_register(CTRL_LE, 0x00);
+    set_control_pin(CHIP_ENABLE, 1);
+    set_control_pin(OUTPUT_ENABLE, 1);
+    write_to_register(CONTROL_REGISTER, 0x00);
     freeDataBuffer(&handle);
     handle.state = STATE_IDLE;
     break;
@@ -297,7 +307,7 @@ void loop()
 
 void setComunicationMode()
 {
-  set_control_pin(ROM_CE | ROM_OE, 1);
+  set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
   DDRD &= ~(0x01);
   Serial.begin(MONITOR_SPEED); // Initialize serial port
 
@@ -313,6 +323,7 @@ void setProgramerMode()
 {
   Serial.end(); // Close serial port
   DDRD |= 0x01;
+  restore_regsiters();
 }
 
 void logInfo(const char* info) {
@@ -330,7 +341,7 @@ void logError(const char* error) {
 
 int allocatreDataBuffer(firestarter_handle_t* handle) {
   if (handle->data_buffer == NULL) {
-    handle->data_buffer = (byte*)malloc(handle->data_buffer_size);
+    handle->data_buffer = (byte*)malloc(DATA_BUFFER_SIZE);
     if (!handle->data_buffer) {
       logError("Out of memory, creating data_buffer!");
       return 0;

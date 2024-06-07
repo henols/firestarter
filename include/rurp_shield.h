@@ -3,12 +3,12 @@
 
 #include <stdint.h>
 
-#define RLSB_LE  0x01
-#define RMSB_LE  0x02
-#define ROM_OE  0x04
-#define CTRL_LE 0x08
-#define USRBTN  0x10
-#define ROM_CE  0x20
+#define LEAST_SIGNIFICANT_BYTE  0x01 // LEAST SIGNIFICANT BYTE
+#define MOST_SIGNIFICANT_BYTE  0x02 // MOST_SIGNIFICANT_BYTE
+#define OUTPUT_ENABLE  0x04 // OUTPUT ENABLE
+#define CONTROL_REGISTER 0x08 // CONTROL REGISTER
+#define USRBTN  0x10 // USER BUTTON
+#define CHIP_ENABLE  0x20 // CHIP ENABLE
 
 // CONTROLE REGISTER
 #define VPE_TO_VPP 0x01
@@ -16,13 +16,15 @@
 #define VPE_ENABLE 0x04
 #define P1_VPP_ENABLE 0x08
 #define RW 0x40
-#define REG_DISABLE 0x80
+#define REGULATOR 0x80
 
 #define A16 VPE_TO_VPP
 #define A17 0x10
 #define A18 0x20
 
 void rurp_setup();
+
+void restore_regsiters();
 
 void set_data_as_output();
 void set_data_as_input();

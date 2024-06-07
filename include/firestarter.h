@@ -40,7 +40,7 @@ typedef struct firestarter_handle {
 	uint8_t can_erase;
 	uint8_t has_chip_id;
 	uint16_t chip_id;
-	int data_buffer_size;
+	// int data_buffer_size;
 	byte* data_buffer;
 
 	bus_config_t bus_config;
@@ -53,6 +53,7 @@ typedef struct firestarter_handle {
 	void (*firestarter_check_erased)(struct firestarter_handle*);
 	void (*firestarter_set_address)(struct firestarter_handle*, uint32_t);
 	void (*firestarter_set_control_register)(struct firestarter_handle*, uint8_t, bool);
+	bool (*firestarter_get_control_register)(struct firestarter_handle*, uint8_t);
 
 } firestarter_handle_t;
 

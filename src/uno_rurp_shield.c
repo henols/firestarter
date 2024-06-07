@@ -19,21 +19,21 @@
 
 
 
-uint8_t rlsble;
-uint8_t rmsble;
+uint8_t lsb_address;
+uint8_t msb_address;
 uint8_t controle_register;
 
 void rurp_setup() {
     set_data_as_output();
-    DDRB = RLSB_LE | RMSB_LE | CTRL_LE | ROM_OE | ROM_CE | RW;
+    DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | RW;
 
-    PORTB = ROM_OE | ROM_CE;
-    rlsble=0xff;
-    rmsble=0xff;
+    PORTB = OUTPUT_ENABLE | CHIP_ENABLE;
+    lsb_address=0xff;
+    msb_address=0xff;
     controle_register=0xff;
-    write_to_register(RLSB_LE, 0x00);
-    write_to_register(RMSB_LE, 0x00);
-    write_to_register(CTRL_LE, 0x00);
+    write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
+    write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
+    write_to_register(CONTROL_REGISTER, 0x00);
 
 }
 
@@ -45,26 +45,39 @@ void set_data_as_input(){
     DDRD = 0x00;
 }
 
+void restore_regsiters(){
+    uint8_t data = lsb_address;
+    lsb_address = ~lsb_address;
+    write_to_register(LEAST_SIGNIFICANT_BYTE, data);
+    data =msb_address   ;
+    msb_address = ~msb_address;
+    write_to_register(MOST_SIGNIFICANT_BYTE, data);
+    data = controle_register;
+    controle_register = ~controle_register;
+    write_to_register(CONTROL_REGISTER, data);
+}
+
+
 void write_to_register(uint8_t reg, uint8_t data)
 {
 
     switch (reg)
     {
-    case RLSB_LE:
-        if (rlsble == data)
+    case LEAST_SIGNIFICANT_BYTE:
+        if (lsb_address == data)
         {
             return;
         }
-        rlsble = data;
+        lsb_address = data;
         break;
-    case RMSB_LE:
-        if (rmsble == data)
+    case MOST_SIGNIFICANT_BYTE:
+        if (msb_address == data)
         {
             return;
         }
-        rmsble = data;
+        msb_address = data;
         break;
-    case CTRL_LE:
+    case CONTROL_REGISTER:
         if (controle_register == data)
         {
             return;
@@ -86,11 +99,11 @@ uint8_t read_from_register(uint8_t reg)
 {
     switch (reg)
     {
-    case RLSB_LE:
-        return rlsble;
-    case RMSB_LE:
-        return rmsble;
-    case CTRL_LE:
+    case LEAST_SIGNIFICANT_BYTE:
+        return lsb_address;
+    case MOST_SIGNIFICANT_BYTE:
+        return msb_address;
+    case CONTROL_REGISTER:
         return controle_register;
     }
     return NULL;

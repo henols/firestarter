@@ -3,6 +3,6 @@
 
 #include "firestarter.h"
 
-int configure_memory(firestarter_handle_t *handle);
+int configure_eprom(firestarter_handle_t *handle);
 
 #endif // MEMORY_H

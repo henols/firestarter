@@ -1,0 +1,6 @@
+// #define CHIP_REMAP_ADDRESS_BUS 
+
+
+
+#define EPROM_BLANK_CHECK 
+#define EPROM_WRITE_CHECK 
