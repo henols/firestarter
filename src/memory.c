@@ -1,4 +1,11 @@
-#include "chip.h"
+/*
+  Project Name: Firestarter
+ * Copyright (c) 2024 Henrik Olsson
+ *
+ * Permission is hereby granted under MIT license.
+ */
+
+#include "memory.h"
 #include "config.h"
 #include "eprom.h"
 #include "sram.h"
@@ -8,17 +15,17 @@
 #define TYPE_SRAM 4
 
 
-int configure_chip(firestarter_handle_t* handle)
+int configure_memory(firestarter_handle_t* handle)
 {
-    handle->firestarter_read_data = chip_read_data;
-    handle->firestarter_write_data = chip_write_data;
-    handle->firestarter_get_data = chip_get_data;
-    handle->firestarter_set_data = chip_set_data;
-    // handle->firestarter_write_to_register = chip_write_to_register;
-    handle->firestarter_set_address = chip_set_address;
+    handle->firestarter_read_data = memory_read_data;
+    handle->firestarter_write_data = memory_write_data;
+    handle->firestarter_get_data = memory_get_data;
+    handle->firestarter_set_data = memory_set_data;
+    // handle->firestarter_write_to_register = memory_write_to_register;
+    handle->firestarter_set_address = memory_set_address;
 
-    handle->firestarter_set_control_register = chip_set_control_register;
-    handle->firestarter_get_control_register = chip_get_control_register;
+    handle->firestarter_set_control_register = memory_set_control_register;
+    handle->firestarter_get_control_register = memory_get_control_register;
 
     if (handle->mem_type == TYPE_EPROM)
     {
@@ -31,20 +38,20 @@ int configure_chip(firestarter_handle_t* handle)
     return 0;
 }
 
-void chip_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state)
+void memory_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state)
 {
     byte controle_register = read_from_register(CONTROL_REGISTER);
     uint8_t data = state ? controle_register | (bit) : controle_register & ~(bit);
     write_to_register(CONTROL_REGISTER, data);
 }
 
-bool chip_get_control_register(firestarter_handle_t* handle, uint8_t bit)
+bool memory_get_control_register(firestarter_handle_t* handle, uint8_t bit)
 {
     byte controle_register = read_from_register(CONTROL_REGISTER);
     return controle_register & bit;
 }
 
-#ifdef CHIP_REMAP_ADDRESS_BUS
+#ifdef MEMORY_REMAP_ADDRESS_BUS
 uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t rw) {
     uint32_t reorg_address = 0;
     for (int i = 0; i < 19 && config->address_lines[i] != 0xFF; i++) {
@@ -58,7 +65,7 @@ uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t
     return reorg_address;
 }
 #endif
-void chip_set_address(firestarter_handle_t* handle, uint32_t address)
+void memory_set_address(firestarter_handle_t* handle, uint32_t address)
 {
 
     byte lsb = address & 0xFF;
@@ -71,7 +78,7 @@ void chip_set_address(firestarter_handle_t* handle, uint32_t address)
     // handle->firestarter_set_control_register(handle, A18, (top_address >> 2) & 0x01);
 }
 
-void chip_read_data(firestarter_handle_t* handle)
+void memory_read_data(firestarter_handle_t* handle)
 {
     int buf_size = DATA_BUFFER_SIZE;
     for (int i = 0; i < buf_size; i++)
@@ -80,10 +87,10 @@ void chip_read_data(firestarter_handle_t* handle)
     }
 }
 
-uint8_t chip_get_data(firestarter_handle_t* handle, uint32_t address)
+uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address)
 {
 
-#ifdef CHIP_REMAP_ADDRESS_BUS
+#ifdef memory_REMAP_ADDRESS_BUS
     if (handle->bus_config.address_lines[0] != 0xff || handle->bus_config.rw_line != 0xff) {
         address = remap_address_bus(&handle->bus_config, address, READ_FLAG);
     }
@@ -103,7 +110,7 @@ uint8_t chip_get_data(firestarter_handle_t* handle, uint32_t address)
 }
 
 
-void chip_write_data(firestarter_handle_t* handle) {
+void memory_write_data(firestarter_handle_t* handle) {
 
     for (int i = 0; i < DATA_BUFFER_SIZE; i++)
     {
@@ -112,8 +119,8 @@ void chip_write_data(firestarter_handle_t* handle) {
     handle->response_code = RESPONSE_CODE_OK;
 }
 
-void chip_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
-#ifdef CHIP_REMAP_ADDRESS_BUS
+void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
+#ifdef MEMORY_REMAP_ADDRESS_BUS
     if (handle->bus_config.address_lines[0] != 0xff || handle->bus_config.rw_line != 0xff) {
         address = remap_address_bus(&handle->bus_config, address, WRITE_FLAG);
     }

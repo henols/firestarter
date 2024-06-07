@@ -1,3 +1,10 @@
+/*
+  Project Name: Firestarter
+ * Copyright (c) 2024 Henrik Olsson
+ *
+ * Permission is hereby granted under MIT license.
+ */
+
 #include <Arduino.h>
 #include <stdlib.h>
 #include <ArduinoJson.h>
@@ -7,7 +14,7 @@
 extern "C"
 {
 #include "rurp_shield.h"
-#include "chip.h"
+#include "memory.h"
 }
 #define RX 0
 #define TX 1
@@ -39,12 +46,6 @@ void logError(const char* info);
 void setup()
 {
   rurp_setup();
-
-  // write_to_register(LEAST_SIGNIFICANT_BYTE, 0xF1);
-  // delay(500);
-  // write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
-
-
   setComunicationMode();
   handle.state = STATE_IDLE;
 }
@@ -81,8 +82,7 @@ void readProm(firestarter_handle_t* handle) {
   Serial.write(handle->data_buffer, DATA_BUFFER_SIZE);
   Serial.flush();
   handle->address += DATA_BUFFER_SIZE;
-  if (handle->address == handle->mem_size)
-  {
+  if (handle->address == handle->mem_size) {
     Serial.print("OK: Read data from address 0x00 to 0x");
     Serial.println(handle->address, 16);
     Serial.flush();
@@ -110,7 +110,7 @@ void writeProm(firestarter_handle_t* handle)
       logError("Address out of range");
       return;
     }
-    resetTimeout();
+
     Serial.print("INFO: Write to address 0x");
     Serial.println(handle->address, 16);
     Serial.flush();
@@ -138,7 +138,6 @@ void writeProm(firestarter_handle_t* handle)
     }
 
     resetTimeout();
-
   }
 }
 
@@ -159,20 +158,12 @@ void readVpp(firestarter_handle_t* handle) {
     return;
   }
 
-  // delay(100);
-
   write_to_register(CONTROL_REGISTER, ctrl & ~VPE_TO_VPP);
   delay(50);
   float vpp = get_voltage_average();
-  // write_to_register(CONTROL_REGISTER, ctrl & ~REGULATOR);
-  write_to_register(CONTROL_REGISTER, ctrl | VPE_TO_VPP);
-  delay(50);
-  float vpe = get_voltage_average();
 
   Serial.print("DATA: VPP voltage: ");
   Serial.print(vpp);
-  Serial.print("v, VPE voltage: ");
-  Serial.print(vpe);
   Serial.println("v");
   Serial.flush();
   resetTimeout();
@@ -230,8 +221,7 @@ void setupProm(firestarter_handle_t* handle) {
       }
     }
 
-
-    int res = configure_chip(handle);
+    int res = configure_memory(handle);
     if (!res) {
       Serial.println("ERROR: Could not configure chip");
       handle->state = STATE_ERROR;
@@ -244,7 +234,6 @@ void setupProm(firestarter_handle_t* handle) {
   Serial.println(handle->state, 10);
   Serial.flush();
   resetTimeout();
-
 }
 
 
@@ -253,10 +242,7 @@ void loop()
 {
   if (handle.state != STATE_IDLE && timeout < millis()) {
     setProgramerMode();
-    // write_to_register(MOST_SIGNIFICANT_BYTE, 0xFF);
-    delay(500);
-    // write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
-
+    delay(100);
     setComunicationMode();
     logError("Timeout");
     resetTimeout();

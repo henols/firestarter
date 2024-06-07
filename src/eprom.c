@@ -1,8 +1,14 @@
+/*
+  Project Name: Firestarter
+ * Copyright (c) 2024 Henrik Olsson
+ *
+ * Permission is hereby granted under MIT license.
+ */
+
 #include "eprom.h"
 #include <stdio.h>
 #include "config.h"
 #include "firestarter.h"
-#include "chip.h"
 #include "rurp_shield.h"
 
 void eprom_erase(firestarter_handle_t* handle);
@@ -42,8 +48,6 @@ void eprom_erase(firestarter_handle_t* handle) {
 }
 
 void eprom_write_data(firestarter_handle_t* handle) {
-    // handle->firestarter_set_control_register(handle, REGULATOR, 1);
-    // delay(100);
     if (handle->init) {
         handle->init = 0;
         if (handle->has_chip_id) {
@@ -83,8 +87,6 @@ void eprom_write_data(firestarter_handle_t* handle) {
         handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
     }
 
-    // handle->firestarter_set_control_register(handle, REGULATOR, 0);
-
     handle->firestarter_set_control_register(handle, VPE_TO_VPP | VPE_ENABLE, 0);
 
 
@@ -94,15 +96,9 @@ void eprom_write_data(firestarter_handle_t* handle) {
         if (byte != handle->data_buffer[i]) {
             handle->response_code = RESPONSE_CODE_ERROR;
             sprintf(handle->response_msg, "Got: %#x, exp: %#x, at %#x", byte, handle->data_buffer[i] , handle->address + i);
-            // handle->firestarter_set_control_register(handle, REGULATOR, 0);
             return;
         }
     }
-    // if (handle->response_code == RESPONSE_CODE_ERROR) {
-    //     sprintf(handle->response_msg, "Nr bad bytes %d", bc);
-    //     handle->firestarter_set_control_register(handle, REGULATOR, 0);
-    //     return;
-    // }
 #endif
 
     // uint8_t mismatch_bitmask[32];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)
@@ -144,7 +140,6 @@ void eprom_write_data(firestarter_handle_t* handle) {
     // }
     // sprintf(handle->response_msg, "Failed to write memory, at 0x%x, nr %d", handle->address, mismatch);
     // handle->response_code = RESPONSE_CODE_ERROR;
-    handle->firestarter_set_control_register(handle, REGULATOR, 0);
     handle->response_code = RESPONSE_CODE_OK;
 
 }

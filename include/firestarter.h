@@ -1,3 +1,10 @@
+/*
+  Project Name: Firestarter
+ * Copyright (c) 2024 Henrik Olsson
+ *
+ * Permission is hereby granted under MIT license.
+ */
+
 #ifndef FIRESTARTER_H
 #define FIRESTARTER_H
 #include <Arduino.h>
