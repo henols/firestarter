@@ -5,28 +5,26 @@
  * Permission is hereby granted under MIT license.
  */
 
+#include "firestarter.h"
 #include <Arduino.h>
 #include <stdlib.h>
 #include <ArduinoJson.h>
 
-#include "firestarter.h"
 
-extern "C"
-{
 #include "rurp_shield.h"
 #include "memory.h"
-}
+#include "version.h"
+
 #define RX 0
 #define TX 1
 
-
-// R2 = R1 *  Vout / (Vin - Vout)
-// R2 = 44k
-// R1 = 270k
-// Vin = 21.92v
-// Vout = Vin * R2/(R1+R2)
-// Vout = 21.92 * 44000÷(44000+270000)
-// Vout = 3.071592367
+ // R2 = R1 *  Vout / (Vin - Vout)
+ // R2 = 44k
+ // R1 = 270k
+ // Vin = 21.92v
+ // Vout = Vin * R2/(R1+R2)
+ // Vout = 21.92 * 44000÷(44000+270000)
+ // Vout = 3.071592367
 
 
 firestarter_handle_t handle;
@@ -100,9 +98,11 @@ void writeProm(firestarter_handle_t* handle)
     return;
   }
 
-  int len;
-  while ((len = Serial.readBytes(handle->data_buffer, DATA_BUFFER_SIZE)) > 0) {
-    if (len < DATA_BUFFER_SIZE) {
+  int data_size;
+  while ((data_size = Serial.read()) < 0) {
+    handle->data_size = data_size + 1;
+    int len = Serial.readBytes(handle->data_buffer, handle->data_size);
+    if (len < handle->data_size) {
       logError("Not enough data");
       return;
     }
@@ -127,7 +127,7 @@ void writeProm(firestarter_handle_t* handle)
     Serial.println(handle->address, 16);
 
     Serial.print(" - 0x");
-    handle->address += DATA_BUFFER_SIZE;
+    handle->address += handle->data_size;
     Serial.println(handle->address, 16);
 
     if (handle->address == handle->mem_size) {
@@ -141,10 +141,20 @@ void writeProm(firestarter_handle_t* handle)
   }
 }
 
-void readVpp(firestarter_handle_t* handle) {
-  uint8_t ctrl = read_from_register(CONTROL_REGISTER);
+void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
-    write_to_register(CONTROL_REGISTER, ctrl | REGULATOR);
+  uint8_t ctrl = read_from_register(CONTROL_REGISTER);
+    if (handle->state == STATE_READ_VPE) {
+      write_to_register(CONTROL_REGISTER, ctrl | REGULATOR);
+      // write_to_register(CONTROL_REGISTER, ctrl & ~VPE_TO_VPP);
+    }
+    else if (handle->state == STATE_READ_VPP) {
+      write_to_register(CONTROL_REGISTER, ctrl | REGULATOR | VPE_TO_VPP);
+    }
+    else if (handle->state == STATE_READ_VCC) {
+      write_to_register(CONTROL_REGISTER, ctrl & ~REGULATOR);
+    }
+
     handle->init = 0;
     resetTimeout();
   }
@@ -158,14 +168,25 @@ void readVpp(firestarter_handle_t* handle) {
     return;
   }
 
-  write_to_register(CONTROL_REGISTER, ctrl & ~VPE_TO_VPP);
-  delay(50);
-  float vpp = get_voltage_average();
+  float voltage = rurp_read_voltage();
 
-  Serial.print("DATA: VPP voltage: ");
-  Serial.print(vpp);
+  Serial.print("DATA: ");
+  switch (handle->state) {
+  case STATE_READ_VCC:
+    Serial.print("VCC");
+    break;
+  case STATE_READ_VPE:
+    Serial.print("VPE");
+    break;
+  case STATE_READ_VPP:
+    Serial.print("VPP");
+    break;
+  }
+  Serial.print(" voltage: ");
+  Serial.print(voltage);
   Serial.println("v");
   Serial.flush();
+  delay(200);
   resetTimeout();
 }
 
@@ -192,9 +213,11 @@ void setupProm(firestarter_handle_t* handle) {
 
   handle->init = 1;
   handle->state = (uint8_t)doc["state"];
-  if (handle->state < 5) {
+  if (handle->state < STATE_READ_VPE) {
     handle->address = 0;
-
+    if (doc.containsKey("address")) {
+      handle->address = (uint32_t)doc["address"];
+    }
     // handle->name = doc["name"];
     // handle->manufacturer = doc["manufacturer"];
 
@@ -202,6 +225,16 @@ void setupProm(firestarter_handle_t* handle) {
     handle->mem_size = (uint32_t)doc["memory-size"];
     handle->pins = (uint8_t)doc["pin-count"];
     handle->can_erase = (uint32_t)doc["can-erase"];
+    handle->skip_erase = 0;
+    if (doc.containsKey("skip-erase")) {
+      handle->skip_erase = (uint32_t)doc["skip-erase"];
+    }
+
+    handle->blank_check = 1;
+    if (doc.containsKey("blank-check")) {
+      handle->blank_check = (uint32_t)doc["blank-check"];
+    }
+
     handle->has_chip_id = (uint32_t)doc["has-chip-id"];
     handle->chip_id = (uint32_t)doc["chip-id"];
     handle->pulse_delay = (uint32_t)doc["pulse-delay"];
@@ -227,19 +260,56 @@ void setupProm(firestarter_handle_t* handle) {
       handle->state = STATE_ERROR;
       return;
     }
+    Serial.print("INFO: EPROM memory size ");
+    Serial.println(handle->mem_size, 10);
   }
-  Serial.print("INFO: EPROM memory size ");
-  Serial.println(handle->mem_size, 10);
+  else if (handle->state == STATE_CONFIG) {
+    rurp_configuration_t* config = rurp_get_config();
+    int save = 0;
+    if (doc.containsKey("vcc")) {
+
+      config->vcc = (float)doc["vcc"];
+      save = 1;
+    }
+    if (doc.containsKey("r1")) {
+      config->r1 = (long)doc["r1"];
+      save = 1;
+    }
+    if (doc.containsKey("r2")) {
+      config->r2 = (long)doc["r2"];
+      save = 1;
+    }
+    if (save == 1) {
+      rurp_save_config();
+    }
+  }
   Serial.print("OK: state ");
-  Serial.println(handle->state, 10);
+  Serial.println(handle->state);
   Serial.flush();
   resetTimeout();
 }
 
+void getVersion() {
+  Serial.print("OK: ");
+  Serial.println(VERSION);
+  Serial.flush();
+  handle.state = STATE_DONE;
+}
 
+void getConfig() {
+  rurp_configuration_t* rurp_config = rurp_get_config();
+  Serial.print("OK: VCC: ");
+  Serial.print(rurp_config->vcc);
+  Serial.print("v, R1 (R16): ");
+  Serial.print(rurp_config->r1);
+  Serial.print(" ohms, R2 (R14+R15): ");
+  Serial.print(rurp_config->r2);
+  Serial.println(" ohms");
+  Serial.flush();
+  handle.state = STATE_DONE;
+}
 
-void loop()
-{
+void loop() {
   if (handle.state != STATE_IDLE && timeout < millis()) {
     setProgramerMode();
     delay(100);
@@ -251,8 +321,7 @@ void loop()
 
 
 
-  switch (handle.state)
-  {
+  switch (handle.state) {
   case STATE_READ:
     readProm(&handle);
     break;
@@ -269,15 +338,22 @@ void loop()
     freeDataBuffer(&handle);
     handle.state = STATE_IDLE;
     break;
+  case STATE_READ_VPE:
   case STATE_READ_VPP:
-    readVpp(&handle);
-    // handle.state = STATE_IDLE;
+  case STATE_READ_VCC:
+    readVoltage(&handle);
     break;
   case STATE_ERROR:
     handle.state = STATE_DONE;
     break;
   case STATE_IDLE:
     setupProm(&handle);
+    break;
+  case STATE_VERSION:
+    getVersion();
+    break;
+  case STATE_CONFIG:
+    getConfig();
     break;
 
   default:
@@ -309,7 +385,6 @@ void setProgramerMode()
 {
   Serial.end(); // Close serial port
   DDRD |= 0x01;
-  restore_regsiters();
 }
 
 void logInfo(const char* info) {

@@ -6,6 +6,7 @@
  */
 
 #include "eprom.h"
+#include <Arduino.h>
 #include <stdio.h>
 #include "config.h"
 #include "firestarter.h"
@@ -54,25 +55,26 @@ void eprom_write_data(firestarter_handle_t* handle) {
             uint16_t chip_id = eprom_get_chip_id(handle);
             if (chip_id != handle->chip_id) {
                 handle->response_code = RESPONSE_CODE_ERROR;
-                sprintf(handle->response_msg, "Chip ID %#x does not match %#x", chip_id, handle->chip_id);
+                sprintf(handle->response_msg, "Chip ID %#x dont match %#x", chip_id, handle->chip_id);
                 return;
             }
         }
-        if (handle->can_erase) {
+        if (handle->can_erase && !handle->skip_erase) {
             eprom_erase(handle);
+        }
 #ifdef EPROM_BLANK_CHECK
+        if (handle->blank_check) {
             set_control_pin(CHIP_ENABLE, 0);
-            for (uint32_t i = 0; i < handle->mem_size; i++) {
+            for ( uint32_t i = 0; i < handle->mem_size; i++) {
                 if (handle->firestarter_get_data(handle, i) != 0xFF) {
                     handle->response_code = RESPONSE_CODE_ERROR;
-                    sprintf(handle->response_msg, "Failed to erase memory, at 0x%x", i);
-
+                    sprintf(handle->response_msg, "Failed to erase memory, at 0x%x", (unsigned ) i);
                     return;
                 }
             }
             set_control_pin(CHIP_ENABLE, 1);
-#endif
         }
+#endif
     }
 
     if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
@@ -80,7 +82,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
         delay(100);
     }
     uint8_t mismatch_bitmask[DATA_BUFFER_SIZE / 8];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)
-    uint8_t mismatch = 0;
+    unsigned int mismatch = 0;
     for (int i = 0; i < DATA_BUFFER_SIZE / 8; i++) {
         mismatch_bitmask[i] = 0xFF;
     }
@@ -89,16 +91,16 @@ void eprom_write_data(firestarter_handle_t* handle) {
         handle->firestarter_set_control_register(handle, VPE_TO_VPP, 1);
         delay(50);
         handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
-        // Iterate through the mismatch bitmask to find all mismatched positions
 
-        for (uint32_t i = 0; i < DATA_BUFFER_SIZE; i++) {
+        // Iterate through the mismatch bitmask to find all mismatched positions
+        for (uint32_t i = 0; i < handle->data_size; i++) {
             if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
                 handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
             }
         }
         handle->firestarter_set_control_register(handle, VPE_TO_VPP | VPE_ENABLE, 0);
 
-        for (int i = 0; i < DATA_BUFFER_SIZE; i++) {
+        for (int i = 0; i < handle->data_size; i++) {
             if (handle->firestarter_get_data(handle, handle->address + i) != handle->data_buffer[i]) {
                 mismatch++;
                 mismatch_bitmask[i / 8] |= (1 << (i % 8));
@@ -112,7 +114,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
             return;
         }
     }
-    sprintf(handle->response_msg, "Failed to write memory, at 0x%x, nr %d", handle->address, mismatch);
+    sprintf(handle->response_msg, "Failed to write memory, at 0x%x, nr %d", (unsigned) handle->address, mismatch);
     handle->response_code = RESPONSE_CODE_ERROR;
 }
 

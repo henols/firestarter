@@ -8,16 +8,29 @@
 #ifndef RURP_SHIELD_H
 #define RURP_SHIELD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
-#define LEAST_SIGNIFICANT_BYTE  0x01 // LEAST SIGNIFICANT BYTE
-#define MOST_SIGNIFICANT_BYTE  0x02 // MOST_SIGNIFICANT_BYTE
-#define OUTPUT_ENABLE  0x04 // OUTPUT ENABLE
-#define CONTROL_REGISTER 0x08 // CONTROL REGISTER
-#define USRBTN  0x10 // USER BUTTON
-#define CHIP_ENABLE  0x20 // CHIP ENABLE
+// Constants
+#define CONFIG_VERSION  "VER03"
 
-// CONTROLE REGISTER
+// Default configuration
+#define ARDUINO_VCC 5.01
+#define VALUE_R1 270000
+#define VALUE_R2 44000
+
+// Bit masks
+#define LEAST_SIGNIFICANT_BYTE 0x01  // LEAST SIGNIFICANT BYTE
+#define MOST_SIGNIFICANT_BYTE 0x02   // MOST SIGNIFICANT BYTE
+#define OUTPUT_ENABLE 0x04           // OUTPUT ENABLE
+#define CONTROL_REGISTER 0x08        // CONTROL REGISTER
+#define USRBTN 0x10                  // USER BUTTON
+#define CHIP_ENABLE 0x20             // CHIP ENABLE
+
+// CONTROL REGISTER
 #define VPE_TO_VPP 0x01
 #define A9_VPP_ENABLE 0x02
 #define VPE_ENABLE 0x04
@@ -29,22 +42,36 @@
 #define A17 0x10
 #define A18 0x20
 
-void rurp_setup();
+// Struct definition
+    typedef struct rurp_configuration {
+        char version[6];
+        float vcc;
+        long  r1;
+        long  r2;
+    } rurp_configuration_t;
 
-void restore_regsiters();
+    // Function prototypes
+    void  rurp_setup();
 
-void set_data_as_output();
-void set_data_as_input();
+    void restore_registers();
 
-void set_control_pin(uint8_t pin, uint8_t state);
+    void set_data_as_output();
+    void set_data_as_input();
 
-void write_to_register(uint8_t reg, uint8_t data);
-uint8_t read_from_register(uint8_t reg);
+    void set_control_pin(uint8_t pin, uint8_t state);
 
-void write_data_buffer(uint8_t data);
-uint8_t read_data_buffer();
+    void write_to_register(uint8_t reg, uint8_t data);
+    uint8_t read_from_register(uint8_t reg);
 
-float read_voltage();
-float get_voltage_average();
+    void write_data_buffer(uint8_t data);
+    uint8_t read_data_buffer();
+
+    float rurp_read_voltage();
+    float rurp_get_voltage_average();
+    rurp_configuration_t* rurp_get_config();
+    void rurp_save_config();
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RURP_SHIELD_H

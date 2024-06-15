@@ -7,6 +7,7 @@
         "arduino.h": "c",
         "wstring.h": "c",
         "rurp_shield.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stdint.h": "c"
     }
 }

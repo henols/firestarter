@@ -7,7 +7,7 @@
 
 #ifndef FIRESTARTER_H
 #define FIRESTARTER_H
-#include <Arduino.h>
+#include <stdint.h>
 
 #define DATA_BUFFER_SIZE 256
 
@@ -16,7 +16,11 @@
 #define STATE_WRITE 2
 #define STATE_ERASE 3
 #define STATE_CHECK_ERASED 4
-#define STATE_READ_VPP 5
+#define STATE_READ_VPE 10
+#define STATE_READ_VPP 11
+#define STATE_READ_VCC 12 
+#define STATE_VERSION 13
+#define STATE_CONFIG 14
 
 #define STATE_DONE 99
 #define STATE_ERROR 100
@@ -45,11 +49,13 @@ typedef struct firestarter_handle {
 	uint32_t address;
 	uint32_t pulse_delay;
 	uint8_t can_erase;
+	uint8_t skip_erase;
+	uint8_t blank_check;
 	uint8_t has_chip_id;
 	uint16_t chip_id;
 	// int data_buffer_size;
-	byte* data_buffer;
-
+	uint8_t* data_buffer;
+	uint16_t data_size;
 	bus_config_t bus_config;
 
 	void (*firestarter_init)(struct firestarter_handle*);

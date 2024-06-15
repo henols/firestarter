@@ -6,6 +6,8 @@
  */
 
 #include "memory.h"
+#include <Arduino.h>
+
 #include "config.h"
 #include "eprom.h"
 #include "sram.h"
@@ -40,14 +42,14 @@ int configure_memory(firestarter_handle_t* handle)
 
 void memory_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state)
 {
-    byte controle_register = read_from_register(CONTROL_REGISTER);
+    uint8_t controle_register = read_from_register(CONTROL_REGISTER);
     uint8_t data = state ? controle_register | (bit) : controle_register & ~(bit);
     write_to_register(CONTROL_REGISTER, data);
 }
 
 bool memory_get_control_register(firestarter_handle_t* handle, uint8_t bit)
 {
-    byte controle_register = read_from_register(CONTROL_REGISTER);
+    uint8_t controle_register = read_from_register(CONTROL_REGISTER);
     return controle_register & bit;
 }
 
@@ -68,8 +70,8 @@ uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t
 void memory_set_address(firestarter_handle_t* handle, uint32_t address)
 {
 
-    byte lsb = address & 0xFF;
-    byte msb = ((address >> 8) & 0xFF);
+    uint8_t lsb = address & 0xFF;
+    uint8_t msb = ((address >> 8) & 0xFF);
     write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
     write_to_register(MOST_SIGNIFICANT_BYTE, msb);
     // uint8_t top_address = (address >> 16) & 0xFF;
