@@ -1,24 +1,49 @@
 name: Firestarter CI
-
-on: [push]
+on:
+  push:
+    branches:
+    - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+      
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/cache@v3
         with:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
           key: ${{ runner.os }}-pio
+
       - uses: actions/setup-python@v4
+
+      # - name: install gh
+      #   run: apt update && apt install gh
+      
+      - name: Generate release version
+        id: version
+        run: .github/scripts/update_version.py
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          python-version: '3.11'
+          tagging_message: ${{ steps.version.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
       - name: Build PlatformIO Project
         run: pio run
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: /.pio/build/uno/firmware.hex        
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
