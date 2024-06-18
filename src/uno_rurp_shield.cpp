@@ -149,19 +149,20 @@ uint8_t read_data_buffer() {
 
 float rurp_read_voltage()
 {
-    float vin =13.53;
-    float vout= 1.83;
-    float k = vin / vout;
-
-    float refRes = rurp_config.vcc / INPUT_RESOLUTION ;
-
-    return analogRead(VOLTAGE_MESSURE_PIN) * refRes * k;
-    // float r1 = (float)rurp_config.r1;
-    // float r2 = (float)rurp_config.r2;
+     float refRes = rurp_config.vcc / INPUT_RESOLUTION ;
     
-    // float voltageDivider = ( r1 + r2) / r2;
+    // float vin =13.53;
+    // float vout= 1.83;
+    // float k = vin / vout;
 
-// return analogRead(VOLTAGE_MESSURE_PIN) * refRes * voltageDivider;
+    // return analogRead(VOLTAGE_MESSURE_PIN) * refRes * k;
+
+    float r1 = (float)rurp_config.r1;
+    float r2 = (float)rurp_config.r2;
+    
+    float voltageDivider = ( r1 + r2) / r2;
+
+     return analogRead(VOLTAGE_MESSURE_PIN) * refRes * voltageDivider;
 }
 
 float rurp_get_voltage_average()
