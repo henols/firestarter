@@ -45,7 +45,7 @@ extern "C" {
 // Struct definition
     typedef struct rurp_configuration {
         char version[6];
-        float vcc;
+        double vcc;
         long  r1;
         long  r2;
     } rurp_configuration_t;
@@ -53,7 +53,7 @@ extern "C" {
     // Function prototypes
     void  rurp_setup();
 
-    void restore_registers();
+    // void restore_registers();
 
     void set_data_as_output();
     void set_data_as_input();

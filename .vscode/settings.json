@@ -8,6 +8,9 @@
         "wstring.h": "c",
         "rurp_shield.h": "c",
         "string.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "stdlib.h": "c",
+        "stdbool.h": "c",
+        "json_parser.h": "c"
     }
 }

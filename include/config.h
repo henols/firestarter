@@ -13,5 +13,4 @@
 
 #define EPROM_BLANK_CHECK 
 #define EPROM_WRITE_CHECK 
-
 #endif // CONFIG_H

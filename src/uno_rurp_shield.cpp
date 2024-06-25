@@ -70,17 +70,17 @@ void set_data_as_input() {
     DDRD = 0x00;
 }
 
-void restore_regsiters() {
-    uint8_t data = lsb_address;
-    lsb_address = ~lsb_address;
-    write_to_register(LEAST_SIGNIFICANT_BYTE, data);
-    data = msb_address;
-    msb_address = ~msb_address;
-    write_to_register(MOST_SIGNIFICANT_BYTE, data);
-    data = controle_register;
-    controle_register = ~controle_register;
-    write_to_register(CONTROL_REGISTER, data);
-}
+// void restore_regsiters() {
+//     uint8_t data = lsb_address;
+//     lsb_address = ~lsb_address;
+//     write_to_register(LEAST_SIGNIFICANT_BYTE, data);
+//     data = msb_address;
+//     msb_address = ~msb_address;
+//     write_to_register(MOST_SIGNIFICANT_BYTE, data);
+//     data = controle_register;
+//     controle_register = ~controle_register;
+//     write_to_register(CONTROL_REGISTER, data);
+// }
 
 
 void write_to_register(uint8_t reg, uint8_t data)
@@ -108,7 +108,7 @@ void write_to_register(uint8_t reg, uint8_t data)
     default:
         return;
     }
-
+    set_data_as_output();
     PORTD = data;
     PORTB |= reg;
     delayMicroseconds(1);

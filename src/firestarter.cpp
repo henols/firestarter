@@ -8,12 +8,14 @@
 #include "firestarter.h"
 #include <Arduino.h>
 #include <stdlib.h>
-#include <ArduinoJson.h>
 
-
+#include "json_parser.h"
+ // #include "jsmn.h"
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
+
+
 
 #define RX 0
 #define TX 1
@@ -30,19 +32,16 @@
 firestarter_handle_t handle;
 
 unsigned long timeout = 0;
+jsmntok_t tokens[NUMBER_JSNM_TOKENS];
 
 void setProgramerMode();
 void setComunicationMode();
 void resetTimeout();
 
-int allocatreDataBuffer(firestarter_handle_t* handle);
-void freeDataBuffer(firestarter_handle_t* handle);
-
 void logInfo(const char* info);
 void logError(const char* info);
 
-void setup()
-{
+void setup() {
   rurp_setup();
   setComunicationMode();
   handle.state = STATE_IDLE;
@@ -53,19 +52,20 @@ void resetTimeout()
   timeout = millis() + 1000;
 }
 
+int waitCheckForOK(){
+  if (Serial.available() < 2) {
+    return 0;
+  }
+  if(Serial.read()!= 'O' || Serial.read() != 'K' ){
+    logInfo("Expecting OK");
+    resetTimeout();
+    return 0 ;
+  }
+  return 1;
+}
+
 void readProm(firestarter_handle_t* handle) {
-  if (Serial.available() <= 0) {
-    return;
-  }
-
-  String s = Serial.readStringUntil('\n');
-  if (s != "OK") {
-    handle->state = STATE_ERROR;
-    return;
-  }
-  logInfo("Read data");
-
-  if (!allocatreDataBuffer(handle)) {
+  if (!waitCheckForOK()) {
     return;
   }
 
@@ -90,20 +90,24 @@ void readProm(firestarter_handle_t* handle) {
   resetTimeout();
 }
 
+
 void eraseProm(firestarter_handle_t* handle) {}
 
-void writeProm(firestarter_handle_t* handle)
-{
-  if (!allocatreDataBuffer(handle)) {
-    return;
-  }
-
-  int data_size;
-  while ((data_size = Serial.read()) < 0) {
-    handle->data_size = data_size + 1;
+void writeProm(firestarter_handle_t* handle) {
+  if (Serial.available() >= 2) {
+    handle->data_size = Serial.read() << 8;
+    handle->data_size |= Serial.read();
+    if(handle->data_size == 0){
+      Serial.println("OK: Premaure end of data");
+      Serial.flush();
+      return;
+    }
     int len = Serial.readBytes(handle->data_buffer, handle->data_size);
-    if (len < handle->data_size) {
-      logError("Not enough data");
+
+    if (len != handle->data_size) {
+      char msg[50];
+      sprintf(msg, "Not enough data, expected %d, got %i", handle->data_size, len);
+      logError(msg);
       return;
     }
     if (handle->address + len > handle->mem_size) {
@@ -111,9 +115,11 @@ void writeProm(firestarter_handle_t* handle)
       return;
     }
 
-    Serial.print("INFO: Write to address 0x");
-    Serial.println(handle->address, 16);
-    Serial.flush();
+    // Serial.print("INFO: Write to address 0x");
+    // Serial.print(handle->address, 16);
+    // Serial.print(", buffer size 0x");
+    // Serial.println(handle->data_size, 16);
+    // Serial.flush();
 
     setProgramerMode();
     handle->firestarter_write_data(handle);
@@ -124,49 +130,40 @@ void writeProm(firestarter_handle_t* handle)
       return;
     }
     Serial.print("OK: Data written, address 0x");
-    Serial.println(handle->address, 16);
+    Serial.print(handle->address, 16);
 
     Serial.print(" - 0x");
     handle->address += handle->data_size;
     Serial.println(handle->address, 16);
 
-    if (handle->address == handle->mem_size) {
+    resetTimeout();
+    if (handle->address >= handle->mem_size) {
       Serial.println("OK: Memory written");
       Serial.flush();
       handle->state = STATE_DONE;
       return;
     }
 
-    resetTimeout();
   }
 }
 
 void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
-  uint8_t ctrl = read_from_register(CONTROL_REGISTER);
-    if (handle->state == STATE_READ_VPE) {
-      write_to_register(CONTROL_REGISTER, ctrl | REGULATOR);
-      // write_to_register(CONTROL_REGISTER, ctrl & ~VPE_TO_VPP);
-    }
-    else if (handle->state == STATE_READ_VPP) {
-      write_to_register(CONTROL_REGISTER, ctrl | REGULATOR | VPE_TO_VPP);
+    handle->init = 0;
+    uint8_t ctrl = read_from_register(CONTROL_REGISTER);
+    if (handle->state == STATE_READ_VPP) {
+      write_to_register(CONTROL_REGISTER, ctrl | REGULATOR | VPE_TO_VPP | VPE_ENABLE);
     }
     else if (handle->state == STATE_READ_VCC) {
       write_to_register(CONTROL_REGISTER, ctrl & ~REGULATOR);
     }
 
-    handle->init = 0;
     resetTimeout();
   }
-  if (Serial.available() <= 0) {
+  if (!waitCheckForOK()) {
     return;
   }
 
-  String s = Serial.readStringUntil('\n');
-  if (s != "OK") {
-    handle->state = STATE_ERROR;
-    return;
-  }
 
   float voltage = rurp_read_voltage();
 
@@ -174,9 +171,6 @@ void readVoltage(firestarter_handle_t* handle) {
   switch (handle->state) {
   case STATE_READ_VCC:
     Serial.print("VCC");
-    break;
-  case STATE_READ_VPE:
-    Serial.print("VPE");
     break;
   case STATE_READ_VPP:
     Serial.print("VPP");
@@ -191,100 +185,56 @@ void readVoltage(firestarter_handle_t* handle) {
 }
 
 void setupProm(firestarter_handle_t* handle) {
-  if (Serial.available() == 0) {
+  if (Serial.available() <= 0) {
     return;
   }
-
-  String input = Serial.readStringUntil('\n');
-  input.trim();
-  if (input.length() == 0) {
+  int len = Serial.readBytes(handle->data_buffer, DATA_BUFFER_SIZE);
+  if (len == 0) {
     logError("Empty input");
     return;
   }
-  JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, input);
-  if (error) {
-    Serial.print("ERROR: deserialization error, ");
-    Serial.print(error.c_str());
-    Serial.print(" input:  ");
-    Serial.println(input);
+
+  jsmn_parser parser;
+  jsmn_init(&parser);
+  int token_count = jsmn_parse(&parser, handle->data_buffer, len, tokens, NUMBER_JSNM_TOKENS);
+
+  if (token_count < 0) {
+    logError((const char*)handle->data_buffer);
     return;
   }
 
+  handle->state = json_get_state(handle->data_buffer, tokens, token_count);
   handle->init = 1;
-  handle->state = (uint8_t)doc["state"];
-  if (handle->state < STATE_READ_VPE) {
-    handle->address = 0;
-    if (doc.containsKey("address")) {
-      handle->address = (uint32_t)doc["address"];
-    }
-    // handle->name = doc["name"];
-    // handle->manufacturer = doc["manufacturer"];
 
-    handle->mem_type = (uint8_t)doc["type"];
-    handle->mem_size = (uint32_t)doc["memory-size"];
-    handle->pins = (uint8_t)doc["pin-count"];
-    handle->can_erase = (uint32_t)doc["can-erase"];
-    handle->skip_erase = 0;
-    if (doc.containsKey("skip-erase")) {
-      handle->skip_erase = (uint32_t)doc["skip-erase"];
-    }
-
-    handle->blank_check = 1;
-    if (doc.containsKey("blank-check")) {
-      handle->blank_check = (uint32_t)doc["blank-check"];
-    }
-
-    handle->has_chip_id = (uint32_t)doc["has-chip-id"];
-    handle->chip_id = (uint32_t)doc["chip-id"];
-    handle->pulse_delay = (uint32_t)doc["pulse-delay"];
-
-    handle->bus_config.rw_line = 0xFF;
-    handle->bus_config.address_lines[0] = 0xFF;
-
-    if (doc.containsKey("bus-config")) {
-      logInfo("set up bus-config");
-      JsonObject bus_config = doc["bus-config"].as<JsonObject>();
-
-      if (bus_config.containsKey("bus")) {
-        copyArray(bus_config["bus"], handle->bus_config.address_lines);
-      }
-      if (bus_config.containsKey("rw-pin")) {
-        handle->bus_config.rw_line = bus_config["rw-pin"];
-      }
-    }
-
-    int res = configure_memory(handle);
-    if (!res) {
-      Serial.println("ERROR: Could not configure chip");
-      handle->state = STATE_ERROR;
+  if (handle->state < STATE_READ_VPP) {
+    json_parse(handle->data_buffer, tokens, token_count, handle);
+    if (handle->response_code == RESPONSE_CODE_ERROR) {
+      logError(handle->response_msg);
       return;
     }
-    Serial.print("INFO: EPROM memory size ");
-    Serial.println(handle->mem_size, 10);
+    int res = configure_memory(handle);
+    if (!res) {
+      logError("Could not configure chip");
+      return;
+    }
+    Serial.print("INFO: EPROM memory size 0x");
+    Serial.println(handle->mem_size, 16);
+      Serial.flush();
+
   }
   else if (handle->state == STATE_CONFIG) {
     rurp_configuration_t* config = rurp_get_config();
-    int save = 0;
-    if (doc.containsKey("vcc")) {
-
-      config->vcc = (float)doc["vcc"];
-      save = 1;
+    int res = json_parse_config(handle->data_buffer, tokens, token_count, config);
+    if (res < 0) {
+      logError(handle->data_buffer);
+      return;
     }
-    if (doc.containsKey("r1")) {
-      config->r1 = (long)doc["r1"];
-      save = 1;
-    }
-    if (doc.containsKey("r2")) {
-      config->r2 = (long)doc["r2"];
-      save = 1;
-    }
-    if (save == 1) {
+    else if (res == 1) {
       rurp_save_config();
     }
   }
-  Serial.print("OK: state ");
-  Serial.println(handle->state);
+  Serial.print("OK: state 0x");
+  Serial.println(handle->state, 16);
   Serial.flush();
   resetTimeout();
 }
@@ -319,8 +269,6 @@ void loop() {
     handle.state = STATE_DONE;
   }
 
-
-
   switch (handle.state) {
   case STATE_READ:
     readProm(&handle);
@@ -332,13 +280,15 @@ void loop() {
     eraseProm(&handle);
     break;
   case STATE_DONE:
+    setProgramerMode();
     set_control_pin(CHIP_ENABLE, 1);
     set_control_pin(OUTPUT_ENABLE, 1);
     write_to_register(CONTROL_REGISTER, 0x00);
-    freeDataBuffer(&handle);
+    write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
+    write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
+    setComunicationMode();
     handle.state = STATE_IDLE;
     break;
-  case STATE_READ_VPE:
   case STATE_READ_VPP:
   case STATE_READ_VCC:
     readVoltage(&handle);
@@ -398,22 +348,4 @@ void logError(const char* error) {
   Serial.print("ERROR: ");
   Serial.println(error);
   Serial.flush();
-}
-
-int allocatreDataBuffer(firestarter_handle_t* handle) {
-  if (handle->data_buffer == NULL) {
-    handle->data_buffer = (byte*)malloc(DATA_BUFFER_SIZE);
-    if (!handle->data_buffer) {
-      logError("Out of memory, creating data_buffer!");
-      return 0;
-    }
-  }
-  return 1;
-}
-
-void freeDataBuffer(firestarter_handle_t* handle) {
-  if (handle->data_buffer) {
-    free(handle->data_buffer);
-    handle->data_buffer = NULL;
-  }
 }

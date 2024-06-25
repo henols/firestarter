@@ -8,11 +8,11 @@
 #ifndef EPROM_H
 #define EPROM_H
 
+#include "firestarter.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "firestarter.h"
 
     int configure_eprom(firestarter_handle_t* handle);
     

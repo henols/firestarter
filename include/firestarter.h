@@ -8,6 +8,7 @@
 #ifndef FIRESTARTER_H
 #define FIRESTARTER_H
 #include <stdint.h>
+#include <stdbool.h>
 
 #define DATA_BUFFER_SIZE 256
 
@@ -16,7 +17,7 @@
 #define STATE_WRITE 2
 #define STATE_ERASE 3
 #define STATE_CHECK_ERASED 4
-#define STATE_READ_VPE 10
+// #define STATE_READ_VPE 10
 #define STATE_READ_VPP 11
 #define STATE_READ_VCC 12 
 #define STATE_VERSION 13
@@ -40,22 +41,20 @@ typedef struct firestarter_handle {
 	uint8_t init;
 	uint8_t response_code;
 	char response_msg[32];
-	// const char* name;
-	// const char* manufacturer;
 	uint8_t mem_type;
 	uint32_t protocol;
 	uint8_t pins;
 	uint32_t mem_size;
 	uint32_t address;
+	float vpp;
 	uint32_t pulse_delay;
 	uint8_t can_erase;
 	uint8_t skip_erase;
 	uint8_t blank_check;
 	uint8_t has_chip_id;
 	uint16_t chip_id;
-	// int data_buffer_size;
-	uint8_t* data_buffer;
-	uint16_t data_size;
+	char data_buffer[DATA_BUFFER_SIZE];
+	uint32_t data_size;
 	bus_config_t bus_config;
 
 	void (*firestarter_init)(struct firestarter_handle*);
