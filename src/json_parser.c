@@ -46,6 +46,11 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
             i++;
             consumed_tokens += 2;
         }
+        else if (jsoneq(json, &tokens[i], "vpp-pin") == 0) {
+            handle->bus_config.vpp_line = atoi(json + tokens[i + 1].start);
+            i++;
+            consumed_tokens += 2;
+        }
     }
     return consumed_tokens;
 }

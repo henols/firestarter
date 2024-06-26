@@ -104,9 +104,9 @@ void writeProm(firestarter_handle_t* handle) {
     }
     int len = Serial.readBytes(handle->data_buffer, handle->data_size);
 
-    if (len != handle->data_size) {
+    if ((uint32_t)len != handle->data_size) {
       char msg[50];
-      sprintf(msg, "Not enough data, expected %d, got %i", handle->data_size, len);
+      sprintf(msg, "Not enough data, expected %d, got %d", (int)handle->data_size, len);
       logError(msg);
       return;
     }
