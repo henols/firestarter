@@ -38,6 +38,7 @@ typedef struct bus_config {
 
 
 typedef struct firestarter_handle {
+	uint8_t verbose;
 	uint8_t state;
 	uint8_t init;
 	uint8_t response_code;

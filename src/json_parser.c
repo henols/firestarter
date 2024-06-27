@@ -56,6 +56,7 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
 }
 
 int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle) {
+    handle->verbose = 0;
     handle->address = 0;
     handle->skip_erase = 0;
     handle->blank_check = 1;
@@ -66,6 +67,10 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     for (int i = 1; i < token_count; i++) {
         if (jsoneq(json, &tokens[i], "state") == 0) {
             handle->state = atoi(json + tokens[i + 1].start);
+            i++;
+        }
+        else if (jsoneq(json, &tokens[i], "verbose") == 0) {
+            handle->can_erase = (strncmp(json + tokens[i + 1].start, "true", 4) == 0) ? 1 : 0;
             i++;
         }
         else if (jsoneq(json, &tokens[i], "memory-size") == 0) {

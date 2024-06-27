@@ -81,6 +81,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
     }
     uint8_t mismatch_bitmask[DATA_BUFFER_SIZE / 8];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)
     unsigned int mismatch = 0;
+    int rewrites = 0;
     for (int i = 0; i < DATA_BUFFER_SIZE / 8; i++) {
         mismatch_bitmask[i] = 0xFF;
     }
@@ -91,6 +92,9 @@ void eprom_write_data(firestarter_handle_t* handle) {
         for (uint32_t i = 0; i < handle->data_size; i++) {
             if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
                 handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+                if (w > 0) {
+                    rewrites++;
+                }
             }
         }
         handle->firestarter_set_control_register(handle, VPE_TO_VPP | VPE_ENABLE, 0);
@@ -108,6 +112,10 @@ void eprom_write_data(firestarter_handle_t* handle) {
 
         if (!mismatch) {
             handle->response_code = RESPONSE_CODE_OK;
+            handle->response_msg[0] = '\0';
+            if (handle->verbose && rewrites>0) {
+                sprintf(handle->response_msg, "Number of rewrites %d", rewrites);
+            }
             return;
         }
     }

@@ -52,14 +52,14 @@ void resetTimeout()
   timeout = millis() + 1000;
 }
 
-int waitCheckForOK(){
+int waitCheckForOK() {
   if (Serial.available() < 2) {
     return 0;
   }
-  if(Serial.read()!= 'O' || Serial.read() != 'K' ){
+  if (Serial.read() != 'O' || Serial.read() != 'K') {
     logInfo("Expecting OK");
     resetTimeout();
-    return 0 ;
+    return 0;
   }
   return 1;
 }
@@ -97,7 +97,7 @@ void writeProm(firestarter_handle_t* handle) {
   if (Serial.available() >= 2) {
     handle->data_size = Serial.read() << 8;
     handle->data_size |= Serial.read();
-    if(handle->data_size == 0){
+    if (handle->data_size == 0) {
       Serial.println("OK: Premaure end of data");
       Serial.flush();
       return;
@@ -129,13 +129,17 @@ void writeProm(firestarter_handle_t* handle) {
       logError(handle->response_msg);
       return;
     }
+    else if (handle->response_code == RESPONSE_CODE_OK) {
+      logInfo(handle->response_msg);
+    }
+
     Serial.print("OK: Data written, address 0x");
     Serial.print(handle->address, 16);
 
     Serial.print(" - 0x");
     handle->address += handle->data_size;
     Serial.println(handle->address, 16);
-
+    Serial.flush();
     resetTimeout();
     if (handle->address >= handle->mem_size) {
       Serial.println("OK: Memory written");
@@ -219,7 +223,7 @@ void setupProm(firestarter_handle_t* handle) {
     }
     Serial.print("INFO: EPROM memory size 0x");
     Serial.println(handle->mem_size, 16);
-      Serial.flush();
+    Serial.flush();
 
   }
   else if (handle->state == STATE_CONFIG) {
@@ -338,9 +342,11 @@ void setProgramerMode()
 }
 
 void logInfo(const char* info) {
-  Serial.print("INFO: ");
-  Serial.println(info);
-  Serial.flush();
+  if (handle.verbose && strlen(info)) {
+    Serial.print("INFO: ");
+    Serial.println(info);
+    Serial.flush();
+  }
 }
 
 void logError(const char* error) {
