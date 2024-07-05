@@ -13,7 +13,7 @@ extern "C" {
 #endif
 #include "firestarter.h"
 
-    int configure_sram(firestarter_handle_t* handle);
+    void configure_sram(firestarter_handle_t* handle);
 
 #ifdef __cplusplus
 }

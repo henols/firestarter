@@ -17,7 +17,7 @@ extern "C" {
 #define WRITE_FLAG  0
 #define READ_FLAG  1
 
-    int configure_memory(firestarter_handle_t* handle);
+    void configure_memory(firestarter_handle_t* handle);
 
     void memory_set_address(firestarter_handle_t* handle, uint32_t address);
 

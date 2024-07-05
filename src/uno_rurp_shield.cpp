@@ -147,9 +147,9 @@ uint8_t read_data_buffer() {
     return PIND;
 }
 
-float rurp_read_voltage()
+double rurp_read_voltage()
 {
-     float refRes = rurp_config.vcc / INPUT_RESOLUTION ;
+     double refRes = rurp_config.vcc / INPUT_RESOLUTION ;
     
     // float vin =13.53;
     // float vout= 1.83;
@@ -157,17 +157,17 @@ float rurp_read_voltage()
 
     // return analogRead(VOLTAGE_MESSURE_PIN) * refRes * k;
 
-    float r1 = (float)rurp_config.r1;
-    float r2 = (float)rurp_config.r2;
+    long r1 = rurp_config.r1;
+    long r2 = rurp_config.r2;
     
-    float voltageDivider = ( r1 + r2) / r2;
+    double voltageDivider = ( r1 + r2) / r2;
 
      return analogRead(VOLTAGE_MESSURE_PIN) * refRes * voltageDivider;
 }
 
-float rurp_get_voltage_average()
+double rurp_get_voltage_average()
 {
-    float voltage_average = 0;
+    double voltage_average = 0;
     for (int i = 0; i < AVERAGE_OF; i++) {
         voltage_average += rurp_read_voltage();
     }

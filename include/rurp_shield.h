@@ -66,8 +66,8 @@ extern "C" {
     void write_data_buffer(uint8_t data);
     uint8_t read_data_buffer();
 
-    float rurp_read_voltage();
-    float rurp_get_voltage_average();
+    double rurp_read_voltage();
+    double rurp_get_voltage_average();
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config();
 #ifdef __cplusplus

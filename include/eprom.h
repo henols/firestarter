@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 
-    int configure_eprom(firestarter_handle_t* handle);
+    void configure_eprom(firestarter_handle_t* handle);
     
 #ifdef __cplusplus
 }

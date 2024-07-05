@@ -61,6 +61,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     handle->skip_erase = 0;
     handle->blank_check = 1;
     handle->bus_config.rw_line = 0xFF;
+    handle->bus_config.vpp_line = 0;
     handle->bus_config.address_lines[0] = 0xFF;
     handle->response_code = RESPONSE_CODE_OK;
     
@@ -70,7 +71,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
             i++;
         }
         else if (jsoneq(json, &tokens[i], "verbose") == 0) {
-            handle->can_erase = (strncmp(json + tokens[i + 1].start, "true", 4) == 0) ? 1 : 0;
+            handle->verbose = (strncmp(json + tokens[i + 1].start, "true", 4) == 0) ? 1 : 0;
             i++;
         }
         else if (jsoneq(json, &tokens[i], "memory-size") == 0) {
@@ -87,6 +88,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
         }
         else if (jsoneq(json, &tokens[i], "skip-erase") == 0) {
             handle->skip_erase = atoi(json + tokens[i + 1].start);
+            handle->blank_check = 0;
             i++;
         }
         else if (jsoneq(json, &tokens[i], "blank-check") == 0) {

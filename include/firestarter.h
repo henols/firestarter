@@ -42,7 +42,7 @@ typedef struct firestarter_handle {
 	uint8_t state;
 	uint8_t init;
 	uint8_t response_code;
-	char response_msg[32];
+	char response_msg[64];
 	uint8_t mem_type;
 	uint32_t protocol;
 	uint8_t pins;
@@ -59,8 +59,8 @@ typedef struct firestarter_handle {
 	uint32_t data_size;
 	bus_config_t bus_config;
 
-	void (*firestarter_init)(struct firestarter_handle*);
 	void (*firestarter_set_data)(struct firestarter_handle*, uint32_t, uint8_t);
+	void (*firestarter_write_init)(struct firestarter_handle*);
 	void (*firestarter_write_data)(struct firestarter_handle*);
 	uint8_t(*firestarter_get_data)(struct firestarter_handle*, uint32_t);
 	void(*firestarter_read_data)(struct firestarter_handle*);

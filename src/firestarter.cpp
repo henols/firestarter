@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 #include "json_parser.h"
- // #include "jsmn.h"
+#include "logging.h"
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
@@ -38,8 +38,10 @@ void setProgramerMode();
 void setComunicationMode();
 void resetTimeout();
 
-void logInfo(const char* info);
-void logError(const char* info);
+int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
+int checkResponse(firestarter_handle_t* handle);
+void log(const char* type, const char* msg);
+
 
 void setup() {
   rurp_setup();
@@ -69,21 +71,18 @@ void readProm(firestarter_handle_t* handle) {
     return;
   }
 
-  setProgramerMode();
-  handle->firestarter_read_data(handle);
-  setComunicationMode();
+  int res = executeFunction(handle->firestarter_read_data, handle);
+  if (res <= 0) {
+    return;
+  }
 
-  Serial.print("DATA:  0x");
-  Serial.print(handle->address, 16);
-  Serial.print(" - 0x");
-  Serial.println((handle->address + DATA_BUFFER_SIZE), 16);
+  logDataf("Read data from address 0x%lx to 0x%lx", handle->address, handle->address + DATA_BUFFER_SIZE);
+
   Serial.write(handle->data_buffer, DATA_BUFFER_SIZE);
   Serial.flush();
   handle->address += DATA_BUFFER_SIZE;
   if (handle->address == handle->mem_size) {
-    Serial.print("OK: Read data from address 0x00 to 0x");
-    Serial.println(handle->address, 16);
-    Serial.flush();
+    logOkf("Read data from address 0x00 to 0x%lx", handle->mem_size);
     handle->state = STATE_DONE;
     return;
   }
@@ -93,21 +92,28 @@ void readProm(firestarter_handle_t* handle) {
 
 void eraseProm(firestarter_handle_t* handle) {}
 
+
 void writeProm(firestarter_handle_t* handle) {
   if (Serial.available() >= 2) {
     handle->data_size = Serial.read() << 8;
     handle->data_size |= Serial.read();
     if (handle->data_size == 0) {
-      Serial.println("OK: Premaure end of data");
-      Serial.flush();
+      logOk("Premature end of data");
       return;
     }
     int len = Serial.readBytes(handle->data_buffer, handle->data_size);
 
+    if (handle->init && handle->firestarter_write_init != NULL) {
+      handle->init = 0;
+      int res = executeFunction(handle->firestarter_write_init, handle);
+      if (res <= 0) {
+        return;
+      }
+    }
+
+
     if ((uint32_t)len != handle->data_size) {
-      char msg[50];
-      sprintf(msg, "Not enough data, expected %d, got %d", (int)handle->data_size, len);
-      logError(msg);
+      logErrorf("Not enough data, expected %d, got %d", (int)handle->data_size, len);
       return;
     }
     if (handle->address + len > handle->mem_size) {
@@ -115,35 +121,15 @@ void writeProm(firestarter_handle_t* handle) {
       return;
     }
 
-    // Serial.print("INFO: Write to address 0x");
-    // Serial.print(handle->address, 16);
-    // Serial.print(", buffer size 0x");
-    // Serial.println(handle->data_size, 16);
-    // Serial.flush();
-
-    setProgramerMode();
-    handle->firestarter_write_data(handle);
-    setComunicationMode();
-
-    if (handle->response_code == RESPONSE_CODE_ERROR) {
-      logError(handle->response_msg);
+    int res = executeFunction(handle->firestarter_write_data, handle);
+    if (res <= 0) {
       return;
     }
-    else if (handle->response_code == RESPONSE_CODE_OK) {
-      logInfo(handle->response_msg);
-    }
-
-    Serial.print("OK: Data written, address 0x");
-    Serial.print(handle->address, 16);
-
-    Serial.print(" - 0x");
+    logOkf("Data written to address %lX - %lX", handle->address, handle->address + handle->data_size);
     handle->address += handle->data_size;
-    Serial.println(handle->address, 16);
-    Serial.flush();
     resetTimeout();
     if (handle->address >= handle->mem_size) {
-      Serial.println("OK: Memory written");
-      Serial.flush();
+      logOk("Memory written");
       handle->state = STATE_DONE;
       return;
     }
@@ -168,22 +154,12 @@ void readVoltage(firestarter_handle_t* handle) {
     return;
   }
 
+  double voltage = rurp_read_voltage();
+  const char* type = (handle->state == STATE_READ_VCC) ? "VCC" : "VPP";
+  char vStr[10];
+  dtostrf(voltage, 2, 2, vStr);
 
-  float voltage = rurp_read_voltage();
-
-  Serial.print("DATA: ");
-  switch (handle->state) {
-  case STATE_READ_VCC:
-    Serial.print("VCC");
-    break;
-  case STATE_READ_VPP:
-    Serial.print("VPP");
-    break;
-  }
-  Serial.print(" voltage: ");
-  Serial.print(voltage);
-  Serial.println("v");
-  Serial.flush();
+  logDataf("%s Voltage: %sv", type, vStr);
   delay(200);
   resetTimeout();
 }
@@ -216,14 +192,15 @@ void setupProm(firestarter_handle_t* handle) {
       logError(handle->response_msg);
       return;
     }
-    int res = configure_memory(handle);
-    if (!res) {
+
+    configure_memory(handle);
+    int res = checkResponse(handle);
+    if (res <= 0) {
       logError("Could not configure chip");
       return;
     }
-    Serial.print("INFO: EPROM memory size 0x");
-    Serial.println(handle->mem_size, 16);
-    Serial.flush();
+
+    logInfof("EPROM memory size 0x%lx", handle->mem_size);
 
   }
   else if (handle->state == STATE_CONFIG) {
@@ -237,33 +214,25 @@ void setupProm(firestarter_handle_t* handle) {
       rurp_save_config();
     }
   }
-  Serial.print("OK: state 0x");
-  Serial.println(handle->state, 16);
-  Serial.flush();
+  logOkf("Setup done, state 0x%x", handle->state);
   resetTimeout();
 }
 
 void getVersion() {
-  Serial.print("OK: ");
-  Serial.println(VERSION);
-  Serial.flush();
+  logOk(VERSION);
   handle.state = STATE_DONE;
 }
 
-void getConfig() {
+void getConfig(firestarter_handle_t* handle) {
   rurp_configuration_t* rurp_config = rurp_get_config();
-  Serial.print("OK: VCC: ");
-  Serial.print(rurp_config->vcc);
-  Serial.print("v, R1 (R16): ");
-  Serial.print(rurp_config->r1);
-  Serial.print(" ohms, R2 (R14+R15): ");
-  Serial.print(rurp_config->r2);
-  Serial.println(" ohms");
-  Serial.flush();
-  handle.state = STATE_DONE;
+  char vccStr[10];
+  dtostrf(rurp_config->vcc, 4, 2, vccStr);
+  logOkf("VCC: %s, R1: %ld, R2: %ld", vccStr, rurp_config->r1, rurp_config->r2);
+  handle->state = STATE_DONE;
 }
 
 void loop() {
+  handle.response_msg[0] = '\0';
   if (handle.state != STATE_IDLE && timeout < millis()) {
     setProgramerMode();
     delay(100);
@@ -307,22 +276,44 @@ void loop() {
     getVersion();
     break;
   case STATE_CONFIG:
-    getConfig();
+    getConfig(&handle);
     break;
 
   default:
-    Serial.print("ERROR: Unknown state: ");
-    Serial.println(handle.state);
-    Serial.flush();
-    handle.state = STATE_DONE;
+    sprintf(handle.response_msg, "Unknown state: %d", handle.state);
+    logError(handle.response_msg);
     break;
   }
 }
 
 
+int checkResponse(firestarter_handle_t* handle) {
+  if (handle->response_code == RESPONSE_CODE_OK) {
+    logInfo(handle->response_msg);
+    return 1;
+  }
+  else if (handle->response_code == RESPONSE_CODE_WARNING) {
+    logWarn(handle->response_msg);
+    return 1;
+  }
+  else if (handle->response_code == RESPONSE_CODE_ERROR) {
+    logError(handle->response_msg);
+    return 0;
+  }
+  return 0;
+}
 
-void setComunicationMode()
-{
+int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
+  setProgramerMode();
+  callback(handle);
+  setComunicationMode();
+  delayMicroseconds(50);
+  return checkResponse(handle);
+}
+
+
+
+void setComunicationMode() {
   set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
   DDRD &= ~(0x01);
   Serial.begin(MONITOR_SPEED); // Initialize serial port
@@ -335,23 +326,15 @@ void setComunicationMode()
   delay(1);
 }
 
-void setProgramerMode()
-{
+void setProgramerMode() {
   Serial.end(); // Close serial port
   DDRD |= 0x01;
 }
 
-void logInfo(const char* info) {
-  if (handle.verbose && strlen(info)) {
-    Serial.print("INFO: ");
-    Serial.println(info);
-    Serial.flush();
-  }
-}
-
-void logError(const char* error) {
-  handle.state = STATE_ERROR;
-  Serial.print("ERROR: ");
-  Serial.println(error);
+void log(const char* type, const char* msg) {
+  Serial.print(type);
+  Serial.print(": ");
+  Serial.println(msg);
   Serial.flush();
 }
+
