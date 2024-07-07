@@ -12,6 +12,8 @@
 #include "eprom.h"
 #include "sram.h"
 #include "rurp_shield.h"
+#include "logging.h"
+
 
 #define TYPE_EPROM 1
 #define TYPE_SRAM 4
@@ -32,14 +34,14 @@ void configure_memory(firestarter_handle_t* handle) {
     if (handle->mem_type == TYPE_EPROM)
     {
         configure_eprom(handle);
-        return ;
+        return;
     }
     else if (handle->mem_type == TYPE_SRAM)
     {
-         configure_sram(handle);
+        configure_sram(handle);
         return;
     }
-    sprintf(handle->response_msg, "Memory type not supported");
+    copyToBuffer(handle->response_msg, "Memory type not supported");
     handle->response_code = RESPONSE_CODE_ERROR;
     return;
 }
@@ -133,7 +135,7 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
 
     handle->firestarter_set_address(handle, address);
     write_data_buffer(data);
-    delayMicroseconds(1);   
+    delayMicroseconds(1);
     set_control_pin(CHIP_ENABLE, 0);
     delayMicroseconds(handle->pulse_delay);
     set_control_pin(CHIP_ENABLE, 1);

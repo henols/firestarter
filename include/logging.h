@@ -1,44 +1,81 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
-#define logOk(info) \
-  log("OK", info)
+#include <avr/pgmspace.h>
 
-#define logOkf(cformat, ...) \
-  format(cformat, __VA_ARGS__); \
-  logOk(handle->response_msg)
+#define copyToBuffer( buf, msg) \
+  strcpy_P(buf, PSTR(msg)); \
 
-#define logInfo(info) \
-  if(strlen(info)){ \
-    log("INFO", info); \
+
+#define logOk(msg) \
+  logOkBuf(handle->response_msg, msg); \
+
+#define logOkBuf(buf, msg) \
+  copyToBuffer(buf, msg); \
+  logOkMsg(buf)
+
+#define logOkMsg(msg) \
+  log("OK", msg)
+
+#define logOkf(buf, cformat, ...) \
+  format(buf, cformat, __VA_ARGS__); \
+  logOkMsg(buf)
+
+#define logInfoBuf(buf, msg) \
+  copyToBuffer(buf, msg); \
+  logInfoMsg(buf)
+
+#define logInfo(msg) \
+  copyToBuffer(handle->response_msg, msg); \
+  logInfoMsg(handle->response_msg)
+
+#define logInfoMsg(msg) \
+  if(strlen(msg)){ \
+    log("INFO", msg); \
   }
 
-#define logInfof(cformat, ...) \
-  format(cformat, __VA_ARGS__); \
-  logInfo(handle->response_msg)
+#define logInfof(buf, cformat, ...) \
+  format(buf, cformat, __VA_ARGS__); \
+  logInfoMsg(buf)
 
-#define logData(info) \
-  log("DATA", info)
+#define logDataMsg(msg) \
+  log("DATA", msg)
 
-#define logDataf(cformat, ...) \
-  format(cformat, __VA_ARGS__); \
-  logData(handle->response_msg)
+#define logData(msg) \
+  copyToBuffer(handle->response_msg, msg);\
+  logDataMsg(handle->response_msg)
 
-#define logWarn(info) \
-  log("WARN", info)
+#define logDataf(buf, cformat, ...) \
+  format(buf, cformat, __VA_ARGS__); \
+  logDataMsg(buf)
 
-#define logWarnf(cformat, ...) \
-  format(cformat, __VA_ARGS__); \
-  logWarn(handle->response_msg)
+#define logWarnMsg(msg) \
+  log("WARN", msg)
 
-#define logError(info) \
-  log("ERROR", info)
+#define logWarnf(buf, cformat, ...) \
+  format(buf, cformat, __VA_ARGS__); \
+  logWarnMsg(buf)
 
-#define logErrorf(cformat, ...) \
-  format(cformat, __VA_ARGS__); \
-  logError(handle->response_msg)
+#define logError(msg) \
+  logErrorBuf(handle->response_msg,msg); \
 
-#define format(cformat, ...) \
-  sprintf(handle->response_msg, cformat, __VA_ARGS__)
+#define logErrorBuf(buf, msg) \
+  copyToBuffer(buf, msg);\
+  logErrorMsg(buf)
+
+#define logErrorMsg(msg) \
+  log("ERROR", msg)
+
+#define logErrorf(buf, cformat, ...) \
+  format(buf, cformat, __VA_ARGS__); \
+  logErrorMsg(buf)
+
+
+#define format(buf, cformat, ...) \
+  char msg[40]; \
+  copyToBuffer(msg, cformat);\
+  sprintf(buf, msg, __VA_ARGS__)
+
+void log(const char* type, const char* msg);
 
 #endif // LOGGING_H

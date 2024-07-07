@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <Arduino.h>
+
 #include "jsmn.h"
 
 int json_init(char* json, int len, jsmntok_t* tokens) {
@@ -20,9 +22,14 @@ int json_init(char* json, int len, jsmntok_t* tokens) {
     return jsmn_parse(&parser, json, len, tokens, sizeof(tokens) / sizeof(tokens[0]));
 }
 
-static int jsoneq(const char* json, jsmntok_t* tok, const char* s) {
-    if (tok->type == JSMN_STRING && (int)strlen(s) == tok->end - tok->start &&
-        strncmp(json + tok->start, s, tok->end - tok->start) == 0) {
+#define jsoneq(json, tok, s) \
+    jsoneq_(json, tok, PSTR(s))
+    // jsoneq_(json, tok, s)
+
+static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {
+    if (tok->type == JSMN_STRING && (int)strlen_P(s) == tok->end - tok->start &&
+        strncmp_P(json + tok->start, s, tok->end - tok->start) == 0) {
+        // strcmp_P(json + tok->start, s) == 0) {
         return 0;
     }
     return -1;
@@ -54,6 +61,9 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
     }
     return consumed_tokens;
 }
+int checkBoolean(const char* json) {
+    return strncmp(json, "true", 4) == 0;
+}
 
 int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle) {
     handle->verbose = 0;
@@ -64,6 +74,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     handle->bus_config.vpp_line = 0;
     handle->bus_config.address_lines[0] = 0xFF;
     handle->response_code = RESPONSE_CODE_OK;
+    handle->chip_id = 0;
     
     for (int i = 1; i < token_count; i++) {
         if (jsoneq(json, &tokens[i], "state") == 0) {
@@ -71,7 +82,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
             i++;
         }
         else if (jsoneq(json, &tokens[i], "verbose") == 0) {
-            handle->verbose = (strncmp(json + tokens[i + 1].start, "true", 4) == 0) ? 1 : 0;
+            handle->verbose = checkBoolean(json + tokens[i + 1].start);
             i++;
         }
         else if (jsoneq(json, &tokens[i], "memory-size") == 0) {
@@ -83,20 +94,16 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
             i++;
         }
         else if (jsoneq(json, &tokens[i], "can-erase") == 0) {
-            handle->can_erase = (strncmp(json + tokens[i + 1].start, "true", 4) == 0) ? 1 : 0;
+            handle->can_erase = checkBoolean(json + tokens[i + 1].start);
             i++;
         }
         else if (jsoneq(json, &tokens[i], "skip-erase") == 0) {
-            handle->skip_erase = atoi(json + tokens[i + 1].start);
+            handle->skip_erase = checkBoolean(json + tokens[i + 1].start);
             handle->blank_check = 0;
             i++;
         }
         else if (jsoneq(json, &tokens[i], "blank-check") == 0) {
-            handle->blank_check = atoi(json + tokens[i + 1].start);
-            i++;
-        }
-        else if (jsoneq(json, &tokens[i], "has-chip-id") == 0) {
-            handle->has_chip_id = (strncmp(json + tokens[i + 1].start, "true", 4) == 0) ? 1 : 0;
+            handle->blank_check = checkBoolean(json + tokens[i + 1].start);
             i++;
         }
         else if (jsoneq(json, &tokens[i], "chip-id") == 0) {

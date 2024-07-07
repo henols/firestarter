@@ -15,7 +15,7 @@
 #include "memory.h"
 #include "version.h"
 
-
+// 1892 bytes of SRAM
 
 #define RX 0
 #define TX 1
@@ -32,7 +32,6 @@
 firestarter_handle_t handle;
 
 unsigned long timeout = 0;
-jsmntok_t tokens[NUMBER_JSNM_TOKENS];
 
 void setProgramerMode();
 void setComunicationMode();
@@ -40,7 +39,6 @@ void resetTimeout();
 
 int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
 int checkResponse(firestarter_handle_t* handle);
-void log(const char* type, const char* msg);
 
 
 void setup() {
@@ -59,7 +57,7 @@ int waitCheckForOK() {
     return 0;
   }
   if (Serial.read() != 'O' || Serial.read() != 'K') {
-    logInfo("Expecting OK");
+    logInfoBuf(handle.response_msg, "Expecting OK");
     resetTimeout();
     return 0;
   }
@@ -76,13 +74,13 @@ void readProm(firestarter_handle_t* handle) {
     return;
   }
 
-  logDataf("Read data from address 0x%lx to 0x%lx", handle->address, handle->address + DATA_BUFFER_SIZE);
+  logDataf(handle->response_msg, "Read data from address 0x%lx to 0x%lx", handle->address, handle->address + DATA_BUFFER_SIZE);
 
   Serial.write(handle->data_buffer, DATA_BUFFER_SIZE);
   Serial.flush();
   handle->address += DATA_BUFFER_SIZE;
   if (handle->address == handle->mem_size) {
-    logOkf("Read data from address 0x00 to 0x%lx", handle->mem_size);
+    logOkf(handle->response_msg, "Read data from address 0x00 to 0x%lx", handle->mem_size);
     handle->state = STATE_DONE;
     return;
   }
@@ -113,7 +111,7 @@ void writeProm(firestarter_handle_t* handle) {
 
 
     if ((uint32_t)len != handle->data_size) {
-      logErrorf("Not enough data, expected %d, got %d", (int)handle->data_size, len);
+      logErrorf(handle->response_msg, "Not enough data, expected %d, got %d", (int)handle->data_size, len);
       return;
     }
     if (handle->address + len > handle->mem_size) {
@@ -125,7 +123,7 @@ void writeProm(firestarter_handle_t* handle) {
     if (res <= 0) {
       return;
     }
-    logOkf("Data written to address %lX - %lX", handle->address, handle->address + handle->data_size);
+    logOkf(handle->response_msg, "Data written to address %lX - %lX", handle->address, handle->address + handle->data_size);
     handle->address += handle->data_size;
     resetTimeout();
     if (handle->address >= handle->mem_size) {
@@ -159,7 +157,7 @@ void readVoltage(firestarter_handle_t* handle) {
   char vStr[10];
   dtostrf(voltage, 2, 2, vStr);
 
-  logDataf("%s Voltage: %sv", type, vStr);
+  logDataf(handle->response_msg, "%s Voltage: %sv", type, vStr);
   delay(200);
   resetTimeout();
 }
@@ -175,11 +173,13 @@ void setupProm(firestarter_handle_t* handle) {
   }
 
   jsmn_parser parser;
+  jsmntok_t tokens[NUMBER_JSNM_TOKENS];
+
   jsmn_init(&parser);
   int token_count = jsmn_parse(&parser, handle->data_buffer, len, tokens, NUMBER_JSNM_TOKENS);
 
   if (token_count < 0) {
-    logError((const char*)handle->data_buffer);
+    logErrorMsg((const char*)handle->data_buffer);
     return;
   }
 
@@ -189,7 +189,7 @@ void setupProm(firestarter_handle_t* handle) {
   if (handle->state < STATE_READ_VPP) {
     json_parse(handle->data_buffer, tokens, token_count, handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
-      logError(handle->response_msg);
+      logErrorMsg(handle->response_msg);
       return;
     }
 
@@ -200,26 +200,26 @@ void setupProm(firestarter_handle_t* handle) {
       return;
     }
 
-    logInfof("EPROM memory size 0x%lx", handle->mem_size);
+    logInfof(handle->response_msg, "EPROM memory size 0x%lx", handle->mem_size);
 
   }
   else if (handle->state == STATE_CONFIG) {
     rurp_configuration_t* config = rurp_get_config();
     int res = json_parse_config(handle->data_buffer, tokens, token_count, config);
     if (res < 0) {
-      logError(handle->data_buffer);
+      logErrorMsg(handle->data_buffer);
       return;
     }
     else if (res == 1) {
       rurp_save_config();
     }
   }
-  logOkf("Setup done, state 0x%x", handle->state);
+  logOkf(handle->response_msg, "Setup done, state 0x%x", handle->state);
   resetTimeout();
 }
 
 void getVersion() {
-  logOk(VERSION);
+  logOkBuf(handle.response_msg, VERSION);
   handle.state = STATE_DONE;
 }
 
@@ -227,7 +227,7 @@ void getConfig(firestarter_handle_t* handle) {
   rurp_configuration_t* rurp_config = rurp_get_config();
   char vccStr[10];
   dtostrf(rurp_config->vcc, 4, 2, vccStr);
-  logOkf("VCC: %s, R1: %ld, R2: %ld", vccStr, rurp_config->r1, rurp_config->r2);
+  logOkf(handle->response_msg, "VCC: %s, R1: %ld, R2: %ld", vccStr, rurp_config->r1, rurp_config->r2);
   handle->state = STATE_DONE;
 }
 
@@ -237,7 +237,7 @@ void loop() {
     setProgramerMode();
     delay(100);
     setComunicationMode();
-    logError("Timeout");
+    logErrorBuf(handle.response_msg, "Timeout");
     resetTimeout();
     handle.state = STATE_DONE;
   }
@@ -280,8 +280,7 @@ void loop() {
     break;
 
   default:
-    sprintf(handle.response_msg, "Unknown state: %d", handle.state);
-    logError(handle.response_msg);
+    logErrorf(handle.response_msg, "Unknown state: %d", handle.state);
     break;
   }
 }
@@ -289,15 +288,15 @@ void loop() {
 
 int checkResponse(firestarter_handle_t* handle) {
   if (handle->response_code == RESPONSE_CODE_OK) {
-    logInfo(handle->response_msg);
+    logInfoMsg(handle->response_msg);
     return 1;
   }
   else if (handle->response_code == RESPONSE_CODE_WARNING) {
-    logWarn(handle->response_msg);
+    logWarnMsg(handle->response_msg);
     return 1;
   }
   else if (handle->response_code == RESPONSE_CODE_ERROR) {
-    logError(handle->response_msg);
+    logErrorMsg(handle->response_msg);
     return 0;
   }
   return 0;

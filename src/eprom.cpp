@@ -6,11 +6,14 @@
  */
 
 #include "eprom.h"
-#include <Arduino.h>
+#include <avr/pgmspace.h>
 #include <stdio.h>
 #include "config.h"
 #include "firestarter.h"
 #include "rurp_shield.h"
+#include <Arduino.h>
+#include "logging.h"
+
 
 void eprom_erase(firestarter_handle_t* handle);
 void eprom_write_init(firestarter_handle_t* handle);
@@ -56,23 +59,25 @@ void eprom_erase(firestarter_handle_t* handle) {
 }
 
 void eprom_write_init(firestarter_handle_t* handle) {
-    if (handle->has_chip_id) {
+    if (handle->chip_id>0)  {
         uint16_t chip_id = eprom_get_chip_id(handle);
         if (chip_id != handle->chip_id) {
             handle->response_code = RESPONSE_CODE_ERROR;
-            sprintf(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
+            format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
             return;
         }
     }
     if (handle->can_erase && !handle->skip_erase) {
         eprom_erase(handle);
+    } else {
+        copyToBuffer(handle->response_msg, "Skipping erase of memory");
     }
 #ifdef EPROM_BLANK_CHECK
     if (handle->blank_check) {
         for (uint32_t i = 0; i < handle->mem_size; i++) {
             if (handle->firestarter_get_data(handle, i) != 0xFF) {
                 handle->response_code = RESPONSE_CODE_ERROR;
-                sprintf(handle->response_msg, "Memory is not blank, at %#lx", i);
+                format(handle->response_msg, "Memory is not blank, at %#lx", i);
                 return;
             }
         }
@@ -124,13 +129,13 @@ void eprom_write_data(firestarter_handle_t* handle) {
             handle->response_code = RESPONSE_CODE_OK;
             handle->response_msg[0] = '\0';
             if (handle->verbose && rewrites > 0) {
-                sprintf(handle->response_msg, "Number of rewrites %d", rewrites);
+                format(handle->response_msg, "Number of rewrites %d", rewrites);
             }
             return;
         }
     }
     handle->firestarter_set_control_register(handle, REGULATOR, 0);
-    sprintf(handle->response_msg, "Failed to write memory, at 0x%lx, nr %d", handle->address, mismatch);
+    format(handle->response_msg, "Failed to write memory, at 0x%lx, nr %d", handle->address, mismatch);
     handle->response_code = RESPONSE_CODE_ERROR;
 }
 

@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
 #define DATA_BUFFER_SIZE 256
 
 #define STATE_IDLE 0
@@ -53,7 +54,6 @@ typedef struct firestarter_handle {
 	uint8_t can_erase;
 	uint8_t skip_erase;
 	uint8_t blank_check;
-	uint8_t has_chip_id;
 	uint16_t chip_id;
 	char data_buffer[DATA_BUFFER_SIZE];
 	uint32_t data_size;
