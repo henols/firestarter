@@ -11,13 +11,13 @@
 #include <stdbool.h>
 
 
-#define DATA_BUFFER_SIZE 256
+#define DATA_BUFFER_SIZE 512
 
 #define STATE_IDLE 0
 #define STATE_READ 1
 #define STATE_WRITE 2
 #define STATE_ERASE 3
-#define STATE_CHECK_ERASED 4
+#define STATE_BLANK_CHECK 4
 // #define STATE_READ_VPE 10
 #define STATE_READ_VPP 11
 #define STATE_READ_VCC 12 
@@ -64,7 +64,8 @@ typedef struct firestarter_handle {
 	void (*firestarter_write_data)(struct firestarter_handle*);
 	uint8_t(*firestarter_get_data)(struct firestarter_handle*, uint32_t);
 	void(*firestarter_read_data)(struct firestarter_handle*);
-	void (*firestarter_check_erased)(struct firestarter_handle*);
+	void (*firestarter_erase)(struct firestarter_handle*);
+	void (*firestarter_blank_check)(struct firestarter_handle*);
 	void (*firestarter_set_address)(struct firestarter_handle*, uint32_t);
 	void (*firestarter_set_control_register)(struct firestarter_handle*, uint8_t, bool);
 	bool (*firestarter_get_control_register)(struct firestarter_handle*, uint8_t);

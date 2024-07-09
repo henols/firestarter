@@ -15,7 +15,7 @@
 #include "memory.h"
 #include "version.h"
 
-// 1892 bytes of SRAM
+ // 1892 bytes of SRAM
 
 #define RX 0
 #define TX 1
@@ -88,7 +88,35 @@ void readProm(firestarter_handle_t* handle) {
 }
 
 
-void eraseProm(firestarter_handle_t* handle) {}
+void eraseProm(firestarter_handle_t* handle) {
+  if (handle->firestarter_erase) {
+    int res = executeFunction(handle->firestarter_erase, handle);
+    if (res <= 0) {
+      return;
+    }
+    logOkBuf(handle->response_msg, "Chip is erased");
+    handle->state = STATE_DONE;
+  }
+  else {
+    logError("Erase not supported");
+  }
+}
+
+void blankCheck(firestarter_handle_t* handle) {
+  if (handle->firestarter_blank_check) {
+    int res = executeFunction(handle->firestarter_blank_check, handle);
+    if (res <= 0) {
+      return;
+    }
+    logOkBuf(handle->response_msg, "Chip is blank");
+    handle->state = STATE_DONE;
+  }
+  else {
+    logError("Blank check not supported");
+  }
+}
+
+
 
 
 void writeProm(firestarter_handle_t* handle) {
@@ -251,6 +279,9 @@ void loop() {
     break;
   case STATE_ERASE:
     eraseProm(&handle);
+    break;
+  case STATE_BLANK_CHECK:
+    blankCheck(&handle);
     break;
   case STATE_DONE:
     setProgramerMode();

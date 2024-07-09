@@ -104,6 +104,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
         }
         else if (jsoneq(json, &tokens[i], "blank-check") == 0) {
             handle->blank_check = checkBoolean(json + tokens[i + 1].start);
+            handle->skip_erase = 1;
             i++;
         }
         else if (jsoneq(json, &tokens[i], "chip-id") == 0) {

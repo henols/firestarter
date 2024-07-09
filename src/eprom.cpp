@@ -16,6 +16,7 @@
 
 
 void eprom_erase(firestarter_handle_t* handle);
+void eprom_blank_check(firestarter_handle_t* handle);
 void eprom_write_init(firestarter_handle_t* handle);
 void eprom_write_data(firestarter_handle_t* handle);
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
@@ -28,7 +29,8 @@ void configure_eprom(firestarter_handle_t* handle) {
     handle->firestarter_write_data = eprom_write_data;
     set_control_register = handle->firestarter_set_control_register;
     handle->firestarter_set_control_register = eprom_set_control_register;
-    handle->response_code = RESPONSE_CODE_OK;
+    handle->firestarter_erase = eprom_erase;
+    handle->firestarter_blank_check = eprom_blank_check;
 }
 
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
@@ -45,7 +47,15 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
     return chip_id;
 }
 
-void eprom_erase(firestarter_handle_t* handle) {
+void eprom_check_chip_id(firestarter_handle_t* handle) {
+    uint16_t chip_id = eprom_get_chip_id(handle);
+    if (chip_id != handle->chip_id) {
+        handle->response_code = RESPONSE_CODE_ERROR;
+        format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
+    }
+}
+
+void eprom_internal_erase(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR, 1);
     delay(100);
     handle->firestarter_set_address(handle, 0x0000);
@@ -58,28 +68,51 @@ void eprom_erase(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
 }
 
-void eprom_write_init(firestarter_handle_t* handle) {
-    if (handle->chip_id>0)  {
-        uint16_t chip_id = eprom_get_chip_id(handle);
-        if (chip_id != handle->chip_id) {
+void eprom_erase(firestarter_handle_t* handle) {
+    if (handle->chip_id > 0) {
+        eprom_check_chip_id(handle);
+        if (handle->response_code == RESPONSE_CODE_ERROR) {
+            return;
+        }
+    }
+    if (handle->can_erase) {
+        eprom_internal_erase(handle);
+    }
+    else {
+        copyToBuffer(handle->response_msg, "Erase not supported");
+        handle->response_code = RESPONSE_CODE_ERROR;
+    }
+}
+
+void eprom_blank_check(firestarter_handle_t* handle) {
+    for (uint32_t i = 0; i < handle->mem_size; i++) {
+        if (handle->firestarter_get_data(handle, i) != 0xFF) {
             handle->response_code = RESPONSE_CODE_ERROR;
-            format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
+            format(handle->response_msg, "Memory is not blank, at %#lx", i);
+            return;
+        }
+    }
+}
+
+
+void eprom_write_init(firestarter_handle_t* handle) {
+    if (handle->chip_id > 0) {
+        eprom_check_chip_id(handle);
+        if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;
         }
     }
     if (handle->can_erase && !handle->skip_erase) {
-        eprom_erase(handle);
-    } else {
+        eprom_internal_erase(handle);
+    }
+    else {
         copyToBuffer(handle->response_msg, "Skipping erase of memory");
     }
 #ifdef EPROM_BLANK_CHECK
     if (handle->blank_check) {
-        for (uint32_t i = 0; i < handle->mem_size; i++) {
-            if (handle->firestarter_get_data(handle, i) != 0xFF) {
-                handle->response_code = RESPONSE_CODE_ERROR;
-                format(handle->response_msg, "Memory is not blank, at %#lx", i);
-                return;
-            }
+        eprom_blank_check(handle);
+        if (handle->response_code == RESPONSE_CODE_ERROR) {
+            return;
         }
     }
 #endif
@@ -126,7 +159,6 @@ void eprom_write_data(firestarter_handle_t* handle) {
         }
 
         if (!mismatch) {
-            handle->response_code = RESPONSE_CODE_OK;
             handle->response_msg[0] = '\0';
             if (handle->verbose && rewrites > 0) {
                 format(handle->response_msg, "Number of rewrites %d", rewrites);
@@ -141,7 +173,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
 
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
 void eprom_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state) {
-    if(bit & VPE_ENABLE && handle->bus_config.vpp_line == 1) {
+    if (bit & VPE_ENABLE && handle->bus_config.vpp_line == 1) {
         bit &= ~VPE_ENABLE;
         bit |= P1_VPP_ENABLE;
     }

@@ -14,7 +14,6 @@ void configure_sram(firestarter_handle_t* handle) {
     // Configure memory
     // handle->firestarter_read_data = chip_read_data;
     // handle->firestarter_write_data = chip_write_data;
-    handle->response_code = RESPONSE_CODE_OK;
 
 }
 // void chip_read_data(firestarter_handle_t* handle)
