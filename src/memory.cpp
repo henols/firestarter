@@ -23,7 +23,7 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_read_data = memory_read_data;
     handle->firestarter_write_init = NULL;
     handle->firestarter_erase = NULL;
-	handle->firestarter_blank_check = NULL;
+    handle->firestarter_blank_check = NULL;
 
     handle->firestarter_write_data = memory_write_data;
     handle->firestarter_get_data = memory_get_data;
@@ -81,10 +81,12 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
     write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
     uint8_t msb = ((address >> 8) & 0xFF);
     write_to_register(MOST_SIGNIFICANT_BYTE, msb);
-    // uint8_t top_address = (address >> 16) & 0xFF;
-    // handle->firestarter_set_control_register(handle, A16, top_asetupddress & 0x01);
-    // handle->firestarter_set_control_register(handle, A17, (top_address >> 1) & 0x01);
-    // handle->firestarter_set_control_register(handle, A18, (top_address >> 2) & 0x01);
+#ifdef MEMORY_SET_TOP_ADDRESS
+    // Will this work with VPE_TO_VPP?
+    uint8_t top_address = (address >> 16) & 0xFF;
+    top_address |= read_from_register(CONTROL_REGISTER) & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR);
+    write_to_register(CONTROL_REGISTER, top_address);
+#endif
 }
 
 void memory_read_data(firestarter_handle_t* handle) {

@@ -37,13 +37,13 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR, 1);
     delay(50);
 
-    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_TO_VPP, 1);
+    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE, 1);
     delay(100);
     set_control_pin(CHIP_ENABLE, 0);
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
     chip_id |= (handle->firestarter_get_data(handle, 0x0001));
     set_control_pin(CHIP_ENABLE, 1);
-    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_TO_VPP, 0);
+    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE, 0);
     return chip_id;
 }
 
@@ -59,13 +59,13 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR, 1);
     delay(100);
     handle->firestarter_set_address(handle, 0x0000);
-    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_ENABLE, 1);
+    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_ENABLE | VPE_TO_VPP, 1);
     delay(100);
     set_control_pin(CHIP_ENABLE, 0);
     delayMicroseconds(handle->pulse_delay);
     set_control_pin(CHIP_ENABLE, 1);
 
-    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE | VPE_TO_VPP, 0);
 }
 
 void eprom_erase(firestarter_handle_t* handle) {
@@ -119,9 +119,6 @@ void eprom_write_init(firestarter_handle_t* handle) {
 }
 
 void eprom_write_data(firestarter_handle_t* handle) {
-    if (handle->init) {
-        handle->init = 0;
-    }
 
     if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
         handle->firestarter_set_control_register(handle, REGULATOR, 1);
@@ -135,7 +132,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
     }
     for (int w = 0; w < 20; w++) {
         mismatch = 0;
-        handle->firestarter_set_control_register(handle, VPE_TO_VPP | VPE_ENABLE, 1);
+        handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
         // Iterate through the mismatch bitmask to find all mismatched positions
         for (uint32_t i = 0; i < handle->data_size; i++) {
             if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
@@ -145,7 +142,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
                 }
             }
         }
-        handle->firestarter_set_control_register(handle, VPE_TO_VPP | VPE_ENABLE, 0);
+        handle->firestarter_set_control_register(handle, VPE_ENABLE, 0);
         for (uint32_t i = 0; i < handle->data_size; i++) {
             if (handle->firestarter_get_data(handle, (handle->address + i)) != (uint8_t)handle->data_buffer[i]) {
                 mismatch++;
