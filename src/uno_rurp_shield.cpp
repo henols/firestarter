@@ -149,20 +149,19 @@ uint8_t read_data_buffer() {
 
 double rurp_read_voltage()
 {
-     double refRes = rurp_config.vcc / INPUT_RESOLUTION ;
+    double refRes = rurp_config.vcc / INPUT_RESOLUTION;
     
-    // float vin =13.53;
-    // float vout= 1.83;
-    // float k = vin / vout;
-
-    // return analogRead(VOLTAGE_MESSURE_PIN) * refRes * k;
-
     long r1 = rurp_config.r1;
     long r2 = rurp_config.r2;
     
-    double voltageDivider = ( r1 + r2) / r2;
-
-     return analogRead(VOLTAGE_MESSURE_PIN) * refRes * voltageDivider;
+    // Correct voltage divider ratio calculation
+    double voltageDivider = 1.0 + static_cast<double>(r1) / r2;
+    
+    // Read the analog value and convert to voltage
+    double vout = analogRead(VOLTAGE_MESSURE_PIN) * refRes;
+    
+    // Calculate the input voltage
+    return vout * voltageDivider;
 }
 
 double rurp_get_voltage_average()
