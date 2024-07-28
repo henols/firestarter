@@ -121,8 +121,8 @@ void eprom_write_init(firestarter_handle_t* handle) {
 void eprom_write_data(firestarter_handle_t* handle) {
 
     if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
-        handle->firestarter_set_control_register(handle, REGULATOR, 1);
-        delay(100);
+        handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1); // Regulator defaults to VEP (~2V higher than VPP so it must be dropped)
+        delay(500);
     }
     uint8_t mismatch_bitmask[DATA_BUFFER_SIZE / 8];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)
     int mismatch = 0;
