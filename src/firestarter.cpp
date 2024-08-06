@@ -34,7 +34,7 @@ firestarter_handle_t handle;
 unsigned long timeout = 0;
 
 void setProgramerMode();
-void setComunicationMode();
+void setCommunicationMode();
 void resetTimeout();
 
 int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
@@ -43,7 +43,7 @@ int checkResponse(firestarter_handle_t* handle);
 
 void setup() {
   rurp_setup();
-  setComunicationMode();
+  setCommunicationMode();
   handle.state = STATE_IDLE;
 }
 
@@ -264,7 +264,7 @@ void loop() {
   if (handle.state != STATE_IDLE && timeout < millis()) {
     setProgramerMode();
     delay(100);
-    setComunicationMode();
+    setCommunicationMode();
     logErrorBuf(handle.response_msg, "Timeout");
     resetTimeout();
     handle.state = STATE_DONE;
@@ -290,7 +290,7 @@ void loop() {
     write_to_register(CONTROL_REGISTER, 0x00);
     write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
     write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
-    setComunicationMode();
+    setCommunicationMode();
     handle.state = STATE_IDLE;
     break;
   case STATE_READ_VPP:
@@ -336,14 +336,14 @@ int checkResponse(firestarter_handle_t* handle) {
 int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
   setProgramerMode();
   callback(handle);
-  setComunicationMode();
+  setCommunicationMode();
   delayMicroseconds(50);
   return checkResponse(handle);
 }
 
 
 
-void setComunicationMode() {
+void setCommunicationMode() {
   set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
   DDRD &= ~(0x01);
   Serial.begin(MONITOR_SPEED); // Initialize serial port
