@@ -12,5 +12,22 @@
         "stdlib.h": "c",
         "stdbool.h": "c",
         "json_parser.h": "c"
-    }
+    },
+    "cSpell.words": [
+        "Avrdude",
+        "DDRB",
+        "DDRD",
+        "EEPROM",
+        "EPROM",
+        "Firestarter",
+        "Fobel",
+        "FTDI",
+        "Killian",
+        "Olsson",
+        "PIND",
+        "PORTB",
+        "PORTD",
+        "rurp",
+        "Vout"
+    ]
 }

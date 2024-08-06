@@ -1,4 +1,4 @@
-# Firestarter EPROM progammer, Arduino UNO application
+# Firestarter EPROM programmer, Arduino UNO application
 Firestarter is an application for the [Relatively-Universal-ROM-Programmer](https://github.com/AndersBNielsen/Relatively-Universal-ROM-Programmer)
 
 Get one here [Relatively-Universal-ROM-Programmer](https://www.imania.dk/samlesaet-hobbyelektronik-og-ic-er-relatively-universal-rom-programmer.htm)
