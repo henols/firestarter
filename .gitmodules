@@ -1,0 +1,3 @@
+[submodule "firestarter_app"]
+	path = firestarter_app
+	url = git@github.com:fmuntean/firestarter_app.git
