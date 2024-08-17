@@ -4,6 +4,6 @@
 
 
 
-#define VERSION "1.0.2"
+#define VERSION "1.0.3"
 
 #endif // VERSION_H
