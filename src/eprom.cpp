@@ -170,7 +170,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
 
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
 void eprom_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state) {
-    if (bit & VPE_ENABLE && handle->bus_config.vpp_line == 1) {
+    if (bit & VPE_ENABLE && (handle->bus_config.vpp_line == 15 || handle->bus_config.vpp_line == 21)) {
         bit &= ~VPE_ENABLE;
         bit |= P1_VPP_ENABLE;
     }
