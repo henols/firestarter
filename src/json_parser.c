@@ -107,6 +107,10 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
             handle->skip_erase = 1;
             i++;
         }
+        else if (jsoneq(json, &tokens[i], "force") == 0) {
+            handle->force = checkBoolean(json + tokens[i + 1].start);
+            i++;
+        }
         else if (jsoneq(json, &tokens[i], "chip-id") == 0) {
             handle->chip_id = atoi(json + tokens[i + 1].start);
             i++;

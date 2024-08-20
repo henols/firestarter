@@ -83,7 +83,7 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
     write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 #ifdef MEMORY_SET_TOP_ADDRESS
     // Will this work with VPE_TO_VPP?
-    uint8_t top_address = (address >> 16) & 0xFF;
+    uint8_t top_address = (address >> 16) &  (A16 | A17 | A18 | RW);
     top_address |= read_from_register(CONTROL_REGISTER) & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR);
     write_to_register(CONTROL_REGISTER, top_address);
 #endif
