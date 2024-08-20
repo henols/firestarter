@@ -50,7 +50,7 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
 void eprom_check_chip_id(firestarter_handle_t* handle) {
     uint16_t chip_id = eprom_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
-        handle->response_code = RESPONSE_CODE_ERROR;
+        handle->response_code = handle->force ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
         format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
     }
 }
@@ -66,6 +66,26 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
     set_control_pin(CHIP_ENABLE, 1);
 
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
+}
+
+void eprom_check_vpp(firestarter_handle_t* handle) {
+    handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
+    delay(100);
+    double vpp = rurp_read_voltage();
+    if (vpp > handle->vpp * 1.02) {
+        handle->response_code = handle->force ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
+        char vStr[6];
+        dtostrf(vpp, 2, 2, vStr);
+
+        format(handle->response_msg, "VPP voltage is too high: %sv", vStr);
+    }
+    else if (vpp > handle->vpp * .95) {
+        handle->response_code = RESPONSE_CODE_WARNING;
+        char vStr[6];
+        dtostrf(vpp, 2, 2, vStr);
+        format(handle->response_msg, "VPP voltage is low: %sv", vStr);
+    }
+    handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
 }
 
 void eprom_erase(firestarter_handle_t* handle) {
@@ -96,12 +116,18 @@ void eprom_blank_check(firestarter_handle_t* handle) {
 
 
 void eprom_write_init(firestarter_handle_t* handle) {
+    eprom_check_vpp(handle);
+    if (handle->response_code == RESPONSE_CODE_ERROR) {
+        return;
+    }
+
     if (handle->chip_id > 0) {
         eprom_check_chip_id(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;
         }
     }
+
     if (handle->can_erase && !handle->skip_erase) {
         eprom_internal_erase(handle);
     }
