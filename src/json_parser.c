@@ -45,6 +45,7 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
             for (int j = 0; j < bus_array_size && j < 19; j++) {
                 handle->bus_config.address_lines[j] = atoi(json + tokens[bus_array_start + j + 1].start);
             }
+            handle->bus_config.address_lines[bus_array_size] = 0xFF;
             i += bus_array_size + 1;
             consumed_tokens += bus_array_size + 2;
         }
