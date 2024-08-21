@@ -25,7 +25,7 @@ void load_config();
 
 uint8_t lsb_address;
 uint8_t msb_address;
-uint8_t controle_register;
+uint8_t control_register;
 
 void rurp_setup() {
     pinMode(VOLTAGE_MESSURE_PIN, INPUT);
@@ -35,7 +35,7 @@ void rurp_setup() {
     PORTB = OUTPUT_ENABLE | CHIP_ENABLE;
     lsb_address = 0xff;
     msb_address = 0xff;
-    controle_register = 0xff;
+    control_register = 0xff;
     write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
     write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
     write_to_register(CONTROL_REGISTER, 0x00);
@@ -100,10 +100,10 @@ void write_to_register(uint8_t reg, uint8_t data)
         msb_address = data;
         break;
     case CONTROL_REGISTER:
-        if (controle_register == data) {
+        if (control_register == data) {
             return;
         }
-        controle_register = data;
+        control_register = data;
         break;
     default:
         return;
@@ -123,7 +123,7 @@ uint8_t read_from_register(uint8_t reg)
     case MOST_SIGNIFICANT_BYTE:
         return msb_address;
     case CONTROL_REGISTER:
-        return controle_register;
+        return control_register;
     }
     return 0;
 }
