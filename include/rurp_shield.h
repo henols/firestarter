@@ -31,16 +31,18 @@ extern "C" {
 #define CHIP_ENABLE 0x20             // CHIP ENABLE
 
 // CONTROL REGISTER
-#define VPE_TO_VPP 0x01
-#define A9_VPP_ENABLE 0x02
-#define VPE_ENABLE 0x04
-#define P1_VPP_ENABLE 0x08
-#define RW 0x40
-#define REGULATOR 0x80
+#define VPE_TO_VPP (uint8_t)0x01
+#define A9_VPP_ENABLE (uint8_t)0x02
+#define VPE_ENABLE (uint8_t)0x04
+#define P1_VPP_ENABLE (uint8_t)0x08
+#define RW (uint8_t)0x40
+#define REGULATOR (uint8_t)0x80
 
 #define A16 VPE_TO_VPP
-#define A17 0x10
-#define A18 0x20
+#define A17 (uint8_t)0x10
+#define A18 (uint8_t)0x20
+
+#define A13 (uint8_t)0x20
 
 // Struct definition
     typedef struct rurp_configuration {
@@ -55,16 +57,16 @@ extern "C" {
 
     // void restore_registers();
 
-    void set_data_as_output();
-    void set_data_as_input();
+    void rurp_set_data_as_output();
+    void rurp_set_data_as_input();
 
-    void set_control_pin(uint8_t pin, uint8_t state);
+    void rurp_set_control_pin(uint8_t pin, uint8_t state);
 
-    void write_to_register(uint8_t reg, uint8_t data);
-    uint8_t read_from_register(uint8_t reg);
+    void rurp_write_to_register(uint8_t reg, uint8_t data);
+    uint8_t rurp_read_from_register(uint8_t reg);
 
-    void write_data_buffer(uint8_t data);
-    uint8_t read_data_buffer();
+    void rurp_write_data_buffer(uint8_t data);
+    uint8_t rurp_read_data_buffer();
 
     double rurp_read_voltage();
     double rurp_get_voltage_average();

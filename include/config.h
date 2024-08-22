@@ -11,4 +11,8 @@
 #define EPROM_BLANK_CHECK 
 #define EPROM_WRITE_CHECK 
 
+#define TEST_VPP_BEFORE_WRITE
+
+// #define POWER_THROUGH_ADDRESS_LINES
+
 #endif // CONFIG_H

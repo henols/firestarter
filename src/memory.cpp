@@ -34,6 +34,9 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register = memory_set_control_register;
     handle->firestarter_get_control_register = memory_get_control_register;
     handle->response_code = RESPONSE_CODE_OK;
+#ifdef POWER_THROUGH_ADDRESS_LINES
+    // memory_set_address(handle, 0);
+#endif
     if (handle->mem_type == TYPE_EPROM)
     {
         configure_eprom(handle);
@@ -50,13 +53,13 @@ void configure_memory(firestarter_handle_t* handle) {
 }
 
 void memory_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state) {
-    uint8_t controle_register = read_from_register(CONTROL_REGISTER);
+    uint8_t controle_register = rurp_read_from_register(CONTROL_REGISTER);
     uint8_t data = state ? controle_register | (bit) : controle_register & ~(bit);
-    write_to_register(CONTROL_REGISTER, data);
+    rurp_write_to_register(CONTROL_REGISTER, data);
 }
 
 bool memory_get_control_register(firestarter_handle_t* handle, uint8_t bit) {
-    uint8_t controle_register = read_from_register(CONTROL_REGISTER);
+    uint8_t controle_register = rurp_read_from_register(CONTROL_REGISTER);
     return controle_register & bit;
 }
 
@@ -74,10 +77,18 @@ uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t
 }
 
 void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
+#ifdef POWER_THROUGH_ADDRESS_LINES
+    if (handle->pins == 24) {
+        address |= (uint32_t)A13 << 8;
+    }
+    else if (handle->pins == 28) {
+        address |= (uint32_t)A17 << 16;
+    }
+#endif
     uint8_t lsb = address & 0xFF;
-    write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
-    uint8_t msb = (((address&(uint32_t)0x00ff00) >> 8) & 0xFF);
-    write_to_register(MOST_SIGNIFICANT_BYTE, msb);
+    rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
+    uint8_t msb = ((address >> 8) & 0xFF);
+    rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 
     // Will this work with VPE_TO_VPP?
     uint8_t top_address = ((uint32_t)address >> 16) &  (A16 | A17 | A18 | RW);
@@ -86,29 +97,28 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 }
 
 void memory_read_data(firestarter_handle_t* handle) {
-    set_control_pin(CHIP_ENABLE, 0);
+    rurp_set_control_pin(CHIP_ENABLE, 0);
     int buf_size = DATA_BUFFER_SIZE;
     for (int i = 0; i < buf_size; i++)
     {
         handle->data_buffer[i] = handle->firestarter_get_data(handle, handle->address + i);
     }
-    set_control_pin(CHIP_ENABLE, 1);
+    rurp_set_control_pin(CHIP_ENABLE, 1);
 }
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
-    uint32_t remapped_address = address;
 
     if (handle->bus_config.address_lines[0] != 0xff || handle->bus_config.rw_line != 0xff) {
-        remapped_address = remap_address_bus(&handle->bus_config, address, READ_FLAG);
+        address = remap_address_bus(&handle->bus_config, address, READ_FLAG);
     }
 
-    handle->firestarter_set_address(handle, remapped_address);
-    set_data_as_input();
-    set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 0);
+    handle->firestarter_set_address(handle, address);
+    rurp_set_data_as_input();
+    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 0);
     delayMicroseconds(3);
-    uint8_t data = read_data_buffer();
-    set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
-    set_data_as_output();
+    uint8_t data = rurp_read_data_buffer();
+    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
+    rurp_set_data_as_output();
 
     return data;
 }
@@ -127,9 +137,9 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
     }
 
     handle->firestarter_set_address(handle, address);
-    write_data_buffer(data);
+    rurp_write_data_buffer(data);
     delayMicroseconds(1);
-    set_control_pin(CHIP_ENABLE, 0);
+    rurp_set_control_pin(CHIP_ENABLE, 0);
     delayMicroseconds(handle->pulse_delay);
-    set_control_pin(CHIP_ENABLE, 1);
+    rurp_set_control_pin(CHIP_ENABLE, 1);
 }
