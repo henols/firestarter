@@ -68,6 +68,7 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
 }
 
+#ifdef TEST_VPP_BEFORE_WRITE
 void eprom_check_vpp(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
     delay(100);
@@ -87,6 +88,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
     }
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
 }
+#endif
 
 void eprom_erase(firestarter_handle_t* handle) {
     if (handle->chip_id > 0) {
@@ -116,12 +118,13 @@ void eprom_blank_check(firestarter_handle_t* handle) {
 
 
 void eprom_write_init(firestarter_handle_t* handle) {
-    /* Breaks everything for some reason
+#ifdef TEST_VPP_BEFORE_WRITE
+    // Breaks everything for some reason
     eprom_check_vpp(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
         return;
     }
-    */
+#endif
     if (handle->chip_id > 0) {
         eprom_check_chip_id(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {

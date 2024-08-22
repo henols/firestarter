@@ -35,15 +35,13 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_get_control_register = memory_get_control_register;
     handle->response_code = RESPONSE_CODE_OK;
 #ifdef POWER_THROUGH_ADDRESS_LINES
-    // memory_set_address(handle, 0);
+    memory_set_address(handle, 0);
 #endif
-    if (handle->mem_type == TYPE_EPROM)
-    {
+    if (handle->mem_type == TYPE_EPROM) {
         configure_eprom(handle);
         return;
     }
-    else if (handle->mem_type == TYPE_SRAM)
-    {
+    else if (handle->mem_type == TYPE_SRAM) {
         configure_sram(handle);
         return;
     }
@@ -90,17 +88,16 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
     uint8_t msb = ((address >> 8) & 0xFF);
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 
-    // Will this work with VPE_TO_VPP?
-    uint8_t top_address = ((uint32_t)address >> 16) &  (A16 | A17 | A18 | RW);
-    top_address |= read_from_register(CONTROL_REGISTER) & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR | VPE_TO_VPP); //This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared - can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
-    write_to_register(CONTROL_REGISTER, top_address);
+    uint8_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | RW);
+    //This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared - can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
+    top_address |= rurp_read_from_register(CONTROL_REGISTER) & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR | VPE_TO_VPP); 
+    rurp_write_to_register(CONTROL_REGISTER, top_address);
 }
 
 void memory_read_data(firestarter_handle_t* handle) {
     rurp_set_control_pin(CHIP_ENABLE, 0);
     int buf_size = DATA_BUFFER_SIZE;
-    for (int i = 0; i < buf_size; i++)
-    {
+    for (int i = 0; i < buf_size; i++) {
         handle->data_buffer[i] = handle->firestarter_get_data(handle, handle->address + i);
     }
     rurp_set_control_pin(CHIP_ENABLE, 1);
