@@ -116,11 +116,12 @@ void eprom_blank_check(firestarter_handle_t* handle) {
 
 
 void eprom_write_init(firestarter_handle_t* handle) {
+    /* Breaks everything for some reason
     eprom_check_vpp(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
         return;
     }
-
+    */
     if (handle->chip_id > 0) {
         eprom_check_chip_id(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {

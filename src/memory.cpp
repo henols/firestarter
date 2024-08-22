@@ -81,7 +81,7 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 
     // Will this work with VPE_TO_VPP?
     uint8_t top_address = ((uint32_t)address >> 16) &  (A16 | A17 | A18 | RW);
-    top_address |= read_from_register(CONTROL_REGISTER) & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR);
+    top_address |= read_from_register(CONTROL_REGISTER) & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR | VPE_TO_VPP); //This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared - can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
     write_to_register(CONTROL_REGISTER, top_address);
 }
 
