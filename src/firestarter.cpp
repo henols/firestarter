@@ -290,7 +290,7 @@ void loop() {
     rurp_write_to_register(CONTROL_REGISTER, 0x00);
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
-    setComunicationMode();
+    setCommunicationMode();
     handle.state = STATE_IDLE;
     break;
   case STATE_READ_VPP:

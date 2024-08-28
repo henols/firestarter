@@ -51,13 +51,13 @@ void configure_memory(firestarter_handle_t* handle) {
 }
 
 void memory_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state) {
-    uint8_t control_register = read_from_register(CONTROL_REGISTER);
+    uint8_t control_register = rurp_read_from_register(CONTROL_REGISTER);
     uint8_t data = state ? control_register | (bit) : control_register & ~(bit);
-    write_to_register(CONTROL_REGISTER, data);
+    rurp_write_to_register(CONTROL_REGISTER, data);
 }
 
 bool memory_get_control_register(firestarter_handle_t* handle, uint8_t bit) {
-    uint8_t control_register = read_from_register(CONTROL_REGISTER);
+    uint8_t control_register = rurp_read_from_register(CONTROL_REGISTER);
     return control_register & bit;
 }
 
