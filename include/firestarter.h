@@ -53,6 +53,7 @@ typedef struct firestarter_handle {
 	uint32_t pulse_delay;
 	uint8_t can_erase;
 	uint8_t skip_erase;
+	uint8_t force;
 	uint8_t blank_check;
 	uint16_t chip_id;
 	char data_buffer[DATA_BUFFER_SIZE];

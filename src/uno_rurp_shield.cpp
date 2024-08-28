@@ -29,16 +29,16 @@ uint8_t control_register;
 
 void rurp_setup() {
     pinMode(VOLTAGE_MEASURE_PIN, INPUT);
-    set_data_as_output();
+    rurp_set_data_as_output();
     DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | RW;
 
     PORTB = OUTPUT_ENABLE | CHIP_ENABLE;
     lsb_address = 0xff;
     msb_address = 0xff;
     control_register = 0xff;
-    write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
-    write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
-    write_to_register(CONTROL_REGISTER, 0x00);
+    rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
+    rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
+    rurp_write_to_register(CONTROL_REGISTER, 0x00);
     load_config();
 }
 
@@ -62,11 +62,11 @@ rurp_configuration_t* rurp_get_config() {
     return &rurp_config;
 }
 
-void set_data_as_output() {
+void rurp_set_data_as_output() {
     DDRD = 0xff;
 }
 
-void set_data_as_input() {
+void rurp_set_data_as_input() {
     DDRD = 0x00;
 }
 
@@ -83,7 +83,7 @@ void set_data_as_input() {
 // }
 
 
-void write_to_register(uint8_t reg, uint8_t data)
+void rurp_write_to_register(uint8_t reg, uint8_t data)
 {
 
     switch (reg) {
@@ -108,14 +108,14 @@ void write_to_register(uint8_t reg, uint8_t data)
     default:
         return;
     }
-    set_data_as_output();
+    rurp_set_data_as_output();
     PORTD = data;
     PORTB |= reg;
     delayMicroseconds(1);
     PORTB &= ~(reg);
 }
 
-uint8_t read_from_register(uint8_t reg)
+uint8_t rurp_read_from_register(uint8_t reg)
 {
     switch (reg) {
     case LEAST_SIGNIFICANT_BYTE:
@@ -128,7 +128,7 @@ uint8_t read_from_register(uint8_t reg)
     return 0;
 }
 
-void set_control_pin(uint8_t pin, uint8_t state)
+void rurp_set_control_pin(uint8_t pin, uint8_t state)
 {
     if (state) {
         PORTB |= pin;
@@ -139,11 +139,11 @@ void set_control_pin(uint8_t pin, uint8_t state)
 }
 
 
-void write_data_buffer(uint8_t data) {
+void rurp_write_data_buffer(uint8_t data) {
     PORTD = data;
 }
 
-uint8_t read_data_buffer() {
+uint8_t rurp_read_data_buffer() {
     return PIND;
 }
 

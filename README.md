@@ -7,6 +7,16 @@ Python application [Firestarter app](https://github.com/henols/firestarter_app)
 
 ## Installation
 
+Install the [Firestarter app](https://github.com/henols/firestarter_app)
+
+Then upload the firmware to an Arduino UNO:
+
+```bash
+ firestarter fw --install
+```
+
+OR
+
 Install [PlatformIO](https://platformio.org/install)
 
 Install Firestarter on an Arduino UNO:

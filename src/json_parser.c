@@ -45,6 +45,7 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
             for (int j = 0; j < bus_array_size && j < 19; j++) {
                 handle->bus_config.address_lines[j] = atoi(json + tokens[bus_array_start + j + 1].start);
             }
+            handle->bus_config.address_lines[bus_array_size] = 0xFF;
             i += bus_array_size + 1;
             consumed_tokens += bus_array_size + 2;
         }
@@ -105,6 +106,10 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
         else if (jsoneq(json, &tokens[i], "blank-check") == 0) {
             handle->blank_check = checkBoolean(json + tokens[i + 1].start);
             handle->skip_erase = 1;
+            i++;
+        }
+        else if (jsoneq(json, &tokens[i], "force") == 0) {
+            handle->force = checkBoolean(json + tokens[i + 1].start);
             i++;
         }
         else if (jsoneq(json, &tokens[i], "chip-id") == 0) {

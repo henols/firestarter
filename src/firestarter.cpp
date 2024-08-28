@@ -166,12 +166,12 @@ void writeProm(firestarter_handle_t* handle) {
 void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
     handle->init = 0;
-    uint8_t ctrl = read_from_register(CONTROL_REGISTER);
+    // uint8_t ctrl = read_from_register(CONTROL_REGISTER);
     if (handle->state == STATE_READ_VPP) {
-      write_to_register(CONTROL_REGISTER, ctrl | REGULATOR | VPE_TO_VPP ); //Only enable regulator and drop voltage to VPP
+      rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP ); //Only enable regulator and drop voltage to VPP
     }
     else if (handle->state == STATE_READ_VCC) {
-      write_to_register(CONTROL_REGISTER, ctrl & ~REGULATOR);
+      rurp_write_to_register(CONTROL_REGISTER, 0);
     }
 
     resetTimeout();
@@ -285,12 +285,12 @@ void loop() {
     break;
   case STATE_DONE:
     setProgramerMode();
-    set_control_pin(CHIP_ENABLE, 1);
-    set_control_pin(OUTPUT_ENABLE, 1);
-    write_to_register(CONTROL_REGISTER, 0x00);
-    write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
-    write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
-    setCommunicationMode();
+    rurp_set_control_pin(CHIP_ENABLE, 1);
+    rurp_set_control_pin(OUTPUT_ENABLE, 1);
+    rurp_write_to_register(CONTROL_REGISTER, 0x00);
+    rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
+    rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
+    setComunicationMode();
     handle.state = STATE_IDLE;
     break;
   case STATE_READ_VPP:
@@ -344,7 +344,7 @@ int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_
 
 
 void setCommunicationMode() {
-  set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
+  rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
   DDRD &= ~(0x01);
   Serial.begin(MONITOR_SPEED); // Initialize serial port
 
