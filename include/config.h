@@ -15,4 +15,6 @@
 
 // #define POWER_THROUGH_ADDRESS_LINES
 
+#define SERIAL_DEBUG 
+
 #endif // CONFIG_H

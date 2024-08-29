@@ -14,6 +14,9 @@
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
+#include "config.h"
+
+#include "debug.h"
 
  // 1892 bytes of SRAM
 
@@ -42,6 +45,7 @@ int checkResponse(firestarter_handle_t* handle);
 
 
 void setup() {
+  debug_setup();
   rurp_setup();
   setCommunicationMode();
   handle.state = STATE_IDLE;
@@ -362,6 +366,8 @@ void setProgramerMode() {
 }
 
 void log(const char* type, const char* msg) {
+
+  log_debug(type, msg);
   Serial.print(type);
   Serial.print(": ");
   Serial.println(msg);

@@ -187,7 +187,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
 
         if (!mismatch) {
             handle->response_msg[0] = '\0';
-            if (handle->verbose && rewrites > 0) {
+            if (rewrites > 0) {
                 format(handle->response_msg, "Number of rewrites %d", rewrites);
             }
             return;
