@@ -14,6 +14,9 @@
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
+#include "config.h"
+
+#include "debug.h"
 
  // 1892 bytes of SRAM
 
@@ -42,6 +45,7 @@ int checkResponse(firestarter_handle_t* handle);
 
 
 void setup() {
+  debug_setup();
   rurp_setup();
   setCommunicationMode();
   handle.state = STATE_IDLE;
@@ -116,9 +120,6 @@ void blankCheck(firestarter_handle_t* handle) {
   }
 }
 
-
-
-
 void writeProm(firestarter_handle_t* handle) {
   if (Serial.available() >= 2) {
     handle->data_size = Serial.read() << 8;
@@ -165,9 +166,11 @@ void writeProm(firestarter_handle_t* handle) {
 
 void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
+    debug("Init read voltage");
     handle->init = 0;
     // uint8_t ctrl = read_from_register(CONTROL_REGISTER);
     if (handle->state == STATE_READ_VPP) {
+      debug("Setting up VPP");
       rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP ); //Only enable regulator and drop voltage to VPP
     }
     else if (handle->state == STATE_READ_VCC) {
@@ -362,6 +365,8 @@ void setProgramerMode() {
 }
 
 void log(const char* type, const char* msg) {
+
+  log_debug(type, msg);
   Serial.print(type);
   Serial.print(": ");
   Serial.println(msg);
