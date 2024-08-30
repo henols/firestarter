@@ -120,9 +120,6 @@ void blankCheck(firestarter_handle_t* handle) {
   }
 }
 
-
-
-
 void writeProm(firestarter_handle_t* handle) {
   if (Serial.available() >= 2) {
     handle->data_size = Serial.read() << 8;
@@ -169,9 +166,11 @@ void writeProm(firestarter_handle_t* handle) {
 
 void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
+    debug("Init read voltage");
     handle->init = 0;
     // uint8_t ctrl = read_from_register(CONTROL_REGISTER);
     if (handle->state == STATE_READ_VPP) {
+      debug("Setting up VPP");
       rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP ); //Only enable regulator and drop voltage to VPP
     }
     else if (handle->state == STATE_READ_VCC) {
