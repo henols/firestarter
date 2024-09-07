@@ -72,7 +72,7 @@ void readProm(firestarter_handle_t* handle) {
   if (!waitCheckForOK()) {
     return;
   }
-
+  debug("Read PROM");
   int res = executeFunction(handle->firestarter_read_data, handle);
   if (res <= 0) {
     return;
@@ -93,6 +93,7 @@ void readProm(firestarter_handle_t* handle) {
 
 
 void eraseProm(firestarter_handle_t* handle) {
+  debug("Erase PROM");
   if (handle->firestarter_erase) {
     int res = executeFunction(handle->firestarter_erase, handle);
     if (res <= 0) {
@@ -107,6 +108,7 @@ void eraseProm(firestarter_handle_t* handle) {
 }
 
 void blankCheck(firestarter_handle_t* handle) {
+  debug("Blank check PROM");
   if (handle->firestarter_blank_check) {
     int res = executeFunction(handle->firestarter_blank_check, handle);
     if (res <= 0) {
@@ -121,6 +123,7 @@ void blankCheck(firestarter_handle_t* handle) {
 }
 
 void writeProm(firestarter_handle_t* handle) {
+  debug("Write PROM");
   if (Serial.available() >= 2) {
     handle->data_size = Serial.read() << 8;
     handle->data_size |= Serial.read();
@@ -131,6 +134,7 @@ void writeProm(firestarter_handle_t* handle) {
     int len = Serial.readBytes(handle->data_buffer, handle->data_size);
 
     if (handle->init && handle->firestarter_write_init != NULL) {
+      debug("Write PROM init");
       handle->init = 0;
       int res = executeFunction(handle->firestarter_write_init, handle);
       if (res <= 0) {
@@ -148,6 +152,7 @@ void writeProm(firestarter_handle_t* handle) {
       return;
     }
 
+    debug("Write PROM exec");
     int res = executeFunction(handle->firestarter_write_data, handle);
     if (res <= 0) {
       return;
@@ -331,6 +336,7 @@ int checkResponse(firestarter_handle_t* handle) {
   }
   else if (handle->response_code == RESPONSE_CODE_ERROR) {
     logErrorMsg(handle->response_msg);
+    handle->state = STATE_DONE;
     return 0;
   }
   return 0;
