@@ -31,18 +31,18 @@ extern "C" {
 #define CHIP_ENABLE 0x20             // CHIP ENABLE
 
 // CONTROL REGISTER
-#define VPE_TO_VPP (uint8_t)0x01
-#define A9_VPP_ENABLE (uint8_t)0x02
-#define VPE_ENABLE (uint8_t)0x04
-#define P1_VPP_ENABLE (uint8_t)0x08
-#define RW (uint8_t)0x40
-#define REGULATOR (uint8_t)0x80
+#define VPE_TO_VPP 0x01
+#define A9_VPP_ENABLE 0x02
+#define VPE_ENABLE 0x04
+#define P1_VPP_ENABLE 0x08
+#define RW 0x40
+#define REGULATOR 0x80
 
 #define A16 VPE_TO_VPP
-#define A17 (uint8_t)0x10
-#define A18 (uint8_t)0x20
+#define A17 0x10
+#define A18 0x20
 
-#define A13 (uint8_t)0x20
+#define A13 0x20
 
 // Struct definition
     typedef struct rurp_configuration {
@@ -72,6 +72,7 @@ extern "C" {
     double rurp_get_voltage_average();
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config();
+    int rurp_get_hardware_revision();
 #ifdef __cplusplus
 }
 #endif
