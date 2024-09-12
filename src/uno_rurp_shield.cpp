@@ -12,6 +12,7 @@
 #if board == uno
 constexpr int  CONFIG_START = 48;
 constexpr int VOLTAGE_MEASURE_PIN = A2;
+constexpr int HARDWARE_REVISION_PIN = A3;
 
 constexpr int INPUT_RESOLUTION = 1023;
 constexpr int AVERAGE_OF = 500;
@@ -29,6 +30,7 @@ uint8_t control_register;
 
 void rurp_setup() {
     pinMode(VOLTAGE_MEASURE_PIN, INPUT);
+    pinMode(HARDWARE_REVISION_PIN, INPUT_PULLUP);
     rurp_set_data_as_output();
     DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | RW;
 
@@ -40,6 +42,21 @@ void rurp_setup() {
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
     rurp_write_to_register(CONTROL_REGISTER, 0x00);
     load_config();
+}
+
+
+int rurp_get_hardware_revision(){
+    int value = digitalRead(HARDWARE_REVISION_PIN);
+    switch (value)
+    {
+    case 1:
+        return 1;
+    case 0:
+        return 2;
+    
+    default:
+        return -1;
+    }
 }
 
 void load_config() {

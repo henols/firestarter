@@ -21,8 +21,9 @@
 // #define STATE_READ_VPE 10
 #define STATE_READ_VPP 11
 #define STATE_READ_VCC 12 
-#define STATE_VERSION 13
+#define STATE_FW_VERSION 13
 #define STATE_CONFIG 14
+#define STATE_HW_VERSION 15
 
 #define STATE_DONE 99
 #define STATE_ERROR 100

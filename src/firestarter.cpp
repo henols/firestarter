@@ -254,8 +254,13 @@ void setupProm(firestarter_handle_t* handle) {
   resetTimeout();
 }
 
-void getVersion() {
+void getFwVersion() {
   logOkBuf(handle.response_msg, VERSION);
+  handle.state = STATE_DONE;
+}
+
+void getHwVersion() {
+  logOkf(handle.response_msg, "%d", rurp_get_hardware_revision());
   handle.state = STATE_DONE;
 }
 
@@ -311,8 +316,11 @@ void loop() {
   case STATE_IDLE:
     setupProm(&handle);
     break;
-  case STATE_VERSION:
-    getVersion();
+  case STATE_FW_VERSION:
+    getFwVersion();
+    break;
+  case STATE_HW_VERSION:
+    getHwVersion();
     break;
   case STATE_CONFIG:
     getConfig(&handle);

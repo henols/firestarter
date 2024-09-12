@@ -72,6 +72,7 @@ extern "C" {
     double rurp_get_voltage_average();
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config();
+    int rurp_get_hardware_revision();
 #ifdef __cplusplus
 }
 #endif
