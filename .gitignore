@@ -6,3 +6,6 @@
 
 .secrets
 .DS_Store
+
+.gitmodules
+firestarter_app

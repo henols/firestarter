@@ -13,7 +13,7 @@
 #include "sram.h"
 #include "rurp_shield.h"
 #include "logging.h"
-
+#include "debug.h"
 
 #define TYPE_EPROM 1
 #define TYPE_SRAM 4
@@ -75,22 +75,30 @@ uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t
 }
 
 void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
-#ifdef POWER_THROUGH_ADDRESS_LINES
-    if (handle->pins == 24) {
-        address |= (uint32_t)A13 << 8;
-    }
-    else if (handle->pins == 28) {
-        address |= (uint32_t)A17 << 16;
-    }
+#ifdef DEBUG_ADDRESS
+    debug_format("Address 0x%06x", address);
 #endif
     uint8_t lsb = address & 0xFF;
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
     uint8_t msb = ((address >> 8) & 0xFF);
+#ifdef POWER_THROUGH_ADDRESS_LINES
+    if (handle->pins == 24) {
+        msb |= A13;
+    }
+#endif
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 
     uint8_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | RW);
     //This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared - can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
-    top_address |= rurp_read_from_register(CONTROL_REGISTER) & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR | VPE_TO_VPP); 
+    top_address |= rurp_read_from_register(CONTROL_REGISTER) & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR | VPE_TO_VPP);
+#ifdef POWER_THROUGH_ADDRESS_LINES 
+    if (handle->pins == 28) {
+        top_address |= A17;
+    }
+#endif
+#ifdef DEBUG_ADDRESS
+    debug_format("top msb lsb %02x %02x %02x", top_address, msb, lsb);
+#endif
     rurp_write_to_register(CONTROL_REGISTER, top_address);
 }
 

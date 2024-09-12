@@ -14,6 +14,9 @@
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
+#include "config.h"
+
+#include "debug.h"
 
  // 1892 bytes of SRAM
 
@@ -42,6 +45,7 @@ int checkResponse(firestarter_handle_t* handle);
 
 
 void setup() {
+  debug_setup();
   rurp_setup();
   setCommunicationMode();
   handle.state = STATE_IDLE;
@@ -68,7 +72,7 @@ void readProm(firestarter_handle_t* handle) {
   if (!waitCheckForOK()) {
     return;
   }
-
+  debug("Read PROM");
   int res = executeFunction(handle->firestarter_read_data, handle);
   if (res <= 0) {
     return;
@@ -89,6 +93,7 @@ void readProm(firestarter_handle_t* handle) {
 
 
 void eraseProm(firestarter_handle_t* handle) {
+  debug("Erase PROM");
   if (handle->firestarter_erase) {
     int res = executeFunction(handle->firestarter_erase, handle);
     if (res <= 0) {
@@ -103,6 +108,7 @@ void eraseProm(firestarter_handle_t* handle) {
 }
 
 void blankCheck(firestarter_handle_t* handle) {
+  debug("Blank check PROM");
   if (handle->firestarter_blank_check) {
     int res = executeFunction(handle->firestarter_blank_check, handle);
     if (res <= 0) {
@@ -116,10 +122,8 @@ void blankCheck(firestarter_handle_t* handle) {
   }
 }
 
-
-
-
 void writeProm(firestarter_handle_t* handle) {
+  debug("Write PROM");
   if (Serial.available() >= 2) {
     handle->data_size = Serial.read() << 8;
     handle->data_size |= Serial.read();
@@ -130,6 +134,7 @@ void writeProm(firestarter_handle_t* handle) {
     int len = Serial.readBytes(handle->data_buffer, handle->data_size);
 
     if (handle->init && handle->firestarter_write_init != NULL) {
+      debug("Write PROM init");
       handle->init = 0;
       int res = executeFunction(handle->firestarter_write_init, handle);
       if (res <= 0) {
@@ -147,6 +152,7 @@ void writeProm(firestarter_handle_t* handle) {
       return;
     }
 
+    debug("Write PROM exec");
     int res = executeFunction(handle->firestarter_write_data, handle);
     if (res <= 0) {
       return;
@@ -165,10 +171,12 @@ void writeProm(firestarter_handle_t* handle) {
 
 void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
+    debug("Init read voltage");
     handle->init = 0;
     // uint8_t ctrl = read_from_register(CONTROL_REGISTER);
     setProgramerMode();
     if (handle->state == STATE_READ_VPP) {
+      debug("Setting up VPP");
       rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP ); //Only enable regulator and drop voltage to VPP
     }
     else if (handle->state == STATE_READ_VCC) {
@@ -249,8 +257,13 @@ void setupProm(firestarter_handle_t* handle) {
   resetTimeout();
 }
 
-void getVersion() {
+void getFwVersion() {
   logOkBuf(handle.response_msg, VERSION);
+  handle.state = STATE_DONE;
+}
+
+void getHwVersion() {
+  logOkf(handle.response_msg, "%d", rurp_get_hardware_revision());
   handle.state = STATE_DONE;
 }
 
@@ -306,8 +319,11 @@ void loop() {
   case STATE_IDLE:
     setupProm(&handle);
     break;
-  case STATE_VERSION:
-    getVersion();
+  case STATE_FW_VERSION:
+    getFwVersion();
+    break;
+  case STATE_HW_VERSION:
+    getHwVersion();
     break;
   case STATE_CONFIG:
     getConfig(&handle);
@@ -331,6 +347,7 @@ int checkResponse(firestarter_handle_t* handle) {
   }
   else if (handle->response_code == RESPONSE_CODE_ERROR) {
     logErrorMsg(handle->response_msg);
+    handle->state = STATE_DONE;
     return 0;
   }
   return 0;
@@ -365,6 +382,8 @@ void setProgramerMode() {
 }
 
 void log(const char* type, const char* msg) {
+
+  log_debug(type, msg);
   Serial.print(type);
   Serial.print(": ");
   Serial.println(msg);
