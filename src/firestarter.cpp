@@ -176,8 +176,9 @@ void readVoltage(firestarter_handle_t* handle) {
     }
 
     resetTimeout();
+    setCommunicationMode();
   }
-  setCommunicationMode();
+ 
   if (!waitCheckForOK()) {
     return;
   }
