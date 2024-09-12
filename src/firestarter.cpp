@@ -167,6 +167,7 @@ void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
     handle->init = 0;
     // uint8_t ctrl = read_from_register(CONTROL_REGISTER);
+    setProgramerMode();
     if (handle->state == STATE_READ_VPP) {
       rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP ); //Only enable regulator and drop voltage to VPP
     }
@@ -176,6 +177,7 @@ void readVoltage(firestarter_handle_t* handle) {
 
     resetTimeout();
   }
+  setCommunicationMode();
   if (!waitCheckForOK()) {
     return;
   }
