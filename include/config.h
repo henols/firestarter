@@ -14,8 +14,8 @@
 // #define TEST_VPP_BEFORE_WRITE
 
 #define POWER_THROUGH_ADDRESS_LINES
-
-// #define SERIAL_DEBUG 
+#define HARDWARE_REVISION
+#define SERIAL_DEBUG 
 // #define DEBUG_ADDRESS
 
 #endif // CONFIG_H

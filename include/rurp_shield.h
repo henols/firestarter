@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include "config.h"
 
 // Constants
 #define CONFIG_VERSION  "VER03"
@@ -30,19 +31,41 @@ extern "C" {
 #define USRBTN 0x10                  // USER BUTTON
 #define CHIP_ENABLE 0x20             // CHIP ENABLE
 
+#define REVISISION_1 1
+#define REVISISION_2 2
+
 // CONTROL REGISTER
+#ifndef HARDWARE_REVISION
 #define VPE_TO_VPP      0x01
+#define A16             VPE_TO_VPP
 #define A9_VPP_ENABLE   0x02
 #define VPE_ENABLE      0x04
 #define P1_VPP_ENABLE   0x08
+#define A17             0x10
+#define A18             0x20
 #define RW              0x40
 #define REGULATOR       0x80
 
-#define A16             VPE_TO_VPP
+#else
+#define A16             0x01
+#define A9_VPP_ENABLE   0x02
+#define VPE_ENABLE      0x04
+#define P1_VPP_ENABLE   0x08
 #define A17             0x10
 #define A18             0x20
+#define RW              0x40
+#define REGULATOR       0x80
+#define VPE_TO_VPP      0x100
+
+#endif
 
 #define A13             0x20
+
+#ifndef HARDWARE_REVISION
+#define register_t uint8_t
+#else
+#define register_t uint16_t
+#endif
 
 // Struct definition
     typedef struct rurp_configuration {
@@ -62,8 +85,8 @@ extern "C" {
 
     void rurp_set_control_pin(uint8_t pin, uint8_t state);
 
-    void rurp_write_to_register(uint8_t reg, uint8_t data);
-    uint8_t rurp_read_from_register(uint8_t reg);
+    void rurp_write_to_register(uint8_t reg, register_t data);
+    register_t rurp_read_from_register(uint8_t reg);
 
     void rurp_write_data_buffer(uint8_t data);
     uint8_t rurp_read_data_buffer();

@@ -9,9 +9,10 @@
 #define FIRESTARTER_H
 #include <stdint.h>
 #include <stdbool.h>
+#include "rurp_shield.h"
 
-
-#define DATA_BUFFER_SIZE 512
+// #define DATA_BUFFER_SIZE 512
+#define DATA_BUFFER_SIZE 128
 
 #define STATE_IDLE 0
 #define STATE_READ 1
@@ -69,8 +70,8 @@ typedef struct firestarter_handle {
 	void (*firestarter_erase)(struct firestarter_handle*);
 	void (*firestarter_blank_check)(struct firestarter_handle*);
 	void (*firestarter_set_address)(struct firestarter_handle*, uint32_t);
-	void (*firestarter_set_control_register)(struct firestarter_handle*, uint8_t, bool);
-	bool (*firestarter_get_control_register)(struct firestarter_handle*, uint8_t);
+	void (*firestarter_set_control_register)(struct firestarter_handle*, register_t, bool);
+	bool (*firestarter_get_control_register)(struct firestarter_handle*, register_t);
 
 } firestarter_handle_t;
 

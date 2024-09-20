@@ -8,16 +8,46 @@
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include <EEPROM.h>
+#include "config.h"
 
 #if board == uno
-constexpr int  CONFIG_START = 48;
+constexpr int CONFIG_START = 48;
 constexpr int VOLTAGE_MEASURE_PIN = A2;
 constexpr int HARDWARE_REVISION_PIN = A3;
 
 constexpr int INPUT_RESOLUTION = 1023;
 constexpr int AVERAGE_OF = 500;
 
+#ifdef HARDWARE_REVISION
 
+// REV 1
+#define REV_1_VPE_TO_VPP      0x01
+#define REV_1_A9_VPP_ENABLE   0x02
+#define REV_1_VPE_ENABLE      0x04
+#define REV_1_P1_VPP_ENABLE   0x08
+#define REV_1_RW              0x40
+#define REV_1_REGULATOR       0x80
+
+#define REV_1_A16             VPE_TO_VPP
+#define REV_1_A17             0x10
+#define REV_1_A18             0x20
+
+// REV 2
+#define REV_2_VPE_TO_VPP      0x01
+#define REV_2_A9_VPP_ENABLE   0x02
+#define REV_2_VPE_ENABLE      0x04
+#define REV_2_P1_VPP_ENABLE   0x08
+#define REV_2_P30             0x10
+#define REV_2_P2              0x20
+#define REV_2_P31             0x40
+#define REV_2_REGULATOR       0x80
+
+#define REV_2_P1              P1_VPP_ENABLE
+#define REV_2_RW              REV_2_P31
+#define REV_2_A16             REV_2_P2
+#define REV_2_A17             REV_2_P30
+#define REV_2_A18             P1_VPP_ENABLE
+#endif
 
 rurp_configuration_t rurp_config;
 
@@ -26,7 +56,7 @@ void load_config();
 
 uint8_t lsb_address;
 uint8_t msb_address;
-uint8_t control_register;
+register_t control_register;
 
 void rurp_setup() {
     pinMode(VOLTAGE_MEASURE_PIN, INPUT);
@@ -45,16 +75,17 @@ void rurp_setup() {
 }
 
 
-int rurp_get_hardware_revision(){
+int rurp_get_hardware_revision() {
     int value = digitalRead(HARDWARE_REVISION_PIN);
     switch (value)
     {
     case 1:
-        return 1;
+        return REVISISION_1;
     case 0:
-        return 2;
-    
+        return REVISISION_2;
+
     default:
+        // Unknown hardware revision
         return -1;
     }
 }
@@ -87,31 +118,42 @@ void rurp_set_data_as_input() {
     DDRD = 0x00;
 }
 
-// void restore_registers() {
-//     uint8_t data = lsb_address;
-//     lsb_address = ~lsb_address;
-//     write_to_register(LEAST_SIGNIFICANT_BYTE, data);
-//     data = msb_address;
-//     msb_address = ~msb_address;
-//     write_to_register(MOST_SIGNIFICANT_BYTE, data);
-//     data = control_register;
-//     control_register = ~control_register;
-//     write_to_register(CONTROL_REGISTER, data);
-// }
+#ifdef HARDWARE_REVISION
+uint8_t map_ctrl_reg_to_hardware_revision(uint16_t data) {
+    uint8_t ctrl_reg = 0;
+    int hw = rurp_get_hardware_revision();
+    switch (hw)
+    {
+    case REVISISION_2:
+        ctrl_reg = data & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | A17 | RW | REGULATOR);
+        ctrl_reg |= data & VPE_TO_VPP ? REV_1_VPE_TO_VPP : 0;
+        ctrl_reg |= data & A16 ? REV_2_A16 : 0;
+        ctrl_reg |= data & A18 ? REV_2_A18 : 0;
+        break;
+    case REVISISION_1:
+        ctrl_reg = data;
+        ctrl_reg |= data & VPE_TO_VPP ? REV_1_VPE_TO_VPP : 0;
+        break;
+    default:
+        break;
+    }
 
+    return ctrl_reg;
+}
+#endif
 
-void rurp_write_to_register(uint8_t reg, uint8_t data)
+void rurp_write_to_register(uint8_t reg, register_t data)
 {
 
     switch (reg) {
     case LEAST_SIGNIFICANT_BYTE:
-        if (lsb_address == data) {
+        if (lsb_address == (uint8_t)data) {
             return;
         }
         lsb_address = data;
         break;
     case MOST_SIGNIFICANT_BYTE:
-        if (msb_address == data) {
+        if (msb_address == (uint8_t)data) {
             return;
         }
         msb_address = data;
@@ -121,6 +163,9 @@ void rurp_write_to_register(uint8_t reg, uint8_t data)
             return;
         }
         control_register = data;
+#ifdef HARDWARE_REVISION
+        data = map_ctrl_reg_to_hardware_revision(data);
+#endif
         break;
     default:
         return;
@@ -132,7 +177,7 @@ void rurp_write_to_register(uint8_t reg, uint8_t data)
     PORTB &= ~(reg);
 }
 
-uint8_t rurp_read_from_register(uint8_t reg)
+register_t rurp_read_from_register(uint8_t reg)
 {
     switch (reg) {
     case LEAST_SIGNIFICANT_BYTE:
@@ -167,16 +212,16 @@ uint8_t rurp_read_data_buffer() {
 double rurp_read_voltage()
 {
     double refRes = rurp_config.vcc / INPUT_RESOLUTION;
-    
+
     long r1 = rurp_config.r1;
     long r2 = rurp_config.r2;
-    
+
     // Correct voltage divider ratio calculation
     double voltageDivider = 1.0 + static_cast<double>(r1) / r2;
-    
+
     // Read the analog value and convert to voltage
     double vout = analogRead(VOLTAGE_MEASURE_PIN) * refRes;
-    
+
     // Calculate the input voltage
     return vout * voltageDivider;
 }
