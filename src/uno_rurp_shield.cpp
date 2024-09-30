@@ -74,7 +74,7 @@ void rurp_setup() {
     load_config();
 }
 
-
+#ifdef HARDWARE_REVISION
 int rurp_get_hardware_revision() {
     int value = digitalRead(HARDWARE_REVISION_PIN);
     switch (value)
@@ -89,6 +89,7 @@ int rurp_get_hardware_revision() {
         return -1;
     }
 }
+#endif
 
 void load_config() {
     EEPROM.get(CONFIG_START, rurp_config);

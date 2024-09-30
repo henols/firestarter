@@ -31,8 +31,6 @@ extern "C" {
 #define USRBTN 0x10                  // USER BUTTON
 #define CHIP_ENABLE 0x20             // CHIP ENABLE
 
-#define REVISISION_1 1
-#define REVISISION_2 2
 
 // CONTROL REGISTER
 #ifndef HARDWARE_REVISION
@@ -47,6 +45,9 @@ extern "C" {
 #define REGULATOR       0x80
 
 #else
+#define REVISISION_1 1
+#define REVISISION_2 2
+
 #define A16             0x01
 #define A9_VPP_ENABLE   0x02
 #define VPE_ENABLE      0x04
@@ -95,7 +96,10 @@ extern "C" {
     double rurp_get_voltage_average();
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config();
+#ifdef HARDWARE_REVISION
     int rurp_get_hardware_revision();
+#endif
+
 #ifdef __cplusplus
 }
 #endif

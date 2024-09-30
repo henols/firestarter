@@ -260,10 +260,12 @@ void getFwVersion() {
   handle.state = STATE_DONE;
 }
 
+#ifdef HARDWARE_REVISION
 void getHwVersion() {
   logOkf(handle.response_msg, "%d", rurp_get_hardware_revision());
   handle.state = STATE_DONE;
 }
+#endif
 
 void getConfig(firestarter_handle_t* handle) {
   rurp_configuration_t* rurp_config = rurp_get_config();
@@ -320,9 +322,11 @@ void loop() {
   case STATE_FW_VERSION:
     getFwVersion();
     break;
+#ifdef HARDWARE_REVISION
   case STATE_HW_VERSION:
     getHwVersion();
     break;
+#endif
   case STATE_CONFIG:
     getConfig(&handle);
     break;

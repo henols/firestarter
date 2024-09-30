@@ -11,8 +11,7 @@
 #include <stdbool.h>
 #include "rurp_shield.h"
 
-// #define DATA_BUFFER_SIZE 512
-#define DATA_BUFFER_SIZE 128
+#define DATA_BUFFER_SIZE 512
 
 #define STATE_IDLE 0
 #define STATE_READ 1
