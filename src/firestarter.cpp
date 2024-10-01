@@ -127,6 +127,7 @@ void writeProm(firestarter_handle_t* handle) {
       handle->state = STATE_DONE;
       return;
     }
+    logOk("Data size received");
     int len = Serial.readBytes(handle->data_buffer, handle->data_size);
 
     debug_format("Write buffer: %.10s...", handle->data_buffer);
