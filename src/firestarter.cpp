@@ -17,7 +17,6 @@
 #include "config.h"
 
 #include "debug.h"
-#include <CRC.h>
 
 #define RX 0
 #define TX 1
@@ -252,7 +251,8 @@ void setupProm(firestarter_handle_t* handle) {
       rurp_save_config();
     }
   }
-  logOkf(handle->response_msg, "Setup done, state 0x%x", handle->state);
+
+  logOkf(handle->response_msg, "FW: %s, HW: Rev%d, state 0x%02x", VERSION, rurp_get_hardware_revision(),   handle->state);
   resetTimeout();
 }
 
