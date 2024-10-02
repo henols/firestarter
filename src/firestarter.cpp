@@ -131,6 +131,7 @@ void writeProm(firestarter_handle_t* handle) {
       logOk("Premature end of data");
       return;
     }
+    logOk("Data size received");
     int len = Serial.readBytes(handle->data_buffer, handle->data_size);
 
     if (handle->init && handle->firestarter_write_init != NULL) {

@@ -72,7 +72,7 @@
 
 
 #define format(buf, cformat, ...) \
-  char msg[40]; \
+  char msg[80]; \
   copyToBuffer(msg, cformat);\
   sprintf(buf, msg, __VA_ARGS__)
 
