@@ -13,6 +13,7 @@
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include "logging.h"
+#include "debug.h"
 
 
 void eprom_erase(firestarter_handle_t* handle);
@@ -20,9 +21,9 @@ void eprom_blank_check(firestarter_handle_t* handle);
 void eprom_write_init(firestarter_handle_t* handle);
 void eprom_write_data(firestarter_handle_t* handle);
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
-void eprom_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state);
+void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
 
-void (*set_control_register)(struct firestarter_handle*, uint8_t, bool);
+void (*set_control_register)(struct firestarter_handle*, register_t, bool);
 
 void configure_eprom(firestarter_handle_t* handle) {
     handle->firestarter_write_init = eprom_write_init;
@@ -108,9 +109,10 @@ void eprom_erase(firestarter_handle_t* handle) {
 
 void eprom_blank_check(firestarter_handle_t* handle) {
     for (uint32_t i = 0; i < handle->mem_size; i++) {
-        if (handle->firestarter_get_data(handle, i) != 0xFF) {
+        uint8_t val = handle->firestarter_get_data(handle, i);
+        if (val != 0xFF) {
             handle->response_code = RESPONSE_CODE_ERROR;
-            format(handle->response_msg, "Memory is not blank, at %#lx", i);
+            format(handle->response_msg, "Memory is not blank, at 0x%06x, value: 0x%02x", i, val);
             return;
         }
     }
@@ -175,6 +177,7 @@ void eprom_write_data(firestarter_handle_t* handle) {
         handle->firestarter_set_control_register(handle, VPE_ENABLE, 0);
         for (uint32_t i = 0; i < handle->data_size; i++) {
             if (handle->firestarter_get_data(handle, (handle->address + i)) != (uint8_t)handle->data_buffer[i]) {
+                // debug_format("Mismatch at 0x%lx, expected %c, got %c", handle->address + i, handle->data_buffer[i], handle->firestarter_get_data(handle, handle->address + i));
                 mismatch++;
                 if (mismatch == 1) {
                 }
@@ -192,14 +195,15 @@ void eprom_write_data(firestarter_handle_t* handle) {
             }
             return;
         }
+        debug("Mismatch, retrying");
     }
     handle->firestarter_set_control_register(handle, REGULATOR, 0);
-    format(handle->response_msg, "Failed to write memory, at 0x%lx, nr %d", handle->address, mismatch);
+    format(handle->response_msg, "Failed to write memory, at 0x%06x, nr %d", handle->address, mismatch);
     handle->response_code = RESPONSE_CODE_ERROR;
 }
 
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
-void eprom_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state) {
+void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bool state) {
     if (bit & VPE_ENABLE && (handle->bus_config.vpp_line == 15 || handle->bus_config.vpp_line == 21)) {
         bit &= ~VPE_ENABLE;
         bit |= P1_VPP_ENABLE;

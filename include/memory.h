@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include "firestarter.h"
+#include "rurp_shield.h"
 
 #define WRITE_FLAG  0
 #define READ_FLAG  1
@@ -21,9 +22,9 @@ extern "C" {
 
     void memory_set_address(firestarter_handle_t* handle, uint32_t address);
 
-    void memory_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state);
+    void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
 
-    bool memory_get_control_register(firestarter_handle_t* handle, uint8_t bit);
+    bool memory_get_control_register(firestarter_handle_t* handle, register_t bit);
 
     void memory_read_data(firestarter_handle_t* handle);
 

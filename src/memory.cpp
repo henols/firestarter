@@ -50,14 +50,14 @@ void configure_memory(firestarter_handle_t* handle) {
     return;
 }
 
-void memory_set_control_register(firestarter_handle_t* handle, uint8_t bit, bool state) {
-    uint8_t control_register = rurp_read_from_register(CONTROL_REGISTER);
-    uint8_t data = state ? control_register | (bit) : control_register & ~(bit);
+void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state) {
+    register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
+    register_t data = state ? control_register | (bit) : control_register & ~(bit);
     rurp_write_to_register(CONTROL_REGISTER, data);
 }
 
-bool memory_get_control_register(firestarter_handle_t* handle, uint8_t bit) {
-    uint8_t control_register = rurp_read_from_register(CONTROL_REGISTER);
+bool memory_get_control_register(firestarter_handle_t* handle, register_t bit) {
+    register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
     return control_register & bit;
 }
 
@@ -88,10 +88,16 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 #endif
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 
-    uint8_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | RW);
-    //This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared - can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
-    top_address |= rurp_read_from_register(CONTROL_REGISTER) & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR | VPE_TO_VPP);
-#ifdef POWER_THROUGH_ADDRESS_LINES 
+    register_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | RW);
+    register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
+    if (((top_address & RW) && RW == WRITE_FLAG) || handle->pins < 32) {
+        // This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared -
+        // can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
+        mask |= VPE_TO_VPP;
+    }
+    top_address |= rurp_read_from_register(CONTROL_REGISTER) & mask;
+
+#ifdef POWER_THROUGH_ADDRESS_LINES
     if (handle->pins == 28) {
         top_address |= A17;
     }
@@ -105,8 +111,11 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 void memory_read_data(firestarter_handle_t* handle) {
     rurp_set_control_pin(CHIP_ENABLE, 0);
     int buf_size = DATA_BUFFER_SIZE;
+    debug_format("Reading from address 0x%06x", handle->address);
     for (int i = 0; i < buf_size; i++) {
-        handle->data_buffer[i] = handle->firestarter_get_data(handle, handle->address + i);
+        uint8_t data = handle->firestarter_get_data(handle, handle->address + i);
+        // debug_format("Data 0x%02x %c", data, data);
+        handle->data_buffer[i] = data;
     }
     rurp_set_control_pin(CHIP_ENABLE, 1);
 }

@@ -17,19 +17,10 @@
 #include "config.h"
 
 #include "debug.h"
-
- // 1892 bytes of SRAM
+#include <CRC.h>
 
 #define RX 0
 #define TX 1
-
- // R2 = R1 *  Vout / (Vin - Vout)
- // R2 = 44k
- // R1 = 270k
- // Vin = 21.92v
- // Vout = Vin * R2/(R1+R2)
- // Vout = 21.92 * 44000÷(44000+270000)
- // Vout = 3.071592367
 
 
 firestarter_handle_t handle;
@@ -49,6 +40,9 @@ void setup() {
   rurp_setup();
   setCommunicationMode();
   handle.state = STATE_IDLE;
+  debug("Firestarter started");
+  debug_format("Firmware version: %s", VERSION);
+  debug_format("Hardware revision: %d", rurp_get_hardware_revision());
 }
 
 void resetTimeout()
@@ -79,6 +73,7 @@ void readProm(firestarter_handle_t* handle) {
   }
 
   logDataf(handle->response_msg, "Read data from address 0x%lx to 0x%lx", handle->address, handle->address + DATA_BUFFER_SIZE);
+  debug_format("Read buffer: %.10s...", handle->data_buffer);
 
   Serial.write(handle->data_buffer, DATA_BUFFER_SIZE);
   Serial.flush();
@@ -129,10 +124,13 @@ void writeProm(firestarter_handle_t* handle) {
     handle->data_size |= Serial.read();
     if (handle->data_size == 0) {
       logOk("Premature end of data");
+      handle->state = STATE_DONE;
       return;
     }
     logOk("Data size received");
     int len = Serial.readBytes(handle->data_buffer, handle->data_size);
+
+    debug_format("Write buffer: %.10s...", handle->data_buffer);
 
     if (handle->init && handle->firestarter_write_init != NULL) {
       debug("Write PROM init");
@@ -263,10 +261,12 @@ void getFwVersion() {
   handle.state = STATE_DONE;
 }
 
+#ifdef HARDWARE_REVISION
 void getHwVersion() {
   logOkf(handle.response_msg, "%d", rurp_get_hardware_revision());
   handle.state = STATE_DONE;
 }
+#endif
 
 void getConfig(firestarter_handle_t* handle) {
   rurp_configuration_t* rurp_config = rurp_get_config();
@@ -323,9 +323,11 @@ void loop() {
   case STATE_FW_VERSION:
     getFwVersion();
     break;
+#ifdef HARDWARE_REVISION
   case STATE_HW_VERSION:
     getHwVersion();
     break;
+#endif
   case STATE_CONFIG:
     getConfig(&handle);
     break;
