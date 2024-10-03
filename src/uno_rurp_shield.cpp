@@ -123,6 +123,9 @@ void rurp_set_data_as_input() {
 uint8_t map_ctrl_reg_to_hardware_revision(uint16_t data) {
     uint8_t ctrl_reg = 0;
     int hw = rurp_get_hardware_revision();
+    #ifdef MANUAL_REV_2
+    hw = REVISION_2;
+    #endif
     switch (hw)
     {
     case REVISISION_2:
