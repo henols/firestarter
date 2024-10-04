@@ -74,18 +74,27 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
     delay(100);
     double vpp = rurp_read_voltage();
+#ifdef DEBUG
+    char vppStr[6];
+    dtostrf(vpp, 2, 2, vppStr);
+    debug_format("Checking VPP voltage %s", vppStr);
+#endif
+
     if (vpp > handle->vpp * 1.02) {
         handle->response_code = handle->force ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
         char vStr[6];
         dtostrf(vpp, 2, 2, vStr);
-
-        format(handle->response_msg, "VPP voltage is too high: %sv", vStr);
+        char rStr[6];
+        dtostrf(handle->vpp, 2, 2, rStr);
+        format(handle->response_msg, "VPP voltage is too high: %sv expected: %sv", vStr, rStr);
     }
-    else if (vpp > handle->vpp * .95) {
+    else if (vpp < handle->vpp * .95) {
         handle->response_code = RESPONSE_CODE_WARNING;
         char vStr[6];
         dtostrf(vpp, 2, 2, vStr);
-        format(handle->response_msg, "VPP voltage is low: %sv", vStr);
+        char rStr[6];
+        dtostrf(handle->vpp, 2, 2, rStr);
+        format(handle->response_msg, "VPP voltage is low: %sv expected: %sv", vStr, rStr);
     }
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
 }

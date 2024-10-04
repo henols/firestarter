@@ -17,7 +17,7 @@ void debug_setup() {
 }
 
 void debug_buf(const char* msg) {
-    log_debug("debug", msg);
+    log_debug("DEBUG", msg);
 }
 
 void log_debug(const char* type, const char* msg) {

@@ -41,7 +41,7 @@ void setup() {
   handle.state = STATE_IDLE;
   debug("Firestarter started");
   debug_format("Firmware version: %s", VERSION);
-  debug_format("Hardware revision: %s", getHwVersion());
+  // debug_format("Hardware revision: %s", getHwVersion());
 }
 
 void resetTimeout()
@@ -163,7 +163,6 @@ void writeProm(firestarter_handle_t* handle) {
       handle->state = STATE_DONE;
       return;
     }
-
   }
 }
 
@@ -360,6 +359,7 @@ int checkResponse(firestarter_handle_t* handle) {
   }
   else if (handle->response_code == RESPONSE_CODE_WARNING) {
     logWarnMsg(handle->response_msg);
+    handle->response_code = RESPONSE_CODE_OK;
     return 1;
   }
   else if (handle->response_code == RESPONSE_CODE_ERROR) {
@@ -399,7 +399,6 @@ void setProgramerMode() {
 }
 
 void log(const char* type, const char* msg) {
-
   log_debug(type, msg);
   Serial.print(type);
   Serial.print(": ");
