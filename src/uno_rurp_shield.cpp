@@ -80,10 +80,9 @@ int rurp_get_hardware_revision() {
     switch (value)
     {
     case 1:
-        return REVISISION_1;
+        return REVISION_1;
     case 0:
-        return REVISISION_2;
-
+        return REVISION_2;
     default:
         // Unknown hardware revision
         return -1;
@@ -131,13 +130,13 @@ uint8_t map_ctrl_reg_to_hardware_revision(uint16_t data) {
         hw = rurp_config.hardware_revision;
     }
     switch (hw) {
-    case REVISISION_2:
+    case REVISION_2:
         ctrl_reg = data & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | A17 | RW | REGULATOR);
         ctrl_reg |= data & VPE_TO_VPP ? REV_2_VPE_TO_VPP : 0;
         ctrl_reg |= data & A16 ? REV_2_A16 : 0;
         ctrl_reg |= data & A18 ? REV_2_A18 : 0;
         break;
-    case REVISISION_1:
+    case REVISION_1:
         ctrl_reg = data;
         ctrl_reg |= data & VPE_TO_VPP ? REV_1_VPE_TO_VPP : 0;
         break;
@@ -212,8 +211,28 @@ uint8_t rurp_read_data_buffer() {
     return PIND;
 }
 
+double rurp_read_vcc() {
+  // Read 1.1V reference against AVcc
+  // Set the analog reference to the internal 1.1V
+  // Default is analogReference(DEFAULT) which is connected to the external 5V
+  ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  
+  delay(2); // Wait for voltage to stabilize
+  ADCSRA |= _BV(ADSC); // Start conversion
+  while (bit_is_set(ADCSRA, ADSC)); // Wait for conversion to complete
+
+  long result = ADCL;
+  result |= ADCH << 8;
+
+  // Calculate Vcc (supply voltage) in millivolts
+  // 1100 mV * 1024 ADC steps / ADC reading
+  return 1126400L / (double)result/1000;
+}
+
+
+
 double rurp_read_voltage() {
-    double refRes = rurp_config.vcc / INPUT_RESOLUTION;
+    double refRes = rurp_read_vcc() / INPUT_RESOLUTION;
 
     long r1 = rurp_config.r1;
     long r2 = rurp_config.r2;

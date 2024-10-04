@@ -45,8 +45,8 @@ extern "C" {
 #define REGULATOR       0x80
 
 #else
-#define REVISISION_1 1
-#define REVISISION_2 2
+#define REVISION_1 1
+#define REVISION_2 2
 
 #define A16             0x01
 #define A9_VPP_ENABLE   0x02
@@ -93,6 +93,7 @@ extern "C" {
     void rurp_write_data_buffer(uint8_t data);
     uint8_t rurp_read_data_buffer();
 
+    double rurp_read_vcc();
     double rurp_read_voltage();
     double rurp_get_voltage_average();
     rurp_configuration_t* rurp_get_config();

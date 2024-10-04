@@ -171,18 +171,19 @@ void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
     debug("Init read voltage");
     handle->init = 0;
-    // uint8_t ctrl = read_from_register(CONTROL_REGISTER);
     setProgramerMode();
     if (handle->state == STATE_READ_VPP) {
       debug("Setting up VPP");
-      rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP ); //Only enable regulator and drop voltage to VPP
+      rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP ); // Enable regulator and drop voltage to VPP
     }
-    else if (handle->state == STATE_READ_VCC) {
-      rurp_write_to_register(CONTROL_REGISTER, 0);
+    else if (handle->state == STATE_READ_VPE) {
+      debug("Setting up VPP");
+      rurp_write_to_register(CONTROL_REGISTER, REGULATOR); // Enable regulator
     }
-
+    
     resetTimeout();
     setCommunicationMode();
+    logOk("Voltage read setup");
   }
  
   if (!waitCheckForOK()) {
@@ -190,11 +191,12 @@ void readVoltage(firestarter_handle_t* handle) {
   }
 
   double voltage = rurp_read_voltage();
-  const char* type = (handle->state == STATE_READ_VCC) ? "VCC" : "VPP";
+  const char* type = (handle->state == STATE_READ_VPE) ? "VPE" : "VPP";
   char vStr[10];
   dtostrf(voltage, 2, 2, vStr);
-
-  logDataf(handle->response_msg, "%s Voltage: %sv", type, vStr);
+  char vcc[10];
+  dtostrf(rurp_read_vcc(), 2, 2, vcc);
+  logDataf(handle->response_msg, "%s: %sv, Internal VCC: %sv", type, vStr, vcc);
   delay(200);
   resetTimeout();
 }
@@ -323,7 +325,7 @@ void loop() {
     handle.state = STATE_IDLE;
     break;
   case STATE_READ_VPP:
-  case STATE_READ_VCC:
+  case STATE_READ_VPE:
     readVoltage(&handle);
     break;
   case STATE_ERROR:
