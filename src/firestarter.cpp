@@ -32,7 +32,7 @@ void resetTimeout();
 
 int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
 int checkResponse(firestarter_handle_t* handle);
-
+void getHwVersion();
 
 void setup() {
   debug_setup();
@@ -41,7 +41,7 @@ void setup() {
   handle.state = STATE_IDLE;
   debug("Firestarter started");
   debug_format("Firmware version: %s", VERSION);
-  debug_format("Hardware revision: %d", rurp_get_hardware_revision());
+  debug_format("Hardware revision: %s", getHwVersion());
 }
 
 void resetTimeout()
@@ -263,16 +263,28 @@ void getFwVersion() {
 
 #ifdef HARDWARE_REVISION
 void getHwVersion() {
-  logOkf(handle.response_msg, "%d", rurp_get_hardware_revision());
+  rurp_configuration_t* rurp_config = rurp_get_config();
+  char revStr[24];
+  if(rurp_config->hardware_revision > 0){
+    sprintf(revStr, ", Override HW: Rev%d", rurp_config->hardware_revision);
+  } else {
+    revStr[0] = '\0';
+  }
+  logOkf(handle.response_msg, "Rev%d%s", rurp_get_hardware_revision(), revStr);
   handle.state = STATE_DONE;
 }
 #endif
 
 void getConfig(firestarter_handle_t* handle) {
   rurp_configuration_t* rurp_config = rurp_get_config();
-  char vccStr[10];
-  dtostrf(rurp_config->vcc, 4, 2, vccStr);
-  logOkf(handle->response_msg, "VCC: %s, R1: %ld, R2: %ld", vccStr, rurp_config->r1, rurp_config->r2);
+  char revStr[24];
+  if(rurp_config->hardware_revision > 0){
+    sprintf(revStr, ", Override HW: Rev%d", rurp_config->hardware_revision);
+  } else {
+    revStr[0] = '\0';
+  }
+  
+  logOkf(handle->response_msg, "R1: %ld, R2: %ld %s", rurp_config->r1, rurp_config->r2, revStr);
   handle->state = STATE_DONE;
 }
 

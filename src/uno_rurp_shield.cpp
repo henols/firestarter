@@ -28,7 +28,7 @@ constexpr int AVERAGE_OF = 500;
 #define REV_1_RW              0x40
 #define REV_1_REGULATOR       0x80
 
-#define REV_1_A16             VPE_TO_VPP
+#define REV_1_A16             REV_1_VPE_TO_VPP
 #define REV_1_A17             0x10
 #define REV_1_A18             0x20
 
@@ -93,11 +93,16 @@ int rurp_get_hardware_revision() {
 
 void load_config() {
     EEPROM.get(CONFIG_START, rurp_config);
-    if (strcmp(rurp_config.version, CONFIG_VERSION) != 0) {
+    if (strcmp(rurp_config.version, "VER03") == 0) {
+        strcpy(rurp_config.version, CONFIG_VERSION);
+        rurp_config.hardware_revision = 0;
+        rurp_save_config();
+    } else if (strcmp(rurp_config.version, CONFIG_VERSION) != 0) {
         strcpy(rurp_config.version, CONFIG_VERSION);
         rurp_config.vcc = ARDUINO_VCC;
         rurp_config.r1 = VALUE_R1;
         rurp_config.r2 = VALUE_R2;
+        rurp_config.hardware_revision = 0;
         rurp_save_config();
     }
 }
@@ -105,7 +110,6 @@ void load_config() {
 void rurp_save_config() {
     EEPROM.put(CONFIG_START, rurp_config);
 }
-
 
 rurp_configuration_t* rurp_get_config() {
     return &rurp_config;
@@ -123,11 +127,13 @@ void rurp_set_data_as_input() {
 uint8_t map_ctrl_reg_to_hardware_revision(uint16_t data) {
     uint8_t ctrl_reg = 0;
     int hw = rurp_get_hardware_revision();
-    switch (hw)
-    {
+    if(rurp_config.hardware_revision > 0) {
+        hw = rurp_config.hardware_revision;
+    }
+    switch (hw) {
     case REVISISION_2:
         ctrl_reg = data & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | A17 | RW | REGULATOR);
-        ctrl_reg |= data & VPE_TO_VPP ? REV_1_VPE_TO_VPP : 0;
+        ctrl_reg |= data & VPE_TO_VPP ? REV_2_VPE_TO_VPP : 0;
         ctrl_reg |= data & A16 ? REV_2_A16 : 0;
         ctrl_reg |= data & A18 ? REV_2_A18 : 0;
         break;
@@ -143,9 +149,7 @@ uint8_t map_ctrl_reg_to_hardware_revision(uint16_t data) {
 }
 #endif
 
-void rurp_write_to_register(uint8_t reg, register_t data)
-{
-
+void rurp_write_to_register(uint8_t reg, register_t data) {
     switch (reg) {
     case LEAST_SIGNIFICANT_BYTE:
         if (lsb_address == (uint8_t)data) {
@@ -178,8 +182,7 @@ void rurp_write_to_register(uint8_t reg, register_t data)
     PORTB &= ~(reg);
 }
 
-register_t rurp_read_from_register(uint8_t reg)
-{
+register_t rurp_read_from_register(uint8_t reg) {
     switch (reg) {
     case LEAST_SIGNIFICANT_BYTE:
         return lsb_address;
@@ -191,8 +194,7 @@ register_t rurp_read_from_register(uint8_t reg)
     return 0;
 }
 
-void rurp_set_control_pin(uint8_t pin, uint8_t state)
-{
+void rurp_set_control_pin(uint8_t pin, uint8_t state) {
     if (state) {
         PORTB |= pin;
     }
@@ -210,8 +212,7 @@ uint8_t rurp_read_data_buffer() {
     return PIND;
 }
 
-double rurp_read_voltage()
-{
+double rurp_read_voltage() {
     double refRes = rurp_config.vcc / INPUT_RESOLUTION;
 
     long r1 = rurp_config.r1;
@@ -227,8 +228,7 @@ double rurp_read_voltage()
     return vout * voltageDivider;
 }
 
-double rurp_get_voltage_average()
-{
+double rurp_get_voltage_average() {
     double voltage_average = 0;
     for (int i = 0; i < AVERAGE_OF; i++) {
         voltage_average += rurp_read_voltage();

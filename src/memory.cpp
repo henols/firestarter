@@ -62,9 +62,9 @@ bool memory_get_control_register(firestarter_handle_t* handle, register_t bit) {
 }
 
 uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t rw) {
-    uint32_t reorg_address = 0;
-    for (int i = 0; i < 19 && config->address_lines[i] != 0xFF; i++) {
-        if (address & (uint32_t)1 << i) {
+    uint32_t reorg_address = config->address_mask & address;
+    for (int i = config->matching_lines; i < 19 && config->address_lines[i] != 0xFF; i++) {
+        if (config->address_lines[i] != i && address & (uint32_t)1 << i) {
             reorg_address |= (uint32_t)1 << config->address_lines[i];
         }
     }

@@ -34,6 +34,8 @@
 
 typedef struct bus_config {
 	uint8_t address_lines[19]; // Array mapping address lines
+	uint32_t address_mask;      // Mask for address lines
+	uint8_t matching_lines;	 // Number of matching address lines
 	uint8_t rw_line;           // RW line mapping
 	uint8_t vpp_line;		  // VPP line mapping
 } bus_config_t;

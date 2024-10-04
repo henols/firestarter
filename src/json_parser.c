@@ -40,10 +40,16 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
 
     for (int i = 1; i < token_count; i++) {
         if (jsoneq(json, &tokens[i], "bus") == 0) {
+            handle->bus_config.matching_lines=0xff;
             int bus_array_start = i + 1;
             int bus_array_size = tokens[bus_array_start].size;
             for (int j = 0; j < bus_array_size && j < 19; j++) {
                 handle->bus_config.address_lines[j] = atoi(json + tokens[bus_array_start + j + 1].start);
+                if(handle->bus_config.address_lines[j] == j) {
+                    handle->bus_config.address_mask |= 1 << j;
+                } else if (handle->bus_config.matching_lines == 0xff) {
+                    handle->bus_config.matching_lines = j;
+                }
             }
             handle->bus_config.address_lines[bus_array_size] = 0xFF;
             i += bus_array_size + 1;
@@ -151,8 +157,8 @@ int json_parse_config(char* json, jsmntok_t* tokens, int token_count, rurp_confi
         if (jsoneq(json, &tokens[i], "state") == 0) {
             i++;
         }
-        else if (jsoneq(json, &tokens[i], "vcc") == 0) {
-            config->vcc = atof(json + tokens[i + 1].start);
+        else if (jsoneq(json, &tokens[i], "rev") == 0) {
+            config->hardware_revision = atof(json + tokens[i + 1].start);
             i++;
             res = 1;
         }

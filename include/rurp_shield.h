@@ -16,7 +16,7 @@ extern "C" {
 #include "config.h"
 
 // Constants
-#define CONFIG_VERSION  "VER03"
+#define CONFIG_VERSION  "VER04"
 
 // Default configuration
 #define ARDUINO_VCC 5.01
@@ -69,11 +69,12 @@ extern "C" {
 #endif
 
 // Struct definition
-    typedef struct rurp_configuration {
+    typedef struct  {
         char version[6];
         double vcc;
         long  r1;
         long  r2;
+        uint8_t hardware_revision; 
     } rurp_configuration_t;
 
     // Function prototypes
