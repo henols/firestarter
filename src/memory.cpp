@@ -34,9 +34,7 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register = memory_set_control_register;
     handle->firestarter_get_control_register = memory_get_control_register;
     handle->response_code = RESPONSE_CODE_OK;
-#ifdef POWER_THROUGH_ADDRESS_LINES
-    memory_set_address(handle, 0);
-#endif
+
     if (handle->mem_type == TYPE_EPROM) {
         configure_eprom(handle);
         return;
