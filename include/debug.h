@@ -32,8 +32,6 @@ void debug_buf(const char* msg);
         debug_buf(_buf); \
     }
 
-
-
 #else
 #define debug(msg)
 #define debug_format(cformat, ...)

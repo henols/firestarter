@@ -18,7 +18,7 @@
   log("OK", msg)
 
 #define logOkf(buf, cformat, ...) \
-  format(buf, cformat, __VA_ARGS__); \
+  {format(buf, cformat, __VA_ARGS__);} \
   logOkMsg(buf)
 
 #define logInfoBuf(buf, msg) \
@@ -35,7 +35,7 @@
   }
 
 #define logInfof(buf, cformat, ...) \
-  format(buf, cformat, __VA_ARGS__); \
+  {format(buf, cformat, __VA_ARGS__);} \
   logInfoMsg(buf)
 
 #define logDataMsg(msg) \
@@ -46,18 +46,22 @@
   logDataMsg(handle->response_msg)
 
 #define logDataf(buf, cformat, ...) \
-  format(buf, cformat, __VA_ARGS__); \
+  {format(buf, cformat, __VA_ARGS__);} \
   logDataMsg(buf)
+
+#define logWarn(msg) \
+  copyToBuffer(handle->response_msg, msg);\
+  logWarnMsg(handle->response_msg)
 
 #define logWarnMsg(msg) \
   log("WARN", msg)
 
 #define logWarnf(buf, cformat, ...) \
-  format(buf, cformat, __VA_ARGS__); \
+  {format(buf, cformat, __VA_ARGS__);} \
   logWarnMsg(buf)
 
 #define logError(msg) \
-  logErrorBuf(handle->response_msg,msg); \
+  logErrorBuf(handle->response_msg, msg); \
 
 #define logErrorBuf(buf, msg) \
   copyToBuffer(buf, msg);\
@@ -67,7 +71,7 @@
   log("ERROR", msg)
 
 #define logErrorf(buf, cformat, ...) \
-  format(buf, cformat, __VA_ARGS__); \
+  {format(buf, cformat, __VA_ARGS__);} \
   logErrorMsg(buf)
 
 

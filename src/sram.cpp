@@ -9,8 +9,9 @@
 #include "firestarter.h"
 #include "rurp_shield.h"
 #include <stdio.h>
-
+#include "debug.h"
 void configure_sram(firestarter_handle_t* handle) {
+    debug("Configuring SRAM");
     // Configure memory
     // handle->firestarter_read_data = chip_read_data;
     // handle->firestarter_write_data = chip_write_data;

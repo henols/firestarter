@@ -76,9 +76,15 @@ void rurp_setup() {
 
 #ifdef HARDWARE_REVISION
 int rurp_get_hardware_revision() {
+    if (rurp_config.hardware_revision < 0xFF) {
+        return rurp_config.hardware_revision;
+    }
+    return rurp_get_physical_hardware_revision();
+}
+
+int rurp_get_physical_hardware_revision() {
     int value = digitalRead(HARDWARE_REVISION_PIN);
-    switch (value)
-    {
+    switch (value) {
     case 1:
         return REVISION_1;
     case 0:
@@ -92,16 +98,19 @@ int rurp_get_hardware_revision() {
 
 void load_config() {
     EEPROM.get(CONFIG_START, rurp_config);
-    if (strcmp(rurp_config.version, "VER03") == 0) {
+    if (strcmp(rurp_config.version, "VER03") == 0 || strcmp(rurp_config.version, "VER04") == 0) {
         strcpy(rurp_config.version, CONFIG_VERSION);
-        rurp_config.hardware_revision = 0;
+        if (strcmp(rurp_config.version, "VER03") == 0 || rurp_config.hardware_revision == 0x00) {
+            rurp_config.hardware_revision = 0xFF;
+        }
         rurp_save_config();
-    } else if (strcmp(rurp_config.version, CONFIG_VERSION) != 0) {
+    }
+    else if (strcmp(rurp_config.version, CONFIG_VERSION) != 0) {
         strcpy(rurp_config.version, CONFIG_VERSION);
         rurp_config.vcc = ARDUINO_VCC;
         rurp_config.r1 = VALUE_R1;
         rurp_config.r2 = VALUE_R2;
-        rurp_config.hardware_revision = 0;
+        rurp_config.hardware_revision = 0xFF;
         rurp_save_config();
     }
 }
@@ -126,9 +135,6 @@ void rurp_set_data_as_input() {
 uint8_t map_ctrl_reg_to_hardware_revision(uint16_t data) {
     uint8_t ctrl_reg = 0;
     int hw = rurp_get_hardware_revision();
-    if(rurp_config.hardware_revision > 0) {
-        hw = rurp_config.hardware_revision;
-    }
     switch (hw) {
     case REVISION_2:
         ctrl_reg = data & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | A17 | RW | REGULATOR);
@@ -136,6 +142,7 @@ uint8_t map_ctrl_reg_to_hardware_revision(uint16_t data) {
         ctrl_reg |= data & A16 ? REV_2_A16 : 0;
         ctrl_reg |= data & A18 ? REV_2_A18 : 0;
         break;
+    case REVISION_0:
     case REVISION_1:
         ctrl_reg = data;
         ctrl_reg |= data & VPE_TO_VPP ? REV_1_VPE_TO_VPP : 0;
@@ -212,21 +219,21 @@ uint8_t rurp_read_data_buffer() {
 }
 
 double rurp_read_vcc() {
-  // Read 1.1V reference against AVcc
-  // Set the analog reference to the internal 1.1V
-  // Default is analogReference(DEFAULT) which is connected to the external 5V
-  ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
-  
-  delay(2); // Wait for voltage to stabilize
-  ADCSRA |= _BV(ADSC); // Start conversion
-  while (bit_is_set(ADCSRA, ADSC)); // Wait for conversion to complete
+    // Read 1.1V reference against AVcc
+    // Set the analog reference to the internal 1.1V
+    // Default is analogReference(DEFAULT) which is connected to the external 5V
+    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
 
-  long result = ADCL;
-  result |= ADCH << 8;
+    delay(2); // Wait for voltage to stabilize
+    ADCSRA |= _BV(ADSC); // Start conversion
+    while (bit_is_set(ADCSRA, ADSC)); // Wait for conversion to complete
 
-  // Calculate Vcc (supply voltage) in millivolts
-  // 1100 mV * 1024 ADC steps / ADC reading
-  return 1126400L / (double)result/1000;
+    long result = ADCL;
+    result |= ADCH << 8;
+
+    // Calculate Vcc (supply voltage) in millivolts
+    // 1100 mV * 1024 ADC steps / ADC reading
+    return 1126400L / (double)result / 1000;
 }
 
 

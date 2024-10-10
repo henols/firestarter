@@ -24,7 +24,7 @@ int json_init(char* json, int len, jsmntok_t* tokens) {
 
 #define jsoneq(json, tok, s) \
     jsoneq_(json, tok, PSTR(s))
-    // jsoneq_(json, tok, s)
+// jsoneq_(json, tok, s)
 
 static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {
     if (tok->type == JSMN_STRING && (int)strlen_P(s) == tok->end - tok->start &&
@@ -40,14 +40,15 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
 
     for (int i = 1; i < token_count; i++) {
         if (jsoneq(json, &tokens[i], "bus") == 0) {
-            handle->bus_config.matching_lines=0xff;
+            handle->bus_config.matching_lines = 0xff;
             int bus_array_start = i + 1;
             int bus_array_size = tokens[bus_array_start].size;
             for (int j = 0; j < bus_array_size && j < 19; j++) {
                 handle->bus_config.address_lines[j] = atoi(json + tokens[bus_array_start + j + 1].start);
-                if(handle->bus_config.address_lines[j] == j) {
+                if (handle->bus_config.address_lines[j] == j) {
                     handle->bus_config.address_mask |= 1 << j;
-                } else if (handle->bus_config.matching_lines == 0xff) {
+                }
+                else if (handle->bus_config.matching_lines == 0xff) {
                     handle->bus_config.matching_lines = j;
                 }
             }
@@ -82,7 +83,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     handle->bus_config.address_lines[0] = 0xFF;
     handle->response_code = RESPONSE_CODE_OK;
     handle->chip_id = 0;
-    
+
     for (int i = 1; i < token_count; i++) {
         if (jsoneq(json, &tokens[i], "state") == 0) {
             handle->state = atoi(json + tokens[i + 1].start);
@@ -157,11 +158,13 @@ int json_parse_config(char* json, jsmntok_t* tokens, int token_count, rurp_confi
         if (jsoneq(json, &tokens[i], "state") == 0) {
             i++;
         }
+#ifdef HARDWARE_REVISION
         else if (jsoneq(json, &tokens[i], "rev") == 0) {
             config->hardware_revision = atof(json + tokens[i + 1].start);
             i++;
             res = 1;
         }
+#endif
         else if (jsoneq(json, &tokens[i], "r1") == 0) {
             config->r1 = atol(json + tokens[i + 1].start);
             i++;

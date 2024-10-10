@@ -26,6 +26,7 @@ void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bo
 void (*set_control_register)(struct firestarter_handle*, register_t, bool);
 
 void configure_eprom(firestarter_handle_t* handle) {
+    debug("Configuring EPROM");
     handle->firestarter_write_init = eprom_write_init;
     handle->firestarter_write_data = eprom_write_data;
     set_control_register = handle->firestarter_set_control_register;
@@ -71,6 +72,14 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
 
 #ifdef TEST_VPP_BEFORE_WRITE
 void eprom_check_vpp(firestarter_handle_t* handle) {
+#ifdef HARDWARE_REVISION
+    if (rurp_get_hardware_revision() == REVISION_0) {
+        handle->response_code = RESPONSE_CODE_WARNING;
+        strcpy(handle->response_msg, "Rev0 dont support reading VPP.");
+        return;
+    }
+#endif
+
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
     delay(100);
     double vpp = rurp_read_voltage();

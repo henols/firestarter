@@ -20,6 +20,7 @@
 
 
 void configure_memory(firestarter_handle_t* handle) {
+    debug("Configuring memory");
     handle->firestarter_read_data = memory_read_data;
     handle->firestarter_write_init = NULL;
     handle->firestarter_erase = NULL;

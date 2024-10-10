@@ -41,11 +41,10 @@ void setup() {
   handle.state = STATE_IDLE;
   debug("Firestarter started");
   debug_format("Firmware version: %s", VERSION);
-  // debug_format("Hardware revision: %s", getHwVersion());
+  debug_format("Hardware revision: %s", rurp_get_physical_hardware_revision());
 }
 
-void resetTimeout()
-{
+void resetTimeout() {
   timeout = millis() + 1000;
 }
 
@@ -72,7 +71,7 @@ void readProm(firestarter_handle_t* handle) {
   }
 
   logDataf(handle->response_msg, "Read data from address 0x%lx to 0x%lx", handle->address, handle->address + DATA_BUFFER_SIZE);
-  debug_format("Read buffer: %.10s...", handle->data_buffer);
+  // debug_format("Read buffer: %.10s...", handle->data_buffer);
 
   Serial.write(handle->data_buffer, DATA_BUFFER_SIZE);
   Serial.flush();
@@ -117,8 +116,8 @@ void blankCheck(firestarter_handle_t* handle) {
 }
 
 void writeProm(firestarter_handle_t* handle) {
-  debug("Write PROM");
   if (Serial.available() >= 2) {
+    debug("Write PROM");
     handle->data_size = Serial.read() << 8;
     handle->data_size |= Serial.read();
     if (handle->data_size == 0) {
@@ -126,10 +125,10 @@ void writeProm(firestarter_handle_t* handle) {
       handle->state = STATE_DONE;
       return;
     }
-    logOk("Data size received");
+    logOkf(handle->response_msg, "Expecting data size %d", handle->data_size);
     int len = Serial.readBytes(handle->data_buffer, handle->data_size);
 
-    debug_format("Write buffer: %.10s...", handle->data_buffer);
+    // debug_format("Write buffer: %.10s...", handle->data_buffer);
 
     if (handle->init && handle->firestarter_write_init != NULL) {
       debug("Write PROM init");
@@ -140,7 +139,6 @@ void writeProm(firestarter_handle_t* handle) {
       }
     }
 
-
     if ((uint32_t)len != handle->data_size) {
       logErrorf(handle->response_msg, "Not enough data, expected %d, got %d", (int)handle->data_size, len);
       return;
@@ -150,7 +148,7 @@ void writeProm(firestarter_handle_t* handle) {
       return;
     }
 
-    debug("Write PROM exec");
+    // debug("Write PROM exec");
     int res = executeFunction(handle->firestarter_write_data, handle);
     if (res <= 0) {
       return;
@@ -166,25 +164,34 @@ void writeProm(firestarter_handle_t* handle) {
   }
 }
 
+void initReadVoltage(firestarter_handle_t* handle) {
+  debug("Init read voltage");
+  if (handle->state == STATE_READ_VPP) {
+    debug("Setting up VPP");
+    rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP); // Enable regulator and drop voltage to VPP
+  }
+  else if (handle->state == STATE_READ_VPE) {
+    debug("Setting up VPP");
+    rurp_write_to_register(CONTROL_REGISTER, REGULATOR); // Enable regulator
+  }
+  resetTimeout();
+}
+
 void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
-    debug("Init read voltage");
+    if(rurp_get_hardware_revision() == REVISION_0){
+      logError("Rev0 dont support reading VPP/VPE");
+      return;
+    }
     handle->init = 0;
-    setProgramerMode();
-    if (handle->state == STATE_READ_VPP) {
-      debug("Setting up VPP");
-      rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP ); // Enable regulator and drop voltage to VPP
+    int res = executeFunction(initReadVoltage, handle);
+    if (res <= 0) {
+      return;
     }
-    else if (handle->state == STATE_READ_VPE) {
-      debug("Setting up VPP");
-      rurp_write_to_register(CONTROL_REGISTER, REGULATOR); // Enable regulator
-    }
-    
-    resetTimeout();
-    setCommunicationMode();
     logOk("Voltage read setup");
+
   }
- 
+
   if (!waitCheckForOK()) {
     return;
   }
@@ -200,23 +207,18 @@ void readVoltage(firestarter_handle_t* handle) {
   resetTimeout();
 }
 
-void setupProm(firestarter_handle_t* handle) {
-  if (Serial.available() <= 0) {
-    return;
-  }
-  int len = Serial.readBytes(handle->data_buffer, DATA_BUFFER_SIZE);
-  if (len == 0) {
-    logError("Empty input");
-    return;
-  }
+void parseJson(firestarter_handle_t* handle) {
+  debug("Parse JSON");
+  handle->response_code = RESPONSE_CODE_OK;
+  logInfoMsg((const char*)handle->data_buffer);
 
   jsmn_parser parser;
   jsmntok_t tokens[NUMBER_JSNM_TOKENS];
 
   jsmn_init(&parser);
-  int token_count = jsmn_parse(&parser, handle->data_buffer, len, tokens, NUMBER_JSNM_TOKENS);
-
-  if (token_count < 0) {
+  int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
+  logInfof(handle->response_msg, "Token count: %d", token_count);
+  if (token_count <= 0) {
     logErrorMsg((const char*)handle->data_buffer);
     return;
   }
@@ -227,74 +229,120 @@ void setupProm(firestarter_handle_t* handle) {
   if (handle->state < STATE_READ_VPP) {
     json_parse(handle->data_buffer, tokens, token_count, handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
-      logErrorMsg(handle->response_msg);
       return;
     }
-
-    configure_memory(handle);
-    int res = checkResponse(handle);
-    if (res <= 0) {
+    if (!executeFunction(configure_memory, handle)) {
       logError("Could not configure chip");
       return;
     }
-
-    logInfof(handle->response_msg, "EPROM memory size 0x%lx", handle->mem_size);
-
   }
   else if (handle->state == STATE_CONFIG) {
     rurp_configuration_t* config = rurp_get_config();
     int res = json_parse_config(handle->data_buffer, tokens, token_count, config);
     if (res < 0) {
-      logErrorMsg(handle->data_buffer);
+      logError("Could not parse config");
       return;
     }
     else if (res == 1) {
       rurp_save_config();
     }
   }
+}
 
-  logOkf(handle->response_msg, "FW: %s, HW: Rev%d, state 0x%02x", VERSION, rurp_get_hardware_revision(),   handle->state);
+void setupProm(firestarter_handle_t* handle) {
+  if (Serial.available() <= 0) {
+    return;
+  }
+  debug("Setup PROM");
+  handle->data_size = Serial.readBytes(handle->data_buffer, DATA_BUFFER_SIZE);
+  if (handle->data_size == 0) {
+    logError("Empty input");
+    return;
+  }
+  if (handle->data_buffer[0] != '{') {
+    logWarn("No JSON object");
+    return;
+  }
+  debug_format("Setup buffer size: %d", handle->data_size);
+  logInfof(handle->response_msg, "Expecting data size %d", handle->data_size);
+
+  parseJson(handle);
+
+  if (handle->state == 0) {
+    logErrorf(handle->response_msg, "Unknown state: %s", handle->data_buffer);
+
+    return;
+  }
+  if (handle->state > STATE_IDLE && handle->state < STATE_READ_VPP) {
+    logInfof(handle->response_msg, "EPROM memory size 0x%lx", handle->mem_size);
+  }
+
+#ifdef HARDWARE_REVISION
+  logOkf(handle->response_msg, "FW: %s, HW: Rev%d, State 0x%02x", VERSION, rurp_get_hardware_revision(), handle->state);
+#else
+  logOkf(handle->response_msg, "FW: %s, State 0x%02x", VERSION, handle->state);
+#endif
   resetTimeout();
 }
 
 void getFwVersion() {
+  debug("Get FW version");
   logOkBuf(handle.response_msg, VERSION);
   handle.state = STATE_DONE;
 }
 
 #ifdef HARDWARE_REVISION
-void getHwVersion() {
+void createOverideText(char* revStr) {
   rurp_configuration_t* rurp_config = rurp_get_config();
-  char revStr[24];
-  if(rurp_config->hardware_revision > 0){
+  if (rurp_config->hardware_revision < 0xFF) {
     sprintf(revStr, ", Override HW: Rev%d", rurp_config->hardware_revision);
-  } else {
+  }
+  else {
     revStr[0] = '\0';
   }
-  logOkf(handle.response_msg, "Rev%d%s", rurp_get_hardware_revision(), revStr);
+}
+
+void getHwVersion() {
+  debug("Get HW version");
+  char revStr[24];
+  createOverideText(revStr);
+  logOkf(handle.response_msg, "Rev%d%s", rurp_get_physical_hardware_revision(), revStr);
   handle.state = STATE_DONE;
 }
 #endif
 
 void getConfig(firestarter_handle_t* handle) {
+  debug("Get config");
   rurp_configuration_t* rurp_config = rurp_get_config();
+#ifdef HARDWARE_REVISION
   char revStr[24];
-  if(rurp_config->hardware_revision > 0){
-    sprintf(revStr, ", Override HW: Rev%d", rurp_config->hardware_revision);
-  } else {
-    revStr[0] = '\0';
-  }
-  
-  logOkf(handle->response_msg, "R1: %ld, R2: %ld %s", rurp_config->r1, rurp_config->r2, revStr);
+  createOverideText(revStr);
+  logOkf(handle->response_msg, "R1: %ld, R2: %ld%s", rurp_config->r1, rurp_config->r2, revStr);
+#else
+  logOkf(handle->response_msg, "R1: %ld, R2: %ld", rurp_config->r1, rurp_config->r2);
+#endif
   handle->state = STATE_DONE;
+}
+
+void stateDone(firestarter_handle_t* handle) {
+  debug("State done");
+  setProgramerMode();
+  rurp_set_control_pin(CHIP_ENABLE, 1);
+  rurp_set_control_pin(OUTPUT_ENABLE, 1);
+  rurp_write_to_register(CONTROL_REGISTER, 0x00);
+  rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
+  rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
+  handle->state = STATE_IDLE;
+  handle->response_code = RESPONSE_CODE_OK;
+  setCommunicationMode();
+  if (handle->response_msg[0] != '\0') {
+    logInfoMsg(handle->response_msg);
+  }
 }
 
 void loop() {
   handle.response_msg[0] = '\0';
   if (handle.state != STATE_IDLE && timeout < millis()) {
-    setProgramerMode();
-    delay(100);
-    setCommunicationMode();
     logErrorBuf(handle.response_msg, "Timeout");
     resetTimeout();
     handle.state = STATE_DONE;
@@ -314,14 +362,7 @@ void loop() {
     blankCheck(&handle);
     break;
   case STATE_DONE:
-    setProgramerMode();
-    rurp_set_control_pin(CHIP_ENABLE, 1);
-    rurp_set_control_pin(OUTPUT_ENABLE, 1);
-    rurp_write_to_register(CONTROL_REGISTER, 0x00);
-    rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
-    rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
-    setCommunicationMode();
-    handle.state = STATE_IDLE;
+    stateDone(&handle);
     break;
   case STATE_READ_VPP:
   case STATE_READ_VPE:
@@ -372,37 +413,44 @@ int checkResponse(firestarter_handle_t* handle) {
 
 int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
   setProgramerMode();
-  callback(handle);
+  if (callback != NULL) {
+    callback(handle);
+  }
   setCommunicationMode();
   delayMicroseconds(50);
+  resetTimeout();
   return checkResponse(handle);
 }
 
-
+bool comMode = true;
 
 void setCommunicationMode() {
   rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
   DDRD &= ~(0x01);
   Serial.begin(MONITOR_SPEED); // Initialize serial port
 
-  while (!Serial)
-  {
+  while (!Serial) {
     delayMicroseconds(1);
   }
   Serial.flush();
   delay(1);
+  comMode = true;
 }
 
 void setProgramerMode() {
+  comMode = false;
   Serial.end(); // Close serial port
   DDRD |= 0x01;
+
 }
 
 void log(const char* type, const char* msg) {
   log_debug(type, msg);
-  Serial.print(type);
-  Serial.print(": ");
-  Serial.println(msg);
-  Serial.flush();
+  if (comMode) {
+    Serial.print(type);
+    Serial.print(": ");
+    Serial.println(msg);
+    Serial.flush();
+  }
 }
 

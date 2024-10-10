@@ -16,7 +16,7 @@ extern "C" {
 #include "config.h"
 
 // Constants
-#define CONFIG_VERSION  "VER04"
+#define CONFIG_VERSION  "VER05"
 
 // Default configuration
 #define ARDUINO_VCC 5.01
@@ -45,6 +45,7 @@ extern "C" {
 #define REGULATOR       0x80
 
 #else
+#define REVISION_0 0
 #define REVISION_1 1
 #define REVISION_2 2
 
@@ -100,6 +101,7 @@ extern "C" {
     void rurp_save_config();
 #ifdef HARDWARE_REVISION
     int rurp_get_hardware_revision();
+    int rurp_get_physical_hardware_revision();
 #endif
 
 #ifdef __cplusplus
