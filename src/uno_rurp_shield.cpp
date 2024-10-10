@@ -57,11 +57,32 @@ void load_config();
 uint8_t lsb_address;
 uint8_t msb_address;
 register_t control_register;
+int revision = 5;
+
 
 void rurp_setup() {
-    pinMode(VOLTAGE_MEASURE_PIN, INPUT);
-    pinMode(HARDWARE_REVISION_PIN, INPUT_PULLUP);
     rurp_set_data_as_output();
+
+    pinMode(HARDWARE_REVISION_PIN, INPUT_PULLUP);
+    pinMode(VOLTAGE_MEASURE_PIN, INPUT_PULLUP);
+
+
+    int value = digitalRead(HARDWARE_REVISION_PIN);
+    
+    switch (value) {
+    case 1:
+        revision = analogRead(VOLTAGE_MEASURE_PIN) < 1000 ? REVISION_1 : REVISION_0;
+        break;
+    case 0:
+        revision = REVISION_2;
+        break;
+    default:
+        // Unknown hardware revision
+        revision = -1;
+    }
+    pinMode(VOLTAGE_MEASURE_PIN, INPUT);
+
+
     DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | RW;
 
     PORTB = OUTPUT_ENABLE | CHIP_ENABLE;
@@ -83,16 +104,7 @@ int rurp_get_hardware_revision() {
 }
 
 int rurp_get_physical_hardware_revision() {
-    int value = digitalRead(HARDWARE_REVISION_PIN);
-    switch (value) {
-    case 1:
-        return REVISION_1;
-    case 0:
-        return REVISION_2;
-    default:
-        // Unknown hardware revision
-        return -1;
-    }
+    return revision;
 }
 #endif
 
