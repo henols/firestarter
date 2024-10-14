@@ -229,6 +229,7 @@ void parseJson(firestarter_handle_t* handle) {
   if (handle->state < STATE_READ_VPP) {
     json_parse(handle->data_buffer, tokens, token_count, handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
+      logErrorMsg(handle->response_msg);
       return;
     }
     if (!executeFunction(configure_memory, handle)) {
