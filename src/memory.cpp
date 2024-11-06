@@ -11,11 +11,13 @@
 #include "config.h"
 #include "eprom.h"
 #include "sram.h"
+#include "flash.h"
 #include "rurp_shield.h"
 #include "logging.h"
 #include "debug.h"
 
 #define TYPE_EPROM 1
+#define TYPE_FLASH 3
 #define TYPE_SRAM 4
 
 
@@ -46,7 +48,11 @@ void configure_memory(firestarter_handle_t* handle) {
         configure_sram(handle);
         return;
     }
-    copyToBuffer(handle->response_msg, "Memory type not supported");
+    else if (handle->mem_type == TYPE_FLASH) {
+        configure_flash(handle);
+        return;
+    }
+    format(handle->response_msg, "Memory type 0x%02x not supported", handle->mem_type);
     handle->response_code = RESPONSE_CODE_ERROR;
     return;
 }
