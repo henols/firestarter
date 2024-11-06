@@ -115,7 +115,9 @@ void memory_read_data(firestarter_handle_t* handle) {
     debug_format("Reading from address 0x%06x", handle->address);
     for (int i = 0; i < buf_size; i++) {
         uint8_t data = handle->firestarter_get_data(handle, handle->address + i);
-        // debug_format("Data 0x%02x %c", data, data);
+        if(((handle->address + i) &  0x1ff )== 0) {
+            debug_format("Data 0x%02x %c", data, data);
+        }
         handle->data_buffer[i] = data;
     }
     rurp_set_control_pin(CHIP_ENABLE, 1);
@@ -129,7 +131,9 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
 
     handle->firestarter_set_address(handle, address);
     rurp_set_data_as_input();
-    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 0);
+    rurp_set_control_pin(CHIP_ENABLE , 0);
+    delayMicroseconds(2);
+    rurp_set_control_pin( OUTPUT_ENABLE, 0);
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();
     rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
@@ -139,11 +143,54 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
 }
 
 void memory_write_data(firestarter_handle_t* handle) {
-
-    for (uint32_t i = 0; i < handle->data_size; i++) {
-        handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+    uint8_t mismatch_bitmask[DATA_BUFFER_SIZE / 8];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)
+    int mismatch = 0;
+    int rewrites = 0;
+    for (int i = 0; i < DATA_BUFFER_SIZE / 8; i++) {
+        mismatch_bitmask[i] = 0xFF;
     }
-    handle->response_code = RESPONSE_CODE_OK;
+    for (int w = 0; w < 20; w++) {
+        mismatch = 0;
+        // Iterate through the mismatch bitmask to find all mismatched positions
+        for (uint32_t i = 0; i < handle->data_size; i++) {
+            if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
+                handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+                if (w > 0) {
+                    rewrites++;
+                }
+            }
+        }
+        for (uint32_t i = 0; i < handle->data_size; i++) {
+            if (handle->firestarter_get_data(handle, (handle->address + i)) != (uint8_t)handle->data_buffer[i]) {
+                // debug_format("Mismatch at 0x%lx, expected %c, got %c", handle->address + i, handle->data_buffer[i], handle->firestarter_get_data(handle, handle->address + i));
+                mismatch++;
+                mismatch_bitmask[i / 8] |= (1 << (i % 8));
+            }
+            else {
+                mismatch_bitmask[i / 8] &= ~(1 << (i % 8));
+            }
+            if(i == 0) {
+                debug_format("Data 0x%02x %c", (uint8_t)handle->data_buffer[i], (uint8_t)handle->data_buffer[i]);
+            }
+
+        }
+
+        if (!mismatch) {
+            handle->response_msg[0] = '\0';
+            if (rewrites > 0) {
+                format(handle->response_msg, "Number of rewrites %d", rewrites);
+            }
+            return;
+        }
+        debug("Mismatch, retrying");
+    }
+    format(handle->response_msg, "Failed to write memory, at 0x%06x, nr %d", handle->address, mismatch);
+    handle->response_code = RESPONSE_CODE_ERROR;
+
+    // for (uint32_t i = 0; i < handle->data_size; i++) {
+    //     handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+    // }
+    // handle->response_code = RESPONSE_CODE_OK;
 }
 
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {

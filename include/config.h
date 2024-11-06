@@ -15,7 +15,7 @@
 
 #define POWER_THROUGH_ADDRESS_LINES
 #define HARDWARE_REVISION
-// #define SERIAL_DEBUG 
+#define SERIAL_DEBUG 
 // #define DEBUG_ADDRESS
 
 #endif // CONFIG_H

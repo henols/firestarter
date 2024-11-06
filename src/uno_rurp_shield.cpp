@@ -141,6 +141,7 @@ void rurp_set_data_as_output() {
 
 void rurp_set_data_as_input() {
     DDRD = 0x00;
+    PORTD = 0xFF;
 }
 
 #ifdef HARDWARE_REVISION
