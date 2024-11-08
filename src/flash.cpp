@@ -95,8 +95,7 @@ void flash_check_chip_id(firestarter_handle_t* handle) {
     }
 }
 
-void flash_byte_flipping(firestarter_handle_t* handle, byte_flip_t* byte_flips) {
-    size_t size = sizeof(byte_flips) / sizeof(byte_flips[0]);
+void flash_byte_flipping(firestarter_handle_t* handle, byte_flip_t* byte_flips, size_t size) {
     for (size_t i = 0; i < size; i++) {
         handle->firestarter_set_data(handle, byte_flips[i].address, byte_flips[i].byte);
     }
@@ -108,7 +107,7 @@ void flash_enable_write(firestarter_handle_t* handle) {
         {0x2AAA, 0x55},
         {0x5555, 0xA0},
     };
-    flash_byte_flipping(handle, byte_flips);
+    flash_byte_flipping(handle, byte_flips, sizeof(byte_flips) / sizeof(byte_flips[0]));
 }
 
 
@@ -121,7 +120,7 @@ void flash_internal_erase(firestarter_handle_t* handle) {
         {0x2AAA, 0x55},
         {0x5555, 0x10},
     };
-    flash_byte_flipping(handle, byte_flips);
+    flash_byte_flipping(handle, byte_flips, sizeof(byte_flips) / sizeof(byte_flips[0]));
 }
 
 uint16_t flash_get_chip_id(firestarter_handle_t* handle) {
@@ -135,9 +134,12 @@ uint16_t flash_get_chip_id(firestarter_handle_t* handle) {
         {0x2AAA, 0x55},
         {0x5555, 0xF0},
     };
-    flash_byte_flipping(handle, enable_id);
+
+    flash_byte_flipping(handle, enable_id, sizeof(enable_id) / sizeof(enable_id[0]));
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
     chip_id |= (handle->firestarter_get_data(handle, 0x0001));
-    flash_byte_flipping(handle, disable_id);   
+    flash_byte_flipping(handle, disable_id, sizeof(disable_id) / sizeof(enable_id[0]));   
     return chip_id;
+
 }
+
