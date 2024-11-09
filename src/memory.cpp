@@ -20,6 +20,7 @@
 #define TYPE_FLASH 3
 #define TYPE_SRAM 4
 
+uint8_t programming = 0;
 
 void configure_memory(firestarter_handle_t* handle) {
     debug("Configuring memory");
@@ -145,7 +146,6 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
 }
 
 void memory_write_data(firestarter_handle_t* handle) {
-
     for (uint32_t i = 0; i < handle->data_size; i++) {
         handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
     }
@@ -159,8 +159,9 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
 
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
-    delayMicroseconds(1);
+//    delayMicroseconds(3); //Assume we don't need this
     rurp_set_control_pin(CHIP_ENABLE, 0);
-    delayMicroseconds(handle->pulse_delay);
+    delayMicroseconds(handle->pulse_delay + 3);
     rurp_set_control_pin(CHIP_ENABLE, 1);
+
 }
