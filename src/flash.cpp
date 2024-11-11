@@ -29,6 +29,9 @@ void flash_internal_erase(firestarter_handle_t* handle);
 void flash_check_chip_id(firestarter_handle_t* handle);
 void flash_enable_write(firestarter_handle_t* handle);
 void flash_write_data(firestarter_handle_t* handle);
+void flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data);
+void flash_fast_address(firestarter_handle_t* handle, uint32_t address);
+
 
 void configure_flash(firestarter_handle_t* handle) {
     debug("Configuring Flash");
@@ -100,10 +103,11 @@ void flash_check_chip_id(firestarter_handle_t* handle) {
 }
 
 void flash_byte_flipping(firestarter_handle_t* handle, byte_flip_t* byte_flips, size_t size) {
+    handle->firestarter_set_control_register(handle, RW, 0); 
     for (size_t i = 0; i < size; i++) {
-        handle->firestarter_set_data(handle, byte_flips[i].address, byte_flips[i].byte);
+        flash_flip_data(handle, byte_flips[i].address, byte_flips[i].byte);
     }
-        handle->firestarter_set_control_register(handle, RW, 1);
+    handle->firestarter_set_control_register(handle, RW, 0);
 }
 
 void flash_enable_write(firestarter_handle_t* handle) {
@@ -155,16 +159,9 @@ void flash_write_data(firestarter_handle_t* handle) {
 
             //set rw high
     handle->firestarter_set_control_register(handle, RW, 1);
-    //loop
-    //wait 10ns
-    //set data to input
     rurp_set_data_as_input();
-    //set CE low
     rurp_set_control_pin(CHIP_ENABLE, 0);
-    //set OE low
     rurp_set_control_pin(OUTPUT_ENABLE, 0);
-    delayMicroseconds(3);
-    //loop
     //read bit7 and compare bit7 of data
     uint8_t testbit = rurp_read_data_buffer() & 0x80;
     while (testbit != (handle->data_buffer[i] & 0x80)) {
@@ -176,4 +173,18 @@ void flash_write_data(firestarter_handle_t* handle) {
     rurp_set_data_as_output();
     }
     handle->response_code = RESPONSE_CODE_OK;
+}
+
+void flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
+    flash_fast_address(handle, address);
+    rurp_write_data_buffer(data);
+    rurp_set_control_pin(CHIP_ENABLE, 0);
+    rurp_set_control_pin(CHIP_ENABLE, 1);
+}
+
+void flash_fast_address(firestarter_handle_t* handle, uint32_t address) {
+    uint8_t lsb = address & 0xFF;
+    rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
+    uint8_t msb = ((address >> 8) & 0xFF);
+    rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 }
