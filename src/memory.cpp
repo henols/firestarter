@@ -161,7 +161,6 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
     rurp_write_data_buffer(data);
 //    delayMicroseconds(3); //Assume we don't need this
     rurp_set_control_pin(CHIP_ENABLE, 0);
-    delayMicroseconds(handle->pulse_delay + 3);
+    delayMicroseconds(handle->pulse_delay);
     rurp_set_control_pin(CHIP_ENABLE, 1);
-
 }

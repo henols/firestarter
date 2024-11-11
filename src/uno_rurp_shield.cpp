@@ -196,7 +196,7 @@ void rurp_write_to_register(uint8_t reg, register_t data) {
     rurp_set_data_as_output();
     PORTD = data;
     PORTB |= reg;
-    delayMicroseconds(1);
+// Probably useless - verify later    delayMicroseconds(1); 
     PORTB &= ~(reg);
 }
 
