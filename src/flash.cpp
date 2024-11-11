@@ -5,6 +5,7 @@
  * Permission is hereby granted under MIT license.
  */
 
+#include <Arduino.h>
 #include "flash.h"
 #include "firestarter.h"
 #include "rurp_shield.h"
@@ -27,12 +28,14 @@ uint16_t flash_get_chip_id(firestarter_handle_t* handle);
 void flash_internal_erase(firestarter_handle_t* handle);
 void flash_check_chip_id(firestarter_handle_t* handle);
 void flash_enable_write(firestarter_handle_t* handle);
+void flash_write_data(firestarter_handle_t* handle);
 
 void configure_flash(firestarter_handle_t* handle) {
     debug("Configuring Flash");
     handle->firestarter_write_init = flash_write_init;
     handle->firestarter_erase = flash_erase;
     handle->firestarter_blank_check = flash_blank_check;
+    handle->firestarter_write_data = flash_write_data;
 }
 
 void flash_write_init(firestarter_handle_t* handle) {
@@ -45,6 +48,7 @@ void flash_write_init(firestarter_handle_t* handle) {
 
     if (handle->can_erase && !handle->skip_erase) {
         flash_internal_erase(handle);
+        delay(101);
     }
     else {
         copyToBuffer(handle->response_msg, "Skipping erase of memory");
@@ -57,7 +61,7 @@ void flash_write_init(firestarter_handle_t* handle) {
         }
     }
 #endif
-    flash_enable_write(handle);
+//    flash_enable_write(handle); // Happens before every write now
 }
 
 void flash_erase(firestarter_handle_t* handle) {
@@ -99,6 +103,7 @@ void flash_byte_flipping(firestarter_handle_t* handle, byte_flip_t* byte_flips, 
     for (size_t i = 0; i < size; i++) {
         handle->firestarter_set_data(handle, byte_flips[i].address, byte_flips[i].byte);
     }
+        handle->firestarter_set_control_register(handle, RW, 1);
 }
 
 void flash_enable_write(firestarter_handle_t* handle) {
@@ -143,3 +148,32 @@ uint16_t flash_get_chip_id(firestarter_handle_t* handle) {
 
 }
 
+void flash_write_data(firestarter_handle_t* handle) {
+    for (uint32_t i = 0; i < handle->data_size; i++) {
+        flash_enable_write(handle);
+        handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+
+            //set rw high
+    handle->firestarter_set_control_register(handle, RW, 1);
+    //loop
+    //wait 10ns
+    //set data to input
+    rurp_set_data_as_input();
+    //set CE low
+    rurp_set_control_pin(CHIP_ENABLE, 0);
+    //set OE low
+    rurp_set_control_pin(OUTPUT_ENABLE, 0);
+    delayMicroseconds(3);
+    //loop
+    //read bit7 and compare bit7 of data
+    uint8_t testbit = rurp_read_data_buffer() & 0x80;
+    while (testbit != (handle->data_buffer[i] & 0x80)) {
+    testbit = rurp_read_data_buffer() & 0x80;
+    //if bit7 different, loop WE NEED A TIMEOUT HERE
+    }
+    //set data back to output as we found it
+    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
+    rurp_set_data_as_output();
+    }
+    handle->response_code = RESPONSE_CODE_OK;
+}
