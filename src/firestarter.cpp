@@ -65,6 +65,14 @@ void readProm(firestarter_handle_t* handle) {
     return;
   }
   debug("Read PROM");
+    if (handle->init && handle->firestarter_read_init != NULL) {
+      debug("Read PROM init");
+      handle->init = 0;
+      int res = executeFunction(handle->firestarter_read_init, handle);
+      if (res <= 0) {
+        return;
+      }
+    }
   int res = executeFunction(handle->firestarter_read_data, handle);
   if (res <= 0) {
     return;

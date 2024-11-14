@@ -18,6 +18,7 @@
 
 void eprom_erase(firestarter_handle_t* handle);
 void eprom_blank_check(firestarter_handle_t* handle);
+void eprom_read_init(firestarter_handle_t* handle);
 void eprom_write_init(firestarter_handle_t* handle);
 void eprom_write_data(firestarter_handle_t* handle);
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
@@ -27,6 +28,7 @@ void (*set_control_register)(struct firestarter_handle*, register_t, bool);
 
 void configure_eprom(firestarter_handle_t* handle) {
     debug("Configuring EPROM");
+    handle->firestarter_read_init = eprom_read_init;
     handle->firestarter_write_init = eprom_write_init;
     handle->firestarter_write_data = eprom_write_data;
     set_control_register = handle->firestarter_set_control_register;
@@ -136,6 +138,20 @@ void eprom_blank_check(firestarter_handle_t* handle) {
     }
 }
 
+
+void eprom_read_init(firestarter_handle_t* handle) {
+    if (!handle->force) {}
+    eprom_check_vpp(handle);
+    if (handle->response_code == RESPONSE_CODE_ERROR) {
+        return;
+    }
+    if (handle->chip_id > 0) {
+        eprom_check_chip_id(handle);
+        if (handle->response_code == RESPONSE_CODE_ERROR) {
+            return;
+        }
+    }
+}
 
 void eprom_write_init(firestarter_handle_t* handle) {
 #ifdef TEST_VPP_BEFORE_WRITE
