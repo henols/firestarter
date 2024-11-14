@@ -67,6 +67,7 @@ typedef struct firestarter_handle {
 	void (*firestarter_write_init)(struct firestarter_handle*);
 	void (*firestarter_write_data)(struct firestarter_handle*);
 	uint8_t(*firestarter_get_data)(struct firestarter_handle*, uint32_t);
+	void (*firestarter_read_init)(struct firestarter_handle*);
 	void(*firestarter_read_data)(struct firestarter_handle*);
 	void (*firestarter_erase)(struct firestarter_handle*);
 	void (*firestarter_blank_check)(struct firestarter_handle*);
