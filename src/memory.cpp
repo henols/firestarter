@@ -159,7 +159,7 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
 
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
-//    delayMicroseconds(3); //Assume we don't need this
+    delayMicroseconds(3); //Needed for slower address changes like slow ROMs and "Power through address lines"
     rurp_set_control_pin(CHIP_ENABLE, 0);
     delayMicroseconds(handle->pulse_delay);
     rurp_set_control_pin(CHIP_ENABLE, 1);
