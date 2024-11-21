@@ -141,7 +141,7 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();
     rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
-    rurp_set_data_as_output();
+    // rurp_set_data_as_output();
 
     return data;
 }

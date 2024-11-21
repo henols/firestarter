@@ -85,7 +85,7 @@ void flash_write_data(firestarter_handle_t* handle) {
         handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
 
         verify_operation(handle, handle->data_buffer[i]);
-        if(handle->response_code == RESPONSE_CODE_ERROR) {
+        if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;
         }
     }
@@ -180,27 +180,28 @@ uint16_t flash_get_chip_id(firestarter_handle_t* handle) {
 
 uint8_t data_poll() {
     rurp_set_data_as_input();
-    rurp_set_control_pin(CHIP_ENABLE, 1);
-    rurp_set_control_pin(OUTPUT_ENABLE, 1);
     rurp_set_control_pin(CHIP_ENABLE, 0);
     rurp_set_control_pin(OUTPUT_ENABLE, 0);
-    return rurp_read_data_buffer();
+    uint8_t data = rurp_read_data_buffer();
+    rurp_set_control_pin(CHIP_ENABLE, 1);
+    rurp_set_control_pin(OUTPUT_ENABLE, 1);
+    return data;
 }
 
 void verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
-    
+
     handle->firestarter_set_control_register(handle, RW, 1);
 
-    for(int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
         rurp_set_control_pin(CHIP_ENABLE, 0);
         rurp_set_control_pin(CHIP_ENABLE, 1);
     }
 
     unsigned long now = millis();
-    while (millis() - now <= 2) {
+    while (millis() - now <= 150) {
 
         // Check Data# Polling (DQ7)
-        if ((data_poll() & 0x80) == (expected_data & 0x80)) {
+        if (data_poll() == expected_data) {
             // Verify completion with an additional read
             if (data_poll() == data_poll()) {
                 rurp_set_data_as_output();  
@@ -211,11 +212,12 @@ void verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
         }
     }
     handle->response_code = RESPONSE_CODE_ERROR;
-    copyToBuffer(handle->response_msg, "Timeout waiting for data to be written");
+    copyToBuffer(handle->response_msg, "Operation timed out");
     return;
 }
 
 void flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
+    rurp_set_data_as_output();
     fast_address(handle, address);
     rurp_write_data_buffer(data);
     rurp_set_control_pin(CHIP_ENABLE, 0);
