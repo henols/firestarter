@@ -64,14 +64,20 @@ typedef struct firestarter_handle {
 	bus_config_t bus_config;
 
 	void (*firestarter_set_data)(struct firestarter_handle*, uint32_t, uint8_t);
+	uint8_t(*firestarter_get_data)(struct firestarter_handle*, uint32_t);
+	
 	void (*firestarter_write_init)(struct firestarter_handle*);
 	void (*firestarter_write_data)(struct firestarter_handle*);
-	uint8_t(*firestarter_get_data)(struct firestarter_handle*, uint32_t);
+	
 	void (*firestarter_read_init)(struct firestarter_handle*);
-	void(*firestarter_read_data)(struct firestarter_handle*);
+	void (*firestarter_read_data)(struct firestarter_handle*);
+	
 	void (*firestarter_erase)(struct firestarter_handle*);
+	
 	void (*firestarter_blank_check)(struct firestarter_handle*);
+	
 	void (*firestarter_set_address)(struct firestarter_handle*, uint32_t);
+	
 	void (*firestarter_set_control_register)(struct firestarter_handle*, register_t, bool);
 	bool (*firestarter_get_control_register)(struct firestarter_handle*, register_t);
 

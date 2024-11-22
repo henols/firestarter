@@ -193,10 +193,9 @@ void rurp_write_to_register(uint8_t reg, register_t data) {
     default:
         return;
     }
-    rurp_set_data_as_output();
-    PORTD = data;
+    rurp_write_data_buffer( data);
     PORTB |= reg;
-    delayMicroseconds(1);
+// Probably useless - verify later    delayMicroseconds(1); 
     PORTB &= ~(reg);
 }
 
@@ -223,6 +222,7 @@ void rurp_set_control_pin(uint8_t pin, uint8_t state) {
 
 
 void rurp_write_data_buffer(uint8_t data) {
+    rurp_set_data_as_output();
     PORTD = data;
 }
 

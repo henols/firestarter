@@ -11,13 +11,16 @@
 #include "config.h"
 #include "eprom.h"
 #include "sram.h"
+#include "flash.h"
 #include "rurp_shield.h"
 #include "logging.h"
 #include "debug.h"
 
 #define TYPE_EPROM 1
+#define TYPE_FLASH 3
 #define TYPE_SRAM 4
 
+uint8_t programming = 0;
 
 void configure_memory(firestarter_handle_t* handle) {
     debug("Configuring memory");
@@ -47,7 +50,11 @@ void configure_memory(firestarter_handle_t* handle) {
         configure_sram(handle);
         return;
     }
-    copyToBuffer(handle->response_msg, "Memory type not supported");
+    else if (handle->mem_type == TYPE_FLASH) {
+        configure_flash(handle);
+        return;
+    }
+    format(handle->response_msg, "Memory type 0x%02x not supported", handle->mem_type);
     handle->response_code = RESPONSE_CODE_ERROR;
     return;
 }
@@ -134,13 +141,12 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();
     rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
-    rurp_set_data_as_output();
+    // rurp_set_data_as_output();
 
     return data;
 }
 
 void memory_write_data(firestarter_handle_t* handle) {
-
     for (uint32_t i = 0; i < handle->data_size; i++) {
         handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
     }
@@ -154,7 +160,7 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
 
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
-    delayMicroseconds(1);
+    delayMicroseconds(3); //Needed for slower address changes like slow ROMs and "Power through address lines"
     rurp_set_control_pin(CHIP_ENABLE, 0);
     delayMicroseconds(handle->pulse_delay);
     rurp_set_control_pin(CHIP_ENABLE, 1);
