@@ -192,18 +192,19 @@ void verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
 
     handle->firestarter_set_control_register(handle, RW, 1);
 
+/* Uhm.. Why?
     for (int i = 0; i < 4; i++) {
         rurp_set_control_pin(CHIP_ENABLE, 0);
         rurp_set_control_pin(CHIP_ENABLE, 1);
     }
-
+*/
     unsigned long now = millis();
     while (millis() - now <= 150) {
 
         // Check Data# Polling (DQ7)
-        if (data_poll() == expected_data) {
+        if ((data_poll() & 0x80) == (expected_data & 0x80)) { //Only check if bit 7 has flipped
             // Verify completion with an additional read
-            if (data_poll() == data_poll()) {
+            if ((data_poll() & 0x80) == (data_poll() & 0x80)) { //No assuming other bits
                 rurp_set_data_as_output();  
                 rurp_set_control_pin(CHIP_ENABLE, 1);
                 rurp_set_control_pin(OUTPUT_ENABLE, 1);
