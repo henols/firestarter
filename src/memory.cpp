@@ -24,15 +24,16 @@ uint8_t programming = 0;
 
 void configure_memory(firestarter_handle_t* handle) {
     debug("Configuring memory");
+    handle->firestarter_read_init = NULL;
     handle->firestarter_read_data = memory_read_data;
     handle->firestarter_write_init = NULL;
+    handle->firestarter_write_data = memory_write_data;
     handle->firestarter_erase = NULL;
     handle->firestarter_blank_check = NULL;
 
-    handle->firestarter_write_data = memory_write_data;
     handle->firestarter_get_data = memory_get_data;
     handle->firestarter_set_data = memory_set_data;
-    // handle->firestarter_write_to_register = memory_write_to_register;
+    
     handle->firestarter_set_address = memory_set_address;
 
     handle->firestarter_set_control_register = memory_set_control_register;
@@ -140,7 +141,7 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();
     rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
-    rurp_set_data_as_output();
+    // rurp_set_data_as_output();
 
     return data;
 }
