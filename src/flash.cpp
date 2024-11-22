@@ -192,12 +192,6 @@ void verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
 
     handle->firestarter_set_control_register(handle, RW, 1);
 
-/* Uhm.. Why?
-    for (int i = 0; i < 4; i++) {
-        rurp_set_control_pin(CHIP_ENABLE, 0);
-        rurp_set_control_pin(CHIP_ENABLE, 1);
-    }
-*/
     unsigned long now = millis();
     while (millis() - now <= 150) {
 
