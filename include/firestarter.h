@@ -18,6 +18,7 @@
 #define STATE_WRITE 2
 #define STATE_ERASE 3
 #define STATE_BLANK_CHECK 4
+#define STATE_CHECK_CHIP_ID 5
 // #define STATE_READ_VPE 10
 #define STATE_READ_VPP 11
 #define STATE_READ_VPE 12 
@@ -76,6 +77,8 @@ typedef struct firestarter_handle {
 	
 	void (*firestarter_blank_check)(struct firestarter_handle*);
 	
+	void (*firestarter_check_chip_id)(struct firestarter_handle*);
+
 	void (*firestarter_set_address)(struct firestarter_handle*, uint32_t);
 	
 	void (*firestarter_set_control_register)(struct firestarter_handle*, register_t, bool);

@@ -30,6 +30,7 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_write_data = memory_write_data;
     handle->firestarter_erase = NULL;
     handle->firestarter_blank_check = NULL;
+    handle->firestarter_check_chip_id = NULL;
 
     handle->firestarter_get_data = memory_get_data;
     handle->firestarter_set_data = memory_set_data;

@@ -21,8 +21,10 @@ void eprom_blank_check(firestarter_handle_t* handle);
 void eprom_read_init(firestarter_handle_t* handle);
 void eprom_write_init(firestarter_handle_t* handle);
 void eprom_write_data(firestarter_handle_t* handle);
-uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
+void eprom_check_chip_id(firestarter_handle_t* handle);
+
 void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
+uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
 
 void (*set_control_register)(struct firestarter_handle*, register_t, bool);
 
@@ -35,9 +37,10 @@ void configure_eprom(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register = eprom_set_control_register;
     handle->firestarter_erase = eprom_erase;
     handle->firestarter_blank_check = eprom_blank_check;
+    handle->firestarter_check_chip_id = eprom_check_chip_id;
 }
 
-uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
+uint16_t epromget_chip_id(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR, 1);
     delay(50);
 
@@ -52,7 +55,7 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
 }
 
 void eprom_check_chip_id(firestarter_handle_t* handle) {
-    uint16_t chip_id = eprom_get_chip_id(handle);
+    uint16_t chip_id = epromget_chip_id(handle);
     if (chip_id != handle->chip_id) {
         handle->response_code = handle->force ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
         format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);

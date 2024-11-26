@@ -108,6 +108,21 @@ void eraseProm(firestarter_handle_t* handle) {
   }
 }
 
+void checkChipId(firestarter_handle_t* handle) {
+  debug("Check Chip ID");
+  if (handle->firestarter_check_chip_id ) {
+    int res = executeFunction(handle->firestarter_check_chip_id, handle);
+    if (res <= 0) {
+      return;
+    }
+    logOkBuf(handle->response_msg, "Chip ID matches");
+    handle->state = STATE_DONE;
+  }
+  else {
+    logError("Check Chip ID is not supported");
+  }
+}
+
 void blankCheck(firestarter_handle_t* handle) {
   debug("Blank check PROM");
   if (handle->firestarter_blank_check) {
@@ -119,7 +134,7 @@ void blankCheck(firestarter_handle_t* handle) {
     handle->state = STATE_DONE;
   }
   else {
-    logError("Blank check not supported");
+    logError("Blank check is not supported");
   }
 }
 
@@ -369,6 +384,9 @@ void loop() {
     break;
   case STATE_BLANK_CHECK:
     blankCheck(&handle);
+    break;
+  case STATE_CHECK_CHIP_ID:
+    checkChipId(&handle);
     break;
   case STATE_DONE:
     stateDone(&handle);

@@ -26,9 +26,9 @@ void flash_blank_check(firestarter_handle_t* handle);
 void flash_read_init(firestarter_handle_t* handle);
 void flash_write_init(firestarter_handle_t* handle);
 void flash_write_data(firestarter_handle_t* handle);
-uint16_t flash_get_chip_id(firestarter_handle_t* handle);
 void flash_check_chip_id(firestarter_handle_t* handle);
 
+uint16_t flash_get_chip_id(firestarter_handle_t* handle);
 void enable_write(firestarter_handle_t* handle);
 void internal_erase(firestarter_handle_t* handle);
 void flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data);
@@ -40,9 +40,10 @@ void configure_flash(firestarter_handle_t* handle) {
     debug("Configuring Flash");
     handle->firestarter_read_init = flash_read_init;
     handle->firestarter_write_init = flash_write_init;
+    handle->firestarter_write_data = flash_write_data;
     handle->firestarter_erase = flash_erase;
     handle->firestarter_blank_check = flash_blank_check;
-    handle->firestarter_write_data = flash_write_data;
+    handle->firestarter_check_chip_id = flash_check_chip_id;
 }
 
 void flash_read_init(firestarter_handle_t* handle) {
