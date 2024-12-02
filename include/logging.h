@@ -2,6 +2,7 @@
 #define LOGGING_H
 
 #include <avr/pgmspace.h>
+#include "rurp_shield.h"
 
 #define copyToBuffer( buf, msg) \
   strcpy_P(buf, PSTR(msg)); \
@@ -15,7 +16,7 @@
   logOkMsg(buf)
 
 #define logOkMsg(msg) \
-  log("OK", msg)
+  rurp_log("OK", msg)
 
 #define logOkf(buf, cformat, ...) \
   {format(buf, cformat, __VA_ARGS__);} \
@@ -31,7 +32,7 @@
 
 #define logInfoMsg(msg) \
   if(strlen(msg)){ \
-    log("INFO", msg); \
+    rurp_log("INFO", msg); \
   }
 
 #define logInfof(buf, cformat, ...) \
@@ -39,7 +40,7 @@
   logInfoMsg(buf)
 
 #define logDataMsg(msg) \
-  log("DATA", msg)
+  rurp_log("DATA", msg)
 
 #define logData(msg) \
   copyToBuffer(handle->response_msg, msg);\
@@ -54,7 +55,7 @@
   logWarnMsg(handle->response_msg)
 
 #define logWarnMsg(msg) \
-  log("WARN", msg)
+  rurp_log("WARN", msg)
 
 #define logWarnf(buf, cformat, ...) \
   {format(buf, cformat, __VA_ARGS__);} \
@@ -68,7 +69,7 @@
   logErrorMsg(buf)
 
 #define logErrorMsg(msg) \
-  log("ERROR", msg)
+  rurp_log("ERROR", msg)
 
 #define logErrorf(buf, cformat, ...) \
   {format(buf, cformat, __VA_ARGS__);} \
@@ -80,6 +81,5 @@
   copyToBuffer(msg, cformat);\
   sprintf(buf, msg, __VA_ARGS__)
 
-void log(const char* type, const char* msg);
 
 #endif // LOGGING_H

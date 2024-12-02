@@ -81,8 +81,10 @@ extern "C" {
     // Function prototypes
     void  rurp_setup();
 
-    // void restore_registers();
-
+    void rurp_set_programmer_mode();
+    void rurp_set_communication_mode();
+    void rurp_log(const char* type, const char* msg);
+    
     void rurp_set_data_as_output();
     void rurp_set_data_as_input();
 

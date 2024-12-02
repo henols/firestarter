@@ -14,8 +14,6 @@
 #define RX_DEBUG  A0
 #define TX_DEBUG  A1
 
-void debug_setup();
-void log_debug(const char* type, const char* msg);
 void debug_buf(const char* msg);
 
 #define debug(msg) \

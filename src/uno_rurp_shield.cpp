@@ -5,12 +5,13 @@
  * Permission is hereby granted under MIT license.
  */
 
+#ifdef ARDUINO_AVR_UNO
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "config.h"
+#include "debug.h"
 
-#if board == uno
 constexpr int CONFIG_START = 48;
 constexpr int VOLTAGE_MEASURE_PIN = A2;
 constexpr int HARDWARE_REVISION_PIN = A3;
@@ -51,8 +52,14 @@ constexpr int AVERAGE_OF = 500;
 
 rurp_configuration_t rurp_config;
 
+bool comMode = true;
 
 void load_config();
+
+#ifdef SERIAL_DEBUG
+void debug_setup();
+void log_debug(const char* type, const char* msg);
+#endif
 
 uint8_t lsb_address;
 uint8_t msb_address;
@@ -61,6 +68,8 @@ int revision = 5;
 
 
 void rurp_setup() {
+    debug_setup();
+
     rurp_set_data_as_output();
 
     pinMode(HARDWARE_REVISION_PIN, INPUT_PULLUP);
@@ -68,7 +77,7 @@ void rurp_setup() {
 
 
     int value = digitalRead(HARDWARE_REVISION_PIN);
-    
+
     switch (value) {
     case 1:
         revision = analogRead(VOLTAGE_MEASURE_PIN) < 1000 ? REVISION_1 : REVISION_0;
@@ -93,6 +102,38 @@ void rurp_setup() {
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
     rurp_write_to_register(CONTROL_REGISTER, 0x00);
     load_config();
+
+    rurp_set_communication_mode();
+}
+
+void rurp_set_communication_mode() {
+    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
+    DDRD &= ~(0x01);
+    Serial.begin(MONITOR_SPEED); // Initialize serial port
+
+    while (!Serial) {
+        delayMicroseconds(1);
+    }
+    Serial.flush();
+    delay(1);
+    comMode = true;
+}
+
+void rurp_set_programmer_mode() {
+    comMode = false;
+    Serial.end(); // Close serial port
+    DDRD |= 0x01;
+
+}
+
+void rurp_log(const char* type, const char* msg) {
+    log_debug(type, msg);
+    if (comMode) {
+        Serial.print(type);
+        Serial.print(": ");
+        Serial.println(msg);
+        Serial.flush();
+    }
 }
 
 #ifdef HARDWARE_REVISION
@@ -193,9 +234,9 @@ void rurp_write_to_register(uint8_t reg, register_t data) {
     default:
         return;
     }
-    rurp_write_data_buffer( data);
+    rurp_write_data_buffer(data);
     PORTB |= reg;
-// Probably useless - verify later    delayMicroseconds(1); 
+    // Probably useless - verify later    delayMicroseconds(1); 
     PORTB &= ~(reg);
 }
 
@@ -274,5 +315,23 @@ double rurp_get_voltage_average() {
 
     return voltage_average / AVERAGE_OF;
 }
+#ifdef SERIAL_DEBUG
+#include <SoftwareSerial.h>
+SoftwareSerial debugSerial(RX_DEBUG, TX_DEBUG);
 
+void debug_setup() {
+    debugSerial.begin(57600);
+}
+
+void debug_buf(const char* msg) {
+    log_debug("DEBUG", msg);
+}
+
+void log_debug(const char* type, const char* msg) {
+    debugSerial.print(type);
+    debugSerial.print(": ");
+    debugSerial.println(msg);
+    debugSerial.flush();
+}
+#endif
 #endif

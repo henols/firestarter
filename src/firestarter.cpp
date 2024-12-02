@@ -26,8 +26,6 @@ firestarter_handle_t handle;
 
 unsigned long timeout = 0;
 
-void setProgramerMode();
-void setCommunicationMode();
 void resetTimeout();
 
 int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
@@ -35,9 +33,7 @@ int checkResponse(firestarter_handle_t* handle);
 void getHwVersion();
 
 void setup() {
-  debug_setup();
   rurp_setup();
-  setCommunicationMode();
   handle.state = STATE_IDLE;
   debug("Firestarter started");
   debug_format("Firmware version: %s", VERSION);
@@ -232,7 +228,6 @@ void readVoltage(firestarter_handle_t* handle) {
 
 void parseJson(firestarter_handle_t* handle) {
   debug("Parse JSON");
-  handle->response_code = RESPONSE_CODE_OK;
   logInfoMsg((const char*)handle->data_buffer);
 
   jsmn_parser parser;
@@ -273,18 +268,16 @@ void parseJson(firestarter_handle_t* handle) {
   }
 }
 
-void setupProm(firestarter_handle_t* handle) {
+void setupEprom(firestarter_handle_t* handle) {
+
   if (Serial.available() <= 0) {
     return;
   }
-  debug("Setup PROM");
+  debug("Setup");
+  handle->response_code = RESPONSE_CODE_OK;
   handle->data_size = Serial.readBytes(handle->data_buffer, DATA_BUFFER_SIZE);
   if (handle->data_size == 0) {
     logError("Empty input");
-    return;
-  }
-  if (handle->data_buffer[0] != '{') {
-    logWarn("No JSON object");
     return;
   }
   debug_format("Setup buffer size: %d", handle->data_size);
@@ -350,7 +343,7 @@ void getConfig(firestarter_handle_t* handle) {
 
 void stateDone(firestarter_handle_t* handle) {
   debug("State done");
-  setProgramerMode();
+  rurp_set_programmer_mode();
   rurp_set_control_pin(CHIP_ENABLE, 1);
   rurp_set_control_pin(OUTPUT_ENABLE, 1);
   rurp_write_to_register(CONTROL_REGISTER, 0x00);
@@ -358,7 +351,7 @@ void stateDone(firestarter_handle_t* handle) {
   rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
   handle->state = STATE_IDLE;
   handle->response_code = RESPONSE_CODE_OK;
-  setCommunicationMode();
+  rurp_set_communication_mode();
   if (handle->response_msg[0] != '\0') {
     logInfoMsg(handle->response_msg);
   }
@@ -399,7 +392,7 @@ void loop() {
     handle.state = STATE_DONE;
     break;
   case STATE_IDLE:
-    setupProm(&handle);
+    setupEprom(&handle);
     break;
   case STATE_FW_VERSION:
     getFwVersion();
@@ -439,45 +432,16 @@ int checkResponse(firestarter_handle_t* handle) {
 }
 
 int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
-  setProgramerMode();
+  rurp_set_programmer_mode();
   if (callback != NULL) {
     callback(handle);
   }
-  setCommunicationMode();
+  rurp_set_communication_mode();
   delayMicroseconds(50);
   resetTimeout();
   return checkResponse(handle);
 }
 
-bool comMode = true;
 
-void setCommunicationMode() {
-  rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
-  DDRD &= ~(0x01);
-  Serial.begin(MONITOR_SPEED); // Initialize serial port
 
-  while (!Serial) {
-    delayMicroseconds(1);
-  }
-  Serial.flush();
-  delay(1);
-  comMode = true;
-}
-
-void setProgramerMode() {
-  comMode = false;
-  Serial.end(); // Close serial port
-  DDRD |= 0x01;
-
-}
-
-void log(const char* type, const char* msg) {
-  log_debug(type, msg);
-  if (comMode) {
-    Serial.print(type);
-    Serial.print(": ");
-    Serial.println(msg);
-    Serial.flush();
-  }
-}
 
