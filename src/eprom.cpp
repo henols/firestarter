@@ -26,15 +26,17 @@ void eprom_check_chip_id(firestarter_handle_t* handle);
 void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
 
-void (*set_control_register)(struct firestarter_handle*, register_t, bool);
+void (*ep_set_control_register)(struct firestarter_handle*, register_t, bool);
 
 void configure_eprom(firestarter_handle_t* handle) {
     debug("Configuring EPROM");
     handle->firestarter_read_init = eprom_read_init;
     handle->firestarter_write_init = eprom_write_init;
     handle->firestarter_write_data = eprom_write_data;
-    set_control_register = handle->firestarter_set_control_register;
+
+    ep_set_control_register = handle->firestarter_set_control_register;
     handle->firestarter_set_control_register = eprom_set_control_register;
+
     handle->firestarter_erase = eprom_erase;
     handle->firestarter_blank_check = eprom_blank_check;
     handle->firestarter_check_chip_id = eprom_check_chip_id;
@@ -245,5 +247,5 @@ void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bo
         bit &= ~VPE_ENABLE;
         bit |= P1_VPP_ENABLE;
     }
-    set_control_register(handle, bit, state);
+    ep_set_control_register(handle, bit, state);
 }

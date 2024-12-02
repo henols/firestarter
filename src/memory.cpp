@@ -8,6 +8,7 @@
 #include "memory.h"
 #include <Arduino.h>
 
+#include "memory_utils.h"
 #include "config.h"
 #include "eprom.h"
 #include "sram.h"
@@ -77,18 +78,6 @@ bool memory_get_control_register(firestarter_handle_t* handle, register_t bit) {
     return control_register & bit;
 }
 
-uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t rw) {
-    uint32_t reorg_address = config->address_mask & address;
-    for (int i = config->matching_lines; i < 19 && config->address_lines[i] != 0xFF; i++) {
-        if (config->address_lines[i] != i && address & (uint32_t)1 << i) {
-            reorg_address |= (uint32_t)1 << config->address_lines[i];
-        }
-    }
-    if (config->rw_line != 0xFF) {
-        reorg_address |= (uint32_t)rw << config->rw_line;
-    }
-    return reorg_address;
-}
 
 void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 #ifdef DEBUG_ADDRESS
@@ -137,10 +126,7 @@ void memory_read_data(firestarter_handle_t* handle) {
 }
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
-
-    if (handle->bus_config.address_lines[0] != 0xff || handle->bus_config.rw_line != 0xff) {
-        address = remap_address_bus(&handle->bus_config, address, READ_FLAG);
-    }
+    address = utils_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_set_data_as_input();
@@ -161,9 +147,7 @@ void memory_write_data(firestarter_handle_t* handle) {
 }
 
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
-    if (handle->bus_config.address_lines[0] != 0xff || handle->bus_config.rw_line != 0xff) {
-        address = remap_address_bus(&handle->bus_config, address, WRITE_FLAG);
-    }
+    address = utils_remap_address_bus(handle, address, WRITE_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);

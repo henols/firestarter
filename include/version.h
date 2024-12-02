@@ -1,10 +1,13 @@
+/*
+ * Project Name: Firestarter
+ * Copyright (c) 2024 Henrik Olsson
+ *
+ * Permission is hereby granted under MIT license.
+ */
+
 #ifndef VERSION_H
 #define VERSION_H
 
-#define VERSION "1.2.1"
-
-
-
-#define VERSION "1.2.3"
+#define VERSION "1.3.0"
 
 #endif // VERSION_H

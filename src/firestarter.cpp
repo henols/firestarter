@@ -440,6 +440,7 @@ int checkResponse(firestarter_handle_t* handle) {
 
 int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
   setProgramerMode();
+  handle->response_msg[0] = '\0';
   if (callback != NULL) {
     callback(handle);
   }

@@ -7,7 +7,7 @@
 
 #include <Arduino.h>
 #include "flash_type_3.h"
-#include "flash_util.h"
+#include "memory_utils.h"
 #include "firestarter.h"
 #include "rurp_shield.h"
 #include "logging.h"
@@ -76,7 +76,7 @@ void flash_3_write_data(firestarter_handle_t* handle) {
         f3_enable_write(handle);
         handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
 
-        flash_verify_operation(handle, handle->data_buffer[i]);
+        utils_verify_flash_operation(handle, handle->data_buffer[i]);
         if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;
         }
@@ -120,44 +120,21 @@ void flash_3_check_chip_id(firestarter_handle_t* handle) {
 }
 
 void f3_enable_write(firestarter_handle_t* handle) {
-    byte_flip_t byte_flips[] = {
-        {0x5555, 0xAA},
-        {0x2AAA, 0x55},
-        {0x5555, 0xA0},
-    };
-    flash_byte_flipping(handle, byte_flips, sizeof(byte_flips) / sizeof(byte_flips[0]));
+    utils_flash_byte_flipping(handle, flash_enable_write, sizeof(flash_enable_write) / sizeof(flash_enable_write[0]));
 }
 
 
 void f3_internal_erase(firestarter_handle_t* handle) {
-    byte_flip_t byte_flips[] = {
-        {0x5555, 0xAA},
-        {0x2AAA, 0x55},
-        {0x5555, 0x80},
-        {0x5555, 0xAA},
-        {0x2AAA, 0x55},
-        {0x5555, 0x10},
-    };
-    flash_byte_flipping(handle, byte_flips, sizeof(byte_flips) / sizeof(byte_flips[0]));
+    utils_flash_byte_flipping(handle, flash_erase, sizeof(flash_erase) / sizeof(flash_erase[0]));
     handle->firestarter_set_address(handle, 0x0000);
-    flash_verify_operation(handle, 0xFF);
+    utils_verify_flash_operation(handle, 0xFF);
 }
 
 uint16_t flash_3_get_chip_id(firestarter_handle_t* handle) {
-    byte_flip_t enable_id[] = {
-        {0x5555, 0xAA},
-        {0x2AAA, 0x55},
-        {0x5555, 0x90},
-    };
-    byte_flip disable_id[] = {
-        {0x5555, 0xAA},
-        {0x2AAA, 0x55},
-        {0x5555, 0xF0},
-    };
 
-    flash_byte_flipping(handle, enable_id, sizeof(enable_id) / sizeof(enable_id[0]));
+    utils_flash_byte_flipping(handle, flash_enable_id, sizeof(flash_enable_id) / sizeof(flash_enable_id[0]));
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
     chip_id |= (handle->firestarter_get_data(handle, 0x0001));
-    flash_byte_flipping(handle, disable_id, sizeof(disable_id) / sizeof(enable_id[0]));
+    utils_flash_byte_flipping(handle, flash_disable_id, sizeof(flash_disable_id) / sizeof(flash_enable_id[0]));
     return chip_id;
 }
