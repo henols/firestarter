@@ -61,14 +61,14 @@ void readProm(firestarter_handle_t* handle) {
     return;
   }
   debug("Read PROM");
-    if (handle->init && handle->firestarter_read_init != NULL) {
-      debug("Read PROM init");
-      handle->init = 0;
-      int res = executeFunction(handle->firestarter_read_init, handle);
-      if (res <= 0) {
-        return;
-      }
+  if (handle->init && handle->firestarter_read_init != NULL) {
+    debug("Read PROM init");
+    handle->init = 0;
+    int res = executeFunction(handle->firestarter_read_init, handle);
+    if (res <= 0) {
+      return;
     }
+  }
   int res = executeFunction(handle->firestarter_read_data, handle);
   if (res <= 0) {
     return;
@@ -106,7 +106,7 @@ void eraseProm(firestarter_handle_t* handle) {
 
 void checkChipId(firestarter_handle_t* handle) {
   debug("Check Chip ID");
-  if (handle->firestarter_check_chip_id ) {
+  if (handle->firestarter_check_chip_id) {
     int res = executeFunction(handle->firestarter_check_chip_id, handle);
     if (res <= 0) {
       return;
@@ -198,7 +198,7 @@ void initReadVoltage(firestarter_handle_t* handle) {
 
 void readVoltage(firestarter_handle_t* handle) {
   if (handle->init) {
-    if(rurp_get_hardware_revision() == REVISION_0){
+    if (rurp_get_hardware_revision() == REVISION_0) {
       logError("Rev0 dont support reading VPP/VPE");
       return;
     }
@@ -295,7 +295,7 @@ void setupEprom(firestarter_handle_t* handle) {
   }
 
 #ifdef HARDWARE_REVISION
-  logOkf(handle->response_msg, "FW: %s, HW: Rev%d, State 0x%02x", VERSION, rurp_get_hardware_revision(), handle->state);
+  logOkf(handle->response_msg, "FW: %s:%s, HW: Rev%d, State 0x%02x", VERSION, BOARD_NAME, rurp_get_hardware_revision(), handle->state);
 #else
   logOkf(handle->response_msg, "FW: %s, State 0x%02x", VERSION, handle->state);
 #endif
@@ -304,7 +304,7 @@ void setupEprom(firestarter_handle_t* handle) {
 
 void getFwVersion() {
   debug("Get FW version");
-  logOkBuf(handle.response_msg, VERSION);
+  logOkf(handle.response_msg, "%s:%s", VERSION, BOARD_NAME);
   handle.state = STATE_DONE;
 }
 

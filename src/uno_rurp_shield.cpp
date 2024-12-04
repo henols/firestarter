@@ -315,6 +315,7 @@ double rurp_get_voltage_average() {
 
     return voltage_average / AVERAGE_OF;
 }
+
 #ifdef SERIAL_DEBUG
 #include <SoftwareSerial.h>
 SoftwareSerial debugSerial(RX_DEBUG, TX_DEBUG);
