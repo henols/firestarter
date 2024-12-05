@@ -48,33 +48,12 @@ def calculate_version():
 
     major, minor, patch = get_header_version()
 
-    patch = int(patch) + 1
+    pattern = re.compile("[0-9]+")
+    if pattern.match(patch):
+        patch = int(patch) + 1
+    else:
+        patch = 0
     update_version(major, minor, patch)
-
-    # subprocess.run(
-    #     ["gh", "auth", "setup-git"],
-    #     check=True,
-    # )
-    # subprocess.run(
-    #     ["git", "add", "include/version.h"],
-    #     check=True,
-    # )
-
-    # subprocess.run(
-    #     ["git", "commit", "-m", f"Version {major}.{minor}.{patch}"],
-    #     check=True,
-    # )
-
-    # subprocess.run(
-    #     ["git", "push"],
-    #     check=True,
-    # )
-
-
-    # subprocess.run(
-    #     ["gh", "release", "create", "--generate-notes", f"{major}.{minor}.{patch}"],
-    #     check=True,
-    # )
 
     print(f"New versin created: {major}.{minor}.{patch}")
     with open(os.environ["GITHUB_OUTPUT"], "a") as fh:

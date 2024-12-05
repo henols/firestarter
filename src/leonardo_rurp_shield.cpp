@@ -5,7 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifdef ARDUINO_AVR_UNO
+
+#ifdef ARDUINO_AVR_LEONARDO
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -56,11 +57,6 @@ bool comMode = true;
 
 void load_config();
 
-#ifdef SERIAL_DEBUG
-void debug_setup();
-void log_debug(const char* type, const char* msg);
-#endif
-
 uint8_t lsb_address;
 uint8_t msb_address;
 register_t control_register;
@@ -68,8 +64,6 @@ int revision = 5;
 
 
 void rurp_setup() {
-    debug_setup();
-
     rurp_set_data_as_output();
 
     pinMode(HARDWARE_REVISION_PIN, INPUT_PULLUP);
@@ -127,13 +121,10 @@ void rurp_set_programmer_mode() {
 }
 
 void rurp_log(const char* type, const char* msg) {
-    log_debug(type, msg);
-    if (comMode) {
-        Serial.print(type);
-        Serial.print(": ");
-        Serial.println(msg);
-        Serial.flush();
-    }
+    Serial.print(type);
+    Serial.print(": ");
+    Serial.println(msg);
+    Serial.flush();
 }
 
 #ifdef HARDWARE_REVISION
@@ -317,22 +308,9 @@ double rurp_get_voltage_average() {
 }
 
 #ifdef SERIAL_DEBUG
-#include <SoftwareSerial.h>
-SoftwareSerial debugSerial(RX_DEBUG, TX_DEBUG);
-
-void debug_setup() {
-    debugSerial.begin(57600);
-}
-
 void debug_buf(const char* msg) {
-    log_debug("DEBUG", msg);
-}
-
-void log_debug(const char* type, const char* msg) {
-    debugSerial.print(type);
-    debugSerial.print(": ");
-    debugSerial.println(msg);
-    debugSerial.flush();
+    rurp_log("DEBUG", msg);
 }
 #endif
+
 #endif
