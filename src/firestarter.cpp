@@ -140,7 +140,8 @@ void writeProm(firestarter_handle_t* handle) {
     handle->data_size = Serial.read() << 8;
     handle->data_size |= Serial.read();
     if (handle->data_size == 0) {
-      logOk("Premature end of data");
+      logWarn("Premature end of data");
+      // logOk("Memory written");
       handle->state = STATE_DONE;
       return;
     }
