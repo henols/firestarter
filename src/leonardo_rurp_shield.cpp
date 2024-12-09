@@ -8,6 +8,7 @@
 
 #ifdef ARDUINO_AVR_LEONARDO
 #include "rurp_shield.h"
+#include "rurp_utils.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "config.h"
@@ -20,42 +21,48 @@ constexpr int HARDWARE_REVISION_PIN = A3;
 constexpr int INPUT_RESOLUTION = 1023;
 constexpr int AVERAGE_OF = 500;
 
-#ifdef HARDWARE_REVISION
+// #ifdef HARDWARE_REVISION
 
-// REV 1
-#define REV_1_VPE_TO_VPP      0x01
-#define REV_1_A9_VPP_ENABLE   0x02
-#define REV_1_VPE_ENABLE      0x04
-#define REV_1_P1_VPP_ENABLE   0x08
-#define REV_1_RW              0x40
-#define REV_1_REGULATOR       0x80
+// // REV 1
+// #define REV_1_VPE_TO_VPP      0x01
+// #define REV_1_A9_VPP_ENABLE   0x02
+// #define REV_1_VPE_ENABLE      0x04
+// #define REV_1_P1_VPP_ENABLE   0x08
+// #define REV_1_RW              0x40
+// #define REV_1_REGULATOR       0x80
 
-#define REV_1_A16             REV_1_VPE_TO_VPP
-#define REV_1_A17             0x10
-#define REV_1_A18             0x20
+// #define REV_1_A16             REV_1_VPE_TO_VPP
+// #define REV_1_A17             0x10
+// #define REV_1_A18             0x20
 
-// REV 2
-#define REV_2_VPE_TO_VPP      0x01
-#define REV_2_A9_VPP_ENABLE   0x02
-#define REV_2_VPE_ENABLE      0x04
-#define REV_2_P1_VPP_ENABLE   0x08
-#define REV_2_P30             0x10
-#define REV_2_P2              0x20
-#define REV_2_P31             0x40
-#define REV_2_REGULATOR       0x80
+// // REV 2
+// #define REV_2_VPE_TO_VPP      0x01
+// #define REV_2_A9_VPP_ENABLE   0x02
+// #define REV_2_VPE_ENABLE      0x04
+// #define REV_2_P1_VPP_ENABLE   0x08
+// #define REV_2_P30             0x10
+// #define REV_2_P2              0x20
+// #define REV_2_P31             0x40
+// #define REV_2_REGULATOR       0x80
 
-#define REV_2_P1              P1_VPP_ENABLE
-#define REV_2_RW              REV_2_P31
-#define REV_2_A16             REV_2_P2
-#define REV_2_A17             REV_2_P30
-#define REV_2_A18             P1_VPP_ENABLE
-#endif
+// #define REV_2_P1              P1_VPP_ENABLE
+// #define REV_2_RW              REV_2_P31
+// #define REV_2_A16             REV_2_P2
+// #define REV_2_A17             REV_2_P30
+// #define REV_2_A18             P1_VPP_ENABLE
+// #endif
 
 rurp_configuration_t rurp_config;
 
 bool comMode = true;
 
 void load_config();
+
+void set_port_b(uint8_t data);
+void set_port_d(uint8_t data);
+
+uint8_t get_port_d();
+uint8_t get_port_b();
 
 uint8_t lsb_address;
 uint8_t msb_address;
@@ -85,10 +92,15 @@ void rurp_setup() {
     }
     pinMode(VOLTAGE_MEASURE_PIN, INPUT);
 
+    // Set 'PORTB' to input
+    // DDRB |= 0xF0;
+    // DDRD |= 0x40;
+    // DDRC |= 0x80;
+    for (int i = 8; i <= 13; i++) {
+        pinMode(i, OUTPUT);
+    }
 
-    DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | RW;
 
-    PORTB = OUTPUT_ENABLE | CHIP_ENABLE;
     lsb_address = 0xff;
     msb_address = 0xff;
     control_register = 0xff;
@@ -97,34 +109,38 @@ void rurp_setup() {
     rurp_write_to_register(CONTROL_REGISTER, 0x00);
     load_config();
 
-    rurp_set_communication_mode();
-}
-
-void rurp_set_communication_mode() {
-    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
-    DDRD &= ~(0x01);
     Serial.begin(MONITOR_SPEED); // Initialize serial port
-
     while (!Serial) {
         delayMicroseconds(1);
     }
     Serial.flush();
     delay(1);
-    comMode = true;
 }
 
-void rurp_set_programmer_mode() {
-    comMode = false;
-    Serial.end(); // Close serial port
-    DDRD |= 0x01;
-
+int rurp_communication_available() {
+    return Serial.available();
 }
+int rurp_communication_read() {
+    return Serial.read();
+}
+
+size_t rurp_communication_read_bytes(char* buffer, size_t length) {
+    return Serial.readBytes(buffer, length);
+}
+
+size_t rurp_communication_write(const char* buffer, size_t size) {
+    size_t bytes = Serial.write(buffer, size);
+    Serial.flush();
+    return bytes;
+}
+
 
 void rurp_log(const char* type, const char* msg) {
     Serial.print(type);
     Serial.print(": ");
     Serial.println(msg);
     Serial.flush();
+    delay(5);
 }
 
 #ifdef HARDWARE_REVISION
@@ -168,36 +184,24 @@ rurp_configuration_t* rurp_get_config() {
 }
 
 void rurp_set_data_as_output() {
-    DDRD = 0xff;
+    // DDRD |= 0x04 & 0x08 & 0x02 & 0x01 & 0x10 & 0x80;
+    // DDRC |= 0x40;
+    // DDRE |= 0x40;
+    for (int i = 0; i < 8; i++) {
+        pinMode(i, OUTPUT);
+    }
+
 }
 
 void rurp_set_data_as_input() {
-    DDRD = 0x00;
-}
-
-#ifdef HARDWARE_REVISION
-uint8_t map_ctrl_reg_to_hardware_revision(uint16_t data) {
-    uint8_t ctrl_reg = 0;
-    int hw = rurp_get_hardware_revision();
-    switch (hw) {
-    case REVISION_2:
-        ctrl_reg = data & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | A17 | RW | REGULATOR);
-        ctrl_reg |= data & VPE_TO_VPP ? REV_2_VPE_TO_VPP : 0;
-        ctrl_reg |= data & A16 ? REV_2_A16 : 0;
-        ctrl_reg |= data & A18 ? REV_2_A18 : 0;
-        break;
-    case REVISION_0:
-    case REVISION_1:
-        ctrl_reg = data;
-        ctrl_reg |= data & VPE_TO_VPP ? REV_1_VPE_TO_VPP : 0;
-        break;
-    default:
-        break;
+    // DDRD &= ~(0x04 & 0x08 & 0x02 & 0x01 & 0x10 & 0x80);
+    // DDRC &= ~0x40;
+    // DDRE &= ~0x40;
+    for (int i = 0; i < 8; i++) {
+        pinMode(i, INPUT);
     }
-
-    return ctrl_reg;
 }
-#endif
+
 
 void rurp_write_to_register(uint8_t reg, register_t data) {
     switch (reg) {
@@ -219,16 +223,16 @@ void rurp_write_to_register(uint8_t reg, register_t data) {
         }
         control_register = data;
 #ifdef HARDWARE_REVISION
-        data = map_ctrl_reg_to_hardware_revision(data);
+        data = rurp_map_ctrl_reg_to_hardware_revision(data);
 #endif
         break;
     default:
         return;
     }
     rurp_write_data_buffer(data);
-    PORTB |= reg;
-    // Probably useless - verify later    delayMicroseconds(1); 
-    PORTB &= ~(reg);
+    uint8_t v = get_port_b();
+    set_port_b(v | reg);
+    set_port_b(v);
 }
 
 register_t rurp_read_from_register(uint8_t reg) {
@@ -244,40 +248,44 @@ register_t rurp_read_from_register(uint8_t reg) {
 }
 
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
+    uint8_t b = get_port_b();
     if (state) {
-        PORTB |= pin;
+        set_port_b(b |= pin);
     }
     else {
-        PORTB &= ~(pin);
+        set_port_b(b &= ~(pin));
     }
+    // volatile uint8_t* out = portOutputRegister(PORTD);
+
 }
 
 
 void rurp_write_data_buffer(uint8_t data) {
     rurp_set_data_as_output();
-    PORTD = data;
+    set_port_d(data);
 }
 
 uint8_t rurp_read_data_buffer() {
-    return PIND;
+    return get_port_d();
 }
 
 double rurp_read_vcc() {
     // Read 1.1V reference against AVcc
     // Set the analog reference to the internal 1.1V
     // Default is analogReference(DEFAULT) which is connected to the external 5V
-    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
 
     delay(2); // Wait for voltage to stabilize
     ADCSRA |= _BV(ADSC); // Start conversion
     while (bit_is_set(ADCSRA, ADSC)); // Wait for conversion to complete
-
+    ADCSRA |= _BV(ADSC); // Start conversion
+    while (bit_is_set(ADCSRA, ADSC)); // measuring
     long result = ADCL;
     result |= ADCH << 8;
 
     // Calculate Vcc (supply voltage) in millivolts
     // 1100 mV * 1024 ADC steps / ADC reading
-    return 1126400L / (double)result / 1000;
+    return 1125300L / result / 1000;
 }
 
 
@@ -307,10 +315,100 @@ double rurp_get_voltage_average() {
     return voltage_average / AVERAGE_OF;
 }
 
+// Function to set Arduino digital pins 8-13 on the ATmega328U4
+void set_port_b(uint8_t data) {
+    // Map Arduino digital pins 8-13 to ATmega328U4 port bits
+    // Arduino Pin    ATmega328U4 Port Pin
+    // 8              PB4
+    // 9              PB5
+    // 10             PB6
+    // 11             PB7
+    // 12             PD6
+    // 13             PC7
+
+    // // Use masks for efficient clearing and setting
+    // PORTB = (PORTB & ~((1 << PB4) | //
+    //     (1 << PB5) | (1 << PB6) | //
+    //     (1 << PB7))) | //
+    //     (((data & 0x01) << PB4) |//
+    //         ((data & 0x02) << (PB5 - 1)) |//
+    //         ((data & 0x04) << (PB6 - 2)) | //
+    //         ((data & 0x08) << (PB7 - 3)));
+
+    // PORTD = (PORTD & ~(1 << PD6)) | ((data & 0x10) << (PD6 - 4));
+    // PORTC = (PORTC & ~(1 << PC7)) | ((data & 0x20) << (PC7 - 5));
+    for (int i = 8; i <= 13; i++) {
+        if (data & (1 << (i - 8))) {
+            digitalWrite(i, HIGH);
+        }
+        else {
+            digitalWrite(i, LOW);
+        }
+    }
+
+}
+
+// Function to get the current state of Arduino digital pins 0-7 on the ATmega328U4
+uint8_t get_port_d() {
+    uint8_t data = 0;
+    // data |= PIND & 0x04 ? 0x01 : 0x00;
+    // data |= PIND & 0x08 ? 0x02 : 0x00;
+    // data |= PIND & 0x02 ? 0x04 : 0x00;
+    // data |= PIND & 0x01 ? 0x08 : 0x00;
+    // data |= PIND & 0x0F ? 0x10 : 0x00;
+    // data |= PINC & 0x40 ? 0x20 : 0x00;
+    // data |= PIND & 0x80 ? 0x40 : 0x00;
+    // data |= PINE & 0x40 ? 0x80 : 0x00;
+    for (int i = 0; i < 8; i++) {
+        data |= digitalRead(i) ? 1 << i : 0x00;
+    }
+    return data;
+}
+
+void set_port_d(uint8_t byte) {
+    for (int i = 0; i < 8; i++) {
+        if (byte & (1 << i)) {
+            digitalWrite(i, HIGH);
+        }
+        else {
+            digitalWrite(i, LOW);
+        }
+    }
+    // Clear all relevant bits on PORTD, PORTE, and PORTF
+    // PORTD &= ~((1 << PD1) | (1 << PD0) | (1 << PD4) | (1 << PD6) | (1 << PD7));
+    // PORTE &= ~(1 << PE6);
+    // PORTF &= ~((1 << PF7) | (1 << PF6));
+
+    // // Set the bits based on the input byte
+    // PORTD |= ((byte & 0x01) << PD1) |  // Bit 0 -> PD1 (Pin 2)
+    //     ((byte & 0x02) >> 1) |    // Bit 1 -> PD0 (Pin 3)
+    //     ((byte & 0x04) << 2) |    // Bit 2 -> PD4 (Pin 4)
+    //     ((byte & 0x08) << 3) |    // Bit 3 -> PD6 (Pin 5)
+    //     ((byte & 0x10) << 3);     // Bit 4 -> PD7 (Pin 6)
+    // PORTE |= ((byte & 0x20) >> 5);     // Bit 5 -> PE6 (Pin 7)
+    // PORTF |= ((byte & 0x40) >> 1) |    // Bit 6 -> PF7 (Pin 0)
+    //     ((byte & 0x80) >> 1);     // Bit 7 -> PF6 (Pin 1)
+}
+
+uint8_t get_port_b() {
+    uint8_t data = 0;
+    // data |= PINB & 0x10 ? 0x01 : 0x00;
+    // data |= PINB & 0x20 ? 0x02 : 0x00;
+    // data |= PINB & 0x40 ? 0x04 : 0x00;
+    // data |= PINB & 0x80 ? 0x08 : 0x00;
+    // data |= PIND & 0x40 ? 0x10 : 0x00;
+    // data |= PINC & 0x80 ? 0x20 : 0x00;
+    for (int i = 8; i <= 13; i++) {
+        data |= digitalRead(i) ? 1 << (i - 8) : 0x00;
+    }
+    return data;
+}
+
 #ifdef SERIAL_DEBUG
 void debug_buf(const char* msg) {
     rurp_log("DEBUG", msg);
 }
+
 #endif
 
 #endif

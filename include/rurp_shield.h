@@ -13,9 +13,11 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stddef.h>
 #include "config.h"
+#include "rurp_defines.h"
 
-// Constants
+    // Constants
 #define CONFIG_VERSION  "VER05"
 
 // Default configuration
@@ -32,37 +34,6 @@ extern "C" {
 #define CHIP_ENABLE 0x20             // CHIP ENABLE
 
 
-// CONTROL REGISTER
-#ifndef HARDWARE_REVISION
-#define VPE_TO_VPP      0x01
-#define A16             VPE_TO_VPP
-#define A9_VPP_ENABLE   0x02
-#define VPE_ENABLE      0x04
-#define P1_VPP_ENABLE   0x08
-#define A17             0x10
-#define A18             0x20
-#define RW              0x40
-#define REGULATOR       0x80
-
-#else
-#define REVISION_0 0
-#define REVISION_1 1
-#define REVISION_2 2
-
-#define A16             0x01
-#define A9_VPP_ENABLE   0x02
-#define VPE_ENABLE      0x04
-#define P1_VPP_ENABLE   0x08
-#define A17             0x10
-#define A18             0x20
-#define RW              0x40
-#define REGULATOR       0x80
-#define VPE_TO_VPP      0x100
-
-#endif
-
-#define A13             0x20
-
 #ifndef HARDWARE_REVISION
 #define register_t uint8_t
 #else
@@ -70,21 +41,31 @@ extern "C" {
 #endif
 
 // Struct definition
-    typedef struct  {
+    typedef struct rurp_configuration {
         char version[6];
         double vcc;
         long  r1;
         long  r2;
-        uint8_t hardware_revision; 
+        uint8_t hardware_revision;
     } rurp_configuration_t;
 
     // Function prototypes
     void  rurp_setup();
 
+#ifdef SERIAL_ON_IO
     void rurp_set_programmer_mode();
     void rurp_set_communication_mode();
+#else
+#define rurp_set_programmer_mode();
+#define rurp_set_communication_mode();
+#endif
+    int rurp_communication_available();
+    int rurp_communication_read();
+    size_t rurp_communication_write(const char* buffer, size_t size);
+    size_t rurp_communication_read_bytes(char* buffer, size_t length);
+
     void rurp_log(const char* type, const char* msg);
-    
+
     void rurp_set_data_as_output();
     void rurp_set_data_as_input();
 
@@ -101,9 +82,11 @@ extern "C" {
     double rurp_get_voltage_average();
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config();
+
 #ifdef HARDWARE_REVISION
     int rurp_get_hardware_revision();
     int rurp_get_physical_hardware_revision();
+
 #endif
 
 #ifdef __cplusplus
