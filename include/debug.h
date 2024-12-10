@@ -11,8 +11,6 @@
 #ifdef SERIAL_DEBUG
 #include <Arduino.h>
 #include "logging.h"
-#define RX_DEBUG  A0
-#define TX_DEBUG  A1
 
 void debug_buf(const char* msg);
 

@@ -81,6 +81,7 @@ void readProm(firestarter_handle_t* handle) {
 
   handle->address += DATA_BUFFER_SIZE;
   if (handle->address == handle->mem_size) {
+    while(!waitCheckForOK());
     logOkf(handle->response_msg, "Read data from address 0x00 to 0x%lx", handle->mem_size);
     handle->state = STATE_DONE;
     return;
@@ -141,23 +142,13 @@ void writeProm(firestarter_handle_t* handle) {
     handle->data_size |= rurp_communication_read();
     if (handle->data_size == 0) {
       logWarn("Premature end of data");
-      // logOk("Memory written");
+      logOk("Memory written");
       handle->state = STATE_DONE;
       return;
     }
-    logOkf(handle->response_msg, "Expecting data size %d", handle->data_size);
+
+    logOkf(handle->response_msg, "Reciving %d bytes", handle->data_size);
     int len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
-
-    // debug_format("Write buffer: %.10s...", handle->data_buffer);
-
-    if (handle->init && handle->firestarter_write_init != NULL) {
-      debug("Write PROM init");
-      handle->init = 0;
-      int res = executeFunction(handle->firestarter_write_init, handle);
-      if (res <= 0) {
-        return;
-      }
-    }
 
     if ((uint32_t)len != handle->data_size) {
       logErrorf(handle->response_msg, "Not enough data, expected %d, got %d", (int)handle->data_size, len);
@@ -167,6 +158,15 @@ void writeProm(firestarter_handle_t* handle) {
       logError("Address out of range");
       return;
     }
+
+    if (handle->firestarter_write_init != NULL && handle->init) {
+      debug("Write PROM init");
+      int res = executeFunction(handle->firestarter_write_init, handle);
+      if (res <= 0) {
+        return;
+      }
+    }
+    handle->init = 0;
 
     // debug("Write PROM exec");
     int res = executeFunction(handle->firestarter_write_data, handle);
@@ -209,7 +209,6 @@ void readVoltage(firestarter_handle_t* handle) {
       return;
     }
     logOk("Voltage read setup");
-
   }
 
   if (!waitCheckForOK()) {
@@ -275,15 +274,15 @@ void setupEprom(firestarter_handle_t* handle) {
   if (rurp_communication_available() <= 0) {
     return;
   }
-  debug("Setup");
   handle->response_code = RESPONSE_CODE_OK;
   handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
   if (handle->data_size == 0) {
     logError("Empty input");
     return;
   }
-  debug_format("Setup buffer size: %d", handle->data_size);
-  logInfof(handle->response_msg, "Number bytes %d", handle->data_size);
+  debug("Setup");
+  handle->data_buffer[handle->data_size] = '\0';
+  logInfof(handle->response_msg, "Setup buffer size: %d", handle->data_size);
 
   parseJson(handle);
 
@@ -353,13 +352,10 @@ void stateDone(firestarter_handle_t* handle) {
   handle->state = STATE_IDLE;
   handle->response_code = RESPONSE_CODE_OK;
   rurp_set_communication_mode();
-  if (handle->response_msg[0] != '\0') {
-    logInfoMsg(handle->response_msg);
-  }
+  handle->response_msg[0] = '\0';
 }
 
 void loop() {
-  handle.response_msg[0] = '\0';
   if (handle.state != STATE_IDLE && timeout < millis()) {
     logErrorBuf(handle.response_msg, "Timeout");
     resetTimeout();

@@ -40,7 +40,8 @@ void configure_eprom(firestarter_handle_t* handle) {
     handle->firestarter_check_chip_id = eprom_check_chip_id;
 }
 
-uint16_t epromget_chip_id(firestarter_handle_t* handle) {
+uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
+    debug("Get chip ID");
     handle->firestarter_set_control_register(handle, REGULATOR, 1);
     delay(50);
 
@@ -55,7 +56,8 @@ uint16_t epromget_chip_id(firestarter_handle_t* handle) {
 }
 
 void eprom_check_chip_id(firestarter_handle_t* handle) {
-    uint16_t chip_id = epromget_chip_id(handle);
+    debug("Check chip ID");
+    uint16_t chip_id = eprom_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
         handle->response_code = handle->force ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
         format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
@@ -63,6 +65,7 @@ void eprom_check_chip_id(firestarter_handle_t* handle) {
 }
 
 void eprom_internal_erase(firestarter_handle_t* handle) {
+    debug("Internal erase");
     handle->firestarter_set_control_register(handle, REGULATOR, 1); //Enable regulator without dropping resistor
     delay(100);
     handle->firestarter_set_address(handle, 0x0000);
@@ -77,6 +80,7 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
 
 #ifdef TEST_VPP_BEFORE_WRITE
 void eprom_check_vpp(firestarter_handle_t* handle) {
+    debug("Check VPP");
 #ifdef HARDWARE_REVISION
     if (rurp_get_hardware_revision() == REVISION_0) {
         handle->response_code = RESPONSE_CODE_WARNING;
@@ -88,7 +92,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
     delay(100);
     double vpp = rurp_read_voltage();
-#ifdef DEBUG
+#ifdef SERIAL_DEBUG
     char vppStr[6];
     dtostrf(vpp, 2, 2, vppStr);
     debug_format("Checking VPP voltage %s", vppStr);
@@ -115,6 +119,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 #endif
 
 void eprom_erase(firestarter_handle_t* handle) {
+    debug("Erase");
     if (handle->chip_id > 0) {
         eprom_check_chip_id(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {
@@ -131,6 +136,7 @@ void eprom_erase(firestarter_handle_t* handle) {
 }
 
 void eprom_blank_check(firestarter_handle_t* handle) {
+    debug("Blank check");
     for (uint32_t i = 0; i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {

@@ -58,6 +58,9 @@ bool comMode = true;
 void load_config();
 
 #ifdef SERIAL_DEBUG
+#define RX_DEBUG  A0
+#define TX_DEBUG  A1
+
 void debug_setup();
 void log_debug(const char* type, const char* msg);
 #endif
@@ -116,7 +119,7 @@ void rurp_set_communication_mode() {
         delayMicroseconds(1);
     }
     Serial.flush();
-    delayMicroseconds(50);
+    // delayMicroseconds(50);
     comMode = true;
 }
 

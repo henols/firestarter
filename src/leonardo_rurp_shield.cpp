@@ -140,7 +140,6 @@ void rurp_log(const char* type, const char* msg) {
     Serial.print(": ");
     Serial.println(msg);
     Serial.flush();
-    delay(5);
 }
 
 #ifdef HARDWARE_REVISION
@@ -408,7 +407,6 @@ uint8_t get_port_b() {
 void debug_buf(const char* msg) {
     rurp_log("DEBUG", msg);
 }
-
 #endif
 
 #endif
