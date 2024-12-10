@@ -14,7 +14,6 @@
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
-#include "config.h"
 
 #include "debug.h"
 

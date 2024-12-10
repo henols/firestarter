@@ -9,7 +9,6 @@
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include <EEPROM.h>
-#include "config.h"
 #include "debug.h"
 #include "rurp_utils.h"
 

@@ -11,7 +11,6 @@
 #include "rurp_utils.h"
 #include <Arduino.h>
 #include <EEPROM.h>
-#include "config.h"
 #include "debug.h"
 
 constexpr int CONFIG_START = 48;

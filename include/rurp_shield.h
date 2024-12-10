@@ -13,9 +13,6 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include <stddef.h>
-#include "config.h"
-#include "rurp_defines.h"
 
     // Constants
 #define CONFIG_VERSION  "VER05"

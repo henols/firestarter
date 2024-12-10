@@ -8,7 +8,6 @@
 #include "memory.h"
 #include <Arduino.h>
 
-#include "config.h"
 #include "eprom.h"
 #include "sram.h"
 #include "flash.h"

@@ -8,7 +8,6 @@
 #include "eprom.h"
 #include <avr/pgmspace.h>
 #include <stdio.h>
-#include "config.h"
 #include "firestarter.h"
 #include "rurp_shield.h"
 #include <Arduino.h>
