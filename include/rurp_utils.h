@@ -2,8 +2,10 @@
 #define RURP_UTILS_H
 
 #include <stdint.h>
-#include "config.h"
-#include "rurp_defines.h"
+#include <EEPROM.h>
+#include <string.h>
+
+#include "rurp_shield.h"
 
 #ifdef HARDWARE_REVISION
     int rurp_get_hardware_revision();
@@ -31,4 +33,39 @@ uint8_t rurp_map_ctrl_reg_to_hardware_revision(uint16_t data) {
     return ctrl_reg;
 }
 #endif
+
+#define CONFIG_START 48
+
+void load_config() {
+    rurp_configuration_t *rurp_config = rurp_get_config();
+    EEPROM.get(CONFIG_START, rurp_config);
+    rurp_validate_config();
+}
+
+void rurp_save_config() {
+    rurp_configuration_t *rurp_config = rurp_get_config();
+    EEPROM.put(CONFIG_START, rurp_config);
+}
+
+void rurp_validate_config() {
+        rurp_configuration_t* rurp_config = rurp_get_config();
+        if (strcmp(rurp_config->version, "VER03") == 0 || strcmp(rurp_config->version, "VER04") == 0) {
+            strcpy(rurp_config->version, CONFIG_VERSION);
+            if (strcmp(rurp_config->version, "VER03") == 0 || rurp_config->hardware_revision == 0x00) {
+                rurp_config->hardware_revision = 0xFF;
+            }
+            rurp_save_config();
+        }
+        else if (strcmp(rurp_config->version, CONFIG_VERSION) != 0) {
+            strcpy(rurp_config->version, CONFIG_VERSION);
+            rurp_config->vcc = ARDUINO_VCC;
+            rurp_config->r1 = VALUE_R1;
+            rurp_config->r2 = VALUE_R2;
+            rurp_config->hardware_revision = 0xFF;
+            rurp_save_config();
+        }
+    }
+
+#include <string.h>
+
 #endif // RURP_UTILS_H

@@ -7,48 +7,16 @@
 
 #ifdef ARDUINO_AVR_UNO
 #include "rurp_shield.h"
-#include <Arduino.h>
 #include <EEPROM.h>
-#include "debug.h"
+#include <Arduino.h>
 #include "rurp_utils.h"
+#include "debug.h"
 
-constexpr int CONFIG_START = 48;
 constexpr int VOLTAGE_MEASURE_PIN = A2;
 constexpr int HARDWARE_REVISION_PIN = A3;
 
 constexpr int INPUT_RESOLUTION = 1023;
 constexpr int AVERAGE_OF = 500;
-
-// #ifdef HARDWARE_REVISION
-
-// // REV 1
-// #define REV_1_VPE_TO_VPP      0x01
-// #define REV_1_A9_VPP_ENABLE   0x02
-// #define REV_1_VPE_ENABLE      0x04
-// #define REV_1_P1_VPP_ENABLE   0x08
-// #define REV_1_RW              0x40
-// #define REV_1_REGULATOR       0x80
-
-// #define REV_1_A16             REV_1_VPE_TO_VPP
-// #define REV_1_A17             0x10
-// #define REV_1_A18             0x20
-
-// // REV 2
-// #define REV_2_VPE_TO_VPP      0x01
-// #define REV_2_A9_VPP_ENABLE   0x02
-// #define REV_2_VPE_ENABLE      0x04
-// #define REV_2_P1_VPP_ENABLE   0x08
-// #define REV_2_P30             0x10
-// #define REV_2_P2              0x20
-// #define REV_2_P31             0x40
-// #define REV_2_REGULATOR       0x80
-
-// #define REV_2_P1              P1_VPP_ENABLE
-// #define REV_2_RW              REV_2_P31
-// #define REV_2_A16             REV_2_P2
-// #define REV_2_A17             REV_2_P30
-// #define REV_2_A18             P1_VPP_ENABLE
-// #endif
 
 rurp_configuration_t rurp_config;
 
@@ -72,6 +40,7 @@ int revision = 5;
 
 void rurp_setup() {
     debug_setup();
+
 
     rurp_set_data_as_output();
 
@@ -169,28 +138,6 @@ int rurp_get_physical_hardware_revision() {
 }
 #endif
 
-void load_config() {
-    EEPROM.get(CONFIG_START, rurp_config);
-    if (strcmp(rurp_config.version, "VER03") == 0 || strcmp(rurp_config.version, "VER04") == 0) {
-        strcpy(rurp_config.version, CONFIG_VERSION);
-        if (strcmp(rurp_config.version, "VER03") == 0 || rurp_config.hardware_revision == 0x00) {
-            rurp_config.hardware_revision = 0xFF;
-        }
-        rurp_save_config();
-    }
-    else if (strcmp(rurp_config.version, CONFIG_VERSION) != 0) {
-        strcpy(rurp_config.version, CONFIG_VERSION);
-        rurp_config.vcc = ARDUINO_VCC;
-        rurp_config.r1 = VALUE_R1;
-        rurp_config.r2 = VALUE_R2;
-        rurp_config.hardware_revision = 0xFF;
-        rurp_save_config();
-    }
-}
-
-void rurp_save_config() {
-    EEPROM.put(CONFIG_START, rurp_config);
-}
 
 rurp_configuration_t* rurp_get_config() {
     return &rurp_config;

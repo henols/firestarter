@@ -13,8 +13,72 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stddef.h>
+#include <string.h>
 
-    // Constants
+    // CONTROL REGISTER
+#ifndef HARDWARE_REVISION
+#define VPE_TO_VPP      0x01
+#define A16             VPE_TO_VPP
+#define A9_VPP_ENABLE   0x02
+#define VPE_ENABLE      0x04
+#define P1_VPP_ENABLE   0x08
+#define A17             0x10
+#define A18             0x20
+#define RW              0x40
+#define REGULATOR       0x80
+
+#else
+#define REVISION_0 0
+#define REVISION_1 1
+#define REVISION_2 2
+
+#define A16             0x01
+#define A9_VPP_ENABLE   0x02
+#define VPE_ENABLE      0x04
+#define P1_VPP_ENABLE   0x08
+#define A17             0x10
+#define A18             0x20
+#define RW              0x40
+#define REGULATOR       0x80
+#define VPE_TO_VPP      0x100
+
+#endif
+
+#define A13             0x20
+#ifdef HARDWARE_REVISION
+
+// REV 1
+#define REV_1_VPE_TO_VPP      0x01
+#define REV_1_A9_VPP_ENABLE   0x02
+#define REV_1_VPE_ENABLE      0x04
+#define REV_1_P1_VPP_ENABLE   0x08
+#define REV_1_RW              0x40
+#define REV_1_REGULATOR       0x80
+
+#define REV_1_A16             REV_1_VPE_TO_VPP
+#define REV_1_A17             0x10
+#define REV_1_A18             0x20
+
+// REV 2
+#define REV_2_VPE_TO_VPP      0x01
+#define REV_2_A9_VPP_ENABLE   0x02
+#define REV_2_VPE_ENABLE      0x04
+#define REV_2_P1_VPP_ENABLE   0x08
+#define REV_2_P30             0x10
+#define REV_2_P2              0x20
+#define REV_2_P31             0x40
+#define REV_2_REGULATOR       0x80
+
+#define REV_2_P1              P1_VPP_ENABLE
+#define REV_2_RW              REV_2_P31
+#define REV_2_A16             REV_2_P2
+#define REV_2_A17             REV_2_P30
+#define REV_2_A18             P1_VPP_ENABLE
+#endif
+
+
+// Constants
 #define CONFIG_VERSION  "VER05"
 
 // Default configuration
@@ -38,7 +102,7 @@ extern "C" {
 #endif
 
 // Struct definition
-    typedef struct rurp_configuration {
+    typedef   struct rurp_configuration {
         char version[6];
         double vcc;
         long  r1;
@@ -56,6 +120,7 @@ extern "C" {
 #define rurp_set_programmer_mode();
 #define rurp_set_communication_mode();
 #endif
+
     int rurp_communication_available();
     int rurp_communication_read();
     size_t rurp_communication_write(const char* buffer, size_t size);
@@ -80,14 +145,15 @@ extern "C" {
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config();
 
+    void rurp_validate_config() ;
 #ifdef HARDWARE_REVISION
-    int rurp_get_hardware_revision();
-    int rurp_get_physical_hardware_revision();
+        int rurp_get_hardware_revision();
+        int rurp_get_physical_hardware_revision();
 
 #endif
 
 #ifdef __cplusplus
-}
+    }
 #endif
 
 #endif // RURP_SHIELD_H
