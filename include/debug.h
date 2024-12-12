@@ -8,7 +8,6 @@
 #ifndef __DEBUG_C__
 #define __DEBUG_C__
 #ifdef SERIAL_DEBUG
-#include <Arduino.h>
 #include "logging.h"
 
 void debug_buf(const char* msg);

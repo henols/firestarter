@@ -7,7 +7,6 @@
 
 #ifdef ARDUINO_AVR_UNO
 #include "rurp_shield.h"
-#include <EEPROM.h>
 #include <Arduino.h>
 #include "rurp_utils.h"
 #include "debug.h"
