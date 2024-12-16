@@ -9,8 +9,12 @@
 #include <Arduino.h>
 #include <stdlib.h>
 
+#include "ic_operations.h"
+#include "hw_operations.h"
+
 #include "json_parser.h"
 #include "logging.h"
+#include "utils.h"
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
@@ -21,15 +25,14 @@
 #define TX 1
 
 
+
+bool init_programmer(firestarter_handle_t* handle);
+bool parse_json(firestarter_handle_t* handle);
+bool state_done(firestarter_handle_t* handle);
+
 firestarter_handle_t handle;
 
 unsigned long timeout = 0;
-
-void resetTimeout();
-
-int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
-int checkResponse(firestarter_handle_t* handle);
-void getHwVersion();
 
 void setup() {
   rurp_setup();
@@ -39,206 +42,20 @@ void setup() {
   debug_format("Hardware revision: %s", rurp_get_physical_hardware_revision());
 }
 
-void resetTimeout() {
-  timeout = millis() + 1000;
-}
-
-int waitCheckForOK() {
-  if (rurp_communication_available() < 2) {
-    return 0;
-  }
-  if (rurp_communication_read() != 'O' || rurp_communication_read() != 'K') {
-    logInfoBuf(handle.response_msg, "Expecting OK");
-    resetTimeout();
-    return 0;
-  }
-  return 1;
-}
-
-void readProm(firestarter_handle_t* handle) {
-  if (!waitCheckForOK()) {
-    return;
-  }
-  debug("Read PROM");
-  if (handle->init && handle->firestarter_read_init != NULL) {
-    debug("Read PROM init");
-    handle->init = 0;
-    int res = executeFunction(handle->firestarter_read_init, handle);
-    if (res <= 0) {
-      return;
-    }
-  }
-  int res = executeFunction(handle->firestarter_read_data, handle);
-  if (res <= 0) {
-    return;
-  }
-
-  logDataf(handle->response_msg, "Read data from address 0x%lx to 0x%lx", handle->address, handle->address + DATA_BUFFER_SIZE);
-  // debug_format("Read buffer: %.10s...", handle->data_buffer);
-
-  rurp_communication_write(handle->data_buffer, DATA_BUFFER_SIZE);
-
-  handle->address += DATA_BUFFER_SIZE;
-  if (handle->address == handle->mem_size) {
-    while(!waitCheckForOK());
-    logOkf(handle->response_msg, "Read data from address 0x00 to 0x%lx", handle->mem_size);
-    handle->state = STATE_DONE;
-    return;
-  }
-  resetTimeout();
-}
-
-
-void eraseProm(firestarter_handle_t* handle) {
-  debug("Erase PROM");
-  if (handle->firestarter_erase) {
-    int res = executeFunction(handle->firestarter_erase, handle);
-    if (res <= 0) {
-      return;
-    }
-    logOkBuf(handle->response_msg, "Chip is erased");
-    handle->state = STATE_DONE;
-  }
-  else {
-    logError("Erase not supported");
-  }
-}
-
-void checkChipId(firestarter_handle_t* handle) {
-  debug("Check Chip ID");
-  if (handle->firestarter_check_chip_id) {
-    int res = executeFunction(handle->firestarter_check_chip_id, handle);
-    if (res <= 0) {
-      return;
-    }
-    logOkBuf(handle->response_msg, "Chip ID matches");
-    handle->state = STATE_DONE;
-  }
-  else {
-    logError("Check Chip ID is not supported");
-  }
-}
-
-void blankCheck(firestarter_handle_t* handle) {
-  debug("Blank check PROM");
-  if (handle->firestarter_blank_check) {
-    int res = executeFunction(handle->firestarter_blank_check, handle);
-    if (res <= 0) {
-      return;
-    }
-    logOkBuf(handle->response_msg, "Chip is blank");
-    handle->state = STATE_DONE;
-  }
-  else {
-    logError("Blank check is not supported");
-  }
-}
-
-void writeProm(firestarter_handle_t* handle) {
-  if (rurp_communication_available() >= 2) {
-    debug("Write PROM");
-    handle->data_size = rurp_communication_read() << 8;
-    handle->data_size |= rurp_communication_read();
-    if (handle->data_size == 0) {
-      logWarn("Premature end of data");
-      logOk("Memory written");
-      handle->state = STATE_DONE;
-      return;
-    }
-
-    logOkf(handle->response_msg, "Reciving %d bytes", handle->data_size);
-    int len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
-
-    if ((uint32_t)len != handle->data_size) {
-      logErrorf(handle->response_msg, "Not enough data, expected %d, got %d", (int)handle->data_size, len);
-      return;
-    }
-    if (handle->address + len > handle->mem_size) {
-      logError("Address out of range");
-      return;
-    }
-
-    if (handle->firestarter_write_init != NULL && handle->init) {
-      debug("Write PROM init");
-      int res = executeFunction(handle->firestarter_write_init, handle);
-      if (res <= 0) {
-        return;
-      }
-    }
-    handle->init = 0;
-
-    // debug("Write PROM exec");
-    int res = executeFunction(handle->firestarter_write_data, handle);
-    if (res <= 0) {
-      return;
-    }
-    logOkf(handle->response_msg, "Data written to address %lX - %lX", handle->address, handle->address + handle->data_size);
-    handle->address += handle->data_size;
-    resetTimeout();
-    if (handle->address >= handle->mem_size) {
-      logOk("Memory written");
-      handle->state = STATE_DONE;
-      return;
-    }
-  }
-}
-
-void initReadVoltage(firestarter_handle_t* handle) {
-  debug("Init read voltage");
-  if (handle->state == STATE_READ_VPP) {
-    debug("Setting up VPP");
-    rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP); // Enable regulator and drop voltage to VPP
-  }
-  else if (handle->state == STATE_READ_VPE) {
-    debug("Setting up VPP");
-    rurp_write_to_register(CONTROL_REGISTER, REGULATOR); // Enable regulator
-  }
-  resetTimeout();
-}
-
-void readVoltage(firestarter_handle_t* handle) {
-  if (handle->init) {
-    if (rurp_get_hardware_revision() == REVISION_0) {
-      logError("Rev0 dont support reading VPP/VPE");
-      return;
-    }
-    handle->init = 0;
-    int res = executeFunction(initReadVoltage, handle);
-    if (res <= 0) {
-      return;
-    }
-    logOk("Voltage read setup");
-  }
-
-  if (!waitCheckForOK()) {
-    return;
-  }
-
-  double voltage = rurp_read_voltage();
-  const char* type = (handle->state == STATE_READ_VPE) ? "VPE" : "VPP";
-  char vStr[10];
-  dtostrf(voltage, 2, 2, vStr);
-  char vcc[10];
-  dtostrf(rurp_read_vcc(), 2, 2, vcc);
-  logDataf(handle->response_msg, "%s: %sv, Internal VCC: %sv", type, vStr, vcc);
-  delay(200);
-  resetTimeout();
-}
-
-void parseJson(firestarter_handle_t* handle) {
+bool parse_json(firestarter_handle_t* handle) {
   debug("Parse JSON");
-  logInfoMsg((const char*)handle->data_buffer);
+  log_info_msg((const char*)handle->data_buffer);
 
   jsmn_parser parser;
   jsmntok_t tokens[NUMBER_JSNM_TOKENS];
 
   jsmn_init(&parser);
   int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
-  logInfof(handle->response_msg, "Token count: %d", token_count);
+  log_info_format(handle->response_msg, "Token count: %d", token_count);
   handle->response_msg[0] = '\0';
   if (token_count <= 0) {
-    logErrorMsg((const char*)handle->data_buffer);
-    return;
+    log_error_msg((const char*)handle->data_buffer);
+    return false;
   }
 
   handle->state = json_get_state(handle->data_buffer, tokens, token_count);
@@ -247,100 +64,67 @@ void parseJson(firestarter_handle_t* handle) {
   if (handle->state < STATE_READ_VPP) {
     json_parse(handle->data_buffer, tokens, token_count, handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
-      logErrorMsg(handle->response_msg);
-      return;
+      log_error_msg(handle->response_msg);
+      return false;
     }
-    if (!executeFunction(configure_memory, handle)) {
-      logError("Could not configure chip");
-      return;
+    if (!execute_function(configure_memory, handle)) {
+      log_error("Could not configure chip");
+      return false;
     }
   }
   else if (handle->state == STATE_CONFIG) {
     rurp_configuration_t* config = rurp_get_config();
     int res = json_parse_config(handle->data_buffer, tokens, token_count, config);
     if (res < 0) {
-      logError("Could not parse config");
-      return;
+      log_error("Could not parse config");
+      return false;
     }
     else if (res == 1) {
       rurp_save_config();
     }
   }
+  return true;
 }
 
-void setupEprom(firestarter_handle_t* handle) {
+bool init_programmer(firestarter_handle_t* handle) {
 
   if (rurp_communication_available() <= 0) {
-    return;
+    return false;
   }
+
   handle->response_code = RESPONSE_CODE_OK;
   handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
   if (handle->data_size == 0) {
-    logError("Empty input");
-    return;
+    log_error("Empty input");
+    return true;
   }
   debug("Setup");
   handle->data_buffer[handle->data_size] = '\0';
-  logInfof(handle->response_msg, "Setup buffer size: %d", handle->data_size);
+  log_info_format(handle->response_msg, "Setup buffer size: %d", handle->data_size);
 
-  parseJson(handle);
+  if(!parse_json(handle)){
+    log_error("Could not parse JSON");
+    return true;
+  };
 
   if (handle->state == 0) {
-    logErrorf(handle->response_msg, "Unknown state: %s", handle->data_buffer);
-    return;
+    log_error_format(handle->response_msg, "Unknown state: %s", handle->data_buffer);
+    return true;
   }
+
   if (handle->state > STATE_IDLE && handle->state < STATE_READ_VPP) {
-    logInfof(handle->response_msg, "EPROM memory size 0x%lx", handle->mem_size);
+    log_info_format(handle->response_msg, "EPROM memory size 0x%lx", handle->mem_size);
   }
 
 #ifdef HARDWARE_REVISION
-  logOkf(handle->response_msg, "FW: %s:%s, HW: Rev%d, State 0x%02x", VERSION, BOARD_NAME, rurp_get_hardware_revision(), handle->state);
+  log_ok_format(handle->response_msg, "FW: %s:%s, HW: Rev%d, State 0x%02x", VERSION, BOARD_NAME, rurp_get_hardware_revision(), handle->state);
 #else
-  logOkf(handle->response_msg, "FW: %s, State 0x%02x", VERSION, handle->state);
+  log_ok_format(handle->response_msg, "FW: %s, State 0x%02x", VERSION, handle->state);
 #endif
-  resetTimeout();
+  return false;
 }
 
-void getFwVersion() {
-  debug("Get FW version");
-  logOkf(handle.response_msg, "%s:%s", VERSION, BOARD_NAME);
-  handle.state = STATE_DONE;
-}
-
-#ifdef HARDWARE_REVISION
-void createOverideText(char* revStr) {
-  rurp_configuration_t* rurp_config = rurp_get_config();
-  if (rurp_config->hardware_revision < 0xFF) {
-    sprintf(revStr, ", Override HW: Rev%d", rurp_config->hardware_revision);
-  }
-  else {
-    revStr[0] = '\0';
-  }
-}
-
-void getHwVersion() {
-  debug("Get HW version");
-  char revStr[24];
-  createOverideText(revStr);
-  logOkf(handle.response_msg, "Rev%d%s", rurp_get_physical_hardware_revision(), revStr);
-  handle.state = STATE_DONE;
-}
-#endif
-
-void getConfig(firestarter_handle_t* handle) {
-  debug("Get config");
-  rurp_configuration_t* rurp_config = rurp_get_config();
-#ifdef HARDWARE_REVISION
-  char revStr[24];
-  createOverideText(revStr);
-  logOkf(handle->response_msg, "R1: %ld, R2: %ld%s", rurp_config->r1, rurp_config->r2, revStr);
-#else
-  logOkf(handle->response_msg, "R1: %ld, R2: %ld", rurp_config->r1, rurp_config->r2);
-#endif
-  handle->state = STATE_DONE;
-}
-
-void stateDone(firestarter_handle_t* handle) {
+bool state_done(firestarter_handle_t* handle) {
   debug("State done");
   rurp_set_programmer_mode();
   rurp_set_control_pin(CHIP_ENABLE, 1);
@@ -352,90 +136,72 @@ void stateDone(firestarter_handle_t* handle) {
   handle->response_code = RESPONSE_CODE_OK;
   rurp_set_communication_mode();
   handle->response_msg[0] = '\0';
+  return false;
 }
 
 void loop() {
   if (handle.state != STATE_IDLE && timeout < millis()) {
-    logErrorBuf(handle.response_msg, "Timeout");
-    resetTimeout();
+    log_error_buf(handle.response_msg, "Timeout");
+    reset_timeout();
     handle.state = STATE_DONE;
   }
 
+  bool done = false;
   switch (handle.state) {
   case STATE_READ:
-    readProm(&handle);
+    done = read(&handle);
     break;
   case STATE_WRITE:
-    writeProm(&handle);
+    done = write(&handle);
     break;
   case STATE_ERASE:
-    eraseProm(&handle);
+    done = erase(&handle);
     break;
   case STATE_BLANK_CHECK:
-    blankCheck(&handle);
+    done = blank_check(&handle);
     break;
   case STATE_CHECK_CHIP_ID:
-    checkChipId(&handle);
+    done = check_chip_id(&handle);
     break;
   case STATE_DONE:
-    stateDone(&handle);
+    done = state_done(&handle);
     break;
   case STATE_READ_VPP:
   case STATE_READ_VPE:
-    readVoltage(&handle);
-    break;
-  case STATE_ERROR:
-    handle.state = STATE_DONE;
+    done = read_voltage(&handle);
     break;
   case STATE_IDLE:
-    setupEprom(&handle);
+    done = init_programmer(&handle);
     break;
   case STATE_FW_VERSION:
-    getFwVersion();
+    done = get_fw_version(&handle);
     break;
 #ifdef HARDWARE_REVISION
   case STATE_HW_VERSION:
-    getHwVersion();
+    done = get_hw_version(&handle);
     break;
 #endif
   case STATE_CONFIG:
-    getConfig(&handle);
+    done = get_config(&handle);
     break;
 
   default:
-    logErrorf(handle.response_msg, "Unknown state: %d", handle.state);
+    log_error_format(handle.response_msg, "Unknown state: %d", handle.state);
+    done = true;
     break;
   }
+  if (done) {
+    handle.state = STATE_DONE;
+  }
+  else {
+    reset_timeout();
+  }
 }
 
-
-int checkResponse(firestarter_handle_t* handle) {
-  if (handle->response_code == RESPONSE_CODE_OK) {
-    logInfoMsg(handle->response_msg);
-    return 1;
-  }
-  else if (handle->response_code == RESPONSE_CODE_WARNING) {
-    logWarnMsg(handle->response_msg);
-    handle->response_code = RESPONSE_CODE_OK;
-    return 1;
-  }
-  else if (handle->response_code == RESPONSE_CODE_ERROR) {
-    logErrorMsg(handle->response_msg);
-    handle->state = STATE_DONE;
-    return 0;
-  }
-  return 0;
+void reset_timeout() {
+  timeout = millis() + 1000;
 }
 
-int executeFunction(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
-  rurp_set_programmer_mode();
-  if (callback != NULL) {
-    callback(handle);
-  }
-  rurp_set_communication_mode();
-  resetTimeout();
-  return checkResponse(handle);
-}
 
 
 

@@ -6,11 +6,11 @@
  */
 
 #include "eprom.h"
+#include <Arduino.h>
 #include <avr/pgmspace.h>
 #include <stdio.h>
 #include "firestarter.h"
 #include "rurp_shield.h"
-#include <Arduino.h>
 #include "logging.h"
 #include "debug.h"
 
@@ -129,7 +129,7 @@ void eprom_erase(firestarter_handle_t* handle) {
         eprom_internal_erase(handle);
     }
     else {
-        copyToBuffer(handle->response_msg, "Erase not supported");
+        copy_to_buffer(handle->response_msg, "Erase not supported");
         handle->response_code = RESPONSE_CODE_ERROR;
     }
 }
@@ -180,7 +180,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
         eprom_internal_erase(handle);
     }
     else {
-        copyToBuffer(handle->response_msg, "Skipping erase of memory");
+        copy_to_buffer(handle->response_msg, "Skipping erase of memory");
     }
 #ifdef EPROM_BLANK_CHECK
     if (handle->blank_check) {

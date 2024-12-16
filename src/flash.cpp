@@ -68,7 +68,7 @@ void flash_write_init(firestarter_handle_t* handle) {
         delay(101);
     }
     else {
-        copyToBuffer(handle->response_msg, "Skipping erase of memory");
+        copy_to_buffer(handle->response_msg, "Skipping erase of memory");
     }
 #ifdef EPROM_BLANK_CHECK
     if (handle->blank_check) {
@@ -104,7 +104,7 @@ void flash_erase(firestarter_handle_t* handle) {
         internal_erase(handle);
     }
     else {
-        copyToBuffer(handle->response_msg, "Erase not supported");
+        copy_to_buffer(handle->response_msg, "Erase not supported");
         handle->response_code = RESPONSE_CODE_ERROR;
     }
 }
@@ -208,7 +208,7 @@ void verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
         }
     }
     handle->response_code = RESPONSE_CODE_ERROR;
-    copyToBuffer(handle->response_msg, "Operation timed out");
+    copy_to_buffer(handle->response_msg, "Operation timed out");
     return;
 }
 

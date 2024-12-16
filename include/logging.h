@@ -1,84 +1,85 @@
 #ifndef LOGGING_H
 #define LOGGING_H
-
+#include <stdio.h>
 #include <avr/pgmspace.h>
 #include "rurp_shield.h"
+#include "debug.h"
 
-#define copyToBuffer( buf, msg) \
+#define copy_to_buffer( buf, msg) \
   strcpy_P(buf, PSTR(msg)); \
 
 
-#define logOk(msg) \
-  logOkBuf(handle->response_msg, msg); \
+#define log_ok(msg) \
+  log_ok_buf(handle->response_msg, msg); \
 
-#define logOkBuf(buf, msg) \
-  copyToBuffer(buf, msg); \
-  logOkMsg(buf)
+#define log_ok_buf(buf, msg) \
+  copy_to_buffer(buf, msg); \
+  log_ok_msg(buf)
 
-#define logOkMsg(msg) \
+#define log_ok_msg(msg) \
   rurp_log("OK", msg)
 
-#define logOkf(buf, cformat, ...) \
+#define log_ok_format(buf, cformat, ...) \
   {format(buf, cformat, __VA_ARGS__);} \
-  logOkMsg(buf)
+  log_ok_msg(buf)
 
-#define logInfoBuf(buf, msg) \
-  copyToBuffer(buf, msg); \
+#define log_info_buf(buf, msg) \
+  copy_to_buffer(buf, msg); \
   logInfoMsg(buf)
 
-#define logInfo(msg) \
-  copyToBuffer(handle->response_msg, msg); \
-  logInfoMsg(handle->response_msg)
+#define log_info(msg) \
+  copy_to_buffer(handle->response_msg, msg); \
+  log_info_msg(handle->response_msg)
 
-#define logInfoMsg(msg) \
+#define log_info_msg(msg) \
   if(strlen(msg)){ \
     rurp_log("INFO", msg); \
   }
 
-#define logInfof(buf, cformat, ...) \
+#define log_info_format(buf, cformat, ...) \
   {format(buf, cformat, __VA_ARGS__);} \
-  logInfoMsg(buf)
+  log_info_msg(buf)
 
-#define logDataMsg(msg) \
+#define log_data_msg(msg) \
   rurp_log("DATA", msg)
 
-#define logData(msg) \
-  copyToBuffer(handle->response_msg, msg);\
-  logDataMsg(handle->response_msg)
+#define log_data(msg) \
+  copy_to_buffer(handle->response_msg, msg);\
+  log_data_msg(handle->response_msg)
 
-#define logDataf(buf, cformat, ...) \
+#define log_data_format(buf, cformat, ...) \
   {format(buf, cformat, __VA_ARGS__);} \
-  logDataMsg(buf)
+  log_data_msg(buf)
 
-#define logWarn(msg) \
-  copyToBuffer(handle->response_msg, msg);\
-  logWarnMsg(handle->response_msg)
+#define log_warn(msg) \
+  copy_to_buffer(handle->response_msg, msg);\
+  log_warn_msg(handle->response_msg)
 
-#define logWarnMsg(msg) \
+#define log_warn_msg(msg) \
   rurp_log("WARN", msg)
 
-#define logWarnf(buf, cformat, ...) \
+#define log_warn_format(buf, cformat, ...) \
   {format(buf, cformat, __VA_ARGS__);} \
-  logWarnMsg(buf)
+  log_warn_msg(buf)
 
-#define logError(msg) \
-  logErrorBuf(handle->response_msg, msg); \
+#define log_error(msg) \
+  log_error_buf(handle->response_msg, msg); \
 
-#define logErrorBuf(buf, msg) \
-  copyToBuffer(buf, msg);\
-  logErrorMsg(buf)
+#define log_error_buf(buf, msg) \
+  copy_to_buffer(buf, msg);\
+  log_error_msg(buf)
 
-#define logErrorMsg(msg) \
+#define log_error_msg(msg) \
   rurp_log("ERROR", msg)
 
-#define logErrorf(buf, cformat, ...) \
+#define log_error_format(buf, cformat, ...) \
   {format(buf, cformat, __VA_ARGS__);} \
-  logErrorMsg(buf)
+  log_error_msg(buf)
 
 
 #define format(buf, cformat, ...) \
   char msg[80]; \
-  copyToBuffer(msg, cformat);\
+  copy_to_buffer(msg, cformat);\
   sprintf(buf, msg, __VA_ARGS__)
 
 
