@@ -60,9 +60,14 @@ bool parse_json(firestarter_handle_t* handle) {
 
   handle->state = json_get_state(handle->data_buffer, tokens, token_count);
   handle->init = 1;
-
+  debug_format("State: %d", handle->state);
   if (handle->state < STATE_READ_VPP) {
     json_parse(handle->data_buffer, tokens, token_count, handle);
+    debug_format("Force: %d", is_flag_set(FLAG_FORCE));
+    debug_format("Can erase: %d", is_flag_set(FLAG_CAN_ERASE));
+    debug_format("Skip erase: %d", is_flag_set(FLAG_SKIP_ERASE));
+    debug_format("Skip blank check: %d", is_flag_set(FLAG_SKIP_BLANK_CHECK));
+
     if (handle->response_code == RESPONSE_CODE_ERROR) {
       log_error_msg(handle->response_msg);
       return false;

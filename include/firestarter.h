@@ -32,6 +32,17 @@
 #define RESPONSE_CODE_WARNING 1
 #define RESPONSE_CODE_ERROR 2
 
+// Control flags
+#define FLAG_FORCE 0x01
+#define FLAG_CAN_ERASE 0x02
+#define FLAG_SKIP_ERASE 0x04
+#define FLAG_SKIP_BLANK_CHECK 0x08
+
+
+
+#define is_flag_set(flag) \
+	((handle->ctrl_flags & flag) == flag)
+
 typedef struct bus_config {
 	uint8_t address_lines[19]; // Array mapping address lines
 	uint32_t address_mask;      // Mask for address lines
@@ -54,10 +65,7 @@ typedef struct firestarter_handle {
 	uint32_t address;
 	float vpp;
 	uint32_t pulse_delay;
-	uint8_t can_erase;
-	uint8_t skip_erase;
-	uint8_t force;
-	uint8_t blank_check;
+	uint32_t ctrl_flags;
 	uint16_t chip_id;
 	char data_buffer[DATA_BUFFER_SIZE];
 	uint32_t data_size;

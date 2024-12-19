@@ -63,15 +63,16 @@ void flash_write_init(firestarter_handle_t* handle) {
         }
     }
 
-    if (handle->can_erase && !handle->skip_erase) {
+    if (is_flag_set(FLAG_CAN_ERASE) && !is_flag_set(FLAG_SKIP_ERASE)) {
         internal_erase(handle);
         delay(101);
     }
     else {
+        debug("Skipping erase of memory");
         copy_to_buffer(handle->response_msg, "Skipping erase of memory");
     }
 #ifdef EPROM_BLANK_CHECK
-    if (handle->blank_check) {
+    if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
         flash_blank_check(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;
@@ -100,7 +101,7 @@ void flash_erase(firestarter_handle_t* handle) {
             return;
         }
     }
-    if (handle->can_erase) {
+    if (is_flag_set(FLAG_CAN_ERASE)) {
         internal_erase(handle);
     }
     else {
@@ -123,7 +124,7 @@ void flash_blank_check(firestarter_handle_t* handle) {
 void flash_check_chip_id(firestarter_handle_t* handle) {
     uint16_t chip_id = flash_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
-        handle->response_code = handle->force ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
+        handle->response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
         format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
     }
 }

@@ -76,8 +76,7 @@ int checkBoolean(const char* json) {
 int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle) {
     handle->verbose = 0;
     handle->address = 0;
-    handle->skip_erase = 0;
-    handle->blank_check = 1;
+    handle->ctrl_flags = 0;
     handle->bus_config.rw_line = 0xFF;
     handle->bus_config.vpp_line = 0;
     handle->bus_config.address_lines[0] = 0xFF;
@@ -101,22 +100,8 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
             handle->address = atol(json + tokens[i + 1].start);
             i++;
         }
-        else if (jsoneq(json, &tokens[i], "can-erase") == 0) {
-            handle->can_erase = checkBoolean(json + tokens[i + 1].start);
-            i++;
-        }
-        else if (jsoneq(json, &tokens[i], "skip-erase") == 0) {
-            handle->skip_erase = checkBoolean(json + tokens[i + 1].start);
-            handle->blank_check = 0;
-            i++;
-        }
-        else if (jsoneq(json, &tokens[i], "blank-check") == 0) {
-            handle->blank_check = checkBoolean(json + tokens[i + 1].start);
-            handle->skip_erase = 1;
-            i++;
-        }
-        else if (jsoneq(json, &tokens[i], "force") == 0) {
-            handle->force = checkBoolean(json + tokens[i + 1].start);
+        else if (jsoneq(json, &tokens[i], "flags") == 0) {
+            handle->ctrl_flags = atol(json + tokens[i + 1].start);
             i++;
         }
         else if (jsoneq(json, &tokens[i], "chip-id") == 0) {
