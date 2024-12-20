@@ -152,6 +152,7 @@ void rurp_set_data_as_input() {
 
 
 void rurp_write_to_register(uint8_t reg, register_t data) {
+    bool settle = false;
     switch (reg) {
     case LEAST_SIGNIFICANT_BYTE:
         if (lsb_address == (uint8_t)data) {
@@ -169,6 +170,9 @@ void rurp_write_to_register(uint8_t reg, register_t data) {
         if (control_register == data) {
             return;
         }
+        if ((control_register & P1_VPP_ENABLE) > (data & P1_VPP_ENABLE)) {
+            settle = true;
+        }
         control_register = data;
 #ifdef HARDWARE_REVISION
         data = rurp_map_ctrl_reg_to_hardware_revision(data);
@@ -181,6 +185,11 @@ void rurp_write_to_register(uint8_t reg, register_t data) {
     PORTB |= reg;
     // Probably useless - verify later    delayMicroseconds(1); 
     PORTB &= ~(reg);
+    //Take a break here if an address change needs time to settle
+    if (settle)
+    {
+        delayMicroseconds(4);
+    }
 }
 
 register_t rurp_read_from_register(uint8_t reg) {
