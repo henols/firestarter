@@ -15,7 +15,6 @@ void debug_buf(const char* msg);
 #define debug(msg) \
     { \
         char _buf[60]; \
-        log_ok_buf(_buf, msg);\
         debug_buf(_buf); \
     }
 

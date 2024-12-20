@@ -7,6 +7,7 @@ extern "C" {
 
     bool read(firestarter_handle_t* handle);
     bool write(firestarter_handle_t* handle);
+    bool verify(firestarter_handle_t* handle);
     bool erase(firestarter_handle_t* handle);
     bool check_chip_id(firestarter_handle_t* handle);
     bool blank_check(firestarter_handle_t* handle);

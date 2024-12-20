@@ -19,14 +19,13 @@
 #define STATE_ERASE 3
 #define STATE_BLANK_CHECK 4
 #define STATE_CHECK_CHIP_ID 5
+#define STATE_VERIFY 6
 
 #define STATE_READ_VPP 11
 #define STATE_READ_VPE 12 
 #define STATE_FW_VERSION 13
 #define STATE_CONFIG 14
 #define STATE_HW_VERSION 15
-
-#define STATE_DONE 99
 
 #define RESPONSE_CODE_OK 0
 #define RESPONSE_CODE_WARNING 1
@@ -37,7 +36,7 @@
 #define FLAG_CAN_ERASE 0x02
 #define FLAG_SKIP_ERASE 0x04
 #define FLAG_SKIP_BLANK_CHECK 0x08
-
+#define FLAG_VPE_AS_VPP 0x10
 
 
 #define is_flag_set(flag) \
@@ -83,7 +82,8 @@ typedef struct firestarter_handle {
 	void (*firestarter_erase)(struct firestarter_handle*);
 	
 	void (*firestarter_blank_check)(struct firestarter_handle*);
-	
+	void (*firestarter_verify)(struct firestarter_handle*);
+
 	void (*firestarter_check_chip_id)(struct firestarter_handle*);
 
 	void (*firestarter_set_address)(struct firestarter_handle*, uint32_t);

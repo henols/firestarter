@@ -87,8 +87,14 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
         return;
     }
 #endif
+    if (is_flag_set(FLAG_VPE_AS_VPP)) {
+        handle->firestarter_set_control_register(handle, REGULATOR, 1);
+    }
+    else {
+        // Regulator defaults to VEP (~2V higher than VPP so it must be dropped)
+        handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
+    }
 
-    handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
     delay(100);
     double vpp = rurp_read_voltage();
 #ifdef SERIAL_DEBUG
@@ -193,7 +199,13 @@ void eprom_write_init(firestarter_handle_t* handle) {
 void eprom_write_data(firestarter_handle_t* handle) {
 
     if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
-        handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1); // Regulator defaults to VEP (~2V higher than VPP so it must be dropped)
+        if (is_flag_set(FLAG_VPE_AS_VPP)) {
+            handle->firestarter_set_control_register(handle, REGULATOR, 1);
+        }
+        else {
+            // Regulator defaults to VEP (~2V higher than VPP so it must be dropped)
+            handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
+        }
         delay(500);
     }
     uint8_t mismatch_bitmask[DATA_BUFFER_SIZE / 8];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)

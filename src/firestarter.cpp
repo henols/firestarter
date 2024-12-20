@@ -28,7 +28,7 @@
 
 bool init_programmer(firestarter_handle_t* handle);
 bool parse_json(firestarter_handle_t* handle);
-bool state_done(firestarter_handle_t* handle);
+void command_done(firestarter_handle_t* handle);
 
 firestarter_handle_t handle;
 
@@ -67,6 +67,7 @@ bool parse_json(firestarter_handle_t* handle) {
     debug_format("Can erase: %d", is_flag_set(FLAG_CAN_ERASE));
     debug_format("Skip erase: %d", is_flag_set(FLAG_SKIP_ERASE));
     debug_format("Skip blank check: %d", is_flag_set(FLAG_SKIP_BLANK_CHECK));
+    debug_format("VPE as VPP: %d", is_flag_set(FLAG_VPE_AS_VPP));
 
     if (handle->response_code == RESPONSE_CODE_ERROR) {
       log_error_msg(handle->response_msg);
@@ -107,7 +108,7 @@ bool init_programmer(firestarter_handle_t* handle) {
   handle->data_buffer[handle->data_size] = '\0';
   log_info_format(handle->response_msg, "Setup buffer size: %d", handle->data_size);
 
-  if(!parse_json(handle)){
+  if (!parse_json(handle)) {
     log_error("Could not parse JSON");
     return true;
   };
@@ -129,7 +130,7 @@ bool init_programmer(firestarter_handle_t* handle) {
   return false;
 }
 
-bool state_done(firestarter_handle_t* handle) {
+void command_done(firestarter_handle_t* handle) {
   debug("State done");
   rurp_set_programmer_mode();
   rurp_set_control_pin(CHIP_ENABLE, 1);
@@ -141,14 +142,12 @@ bool state_done(firestarter_handle_t* handle) {
   handle->response_code = RESPONSE_CODE_OK;
   rurp_set_communication_mode();
   handle->response_msg[0] = '\0';
-  return false;
 }
 
 void loop() {
   if (handle.state != STATE_IDLE && timeout < millis()) {
     log_error_buf(handle.response_msg, "Timeout");
-    reset_timeout();
-    handle.state = STATE_DONE;
+    command_done(&handle);
   }
 
   bool done = false;
@@ -159,6 +158,9 @@ void loop() {
   case STATE_WRITE:
     done = write(&handle);
     break;
+  case STATE_VERIFY:
+    done = verify(&handle);
+    break;
   case STATE_ERASE:
     done = erase(&handle);
     break;
@@ -167,9 +169,6 @@ void loop() {
     break;
   case STATE_CHECK_CHIP_ID:
     done = check_chip_id(&handle);
-    break;
-  case STATE_DONE:
-    done = state_done(&handle);
     break;
   case STATE_READ_VPP:
   case STATE_READ_VPE:
@@ -196,11 +195,9 @@ void loop() {
     break;
   }
   if (done) {
-    handle.state = STATE_DONE;
+    command_done(&handle);
   }
-  else {
-    reset_timeout();
-  }
+  reset_timeout();
 }
 
 void reset_timeout() {
