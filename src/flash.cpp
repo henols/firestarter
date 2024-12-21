@@ -65,7 +65,7 @@ void flash_write_init(firestarter_handle_t* handle) {
 
     if (is_flag_set(FLAG_CAN_ERASE) && !is_flag_set(FLAG_SKIP_ERASE)) {
         internal_erase(handle);
-        delay(101);
+        delay(105); //Old chips, worst case assumed to 5% longer to erase 
     }
     else {
         debug("Skipping erase of memory");
