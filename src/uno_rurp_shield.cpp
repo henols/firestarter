@@ -21,8 +21,6 @@ rurp_configuration_t rurp_config;
 
 bool comMode = true;
 
-void load_config();
-
 #ifdef SERIAL_DEBUG
 #define RX_DEBUG  A0
 #define TX_DEBUG  A1
