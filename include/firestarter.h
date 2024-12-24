@@ -70,22 +70,26 @@ typedef struct firestarter_handle {
 	uint32_t data_size;
 	bus_config_t bus_config;
 
-	void (*firestarter_set_data)(struct firestarter_handle*, uint32_t, uint8_t);
-	uint8_t(*firestarter_get_data)(struct firestarter_handle*, uint32_t);
-	
 	void (*firestarter_write_init)(struct firestarter_handle*);
 	void (*firestarter_write_data)(struct firestarter_handle*);
 	
 	void (*firestarter_read_init)(struct firestarter_handle*);
 	void (*firestarter_read_data)(struct firestarter_handle*);
 	
-	void (*firestarter_erase)(struct firestarter_handle*);
-	
-	void (*firestarter_blank_check)(struct firestarter_handle*);
-	void (*firestarter_verify)(struct firestarter_handle*);
-
+	void (*firestarter_erase_init)(struct firestarter_handle*);
+    void (*firestarter_erase)(struct firestarter_handle*);
+    
+	void (*firestarter_check_chip_id_init)(struct firestarter_handle*);
 	void (*firestarter_check_chip_id)(struct firestarter_handle*);
 
+	void (*firestarter_blank_check_init)(struct firestarter_handle*);
+	void (*firestarter_blank_check)(struct firestarter_handle*);
+	void (*firestarter_verify_init)(struct firestarter_handle*);
+	void (*firestarter_verify)(struct firestarter_handle*);
+
+    void (*firestarter_set_data)(struct firestarter_handle*, uint32_t, uint8_t);
+	uint8_t(*firestarter_get_data)(struct firestarter_handle*, uint32_t);
+			
 	void (*firestarter_set_address)(struct firestarter_handle*, uint32_t);
 	
 	void (*firestarter_set_control_register)(struct firestarter_handle*, register_t, bool);

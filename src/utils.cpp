@@ -3,13 +3,22 @@
 #include "logging.h"
 #include "rurp_shield.h"
 
+int execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
+    if (handle->init && callback != NULL) {
+        debug("Init function");
+        handle->init = 0;
+        return execute_function(handle->firestarter_read_init, handle);
+    }           
+    return 1;              
+}
+
 int execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
-    rurp_set_programmer_mode();
-    if (callback != NULL) {
+   if (callback != NULL) {
+        rurp_set_programmer_mode();
         callback(handle);
+        rurp_set_communication_mode();
+        reset_timeout();
     }
-    rurp_set_communication_mode();
-    reset_timeout();
     return check_response(handle);
 }
 

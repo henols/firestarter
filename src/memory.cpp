@@ -34,13 +34,22 @@ void configure_memory(firestarter_handle_t* handle) {
     debug("Configuring memory");
     handle->firestarter_read_init = NULL;
     handle->firestarter_read_data = memory_read_data;
+    
     handle->firestarter_write_init = NULL;
     handle->firestarter_write_data = memory_write_data;
-    handle->firestarter_verify = memory_verify_data;
-    handle->firestarter_erase = NULL;
-    handle->firestarter_blank_check = NULL;
-    handle->firestarter_check_chip_id = NULL;
 
+    handle->firestarter_verify_init = NULL;
+    handle->firestarter_verify = memory_verify_data;
+    
+    handle->firestarter_erase_init = NULL;
+    handle->firestarter_erase = NULL;
+
+    handle->firestarter_blank_check_init = NULL;
+    handle->firestarter_blank_check = NULL;
+
+    handle->firestarter_check_chip_id_init = NULL;
+    handle->firestarter_check_chip_id = NULL; 
+    
     handle->firestarter_get_data = memory_get_data;
     handle->firestarter_set_data = memory_set_data;
 

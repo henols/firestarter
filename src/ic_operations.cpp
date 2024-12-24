@@ -11,14 +11,11 @@ bool read(firestarter_handle_t* handle) {
   }
 
   debug("Read PROM");
-  if (handle->init && handle->firestarter_read_init != NULL) {
-    debug("Read PROM init");
-    handle->init = 0;
-    int res = execute_function(handle->firestarter_read_init, handle);
-    if (res <= 0) {
-      return true;
-    }
+  int res = execute_init(handle->firestarter_read_init, handle);
+  if (res <= 0) {
+    return true;
   }
+  
   int res = execute_function(handle->firestarter_read_data, handle);
   if (res <= 0) {
     return true;
@@ -62,14 +59,10 @@ bool write(firestarter_handle_t* handle) {
       return true;
     }
 
-    if (handle->firestarter_write_init != NULL && handle->init) {
-      debug("Write PROM init");
-      int res = execute_function(handle->firestarter_write_init, handle);
-      if (res <= 0) {
-        return true;
-      }
+    int res = execute_init(handle->firestarter_write_init, handle);
+    if (res <= 0) {
+      return true;
     }
-    handle->init = 0;
 
     // debug("Write PROM exec");
     int res = execute_function(handle->firestarter_write_data, handle);
@@ -89,6 +82,7 @@ bool write(firestarter_handle_t* handle) {
 }
 
 bool verify(firestarter_handle_t* handle) {
+  
   if (rurp_communication_available() >= 2) {
     debug("Verify PROM");
     handle->data_size = rurp_communication_read() << 8;
@@ -111,6 +105,10 @@ bool verify(firestarter_handle_t* handle) {
       log_error("Address out of range");
       return true;
     }
+    int res = execute_init(handle->firestarter_verify_init, handle);
+    if (res <= 0) {
+      return true;
+    }
 
     int res = execute_function(handle->firestarter_verify, handle);
     if (res <= 0) {
@@ -129,8 +127,13 @@ bool verify(firestarter_handle_t* handle) {
 }
 
 bool erase(firestarter_handle_t* handle) {
-  debug("Erase PROM");
   if (handle->firestarter_erase) {
+      debug("Erase PROM");
+    int res = execute_init(handle->firestarter_erase_init, handle);
+    if (res <= 0) {
+      return true;
+    }
+
     int res = execute_function(handle->firestarter_erase, handle);
     if (res <= 0) {
       return true;
@@ -146,6 +149,11 @@ bool erase(firestarter_handle_t* handle) {
 bool check_chip_id(firestarter_handle_t* handle) {
   debug("Check Chip ID");
   if (handle->firestarter_check_chip_id) {
+    int res = execute_init(handle->firestarter_check_chip_id_init, handle);
+    if (res <= 0) {
+      return true;
+    }
+
     int res = execute_function(handle->firestarter_check_chip_id, handle);
     if (res <= 0) {
       return true;
@@ -160,7 +168,12 @@ bool check_chip_id(firestarter_handle_t* handle) {
 
 bool blank_check(firestarter_handle_t* handle) {
   debug("Blank check PROM");
-  if (handle->firestarter_blank_check) {
+   if (handle->firestarter_blank_check) {
+  int res = execute_init(handle->firestarter_blank_check_init, handle);
+      if (res <= 0) {
+            return true;
+    }
+
     int res = execute_function(handle->firestarter_blank_check, handle);
     if (res <= 0) {
       return true;
