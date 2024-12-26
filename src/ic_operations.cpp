@@ -16,7 +16,7 @@ bool read(firestarter_handle_t* handle) {
     return true;
   }
   
-  int res = execute_function(handle->firestarter_read_data, handle);
+  res = execute_function(handle->firestarter_read_data, handle);
   if (res <= 0) {
     return true;
   }
@@ -65,7 +65,7 @@ bool write(firestarter_handle_t* handle) {
     }
 
     // debug("Write PROM exec");
-    int res = execute_function(handle->firestarter_write_data, handle);
+    res = execute_function(handle->firestarter_write_data, handle);
     if (res <= 0) {
       return true;
     }
@@ -110,7 +110,7 @@ bool verify(firestarter_handle_t* handle) {
       return true;
     }
 
-    int res = execute_function(handle->firestarter_verify, handle);
+    res = execute_function(handle->firestarter_verify, handle);
     if (res <= 0) {
       return true;
     }
@@ -134,7 +134,7 @@ bool erase(firestarter_handle_t* handle) {
       return true;
     }
 
-    int res = execute_function(handle->firestarter_erase, handle);
+    res = execute_function(handle->firestarter_erase, handle);
     if (res <= 0) {
       return true;
     }
@@ -154,7 +154,7 @@ bool check_chip_id(firestarter_handle_t* handle) {
       return true;
     }
 
-    int res = execute_function(handle->firestarter_check_chip_id, handle);
+    res = execute_function(handle->firestarter_check_chip_id, handle);
     if (res <= 0) {
       return true;
     }
@@ -174,7 +174,7 @@ bool blank_check(firestarter_handle_t* handle) {
             return true;
     }
 
-    int res = execute_function(handle->firestarter_blank_check, handle);
+    res = execute_function(handle->firestarter_blank_check, handle);
     if (res <= 0) {
       return true;
     }
