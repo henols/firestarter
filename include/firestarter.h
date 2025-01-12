@@ -84,6 +84,7 @@ typedef struct firestarter_handle {
 
 	void (*firestarter_blank_check_init)(struct firestarter_handle*);
 	void (*firestarter_blank_check)(struct firestarter_handle*);
+	
 	void (*firestarter_verify_init)(struct firestarter_handle*);
 	void (*firestarter_verify)(struct firestarter_handle*);
 

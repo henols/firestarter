@@ -15,16 +15,21 @@
 #include "debug.h"
 
 
+void eprom_erase_init(firestarter_handle_t* handle);
 void eprom_erase(firestarter_handle_t* handle);
+void eprom_blank_check_init(firestarter_handle_t* handle);
 void eprom_blank_check(firestarter_handle_t* handle);
+void eprom_verify_init(firestarter_handle_t* handle);
 void eprom_read_init(firestarter_handle_t* handle);
 void eprom_write_init(firestarter_handle_t* handle);
 void eprom_write_data(firestarter_handle_t* handle);
+void eprom_check_chip_id_init(firestarter_handle_t* handle);
 void eprom_check_chip_id(firestarter_handle_t* handle);
 
 void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
-
+void eprom_check_vpp(firestarter_handle_t* handle);
+void eprom_internal_erase(firestarter_handle_t* handle);
 void (*set_control_register)(struct firestarter_handle*, register_t, bool);
 
 void configure_eprom(firestarter_handle_t* handle) {
@@ -34,24 +39,19 @@ void configure_eprom(firestarter_handle_t* handle) {
     handle->firestarter_write_data = eprom_write_data;
     set_control_register = handle->firestarter_set_control_register;
     handle->firestarter_set_control_register = eprom_set_control_register;
-    handle->firestarter_erase = eprom_erase;
+    handle->firestarter_erase_init = eprom_erase_init;
+    handle->firestarter_erase = eprom_erase; 
+    handle->firestarter_blank_check_init = eprom_blank_check_init;
     handle->firestarter_blank_check = eprom_blank_check;
+    handle->firestarter_check_chip_id_init = eprom_check_chip_id_init;
     handle->firestarter_check_chip_id = eprom_check_chip_id;
 }
 
-uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
-    debug("Get chip ID");
-    handle->firestarter_set_control_register(handle, REGULATOR, 1);
-    delay(50);
 
-    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE, 1);
-    delay(100);
-    rurp_set_control_pin(CHIP_ENABLE, 0);
-    uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
-    chip_id |= (handle->firestarter_get_data(handle, 0x0001));
-    rurp_set_control_pin(CHIP_ENABLE, 1);
-    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE, 0);
-    return chip_id;
+void eprom_check_chip_id_init(firestarter_handle_t* handle) {
+#ifdef TEST_VPP_BEFORE_WRITE
+    eprom_check_vpp(handle);
+#endif
 }
 
 void eprom_check_chip_id(firestarter_handle_t* handle) {
@@ -63,65 +63,23 @@ void eprom_check_chip_id(firestarter_handle_t* handle) {
     }
 }
 
-void eprom_internal_erase(firestarter_handle_t* handle) {
-    debug("Internal erase");
-    handle->firestarter_set_control_register(handle, REGULATOR, 1); //Enable regulator without dropping resistor
-    delay(100);
-    handle->firestarter_set_address(handle, 0x0000);
-    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_ENABLE, 1); //Erase with VPE - assumes VPE_TO_VPP isn't set and left active previously
-    delay(100);
-    rurp_set_control_pin(CHIP_ENABLE, 0);
-    delayMicroseconds(handle->pulse_delay);
-    rurp_set_control_pin(CHIP_ENABLE, 1);
-
-    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
+void eprom_internal_erase_init(firestarter_handle_t* handle) {
 }
 
-#ifdef TEST_VPP_BEFORE_WRITE
-void eprom_check_vpp(firestarter_handle_t* handle) {
-    debug("Check VPP");
-#ifdef HARDWARE_REVISION
-    if (rurp_get_hardware_revision() == REVISION_0) {
-        handle->response_code = RESPONSE_CODE_WARNING;
-        strcpy(handle->response_msg, "Rev0 dont support reading VPP.");
+void eprom_erase_init(firestarter_handle_t* handle) {
+    debug("Erase init");
+    if (!is_flag_set(FLAG_CAN_ERASE)) {
+        copy_to_buffer(handle->response_msg, "Erase not supported");
+        handle->response_code = RESPONSE_CODE_ERROR;
         return;
     }
-#endif
-    if (is_flag_set(FLAG_VPE_AS_VPP)) {
-        handle->firestarter_set_control_register(handle, REGULATOR, 1);
+    if (handle->chip_id > 0) {
+        eprom_check_chip_id(handle);
+        if (handle->response_code == RESPONSE_CODE_ERROR) {
+            return;
+        }
     }
-    else {
-        // Regulator defaults to VEP (~2V higher than VPP so it must be dropped)
-        handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
-    }
-
-    delay(100);
-    double vpp = rurp_read_voltage();
-#ifdef SERIAL_DEBUG
-    char vppStr[6];
-    dtostrf(vpp, 2, 2, vppStr);
-    debug_format("Checking VPP voltage %s", vppStr);
-#endif
-
-    if (vpp > handle->vpp * 1.02) {
-        handle->response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        char vStr[6];
-        dtostrf(vpp, 2, 2, vStr);
-        char rStr[6];
-        dtostrf(handle->vpp, 2, 2, rStr);
-        format(handle->response_msg, "VPP voltage is too high: %sv expected: %sv", vStr, rStr);
-    }
-    else if (vpp < handle->vpp * .95) {
-        handle->response_code = RESPONSE_CODE_WARNING;
-        char vStr[6];
-        dtostrf(vpp, 2, 2, vStr);
-        char rStr[6];
-        dtostrf(handle->vpp, 2, 2, rStr);
-        format(handle->response_msg, "VPP voltage is low: %sv expected: %sv", vStr, rStr);
-    }
-    handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
 }
-#endif
 
 void eprom_erase(firestarter_handle_t* handle) {
     debug("Erase");
@@ -138,6 +96,9 @@ void eprom_erase(firestarter_handle_t* handle) {
         copy_to_buffer(handle->response_msg, "Erase not supported");
         handle->response_code = RESPONSE_CODE_ERROR;
     }
+}
+
+void eprom_blank_check_init(firestarter_handle_t* handle) {
 }
 
 void eprom_blank_check(firestarter_handle_t* handle) {
@@ -167,7 +128,6 @@ void eprom_read_init(firestarter_handle_t* handle) {
 
 void eprom_write_init(firestarter_handle_t* handle) {
 #ifdef TEST_VPP_BEFORE_WRITE
-    // Breaks everything for some reason
     eprom_check_vpp(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
         return;
@@ -262,3 +222,79 @@ void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bo
     }
     set_control_register(handle, bit, state);
 }
+
+uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
+    debug("Get chip ID");
+    handle->firestarter_set_control_register(handle, REGULATOR, 1);
+    delay(50);
+
+    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE, 1);
+    delay(100);
+    rurp_set_control_pin(CHIP_ENABLE, 0);
+    uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
+    chip_id |= (handle->firestarter_get_data(handle, 0x0001));
+    rurp_set_control_pin(CHIP_ENABLE, 1);
+    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE, 0);
+    return chip_id;
+}
+
+#ifdef TEST_VPP_BEFORE_WRITE
+void eprom_check_vpp(firestarter_handle_t* handle) {
+    debug("Check VPP");
+#ifdef HARDWARE_REVISION
+    if (rurp_get_hardware_revision() == REVISION_0) {
+        handle->response_code = RESPONSE_CODE_WARNING;
+        strcpy(handle->response_msg, "Rev0 dont support reading VPP.");
+        return;
+    }
+#endif
+    if (is_flag_set(FLAG_VPE_AS_VPP)) {
+        handle->firestarter_set_control_register(handle, REGULATOR, 1);
+    }
+    else {
+        // Regulator defaults to VEP (~2V higher than VPP so it must be dropped)
+        handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
+    }
+
+    delay(100);
+    double vpp = rurp_read_voltage();
+#ifdef SERIAL_DEBUG
+    char vppStr[6];
+    dtostrf(vpp, 2, 2, vppStr);
+    debug_format("Checking VPP voltage %s", vppStr);
+#endif
+
+    if (vpp > handle->vpp * 1.02) {
+        handle->response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
+        char vStr[6];
+        dtostrf(vpp, 2, 2, vStr);
+        char rStr[6];
+        dtostrf(handle->vpp, 2, 2, rStr);
+        format(handle->response_msg, "VPP voltage is too high: %sv expected: %sv", vStr, rStr);
+    }
+    else if (vpp < handle->vpp * .95) {
+        handle->response_code = RESPONSE_CODE_WARNING;
+        char vStr[6];
+        dtostrf(vpp, 2, 2, vStr);
+        char rStr[6];
+        dtostrf(handle->vpp, 2, 2, rStr);
+        format(handle->response_msg, "VPP voltage is low: %sv expected: %sv", vStr, rStr);
+    }
+    handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
+}
+#endif
+
+void eprom_internal_erase(firestarter_handle_t* handle) {
+    debug("Internal erase");
+    handle->firestarter_set_control_register(handle, REGULATOR, 1); //Enable regulator without dropping resistor
+    delay(100);
+    handle->firestarter_set_address(handle, 0x0000);
+    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_ENABLE, 1); //Erase with VPE - assumes VPE_TO_VPP isn't set and left active previously
+    delay(100);
+    rurp_set_control_pin(CHIP_ENABLE, 0);
+    delayMicroseconds(handle->pulse_delay);
+    rurp_set_control_pin(CHIP_ENABLE, 1);
+
+    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
+}
+
