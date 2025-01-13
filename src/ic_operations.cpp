@@ -21,13 +21,13 @@ bool read(firestarter_handle_t* handle) {
     return true;
   }
 
-  log_data_format(handle->response_msg, "Read data from address 0x%lx to 0x%lx", handle->address, handle->address + DATA_BUFFER_SIZE);
-  rurp_communication_write(handle->data_buffer, DATA_BUFFER_SIZE);
+  log_data_format(handle->response_msg, "Read data from address 0x%lx to 0x%lx", handle->address, handle->address + handle->data_size);
+  rurp_communication_write(handle->data_buffer, handle->data_size);
   // debug_format("Read buffer: %.10s...", handle->data_buffer);
 
 
-  handle->address += DATA_BUFFER_SIZE;
-  if (handle->address == handle->mem_size) {
+  handle->address += handle->data_size;
+  if (handle->address > handle->mem_size -1) {
     while (!wait_for_ok(handle));
     log_ok("Memmory read");
     return true;

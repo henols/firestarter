@@ -1,7 +1,6 @@
 #include "hw_operations.h"
 #include "firestarter.h"
 #include "logging.h"
-// #include "debug.h"
 #include "utils.h"
 #include "rurp_shield.h"
 #include "version.h"
