@@ -129,7 +129,7 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 
 void memory_read_data(firestarter_handle_t* handle) {
     rurp_set_control_pin(CHIP_ENABLE, 0);
-    int buf_size = DATA_BUFFER_SIZE;
+    int buf_size = min(handle->mem_size - handle->address, DATA_BUFFER_SIZE);
     debug_format("Reading from address 0x%06x", handle->address);
     for (int i = 0; i < buf_size; i++) {
         uint8_t data = handle->firestarter_get_data(handle, handle->address + i);
@@ -137,6 +137,7 @@ void memory_read_data(firestarter_handle_t* handle) {
         handle->data_buffer[i] = data;
     }
     rurp_set_control_pin(CHIP_ENABLE, 1);
+    handle->data_size = buf_size;
 }
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
