@@ -11,7 +11,6 @@
 #include "rurp_utils.h"
 #include <Arduino.h>
 #include <EEPROM.h>
-#include "debug.h"
 
 constexpr int VOLTAGE_MEASURE_PIN = A2;
 constexpr int HARDWARE_REVISION_PIN = A3;

@@ -1,7 +1,6 @@
 #include "ic_operations.h"
 #include "firestarter.h"
 #include "logging.h"
-#include "debug.h"
 #include "utils.h"
 #include "rurp_shield.h"
 
@@ -15,7 +14,7 @@ bool read(firestarter_handle_t* handle) {
   if (res <= 0) {
     return true;
   }
-  
+
   res = execute_function(handle->firestarter_read_data, handle);
   if (res <= 0) {
     return true;
@@ -27,7 +26,7 @@ bool read(firestarter_handle_t* handle) {
 
 
   handle->address += handle->data_size;
-  if (handle->address > handle->mem_size -1) {
+  if (handle->address > handle->mem_size - 1) {
     while (!wait_for_ok(handle));
     log_ok("Memmory read");
     return true;
@@ -36,6 +35,7 @@ bool read(firestarter_handle_t* handle) {
 }
 
 bool write(firestarter_handle_t* handle) {
+
   if (rurp_communication_available() >= 2) {
     debug("Write PROM");
     handle->data_size = rurp_communication_read() << 8;
@@ -82,7 +82,7 @@ bool write(firestarter_handle_t* handle) {
 }
 
 bool verify(firestarter_handle_t* handle) {
-  
+
   if (rurp_communication_available() >= 2) {
     debug("Verify PROM");
     handle->data_size = rurp_communication_read() << 8;
@@ -105,6 +105,7 @@ bool verify(firestarter_handle_t* handle) {
       log_error("Address out of range");
       return true;
     }
+
     int res = execute_init(handle->firestarter_verify_init, handle);
     if (res <= 0) {
       return true;
@@ -128,7 +129,7 @@ bool verify(firestarter_handle_t* handle) {
 
 bool erase(firestarter_handle_t* handle) {
   if (handle->firestarter_erase) {
-      debug("Erase PROM");
+    debug("Erase PROM");
     int res = execute_init(handle->firestarter_erase_init, handle);
     if (res <= 0) {
       return true;
@@ -168,10 +169,10 @@ bool check_chip_id(firestarter_handle_t* handle) {
 
 bool blank_check(firestarter_handle_t* handle) {
   debug("Blank check PROM");
-   if (handle->firestarter_blank_check) {
-  int res = execute_init(handle->firestarter_blank_check_init, handle);
-      if (res <= 0) {
-            return true;
+  if (handle->firestarter_blank_check) {
+    int res = execute_init(handle->firestarter_blank_check_init, handle);
+    if (res <= 0) {
+      return true;
     }
 
     res = execute_function(handle->firestarter_blank_check, handle);

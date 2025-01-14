@@ -13,7 +13,6 @@
 #include "flash.h"
 #include "rurp_shield.h"
 #include "logging.h"
-#include "debug.h"
 
 #define TYPE_EPROM 1
 #define TYPE_FLASH 3

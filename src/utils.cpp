@@ -4,10 +4,11 @@
 #include "rurp_shield.h"
 
 int execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
-    if (handle->init && callback != NULL) {
-        debug("Init function");
+    if (handle->init == 1 && callback != NULL) {
+        debug_format("Init function: %d, state: %d", handle->init, handle->state);
+        handle->response_msg[0] = '\0';
         handle->init = 0;
-        return execute_function(handle->firestarter_read_init, handle);
+        return execute_function(callback, handle);
     }           
     return 1;              
 }

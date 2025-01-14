@@ -11,8 +11,6 @@
 #include "rurp_shield.h"
 #include "logging.h"
 #include <stdio.h>
-#include "debug.h"
-
 
 typedef struct byte_flip
 {

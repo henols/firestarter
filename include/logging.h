@@ -1,9 +1,12 @@
-#ifndef LOGGING_H
-#define LOGGING_H
+
+
+
+// #ifndef __LOGGING_H__
+// #define __LOGGING_H__
+
 #include <stdio.h>
 #include <avr/pgmspace.h>
 #include "rurp_shield.h"
-#include "debug.h"
 
 #define copy_to_buffer( buf, msg) \
   strcpy_P(buf, PSTR(msg)); \
@@ -83,4 +86,29 @@
   sprintf(buf, msg, __VA_ARGS__)
 
 
-#endif // LOGGING_H
+#ifdef SERIAL_DEBUG
+extern char *debug_msg_buffer; 
+
+void debug_setup();
+void debug_buf(const char* msg);
+
+#define debug(msg) \
+    { \
+        debug_buf(msg); \
+    }
+
+#define debug_format(cformat, ...) \
+    { \
+        format(debug_msg_buffer, cformat, __VA_ARGS__); \
+        debug_buf(debug_msg_buffer); \
+    }
+
+#else
+#define debug(msg)
+#define debug_format(cformat, ...)
+#define debug_setup()
+#define debug_buf(msg)
+#define log_debug(type, msg)
+#endif
+
+// #endif // __LOGGING_H__

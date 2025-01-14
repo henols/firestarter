@@ -9,7 +9,6 @@
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include "rurp_utils.h"
-#include "debug.h"
 
 constexpr int VOLTAGE_MEASURE_PIN = A2;
 constexpr int HARDWARE_REVISION_PIN = A3;
@@ -25,8 +24,9 @@ bool comMode = true;
 #define RX_DEBUG  A0
 #define TX_DEBUG  A1
 
-void debug_setup();
 void log_debug(const char* type, const char* msg);
+#else
+#define log_debug(type, msg)
 #endif
 
 uint8_t lsb_address;
@@ -36,7 +36,6 @@ int revision = 5;
 
 
 void rurp_setup() {
-    debug_setup();
 
 
     rurp_set_data_as_output();

@@ -102,7 +102,7 @@ extern "C" {
 #endif
 
 // Struct definition
-    typedef   struct rurp_configuration {
+    typedef struct rurp_configuration {
         char version[6];
         double vcc;
         long  r1;
@@ -145,15 +145,15 @@ extern "C" {
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config();
 
-    void rurp_validate_config() ;
+    void rurp_validate_config();
 #ifdef HARDWARE_REVISION
-        int rurp_get_hardware_revision();
-        int rurp_get_physical_hardware_revision();
+    int rurp_get_hardware_revision();
+    int rurp_get_physical_hardware_revision();
 
 #endif
 
 #ifdef __cplusplus
-    }
+}
 #endif
 
 #endif // RURP_SHIELD_H

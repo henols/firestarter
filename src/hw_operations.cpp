@@ -43,7 +43,8 @@ bool read_voltage(firestarter_handle_t* handle) {
 bool get_fw_version(firestarter_handle_t* handle) {
   debug("Get FW version");
   log_ok_format(handle->response_msg, "%s:%s", VERSION, BOARD_NAME);
-return true;}
+  return true;
+}
 
 
 #ifdef HARDWARE_REVISION
@@ -52,7 +53,8 @@ bool get_hw_version(firestarter_handle_t* handle) {
   char revStr[24];
   create_overide_text(revStr);
   log_ok_format(handle->response_msg, "Rev%d%s", rurp_get_physical_hardware_revision(), revStr);
-return true;}
+  return true;
+}
 #endif
 
 bool get_config(firestarter_handle_t* handle) {

@@ -14,12 +14,11 @@
 
 #include "json_parser.h"
 #include "logging.h"
+
 #include "utils.h"
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
-
-#include "debug.h"
 
 #define RX 0
 #define TX 1
@@ -35,11 +34,16 @@ firestarter_handle_t handle;
 unsigned long timeout = 0;
 
 void setup() {
+  #ifdef SERIAL_DEBUG
+  debug_msg_buffer = (char*)malloc(80);
+  debug_setup();
+  #endif
   rurp_setup();
+
   handle.state = STATE_IDLE;
   debug("Firestarter started");
   debug_format("Firmware version: %s", VERSION);
-  debug_format("Hardware revision: %s", rurp_get_physical_hardware_revision());
+  debug_format("Hardware revision: %d", rurp_get_physical_hardware_revision());
 }
 
 bool parse_json(firestarter_handle_t* handle) {
@@ -59,7 +63,6 @@ bool parse_json(firestarter_handle_t* handle) {
   }
 
   handle->state = json_get_state(handle->data_buffer, tokens, token_count);
-  handle->init = 1;
   debug_format("State: %d", handle->state);
   if (handle->state < STATE_READ_VPP) {
     json_parse(handle->data_buffer, tokens, token_count, handle);
@@ -93,20 +96,17 @@ bool parse_json(firestarter_handle_t* handle) {
 }
 
 bool init_programmer(firestarter_handle_t* handle) {
-
-  if (rurp_communication_available() <= 0) {
-    return false;
-  }
-
   handle->response_code = RESPONSE_CODE_OK;
+  handle->init = 1;
+
   handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
+  log_info_format(handle->response_msg, "Setup buffer size: %d", handle->data_size);
   if (handle->data_size == 0) {
     log_error("Empty input");
     return true;
   }
   debug("Setup");
   handle->data_buffer[handle->data_size] = '\0';
-  log_info_format(handle->response_msg, "Setup buffer size: %d", handle->data_size);
 
   if (!parse_json(handle)) {
     log_error("Could not parse JSON");
@@ -139,7 +139,6 @@ void command_done(firestarter_handle_t* handle) {
   rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
   rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
   handle->state = STATE_IDLE;
-  handle->response_code = RESPONSE_CODE_OK;
   rurp_set_communication_mode();
   handle->response_msg[0] = '\0';
 }
@@ -148,6 +147,16 @@ void loop() {
   if (handle.state != STATE_IDLE && timeout < millis()) {
     log_error_buf(handle.response_msg, "Timeout");
     command_done(&handle);
+  } else
+  if (handle.state == STATE_IDLE) {
+    if (rurp_communication_available() > 0) {
+      if (init_programmer(&handle)) {
+        return;
+      }
+    }
+    else {
+      return;
+    }
   }
 
   bool done = false;
@@ -174,9 +183,9 @@ void loop() {
   case STATE_READ_VPE:
     done = read_voltage(&handle);
     break;
-  case STATE_IDLE:
-    done = init_programmer(&handle);
-    break;
+    // case STATE_IDLE:
+    //   done = init_programmer(&handle);
+    //   break;
   case STATE_FW_VERSION:
     done = get_fw_version(&handle);
     break;
@@ -197,7 +206,7 @@ void loop() {
   if (done) {
     command_done(&handle);
   }
-  reset_timeout();
+
 }
 
 void reset_timeout() {
