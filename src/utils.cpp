@@ -34,16 +34,16 @@ int execute_function(void (*callback)(firestarter_handle_t* handle), firestarter
 
 int check_response(firestarter_handle_t* handle) {
     if (handle->response_code == RESPONSE_CODE_OK) {
-        log_info_msg(handle->response_msg);
+        log_info(handle->response_msg);
         return 1;
     }
     else if (handle->response_code == RESPONSE_CODE_WARNING) {
-        log_warn_msg(handle->response_msg);
+        log_warn(handle->response_msg);
         handle->response_code = RESPONSE_CODE_OK;
         return 1;
     }
     else if (handle->response_code == RESPONSE_CODE_ERROR) {
-        log_error_msg(handle->response_msg);
+        log_error(handle->response_msg);
     }
     return 0;
 }
@@ -53,7 +53,7 @@ int wait_for_ok(firestarter_handle_t* handle) {
         return 0;
     }
     if (rurp_communication_read() != 'O' || rurp_communication_read() != 'K') {
-        log_info("Expecting OK");
+        log_info_const("Expecting OK");
         reset_timeout();
         return 0;
     }

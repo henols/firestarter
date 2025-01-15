@@ -46,6 +46,7 @@ void configure_eprom(firestarter_handle_t* handle) {
         break;
     case STATE_ERASE:
         handle->firestarter_operation_execute = eprom_erase_execute;
+        handle->firestarter_operation_end = eprom_blank_check_execute;
         break;
     case STATE_BLANK_CHECK:
         handle->firestarter_operation_execute = eprom_blank_check_execute;
@@ -59,7 +60,6 @@ void configure_eprom(firestarter_handle_t* handle) {
     set_control_register = handle->firestarter_set_control_register;
     handle->firestarter_set_control_register = eprom_set_control_register;
 }
-
 
 void eprom_check_chip_id_init(firestarter_handle_t* handle) {
 #ifdef TEST_VPP_BEFORE_OPERATION

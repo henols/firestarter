@@ -48,17 +48,17 @@ void setup() {
 
 bool parse_json(firestarter_handle_t* handle) {
   debug("Parse JSON");
-  log_info_msg((const char*)handle->data_buffer);
+  log_info((const char*)handle->data_buffer);
 
   jsmn_parser parser;
   jsmntok_t tokens[NUMBER_JSNM_TOKENS];
 
   jsmn_init(&parser);
   int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
-  log_info_format(handle->response_msg, "Token count: %d", token_count);
+  log_info_format( "Token count: %d", token_count);
   handle->response_msg[0] = '\0';
   if (token_count <= 0) {
-    log_error_msg((const char*)handle->data_buffer);
+    log_error((const char*)handle->data_buffer);
     return false;
   }
 
@@ -73,11 +73,11 @@ bool parse_json(firestarter_handle_t* handle) {
     debug_format("VPE as VPP: %d", is_flag_set(FLAG_VPE_AS_VPP));
 
     if (handle->response_code == RESPONSE_CODE_ERROR) {
-      log_error_msg(handle->response_msg);
+      log_error(handle->response_msg);
       return false;
     }
     if (!execute_function(configure_memory, handle)) {
-      log_error("Could not configure chip");
+      log_error_const("Could not configure chip");
       return false;
     }
   }
@@ -85,7 +85,7 @@ bool parse_json(firestarter_handle_t* handle) {
     rurp_configuration_t* config = rurp_get_config();
     int res = json_parse_config(handle->data_buffer, tokens, token_count, config);
     if (res < 0) {
-      log_error("Could not parse config");
+      log_error_const("Could not parse config");
       return false;
     }
     else if (res == 1) {
@@ -100,32 +100,32 @@ bool init_programmer(firestarter_handle_t* handle) {
   handle->init = 1;
 
   handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
-  log_info_format(handle->response_msg, "Setup buffer size: %d", handle->data_size);
+  log_info_format( "Setup buffer size: %d", handle->data_size);
   if (handle->data_size == 0) {
-    log_error("Empty input");
+    log_error_const("Empty input");
     return true;
   }
   debug("Setup");
   handle->data_buffer[handle->data_size] = '\0';
 
   if (!parse_json(handle)) {
-    log_error("Could not parse JSON");
+    log_error_const("Could not parse JSON");
     return true;
   };
 
   if (handle->state == 0) {
-    log_error_format(handle->response_msg, "Unknown state: %s", handle->data_buffer);
+    log_error_format("Unknown state: %s", handle->data_buffer);
     return true;
   }
 
   if (handle->state > STATE_IDLE && handle->state < STATE_READ_VPP) {
-    log_info_format(handle->response_msg, "EPROM memory size 0x%lx", handle->mem_size);
+    log_info_format( "EPROM memory size 0x%lx", handle->mem_size);
   }
 
 #ifdef HARDWARE_REVISION
-  log_ok_format(handle->response_msg, "FW: %s:%s, HW: Rev%d, State 0x%02x", VERSION, BOARD_NAME, rurp_get_hardware_revision(), handle->state);
+  log_ok_format( "FW: %s:%s, HW: Rev%d, State 0x%02x", VERSION, BOARD_NAME, rurp_get_hardware_revision(), handle->state);
 #else
-  log_ok_format(handle->response_msg, "FW: %s, State 0x%02x", VERSION, handle->state);
+  log_ok_format( "FW: %s, State 0x%02x", VERSION, handle->state);
 #endif
   return false;
 }
@@ -145,7 +145,7 @@ void command_done(firestarter_handle_t* handle) {
 
 void loop() {
   if (handle.state != STATE_IDLE && timeout < millis()) {
-    log_error_buf(handle.response_msg, "Timeout");
+    log_error_const_buf(handle.response_msg, "Timeout");
     command_done(&handle);
   } else
   if (handle.state == STATE_IDLE) {
@@ -183,9 +183,8 @@ void loop() {
   case STATE_READ_VPE:
     done = read_voltage(&handle);
     break;
-    // case STATE_IDLE:
-    //   done = init_programmer(&handle);
-    //   break;
+   case STATE_IDLE:
+      break;
   case STATE_FW_VERSION:
     done = get_fw_version(&handle);
     break;
@@ -199,7 +198,7 @@ void loop() {
     break;
 
   default:
-    log_error_format(handle.response_msg, "Unknown state: %d", handle.state);
+    log_error_format_buf(handle.response_msg, "Unknown state: %d", handle.state);
     done = true;
     break;
   }
