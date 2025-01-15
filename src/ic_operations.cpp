@@ -1,8 +1,17 @@
+/*
+ * Project Name: Firestarter
+ * Copyright (c) 2024 Henrik Olsson
+ *
+ * Permission is hereby granted under MIT license.
+ */
+
 #include "ic_operations.h"
 #include "firestarter.h"
 #include "logging.h"
 #include "utils.h"
 #include "rurp_shield.h"
+
+bool excecute_operation(firestarter_handle_t* handle);
 
 bool read(firestarter_handle_t* handle) {
   if (!wait_for_ok(handle)) {
@@ -10,12 +19,12 @@ bool read(firestarter_handle_t* handle) {
   }
 
   debug("Read PROM");
-  int res = execute_init(handle->firestarter_read_init, handle);
+  int res = execute_init(handle->firestarter_operation_init, handle);
   if (res <= 0) {
     return true;
   }
 
-  res = execute_function(handle->firestarter_read_data, handle);
+  res = execute_function(handle->firestarter_operation_execute, handle);
   if (res <= 0) {
     return true;
   }
@@ -28,7 +37,9 @@ bool read(firestarter_handle_t* handle) {
   handle->address += handle->data_size;
   if (handle->address > handle->mem_size - 1) {
     while (!wait_for_ok(handle));
-    log_ok("Memmory read");
+    if (execute_function(handle->firestarter_operation_end, handle) > 0) {
+      log_ok("Memmory read");
+    }
     return true;
   }
   return false;
@@ -42,7 +53,9 @@ bool write(firestarter_handle_t* handle) {
     handle->data_size |= rurp_communication_read();
     if (handle->data_size == 0) {
       log_warn("Premature end of data");
-      log_ok("Memory written");
+      if (execute_function(handle->firestarter_operation_end, handle) > 0) {
+        log_ok("Memory written");
+      }
       return true;
     }
 
@@ -59,13 +72,13 @@ bool write(firestarter_handle_t* handle) {
       return true;
     }
 
-    int res = execute_init(handle->firestarter_write_init, handle);
+    int res = execute_init(handle->firestarter_operation_init, handle);
     if (res <= 0) {
       return true;
     }
 
     // debug("Write PROM exec");
-    res = execute_function(handle->firestarter_write_data, handle);
+    res = execute_function(handle->firestarter_operation_execute, handle);
     if (res <= 0) {
       return true;
     }
@@ -74,7 +87,9 @@ bool write(firestarter_handle_t* handle) {
 
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
-      log_ok("Memory written");
+      if (execute_function(handle->firestarter_operation_end, handle) > 0) {
+        log_ok("Memory written");
+      }
       return true;
     }
   }
@@ -89,7 +104,9 @@ bool verify(firestarter_handle_t* handle) {
     handle->data_size |= rurp_communication_read();
     if (handle->data_size == 0) {
       log_warn("Premature end of data");
-      log_ok("Memory verified");
+      if (execute_function(handle->firestarter_operation_end, handle) > 0) {
+        log_ok("Memory verified");
+      }
       return true;
     }
 
@@ -106,12 +123,12 @@ bool verify(firestarter_handle_t* handle) {
       return true;
     }
 
-    int res = execute_init(handle->firestarter_verify_init, handle);
+    int res = execute_init(handle->firestarter_operation_init, handle);
     if (res <= 0) {
       return true;
     }
 
-    res = execute_function(handle->firestarter_verify, handle);
+    res = execute_function(handle->firestarter_operation_execute, handle);
     if (res <= 0) {
       return true;
     }
@@ -120,7 +137,9 @@ bool verify(firestarter_handle_t* handle) {
 
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
-      log_ok("Memory verified");
+      if (execute_function(handle->firestarter_operation_end, handle) > 0) {
+        log_ok("Memory verified");
+      }
       return true;
     }
   }
@@ -128,18 +147,11 @@ bool verify(firestarter_handle_t* handle) {
 }
 
 bool erase(firestarter_handle_t* handle) {
-  if (handle->firestarter_erase) {
-    debug("Erase PROM");
-    int res = execute_init(handle->firestarter_erase_init, handle);
-    if (res <= 0) {
-      return true;
+  debug("Erase PROM");
+  if (excecute_operation(handle)) {
+    if (handle->response_code == RESPONSE_CODE_OK) {
+      log_ok("Chip is erased");
     }
-
-    res = execute_function(handle->firestarter_erase, handle);
-    if (res <= 0) {
-      return true;
-    }
-    log_ok("Chip is erased");
   }
   else {
     log_error("Erase not supported");
@@ -149,17 +161,10 @@ bool erase(firestarter_handle_t* handle) {
 
 bool check_chip_id(firestarter_handle_t* handle) {
   debug("Check Chip ID");
-  if (handle->firestarter_check_chip_id) {
-    int res = execute_init(handle->firestarter_check_chip_id_init, handle);
-    if (res <= 0) {
-      return true;
+  if (excecute_operation(handle)) {
+    if (handle->response_code == RESPONSE_CODE_OK) {
+      log_ok("Chip ID matches");
     }
-
-    res = execute_function(handle->firestarter_check_chip_id, handle);
-    if (res <= 0) {
-      return true;
-    }
-    log_ok("Chip ID matches");
   }
   else {
     log_error("Check Chip ID is not supported");
@@ -169,21 +174,35 @@ bool check_chip_id(firestarter_handle_t* handle) {
 
 bool blank_check(firestarter_handle_t* handle) {
   debug("Blank check PROM");
-  if (handle->firestarter_blank_check) {
-    int res = execute_init(handle->firestarter_blank_check_init, handle);
-    if (res <= 0) {
-      return true;
+  if (excecute_operation(handle)) {
+    if (handle->response_code == RESPONSE_CODE_OK) {
+      log_ok("Chip is blank");
     }
-
-    res = execute_function(handle->firestarter_blank_check, handle);
-    if (res <= 0) {
-      return true;
-    }
-    log_ok("Chip is blank");
   }
   else {
     log_error("Blank check is not supported");
   }
   return true;
 }
+
+
+bool excecute_operation(firestarter_handle_t* handle) {
+  if (handle->firestarter_operation_execute) {
+    int res = execute_init(handle->firestarter_operation_init, handle);
+    if (res <= 0) {
+      return true;
+    }
+    res = execute_function(handle->firestarter_operation_execute, handle);
+    if (res <= 0) {
+      return true;
+    }
+    res = execute_function(handle->firestarter_operation_end, handle);
+
+    return true;
+  }
+
+  return false;
+
+}
+
 

@@ -18,37 +18,36 @@
 #define TYPE_FLASH 3
 #define TYPE_SRAM 4
 
+void memory_read_execute(firestarter_handle_t* handle);
+void memory_write_execute(firestarter_handle_t* handle);
+void memory_verify_execute(firestarter_handle_t* handle);
+
 void memory_set_address(firestarter_handle_t* handle, uint32_t address);
 void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
 bool memory_get_control_register(firestarter_handle_t* handle, register_t bit);
-void memory_read_data(firestarter_handle_t* handle);
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address);
-void memory_write_data(firestarter_handle_t* handle);
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data);
-void memory_verify_data(firestarter_handle_t* handle);
 
 uint8_t programming = 0;
 
 void configure_memory(firestarter_handle_t* handle) {
     debug("Configuring memory");
-    handle->firestarter_read_init = NULL;
-    handle->firestarter_read_data = memory_read_data;
-    
-    handle->firestarter_write_init = NULL;
-    handle->firestarter_write_data = memory_write_data;
+    handle->firestarter_operation_init = NULL;
+    handle->firestarter_operation_execute = NULL;
+    handle->firestarter_operation_end = NULL;
 
-    handle->firestarter_verify_init = NULL;
-    handle->firestarter_verify = memory_verify_data;
-    
-    handle->firestarter_erase_init = NULL;
-    handle->firestarter_erase = NULL;
+    switch (handle->state) {
+    case STATE_READ:
+        handle->firestarter_operation_execute = memory_read_execute;
+        break;
+    case STATE_WRITE:
+        handle->firestarter_operation_execute = memory_write_execute;
+        break;
+    case STATE_VERIFY:
+        handle->firestarter_operation_execute = memory_verify_execute;
+        break;
+    }
 
-    handle->firestarter_blank_check_init = NULL;
-    handle->firestarter_blank_check = NULL;
-
-    handle->firestarter_check_chip_id_init = NULL;
-    handle->firestarter_check_chip_id = NULL; 
-    
     handle->firestarter_get_data = memory_get_data;
     handle->firestarter_set_data = memory_set_data;
 
@@ -135,7 +134,7 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
     rurp_write_to_register(CONTROL_REGISTER, top_address);
 }
 
-void memory_read_data(firestarter_handle_t* handle) {
+void memory_read_execute(firestarter_handle_t* handle) {
     rurp_set_control_pin(CHIP_ENABLE, 0);
     int buf_size = min(handle->mem_size - handle->address, DATA_BUFFER_SIZE);
     debug_format("Reading from address 0x%06x", handle->address);
@@ -165,7 +164,7 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     return data;
 }
 
-void memory_write_data(firestarter_handle_t* handle) {
+void memory_write_execute(firestarter_handle_t* handle) {
     for (uint32_t i = 0; i < handle->data_size; i++) {
         handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
     }
@@ -185,11 +184,11 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
     rurp_set_control_pin(CHIP_ENABLE, 1);
 }
 
-void memory_verify_data(firestarter_handle_t* handle) {
+void memory_verify_execute(firestarter_handle_t* handle) {
     for (uint32_t i = 0; i < handle->data_size; i++) {
         uint8_t byte = handle->firestarter_get_data(handle, handle->address + i);
         uint8_t expected = handle->data_buffer[i];
-        if(byte != expected){
+        if (byte != expected) {
             format(handle->response_msg, "Expecting 0x%02x got 0x%02x at 0x%04x", expected, byte, handle->address + i);
             handle->response_code = RESPONSE_CODE_ERROR;
             return;

@@ -14,13 +14,13 @@
 #include "logging.h"
 
 
-void eprom_erase(firestarter_handle_t* handle);
-void eprom_blank_check(firestarter_handle_t* handle);
+void eprom_erase_execute(firestarter_handle_t* handle);
+void eprom_blank_check_execute(firestarter_handle_t* handle);
 
 void eprom_write_init(firestarter_handle_t* handle);
-void eprom_write_data(firestarter_handle_t* handle);
+void eprom_write_execute(firestarter_handle_t* handle);
 void eprom_check_chip_id_init(firestarter_handle_t* handle);
-void eprom_check_chip_id(firestarter_handle_t* handle);
+void eprom_check_chip_id_execute(firestarter_handle_t* handle);
 
 void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
@@ -36,23 +36,28 @@ void eprom_generic_init(firestarter_handle_t* handle);
 
 void configure_eprom(firestarter_handle_t* handle) {
     debug("Configuring EPROM");
-    handle->firestarter_read_init = eprom_generic_init;
 
-    handle->firestarter_write_init = eprom_write_init;
-    handle->firestarter_write_data = eprom_write_data;
+    handle->firestarter_operation_init = eprom_generic_init;
+
+    switch (handle->state) {
+    case STATE_WRITE:
+        handle->firestarter_operation_init = eprom_write_init;
+        handle->firestarter_operation_execute = eprom_write_execute;
+        break;
+    case STATE_ERASE:
+        handle->firestarter_operation_execute = eprom_erase_execute;
+        break;
+    case STATE_BLANK_CHECK:
+        handle->firestarter_operation_execute = eprom_blank_check_execute;
+        break;
+    case STATE_CHECK_CHIP_ID:
+        handle->firestarter_operation_init = eprom_check_chip_id_init;
+        handle->firestarter_operation_execute = eprom_check_chip_id_execute;
+        break;
+    }
+
     set_control_register = handle->firestarter_set_control_register;
     handle->firestarter_set_control_register = eprom_set_control_register;
-
-    handle->firestarter_verify_init = eprom_generic_init;
-
-    handle->firestarter_erase_init = eprom_generic_init;
-    handle->firestarter_erase = eprom_erase;
-
-    handle->firestarter_blank_check_init = eprom_generic_init;
-    handle->firestarter_blank_check = eprom_blank_check;
-
-    handle->firestarter_check_chip_id_init = eprom_check_chip_id_init;
-    handle->firestarter_check_chip_id = eprom_check_chip_id;
 }
 
 
@@ -62,7 +67,7 @@ void eprom_check_chip_id_init(firestarter_handle_t* handle) {
 #endif
 }
 
-void eprom_check_chip_id(firestarter_handle_t* handle) {
+void eprom_check_chip_id_execute(firestarter_handle_t* handle) {
     debug("Check chip ID");
     uint16_t chip_id = eprom_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
@@ -71,13 +76,13 @@ void eprom_check_chip_id(firestarter_handle_t* handle) {
     }
 }
 
-void eprom_erase(firestarter_handle_t* handle) {
+void eprom_erase_execute(firestarter_handle_t* handle) {
     debug("Erase");
     eprom_internal_erase(handle);
 }
 
 
-void eprom_blank_check(firestarter_handle_t* handle) {
+void eprom_blank_check_execute(firestarter_handle_t* handle) {
     debug("Blank check");
     for (uint32_t i = 0; i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
@@ -105,12 +110,12 @@ void eprom_write_init(firestarter_handle_t* handle) {
     }
 #ifdef EPROM_BLANK_CHECK
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
-        eprom_blank_check(handle);
+        eprom_blank_check_execute(handle);
     }
 #endif
 }
 
-void eprom_write_data(firestarter_handle_t* handle) {
+void eprom_write_execute(firestarter_handle_t* handle) {
 
     if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
         if (is_flag_set(FLAG_VPE_AS_VPP)) {
@@ -260,6 +265,6 @@ void eprom_generic_init(firestarter_handle_t* handle) {
     }
 #endif
     if (handle->chip_id > 0) {
-        eprom_check_chip_id(handle);
+        eprom_check_chip_id_execute(handle);
     }
 }

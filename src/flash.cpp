@@ -27,31 +27,45 @@ void flash_write_data(firestarter_handle_t* handle);
 void flash_check_chip_id(firestarter_handle_t* handle);
 
 uint16_t flash_get_chip_id(firestarter_handle_t* handle);
+
+void flash_generic_init(firestarter_handle_t* handle);
+
 void enable_write(firestarter_handle_t* handle);
 void internal_erase(firestarter_handle_t* handle);
 void flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data);
 void fast_address(firestarter_handle_t* handle, uint32_t address);
+
+
 void verify_operation(firestarter_handle_t* handle, uint8_t expected_data);
 
 
 void configure_flash(firestarter_handle_t* handle) {
     debug("Configuring Flash");
-    handle->firestarter_read_init = flash_read_init;
-    handle->firestarter_write_init = flash_write_init;
-    handle->firestarter_write_data = flash_write_data;
-    handle->firestarter_erase = flash_erase;
-    handle->firestarter_blank_check = flash_blank_check;
-    handle->firestarter_check_chip_id = flash_check_chip_id;
-}
-
-void flash_read_init(firestarter_handle_t* handle) {
-    if (handle->chip_id > 0) {
-        flash_check_chip_id(handle);
-        if (handle->response_code == RESPONSE_CODE_ERROR) {
-            return;
-        }
+    handle->firestarter_operation_init = flash_generic_init;
+    switch (handle->state) {
+    case STATE_WRITE:
+        handle->firestarter_operation_init = flash_write_init;
+        handle->firestarter_operation_execute = flash_write_data;
+        break;
+    case STATE_ERASE:
+        handle->firestarter_operation_execute = flash_erase;
+        break;
+    case STATE_BLANK_CHECK:
+        handle->firestarter_operation_execute = flash_blank_check;
+        break;
+    case STATE_CHECK_CHIP_ID:
+        handle->firestarter_operation_init = NULL;
+        handle->firestarter_operation_execute = flash_check_chip_id;
+        break;
     }
 }
+
+void flash_generic_init(firestarter_handle_t* handle) {
+    if (handle->chip_id > 0) {
+        flash_check_chip_id(handle);
+    }
+}
+
 
 void flash_write_init(firestarter_handle_t* handle) {
     if (handle->chip_id > 0) {
@@ -72,9 +86,6 @@ void flash_write_init(firestarter_handle_t* handle) {
 #ifdef EPROM_BLANK_CHECK
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
         flash_blank_check(handle);
-        if (handle->response_code == RESPONSE_CODE_ERROR) {
-            return;
-        }
     }
 #endif
 }
@@ -93,12 +104,6 @@ void flash_write_data(firestarter_handle_t* handle) {
 }
 
 void flash_erase(firestarter_handle_t* handle) {
-    if (handle->chip_id > 0) {
-        flash_check_chip_id(handle);
-        if (handle->response_code == RESPONSE_CODE_ERROR) {
-            return;
-        }
-    }
     if (is_flag_set(FLAG_CAN_ERASE)) {
         internal_erase(handle);
     }
@@ -199,7 +204,7 @@ void verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
         if ((data_poll() & 0x80) == (expected_data & 0x80)) { //Only check if bit 7 has flipped
             // Verify completion with an additional read
             if ((data_poll() & 0x80) == (data_poll() & 0x80)) { //No assuming other bits
-                rurp_set_data_as_output();  
+                rurp_set_data_as_output();
                 rurp_set_control_pin(CHIP_ENABLE, 1);
                 rurp_set_control_pin(OUTPUT_ENABLE, 1);
                 return;  // Operation completed successfully

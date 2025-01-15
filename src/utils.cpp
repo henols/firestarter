@@ -1,12 +1,20 @@
+/*
+ * Project Name: Firestarter
+ * Copyright (c) 2024 Henrik Olsson
+ *
+ * Permission is hereby granted under MIT license.
+ */
+
 #include "utils.h"
 #include "firestarter.h"
 #include "logging.h"
 #include "rurp_shield.h"
 
+int check_response(firestarter_handle_t* handle);
+
 int execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
     if (handle->init == 1 && callback != NULL) {
         debug_format("Init function: %d, state: %d", handle->init, handle->state);
-        handle->response_msg[0] = '\0';
         handle->init = 0;
         return execute_function(callback, handle);
     }           
@@ -15,6 +23,7 @@ int execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_han
 
 int execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
    if (callback != NULL) {
+        handle->response_msg[0] = '\0';
         rurp_set_programmer_mode();
         callback(handle);
         rurp_set_communication_mode();
