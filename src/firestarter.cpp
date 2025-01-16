@@ -34,11 +34,14 @@ firestarter_handle_t handle;
 unsigned long timeout = 0;
 
 void setup() {
-  #ifdef SERIAL_DEBUG
+#ifdef SERIAL_DEBUG
   debug_msg_buffer = (char*)malloc(80);
   debug_setup();
-  #endif
-  rurp_setup();
+#endif
+
+  rurp_load_config();
+  rurp_detect_hardware_revision();
+  rurp_board_setup();
 
   handle.state = STATE_IDLE;
   debug("Firestarter started");
@@ -55,7 +58,7 @@ bool parse_json(firestarter_handle_t* handle) {
 
   jsmn_init(&parser);
   int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
-  log_info_format( "Token count: %d", token_count);
+  log_info_format("Token count: %d", token_count);
   handle->response_msg[0] = '\0';
   if (token_count <= 0) {
     log_error((const char*)handle->data_buffer);
@@ -89,7 +92,7 @@ bool parse_json(firestarter_handle_t* handle) {
       return false;
     }
     else if (res == 1) {
-      rurp_save_config();
+      rurp_save_config(config);
     }
   }
   return true;
@@ -100,7 +103,7 @@ bool init_programmer(firestarter_handle_t* handle) {
   handle->init = 1;
 
   handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
-  log_info_format( "Setup buffer size: %d", handle->data_size);
+  log_info_format("Setup buffer size: %d", handle->data_size);
   if (handle->data_size == 0) {
     log_error_const("Empty input");
     return true;
@@ -119,13 +122,15 @@ bool init_programmer(firestarter_handle_t* handle) {
   }
 
   if (handle->state > STATE_IDLE && handle->state < STATE_READ_VPP) {
-    log_info_format( "EPROM memory size 0x%lx", handle->mem_size);
+    log_info_format("EPROM memory size 0x%lx", handle->mem_size);
   }
 
 #ifdef HARDWARE_REVISION
-  log_ok_format( "FW: %s:%s, HW: Rev%d, State 0x%02x", VERSION, BOARD_NAME, rurp_get_hardware_revision(), handle->state);
+#define PARSE_RESPONSE "FW: " FW_VERSION ", HW: Rev%d, State 0x%02x"
+  log_ok_format(PARSE_RESPONSE, rurp_get_hardware_revision(), handle->state);
 #else
-  log_ok_format( "FW: %s, State 0x%02x", VERSION, handle->state);
+#define PARSE_RESPONSE "FW: " FW_VERSION ", State 0x%02x"
+  log_ok_format(PARSE_RESPONSE, handle->state);
 #endif
   return false;
 }
@@ -147,17 +152,18 @@ void loop() {
   if (handle.state != STATE_IDLE && timeout < millis()) {
     log_error_const_buf(handle.response_msg, "Timeout");
     command_done(&handle);
-  } else
-  if (handle.state == STATE_IDLE) {
-    if (rurp_communication_available() > 0) {
-      if (init_programmer(&handle)) {
+  }
+  else
+    if (handle.state == STATE_IDLE) {
+      if (rurp_communication_available() > 0) {
+        if (init_programmer(&handle)) {
+          return;
+        }
+      }
+      else {
         return;
       }
     }
-    else {
-      return;
-    }
-  }
 
   bool done = false;
   switch (handle.state) {
@@ -183,8 +189,8 @@ void loop() {
   case STATE_READ_VPE:
     done = read_voltage(&handle);
     break;
-   case STATE_IDLE:
-      break;
+  case STATE_IDLE:
+    break;
   case STATE_FW_VERSION:
     done = get_fw_version(&handle);
     break;

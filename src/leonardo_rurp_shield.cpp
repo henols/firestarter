@@ -8,20 +8,15 @@
 
 #ifdef ARDUINO_AVR_LEONARDO
 #include "rurp_shield.h"
-#include "rurp_utils.h"
 #include <Arduino.h>
-#include <EEPROM.h>
+// #include <EEPROM.h>
+#include "rurp_hw_rev_utils.h"
+#include "rurp_config_utils.h"
 
-constexpr int VOLTAGE_MEASURE_PIN = A2;
-constexpr int HARDWARE_REVISION_PIN = A3;
 
 constexpr int INPUT_RESOLUTION = 1023;
 constexpr int AVERAGE_OF = 500;
 
-
-rurp_configuration_t rurp_config;
-
-bool comMode = true;
 
 
 void set_port_b(uint8_t data);
@@ -33,30 +28,10 @@ uint8_t get_port_b();
 uint8_t lsb_address;
 uint8_t msb_address;
 register_t control_register;
-int revision = 5;
 
-
-void rurp_setup() {
+void rurp_board_setup() {
     rurp_set_data_as_output();
-    load_config();
-    pinMode(HARDWARE_REVISION_PIN, INPUT_PULLUP);
-    pinMode(VOLTAGE_MEASURE_PIN, INPUT_PULLUP);
-
-
-    int value = digitalRead(HARDWARE_REVISION_PIN);
-
-    switch (value) {
-    case 1:
-        revision = analogRead(VOLTAGE_MEASURE_PIN) < 1000 ? REVISION_1 : REVISION_0;
-        break;
-    case 0:
-        revision = REVISION_2;
-        break;
-    default:
-        // Unknown hardware revision
-        revision = -1;
-    }
-    pinMode(VOLTAGE_MEASURE_PIN, INPUT);
+    
 
     // Set 'PORTB' to input
     // DDRB |= 0xF0;
@@ -105,24 +80,6 @@ void rurp_log(const char* type, const char* msg) {
     Serial.print(": ");
     Serial.println(msg);
     Serial.flush();
-}
-
-#ifdef HARDWARE_REVISION
-int rurp_get_hardware_revision() {
-    if (rurp_config.hardware_revision < 0xFF) {
-        return rurp_config.hardware_revision;
-    }
-    return rurp_get_physical_hardware_revision();
-}
-
-int rurp_get_physical_hardware_revision() {
-    return revision;
-}
-#endif
-
-
-rurp_configuration_t* rurp_get_config() {
-    return &rurp_config;
 }
 
 void rurp_set_data_as_output() {

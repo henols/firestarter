@@ -7,6 +7,7 @@
 #include <Arduino.h>
 #include <stdlib.h>
 
+
 void create_overide_text(char* revStr);
 void init_read_voltage(firestarter_handle_t* handle);
 
@@ -35,14 +36,14 @@ bool read_voltage(firestarter_handle_t* handle) {
   dtostrf(voltage, 2, 2, vStr);
   char vcc[10];
   dtostrf(rurp_read_vcc(), 2, 2, vcc);
-  log_data_format( "%s: %sv, Internal VCC: %sv", type, vStr, vcc);
+  log_data_format("%s: %sv, Internal VCC: %sv", type, vStr, vcc);
   delay(200);
   return false;
 }
 
 bool get_fw_version(firestarter_handle_t* handle) {
   debug("Get FW version");
-  log_ok_format( "%s:%s", VERSION, BOARD_NAME);
+  log_ok_const(FW_VERSION);
   return true;
 }
 
@@ -52,7 +53,7 @@ bool get_hw_version(firestarter_handle_t* handle) {
   debug("Get HW version");
   char revStr[24];
   create_overide_text(revStr);
-  log_ok_format( "Rev%d%s", rurp_get_physical_hardware_revision(), revStr);
+  log_ok_format("Rev%d%s", rurp_get_physical_hardware_revision(), revStr);
   return true;
 }
 #endif
@@ -63,9 +64,9 @@ bool get_config(firestarter_handle_t* handle) {
 #ifdef HARDWARE_REVISION
   char revStr[24];
   create_overide_text(revStr);
-  log_ok_format( "R1: %ld, R2: %ld%s", rurp_config->r1, rurp_config->r2, revStr);
+  log_ok_format("R1: %ld, R2: %ld%s", rurp_config->r1, rurp_config->r2, revStr);
 #else
-  log_ok_format( "R1: %ld, R2: %ld", rurp_config->r1, rurp_config->r2);
+  log_ok_format("R1: %ld, R2: %ld", rurp_config->r1, rurp_config->r2);
 #endif
   return true;
 }
@@ -80,7 +81,6 @@ void init_read_voltage(firestarter_handle_t* handle) {
     debug("Setting up VPP");
     rurp_write_to_register(CONTROL_REGISTER, REGULATOR); // Enable regulator
   }
-
 }
 
 #ifdef HARDWARE_REVISION

@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include "rurp_shield.h"
 
+#define FW_VERSION VERSION ":" BOARD_NAME
+
 #define DATA_BUFFER_SIZE 512
 
 #define STATE_IDLE 0
