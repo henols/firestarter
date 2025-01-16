@@ -16,6 +16,8 @@ extern "C" {
 #include <stddef.h>
 #include <string.h>
 
+#define VOLTAGE_MEASURE_PIN A2
+
     // CONTROL REGISTER
 #ifndef HARDWARE_REVISION
 #define VPE_TO_VPP      0x01
@@ -29,6 +31,7 @@ extern "C" {
 #define REGULATOR       0x80
 
 #else
+#define HARDWARE_REVISION_PIN A3
 #define REVISION_0 0
 #define REVISION_1 1
 #define REVISION_2 2
@@ -79,10 +82,9 @@ extern "C" {
 
 
 // Constants
-#define CONFIG_VERSION  "VER05"
+#define CONFIG_VERSION "VER06"
 
 // Default configuration
-#define ARDUINO_VCC 5.01
 #define VALUE_R1 270000
 #define VALUE_R2 44000
 
@@ -102,16 +104,18 @@ extern "C" {
 #endif
 
 // Struct definition
-    typedef   struct rurp_configuration {
+    typedef struct rurp_configuration {
         char version[6];
-        double vcc;
         long  r1;
         long  r2;
         uint8_t hardware_revision;
     } rurp_configuration_t;
 
     // Function prototypes
-    void  rurp_setup();
+    void rurp_board_setup();
+    void rurp_detect_hardware_revision();
+    void rurp_load_config();
+
 
 #ifdef SERIAL_ON_IO
     void rurp_set_programmer_mode();
@@ -142,18 +146,18 @@ extern "C" {
     double rurp_read_vcc();
     double rurp_read_voltage();
     double rurp_get_voltage_average();
+
     rurp_configuration_t* rurp_get_config();
-    void rurp_save_config();
+    void rurp_save_config(rurp_configuration_t* config);
+    void rurp_validate_config(rurp_configuration_t* config);
 
-    void rurp_validate_config() ;
 #ifdef HARDWARE_REVISION
-        int rurp_get_hardware_revision();
-        int rurp_get_physical_hardware_revision();
-
+    uint8_t rurp_get_hardware_revision();
+    uint8_t rurp_get_physical_hardware_revision();
 #endif
 
 #ifdef __cplusplus
-    }
+}
 #endif
 
 #endif // RURP_SHIELD_H

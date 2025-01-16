@@ -1,3 +1,10 @@
+/*
+ * Project Name: Firestarter
+ * Copyright (c) 2024 Henrik Olsson
+ *
+ * Permission is hereby granted under MIT license.
+ */
+
 #ifndef __UTILS_H
 #define __UTILS_H
 
@@ -5,12 +12,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+    int execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
+    int execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
 
-int execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
-int check_response(firestarter_handle_t* handle);
+    void reset_timeout();
 
-void reset_timeout();
-int wait_for_ok(firestarter_handle_t* handle);
+    int wait_for_ok(firestarter_handle_t* handle);
 
 #ifdef __cplusplus
 }
