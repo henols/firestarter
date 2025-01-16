@@ -13,7 +13,6 @@
 extern "C" {
 #endif
 
-
     void configure_eprom(firestarter_handle_t* handle);
     
 #ifdef __cplusplus

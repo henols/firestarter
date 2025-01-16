@@ -11,9 +11,9 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pip
@@ -43,7 +43,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: .pio/build/uno/firmware.hex        
+          files: .pio/build/**/firestarter_*.hex        
           tag_name: ${{ steps.version.outputs.version }}
           make_latest: true
           # token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}

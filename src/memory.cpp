@@ -9,35 +9,51 @@
 #include <Arduino.h>
 
 #include "memory_utils.h"
-#include "config.h"
 #include "eprom.h"
 #include "sram.h"
 #include "flash_type_2.h"
 #include "flash_type_3.h"
 #include "rurp_shield.h"
 #include "logging.h"
-#include "debug.h"
 
 #define TYPE_EPROM 1
 #define TYPE_FLASH_TYPE_2 2
 #define TYPE_FLASH_TYPE_3 3
 #define TYPE_SRAM 4
 
+void memory_read_execute(firestarter_handle_t* handle);
+void memory_write_execute(firestarter_handle_t* handle);
+void memory_verify_execute(firestarter_handle_t* handle);
+
+void memory_set_address(firestarter_handle_t* handle, uint32_t address);
+void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
+bool memory_get_control_register(firestarter_handle_t* handle, register_t bit);
+uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address);
+void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data);
+
 uint8_t programming = 0;
 
 void configure_memory(firestarter_handle_t* handle) {
     debug("Configuring memory");
-    handle->firestarter_read_init = NULL;
-    handle->firestarter_read_data = memory_read_data;
-    handle->firestarter_write_init = NULL;
-    handle->firestarter_write_data = memory_write_data;
-    handle->firestarter_erase = NULL;
-    handle->firestarter_blank_check = NULL;
-    handle->firestarter_check_chip_id = NULL;
+    handle->firestarter_operation_init = NULL;
+    handle->firestarter_operation_execute = NULL;
+    handle->firestarter_operation_end = NULL;
+
+    switch (handle->state) {
+    case STATE_READ:
+        handle->firestarter_operation_execute = memory_read_execute;
+        break;
+    case STATE_WRITE:
+        handle->firestarter_operation_execute = memory_write_execute;
+        break;
+    case STATE_VERIFY:
+        handle->firestarter_operation_execute = memory_verify_execute;
+        break;
+    }
 
     handle->firestarter_get_data = memory_get_data;
     handle->firestarter_set_data = memory_set_data;
-    
+
     handle->firestarter_set_address = memory_set_address;
 
     handle->firestarter_set_control_register = memory_set_control_register;
@@ -113,9 +129,9 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
     rurp_write_to_register(CONTROL_REGISTER, top_address);
 }
 
-void memory_read_data(firestarter_handle_t* handle) {
+void memory_read_execute(firestarter_handle_t* handle) {
     rurp_set_control_pin(CHIP_ENABLE, 0);
-    int buf_size = DATA_BUFFER_SIZE;
+    int buf_size = min(handle->mem_size - handle->address, DATA_BUFFER_SIZE);
     debug_format("Reading from address 0x%06x", handle->address);
     for (int i = 0; i < buf_size; i++) {
         uint8_t data = handle->firestarter_get_data(handle, handle->address + i);
@@ -123,6 +139,7 @@ void memory_read_data(firestarter_handle_t* handle) {
         handle->data_buffer[i] = data;
     }
     rurp_set_control_pin(CHIP_ENABLE, 1);
+    handle->data_size = buf_size;
 }
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
@@ -139,7 +156,7 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     return data;
 }
 
-void memory_write_data(firestarter_handle_t* handle) {
+void memory_write_execute(firestarter_handle_t* handle) {
     for (uint32_t i = 0; i < handle->data_size; i++) {
         handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
     }
@@ -155,4 +172,17 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
     rurp_set_control_pin(CHIP_ENABLE, 0);
     delayMicroseconds(handle->pulse_delay);
     rurp_set_control_pin(CHIP_ENABLE, 1);
+}
+
+void memory_verify_execute(firestarter_handle_t* handle) {
+    for (uint32_t i = 0; i < handle->data_size; i++) {
+        uint8_t byte = handle->firestarter_get_data(handle, handle->address + i);
+        uint8_t expected = handle->data_buffer[i];
+        if (byte != expected) {
+            format(handle->response_msg, "Expecting 0x%02x got 0x%02x at 0x%04x", expected, byte, handle->address + i);
+            handle->response_code = RESPONSE_CODE_ERROR;
+            return;
+        }
+    }
+    handle->response_code = RESPONSE_CODE_OK;
 }
