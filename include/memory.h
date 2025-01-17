@@ -7,19 +7,17 @@
 
 #ifndef MEMORY_H
 #define MEMORY_H
+#include "firestarter.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "firestarter.h"
-#include "rurp_shield.h"
 
 #define WRITE_FLAG  0
 #define READ_FLAG  1
 
     void configure_memory(firestarter_handle_t* handle);
-    uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t rw);
 
 #ifdef __cplusplus
 }

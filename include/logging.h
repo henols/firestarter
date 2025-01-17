@@ -5,13 +5,9 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef LOGGING_H
-#define LOGGING_H
 
-
-
-// #ifndef __LOGGING_H__
-// #define __LOGGING_H__
+#ifndef __LOGGING_H__
+#define __LOGGING_H__
 
 #include <stdio.h>
 #include <avr/pgmspace.h>
@@ -123,4 +119,4 @@ void debug_buf(const char* msg);
 #define log_debug(type, msg)
 #endif
 
-// #endif // __LOGGING_H__
+#endif // __LOGGING_H__

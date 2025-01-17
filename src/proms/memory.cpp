@@ -71,11 +71,11 @@ void configure_memory(firestarter_handle_t* handle) {
         return;
     }
     else if (handle->mem_type == TYPE_FLASH_TYPE_2) {
-        configure_flash_2(handle);
+        configure_flash2(handle);
         return;
     }
     else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
-        configure_flash_3(handle);
+        configure_flash3(handle);
         return;
     }
     format(handle->response_msg, "Memory type 0x%02x not supported", handle->mem_type);
@@ -143,7 +143,7 @@ void memory_read_execute(firestarter_handle_t* handle) {
 }
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
-    address = utils_remap_address_bus(handle, address, READ_FLAG);
+    address = memory_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_set_data_as_input();
@@ -164,7 +164,7 @@ void memory_write_execute(firestarter_handle_t* handle) {
 }
 
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
-    address = utils_remap_address_bus(handle, address, WRITE_FLAG);
+    address = memory_remap_address_bus(handle, address, WRITE_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
@@ -185,4 +185,35 @@ void memory_verify_execute(firestarter_handle_t* handle) {
         }
     }
     handle->response_code = RESPONSE_CODE_OK;
+}
+
+// Utility functions
+
+uint32_t memory_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t rw) {
+    bus_config_t config = handle->bus_config;
+    if (config.address_lines[0] != 0xff || config.rw_line != 0xff) {
+
+        uint32_t reorg_address = config.address_mask & address;
+        for (int i = config.matching_lines; i < 19 && config.address_lines[i] != 0xFF; i++) {
+            if (config.address_lines[i] != i && address & (uint32_t)1 << i) {
+                reorg_address |= (uint32_t)1 << config.address_lines[i];
+            }
+        }
+        if (config.rw_line != 0xFF) {
+            reorg_address |= (uint32_t)rw << config.rw_line;
+        }
+        return reorg_address;
+    }
+    return address;
+}
+
+void memory_blank_check(firestarter_handle_t* handle) {
+    for (uint32_t i = 0; i < handle->mem_size; i++) {
+        uint8_t val = handle->firestarter_get_data(handle, i);
+        if (val != 0xFF) {
+            handle->response_code = RESPONSE_CODE_ERROR;
+            format(handle->response_msg, "Memory is not blank, at 0x%06x, value: 0x%02x", i, val);
+            return;
+        }
+    }
 }

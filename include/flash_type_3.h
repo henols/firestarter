@@ -13,7 +13,7 @@ extern "C" {
 #endif
 #include "firestarter.h"
 
-    void configure_flash_3(firestarter_handle_t* handle);
+    void configure_flash3(firestarter_handle_t* handle);
 
 #ifdef __cplusplus
 }
