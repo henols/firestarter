@@ -18,21 +18,21 @@ uint8_t fu_flash_data_poll();
 
 void flash_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_flips, size_t size) {
 
-    handle->firestarter_set_control_register(handle, RW, 0);
+    handle->firestarter_set_control_register(handle, READ_WRITE, 0);
     for (size_t i = 0; i < size; i++) {
         fu_flash_flip_data(handle, byte_flips[i].address, byte_flips[i].byte);
     }
-    handle->firestarter_set_control_register(handle, RW, 0);
+    handle->firestarter_set_control_register(handle, READ_WRITE, 0);
 }
 
 void flash_verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
 
-    handle->firestarter_set_control_register(handle, RW, 1);
+    handle->firestarter_set_control_register(handle, READ_WRITE, 1);
 
     unsigned long timeout = millis() + 150;
     while (millis() < timeout) {
         // Check Data# Polling (DQ7)
-        if ((fu_flash_data_poll() & 0x80) == (expected_data & 0x80)) { //Only check if bit 7 has flipped
+        // if ((fu_flash_data_poll() & 0x80) == (expected_data & 0x80)) { //Only check if bit 7 has flipped
             // Verify completion with an additional read
             if ((fu_flash_data_poll() & 0x80) == (fu_flash_data_poll() & 0x80)) { //No assuming other bits
                 rurp_set_data_as_output();
@@ -40,7 +40,7 @@ void flash_verify_operation(firestarter_handle_t* handle, uint8_t expected_data)
                 rurp_set_control_pin(OUTPUT_ENABLE, 1);
                 return;  // Operation completed successfully
             }
-        }
+        // }
     }
     handle->response_code = RESPONSE_CODE_ERROR;
     copy_to_buffer(handle->response_msg, "Operation timed out");

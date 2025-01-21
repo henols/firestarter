@@ -38,6 +38,7 @@ void configure_flash3(firestarter_handle_t* handle) {
         break;
     case STATE_ERASE:
         handle->firestarter_operation_execute = flash3_erase_execute;
+        handle->firestarter_operation_end = memory_blank_check;
         break;
     case STATE_BLANK_CHECK:
         handle->firestarter_operation_execute = memory_blank_check;

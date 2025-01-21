@@ -109,9 +109,9 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 #endif
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 
-    register_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | RW);
+    register_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | READ_WRITE);
     register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
-    if (((top_address & RW) && RW == WRITE_FLAG) || handle->pins < 32) {
+    if (((top_address & READ_WRITE) && READ_WRITE == WRITE_FLAG) || handle->pins < 32) {
         // This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared -
         // can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
         mask |= VPE_TO_VPP;

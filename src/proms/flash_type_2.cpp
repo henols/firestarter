@@ -55,6 +55,7 @@ void configure_flash2(firestarter_handle_t* handle) {
         break;
     case STATE_ERASE:
         handle->firestarter_operation_execute = flash2_erase_execute;
+        handle->firestarter_operation_end = memory_blank_check;
         break;
     case STATE_BLANK_CHECK:
         handle->firestarter_operation_execute = memory_blank_check;
@@ -132,6 +133,7 @@ void flash2_check_chip_id_execute(firestarter_handle_t* handle) {
 
 void f2_dissable_protection(firestarter_handle_t* handle) {
     flash_byte_flipping(handle, flash_disable_write_protection, sizeof(flash_disable_write_protection) / sizeof(flash_disable_write_protection[0]));
+    delayMicroseconds(1);
 }
 
 void f2_enable_protection(firestarter_handle_t* handle) {
@@ -151,7 +153,7 @@ void f2_get_chip_id(firestarter_handle_t* handle, chip_info_t* chip_info) {
     chip_info->chip.manufacturer = handle->firestarter_get_data(handle, 0x0000);
     chip_info->low_boot_lockout = handle->firestarter_get_data(handle, 0x0002);
     chip_info->high_boot_lockout = handle->firestarter_get_data(handle, handle->mem_size - 0x0e);
-    handle->firestarter_set_address(handle, 0x0000);
+    // handle->firestarter_set_address(handle, 0x0000);
     flash_byte_flipping(handle, flash_disable_id, sizeof(flash_disable_id) / sizeof(flash_disable_id[0]));
 }
 

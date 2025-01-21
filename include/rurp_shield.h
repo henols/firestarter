@@ -42,7 +42,7 @@ extern "C" {
 #define P1_VPP_ENABLE   0x08
 #define A17             0x10
 #define A18             0x20
-#define RW              0x40
+#define READ_WRITE              0x40
 #define REGULATOR       0x80
 #define VPE_TO_VPP      0x100
 
