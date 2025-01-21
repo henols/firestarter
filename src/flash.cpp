@@ -99,17 +99,10 @@ void flash_write_execute(firestarter_handle_t* handle) {
             return;
         }
     }
-    handle->response_code = RESPONSE_CODE_OK;
 }
 
 void flash_erase_execute(firestarter_handle_t* handle) {
-    if (is_flag_set(FLAG_CAN_ERASE)) {
-        flash_internal_erase(handle);
-    }
-    else {
-        copy_to_buffer(handle->response_msg, "Erase not supported");
-        handle->response_code = RESPONSE_CODE_ERROR;
-    }
+    flash_internal_erase(handle);
 }
 
 void flash_blank_check_execute(firestarter_handle_t* handle) {

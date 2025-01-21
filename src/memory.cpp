@@ -168,7 +168,6 @@ void memory_write_execute(firestarter_handle_t* handle) {
     for (uint32_t i = 0; i < handle->data_size; i++) {
         handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
     }
-    handle->response_code = RESPONSE_CODE_OK;
 }
 
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
@@ -194,5 +193,4 @@ void memory_verify_execute(firestarter_handle_t* handle) {
             return;
         }
     }
-    handle->response_code = RESPONSE_CODE_OK;
 }

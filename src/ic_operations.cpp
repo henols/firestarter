@@ -29,7 +29,7 @@ bool read(firestarter_handle_t* handle) {
     return true;
   }
 
-  log_data_format( "Read data from address 0x%lx to 0x%lx", handle->address, handle->address + handle->data_size);
+  log_data_format("Read data from address 0x%lx to 0x%lx", handle->address, handle->address + handle->data_size);
   rurp_communication_write(handle->data_buffer, handle->data_size);
   // debug_format("Read buffer: %.10s...", handle->data_buffer);
 
@@ -59,11 +59,11 @@ bool write(firestarter_handle_t* handle) {
       return true;
     }
 
-    log_ok_format( "Reciving %d bytes", handle->data_size);
+    log_ok_format("Reciving %d bytes", handle->data_size);
     int len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
 
     if ((uint32_t)len != handle->data_size) {
-      log_error_format( "Not enough data, expected %d, got %d", (int)handle->data_size, len);
+      log_error_format("Not enough data, expected %d, got %d", (int)handle->data_size, len);
       return true;
     }
 
@@ -83,7 +83,7 @@ bool write(firestarter_handle_t* handle) {
       return true;
     }
 
-    log_ok_format( "Data written to address %lx - %lx", handle->address, handle->address + handle->data_size);
+    log_ok_format("Data written to address %lx - %lx", handle->address, handle->address + handle->data_size);
 
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
@@ -110,7 +110,7 @@ bool verify(firestarter_handle_t* handle) {
       return true;
     }
 
-    log_ok_format( "Reciving %d bytes", handle->data_size);
+    log_ok_format("Reciving %d bytes", handle->data_size);
     int len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
 
     if ((uint32_t)len != handle->data_size) {
@@ -133,7 +133,7 @@ bool verify(firestarter_handle_t* handle) {
       return true;
     }
 
-    log_ok_format( "Data verified address %lx - %lx", handle->address, handle->address + handle->data_size);
+    log_ok_format("Data verified address %lx - %lx", handle->address, handle->address + handle->data_size);
 
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
@@ -152,9 +152,7 @@ bool erase(firestarter_handle_t* handle) {
   }
 
   debug("Erase PROM");
-
-  if (excecute_operation(handle) && is_flag_set(FLAG_CAN_ERASE)) {
-
+  if (is_flag_set(FLAG_CAN_ERASE) and excecute_operation(handle)) {
     if (handle->response_code == RESPONSE_CODE_OK) {
       log_ok_const("Chip is erased");
     }
@@ -216,12 +214,9 @@ bool excecute_operation(firestarter_handle_t* handle) {
       return true;
     }
     execute_function(handle->firestarter_operation_end, handle);
-
     return true;
   }
-
   return false;
-
 }
 
 

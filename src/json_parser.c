@@ -80,7 +80,6 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     handle->bus_config.rw_line = 0xFF;
     handle->bus_config.vpp_line = 0;
     handle->bus_config.address_lines[0] = 0xFF;
-    handle->response_code = RESPONSE_CODE_OK;
     handle->chip_id = 0;
 
     for (int i = 1; i < token_count; i++) {
