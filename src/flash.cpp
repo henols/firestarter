@@ -102,6 +102,7 @@ void flash_write_execute(firestarter_handle_t* handle) {
 }
 
 void flash_erase_execute(firestarter_handle_t* handle) {
+    debug("Erase");
     flash_internal_erase(handle);
 }
 

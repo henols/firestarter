@@ -134,7 +134,8 @@ void rurp_write_to_register(uint8_t reg, register_t data) {
     }
     rurp_write_data_buffer(data);
     PORTB |= reg;
-    // Probably useless - verify later    delayMicroseconds(1); 
+    // Probably useless - verify later 
+    delayMicroseconds(1); 
     PORTB &= ~(reg);
     //Take a break here if an address change needs time to settle
     if (settle)
