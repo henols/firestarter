@@ -154,7 +154,6 @@ void flash_internal_erase(firestarter_handle_t* handle) {
     };
     flash_byte_flipping(handle, byte_flips, sizeof(byte_flips) / sizeof(byte_flips[0]));
     handle->firestarter_set_address(handle, 0x0000);
-    flash_verify_operation(handle, 0xFF);
 }
 
 uint16_t flash_get_chip_id(firestarter_handle_t* handle) {
