@@ -33,7 +33,7 @@ register_t control_register;
 void rurp_board_setup() {
     rurp_set_data_as_output();
 
-    DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | RW;
+    DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | READ_WRITE;
 
     PORTB = OUTPUT_ENABLE | CHIP_ENABLE;
     lsb_address = 0xff;

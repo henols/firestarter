@@ -9,13 +9,13 @@
 #include <Arduino.h>
 #include <avr/pgmspace.h>
 #include <stdio.h>
+#include "memory_utils.h"
 #include "firestarter.h"
 #include "rurp_shield.h"
 #include "logging.h"
 
 
 void eprom_erase_execute(firestarter_handle_t* handle);
-void eprom_blank_check_execute(firestarter_handle_t* handle);
 
 void eprom_write_init(firestarter_handle_t* handle);
 void eprom_write_execute(firestarter_handle_t* handle);
@@ -30,7 +30,7 @@ void eprom_check_vpp(firestarter_handle_t* handle);
 #endif
 
 void eprom_internal_erase(firestarter_handle_t* handle);
-void (*set_control_register)(struct firestarter_handle*, register_t, bool);
+void (*ep_set_control_register)(struct firestarter_handle*, register_t, bool);
 
 void eprom_generic_init(firestarter_handle_t* handle);
 
@@ -46,10 +46,10 @@ void configure_eprom(firestarter_handle_t* handle) {
         break;
     case STATE_ERASE:
         handle->firestarter_operation_execute = eprom_erase_execute;
-        handle->firestarter_operation_end = eprom_blank_check_execute;
+        handle->firestarter_operation_end = memory_blank_check;
         break;
     case STATE_BLANK_CHECK:
-        handle->firestarter_operation_execute = eprom_blank_check_execute;
+        handle->firestarter_operation_execute = memory_blank_check;
         break;
     case STATE_CHECK_CHIP_ID:
         handle->firestarter_operation_init = eprom_check_chip_id_init;
@@ -57,7 +57,7 @@ void configure_eprom(firestarter_handle_t* handle) {
         break;
     }
 
-    set_control_register = handle->firestarter_set_control_register;
+    ep_set_control_register = handle->firestarter_set_control_register;
     handle->firestarter_set_control_register = eprom_set_control_register;
 }
 
@@ -82,18 +82,6 @@ void eprom_erase_execute(firestarter_handle_t* handle) {
 }
 
 
-void eprom_blank_check_execute(firestarter_handle_t* handle) {
-    debug("Blank check");
-    for (uint32_t i = 0; i < handle->mem_size; i++) {
-        uint8_t val = handle->firestarter_get_data(handle, i);
-        if (val != 0xFF) {
-            handle->response_code = RESPONSE_CODE_ERROR;
-            format(handle->response_msg, "Memory is not blank, at 0x%06x, value: 0x%02x", i, val);
-            return;
-        }
-    }
-}
-
 void eprom_write_init(firestarter_handle_t* handle) {
     eprom_generic_init(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
@@ -110,7 +98,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
     }
 #ifdef EPROM_BLANK_CHECK
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
-        eprom_blank_check_execute(handle);
+        memory_blank_check(handle);
     }
 #endif
 }
@@ -179,7 +167,7 @@ void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bo
         bit &= ~VPE_ENABLE;
         bit |= P1_VPP_ENABLE;
     }
-    set_control_register(handle, bit, state);
+    ep_set_control_register(handle, bit, state);
 }
 
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {

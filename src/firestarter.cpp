@@ -15,7 +15,7 @@
 #include "json_parser.h"
 #include "logging.h"
 
-#include "utils.h"
+#include "operation_utils.h"
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
@@ -79,7 +79,7 @@ bool parse_json(firestarter_handle_t* handle) {
       log_error(handle->response_msg);
       return false;
     }
-    if (!execute_function(configure_memory, handle)) {
+    if (!op_execute_function(configure_memory, handle)) {
       log_error_const("Could not configure chip");
       return false;
     }
@@ -214,7 +214,7 @@ void loop() {
 
 }
 
-void reset_timeout() {
+void op_reset_timeout() {
   timeout = millis() + 1000;
 }
 

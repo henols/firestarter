@@ -5,18 +5,18 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef FALSH_H
-#define FLASH_H
+#ifndef FALSH__TYPE_2_H
+#define FALSH__TYPE_2_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 #include "firestarter.h"
 
-    void configure_flash(firestarter_handle_t* handle);
+    void configure_flash2(firestarter_handle_t* handle);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // FLASH_H
+#endif // FALSH__TYPE_2_H

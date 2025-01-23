@@ -5,22 +5,18 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef MEMORY_H
-#define MEMORY_H
-#include "firestarter.h"
+#ifndef FALSH__TYPE_3_H
+#define FALSH__TYPE_3_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "firestarter.h"
 
-
-#define WRITE_FLAG  0
-#define READ_FLAG  1
-
-    void configure_memory(firestarter_handle_t* handle);
+    void configure_flash3(firestarter_handle_t* handle);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // MEMORY_H
+#endif // FALSH__TYPE_3_H
