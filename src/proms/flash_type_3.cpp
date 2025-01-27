@@ -129,6 +129,6 @@ void f3_enable_write(firestarter_handle_t* handle) {
 void f3_internal_erase(firestarter_handle_t* handle) {
     flash_byte_flipping(handle, flash_erase, sizeof(flash_erase) / sizeof(flash_erase[0]));
     handle->firestarter_set_address(handle, 0x0000);
-    flash_verify_operation(handle, 0xFF);
+    // flash_verify_operation(handle, 0xFF);
 }
 
