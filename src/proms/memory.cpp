@@ -11,7 +11,6 @@
 #include "memory_utils.h"
 #include "eprom.h"
 #include "sram.h"
-#include "flash_type_2.h"
 #include "flash_type_3.h"
 #include "rurp_shield.h"
 #include "logging.h"
@@ -70,10 +69,6 @@ void configure_memory(firestarter_handle_t* handle) {
         configure_sram(handle);
         return;
     }
-    else if (handle->mem_type == TYPE_FLASH_TYPE_2) {
-        configure_flash2(handle);
-        return;
-    }
     else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
         configure_flash3(handle);
         return;
@@ -130,7 +125,7 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 }
 
 void memory_read_execute(firestarter_handle_t* handle) {
-    rurp_set_control_pin(CHIP_ENABLE, 0);
+    // rurp_set_control_pin(CHIP_ENABLE, 0);
     int buf_size = min(handle->mem_size - handle->address, DATA_BUFFER_SIZE);
     debug_format("Reading from address 0x%06x", handle->address);
     for (int i = 0; i < buf_size; i++) {
@@ -138,19 +133,24 @@ void memory_read_execute(firestarter_handle_t* handle) {
         // debug_format("Data 0x%02x %c", data, data);
         handle->data_buffer[i] = data;
     }
-    rurp_set_control_pin(CHIP_ENABLE, 1);
+    // rurp_set_control_pin(CHIP_ENABLE, 1);
     handle->data_size = buf_size;
 }
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
+    // rurp_set_control_pin(OUTPUT_ENABLE, 0);
+    rurp_chip_output();
     address = memory_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_set_data_as_input();
-    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 0);
+    // rurp_set_control_pin(CHIP_ENABLE , 0);
+    rurp_chip_enable();
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();
-    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
+    rurp_chip_disable();
+
+    // rurp_set_control_pin(CHIP_ENABLE , 1);
     // rurp_set_data_as_output();
 
     return data;
@@ -163,8 +163,8 @@ void memory_write_execute(firestarter_handle_t* handle) {
 }
 
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
+    rurp_set_control_pin(OUTPUT_ENABLE, 1);
     address = memory_remap_address_bus(handle, address, WRITE_FLAG);
-
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
     delayMicroseconds(3); //Needed for slower address changes like slow ROMs and "Power through address lines"
@@ -187,7 +187,7 @@ void memory_verify_execute(firestarter_handle_t* handle) {
 
 // Utility functions
 
-uint32_t memory_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t rw) {
+uint32_t memory_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
     bus_config_t config = handle->bus_config;
     if (config.address_lines[0] != 0xff || config.rw_line != 0xff) {
 
@@ -198,7 +198,7 @@ uint32_t memory_remap_address_bus(const firestarter_handle_t* handle, uint32_t a
             }
         }
         if (config.rw_line != 0xFF) {
-            reorg_address |= (uint32_t)rw << config.rw_line;
+            reorg_address |= (uint32_t)read_write << config.rw_line;
         }
         return reorg_address;
     }

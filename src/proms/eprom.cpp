@@ -177,10 +177,8 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
 
     handle->firestarter_set_control_register(handle, A9_VPP_ENABLE, 1);
     delay(100);
-    rurp_set_control_pin(CHIP_ENABLE, 0);
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
     chip_id |= (handle->firestarter_get_data(handle, 0x0001));
-    rurp_set_control_pin(CHIP_ENABLE, 1);
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE, 0);
     return chip_id;
 }
@@ -233,14 +231,15 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 
 void eprom_internal_erase(firestarter_handle_t* handle) {
     debug("Internal erase");
+    rurp_chip_input();    
     handle->firestarter_set_control_register(handle, REGULATOR, 1); //Enable regulator without dropping resistor
     delay(100);
     handle->firestarter_set_address(handle, 0x0000);
     handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_ENABLE, 1); //Erase with VPE - assumes VPE_TO_VPP isn't set and left active previously
     delay(100);
-    rurp_set_control_pin(CHIP_ENABLE, 0);
+    rurp_chip_enable();
     delayMicroseconds(handle->pulse_delay);
-    rurp_set_control_pin(CHIP_ENABLE, 1);
+    rurp_chip_output();
 
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
 }

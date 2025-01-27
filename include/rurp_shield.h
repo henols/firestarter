@@ -135,6 +135,14 @@ extern "C" {
     void rurp_set_data_as_output();
     void rurp_set_data_as_input();
 
+#define rurp_chip_enable() rurp_set_chip_enable(0)
+#define rurp_chip_disable() rurp_set_chip_enable(1)
+#define rurp_chip_output() rurp_set_chip_output(0)
+#define rurp_chip_input() rurp_set_chip_output(1)
+
+#define rurp_set_chip_enable(state) rurp_set_control_pin(CHIP_ENABLE, state)
+#define rurp_set_chip_output(state) rurp_set_control_pin(OUTPUT_ENABLE, state)
+
     void rurp_set_control_pin(uint8_t pin, uint8_t state);
 
     void rurp_write_to_register(uint8_t reg, register_t data);

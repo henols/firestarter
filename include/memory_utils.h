@@ -11,10 +11,13 @@
 #include "firestarter.h"
 extern "C" {
 #endif
+    
+    #define WRITE_FLAG  0
+    #define READ_FLAG  1
 
-    uint32_t memory_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t rw);
-
+    uint32_t memory_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write);
     void memory_blank_check(firestarter_handle_t* handle);
+    void memory_set_address(firestarter_handle_t* handle, uint32_t address);
 
 #ifdef __cplusplus
 }

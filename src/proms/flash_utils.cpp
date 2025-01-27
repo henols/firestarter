@@ -64,11 +64,11 @@ void fu_flash_fast_address(firestarter_handle_t* handle, uint32_t address) {
 
 uint8_t fu_flash_data_poll() {
     rurp_set_data_as_input();
-    rurp_set_control_pin(CHIP_ENABLE, 0);
-    rurp_set_control_pin(OUTPUT_ENABLE, 0);
+    rurp_chip_enable();
+    rurp_chip_output();
     uint8_t data = rurp_read_data_buffer();
-    rurp_set_control_pin(CHIP_ENABLE, 1);
-    rurp_set_control_pin(OUTPUT_ENABLE, 1);
+    rurp_chip_disable();
+    rurp_chip_input();
     return data;
 }
 

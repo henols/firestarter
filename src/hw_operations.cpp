@@ -38,7 +38,7 @@ bool read_voltage(firestarter_handle_t* handle) {
   dtostrf(rurp_read_vcc(), 2, 2, vcc);
   log_data_format("%s: %sv, Internal VCC: %sv", type, vStr, vcc);
   delay(200);
-  reset_timeout();
+  op_reset_timeout();
   return false;
 }
 
