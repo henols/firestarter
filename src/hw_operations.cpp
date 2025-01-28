@@ -1,7 +1,7 @@
 #include "hw_operations.h"
 #include "firestarter.h"
 #include "logging.h"
-#include "utils.h"
+#include "operation_utils.h"
 #include "rurp_shield.h"
 #include "version.h"
 #include <Arduino.h>
@@ -12,23 +12,20 @@ void create_overide_text(char* revStr);
 void init_read_voltage(firestarter_handle_t* handle);
 
 bool read_voltage(firestarter_handle_t* handle) {
-  if (handle->init) {
-    debug("Read voltage");
-    if (rurp_get_hardware_revision() == REVISION_0) {
-      log_error_const("Rev0 dont support reading VPP/VPE");
-      return true;
-    }
-    handle->init = 0;
-    int res = execute_function(init_read_voltage, handle);
-    if (res <= 0) {
-      return true;
-    }
-    log_ok_const("Voltage read setup");
-  }
-
-  if (!wait_for_ok(handle)) {
+  if (!op_wait_for_ok(handle)) {
     return false;
   }
+
+  if(handle->init) {
+    debug("Read voltage");
+    int res = op_execute_init(init_read_voltage, handle);
+    if (res <= 0) {
+    //  log_info_const("Fail voltage");
+      return true;
+    }
+    log_ok_const("Voltage setup");
+  }
+
 
   double voltage = rurp_read_voltage();
   const char* type = (handle->state == STATE_READ_VPE) ? "VPE" : "VPP";
@@ -38,7 +35,7 @@ bool read_voltage(firestarter_handle_t* handle) {
   dtostrf(rurp_read_vcc(), 2, 2, vcc);
   log_data_format("%s: %sv, Internal VCC: %sv", type, vStr, vcc);
   delay(200);
-  reset_timeout();
+  op_reset_timeout();
   return false;
 }
 
@@ -74,14 +71,25 @@ bool get_config(firestarter_handle_t* handle) {
 
 void init_read_voltage(firestarter_handle_t* handle) {
   debug("Init read voltage");
+    if (rurp_get_hardware_revision() == REVISION_0) {
+      copy_to_buffer(handle->response_msg,"Rev0 dont support reading VPP/VPE");
+      handle->response_code = RESPONSE_CODE_ERROR;
+      return;
+    }
+
   if (handle->state == STATE_READ_VPP) {
     debug("Setting up VPP");
     rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP); // Enable regulator and drop voltage to VPP
+    copy_to_buffer(handle->response_msg, "Setting up VPP");
+    return;
   }
   else if (handle->state == STATE_READ_VPE) {
-    debug("Setting up VPP");
+    debug("Setting up VPE");
     rurp_write_to_register(CONTROL_REGISTER, REGULATOR); // Enable regulator
+    copy_to_buffer(handle->response_msg, "Setting up VPE");
+    return;
   }
+  copy_to_buffer(handle->response_msg, "Error state");
 }
 
 #ifdef HARDWARE_REVISION

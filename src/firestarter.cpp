@@ -15,15 +15,16 @@
 #include "json_parser.h"
 #include "logging.h"
 
-#include "utils.h"
+#include "operation_utils.h"
 #include "rurp_shield.h"
 #include "memory.h"
 #include "version.h"
+#ifdef DEV_TOOLS
+#include "dev_tools.h"
+#endif
 
 #define RX 0
 #define TX 1
-
-
 
 bool init_programmer(firestarter_handle_t* handle);
 bool parse_json(firestarter_handle_t* handle);
@@ -58,31 +59,48 @@ bool parse_json(firestarter_handle_t* handle) {
 
   jsmn_init(&parser);
   int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
-  log_info_format("Token count: %d", token_count);
   handle->response_msg[0] = '\0';
   if (token_count <= 0) {
-    log_error((const char*)handle->data_buffer);
+    log_info_format("Buf val: 0x%02x", handle->data_buffer[0]);
+    log_error_const("Bad JSON");
+
+    return false;
+  }
+  log_info_format("Token count: %d", token_count);
+
+  handle->state = json_get_state(handle->data_buffer, tokens, token_count);
+  if (handle->state < 0) {
+    log_error_const("Unknown state");
     return false;
   }
 
-  handle->state = json_get_state(handle->data_buffer, tokens, token_count);
   debug_format("State: %d", handle->state);
   if (handle->state < STATE_READ_VPP) {
     json_parse(handle->data_buffer, tokens, token_count, handle);
-    debug_format("Force: %d", is_flag_set(FLAG_FORCE));
-    debug_format("Can erase: %d", is_flag_set(FLAG_CAN_ERASE));
-    debug_format("Skip erase: %d", is_flag_set(FLAG_SKIP_ERASE));
-    debug_format("Skip blank check: %d", is_flag_set(FLAG_SKIP_BLANK_CHECK));
-    debug_format("VPE as VPP: %d", is_flag_set(FLAG_VPE_AS_VPP));
-
+    log_info_format("Force: %d", is_flag_set(FLAG_FORCE));
+    log_info_format("Can erase: %d", is_flag_set(FLAG_CAN_ERASE));
+    log_info_format("Skip erase: %d", is_flag_set(FLAG_SKIP_ERASE));
+    log_info_format("Skip blank check: %d", is_flag_set(FLAG_SKIP_BLANK_CHECK));
+    log_info_format("VPE as VPP: %d", is_flag_set(FLAG_VPE_AS_VPP));
+    log_info_format("Output enable: %d", is_flag_set(FLAG_OUTPUT_ENABLE));
+    log_info_format("Chip enable: %d", is_flag_set(FLAG_CHIP_ENABLE));
     if (handle->response_code == RESPONSE_CODE_ERROR) {
       log_error(handle->response_msg);
       return false;
     }
-    if (!execute_function(configure_memory, handle)) {
+#ifdef DEV_TOOLS
+    if (handle->state < STATE_DEV_ADDRESS) {
+      if (!op_execute_function(configure_memory, handle)) {
+        log_error_const("Could not configure chip");
+        return false;
+      }
+    }
+#else
+    if (!op_execute_function(configure_memory, handle)) {
       log_error_const("Could not configure chip");
       return false;
     }
+#endif
   }
   else if (handle->state == STATE_CONFIG) {
     rurp_configuration_t* config = rurp_get_config();
@@ -106,20 +124,14 @@ bool init_programmer(firestarter_handle_t* handle) {
   log_info_format("Setup buffer size: %d", handle->data_size);
   if (handle->data_size == 0) {
     log_error_const("Empty input");
-    return true;
+    return false;
   }
   debug("Setup");
   handle->data_buffer[handle->data_size] = '\0';
 
   if (!parse_json(handle)) {
-    log_error_const("Could not parse JSON");
-    return true;
+    return false;
   };
-
-  if (handle->state == 0) {
-    log_error_format("Unknown state: %s", handle->data_buffer);
-    return true;
-  }
 
   if (handle->state > STATE_IDLE && handle->state < STATE_READ_VPP) {
     log_info_format("EPROM memory size 0x%lx", handle->mem_size);
@@ -132,14 +144,15 @@ bool init_programmer(firestarter_handle_t* handle) {
 #define PARSE_RESPONSE "FW: " FW_VERSION ", State 0x%02x"
   log_ok_format(PARSE_RESPONSE, handle->state);
 #endif
-  return false;
+  op_reset_timeout();
+  return true;
 }
 
 void command_done(firestarter_handle_t* handle) {
   debug("State done");
   rurp_set_programmer_mode();
-  rurp_set_control_pin(CHIP_ENABLE, 1);
-  rurp_set_control_pin(OUTPUT_ENABLE, 1);
+  rurp_chip_disable();
+  // rurp_set_control_pin(OUTPUT_ENABLE, 1);
   rurp_write_to_register(CONTROL_REGISTER, 0x00);
   rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
   rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
@@ -199,6 +212,15 @@ void loop() {
     done = get_hw_version(&handle);
     break;
 #endif
+#ifdef DEV_TOOLS
+  case  STATE_DEV_REGISTER:
+    done = dt_set_registers(&handle);
+    break;
+  case STATE_DEV_ADDRESS:
+    done = dt_set_address(&handle);
+    break;
+#endif
+
   case STATE_CONFIG:
     done = get_config(&handle);
     break;
@@ -214,7 +236,7 @@ void loop() {
 
 }
 
-void reset_timeout() {
+void op_reset_timeout() {
   timeout = millis() + 1000;
 }
 
