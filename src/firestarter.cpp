@@ -61,17 +61,19 @@ bool parse_json(firestarter_handle_t* handle) {
   int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
   handle->response_msg[0] = '\0';
   if (token_count <= 0) {
+    log_info_format("Buf val: 0x%02x", handle->data_buffer[0]);
     log_error_const("Bad JSON");
+
     return false;
   }
   log_info_format("Token count: %d", token_count);
 
   handle->state = json_get_state(handle->data_buffer, tokens, token_count);
-  if ( handle->state < 0)  {
+  if (handle->state < 0) {
     log_error_const("Unknown state");
     return false;
   }
-  
+
   debug_format("State: %d", handle->state);
   if (handle->state < STATE_READ_VPP) {
     json_parse(handle->data_buffer, tokens, token_count, handle);
@@ -86,10 +88,19 @@ bool parse_json(firestarter_handle_t* handle) {
       log_error(handle->response_msg);
       return false;
     }
+#ifdef DEV_TOOLS
+    if (handle->state < STATE_DEV_ADDRESS) {
+      if (!op_execute_function(configure_memory, handle)) {
+        log_error_const("Could not configure chip");
+        return false;
+      }
+    }
+#else
     if (!op_execute_function(configure_memory, handle)) {
       log_error_const("Could not configure chip");
       return false;
     }
+#endif
   }
   else if (handle->state == STATE_CONFIG) {
     rurp_configuration_t* config = rurp_get_config();
@@ -113,13 +124,13 @@ bool init_programmer(firestarter_handle_t* handle) {
   log_info_format("Setup buffer size: %d", handle->data_size);
   if (handle->data_size == 0) {
     log_error_const("Empty input");
-    return true;
+    return false;
   }
   debug("Setup");
   handle->data_buffer[handle->data_size] = '\0';
 
   if (!parse_json(handle)) {
-    return true;
+    return false;
   };
 
   if (handle->state > STATE_IDLE && handle->state < STATE_READ_VPP) {
@@ -133,7 +144,8 @@ bool init_programmer(firestarter_handle_t* handle) {
 #define PARSE_RESPONSE "FW: " FW_VERSION ", State 0x%02x"
   log_ok_format(PARSE_RESPONSE, handle->state);
 #endif
-  return false;
+  op_reset_timeout();
+  return true;
 }
 
 void command_done(firestarter_handle_t* handle) {

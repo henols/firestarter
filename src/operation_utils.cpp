@@ -54,7 +54,6 @@ int op_wait_for_ok(firestarter_handle_t* handle) {
     }
     if (rurp_communication_read() != 'O' || rurp_communication_read() != 'K') {
         log_info_const("Expecting OK");
-        op_reset_timeout();
         return 0;
     }
     return 1;
