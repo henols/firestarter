@@ -29,7 +29,9 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
 void eprom_check_vpp(firestarter_handle_t* handle);
 #endif
 
+void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_code);
 void eprom_internal_erase(firestarter_handle_t* handle);
+
 void (*ep_set_control_register)(struct firestarter_handle*, register_t, bool);
 
 void eprom_generic_init(firestarter_handle_t* handle);
@@ -67,13 +69,10 @@ void eprom_check_chip_id_init(firestarter_handle_t* handle) {
 #endif
 }
 
+
 void eprom_check_chip_id_execute(firestarter_handle_t* handle) {
     debug("Check chip ID");
-    uint16_t chip_id = eprom_get_chip_id(handle);
-    if (chip_id != handle->chip_id) {
-        handle->response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
-    }
+    eprom_internal_check_chip_id(handle, RESPONSE_CODE_ERROR);
 }
 
 void eprom_erase_execute(firestarter_handle_t* handle) {
@@ -231,7 +230,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 
 void eprom_internal_erase(firestarter_handle_t* handle) {
     debug("Internal erase");
-    rurp_chip_input();    
+    rurp_chip_input();
     handle->firestarter_set_control_register(handle, REGULATOR, 1); //Enable regulator without dropping resistor
     delay(100);
     handle->firestarter_set_address(handle, 0x0000);
@@ -252,6 +251,15 @@ void eprom_generic_init(firestarter_handle_t* handle) {
     }
 #endif
     if (handle->chip_id > 0) {
-        eprom_check_chip_id_execute(handle);
+        eprom_internal_check_chip_id(handle, is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR);
+    }
+}
+
+void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_code) {
+    debug("Check chip ID");
+    uint16_t chip_id = eprom_get_chip_id(handle);
+    if (chip_id != handle->chip_id) {
+        handle->response_code = error_code;
+        format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
     }
 }
