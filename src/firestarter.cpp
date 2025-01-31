@@ -163,7 +163,7 @@ void command_done(firestarter_handle_t* handle) {
 
 void loop() {
   if (handle.state != STATE_IDLE && timeout < millis()) {
-    log_error_const_buf(handle.response_msg, "Timeout");
+    log_error_const_buf(handle.response_msg, "Timeout - aborting");
     command_done(&handle);
   }
   else

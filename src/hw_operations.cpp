@@ -16,16 +16,17 @@ bool read_voltage(firestarter_handle_t* handle) {
     return false;
   }
 
-  if(handle->init) {
+
+  if (handle->init) {
     debug("Read voltage");
     int res = op_execute_init(init_read_voltage, handle);
     if (res <= 0) {
-    //  log_info_const("Fail voltage");
+      //  log_info_const("Fail voltage");
       return true;
     }
-    log_ok_const("Voltage setup");
+    // log_ok_const("Voltage setup");
+    // return false;
   }
-
 
   double voltage = rurp_read_voltage();
   const char* type = (handle->state == STATE_READ_VPE) ? "VPE" : "VPP";
@@ -71,11 +72,11 @@ bool get_config(firestarter_handle_t* handle) {
 
 void init_read_voltage(firestarter_handle_t* handle) {
   debug("Init read voltage");
-    if (rurp_get_hardware_revision() == REVISION_0) {
-      copy_to_buffer(handle->response_msg,"Rev0 dont support reading VPP/VPE");
-      handle->response_code = RESPONSE_CODE_ERROR;
-      return;
-    }
+  if (rurp_get_hardware_revision() == REVISION_0) {
+    copy_to_buffer(handle->response_msg, "Rev0 dont support reading VPP/VPE");
+    handle->response_code = RESPONSE_CODE_ERROR;
+    return;
+  }
 
   if (handle->state == STATE_READ_VPP) {
     debug("Setting up VPP");

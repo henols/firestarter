@@ -24,7 +24,6 @@ void memory_read_execute(firestarter_handle_t* handle);
 void memory_write_execute(firestarter_handle_t* handle);
 void memory_verify_execute(firestarter_handle_t* handle);
 
-void memory_set_address(firestarter_handle_t* handle, uint32_t address);
 void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
 bool memory_get_control_register(firestarter_handle_t* handle, register_t bit);
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address);
