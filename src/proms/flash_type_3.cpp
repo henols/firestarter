@@ -5,8 +5,9 @@
  * Permission is hereby granted under MIT license.
  */
 
+#include "flash_type_3.h"
+
 #include <Arduino.h>
-#include "flash.h"
 #include "firestarter.h"
 #include "rurp_shield.h"
 #include "logging.h"
@@ -36,7 +37,7 @@ void flash_fast_address(firestarter_handle_t* handle, uint32_t address);
 
 void flash_verify_operation(firestarter_handle_t* handle, uint8_t expected_data);
 
-void configure_flash(firestarter_handle_t* handle) {
+void configure_flash3(firestarter_handle_t* handle) {
     debug("Configuring Flash");
     handle->firestarter_operation_init = flash_generic_init;
     switch (handle->state) {
