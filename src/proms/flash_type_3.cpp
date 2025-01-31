@@ -8,16 +8,18 @@
 #include "flash_type_3.h"
 
 #include <Arduino.h>
+#include "memory_utils.h"
+#include "flash_utils.h"
 #include "firestarter.h"
 #include "rurp_shield.h"
 #include "logging.h"
 #include <stdio.h>
 
-typedef struct byte_flip
-{
-    uint32_t address;
-    uint8_t byte;
-} byte_flip_t;
+// typedef struct byte_flip
+// {
+//     uint32_t address;
+//     uint8_t byte;
+// } byte_flip_t;
 
 
 void flash_erase_execute(firestarter_handle_t* handle);
@@ -32,10 +34,10 @@ void flash_generic_init(firestarter_handle_t* handle);
 
 void flash_enable_write(firestarter_handle_t* handle);
 void flash_internal_erase(firestarter_handle_t* handle);
-void flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data);
-void flash_fast_address(firestarter_handle_t* handle, uint32_t address);
+// void flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data);
+// void flash_fast_address(firestarter_handle_t* handle, uint32_t address);
 
-void flash_verify_operation(firestarter_handle_t* handle, uint8_t expected_data);
+// void flash_verify_operation(firestarter_handle_t* handle, uint8_t expected_data);
 
 void configure_flash3(firestarter_handle_t* handle) {
     debug("Configuring Flash");
@@ -47,9 +49,10 @@ void configure_flash3(firestarter_handle_t* handle) {
         break;
     case STATE_ERASE:
         handle->firestarter_operation_execute = flash_erase_execute;
+        // handle->firestarter_operation_end = memory_blank_check;
         break;
     case STATE_BLANK_CHECK:
-        handle->firestarter_operation_execute = flash_blank_check_execute;
+        handle->firestarter_operation_execute = memory_blank_check;
         break;
     case STATE_CHECK_CHIP_ID:
         handle->firestarter_operation_init = NULL;
@@ -126,13 +129,13 @@ void flash_check_chip_id_execute(firestarter_handle_t* handle) {
     }
 }
 
-void flash_byte_flipping(firestarter_handle_t* handle, byte_flip_t* byte_flips, size_t size) {
-    handle->firestarter_set_control_register(handle, RW, 0);
-    for (size_t i = 0; i < size; i++) {
-        flash_flip_data(handle, byte_flips[i].address, byte_flips[i].byte);
-    }
-    handle->firestarter_set_control_register(handle, RW, 0);
-}
+// void flash_byte_flipping(firestarter_handle_t* handle, byte_flip_t* byte_flips, size_t size) {
+//     handle->firestarter_set_control_register(handle, READ_WRITE, 0);
+//     for (size_t i = 0; i < size; i++) {
+//         flash_flip_data(handle, byte_flips[i].address, byte_flips[i].byte);
+//     }
+//     handle->firestarter_set_control_register(handle, READ_WRITE, 0);
+// }
 
 void flash_enable_write(firestarter_handle_t* handle) {
     byte_flip_t byte_flips[] = {
@@ -143,83 +146,64 @@ void flash_enable_write(firestarter_handle_t* handle) {
     flash_byte_flipping(handle, byte_flips, sizeof(byte_flips) / sizeof(byte_flips[0]));
 }
 
-
 void flash_internal_erase(firestarter_handle_t* handle) {
-    byte_flip_t byte_flips[] = {
-        {0x5555, 0xAA},
-        {0x2AAA, 0x55},
-        {0x5555, 0x80},
-        {0x5555, 0xAA},
-        {0x2AAA, 0x55},
-        {0x5555, 0x10},
-    };
-    flash_byte_flipping(handle, byte_flips, sizeof(byte_flips) / sizeof(byte_flips[0]));
+    // flash_byte_flipping(handle, FLASH_ERASE, sizeof(FLASH_ERASE) / sizeof(FLASH_ERASE[0]));
+    flash_execute_command(FLASH_ERASE);
     handle->firestarter_set_address(handle, 0x0000);
 }
 
 uint16_t flash_get_chip_id(firestarter_handle_t* handle) {
-    byte_flip_t enable_id[] = {
-        {0x5555, 0xAA},
-        {0x2AAA, 0x55},
-        {0x5555, 0x90},
-    };
-    byte_flip disable_id[] = {
-        {0x5555, 0xAA},
-        {0x2AAA, 0x55},
-        {0x5555, 0xF0},
-    };
-
-    flash_byte_flipping(handle, enable_id, sizeof(enable_id) / sizeof(enable_id[0]));
+    flash_execute_command(FLASH_ENABLE_ID);
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
     chip_id |= (handle->firestarter_get_data(handle, 0x0001));
-    flash_byte_flipping(handle, disable_id, sizeof(disable_id) / sizeof(enable_id[0]));
+    flash_execute_command(FLASH_DISABLE_ID);
     return chip_id;
 }
 
-uint8_t flash_data_poll() {
-    rurp_set_data_as_input();
-    rurp_set_control_pin(CHIP_ENABLE, 0);
-    rurp_set_control_pin(OUTPUT_ENABLE, 0);
-    uint8_t data = rurp_read_data_buffer();
-    rurp_set_control_pin(CHIP_ENABLE, 1);
-    rurp_set_control_pin(OUTPUT_ENABLE, 1);
-    return data;
-}
+// uint8_t flash_data_poll() {
+//     rurp_set_data_as_input();
+//     rurp_set_control_pin(CHIP_ENABLE, 0);
+//     rurp_set_control_pin(OUTPUT_ENABLE, 0);
+//     uint8_t data = rurp_read_data_buffer();
+//     rurp_set_control_pin(CHIP_ENABLE, 1);
+//     rurp_set_control_pin(OUTPUT_ENABLE, 1);
+//     return data;
+// }
 
-void flash_verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
+// void flash_verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
 
-    handle->firestarter_set_control_register(handle, RW, 1);
+//     handle->firestarter_set_control_register(handle, READ_WRITE, 1);
 
-    unsigned long now = millis();
-    while (millis() - now <= 150) {
+//     unsigned long now = millis();
+//     while (millis() - now <= 150) {
 
-        // Check Data# Polling (DQ7)
-        if ((flash_data_poll() & 0x80) == (expected_data & 0x80)) { //Only check if bit 7 has flipped
-            // Verify completion with an additional read
-            if ((flash_data_poll() & 0x80) == (flash_data_poll() & 0x80)) { //No assuming other bits
-                rurp_set_data_as_output();
-                rurp_set_control_pin(CHIP_ENABLE, 1);
-                rurp_set_control_pin(OUTPUT_ENABLE, 1);
-                return;  // Operation completed successfully
-            }
-        }
-    }
-    handle->response_code = RESPONSE_CODE_ERROR;
-    copy_to_buffer(handle->response_msg, "Operation timed out");
-    return;
-}
+//         // Check Data# Polling (DQ7)
+//         if ((flash_data_poll() & 0x80) == (expected_data & 0x80)) { //Only check if bit 7 has flipped
+//             // Verify completion with an additional read
+//             if ((flash_data_poll() & 0x80) == (flash_data_poll() & 0x80)) { //No assuming other bits
+//                 rurp_set_data_as_output();
+//                 rurp_set_control_pin(CHIP_ENABLE, 1);
+//                 rurp_set_control_pin(OUTPUT_ENABLE, 1);
+//                 return;  // Operation completed successfully
+//             }
+//         }
+//     }
+//     handle->response_code = RESPONSE_CODE_ERROR;
+//     copy_to_buffer(handle->response_msg, "Operation timed out");
+//     return;
+// }
 
-void flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
-    rurp_set_data_as_output();
-    flash_fast_address(handle, address);
-    rurp_write_data_buffer(data);
-    rurp_set_control_pin(CHIP_ENABLE, 0);
-    rurp_set_control_pin(CHIP_ENABLE, 1);
-}
+// void flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
+//     rurp_set_data_as_output();
+//     flash_fast_address(handle, address);
+//     rurp_write_data_buffer(data);
+//     rurp_set_control_pin(CHIP_ENABLE, 0);
+//     rurp_set_control_pin(CHIP_ENABLE, 1);
+// }
 
-void flash_fast_address(firestarter_handle_t* handle, uint32_t address) {
-    uint8_t lsb = address & 0xFF;
-    rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
-    uint8_t msb = ((address >> 8) & 0xFF);
-    rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
-}
+// void flash_fast_address(firestarter_handle_t* handle, uint32_t address) {
+//     uint8_t lsb = address & 0xFF;
+//     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
+//     uint8_t msb = ((address >> 8) & 0xFF);
+//     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
+// }

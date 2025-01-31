@@ -19,7 +19,6 @@ extern "C" {
 #define READ_FLAG  1
 
     void configure_memory(firestarter_handle_t* handle);
-    uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t rw);
 
 #ifdef __cplusplus
 }

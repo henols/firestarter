@@ -24,6 +24,11 @@
 #define STATE_CHECK_CHIP_ID 5
 #define STATE_VERIFY 6
 
+#ifdef DEV_TOOLS
+#define STATE_DEV_ADDRESS 7
+#define STATE_DEV_REGISTER 8 
+#endif
+
 #define STATE_READ_VPP 11
 #define STATE_READ_VPE 12 
 #define STATE_FW_VERSION 13
@@ -40,6 +45,9 @@
 #define FLAG_SKIP_ERASE 0x04
 #define FLAG_SKIP_BLANK_CHECK 0x08
 #define FLAG_VPE_AS_VPP 0x10
+
+#define FLAG_OUTPUT_ENABLE 0x20
+#define FLAG_CHIP_ENABLE 0x40
 
 
 #define is_flag_set(flag) \

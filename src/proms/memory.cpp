@@ -8,6 +8,7 @@
 #include "memory.h"
 #include <Arduino.h>
 
+#include "memory_utils.h"
 #include "eprom.h"
 #include "sram.h"
 #include "flash_type_3.h"
@@ -15,14 +16,14 @@
 #include "logging.h"
 
 #define TYPE_EPROM 1
-#define TYPE_FLASH 3
+#define TYPE_FLASH_TYPE_2 2
+#define TYPE_FLASH_TYPE_3 3
 #define TYPE_SRAM 4
 
 void memory_read_execute(firestarter_handle_t* handle);
 void memory_write_execute(firestarter_handle_t* handle);
 void memory_verify_execute(firestarter_handle_t* handle);
 
-void memory_set_address(firestarter_handle_t* handle, uint32_t address);
 void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
 bool memory_get_control_register(firestarter_handle_t* handle, register_t bit);
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address);
@@ -67,7 +68,7 @@ void configure_memory(firestarter_handle_t* handle) {
         configure_sram(handle);
         return;
     }
-    else if (handle->mem_type == TYPE_FLASH) {
+    else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
         configure_flash3(handle);
         return;
     }
@@ -87,18 +88,6 @@ bool memory_get_control_register(firestarter_handle_t* handle, register_t bit) {
     return control_register & bit;
 }
 
-uint32_t remap_address_bus(const bus_config_t* config, uint32_t address, uint8_t rw) {
-    uint32_t reorg_address = config->address_mask & address;
-    for (int i = config->matching_lines; i < 19 && config->address_lines[i] != 0xFF; i++) {
-        if (config->address_lines[i] != i && address & (uint32_t)1 << i) {
-            reorg_address |= (uint32_t)1 << config->address_lines[i];
-        }
-    }
-    if (config->rw_line != 0xFF) {
-        reorg_address |= (uint32_t)rw << config->rw_line;
-    }
-    return reorg_address;
-}
 
 void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 #ifdef DEBUG_ADDRESS
@@ -114,9 +103,9 @@ void memory_set_address(firestarter_handle_t* handle, uint32_t address) {
 #endif
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 
-    register_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | RW);
+    register_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | READ_WRITE);
     register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
-    if (((top_address & RW) && RW == WRITE_FLAG) || handle->pins < 32) {
+    if (((top_address & READ_WRITE) && READ_WRITE == WRITE_FLAG) || handle->pins < 32) {
         // This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared -
         // can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
         mask |= VPE_TO_VPP;
@@ -149,9 +138,7 @@ void memory_read_execute(firestarter_handle_t* handle) {
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
 
-    if (handle->bus_config.address_lines[0] != 0xff || handle->bus_config.rw_line != 0xff) {
-        address = remap_address_bus(&handle->bus_config, address, READ_FLAG);
-    }
+    address = memory_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_set_data_as_input();
@@ -171,9 +158,7 @@ void memory_write_execute(firestarter_handle_t* handle) {
 }
 
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
-    if (handle->bus_config.address_lines[0] != 0xff || handle->bus_config.rw_line != 0xff) {
-        address = remap_address_bus(&handle->bus_config, address, WRITE_FLAG);
-    }
+    address = memory_remap_address_bus(handle, address, WRITE_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
@@ -190,6 +175,37 @@ void memory_verify_execute(firestarter_handle_t* handle) {
         if (byte != expected) {
             format(handle->response_msg, "Expecting 0x%02x got 0x%02x at 0x%04x", expected, byte, handle->address + i);
             handle->response_code = RESPONSE_CODE_ERROR;
+            return;
+        }
+    }
+}
+
+// Utility functions
+
+uint32_t memory_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
+    bus_config_t config = handle->bus_config;
+    if (config.address_lines[0] != 0xff || config.rw_line != 0xff) {
+
+        uint32_t reorg_address = config.address_mask & address;
+        for (int i = config.matching_lines; i < 19 && config.address_lines[i] != 0xFF; i++) {
+            if (config.address_lines[i] != i && address & (uint32_t)1 << i) {
+                reorg_address |= (uint32_t)1 << config.address_lines[i];
+            }
+        }
+        if (config.rw_line != 0xFF) {
+            reorg_address |= (uint32_t)read_write << config.rw_line;
+        }
+        return reorg_address;
+    }
+    return address;
+}
+
+void memory_blank_check(firestarter_handle_t* handle) {
+    for (uint32_t i = 0; i < handle->mem_size; i++) {
+        uint8_t val = handle->firestarter_get_data(handle, i);
+        if (val != 0xFF) {
+            handle->response_code = RESPONSE_CODE_ERROR;
+            format(handle->response_msg, "Memory is not blank, at 0x%06x, value: 0x%02x", i, val);
             return;
         }
     }

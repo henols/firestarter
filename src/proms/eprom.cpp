@@ -9,13 +9,13 @@
 #include <Arduino.h>
 #include <avr/pgmspace.h>
 #include <stdio.h>
+#include "memory_utils.h"
 #include "firestarter.h"
 #include "rurp_shield.h"
 #include "logging.h"
 
 
 void eprom_erase_execute(firestarter_handle_t* handle);
-void eprom_blank_check_execute(firestarter_handle_t* handle);
 
 void eprom_write_init(firestarter_handle_t* handle);
 void eprom_write_execute(firestarter_handle_t* handle);
@@ -29,8 +29,10 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
 void eprom_check_vpp(firestarter_handle_t* handle);
 #endif
 
+void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_code);
 void eprom_internal_erase(firestarter_handle_t* handle);
-void (*set_control_register)(struct firestarter_handle*, register_t, bool);
+
+void (*ep_set_control_register)(struct firestarter_handle*, register_t, bool);
 
 void eprom_generic_init(firestarter_handle_t* handle);
 
@@ -46,10 +48,10 @@ void configure_eprom(firestarter_handle_t* handle) {
         break;
     case STATE_ERASE:
         handle->firestarter_operation_execute = eprom_erase_execute;
-        handle->firestarter_operation_end = eprom_blank_check_execute;
+        handle->firestarter_operation_end = memory_blank_check;
         break;
     case STATE_BLANK_CHECK:
-        handle->firestarter_operation_execute = eprom_blank_check_execute;
+        handle->firestarter_operation_execute = memory_blank_check;
         break;
     case STATE_CHECK_CHIP_ID:
         handle->firestarter_operation_init = eprom_check_chip_id_init;
@@ -57,7 +59,7 @@ void configure_eprom(firestarter_handle_t* handle) {
         break;
     }
 
-    set_control_register = handle->firestarter_set_control_register;
+    ep_set_control_register = handle->firestarter_set_control_register;
     handle->firestarter_set_control_register = eprom_set_control_register;
 }
 
@@ -67,13 +69,10 @@ void eprom_check_chip_id_init(firestarter_handle_t* handle) {
 #endif
 }
 
+
 void eprom_check_chip_id_execute(firestarter_handle_t* handle) {
     debug("Check chip ID");
-    uint16_t chip_id = eprom_get_chip_id(handle);
-    if (chip_id != handle->chip_id) {
-        handle->response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
-    }
+    eprom_internal_check_chip_id(handle, RESPONSE_CODE_ERROR);
 }
 
 void eprom_erase_execute(firestarter_handle_t* handle) {
@@ -81,18 +80,6 @@ void eprom_erase_execute(firestarter_handle_t* handle) {
     eprom_internal_erase(handle);
 }
 
-
-void eprom_blank_check_execute(firestarter_handle_t* handle) {
-    debug("Blank check");
-    for (uint32_t i = 0; i < handle->mem_size; i++) {
-        uint8_t val = handle->firestarter_get_data(handle, i);
-        if (val != 0xFF) {
-            handle->response_code = RESPONSE_CODE_ERROR;
-            format(handle->response_msg, "Memory is not blank, at 0x%06x, value: 0x%02x", i, val);
-            return;
-        }
-    }
-}
 
 void eprom_write_init(firestarter_handle_t* handle) {
     eprom_generic_init(handle);
@@ -110,7 +97,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
     }
 #ifdef EPROM_BLANK_CHECK
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
-        eprom_blank_check_execute(handle);
+        memory_blank_check(handle);
     }
 #endif
 }
@@ -179,7 +166,7 @@ void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bo
         bit &= ~VPE_ENABLE;
         bit |= P1_VPP_ENABLE;
     }
-    set_control_register(handle, bit, state);
+    ep_set_control_register(handle, bit, state);
 }
 
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
@@ -189,10 +176,8 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
 
     handle->firestarter_set_control_register(handle, A9_VPP_ENABLE, 1);
     delay(100);
-    rurp_set_control_pin(CHIP_ENABLE, 0);
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
     chip_id |= (handle->firestarter_get_data(handle, 0x0001));
-    rurp_set_control_pin(CHIP_ENABLE, 1);
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE, 0);
     return chip_id;
 }
@@ -245,14 +230,15 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 
 void eprom_internal_erase(firestarter_handle_t* handle) {
     debug("Internal erase");
+    rurp_chip_input();
     handle->firestarter_set_control_register(handle, REGULATOR, 1); //Enable regulator without dropping resistor
     delay(100);
     handle->firestarter_set_address(handle, 0x0000);
     handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_ENABLE, 1); //Erase with VPE - assumes VPE_TO_VPP isn't set and left active previously
     delay(100);
-    rurp_set_control_pin(CHIP_ENABLE, 0);
+    rurp_chip_enable();
     delayMicroseconds(handle->pulse_delay);
-    rurp_set_control_pin(CHIP_ENABLE, 1);
+    rurp_chip_output();
 
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
 }
@@ -265,6 +251,15 @@ void eprom_generic_init(firestarter_handle_t* handle) {
     }
 #endif
     if (handle->chip_id > 0) {
-        eprom_check_chip_id_execute(handle);
+        eprom_internal_check_chip_id(handle, is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR);
+    }
+}
+
+void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_code) {
+    debug("Check chip ID");
+    uint16_t chip_id = eprom_get_chip_id(handle);
+    if (chip_id != handle->chip_id) {
+        handle->response_code = error_code;
+        format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
     }
 }

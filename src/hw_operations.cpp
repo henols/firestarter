@@ -1,9 +1,9 @@
 #include "hw_operations.h"
 #include "firestarter.h"
 #include "logging.h"
-#include "utils.h"
 #include "rurp_shield.h"
 #include "version.h"
+#include "operation_utils.h"
 #include <Arduino.h>
 #include <stdlib.h>
 
@@ -19,14 +19,14 @@ bool read_voltage(firestarter_handle_t* handle) {
       return true;
     }
     handle->init = 0;
-    int res = execute_function(init_read_voltage, handle);
+    int res = op_execute_function(init_read_voltage, handle);
     if (res <= 0) {
       return true;
     }
     log_ok_const("Voltage read setup");
   }
 
-  if (!wait_for_ok(handle)) {
+  if (!op_wait_for_ok(handle)) {
     return false;
   }
 
@@ -38,7 +38,7 @@ bool read_voltage(firestarter_handle_t* handle) {
   dtostrf(rurp_read_vcc(), 2, 2, vcc);
   log_data_format("%s: %sv, Internal VCC: %sv", type, vStr, vcc);
   delay(200);
-  reset_timeout();
+  op_reset_timeout();
   return false;
 }
 

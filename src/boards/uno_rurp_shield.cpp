@@ -14,7 +14,7 @@
 constexpr int INPUT_RESOLUTION = 1023;
 constexpr int AVERAGE_OF = 500;
 
-bool comMode = true;
+bool com_mode = true;
 
 #ifdef SERIAL_DEBUG
 #define RX_DEBUG  A0
@@ -33,7 +33,7 @@ register_t control_register;
 void rurp_board_setup() {
     rurp_set_data_as_output();
 
-    DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | RW;
+    DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | READ_WRITE;
 
     PORTB = OUTPUT_ENABLE | CHIP_ENABLE;
     lsb_address = 0xff;
@@ -47,7 +47,6 @@ void rurp_board_setup() {
 }
 
 void rurp_set_communication_mode() {
-    // rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
     DDRD &= ~(0x01);
     Serial.begin(MONITOR_SPEED); // Initialize serial port
     
@@ -55,15 +54,13 @@ void rurp_set_communication_mode() {
         delayMicroseconds(1);
     }
     Serial.flush();
-    // delayMicroseconds(50);
-    comMode = true;
+    com_mode = true;
 }
 
 void rurp_set_programmer_mode() {
-    comMode = false;
+    com_mode = false;
     Serial.end(); // Close serial port
     DDRD |= 0x01;
-
 }
 
 int rurp_communication_available() {
@@ -85,7 +82,7 @@ size_t rurp_communication_write(const char* buffer, size_t size) {
 
 void rurp_log(const char* type, const char* msg) {
     log_debug(type, msg);
-    if (comMode) {
+    if (com_mode) {
         Serial.print(type);
         Serial.print(": ");
         Serial.println(msg);
