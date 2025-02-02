@@ -9,8 +9,8 @@
 #include <Arduino.h>
 #include <stdlib.h>
 
-#include "ic_operations.h"
-#include "hw_operations.h"
+#include "eprom_operations.h"
+#include "hardware_operations.h"
 
 #include "json_parser.h"
 #include "logging.h"
@@ -183,35 +183,35 @@ void loop() {
   bool done = false;
   switch (handle.state) {
   case STATE_READ:
-    done = read(&handle);
+    done = eprom_read(&handle);
     break;
   case STATE_WRITE:
-    done = write(&handle);
+    done = eprom_write(&handle);
     break;
   case STATE_VERIFY:
-    done = verify(&handle);
+    done = eprom_verify(&handle);
     break;
   case STATE_ERASE:
-    done = erase(&handle);
+    done = eprom_erase(&handle);
     break;
   case STATE_BLANK_CHECK:
-    done = blank_check(&handle);
+    done = eprom_blank_check(&handle);
     break;
   case STATE_CHECK_CHIP_ID:
-    done = check_chip_id(&handle);
+    done = eprom_check_chip_id(&handle);
     break;
   case STATE_READ_VPP:
   case STATE_READ_VPE:
-    done = read_voltage(&handle);
+    done = hw_read_voltage(&handle);
     break;
   case STATE_IDLE:
     break;
   case STATE_FW_VERSION:
-    done = get_fw_version(&handle);
+    done = fw_get_version(&handle);
     break;
 #ifdef HARDWARE_REVISION
   case STATE_HW_VERSION:
-    done = get_hw_version(&handle);
+    done = hw_get_version(&handle);
     break;
 #endif
 #ifdef DEV_TOOLS
@@ -224,7 +224,7 @@ void loop() {
 #endif
 
   case STATE_CONFIG:
-    done = get_config(&handle);
+    done = hw_get_config(&handle);
     break;
 
   default:

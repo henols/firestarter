@@ -153,7 +153,6 @@ extern "C" {
 
     double rurp_read_vcc();
     double rurp_read_voltage();
-    double rurp_get_voltage_average();
 
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config(rurp_configuration_t* config);

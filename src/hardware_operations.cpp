@@ -1,4 +1,4 @@
-#include "hw_operations.h"
+#include "hardware_operations.h"
 #include "firestarter.h"
 #include "logging.h"
 #include "rurp_shield.h"
@@ -11,7 +11,7 @@
 void create_overide_text(char* revStr);
 void init_read_voltage(firestarter_handle_t* handle);
 
-bool read_voltage(firestarter_handle_t* handle) {
+bool hw_read_voltage(firestarter_handle_t* handle) {
   if (handle->init) {
     debug("Read voltage");
     if (rurp_get_hardware_revision() == REVISION_0) {
@@ -42,7 +42,7 @@ bool read_voltage(firestarter_handle_t* handle) {
   return false;
 }
 
-bool get_fw_version(firestarter_handle_t* handle) {
+bool fw_get_version(firestarter_handle_t* handle) {
   debug("Get FW version");
   log_ok_const(FW_VERSION);
   return true;
@@ -50,7 +50,7 @@ bool get_fw_version(firestarter_handle_t* handle) {
 
 
 #ifdef HARDWARE_REVISION
-bool get_hw_version(firestarter_handle_t* handle) {
+bool hw_get_version(firestarter_handle_t* handle) {
   debug("Get HW version");
   char revStr[24];
   create_overide_text(revStr);
@@ -59,7 +59,7 @@ bool get_hw_version(firestarter_handle_t* handle) {
 }
 #endif
 
-bool get_config(firestarter_handle_t* handle) {
+bool hw_get_config(firestarter_handle_t* handle) {
   debug("Get config");
   rurp_configuration_t* rurp_config = rurp_get_config();
 #ifdef HARDWARE_REVISION

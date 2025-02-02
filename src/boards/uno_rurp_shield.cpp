@@ -208,14 +208,6 @@ double rurp_read_voltage() {
     return vout * voltageDivider;
 }
 
-double rurp_get_voltage_average() {
-    double voltage_average = 0;
-    for (int i = 0; i < AVERAGE_OF; i++) {
-        voltage_average += rurp_read_voltage();
-    }
-
-    return voltage_average / AVERAGE_OF;
-}
 
 #ifdef SERIAL_DEBUG
 #include <SoftwareSerial.h>
