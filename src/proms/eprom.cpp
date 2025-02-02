@@ -48,10 +48,10 @@ void configure_eprom(firestarter_handle_t* handle) {
         break;
     case STATE_ERASE:
         handle->firestarter_operation_execute = eprom_erase_execute;
-        handle->firestarter_operation_end = memory_blank_check;
+        handle->firestarter_operation_end = m_util_blank_check;
         break;
     case STATE_BLANK_CHECK:
-        handle->firestarter_operation_execute = memory_blank_check;
+        handle->firestarter_operation_execute = m_util_blank_check;
         break;
     case STATE_CHECK_CHIP_ID:
         handle->firestarter_operation_init = eprom_check_chip_id_init;
@@ -97,7 +97,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
     }
 #ifdef EPROM_BLANK_CHECK
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
-        memory_blank_check(handle);
+        m_util_blank_check(handle);
     }
 #endif
 }

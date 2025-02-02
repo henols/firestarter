@@ -13,7 +13,7 @@ extern "C" {
 #include "firestarter.h"
 
 #define flash_execute_command(command) \
-    flash_byte_flipping(handle, command, sizeof(command) / sizeof(command[0]));
+    f_util_byte_flipping(handle, command, sizeof(command) / sizeof(command[0]));
 
 
     typedef struct byte_flip {
@@ -59,8 +59,8 @@ extern "C" {
         {0x5555, 0x20},
     };
 
-    void flash_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_flips, size_t size);
-    void flash_verify_operation(firestarter_handle_t* handle, uint8_t expected_data);
+    void f_util_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_flips, size_t size);
+    void f_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_data);
 
 #ifdef __cplusplus
 }
