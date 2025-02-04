@@ -205,14 +205,6 @@ double rurp_read_voltage() {
     return vout * voltageDivider;
 }
 
-double rurp_get_voltage_average() {
-    double voltage_average = 0;
-    for (int i = 0; i < AVERAGE_OF; i++) {
-        voltage_average += rurp_read_voltage();
-    }
-
-    return voltage_average / AVERAGE_OF;
-}
 
 // Function to set Arduino digital pins 8-13 on the ATmega328U4
 void set_port_b(uint8_t data) {

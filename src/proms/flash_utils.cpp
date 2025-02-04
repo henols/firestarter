@@ -16,7 +16,7 @@ void fu_flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t 
 void fu_flash_fast_address(firestarter_handle_t* handle, uint32_t address);
 uint8_t fu_flash_data_poll();
 
-void flash_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_flips, size_t size) {
+void f_util_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_flips, size_t size) {
 
     handle->firestarter_set_control_register(handle, READ_WRITE, 0);
     for (size_t i = 0; i < size; i++) {
@@ -25,7 +25,7 @@ void flash_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_f
     handle->firestarter_set_control_register(handle, READ_WRITE, 0);
 }
 
-void flash_verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
+void f_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
 
     handle->firestarter_set_control_register(handle, READ_WRITE, 1);
 
@@ -51,6 +51,7 @@ void fu_flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t 
     rurp_set_data_as_output();
     fu_flash_fast_address(handle, address);
     rurp_write_data_buffer(data);
+    rurp_chip_input();
     rurp_set_control_pin(CHIP_ENABLE, 0);
     rurp_set_control_pin(CHIP_ENABLE, 1);
 }

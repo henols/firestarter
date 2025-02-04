@@ -12,7 +12,6 @@
 #include "rurp_hw_rev_utils.h"
 
 constexpr int INPUT_RESOLUTION = 1023;
-constexpr int AVERAGE_OF = 500;
 
 bool com_mode = true;
 
@@ -208,14 +207,6 @@ double rurp_read_voltage() {
     return vout * voltageDivider;
 }
 
-double rurp_get_voltage_average() {
-    double voltage_average = 0;
-    for (int i = 0; i < AVERAGE_OF; i++) {
-        voltage_average += rurp_read_voltage();
-    }
-
-    return voltage_average / AVERAGE_OF;
-}
 
 #ifdef SERIAL_DEBUG
 #include <SoftwareSerial.h>

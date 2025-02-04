@@ -49,6 +49,7 @@
 #define FLAG_OUTPUT_ENABLE 0x20
 #define FLAG_CHIP_ENABLE 0x40
 
+
 #define is_flag_set(flag) \
 	((handle->ctrl_flags & flag) == flag)
 

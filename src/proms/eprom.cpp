@@ -48,10 +48,10 @@ void configure_eprom(firestarter_handle_t* handle) {
         break;
     case STATE_ERASE:
         handle->firestarter_operation_execute = eprom_erase_execute;
-        handle->firestarter_operation_end = memory_blank_check;
+        handle->firestarter_operation_end = m_util_blank_check;
         break;
     case STATE_BLANK_CHECK:
-        handle->firestarter_operation_execute = memory_blank_check;
+        handle->firestarter_operation_execute = m_util_blank_check;
         break;
     case STATE_CHECK_CHIP_ID:
         handle->firestarter_operation_init = eprom_check_chip_id_init;
@@ -97,7 +97,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
     }
 #ifdef EPROM_BLANK_CHECK
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
-        memory_blank_check(handle);
+        m_util_blank_check(handle);
     }
 #endif
 }
@@ -188,7 +188,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 #ifdef HARDWARE_REVISION
     if (rurp_get_hardware_revision() == REVISION_0) {
         handle->response_code = RESPONSE_CODE_WARNING;
-        strcpy(handle->response_msg, "Rev0 dont support reading VPP.");
+        copy_to_buffer(handle->response_msg, "Rev0 dont support reading VPP.");
         return;
     }
 #endif
@@ -209,19 +209,19 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 #endif
 
     if (vpp > handle->vpp * 1.02) {
-        handle->response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
         char vStr[6];
         dtostrf(vpp, 2, 2, vStr);
         char rStr[6];
         dtostrf(handle->vpp, 2, 2, rStr);
+        handle->response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
         format(handle->response_msg, "VPP voltage is too high: %sv expected: %sv", vStr, rStr);
     }
     else if (vpp < handle->vpp * .95) {
-        handle->response_code = RESPONSE_CODE_WARNING;
         char vStr[6];
         dtostrf(vpp, 2, 2, vStr);
         char rStr[6];
         dtostrf(handle->vpp, 2, 2, rStr);
+        handle->response_code = RESPONSE_CODE_WARNING;
         format(handle->response_msg, "VPP voltage is low: %sv expected: %sv", vStr, rStr);
     }
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);

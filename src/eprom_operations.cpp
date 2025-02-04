@@ -5,7 +5,7 @@
  * Permission is hereby granted under MIT license.
  */
 
-#include "ic_operations.h"
+#include "eprom_operations.h"
 #include "firestarter.h"
 #include "logging.h"
 #include "operation_utils.h"
@@ -13,8 +13,8 @@
 
 bool excecute_operation(firestarter_handle_t* handle);
 
-bool read(firestarter_handle_t* handle) {
-  if (!op_wait_for_ok(handle)) {
+bool eprom_read(firestarter_handle_t* handle) {
+  if (!op_check_for_ok(handle)) {
     return false;
   }
 
@@ -36,7 +36,7 @@ bool read(firestarter_handle_t* handle) {
 
   handle->address += handle->data_size;
   if (handle->address > handle->mem_size - 1) {
-    while (!op_wait_for_ok(handle));
+    while (!op_check_for_ok(handle));
     if (op_execute_function(handle->firestarter_operation_end, handle) > 0) {
       log_ok_const("Memmory read");
     }
@@ -45,7 +45,7 @@ bool read(firestarter_handle_t* handle) {
   return false;
 }
 
-bool write(firestarter_handle_t* handle) {
+bool eprom_write(firestarter_handle_t* handle) {
 
   if (rurp_communication_available() >= 2) {
     debug("Write PROM");
@@ -96,7 +96,7 @@ bool write(firestarter_handle_t* handle) {
   return false;
 }
 
-bool verify(firestarter_handle_t* handle) {
+bool eprom_verify(firestarter_handle_t* handle) {
 
   if (rurp_communication_available() >= 2) {
     debug("Verify PROM");
@@ -146,8 +146,8 @@ bool verify(firestarter_handle_t* handle) {
   return false;
 }
 
-bool erase(firestarter_handle_t* handle) {
-  if (!op_wait_for_ok(handle)) {
+bool eprom_erase(firestarter_handle_t* handle) {
+  if (!op_check_for_ok(handle)) {
     return false;
   }
 
@@ -166,8 +166,8 @@ bool erase(firestarter_handle_t* handle) {
   return true;
 }
 
-bool check_chip_id(firestarter_handle_t* handle) {
-  if (!op_wait_for_ok(handle)) {
+bool eprom_check_chip_id(firestarter_handle_t* handle) {
+  if (!op_check_for_ok(handle)) {
     return false;
   }
   debug("Check Chip ID");
@@ -186,8 +186,8 @@ bool check_chip_id(firestarter_handle_t* handle) {
   return true;
 }
 
-bool blank_check(firestarter_handle_t* handle) {
-  if (!op_wait_for_ok(handle)) {
+bool eprom_blank_check(firestarter_handle_t* handle) {
+  if (!op_check_for_ok(handle)) {
     return false;
   }
   debug("Blank check PROM");
@@ -214,10 +214,7 @@ bool excecute_operation(firestarter_handle_t* handle) {
       return true;
     }
     op_execute_function(handle->firestarter_operation_end, handle);
-
     return true;
   }
   return false;
 }
-
-

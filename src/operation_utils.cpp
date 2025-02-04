@@ -14,7 +14,7 @@ int op_check_response(firestarter_handle_t* handle);
 
 int op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
     if (handle->init == 1 && callback != NULL) {
-        debug_format("Init function: %d, state: %d", handle->init, handle->state);
+        log_info_format("Init function: %d, state: %d", handle->init, handle->state);
         handle->init = 0;
         return op_execute_function(callback, handle);
     }           
@@ -48,7 +48,7 @@ int op_check_response(firestarter_handle_t* handle) {
     return 0;
 }
 
-int op_wait_for_ok(firestarter_handle_t* handle) {
+int op_check_for_ok(firestarter_handle_t* handle) {
     if (rurp_communication_available() < 2) {
         return 0;
     }
