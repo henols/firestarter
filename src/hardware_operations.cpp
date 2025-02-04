@@ -17,6 +17,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
     // rurp_get_hardware_revision();
     int res = op_execute_init(hw_init_read_voltage, handle);
     if (res <= 0) {
+    //  log_info_const("Fail voltage");
       return true;
     }
   }
@@ -70,16 +71,25 @@ bool hw_get_config(firestarter_handle_t* handle) {
 
 void hw_init_read_voltage(firestarter_handle_t* handle) {
   debug("Init read voltage");
+    if (rurp_get_hardware_revision() == REVISION_0) {
+      copy_to_buffer(handle->response_msg,"Rev0 dont support reading VPP/VPE");
+      handle->response_code = RESPONSE_CODE_ERROR;
+      return;
+    }
+
   if (handle->state == STATE_READ_VPP) {
     debug("Setting up VPP");
     rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP); // Enable regulator and drop voltage to VPP
+    copy_to_buffer(handle->response_msg, "Setting up VPP");
+    return;
   }
   else if (handle->state == STATE_READ_VPE) {
-    debug("Setting up VPP");
+    debug("Setting up VPE");
     rurp_write_to_register(CONTROL_REGISTER, REGULATOR); // Enable regulator
   } else {
     handle->response_code = RESPONSE_CODE_ERROR;
   }
+  copy_to_buffer(handle->response_msg, "Error state");
 }
 
 #ifdef HARDWARE_REVISION

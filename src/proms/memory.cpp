@@ -124,7 +124,7 @@ void m_util_set_address(firestarter_handle_t* handle, uint32_t address) {
 }
 
 void memory_read_execute(firestarter_handle_t* handle) {
-    rurp_set_control_pin(CHIP_ENABLE, 0);
+    // rurp_set_control_pin(CHIP_ENABLE, 0);
     int buf_size = min(handle->mem_size - handle->address, DATA_BUFFER_SIZE);
     debug_format("Reading from address 0x%06x", handle->address);
     for (int i = 0; i < buf_size; i++) {
@@ -132,20 +132,26 @@ void memory_read_execute(firestarter_handle_t* handle) {
         // debug_format("Data 0x%02x %c", data, data);
         handle->data_buffer[i] = data;
     }
-    rurp_set_control_pin(CHIP_ENABLE, 1);
+    // rurp_set_control_pin(CHIP_ENABLE, 1);
     handle->data_size = buf_size;
 }
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
+    // rurp_set_control_pin(OUTPUT_ENABLE, 0);
+    rurp_chip_output();
+    address = memory_remap_address_bus(handle, address, READ_FLAG);
 
     address = m_util_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_set_data_as_input();
-    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 0);
+    // rurp_set_control_pin(CHIP_ENABLE , 0);
+    rurp_chip_enable();
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();
-    rurp_set_control_pin(CHIP_ENABLE | OUTPUT_ENABLE, 1);
+    rurp_chip_disable();
+
+    // rurp_set_control_pin(CHIP_ENABLE , 1);
     // rurp_set_data_as_output();
 
     return data;

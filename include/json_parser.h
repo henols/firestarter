@@ -4,6 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  */
+
 #ifndef JSON_PARSER_H
 #define JSON_PARSER_H
 

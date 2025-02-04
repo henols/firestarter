@@ -5,8 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef FALSH_H
-#define FLASH_H
+#ifndef FALSH__TYPE_3_H
+#define FALSH__TYPE_3_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,4 +19,4 @@ extern "C" {
 }
 #endif
 
-#endif // FLASH_H
+#endif // FALSH__TYPE_3_H
