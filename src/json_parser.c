@@ -7,6 +7,7 @@
 
 
 #include "json_parser.h"
+#include "logging.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -129,7 +130,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
         }
         else {
             handle->response_code = RESPONSE_CODE_ERROR;
-            sprintf(handle->response_msg, "Unknown field: %s", json + tokens[i].start);
+            format(handle->response_msg, "Unknown field: %s", json + tokens[i].start);
             return -1;
         }
     }

@@ -17,7 +17,7 @@ extern "C" {
 
     void op_reset_timeout();
 
-    int op_wait_for_ok(firestarter_handle_t* handle);
+    int op_check_for_ok(firestarter_handle_t* handle);
 
 #ifdef __cplusplus
 }

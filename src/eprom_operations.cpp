@@ -14,7 +14,7 @@
 bool excecute_operation(firestarter_handle_t* handle);
 
 bool eprom_read(firestarter_handle_t* handle) {
-  if (!op_wait_for_ok(handle)) {
+  if (!op_check_for_ok(handle)) {
     return false;
   }
 
@@ -36,7 +36,7 @@ bool eprom_read(firestarter_handle_t* handle) {
 
   handle->address += handle->data_size;
   if (handle->address > handle->mem_size - 1) {
-    while (!op_wait_for_ok(handle));
+    while (!op_check_for_ok(handle));
     if (op_execute_function(handle->firestarter_operation_end, handle) > 0) {
       log_ok_const("Memmory read");
     }
@@ -147,7 +147,7 @@ bool eprom_verify(firestarter_handle_t* handle) {
 }
 
 bool eprom_erase(firestarter_handle_t* handle) {
-  if (!op_wait_for_ok(handle)) {
+  if (!op_check_for_ok(handle)) {
     return false;
   }
 
@@ -167,7 +167,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
 }
 
 bool eprom_check_chip_id(firestarter_handle_t* handle) {
-  if (!op_wait_for_ok(handle)) {
+  if (!op_check_for_ok(handle)) {
     return false;
   }
   debug("Check Chip ID");
@@ -187,7 +187,7 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
 }
 
 bool eprom_blank_check(firestarter_handle_t* handle) {
-  if (!op_wait_for_ok(handle)) {
+  if (!op_check_for_ok(handle)) {
     return false;
   }
   debug("Blank check PROM");

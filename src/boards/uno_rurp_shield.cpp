@@ -12,7 +12,6 @@
 #include "rurp_hw_rev_utils.h"
 
 constexpr int INPUT_RESOLUTION = 1023;
-constexpr int AVERAGE_OF = 500;
 
 bool com_mode = true;
 

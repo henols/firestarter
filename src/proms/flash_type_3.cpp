@@ -11,9 +11,7 @@
 #include "memory_utils.h"
 #include "flash_utils.h"
 #include "firestarter.h"
-#include "rurp_shield.h"
 #include "logging.h"
-#include <stdio.h>
 
 void flash3_erase_execute(firestarter_handle_t* handle);
 void flash3_write_init(firestarter_handle_t* handle);
@@ -100,7 +98,7 @@ void flash3_check_chip_id_execute(firestarter_handle_t* handle) {
     uint16_t chip_id = flash3_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
         handle->response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
+        format(handle->response_msg, "Chip ID %#04x dont match expected ID %#04x", chip_id, handle->chip_id);
     }
 }
 
