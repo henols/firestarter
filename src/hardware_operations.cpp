@@ -12,18 +12,16 @@ void hw_version_overide(char* revStr);
 void hw_init_read_voltage(firestarter_handle_t* handle);
 
 bool hw_read_voltage(firestarter_handle_t* handle) {
-  if (handle->init) {
-    debug("Read voltage");
-    // rurp_get_hardware_revision();
-    int res = op_execute_init(hw_init_read_voltage, handle);
-    if (res <= 0) {
-    //  log_info_const("Fail voltage");
-      return true;
-    }
-  }
-
   if (!op_check_for_ok(handle)) {
     return false;
+  }
+
+ if (handle->init) {
+    debug("Read voltage");
+    int res = op_execute_init(hw_init_read_voltage, handle);
+    if (res <= 0) {
+      return true;
+    }
   }
 
   double voltage = rurp_read_voltage();
@@ -39,7 +37,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
 }
 
 bool fw_get_version(firestarter_handle_t* handle) {
-    rurp_get_hardware_revision();
+    // rurp_get_hardware_revision();
   debug("Get FW version");
   log_ok_const(FW_VERSION);
   return true;

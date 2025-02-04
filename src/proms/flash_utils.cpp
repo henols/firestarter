@@ -51,6 +51,7 @@ void fu_flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t 
     rurp_set_data_as_output();
     fu_flash_fast_address(handle, address);
     rurp_write_data_buffer(data);
+    rurp_chip_input();
     rurp_set_control_pin(CHIP_ENABLE, 0);
     rurp_set_control_pin(CHIP_ENABLE, 1);
 }

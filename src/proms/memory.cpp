@@ -139,8 +139,6 @@ void memory_read_execute(firestarter_handle_t* handle) {
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     // rurp_set_control_pin(OUTPUT_ENABLE, 0);
     rurp_chip_output();
-    address = memory_remap_address_bus(handle, address, READ_FLAG);
-
     address = m_util_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
