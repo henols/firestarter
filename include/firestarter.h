@@ -15,6 +15,7 @@
 #define FW_VERSION VERSION ":" BOARD_NAME
 
 #define DATA_BUFFER_SIZE 512
+#define RESPONSE_MSG_SIZE 64
 
 #define STATE_IDLE 0
 #define STATE_READ 1
@@ -49,6 +50,25 @@
 #define FLAG_OUTPUT_ENABLE 0x20
 #define FLAG_CHIP_ENABLE 0x40
 
+#define firestarter_warning_response(msg) \
+  firestarter_set_responce(RESPONSE_CODE_WARNING, msg)
+
+#define firestarter_warning_response_format( msg, ...) \
+ firestarter_response_format(RESPONSE_CODE_WARNING, msg, __VA_ARGS__)
+
+#define firestarter_error_response(msg) \
+  firestarter_set_responce(RESPONSE_CODE_ERROR,msg)
+
+#define firestarter_error_response_format( msg, ...) \
+ firestarter_response_format(RESPONSE_CODE_ERROR, msg, __VA_ARGS__)
+
+#define firestarter_set_responce( code, msg) \
+  copy_to_buffer(handle->response_msg, msg); \
+  handle->response_code = code;
+
+#define firestarter_response_format(code, msg, ...) \
+  {format(handle->response_msg, msg, __VA_ARGS__);} \
+  handle->response_code = code;
 
 #define is_flag_set(flag) \
 	((handle->ctrl_flags & flag) == flag)
@@ -67,7 +87,7 @@ typedef struct firestarter_handle {
 	uint8_t state;
 	uint8_t init;
 	uint8_t response_code;
-	char response_msg[64];
+	char response_msg[RESPONSE_MSG_SIZE];
 	uint8_t mem_type;
 	uint32_t protocol;
 	uint8_t pins;

@@ -129,8 +129,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
             i += consumed_tokens + 1;
         }
         else {
-            handle->response_code = RESPONSE_CODE_ERROR;
-            format(handle->response_msg, "Unknown field: %s", json + tokens[i].start);
+            firestarter_error_response_format("Unknown field: %s", json + tokens[i].start);
             return -1;
         }
     }

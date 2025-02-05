@@ -154,7 +154,6 @@ void command_done(firestarter_handle_t* handle) {
   debug("State done");
   rurp_set_programmer_mode();
   rurp_chip_disable();
-  // rurp_set_control_pin(OUTPUT_ENABLE, 1);
   rurp_write_to_register(CONTROL_REGISTER, 0x00);
   rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
   rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
