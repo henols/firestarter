@@ -56,7 +56,7 @@ void configure_memory(firestarter_handle_t* handle) {
 
     handle->firestarter_set_control_register = memory_set_control_register;
     handle->firestarter_get_control_register = memory_get_control_register;
-    handle->response_code = RESPONSE_CODE_OK;
+
 #ifdef POWER_THROUGH_ADDRESS_LINES
     m_util_set_address(handle, 0);
 #endif
@@ -72,9 +72,7 @@ void configure_memory(firestarter_handle_t* handle) {
         configure_flash3(handle);
         return;
     }
-    format(handle->response_msg, "Memory type 0x%02x not supported", handle->mem_type);
-    handle->response_code = RESPONSE_CODE_ERROR;
-    return;
+    firestarter_error_response_format("Memory type 0x%02x not supported", handle->mem_type);
 }
 
 void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state) {
@@ -124,7 +122,6 @@ void m_util_set_address(firestarter_handle_t* handle, uint32_t address) {
 }
 
 void memory_read_execute(firestarter_handle_t* handle) {
-    // rurp_set_control_pin(CHIP_ENABLE, 0);
     int buf_size = min(handle->mem_size - handle->address, DATA_BUFFER_SIZE);
     debug_format("Reading from address 0x%06x", handle->address);
     for (int i = 0; i < buf_size; i++) {
@@ -132,25 +129,19 @@ void memory_read_execute(firestarter_handle_t* handle) {
         // debug_format("Data 0x%02x %c", data, data);
         handle->data_buffer[i] = data;
     }
-    // rurp_set_control_pin(CHIP_ENABLE, 1);
     handle->data_size = buf_size;
 }
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
-    // rurp_set_control_pin(OUTPUT_ENABLE, 0);
     rurp_chip_output();
     address = m_util_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_set_data_as_input();
-    // rurp_set_control_pin(CHIP_ENABLE , 0);
     rurp_chip_enable();
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();
     rurp_chip_disable();
-
-    // rurp_set_control_pin(CHIP_ENABLE , 1);
-    // rurp_set_data_as_output();
 
     return data;
 }
@@ -167,9 +158,9 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
     delayMicroseconds(3); //Needed for slower address changes like slow ROMs and "Power through address lines"
-    rurp_set_control_pin(CHIP_ENABLE, 0);
+    rurp_chip_enable();
     delayMicroseconds(handle->pulse_delay);
-    rurp_set_control_pin(CHIP_ENABLE, 1);
+    rurp_chip_disable();
 }
 
 void memory_verify_execute(firestarter_handle_t* handle) {
@@ -177,8 +168,7 @@ void memory_verify_execute(firestarter_handle_t* handle) {
         uint8_t byte = handle->firestarter_get_data(handle, handle->address + i);
         uint8_t expected = handle->data_buffer[i];
         if (byte != expected) {
-            format(handle->response_msg, "Expecting 0x%02x got 0x%02x at 0x%04x", expected, byte, handle->address + i);
-            handle->response_code = RESPONSE_CODE_ERROR;
+            firestarter_error_response_format("Expecting 0x%02x got 0x%02x at 0x%04x", expected, byte, handle->address + i);
             return;
         }
     }
@@ -208,8 +198,7 @@ void m_util_blank_check(firestarter_handle_t* handle) {
     for (uint32_t i = 0; i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
-            handle->response_code = RESPONSE_CODE_ERROR;
-            format(handle->response_msg, "Memory is not blank, at 0x%06x, value: 0x%02x", i, val);
+            firestarter_error_response_format("Memory is not blank, at 0x%06x, value: 0x%02x", i, val);
             return;
         }
     }

@@ -36,14 +36,13 @@ void f_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_data
             // Verify completion with an additional read
             if ((fu_flash_data_poll() & 0x80) == (fu_flash_data_poll() & 0x80)) { //No assuming other bits
                 rurp_set_data_as_output();
-                rurp_set_control_pin(CHIP_ENABLE, 1);
-                rurp_set_control_pin(OUTPUT_ENABLE, 1);
+                rurp_chip_disable();
+                rurp_chip_input();
                 return;  // Operation completed successfully
             }
         // }
     }
-    handle->response_code = RESPONSE_CODE_ERROR;
-    copy_to_buffer(handle->response_msg, "Operation timed out");
+    firestarter_error_response("Operation timed out");
     return;
 }
 
@@ -52,8 +51,8 @@ void fu_flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t 
     fu_flash_fast_address(handle, address);
     rurp_write_data_buffer(data);
     rurp_chip_input();
-    rurp_set_control_pin(CHIP_ENABLE, 0);
-    rurp_set_control_pin(CHIP_ENABLE, 1);
+    rurp_chip_enable();
+    rurp_chip_disable();
 }
 
 void fu_flash_fast_address(firestarter_handle_t* handle, uint32_t address) {

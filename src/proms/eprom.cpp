@@ -156,8 +156,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
         debug("Mismatch, retrying");
     }
     handle->firestarter_set_control_register(handle, REGULATOR, 0);
-    format(handle->response_msg, "Failed to write memory, at 0x%06x, nr %d", handle->address, mismatch);
-    handle->response_code = RESPONSE_CODE_ERROR;
+    firestarter_error_response_format("Failed to write memory, at 0x%06x, nr %d", handle->address, mismatch);
 }
 
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
@@ -187,8 +186,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
     debug("Check VPP");
 #ifdef HARDWARE_REVISION
     if (rurp_get_hardware_revision() == REVISION_0) {
-        handle->response_code = RESPONSE_CODE_WARNING;
-        copy_to_buffer(handle->response_msg, "Rev0 dont support reading VPP.");
+        firestarter_warning_response("Rev0 dont support reading VPP/VPE");
         return;
     }
 #endif
@@ -213,16 +211,16 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
         dtostrf(vpp, 2, 2, vStr);
         char rStr[6];
         dtostrf(handle->vpp, 2, 2, rStr);
-        handle->response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
+        int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
         format(handle->response_msg, "VPP voltage is too high: %sv expected: %sv", vStr, rStr);
+        firestarter_response_format(response_code, "VPP voltage is too high: %sv expected: %sv", vStr, rStr);
     }
     else if (vpp < handle->vpp * .95) {
         char vStr[6];
         dtostrf(vpp, 2, 2, vStr);
         char rStr[6];
         dtostrf(handle->vpp, 2, 2, rStr);
-        handle->response_code = RESPONSE_CODE_WARNING;
-        format(handle->response_msg, "VPP voltage is low: %sv expected: %sv", vStr, rStr);
+        firestarter_warning_response_format("VPP voltage is low: %sv expected: %sv", vStr, rStr);
     }
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
 }
@@ -259,7 +257,6 @@ void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_co
     debug("Check chip ID");
     uint16_t chip_id = eprom_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
-        handle->response_code = error_code;
-        format(handle->response_msg, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
+        firestarter_response_format(error_code, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
     }
 }

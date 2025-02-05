@@ -64,7 +64,6 @@
   log_data(handle->response_msg)
 
 
-
 #define log_warn(msg) \
   rurp_log(LOG_WARN_MSG, msg)
 
@@ -98,14 +97,13 @@
   log_error(buf)
 
 
-#define copy_to_buffer( buf, msg) \
+#define copy_to_buffer(buf, msg) \
   strcpy_P(buf, PSTR(msg)); \
 
 #define format(buf, cformat, ...) \
-  char msg[80]; \
+  char msg[RESPONSE_MSG_SIZE]; \
   copy_to_buffer(msg, cformat);\
   sprintf(buf, msg, __VA_ARGS__)
-
 
 #ifdef SERIAL_DEBUG
 extern char* debug_msg_buffer;
