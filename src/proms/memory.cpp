@@ -137,7 +137,7 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     address = m_util_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
-    rurp_set_data_as_input();
+    rurp_set_data_input();
     rurp_chip_enable();
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();

@@ -1,15 +1,16 @@
 #ifndef RURP_HW_REV_UTILS_H
 #define RURP_HW_REV_UTILS_H
 
+#ifdef HARDWARE_REVISION
+
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include <stdint.h>
 #include <string.h>
 
-#ifdef HARDWARE_REVISION
 uint8_t revision = 0xFF;
 
-uint8_t rurp_map_ctrl_reg_to_hardware_revision(uint16_t data) {
+uint8_t rurp_map_ctrl_reg_for_hardware_revision(register_t data) {
     uint8_t ctrl_reg = 0;
     uint8_t hw = rurp_get_hardware_revision();
     switch (hw) {

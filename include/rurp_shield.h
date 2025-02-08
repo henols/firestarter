@@ -132,8 +132,8 @@ extern "C" {
 
     void rurp_log(const char* type, const char* msg);
 
-    void rurp_set_data_as_output();
-    void rurp_set_data_as_input();
+    void rurp_set_data_output();
+    void rurp_set_data_input();
 
 #define rurp_chip_enable() rurp_set_chip_enable(0)
 #define rurp_chip_disable() rurp_set_chip_enable(1)

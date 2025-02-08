@@ -35,7 +35,7 @@ void f_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_data
         // if ((fu_flash_data_poll() & 0x80) == (expected_data & 0x80)) { //Only check if bit 7 has flipped
             // Verify completion with an additional read
             if ((fu_flash_data_poll() & 0x80) == (fu_flash_data_poll() & 0x80)) { //No assuming other bits
-                rurp_set_data_as_output();
+                rurp_set_data_output();
                 rurp_chip_disable();
                 rurp_chip_input();
                 return;  // Operation completed successfully
@@ -47,7 +47,7 @@ void f_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_data
 }
 
 void fu_flash_flip_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
-    rurp_set_data_as_output();
+    rurp_set_data_output();
     fu_flash_fast_address(handle, address);
     rurp_write_data_buffer(data);
     rurp_chip_input();
@@ -63,7 +63,7 @@ void fu_flash_fast_address(firestarter_handle_t* handle, uint32_t address) {
 }
 
 uint8_t fu_flash_data_poll() {
-    rurp_set_data_as_input();
+    rurp_set_data_input();
     rurp_chip_enable();
     rurp_chip_output();
     uint8_t data = rurp_read_data_buffer();
