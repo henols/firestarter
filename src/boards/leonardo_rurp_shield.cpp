@@ -13,9 +13,9 @@
 #include "rurp_register_utils.h"
 #include "logging.h"
 
-#define PORTD_DATA_PINS (_BV() | _BV() | _BV() | _BV() | _BV() | _BV())
-#define PORTC_DATA_PINS (_BV())
-#define PORTE_DATA_PINS (_BV())
+#define PORTD_DATA_PINS (_BV(PD0) | _BV(PD1) | _BV(PD2) | _BV(PD3) | _BV(PD4) | _BV(PD7))
+#define PORTC_DATA_PINS (_BV(PC6))
+#define PORTE_DATA_PINS (_BV(PE6))
 
 // #define PORTB_CONTROL_PINS (_BV(PB4) | _BV(PB5) | _BV(PB6) | _BV(PB7))
 // #define PORTD_CONTROL_PINS (_BV(PD6))
@@ -26,7 +26,7 @@
 #define PORTC_CONTROL_PINS 0x80
 
 #define remap_bit(value, from_pos, to_pos) \
-    ((value & _BV(from_pos)) == _BV(from_pos)) ? _BV(to_pos) : 0x00
+    (((value & _BV(from_pos)) ) ? _BV(to_pos) : 0x00)
 
 constexpr int INPUT_RESOLUTION = 1023;
 
@@ -43,6 +43,9 @@ void rurp_board_setup() {
     for (int i = 8; i <= 13; i++) {
         pinMode(i, OUTPUT);
     }
+    // DDRB |= PORTB_CONTROL_PINS; // Set pins D8-D13 as output
+    // DDRD |= PORTD_CONTROL_PINS; // Set pin D12 as output
+    // DDRC |= PORTC_CONTROL_PINS; // Set pin D13 as output
 
     Serial.begin(MONITOR_SPEED);
     while (!Serial) {
@@ -116,12 +119,12 @@ void rurp_set_data_input() {
     }
 }
 
-// #define READ_DATA_PINS_DIRECTLY
-//  #define WRITE_DATA_PINS_DIRECTLY
+ #define READ_DATA_PINS_DIRECTLY
+  #define WRITE_DATA_PINS_DIRECTLY
 #define WRITE_CONTROL_PINS_DIRECTLY
 
 #define read_remap_bit(port, pin, to_bit) \
-    (bit_is_set(port, pin)!= 0) ? _BV(to_bit) : 0x00
+    (bit_is_set(port, pin) ? _BV(to_bit) : 0x00)
 
 uint8_t rurp_get_data_pins_direct() {
     // Mapping the bits of the pins (D0-D7) to the correct bits in a byte
@@ -133,7 +136,7 @@ uint8_t rurp_get_data_pins_direct() {
         read_remap_bit(PIND, PD0, 3) |    // set bit 3 from D3 (PD0 from PIND)
         read_remap_bit(PIND, PD1, 2) |    // set bit 2 from D2 (PD1 from PIND)
         read_remap_bit(PIND, PD3, 1) |    // set bit 1 from D1 (PD3 from PIND)
-    read_remap_bit(PIND, PD2, 0) ; // set bit 0 from D0 (PD2 from PIND)
+        read_remap_bit(PIND, PD2, 0) ; // set bit 0 from D0 (PD2 from PIND)
     return data;
 }
 
@@ -154,14 +157,14 @@ uint8_t rurp_get_data_pins() {
         read_remap_bit(PIND, PD7, 6) |    // set bit 6 from D6 (PD7 from PIND)
         read_remap_bit(PINE, PE6, 7);     // set bit 7 from D7 (PE6 from PINE)
 #endif
-    Serial.print(LOG_INFO_MSG);
-    Serial.print(": Read data: 0b");
-    Serial.print(data, BIN);
-    uint8_t rbyte = rurp_get_data_pins_direct();
-    Serial.print(" - direct: 0b");
-    Serial.print(rbyte, BIN);
-    Serial.print(", equal: ");
-    Serial.println(data == rbyte);
+    // Serial.print(LOG_INFO_MSG);
+    // Serial.print(": Read data: 0b");
+    // Serial.print(data, BIN);
+    // uint8_t rbyte = rurp_get_data_pins_direct();
+    // Serial.print(" - direct: 0b");
+    // Serial.print(rbyte, BIN);
+    // Serial.print(", equal: ");
+    // Serial.println(data == rbyte);
     return data;
 }
 
@@ -171,18 +174,20 @@ void rurp_set_data_pins(uint8_t byte) {
         digitalWrite(i, (byte & (1 << i)) ? HIGH : LOW);
     }
 #else
-
+    PORTD &= ~PORTD_DATA_PINS;
+    PORTC &= ~PORTC_DATA_PINS;
+    PORTE &= ~PORTE_DATA_PINS;
     // Mapping the bits of the byte to the correct pins (D0-D7)
     PORTD |= remap_bit(byte, 0, PD2) | // set pin D0 (PD2 in PORTD) from bit 0
-        remap_bit(byte, 1, PD3) |      // set pin D1 (PD3 in PORTD) from bit 1
-        remap_bit(byte, 2, PD1) |      // set pin D2 (PD1 in PORTD) from bit 2
-        remap_bit(byte, 3, PD0) |      // set pin D3 (PD0 in PORTD) from bit 3
-        remap_bit(byte, 4, PD4) |      // set pin D4 (PD4 in PORTD) from bit 4
-        remap_bit(byte, 6, PD7);       // set pin D6 (PD7 in PORTD) from bit 6
+        read_remap_bit(byte, 1, PD3) |      // set pin D1 (PD3 in PORTD) from bit 1
+        read_remap_bit(byte, 2, PD1) |      // set pin D2 (PD1 in PORTD) from bit 2
+        read_remap_bit(byte, 3, PD0) |      // set pin D3 (PD0 in PORTD) from bit 3
+        read_remap_bit(byte, 4, PD4) |      // set pin D4 (PD4 in PORTD) from bit 4
+        read_remap_bit(byte, 6, PD7);       // set pin D6 (PD7 in PORTD) from bit 6
 
-    PORTC |= remap_bit(byte, 5, PC6);  // set pin D5 (PC6 in PORTC) from bit 5
+    PORTC |= read_remap_bit(byte, 5, PC6);  // set pin D5 (PC6 in PORTC) from bit 5
 
-    PORTE |= remap_bit(byte, 7, PE6);  // set pin D7 (PE6 in PORTE) from bit 7
+    PORTE |= read_remap_bit(byte, 7, PE6);  // set pin D7 (PE6 in PORTE) from bit 7
 #endif
 }
 
