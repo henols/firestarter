@@ -27,10 +27,9 @@ bool eprom_read(firestarter_handle_t* handle) {
     return true;
   }
 
-  log_data_format("Read data from address 0x%lx to 0x%lx", handle->address, handle->address + handle->data_size);
+  log_data_format("Read: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
   rurp_communication_write(handle->data_buffer, handle->data_size);
   // debug_format("Read buffer: %.10s...", handle->data_buffer);
-
 
   handle->address += handle->data_size;
   if (handle->address > handle->mem_size - 1) {
@@ -79,7 +78,7 @@ bool eprom_write(firestarter_handle_t* handle) {
       return true;
     }
 
-    log_ok_format("Data written to address %lx - %lx", handle->address, handle->address + handle->data_size);
+    log_ok_format("Write: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
 
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
@@ -127,7 +126,7 @@ bool eprom_verify(firestarter_handle_t* handle) {
       return true;
     }
 
-    log_ok_format("Data verified address %lx - %lx", handle->address, handle->address + handle->data_size);
+    log_ok_format("Verify: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
 
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
@@ -155,7 +154,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
     }
   }
   else {
-    log_error_const("Erase not supported");
+    log_error_const("Not supported");
   }
   return true;
 }
@@ -175,7 +174,7 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
     }
   }
   else {
-    log_error_const("Check Chip ID is not supported");
+    log_error_const("Not supported");
   }
   return true;
 }
@@ -191,7 +190,7 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
     }
   }
   else {
-    log_error_const("Blank check is not supported");
+    log_error_const("Not supported");
   }
   return true;
 }
