@@ -69,11 +69,9 @@ void flash3_write_init(firestarter_handle_t* handle) {
             copy_to_buffer(handle->response_msg, "Skipping erase of memory");
         }
     }
-#ifdef EPROM_BLANK_CHECK
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
         m_util_blank_check(handle);
     }
-#endif
 }
 
 void flash3_write_execute(firestarter_handle_t* handle) {

@@ -57,9 +57,8 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register = memory_set_control_register;
     handle->firestarter_get_control_register = memory_get_control_register;
 
-#ifdef POWER_THROUGH_ADDRESS_LINES
     m_util_set_address(handle, 0);
-#endif
+
     if (handle->mem_type == TYPE_EPROM) {
         configure_eprom(handle);
         return;
@@ -94,11 +93,9 @@ void m_util_set_address(firestarter_handle_t* handle, uint32_t address) {
     uint8_t lsb = address & 0xFF;
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
     uint8_t msb = ((address >> 8) & 0xFF);
-#ifdef POWER_THROUGH_ADDRESS_LINES
     if (handle->pins == 24) {
         msb |= A13;
     }
-#endif
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 
     register_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | READ_WRITE);
@@ -110,11 +107,9 @@ void m_util_set_address(firestarter_handle_t* handle, uint32_t address) {
     }
     top_address |= rurp_read_from_register(CONTROL_REGISTER) & mask;
 
-#ifdef POWER_THROUGH_ADDRESS_LINES
     if (handle->pins == 28) {
         top_address |= A17;
     }
-#endif
 #ifdef DEBUG_ADDRESS
     debug_format("top msb lsb %02x %02x %02x", top_address, msb, lsb);
 #endif
@@ -137,7 +132,7 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     address = m_util_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
-    rurp_set_data_as_input();
+    rurp_set_data_input();
     rurp_chip_enable();
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();
@@ -175,7 +170,6 @@ void memory_verify_execute(firestarter_handle_t* handle) {
 }
 
 // Utility functions
-
 uint32_t m_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
     bus_config_t config = handle->bus_config;
     if (config.address_lines[0] != 0xff || config.rw_line != 0xff) {
@@ -198,7 +192,7 @@ void m_util_blank_check(firestarter_handle_t* handle) {
     for (uint32_t i = 0; i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
-            firestarter_error_response_format("Memory is not blank, at 0x%06x, value: 0x%02x", i, val);
+            firestarter_error_response_format("Mem not blank, at 0x%06x, v: 0x%02x", i, val);
             return;
         }
     }

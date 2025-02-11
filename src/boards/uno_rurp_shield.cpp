@@ -9,7 +9,11 @@
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include "rurp_config_utils.h"
-#include "rurp_hw_rev_utils.h"
+#include "rurp_register_utils.h"
+
+#define RURP_CUSTOM_LOG
+#include "rurp_serial_utils.h"
+
 
 constexpr int INPUT_RESOLUTION = 1023;
 
@@ -24,20 +28,16 @@ void log_debug(const char* type, const char* msg);
 #define log_debug(type, msg)
 #endif
 
-uint8_t lsb_address;
-uint8_t msb_address;
-register_t control_register;
-
 
 void rurp_board_setup() {
-    rurp_set_data_as_output();
+    // rurp_set_data_as_output();
 
     DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | READ_WRITE;
 
-    PORTB = OUTPUT_ENABLE | CHIP_ENABLE;
-    lsb_address = 0xff;
-    msb_address = 0xff;
-    control_register = 0xff;
+
+    rurp_chip_disable();
+    rurp_chip_input();
+
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
     rurp_write_to_register(CONTROL_REGISTER, 0x00);
@@ -47,110 +47,24 @@ void rurp_board_setup() {
 
 void rurp_set_communication_mode() {
     DDRD &= ~(0x01);
-    Serial.begin(MONITOR_SPEED); // Initialize serial port
-    
-    while (!Serial) {
-        delayMicroseconds(1);
-    }
-    Serial.flush();
+    rurp_serial_begin(MONITOR_SPEED);
     com_mode = true;
 }
 
 void rurp_set_programmer_mode() {
     com_mode = false;
-    Serial.end(); // Close serial port
+    rurp_serial_end();
     DDRD |= 0x01;
 }
 
-int rurp_communication_available() {
-    return Serial.available();    
-}
-int rurp_communication_read() {
-    return Serial.read();
-}
-
-size_t rurp_communication_read_bytes(char* buffer, size_t length) {
-    return Serial.readBytes(buffer, length);
-}
-
-size_t rurp_communication_write(const char* buffer, size_t size) {
-    size_t bytes = Serial.write(buffer, size);
-    Serial.flush();
-    return bytes;
-}
 
 void rurp_log(const char* type, const char* msg) {
     log_debug(type, msg);
     if (com_mode) {
-        Serial.print(type);
-        Serial.print(": ");
-        Serial.println(msg);
-        Serial.flush();
+        rurp_log_internal(type, msg);
     }
 }
 
-void rurp_set_data_as_output() {
-    DDRD = 0xff;
-}
-
-void rurp_set_data_as_input() {
-    DDRD = 0x00;
-}
-
-
-void rurp_write_to_register(uint8_t reg, register_t data) {
-    bool settle = false;
-    switch (reg) {
-    case LEAST_SIGNIFICANT_BYTE:
-        if (lsb_address == (uint8_t)data) {
-            return;
-        }
-        lsb_address = data;
-        break;
-    case MOST_SIGNIFICANT_BYTE:
-        if (msb_address == (uint8_t)data) {
-            return;
-        }
-        msb_address = data;
-        break;
-    case CONTROL_REGISTER:
-        if (control_register == data) {
-            return;
-        }
-        if ((control_register & P1_VPP_ENABLE) > (data & P1_VPP_ENABLE)) {
-            settle = true;
-        }
-        control_register = data;
-#ifdef HARDWARE_REVISION
-        data = rurp_map_ctrl_reg_to_hardware_revision(data);
-#endif
-        break;
-    default:
-        return;
-    }
-    rurp_write_data_buffer(data);
-    PORTB |= reg;
-    // Probably useless - verify later 
-    delayMicroseconds(1); 
-    PORTB &= ~(reg);
-    //Take a break here if an address change needs time to settle
-    if (settle)
-    {
-        delayMicroseconds(4);
-    }
-}
-
-register_t rurp_read_from_register(uint8_t reg) {
-    switch (reg) {
-    case LEAST_SIGNIFICANT_BYTE:
-        return lsb_address;
-    case MOST_SIGNIFICANT_BYTE:
-        return msb_address;
-    case CONTROL_REGISTER:
-        return control_register;
-    }
-    return 0;
-}
 
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
     if (state) {
@@ -163,13 +77,22 @@ void rurp_set_control_pin(uint8_t pin, uint8_t state) {
 
 
 void rurp_write_data_buffer(uint8_t data) {
-    rurp_set_data_as_output();
+    rurp_set_data_output();
     PORTD = data;
 }
 
 uint8_t rurp_read_data_buffer() {
     return PIND;
 }
+
+void rurp_set_data_output() {
+    DDRD = 0xff;
+}
+
+void rurp_set_data_input() {
+    DDRD = 0x00;
+}
+
 
 double rurp_read_vcc() {
     // Read 1.1V reference against AVcc

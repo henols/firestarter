@@ -27,7 +27,7 @@ extern "C" {
 #define P1_VPP_ENABLE   0x08
 #define A17             0x10
 #define A18             0x20
-#define RW              0x40
+#define READ_WRITE      0x40
 #define REGULATOR       0x80
 
 #else
@@ -42,7 +42,7 @@ extern "C" {
 #define P1_VPP_ENABLE   0x08
 #define A17             0x10
 #define A18             0x20
-#define READ_WRITE              0x40
+#define READ_WRITE      0x40
 #define REGULATOR       0x80
 #define VPE_TO_VPP      0x100
 
@@ -113,7 +113,6 @@ extern "C" {
 
     // Function prototypes
     void rurp_board_setup();
-    void rurp_detect_hardware_revision();
     void rurp_load_config();
 
 
@@ -132,8 +131,8 @@ extern "C" {
 
     void rurp_log(const char* type, const char* msg);
 
-    void rurp_set_data_as_output();
-    void rurp_set_data_as_input();
+    void rurp_set_data_output();
+    void rurp_set_data_input();
 
 #define rurp_chip_enable() rurp_set_chip_enable(0)
 #define rurp_chip_disable() rurp_set_chip_enable(1)
@@ -159,6 +158,7 @@ extern "C" {
     void rurp_validate_config(rurp_configuration_t* config);
 
 #ifdef HARDWARE_REVISION
+    void rurp_detect_hardware_revision();
     uint8_t rurp_get_hardware_revision();
     uint8_t rurp_get_physical_hardware_revision();
 #endif

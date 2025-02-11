@@ -14,6 +14,7 @@ extern "C" {
 #endif
     int op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
     int op_execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
+    int op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
 
     void op_reset_timeout();
 

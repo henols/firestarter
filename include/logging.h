@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <avr/pgmspace.h>
 #include "rurp_shield.h"
+#include "firestarter.h"
 
 #define LOG_LEVEL_INFO
 

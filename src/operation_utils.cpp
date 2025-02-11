@@ -14,9 +14,22 @@ int op_check_response(firestarter_handle_t* handle);
 
 int op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
     if (handle->init == 1 && callback != NULL) {
-        log_info_format("Init function: %d, state: %d", handle->init, handle->state);
+        log_info_format("Init function state: %d", handle->state);
         handle->init = 0;
-        return op_execute_function(callback, handle);
+        int res = op_execute_function(callback, handle);
+        log_info_const("Init done");  
+
+        return res;
+    }           
+    return 1;              
+}
+
+int op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
+    if (callback != NULL) {
+        log_info_const("End func");
+        int res = op_execute_function(callback, handle);
+        log_info_const("End done");  
+        return res;
     }           
     return 1;              
 }
