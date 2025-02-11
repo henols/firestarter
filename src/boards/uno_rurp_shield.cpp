@@ -11,6 +11,10 @@
 #include "rurp_config_utils.h"
 #include "rurp_register_utils.h"
 
+#define RURP_CUSTOM_LOG
+#include "rurp_serial_utils.h"
+
+
 constexpr int INPUT_RESOLUTION = 1023;
 
 bool com_mode = true;
@@ -43,45 +47,21 @@ void rurp_board_setup() {
 
 void rurp_set_communication_mode() {
     DDRD &= ~(0x01);
-    Serial.begin(MONITOR_SPEED); // Initialize serial port
-
-    while (!Serial) {
-        delayMicroseconds(1);
-    }
-    Serial.flush();
+    rurp_serial_begin(MONITOR_SPEED);
     com_mode = true;
 }
 
 void rurp_set_programmer_mode() {
     com_mode = false;
-    Serial.end(); // Close serial port
+    rurp_serial_end();
     DDRD |= 0x01;
 }
 
-int rurp_communication_available() {
-    return Serial.available();
-}
-int rurp_communication_read() {
-    return Serial.read();
-}
-
-size_t rurp_communication_read_bytes(char* buffer, size_t length) {
-    return Serial.readBytes(buffer, length);
-}
-
-size_t rurp_communication_write(const char* buffer, size_t size) {
-    size_t bytes = Serial.write(buffer, size);
-    Serial.flush();
-    return bytes;
-}
 
 void rurp_log(const char* type, const char* msg) {
     log_debug(type, msg);
     if (com_mode) {
-        Serial.print(type);
-        Serial.print(": ");
-        Serial.println(msg);
-        Serial.flush();
+        rurp_log_internal(type, msg);
     }
 }
 

@@ -41,7 +41,9 @@ void setup() {
 #endif
 
   rurp_load_config();
+  #ifdef HARDWARE_REVISION
   rurp_detect_hardware_revision();
+  #endif
   rurp_board_setup();
 
   handle.state = STATE_IDLE;

@@ -19,13 +19,11 @@ bool eprom_read(firestarter_handle_t* handle) {
   }
 
   debug("Read PROM");
-  int res = op_execute_init(handle->firestarter_operation_init, handle);
-  if (res <= 0) {
+  if (!op_execute_init(handle->firestarter_operation_init, handle)) {
     return true;
   }
-
-  res = op_execute_function(handle->firestarter_operation_execute, handle);
-  if (res <= 0) {
+  
+  if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
     return true;
   }
 
@@ -37,7 +35,7 @@ bool eprom_read(firestarter_handle_t* handle) {
   handle->address += handle->data_size;
   if (handle->address > handle->mem_size - 1) {
     while (!op_check_for_ok(handle));
-    if (op_execute_function(handle->firestarter_operation_end, handle) > 0) {
+    if (op_execute_end(handle->firestarter_operation_end, handle)) {
       log_ok_const("Memmory read");
     }
     return true;
@@ -53,7 +51,7 @@ bool eprom_write(firestarter_handle_t* handle) {
     handle->data_size |= rurp_communication_read();
     if (handle->data_size == 0) {
       log_warn_const("Premature end of data");
-      if (op_execute_function(handle->firestarter_operation_end, handle) > 0) {
+      if (op_execute_end(handle->firestarter_operation_end, handle)) {
         log_ok_const("Memory written");
       }
       return true;
@@ -72,14 +70,12 @@ bool eprom_write(firestarter_handle_t* handle) {
       return true;
     }
 
-    int res = op_execute_init(handle->firestarter_operation_init, handle);
-    if (res <= 0) {
+    if (!op_execute_init(handle->firestarter_operation_init, handle)) {
       return true;
     }
 
     // debug("Write PROM exec");
-    res = op_execute_function(handle->firestarter_operation_execute, handle);
-    if (res <= 0) {
+    if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
       return true;
     }
 
@@ -87,7 +83,7 @@ bool eprom_write(firestarter_handle_t* handle) {
 
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
-      if (op_execute_function(handle->firestarter_operation_end, handle) > 0) {
+      if (op_execute_end(handle->firestarter_operation_end, handle)) {
         log_ok_const("Memory written");
       }
       return true;
@@ -104,7 +100,7 @@ bool eprom_verify(firestarter_handle_t* handle) {
     handle->data_size |= rurp_communication_read();
     if (handle->data_size == 0) {
       log_warn_const("Premature end of data");
-      if (op_execute_function(handle->firestarter_operation_end, handle) > 0) {
+      if (op_execute_end(handle->firestarter_operation_end, handle) > 0) {
         log_ok_const("Memory verified");
       }
       return true;
@@ -123,13 +119,11 @@ bool eprom_verify(firestarter_handle_t* handle) {
       return true;
     }
 
-    int res = op_execute_init(handle->firestarter_operation_init, handle);
-    if (res <= 0) {
+    if (!op_execute_init(handle->firestarter_operation_init, handle)) {
       return true;
     }
 
-    res = op_execute_function(handle->firestarter_operation_execute, handle);
-    if (res <= 0) {
+    if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
       return true;
     }
 
@@ -137,7 +131,7 @@ bool eprom_verify(firestarter_handle_t* handle) {
 
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
-      if (op_execute_function(handle->firestarter_operation_end, handle) > 0) {
+      if (op_execute_end(handle->firestarter_operation_end, handle)) {
         log_ok_const("Memory verified");
       }
       return true;
@@ -152,7 +146,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
   }
 
   debug("Erase PROM");
-  if (is_flag_set(FLAG_CAN_ERASE) and excecute_operation(handle)) {
+  if (is_flag_set(FLAG_CAN_ERASE) && excecute_operation(handle)) {
     if (handle->response_code == RESPONSE_CODE_OK) {
       log_ok_const("Chip is erased");
     }
@@ -205,15 +199,13 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
 
 bool excecute_operation(firestarter_handle_t* handle) {
   if (handle->firestarter_operation_execute) {
-    int res = op_execute_init(handle->firestarter_operation_init, handle);
-    if (res <= 0) {
+    if (!op_execute_init(handle->firestarter_operation_init, handle)) {
       return true;
     }
-    res = op_execute_function(handle->firestarter_operation_execute, handle);
-    if (res <= 0) {
+    if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
       return true;
     }
-    op_execute_function(handle->firestarter_operation_end, handle);
+    op_execute_end(handle->firestarter_operation_end, handle);
     return true;
   }
   return false;

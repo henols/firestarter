@@ -48,8 +48,7 @@ void rurp_write_to_register(uint8_t reg, register_t data) {
 
     rurp_set_control_pin(reg, 0);
     //Take a break here if an address change needs time to settle
-    if (settle)
-    {
+    if (settle) {
         delayMicroseconds(4);
     }
 }

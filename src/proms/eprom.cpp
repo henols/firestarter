@@ -25,9 +25,7 @@ void eprom_check_chip_id_execute(firestarter_handle_t* handle);
 void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
 
-#ifdef TEST_VPP_BEFORE_OPERATION
 void eprom_check_vpp(firestarter_handle_t* handle);
-#endif
 
 void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_code);
 void eprom_internal_erase(firestarter_handle_t* handle);
@@ -64,9 +62,7 @@ void configure_eprom(firestarter_handle_t* handle) {
 }
 
 void eprom_check_chip_id_init(firestarter_handle_t* handle) {
-#ifdef TEST_VPP_BEFORE_OPERATION
     eprom_check_vpp(handle);
-#endif
 }
 
 
@@ -92,14 +88,12 @@ void eprom_write_init(firestarter_handle_t* handle) {
             eprom_internal_erase(handle);
         }
         else {
-            copy_to_buffer(handle->response_msg, "Skipping erase of memory");
+            copy_to_buffer(handle->response_msg, "Skipping erase.");
         }
     }
-#ifdef EPROM_BLANK_CHECK
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
         m_util_blank_check(handle);
     }
-#endif
 }
 
 void eprom_write_execute(firestarter_handle_t* handle) {
@@ -120,13 +114,17 @@ void eprom_write_execute(firestarter_handle_t* handle) {
     for (int i = 0; i < DATA_BUFFER_SIZE / 8; i++) {
         mismatch_bitmask[i] = 0xFF;
     }
-    for (int w = 0; w < 20; w++) {
+    for (int w = 0; w < 2; w++) {
         mismatch = 0;
         handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
         // Iterate through the mismatch bitmask to find all mismatched positions
         for (uint32_t i = 0; i < handle->data_size; i++) {
             if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
                 handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+                if(i == 0) {
+                    debug_format("Value in buffer ox%x", handle->data_buffer[i]);
+                    delayMicroseconds(10);
+                }
                 if (w > 0) {
                     rewrites++;
                 }
@@ -181,7 +179,6 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
     return chip_id;
 }
 
-#ifdef TEST_VPP_BEFORE_OPERATION
 void eprom_check_vpp(firestarter_handle_t* handle) {
     debug("Check VPP");
 #ifdef HARDWARE_REVISION
@@ -212,19 +209,17 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
         char rStr[6];
         dtostrf(handle->vpp, 2, 2, rStr);
         int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        format(handle->response_msg, "VPP voltage is too high: %sv expected: %sv", vStr, rStr);
-        firestarter_response_format(response_code, "VPP voltage is too high: %sv expected: %sv", vStr, rStr);
+        firestarter_response_format(response_code, "VPP is high: %sv > %sv", vStr, rStr);
     }
     else if (vpp < handle->vpp * .95) {
         char vStr[6];
         dtostrf(vpp, 2, 2, vStr);
         char rStr[6];
         dtostrf(handle->vpp, 2, 2, rStr);
-        firestarter_warning_response_format("VPP voltage is low: %sv expected: %sv", vStr, rStr);
+        firestarter_warning_response_format("VPP is low: %sv < %sv", vStr, rStr);
     }
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
 }
-#endif
 
 void eprom_internal_erase(firestarter_handle_t* handle) {
     debug("Internal erase");
@@ -242,12 +237,10 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
 }
 
 void eprom_generic_init(firestarter_handle_t* handle) {
-#ifdef TEST_VPP_BEFORE_OPERATION
     eprom_check_vpp(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
         return;
     }
-#endif
     if (handle->chip_id > 0) {
         eprom_internal_check_chip_id(handle, is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR);
     }
@@ -257,6 +250,6 @@ void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_co
     debug("Check chip ID");
     uint16_t chip_id = eprom_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
-        firestarter_response_format(error_code, "Chip ID %#x dont match expected ID %#x", chip_id, handle->chip_id);
+        firestarter_response_format(error_code, "Chip ID: %#x dont match: %#x", chip_id, handle->chip_id);
     }
 }
