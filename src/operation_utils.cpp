@@ -41,8 +41,9 @@ int op_execute_function(void (*callback)(firestarter_handle_t* handle), firestar
         callback(handle);
         rurp_set_communication_mode();
         op_reset_timeout();
+        return op_check_response(handle);
     }
-    return op_check_response(handle);
+    return 0;
 }
 
 int op_check_response(firestarter_handle_t* handle) {

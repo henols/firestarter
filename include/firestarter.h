@@ -14,7 +14,9 @@
 
 #define FW_VERSION VERSION ":" BOARD_NAME
 
+#ifndef DATA_BUFFER_SIZE
 #define DATA_BUFFER_SIZE 512
+#endif
 #define RESPONSE_MSG_SIZE 64
 
 #define STATE_IDLE 0
