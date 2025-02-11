@@ -25,7 +25,6 @@ int json_init(char* json, int len, jsmntok_t* tokens) {
 
 #define jsoneq(json, tok, s) \
     jsoneq_(json, tok, PSTR(s))
-// jsoneq_(json, tok, s)
 
 static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {
     if (tok->type == JSMN_STRING && (int)strlen_P(s) == tok->end - tok->start &&

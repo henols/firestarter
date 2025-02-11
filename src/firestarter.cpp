@@ -95,13 +95,13 @@ bool parse_json(firestarter_handle_t* handle) {
 #ifdef DEV_TOOLS
     if (handle->state < STATE_DEV_ADDRESS) {
       if (!op_execute_function(configure_memory, handle)) {
-        log_error_const("Could not configure chip");
+        log_error_const("Setup error");
         return false;
       }
     }
 #else
     if (!op_execute_function(configure_memory, handle)) {
-      log_error_const("Could not configure chip");
+      log_error_const("Setup error");
       return false;
     }
 #endif
@@ -110,7 +110,7 @@ bool parse_json(firestarter_handle_t* handle) {
     rurp_configuration_t* config = rurp_get_config();
     int res = json_parse_config(handle->data_buffer, tokens, token_count, config);
     if (res < 0) {
-      log_error_const("Could not parse config");
+      log_error_const("Failed parsing config");
       return false;
     }
     else if (res == 1) {
@@ -125,7 +125,7 @@ bool init_programmer(firestarter_handle_t* handle) {
   handle->init = 1;
 
   handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
-  log_info_format("Setup buffer size: %d", handle->data_size);
+  log_info_format("Buffer size: %d", handle->data_size);
   if (handle->data_size == 0) {
     log_error_const("Empty input");
     return false;
@@ -138,7 +138,7 @@ bool init_programmer(firestarter_handle_t* handle) {
   };
 
   if (handle->state > STATE_IDLE && handle->state < STATE_READ_VPP) {
-    log_info_format("EPROM memory size 0x%lx", handle->mem_size);
+    log_info_format("Memory size 0x%lx", handle->mem_size);
   }
 
 #ifdef HARDWARE_REVISION

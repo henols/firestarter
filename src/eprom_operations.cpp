@@ -35,7 +35,7 @@ bool eprom_read(firestarter_handle_t* handle) {
   if (handle->address > handle->mem_size - 1) {
     while (!op_check_for_ok(handle));
     if (op_execute_end(handle->firestarter_operation_end, handle)) {
-      log_ok_const("Memmory read");
+      log_ok_const("Read done");
     }
     return true;
   }
@@ -51,16 +51,16 @@ bool eprom_write(firestarter_handle_t* handle) {
     if (handle->data_size == 0) {
       log_warn_const("Premature end of data");
       if (op_execute_end(handle->firestarter_operation_end, handle)) {
-        log_ok_const("Memory written");
+        log_ok_const("Write done");
       }
       return true;
     }
 
-    log_ok_format("Reciving %d bytes", handle->data_size);
+    log_ok_format("Expecting %d bytes", handle->data_size);
     int len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
 
     if ((uint32_t)len != handle->data_size) {
-      log_error_format("Not enough data, expected %d, got %d", (int)handle->data_size, len);
+      log_error_format("Not enough data: %d > %d", (int)handle->data_size, len);
       return true;
     }
 
@@ -83,7 +83,7 @@ bool eprom_write(firestarter_handle_t* handle) {
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
       if (op_execute_end(handle->firestarter_operation_end, handle)) {
-        log_ok_const("Memory written");
+        log_ok_const("Write done");
       }
       return true;
     }
@@ -100,16 +100,16 @@ bool eprom_verify(firestarter_handle_t* handle) {
     if (handle->data_size == 0) {
       log_warn_const("Premature end of data");
       if (op_execute_end(handle->firestarter_operation_end, handle) > 0) {
-        log_ok_const("Memory verified");
+        log_ok_const("Verify done");
       }
       return true;
     }
 
-    log_ok_format("Reciving %d bytes", handle->data_size);
+    log_ok_format("Expecting %d bytes", handle->data_size);
     int len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
 
     if ((uint32_t)len != handle->data_size) {
-      log_error_format("Not enough data, expected %d, got %d", (int)handle->data_size, len);
+      log_error_format("Not enough data: %d > %d", (int)handle->data_size, len);
       return true;
     }
 
@@ -131,7 +131,7 @@ bool eprom_verify(firestarter_handle_t* handle) {
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
       if (op_execute_end(handle->firestarter_operation_end, handle)) {
-        log_ok_const("Memory verified");
+        log_ok_const("Verify done");
       }
       return true;
     }
@@ -147,10 +147,10 @@ bool eprom_erase(firestarter_handle_t* handle) {
   debug("Erase PROM");
   if (is_flag_set(FLAG_CAN_ERASE) && excecute_operation(handle)) {
     if (handle->response_code == RESPONSE_CODE_OK) {
-      log_ok_const("Chip is erased");
+      log_ok_const("Erased");
     }
     else {
-      log_error_const("Chip erase failed");
+      log_error_const("Failed");
     }
   }
   else {
@@ -165,7 +165,7 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
   }
   debug("Check Chip ID");
   if (handle->chip_id == 0) {
-    log_error_const("Chip ID not present");
+    log_error_const("No chip ID");
     return true;
   }
   if (excecute_operation(handle)) {
@@ -186,7 +186,7 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
   debug("Blank check PROM");
   if (excecute_operation(handle)) {
     if (handle->response_code == RESPONSE_CODE_OK) {
-      log_ok_const("Chip is blank");
+      log_ok_const("Blank");
     }
   }
   else {
