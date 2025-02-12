@@ -25,10 +25,6 @@
 
 constexpr int INPUT_RESOLUTION = 1023;
 
-uint8_t rurp_get_data_pins();
-void rurp_set_data_pins(uint8_t data);
-void rurp_set_control_pins(uint8_t value);
-
 uint8_t control_pins = 0x00;
 
 void rurp_board_setup() {
@@ -44,36 +40,35 @@ void rurp_board_setup() {
     delay(1);
 }
 
-
-
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
+    // log_info("Setting control pins");
     control_pins = state ? control_pins | pin : control_pins & ~(pin);
-    rurp_set_control_pins(control_pins);
+    uint8_t nbyte = control_pins << 2;
+    PORTD = (PORTD & ~PORTD_CONTROL_MASK) | (nbyte & PORTD_CONTROL_MASK); // set pins D12 (PD6 in PORTD) from byte bits 4
+    PORTC = (PORTC & ~PORTC_CONTROL_MASK) | (nbyte & PORTC_CONTROL_MASK); // set pins D13 (PC7 in PORTC) from byte bits 5
+    PORTB = (PORTB & ~PORTB_CONTROL_MASK) | (nbyte << 2); // set pins D8-D11 (PB4-PB7 in PORTB) from byte bits 0-3
 }
-
 
 void rurp_write_data_buffer(uint8_t data) {
     rurp_set_data_output(); // Ensure data lines are output
-    rurp_set_data_pins(data);
+    
+    uint8_t portd_val = data & 0x10;        // bit 4 -> PD4
+
+    uint8_t lbyte = data << 1;
+    uint8_t portc_val = lbyte & PORTC_DATA_MASK; // bit 5 -> PC6
+    portd_val |= (lbyte & 0x80) | ((lbyte << 1) & 0x0c);     // bit 6 -> PD7, bit 2 -> PD1, bit 3 -> PD0
+
+    uint8_t rbyte = data >> 1;
+    uint8_t porte_val = rbyte & PORTE_DATA_MASK; // bit 7 -> PE6
+    portd_val |= (rbyte & 0x02) | ((rbyte >> 2) & 0x01); // bit 0 -> PD2, bit 1 -> PD3
+
+    // Clear the bits we are about to update, then set the new bits.
+    PORTD = (PORTD & ~PORTD_DATA_MASK) | portd_val;
+    PORTC = (PORTC & ~PORTC_DATA_MASK) | portc_val;
+    PORTE = (PORTE & ~PORTE_DATA_MASK) | porte_val;
 }
 
 uint8_t rurp_read_data_buffer() {
-    return rurp_get_data_pins();
-}
-
-void rurp_set_data_output() {
-    DDRD |= PORTD_DATA_MASK; // Set pins D0-D3 and D4-D7 as output
-    DDRC |= PORTC_DATA_MASK; // Set pin D5 as output
-    DDRE |= PORTE_DATA_MASK; // Set pin D6 as output
-}
-
-void rurp_set_data_input() {
-    DDRD &= ~PORTD_DATA_MASK; // Set pins D0-D3 and D4-D7 as output
-    DDRC &= ~PORTC_DATA_MASK; // Set pin D5 as output
-    DDRE &= ~PORTE_DATA_MASK; // Set pin D6 as output
-}
-
-uint8_t rurp_get_data_pins() {
     uint8_t data = PIND & 0x10; // PD4 -> bit 4.
     uint8_t rpind = PIND >> 1;
     data |= rpind & 0x40; // PD7 -> bit 6.
@@ -86,29 +81,16 @@ uint8_t rurp_get_data_pins() {
     return data;
 }
 
-void rurp_set_data_pins(uint8_t byte) {
-    uint8_t portd_val = byte & 0x10;        // bit 4 -> PD4
-
-    uint8_t lbyte = byte << 1;
-    uint8_t portc_val = lbyte & PORTC_DATA_MASK; // bit 5 -> PC6
-    portd_val |= (lbyte & 0x80) | ((lbyte << 1) & 0x0c);     // bit 6 -> PD7, bit 2 -> PD1, bit 3 -> PD0
-
-    uint8_t rbyte = byte >> 1;
-    uint8_t porte_val = rbyte & PORTE_DATA_MASK; // bit 7 -> PE6
-    portd_val |= (rbyte & 0x02) | ((rbyte >> 2) & 0x01); // bit 0 -> PD2, bit 1 -> PD3
-
-    // Clear the bits we are about to update, then set the new bits.
-    PORTD = (PORTD & ~PORTD_DATA_MASK) | portd_val;
-    PORTC = (PORTC & ~PORTC_DATA_MASK) | portc_val;
-    PORTE = (PORTE & ~PORTE_DATA_MASK) | porte_val;
+void rurp_set_data_output() {
+    DDRD |= PORTD_DATA_MASK; // Set pins D0-D3 and D4-D7 as output
+    DDRC |= PORTC_DATA_MASK; // Set pin D5 as output
+    DDRE |= PORTE_DATA_MASK; // Set pin D6 as output
 }
 
-void rurp_set_control_pins(uint8_t byte) {
-    // log_info("Setting control pins");
-    uint8_t nbyte = byte << 2;
-    PORTD = (PORTD & ~PORTD_CONTROL_MASK) | (nbyte & PORTD_CONTROL_MASK); // set pins D12 (PD6 in PORTD) from byte bits 4
-    PORTC = (PORTC & ~PORTC_CONTROL_MASK) | (nbyte & PORTC_CONTROL_MASK); // set pins D13 (PC7 in PORTC) from byte bits 5
-    PORTB = (PORTB & ~PORTB_CONTROL_MASK) | (nbyte << 2); // set pins D8-D11 (PB4-PB7 in PORTB) from byte bits 0-3
+void rurp_set_data_input() {
+    DDRD &= ~PORTD_DATA_MASK; // Set pins D0-D3 and D4-D7 as output
+    DDRC &= ~PORTC_DATA_MASK; // Set pin D5 as output
+    DDRE &= ~PORTE_DATA_MASK; // Set pin D6 as output
 }
 
 double rurp_read_vcc() {
@@ -146,7 +128,6 @@ double rurp_read_voltage() {
     return vout * voltageDivider;
 }
 
-
 #ifdef SERIAL_DEBUG
 void debug_setup() {}
 
@@ -154,7 +135,6 @@ void debug_buf(const char* msg) {
     rurp_log("DEBUG", msg);
 }
 #endif
-
 #endif
 
 
