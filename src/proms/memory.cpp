@@ -7,6 +7,7 @@
 
 #include "memory.h"
 #include <Arduino.h>
+#include <stdint.h>
 
 #include "memory_utils.h"
 #include "eprom.h"
@@ -20,12 +21,16 @@
 #define TYPE_FLASH_TYPE_3 3
 #define TYPE_SRAM 4
 
+#ifndef min
+#define min(a,b) ((a)<(b)?(a):(b))
+#endif
+
 void memory_read_execute(firestarter_handle_t* handle);
 void memory_write_execute(firestarter_handle_t* handle);
 void memory_verify_execute(firestarter_handle_t* handle);
 
-void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
-bool memory_get_control_register(firestarter_handle_t* handle, register_t bit);
+void memory_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state);
+bool memory_get_control_register(firestarter_handle_t* handle, rurp_register_t bit);
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address);
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data);
 
@@ -74,14 +79,14 @@ void configure_memory(firestarter_handle_t* handle) {
     firestarter_error_response_format("Memory type 0x%02x not supported", handle->mem_type);
 }
 
-void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state) {
-    register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
-    register_t data = state ? control_register | (bit) : control_register & ~(bit);
+void memory_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
+    rurp_register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
+    rurp_register_t data = state ? control_register | (bit) : control_register & ~(bit);
     rurp_write_to_register(CONTROL_REGISTER, data);
 }
 
-bool memory_get_control_register(firestarter_handle_t* handle, register_t bit) {
-    register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
+bool memory_get_control_register(firestarter_handle_t* handle, rurp_register_t bit) {
+    rurp_register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
     return control_register & bit;
 }
 
@@ -94,21 +99,21 @@ void m_util_set_address(firestarter_handle_t* handle, uint32_t address) {
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
     uint8_t msb = ((address >> 8) & 0xFF);
     if (handle->pins == 24) {
-        msb |= A13;
+        msb |= ADDRESS_LINE_13;
     }
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 
-    register_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | READ_WRITE);
-    register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
+    rurp_register_t top_address = ((uint32_t)address >> 16) & (ADDRESS_LINE_16 | ADDRESS_LINE_17 | ADDRESS_LINE_18 | READ_WRITE);
+    rurp_register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
     if (((top_address & READ_WRITE) && READ_WRITE == WRITE_FLAG) || handle->pins < 32) {
-        // This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared -
+        // This breaks 128K+ ROMs since VPE_TO_VPP and ADDRESS_LINE_16 are shared -
         // can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
         mask |= VPE_TO_VPP;
     }
     top_address |= rurp_read_from_register(CONTROL_REGISTER) & mask;
 
     if (handle->pins == 28) {
-        top_address |= A17;
+        top_address |= ADDRESS_LINE_17;
     }
 #ifdef DEBUG_ADDRESS
     debug_format("top msb lsb %02x %02x %02x", top_address, msb, lsb);

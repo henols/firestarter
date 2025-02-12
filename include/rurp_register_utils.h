@@ -8,9 +8,9 @@
 
 uint8_t lsb_address = 0xff;
 uint8_t msb_address = 0xff;
-register_t control_register = 0xff;
+rurp_register_t control_register = 0xff;
 
-void rurp_write_to_register(uint8_t reg, register_t data) {
+void rurp_write_to_register(uint8_t reg, rurp_register_t data) {
     bool settle = false;
     switch (reg) {
     case LEAST_SIGNIFICANT_BYTE:
@@ -53,7 +53,7 @@ void rurp_write_to_register(uint8_t reg, register_t data) {
     }
 }
 
-register_t rurp_read_from_register(uint8_t reg) {
+rurp_register_t rurp_read_from_register(uint8_t reg) {
     switch (reg) {
     case LEAST_SIGNIFICANT_BYTE:
         return lsb_address;

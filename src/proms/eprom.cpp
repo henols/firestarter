@@ -22,7 +22,7 @@ void eprom_write_execute(firestarter_handle_t* handle);
 void eprom_check_chip_id_init(firestarter_handle_t* handle);
 void eprom_check_chip_id_execute(firestarter_handle_t* handle);
 
-void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
+void eprom_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state);
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
 
 void eprom_check_vpp(firestarter_handle_t* handle);
@@ -30,7 +30,7 @@ void eprom_check_vpp(firestarter_handle_t* handle);
 void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_code);
 void eprom_internal_erase(firestarter_handle_t* handle);
 
-void (*ep_set_control_register)(struct firestarter_handle*, register_t, bool);
+void (*ep_set_control_register)(struct firestarter_handle*, rurp_register_t, bool);
 
 void eprom_generic_init(firestarter_handle_t* handle);
 
@@ -158,7 +158,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
 }
 
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
-void eprom_set_control_register(firestarter_handle_t* handle, register_t bit, bool state) {
+void eprom_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
     if (bit & VPE_ENABLE && (handle->bus_config.vpp_line == 15 || handle->bus_config.vpp_line == 21)) {
         bit &= ~VPE_ENABLE;
         bit |= P1_VPP_ENABLE;

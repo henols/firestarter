@@ -21,12 +21,12 @@ extern "C" {
     // CONTROL REGISTER
 #ifndef HARDWARE_REVISION
 #define VPE_TO_VPP      0x01
-#define A16             VPE_TO_VPP
+#define ADDRESS_LINE_16             VPE_TO_VPP
 #define A9_VPP_ENABLE   0x02
 #define VPE_ENABLE      0x04
 #define P1_VPP_ENABLE   0x08
-#define A17             0x10
-#define A18             0x20
+#define ADDRESS_LINE_17             0x10
+#define ADDRESS_LINE_18             0x20
 #define READ_WRITE      0x40
 #define REGULATOR       0x80
 
@@ -36,21 +36,21 @@ extern "C" {
 #define REVISION_1 1
 #define REVISION_2 2
 
-#define A16             0x01
+#define ADDRESS_LINE_16             0x01
 #define A9_VPP_ENABLE   0x02
 #define VPE_ENABLE      0x04
 #define P1_VPP_ENABLE   0x08
-#define A17             0x10
-#define A18             0x20
+#define ADDRESS_LINE_17             0x10
+#define ADDRESS_LINE_18             0x20
 #define READ_WRITE      0x40
 #define REGULATOR       0x80
 #define VPE_TO_VPP      0x100
 
 #endif
 
-#define A13             0x20
-#ifdef HARDWARE_REVISION
+#define ADDRESS_LINE_13             0x20
 
+#ifdef HARDWARE_REVISION
 // REV 1
 #define REV_1_VPE_TO_VPP      0x01
 #define REV_1_A9_VPP_ENABLE   0x02
@@ -59,9 +59,9 @@ extern "C" {
 #define REV_1_RW              0x40
 #define REV_1_REGULATOR       0x80
 
-#define REV_1_A16             REV_1_VPE_TO_VPP
-#define REV_1_A17             0x10
-#define REV_1_A18             0x20
+#define REV_1_ADDRESS_LINE_16             REV_1_VPE_TO_VPP
+#define REV_1_ADDRESS_LINE_17             0x10
+#define REV_1_ADDRESS_LINE_18             0x20
 
 // REV 2
 #define REV_2_VPE_TO_VPP      0x01
@@ -75,9 +75,9 @@ extern "C" {
 
 #define REV_2_P1              P1_VPP_ENABLE
 #define REV_2_RW              REV_2_P31
-#define REV_2_A16             REV_2_P2
-#define REV_2_A17             REV_2_P30
-#define REV_2_A18             P1_VPP_ENABLE
+#define REV_2_ADDRESS_LINE_16             REV_2_P2
+#define REV_2_ADDRESS_LINE_17             REV_2_P30
+#define REV_2_ADDRESS_LINE_18             P1_VPP_ENABLE
 #endif
 
 
@@ -98,9 +98,9 @@ extern "C" {
 
 
 #ifndef HARDWARE_REVISION
-#define register_t uint8_t
+#define rurp_register_t uint8_t
 #else
-#define register_t uint16_t
+#define rurp_register_t uint16_t
 #endif
 
 // Struct definition
@@ -144,8 +144,8 @@ extern "C" {
 
     void rurp_set_control_pin(uint8_t pin, uint8_t state);
 
-    void rurp_write_to_register(uint8_t reg, register_t data);
-    register_t rurp_read_from_register(uint8_t reg);
+    void rurp_write_to_register(uint8_t reg, rurp_register_t data);
+    rurp_register_t rurp_read_from_register(uint8_t reg);
 
     void rurp_write_data_buffer(uint8_t data);
     uint8_t rurp_read_data_buffer();

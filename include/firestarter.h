@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include "rurp_shield.h"
 
-#define FW_VERSION VERSION ":" BOARD_NAME
+#define FW_VERSION VERSION ":" RURP_BOARD_NAME
 
 #ifndef DATA_BUFFER_SIZE
 #define DATA_BUFFER_SIZE 512
@@ -112,8 +112,8 @@ typedef struct firestarter_handle {
 			
 	void (*firestarter_set_address)(struct firestarter_handle*, uint32_t);
 	
-	void (*firestarter_set_control_register)(struct firestarter_handle*, register_t, bool);
-	bool (*firestarter_get_control_register)(struct firestarter_handle*, register_t);
+	void (*firestarter_set_control_register)(struct firestarter_handle*, rurp_register_t, bool);
+	bool (*firestarter_get_control_register)(struct firestarter_handle*, rurp_register_t);
 
 } firestarter_handle_t;
 

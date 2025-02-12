@@ -8,12 +8,7 @@
 
 #include "json_parser.h"
 #include "logging.h"
-#include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <Arduino.h>
 
 #include "jsmn.h"
 
