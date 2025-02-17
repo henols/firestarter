@@ -6,7 +6,7 @@
  */
 
 
-#ifdef ARDUINO_NUCLEO_L010RB
+#ifdef ARDUINO_UNOR4_MINIMA
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include "rurp_config_utils.h"
@@ -71,23 +71,7 @@ void rurp_set_data_input() {
 double rurp_read_vcc() {
     // TODO: setup internal VCC reference
     
-    // Read 1.1V reference against AVcc
-    // Set the analog reference to the internal 1.1V
-    // Default is analogReference(DEFAULT) which is connected to the external 5V
-    // ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
-
-    // delay(2); // Wait for voltage to stabilize
-    // ADCSRA |= _BV(ADSC); // Start conversion
-    // while (bit_is_set(ADCSRA, ADSC)); // Wait for conversion to complete
-    // ADCSRA |= _BV(ADSC); // Start conversion
-    // while (bit_is_set(ADCSRA, ADSC)); // measuring
-    // long result = ADCL;
-    // result |= ADCH << 8;
-
-    // // Calculate Vcc (supply voltage) in millivolts
-    // // 1100 mV * 1024 ADC steps / ADC reading
-    // return 1125300L / result / 1000;
-    return 3.3;
+     return 5.0;
 }
 
 double rurp_read_voltage() {
