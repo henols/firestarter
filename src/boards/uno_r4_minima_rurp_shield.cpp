@@ -34,23 +34,23 @@ void rurp_board_setup() {
 
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
     // log_info("Setting control pins");
-    control_pins = state ? control_pins | pin : control_pins & ~(pin);
+    control_pins = state ? (control_pins | pin) : control_pins & ~(pin);
     for (int i = 0; i < 6; i++) {
-        digitalWrite(i + 8, control_pins & (1 << i));
+        digitalWrite(i + 8, (control_pins >> i) & 1);
     }
 }
 
 void rurp_write_data_buffer(uint8_t data) {
     rurp_set_data_output(); // Ensure data lines are output
     for (int i = 0; i < 8; i++) {
-        digitalWrite(i + 1, control_pins & (1 << i));
+        digitalWrite(i, (data >> i) & 1);
     }
 }
 
 uint8_t rurp_read_data_buffer() {
     uint8_t data = 0;
-    for(int i = 0; i < 8; i++) {
-        data |= digitalRead(i) & (1 << i);
+    for (int i = 0; i < 8; i++) {
+        data |= digitalRead(i) << i;
     }
 
     return data;
@@ -64,14 +64,14 @@ void rurp_set_data_output() {
 
 void rurp_set_data_input() {
     for (int i = 0; i < 8; i++) {
-        pinMode(i , INPUT);
+        pinMode(i, INPUT);
     }
 }
 
 double rurp_read_vcc() {
     // TODO: setup internal VCC reference
-    
-     return 5.0;
+
+    return 5.0;
 }
 
 double rurp_read_voltage() {
