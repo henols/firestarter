@@ -104,24 +104,21 @@ void eprom_write_execute(firestarter_handle_t* handle) {
     }
     uint8_t mismatch_bitmask[DATA_BUFFER_SIZE / 8];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)
     int mismatch = 0;
-    int rewrites = 0;
+    int retries = 0;
     for (int i = 0; i < DATA_BUFFER_SIZE / 8; i++) {
         mismatch_bitmask[i] = 0xFF;
     }
     for (int w = 0; w < 5; w++) {
         mismatch = 0;
         handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
-        delay(50);
+        delay(150);
         // Iterate through the mismatch bitmask to find all mismatched positions
         for (uint32_t i = 0; i < handle->data_size; i++) {
             if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
                 handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
                 if (i == 0) {
-                    debug_format("Value in buffer ox%x", handle->data_buffer[i]);
+                    debug_format("Value in buffer 0x%x", handle->data_buffer[i]);
                     delayMicroseconds(10);
-                }
-                if (w > 0) {
-                    rewrites++;
                 }
             }
         }
@@ -130,32 +127,24 @@ void eprom_write_execute(firestarter_handle_t* handle) {
             if (handle->firestarter_get_data(handle, (handle->address + i)) != (uint8_t)handle->data_buffer[i]) {
                 // debug_format("Mismatch at 0x%lx, expected %c, got %c", handle->address + i, handle->data_buffer[i], handle->firestarter_get_data(handle, handle->address + i));
                 mismatch++;
-                if (mismatch == 1) {
-                }
                 mismatch_bitmask[i / 8] |= (1 << (i % 8));
             } else {
                 mismatch_bitmask[i / 8] &= ~(1 << (i % 8));
             }
         }
-
         if (!mismatch) {
             handle->response_msg[0] = '\0';
-            if (rewrites > 0) {
-                format(handle->response_msg, "Number of rewrites %d", rewrites);
+            if (retries > 0) {
+                format(handle->response_msg, "Number of reties: %d", retries);
             }
             return;
         }
+        retries = w + 1;
         debug("Mismatch, retrying");
     }
     handle->firestarter_set_control_register(handle, REGULATOR, 0);
-
-    int mismatch_count = 0;
-    for (uint32_t i = 0; i < handle->data_size; i++) {
-        if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
-            mismatch_count++;
-        }
-    }
-    firestarter_error_response_format("Failed to write memory, 0x%06x, reties: %d, bad bytes: %d", handle->address, mismatch, mismatch_count);
+    
+    firestarter_error_response_format("Failed to write memory, 0x%06x, reties: %d, bad bytes: %d", handle->address, retries, mismatch);
 }
 
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
