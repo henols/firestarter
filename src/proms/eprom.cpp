@@ -6,14 +6,13 @@
  */
 
 #include "eprom.h"
-#include <Arduino.h>
-#include <avr/pgmspace.h>
-#include <stdio.h>
-#include "memory_utils.h"
-#include "firestarter.h"
-#include "rurp_shield.h"
-#include "logging.h"
 
+#include <Arduino.h>
+
+#include "firestarter.h"
+#include "logging.h"
+#include "memory_utils.h"
+#include "rurp_shield.h"
 
 void eprom_erase_execute(firestarter_handle_t* handle);
 
@@ -40,21 +39,21 @@ void configure_eprom(firestarter_handle_t* handle) {
     handle->firestarter_operation_init = eprom_generic_init;
 
     switch (handle->state) {
-    case STATE_WRITE:
-        handle->firestarter_operation_init = eprom_write_init;
-        handle->firestarter_operation_execute = eprom_write_execute;
-        break;
-    case STATE_ERASE:
-        handle->firestarter_operation_execute = eprom_erase_execute;
-        handle->firestarter_operation_end = m_util_blank_check;
-        break;
-    case STATE_BLANK_CHECK:
-        handle->firestarter_operation_execute = m_util_blank_check;
-        break;
-    case STATE_CHECK_CHIP_ID:
-        handle->firestarter_operation_init = eprom_check_chip_id_init;
-        handle->firestarter_operation_execute = eprom_check_chip_id_execute;
-        break;
+        case STATE_WRITE:
+            handle->firestarter_operation_init = eprom_write_init;
+            handle->firestarter_operation_execute = eprom_write_execute;
+            break;
+        case STATE_ERASE:
+            handle->firestarter_operation_execute = eprom_erase_execute;
+            handle->firestarter_operation_end = m_util_blank_check;
+            break;
+        case STATE_BLANK_CHECK:
+            handle->firestarter_operation_execute = m_util_blank_check;
+            break;
+        case STATE_CHECK_CHIP_ID:
+            handle->firestarter_operation_init = eprom_check_chip_id_init;
+            handle->firestarter_operation_execute = eprom_check_chip_id_execute;
+            break;
     }
 
     ep_set_control_register = handle->firestarter_set_control_register;
@@ -64,7 +63,6 @@ void configure_eprom(firestarter_handle_t* handle) {
 void eprom_check_chip_id_init(firestarter_handle_t* handle) {
     eprom_check_vpp(handle);
 }
-
 
 void eprom_check_chip_id_execute(firestarter_handle_t* handle) {
     debug("Check chip ID");
@@ -76,7 +74,6 @@ void eprom_erase_execute(firestarter_handle_t* handle) {
     eprom_internal_erase(handle);
 }
 
-
 void eprom_write_init(firestarter_handle_t* handle) {
     eprom_generic_init(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
@@ -86,8 +83,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
     if (is_flag_set(FLAG_CAN_ERASE)) {
         if (!is_flag_set(FLAG_SKIP_ERASE)) {
             eprom_internal_erase(handle);
-        }
-        else {
+        } else {
             copy_to_buffer(handle->response_msg, "Skipping erase.");
         }
     }
@@ -97,12 +93,10 @@ void eprom_write_init(firestarter_handle_t* handle) {
 }
 
 void eprom_write_execute(firestarter_handle_t* handle) {
-
     if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
         if (is_flag_set(FLAG_VPE_AS_VPP)) {
             handle->firestarter_set_control_register(handle, REGULATOR, 1);
-        }
-        else {
+        } else {
             // Regulator defaults to VEP (~2V higher than VPP so it must be dropped)
             handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
         }
@@ -114,14 +108,15 @@ void eprom_write_execute(firestarter_handle_t* handle) {
     for (int i = 0; i < DATA_BUFFER_SIZE / 8; i++) {
         mismatch_bitmask[i] = 0xFF;
     }
-    for (int w = 0; w < 2; w++) {
+    for (int w = 0; w < 5; w++) {
         mismatch = 0;
         handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
+        delay(50);
         // Iterate through the mismatch bitmask to find all mismatched positions
         for (uint32_t i = 0; i < handle->data_size; i++) {
             if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
                 handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
-                if(i == 0) {
+                if (i == 0) {
                     debug_format("Value in buffer ox%x", handle->data_buffer[i]);
                     delayMicroseconds(10);
                 }
@@ -138,8 +133,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
                 if (mismatch == 1) {
                 }
                 mismatch_bitmask[i / 8] |= (1 << (i % 8));
-            }
-            else {
+            } else {
                 mismatch_bitmask[i / 8] &= ~(1 << (i % 8));
             }
         }
@@ -154,7 +148,14 @@ void eprom_write_execute(firestarter_handle_t* handle) {
         debug("Mismatch, retrying");
     }
     handle->firestarter_set_control_register(handle, REGULATOR, 0);
-    firestarter_error_response_format("Failed to write memory, at 0x%06x, nr %d", handle->address, mismatch);
+
+    int mismatch_count = 0;
+    for (uint32_t i = 0; i < handle->data_size; i++) {
+        if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
+            mismatch_count++;
+        }
+    }
+    firestarter_error_response_format("Failed to write memory, 0x%06x, reties: %d, bad bytes: %d", handle->address, mismatch, mismatch_count);
 }
 
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
@@ -189,8 +190,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 #endif
     if (is_flag_set(FLAG_VPE_AS_VPP)) {
         handle->firestarter_set_control_register(handle, REGULATOR, 1);
-    }
-    else {
+    } else {
         // Regulator defaults to VEP (~2V higher than VPP so it must be dropped)
         handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
     }
@@ -210,8 +210,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
         dtostrf(handle->vpp, 2, 2, rStr);
         int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
         firestarter_response_format(response_code, "VPP is high: %sv > %sv", vStr, rStr);
-    }
-    else if (vpp < handle->vpp * .95) {
+    } else if (vpp < handle->vpp * .95) {
         char vStr[6];
         dtostrf(vpp, 2, 2, vStr);
         char rStr[6];
@@ -224,10 +223,10 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 void eprom_internal_erase(firestarter_handle_t* handle) {
     debug("Internal erase");
     rurp_chip_input();
-    handle->firestarter_set_control_register(handle, REGULATOR, 1); //Enable regulator without dropping resistor
+    handle->firestarter_set_control_register(handle, REGULATOR, 1);  // Enable regulator without dropping resistor
     delay(100);
     handle->firestarter_set_address(handle, 0x0000);
-    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_ENABLE, 1); //Erase with VPE - assumes VPE_TO_VPP isn't set and left active previously
+    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_ENABLE, 1);  // Erase with VPE - assumes VPE_TO_VPP isn't set and left active previously
     delay(100);
     rurp_chip_enable();
     delayMicroseconds(handle->pulse_delay);
