@@ -5,9 +5,9 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef VERSION_H
-#define VERSION_H
+#ifndef __VERSION_H__
+#define __VERSION_H__
 
 #define VERSION "1.3.26"
 
-#endif // VERSION_H
+#endif // __VERSION_H__

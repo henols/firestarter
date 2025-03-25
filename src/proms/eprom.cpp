@@ -14,6 +14,8 @@
 #include "memory_utils.h"
 #include "rurp_shield.h"
 
+#define NUMBER_OF_RETRIES 20
+
 void eprom_erase_execute(firestarter_handle_t* handle);
 
 void eprom_write_init(firestarter_handle_t* handle);
@@ -45,10 +47,10 @@ void configure_eprom(firestarter_handle_t* handle) {
             break;
         case STATE_ERASE:
             handle->firestarter_operation_execute = eprom_erase_execute;
-            handle->firestarter_operation_end = m_util_blank_check;
+            handle->firestarter_operation_end = mem_util_blank_check;
             break;
         case STATE_BLANK_CHECK:
-            handle->firestarter_operation_execute = m_util_blank_check;
+            handle->firestarter_operation_execute = mem_util_blank_check;
             break;
         case STATE_CHECK_CHIP_ID:
             handle->firestarter_operation_init = eprom_check_chip_id_init;
@@ -88,7 +90,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
         }
     }
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
-        m_util_blank_check(handle);
+        mem_util_blank_check(handle);
     }
 }
 
@@ -105,21 +107,22 @@ void eprom_write_execute(firestarter_handle_t* handle) {
     uint8_t mismatch_bitmask[DATA_BUFFER_SIZE / 8];  // Array to store mismatch bits (32 bytes * 8 bits = 256 bits)
     int mismatch = 0;
     int retries = 0;
+    uint32_t org_delay = handle->pulse_delay;
     for (int i = 0; i < DATA_BUFFER_SIZE / 8; i++) {
         mismatch_bitmask[i] = 0xFF;
     }
-    for (int w = 0; w < 5; w++) {
+    for (int w = 0; w < NUMBER_OF_RETRIES; w++) {
         mismatch = 0;
         handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
-        delay(150);
+        delay(10);
         // Iterate through the mismatch bitmask to find all mismatched positions
         for (uint32_t i = 0; i < handle->data_size; i++) {
             if (mismatch_bitmask[i / 8] |= (1 << (i % 8))) {
                 handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
-                if (i == 0) {
-                    debug_format("Value in buffer 0x%x", handle->data_buffer[i]);
-                    delayMicroseconds(10);
-                }
+                // if (i == 0) {
+                //     debug_format("Value in buffer 0x%x", handle->data_buffer[i]);
+                //     delayMicroseconds(10);
+                // }
             }
         }
         handle->firestarter_set_control_register(handle, VPE_ENABLE, 0);
@@ -137,13 +140,15 @@ void eprom_write_execute(firestarter_handle_t* handle) {
             if (retries > 0) {
                 format(handle->response_msg, "Number of reties: %d", retries);
             }
+            handle->pulse_delay = org_delay;
             return;
         }
         retries = w + 1;
-        debug("Mismatch, retrying");
+        handle->pulse_delay = org_delay + (org_delay * retries / NUMBER_OF_RETRIES);
+        debug_format("Mismatch, retrying with increased pulse delay from %d to %d", org_delay, handle->pulse_delay);   
     }
     handle->firestarter_set_control_register(handle, REGULATOR, 0);
-    
+
     firestarter_error_response_format("Failed to write memory, 0x%06x, reties: %d, bad bytes: %d", handle->address, retries, mismatch);
 }
 

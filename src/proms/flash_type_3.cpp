@@ -35,7 +35,7 @@ void configure_flash3(firestarter_handle_t* handle) {
         // handle->firestarter_operation_end = memory_blank_check;
         break;
     case STATE_BLANK_CHECK:
-        handle->firestarter_operation_execute = m_util_blank_check;
+        handle->firestarter_operation_execute = mem_util_blank_check;
         break;
     case STATE_CHECK_CHIP_ID:
         handle->firestarter_operation_init = NULL;
@@ -70,7 +70,7 @@ void flash3_write_init(firestarter_handle_t* handle) {
         }
     }
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
-        m_util_blank_check(handle);
+        mem_util_blank_check(handle);
     }
 }
 
@@ -79,7 +79,7 @@ void flash3_write_execute(firestarter_handle_t* handle) {
         flash_execute_command(FLASH_ENABLE_WRITE);
         handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
 
-        f_util_verify_operation(handle, handle->data_buffer[i]);
+        flash_util_verify_operation(handle, handle->data_buffer[i]);
         if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;
         }

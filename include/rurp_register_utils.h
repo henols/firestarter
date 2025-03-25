@@ -1,5 +1,5 @@
-#ifndef RURP_REGESTERS_UTILS_H
-#define RURP_REGESTERS_UTILS_H
+#ifndef __RURP_REGESTERS_UTILS_H__
+#define __RURP_REGESTERS_UTILS_H__
 
 #include "rurp_shield.h"
 #ifdef HARDWARE_REVISION
@@ -66,4 +66,4 @@ rurp_register_t rurp_read_from_register(uint8_t reg) {
 }
 
 
-#endif // RURP_REGESTERS_UTILS_H
+#endif // __RURP_REGESTERS_UTILS_H__

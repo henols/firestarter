@@ -57,12 +57,12 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_get_data = memory_get_data;
     handle->firestarter_set_data = memory_set_data;
 
-    handle->firestarter_set_address = m_util_set_address;
+    handle->firestarter_set_address = mem_util_set_address;
 
     handle->firestarter_set_control_register = memory_set_control_register;
     handle->firestarter_get_control_register = memory_get_control_register;
 
-    m_util_set_address(handle, 0);
+    mem_util_set_address(handle, 0);
 
     if (handle->mem_type == TYPE_EPROM) {
         configure_eprom(handle);
@@ -91,7 +91,7 @@ bool memory_get_control_register(firestarter_handle_t* handle, rurp_register_t b
 }
 
 
-void m_util_set_address(firestarter_handle_t* handle, uint32_t address) {
+void mem_util_set_address(firestarter_handle_t* handle, uint32_t address) {
 #ifdef DEBUG_ADDRESS
     debug_format("Address 0x%06x", address);
 #endif
@@ -134,7 +134,7 @@ void memory_read_execute(firestarter_handle_t* handle) {
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     rurp_chip_output();
-    address = m_util_remap_address_bus(handle, address, READ_FLAG);
+    address = mem_util_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_set_data_input();
@@ -153,7 +153,7 @@ void memory_write_execute(firestarter_handle_t* handle) {
 }
 
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
-    address = m_util_remap_address_bus(handle, address, WRITE_FLAG);
+    address = mem_util_remap_address_bus(handle, address, WRITE_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
@@ -175,7 +175,7 @@ void memory_verify_execute(firestarter_handle_t* handle) {
 }
 
 // Utility functions
-uint32_t m_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
+uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
     bus_config_t config = handle->bus_config;
     if (config.address_lines[0] != 0xff || config.rw_line != 0xff) {
 
@@ -193,7 +193,7 @@ uint32_t m_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t a
     return address;
 }
 
-void m_util_blank_check(firestarter_handle_t* handle) {
+void mem_util_blank_check(firestarter_handle_t* handle) {
     for (uint32_t i = 0; i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {

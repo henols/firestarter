@@ -5,8 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef FIRESTARTER_H
-#define FIRESTARTER_H
+#ifndef __FIRESTARTER_H__
+#define __FIRESTARTER_H__
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -117,4 +117,4 @@ typedef struct firestarter_handle {
 
 } firestarter_handle_t;
 
-#endif  // FIRESTARTER_H
+#endif  // __FIRESTARTER_H__

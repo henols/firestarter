@@ -1,5 +1,6 @@
-#ifndef RURP_LOG_UTILS_H
-#define RURP_LOG_UTILS_H
+#ifndef __RURP_SERIAL_UTILS_H__
+#define __RURP_SERIAL_UTILS_H__
+
 
 #ifndef SERIAL_PORT
 #include <Arduino.h>
@@ -54,4 +55,4 @@ void rurp_log_internal(const char* type, const char* msg) {
 }
 
 
-#endif // RURP_LOG_UTILS_H
+#endif // __RURP_SERIAL_UTILS_H__

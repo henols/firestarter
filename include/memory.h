@@ -5,8 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef __MEMORY_H__
+#define __MEMORY_H__
 #include "firestarter.h"
 
 #ifdef __cplusplus
@@ -19,4 +19,4 @@ extern "C" {
 }
 #endif
 
-#endif // MEMORY_H
+#endif // __MEMORY_H__

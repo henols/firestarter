@@ -1,5 +1,6 @@
-#ifndef HW_OPERATIONS_H
-#define HW_OPERATIONS_H
+#ifndef __HARDWARE_OPERATIONS_H__
+#define __HARDWARE_OPERATIONS_H__
+
 #include "firestarter.h"
 #ifdef __cplusplus
 extern "C" {
@@ -14,4 +15,4 @@ extern "C" {
 }
 #endif
 
-#endif // HW_OPERATIONS_H
+#endif // __HARDWARE_OPERATIONS_H__

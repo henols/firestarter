@@ -5,15 +5,15 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef FLASH_UTILS_H
-#define FLASH_UTILS_H
+#ifndef __FLASH_UTILS_H__
+#define __FLASH_UTILS_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
 #include "firestarter.h"
 
 #define flash_execute_command(command) \
-    f_util_byte_flipping(handle, command, sizeof(command) / sizeof(command[0]));
+    flash_util_byte_flipping(handle, command, sizeof(command) / sizeof(command[0]));
 
 
     typedef struct byte_flip {
@@ -59,11 +59,11 @@ extern "C" {
         {0x5555, 0x20},
     };
 
-    void f_util_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_flips, size_t size);
-    void f_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_data);
+    void flash_util_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_flips, size_t size);
+    void flash_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_data);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // FLASH_UTILS_H
+#endif // __FLASH_UTILS_H__

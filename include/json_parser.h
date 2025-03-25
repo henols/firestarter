@@ -5,8 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef JSON_PARSER_H
-#define JSON_PARSER_H
+#ifndef __JSON_PARSER_H__
+#define __JSON_PARSER_H__
 
 #include "firestarter.h"
 #include "jsmn.h"
@@ -26,4 +26,4 @@ extern "C" {
 #endif
 
 
-#endif // JSON_PARSER_H
+#endif // __JSON_PARSER_H__

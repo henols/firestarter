@@ -5,8 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef RURP_SHIELD_H
-#define RURP_SHIELD_H
+#ifndef __RURP_SHIELD_H__
+#define __RURP_SHIELD_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,4 +167,4 @@ extern "C" {
 }
 #endif
 
-#endif // RURP_SHIELD_H
+#endif // __RURP_SHIELD_H__

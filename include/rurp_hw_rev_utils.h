@@ -1,5 +1,5 @@
-#ifndef RURP_HW_REV_UTILS_H
-#define RURP_HW_REV_UTILS_H
+#ifndef __RURP_HW_REV_UTILS_H__
+#define __RURP_HW_REV_UTILS_H__
 
 #ifdef HARDWARE_REVISION
 
@@ -65,4 +65,4 @@ uint8_t rurp_get_hardware_revision() {
 
 #endif
 
-#endif // RURP_HW_REV_UTILS_H
+#endif // __RURP_HW_REV_UTILS_H__
