@@ -134,10 +134,11 @@ extern "C" {
     void rurp_set_data_output();
     void rurp_set_data_input();
 
-#define rurp_chip_enable() rurp_set_chip_enable(0)
-#define rurp_chip_disable() rurp_set_chip_enable(1)
-#define rurp_chip_output() rurp_set_chip_output(0)
-#define rurp_chip_input() rurp_set_chip_output(1)
+#define rurp_chip_enable() rurp_set_chip_enable(0)  // CE (chip enable) on, enable chip
+#define rurp_chip_disable() rurp_set_chip_enable(1) // CE (chip enable) off, disable chip
+#define rurp_chip_output() rurp_set_chip_output(0)  // OE (output enable) on, enable output
+#define rurp_chip_input() rurp_set_chip_output(1)   // OE (output enable) off, enable input
+
 
 #define rurp_set_chip_enable(state) rurp_set_control_pin(CHIP_ENABLE, state)
 #define rurp_set_chip_output(state) rurp_set_control_pin(OUTPUT_ENABLE, state)
