@@ -93,7 +93,6 @@ extern "C" {
 #define MOST_SIGNIFICANT_BYTE 0x02   // MOST SIGNIFICANT BYTE
 #define OUTPUT_ENABLE 0x04           // OUTPUT ENABLE
 #define CONTROL_REGISTER 0x08        // CONTROL REGISTER
-#define USRBTN 0x10                  // USER BUTTON
 #define CHIP_ENABLE 0x20             // CHIP ENABLE
 
 
@@ -153,6 +152,8 @@ extern "C" {
 
     double rurp_read_vcc();
     double rurp_read_voltage();
+
+    uint8_t rurp_user_button_pressed();
 
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config(rurp_configuration_t* config);

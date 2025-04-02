@@ -14,6 +14,7 @@
 #define RURP_CUSTOM_LOG
 #include "rurp_serial_utils.h"
 
+#define USER_BUTTON 0x10             // USER BUTTON
 
 constexpr int INPUT_RESOLUTION = 1023;
 
@@ -33,7 +34,7 @@ void rurp_board_setup() {
     // rurp_set_data_as_output();
 
     DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | READ_WRITE;
-
+    PORTB = USER_BUTTON;
 
     rurp_chip_disable();
     rurp_chip_input();
@@ -68,13 +69,16 @@ void rurp_log(const char* type, const char* msg) {
 
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
     if (state) {
-        PORTB |= pin;
+        PORTB |= pin | USER_BUTTON;
     }
     else {
-        PORTB &= ~(pin);
+        PORTB &= ~(pin) | USER_BUTTON;
     }
 }
 
+uint8_t rurp_user_button_pressed() {
+    return (PINB & USER_BUTTON) == 0;
+}
 
 void rurp_write_data_buffer(uint8_t data) {
     rurp_set_data_output();

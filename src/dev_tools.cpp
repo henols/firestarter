@@ -34,7 +34,7 @@ bool dt_set_registers(firestarter_handle_t* handle) {
     rurp_set_chip_enable(is_flag_set(FLAG_CHIP_ENABLE) == 0);
     rurp_set_chip_output(is_flag_set(FLAG_OUTPUT_ENABLE) == 0);
 
-    while (true) {
+    while (!rurp_user_button_pressed()) {
         delay(200);
     }
     rurp_set_communication_mode();
@@ -52,7 +52,7 @@ bool dt_set_address(firestarter_handle_t* handle) {
 
     rurp_set_chip_enable(is_flag_set(FLAG_CHIP_ENABLE) == 0);
     rurp_set_chip_output(is_flag_set(FLAG_OUTPUT_ENABLE) == 0);
-    while (true) {
+    while (!rurp_user_button_pressed()) {
         delay(200);
     }
     rurp_set_communication_mode();

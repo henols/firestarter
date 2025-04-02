@@ -15,13 +15,15 @@
 
 #include "rurp_serial_utils.h"
 
-#define PORTD_DATA_MASK 0x9f
 #define PORTC_DATA_MASK 0x40
+#define PORTD_DATA_MASK 0x9f
 #define PORTE_DATA_MASK 0x40
 
 #define PORTB_CONTROL_MASK 0xf0
 #define PORTD_CONTROL_MASK 0x40
 #define PORTC_CONTROL_MASK 0x80
+
+#define USER_BUTTON PORTD_CONTROL_MASK
 
 constexpr int INPUT_RESOLUTION = 1023;
 
@@ -29,8 +31,10 @@ uint8_t control_pins = 0x00;
 
 void rurp_board_setup() {
     DDRB |= PORTB_CONTROL_MASK; // Set pins D8-D13 as output
-    DDRD |= PORTD_CONTROL_MASK; // Set pin D12 as output
     DDRC |= PORTC_CONTROL_MASK; // Set pin D13 as output
+
+    DDRD &= ~USER_BUTTON; // Set pin D12 as input
+    PORTD |= USER_BUTTON; // Enable pull-up resistor on pin D12
 
     SERIAL_PORT.begin(MONITOR_SPEED);
     while (!SERIAL_PORT) {
@@ -44,9 +48,13 @@ void rurp_set_control_pin(uint8_t pin, uint8_t state) {
     // log_info("Setting control pins");
     control_pins = state ? control_pins | pin : control_pins & ~(pin);
     uint8_t nbyte = control_pins << 2;
-    PORTD = (PORTD & ~PORTD_CONTROL_MASK) | (nbyte & PORTD_CONTROL_MASK); // set pins D12 (PD6 in PORTD) from byte bits 4
+    
     PORTC = (PORTC & ~PORTC_CONTROL_MASK) | (nbyte & PORTC_CONTROL_MASK); // set pins D13 (PC7 in PORTC) from byte bits 5
     PORTB = (PORTB & ~PORTB_CONTROL_MASK) | (nbyte << 2); // set pins D8-D11 (PB4-PB7 in PORTB) from byte bits 0-3
+}
+
+uint8_t rurp_user_button_pressed() {
+    return (PIND & USER_BUTTON) == 0;
 }
 
 void rurp_write_data_buffer(uint8_t data) {

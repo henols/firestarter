@@ -73,7 +73,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     handle->address = 0;
     handle->ctrl_flags = 0;
     handle->bus_config.rw_line = 0xFF;
-    handle->bus_config.vpp_line = 0;
+    handle->bus_config.vpp_line = 0xFF;
     handle->bus_config.address_lines[0] = 0xFF;
     handle->chip_id = 0;
 

@@ -189,6 +189,11 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
         if (config.rw_line != 0xFF) {
             reorg_address |= (uint32_t)read_write << config.rw_line;
         }
+
+        // Set VPP to high if VPP line is not 0xFF and not 0x0F or 0x15
+        if (config.vpp_line != 0xFF && !(config.vpp_line == 0x0F || config.vpp_line == 0x15)) {
+            reorg_address |= (uint32_t)1 << config.vpp_line;
+        }
         return reorg_address;
     }
     return address;
