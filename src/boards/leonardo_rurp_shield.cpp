@@ -9,163 +9,96 @@
 #ifdef ARDUINO_AVR_LEONARDO
 #include "rurp_shield.h"
 #include <Arduino.h>
-// #include <EEPROM.h>
-#include "rurp_hw_rev_utils.h"
 #include "rurp_config_utils.h"
+#include "rurp_register_utils.h"
+#include "logging.h"
 
+#include "rurp_serial_utils.h"
+
+#define PORTC_DATA_MASK 0x40
+#define PORTD_DATA_MASK 0x9f
+#define PORTE_DATA_MASK 0x40
+
+#define PORTB_CONTROL_MASK 0xf0
+#define PORTD_CONTROL_MASK 0x40
+#define PORTC_CONTROL_MASK 0x80
+
+#define USER_BUTTON PORTD_CONTROL_MASK
 
 constexpr int INPUT_RESOLUTION = 1023;
-constexpr int AVERAGE_OF = 500;
 
-
-
-void set_port_b(uint8_t data);
-void set_port_d(uint8_t data);
-
-uint8_t get_port_d();
-uint8_t get_port_b();
-
-uint8_t lsb_address;
-uint8_t msb_address;
-register_t control_register;
+uint8_t control_pins = 0x00;
 
 void rurp_board_setup() {
-    rurp_set_data_as_output();
-    
+    DDRB |= PORTB_CONTROL_MASK; // Set pins D8-D13 as output
+    DDRC |= PORTC_CONTROL_MASK; // Set pin D13 as output
 
-    // Set 'PORTB' to input
-    // DDRB |= 0xF0;
-    // DDRD |= 0x40;
-    // DDRC |= 0x80;
-    for (int i = 8; i <= 13; i++) {
-        pinMode(i, OUTPUT);
-    }
+    DDRD &= ~USER_BUTTON; // Set pin D12 as input
+    PORTD |= USER_BUTTON; // Enable pull-up resistor on pin D12
 
-
-    lsb_address = 0xff;
-    msb_address = 0xff;
-    control_register = 0xff;
-    rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
-    rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
-    rurp_write_to_register(CONTROL_REGISTER, 0x00);
-
-    Serial.begin(MONITOR_SPEED); // Initialize serial port
-    while (!Serial) {
+    SERIAL_PORT.begin(MONITOR_SPEED);
+    while (!SERIAL_PORT) {
         delayMicroseconds(1);
     }
-    Serial.flush();
+    SERIAL_PORT.flush();
     delay(1);
 }
 
-int rurp_communication_available() {
-    return Serial.available();
-}
-int rurp_communication_read() {
-    return Serial.read();
-}
-
-size_t rurp_communication_read_bytes(char* buffer, size_t length) {
-    return Serial.readBytes(buffer, length);
-}
-
-size_t rurp_communication_write(const char* buffer, size_t size) {
-    size_t bytes = Serial.write(buffer, size);
-    Serial.flush();
-    return bytes;
-}
-
-
-void rurp_log(const char* type, const char* msg) {
-    Serial.print(type);
-    Serial.print(": ");
-    Serial.println(msg);
-    Serial.flush();
-}
-
-void rurp_set_data_as_output() {
-    // DDRD |= 0x04 & 0x08 & 0x02 & 0x01 & 0x10 & 0x80;
-    // DDRC |= 0x40;
-    // DDRE |= 0x40;
-    for (int i = 0; i < 8; i++) {
-        pinMode(i, OUTPUT);
-    }
-
-}
-
-void rurp_set_data_as_input() {
-    // DDRD &= ~(0x04 & 0x08 & 0x02 & 0x01 & 0x10 & 0x80);
-    // DDRC &= ~0x40;
-    // DDRE &= ~0x40;
-    for (int i = 0; i < 8; i++) {
-        pinMode(i, INPUT);
-    }
-}
-
-
-void rurp_write_to_register(uint8_t reg, register_t data) {
-    switch (reg) {
-    case LEAST_SIGNIFICANT_BYTE:
-        if (lsb_address == (uint8_t)data) {
-            return;
-        }
-        lsb_address = data;
-        break;
-    case MOST_SIGNIFICANT_BYTE:
-        if (msb_address == (uint8_t)data) {
-            return;
-        }
-        msb_address = data;
-        break;
-    case CONTROL_REGISTER:
-        if (control_register == data) {
-            return;
-        }
-        control_register = data;
-#ifdef HARDWARE_REVISION
-        data = rurp_map_ctrl_reg_to_hardware_revision(data);
-#endif
-        break;
-    default:
-        return;
-    }
-    rurp_write_data_buffer(data);
-    uint8_t v = get_port_b();
-    set_port_b(v | reg);
-    set_port_b(v);
-}
-
-register_t rurp_read_from_register(uint8_t reg) {
-    switch (reg) {
-    case LEAST_SIGNIFICANT_BYTE:
-        return lsb_address;
-    case MOST_SIGNIFICANT_BYTE:
-        return msb_address;
-    case CONTROL_REGISTER:
-        return control_register;
-    }
-    return 0;
-}
-
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
-    uint8_t b = get_port_b();
-    if (state) {
-        set_port_b(b |= pin);
-    }
-    else {
-        set_port_b(b &= ~(pin));
-    }
-    // volatile uint8_t* out = portOutputRegister(PORTD);
-
+    // log_info("Setting control pins");
+    control_pins = state ? control_pins | pin : control_pins & ~(pin);
+    uint8_t nbyte = control_pins << 2;
+    
+    PORTC = (PORTC & ~PORTC_CONTROL_MASK) | (nbyte & PORTC_CONTROL_MASK); // set pins D13 (PC7 in PORTC) from byte bits 5
+    PORTB = (PORTB & ~PORTB_CONTROL_MASK) | (nbyte << 2); // set pins D8-D11 (PB4-PB7 in PORTB) from byte bits 0-3
 }
 
+uint8_t rurp_user_button_pressed() {
+    return (PIND & USER_BUTTON) == 0;
+}
 
 void rurp_write_data_buffer(uint8_t data) {
-    rurp_set_data_as_output();
-    set_port_d(data);
+    rurp_set_data_output(); // Ensure data lines are output
+    
+    uint8_t portd_val = data & 0x10;        // bit 4 -> PD4
+
+    uint8_t lbyte = data << 1;
+    uint8_t portc_val = lbyte & PORTC_DATA_MASK; // bit 5 -> PC6
+    portd_val |= (lbyte & 0x80) | ((lbyte << 1) & 0x0c);     // bit 6 -> PD7, bit 2 -> PD1, bit 3 -> PD0
+
+    uint8_t rbyte = data >> 1;
+    uint8_t porte_val = rbyte & PORTE_DATA_MASK; // bit 7 -> PE6
+    portd_val |= (rbyte & 0x02) | ((rbyte >> 2) & 0x01); // bit 0 -> PD2, bit 1 -> PD3
+
+    // Clear the bits we are about to update, then set the new bits.
+    PORTD = (PORTD & ~PORTD_DATA_MASK) | portd_val;
+    PORTC = (PORTC & ~PORTC_DATA_MASK) | portc_val;
+    PORTE = (PORTE & ~PORTE_DATA_MASK) | porte_val;
 }
 
 uint8_t rurp_read_data_buffer() {
-    return get_port_d();
+    uint8_t data = PIND & 0x10; // PD4 -> bit 4.
+    uint8_t rpind = PIND >> 1;
+    data |= rpind & 0x40; // PD7 -> bit 6.
+    data |= (rpind >> 1) & 0x03; // PD2 -> bit 0, PD3 -> bit 1.
+
+    uint8_t lpind = PIND << 1;
+    data |= (lpind & 0x04) | ((lpind << 2) & 0x08); // PD1 -> bit 2, PD0 -> bit 3.
+
+    data |= ((PINC >> 1) & 0x20) | ((PINE << 1) & 0x80);
+    return data;
+}
+
+void rurp_set_data_output() {
+    DDRD |= PORTD_DATA_MASK; // Set pins D0-D3 and D4-D7 as output
+    DDRC |= PORTC_DATA_MASK; // Set pin D5 as output
+    DDRE |= PORTE_DATA_MASK; // Set pin D6 as output
+}
+
+void rurp_set_data_input() {
+    DDRD &= ~PORTD_DATA_MASK; // Set pins D0-D3 and D4-D7 as output
+    DDRC &= ~PORTC_DATA_MASK; // Set pin D5 as output
+    DDRE &= ~PORTE_DATA_MASK; // Set pin D6 as output
 }
 
 double rurp_read_vcc() {
@@ -187,13 +120,11 @@ double rurp_read_vcc() {
     return 1125300L / result / 1000;
 }
 
-
-
 double rurp_read_voltage() {
     double refRes = rurp_read_vcc() / INPUT_RESOLUTION;
-
-    long r1 = rurp_config.r1;
-    long r2 = rurp_config.r2;
+    rurp_configuration_t* rurp_config = rurp_get_config();
+    long r1 = rurp_config->r1;
+    long r2 = rurp_config->r2;
 
     // Correct voltage divider ratio calculation
     double voltageDivider = 1.0 + static_cast<double>(r1) / r2;
@@ -205,100 +136,13 @@ double rurp_read_voltage() {
     return vout * voltageDivider;
 }
 
-
-// Function to set Arduino digital pins 8-13 on the ATmega328U4
-void set_port_b(uint8_t data) {
-    // Map Arduino digital pins 8-13 to ATmega328U4 port bits
-    // Arduino Pin    ATmega328U4 Port Pin
-    // 8              PB4
-    // 9              PB5
-    // 10             PB6
-    // 11             PB7
-    // 12             PD6
-    // 13             PC7
-
-    // // Use masks for efficient clearing and setting
-    // PORTB = (PORTB & ~((1 << PB4) | //
-    //     (1 << PB5) | (1 << PB6) | //
-    //     (1 << PB7))) | //
-    //     (((data & 0x01) << PB4) |//
-    //         ((data & 0x02) << (PB5 - 1)) |//
-    //         ((data & 0x04) << (PB6 - 2)) | //
-    //         ((data & 0x08) << (PB7 - 3)));
-
-    // PORTD = (PORTD & ~(1 << PD6)) | ((data & 0x10) << (PD6 - 4));
-    // PORTC = (PORTC & ~(1 << PC7)) | ((data & 0x20) << (PC7 - 5));
-    for (int i = 8; i <= 13; i++) {
-        if (data & (1 << (i - 8))) {
-            digitalWrite(i, HIGH);
-        }
-        else {
-            digitalWrite(i, LOW);
-        }
-    }
-
-}
-
-// Function to get the current state of Arduino digital pins 0-7 on the ATmega328U4
-uint8_t get_port_d() {
-    uint8_t data = 0;
-    // data |= PIND & 0x04 ? 0x01 : 0x00;
-    // data |= PIND & 0x08 ? 0x02 : 0x00;
-    // data |= PIND & 0x02 ? 0x04 : 0x00;
-    // data |= PIND & 0x01 ? 0x08 : 0x00;
-    // data |= PIND & 0x0F ? 0x10 : 0x00;
-    // data |= PINC & 0x40 ? 0x20 : 0x00;
-    // data |= PIND & 0x80 ? 0x40 : 0x00;
-    // data |= PINE & 0x40 ? 0x80 : 0x00;
-    for (int i = 0; i < 8; i++) {
-        data |= digitalRead(i) ? 1 << i : 0x00;
-    }
-    return data;
-}
-
-void set_port_d(uint8_t byte) {
-    for (int i = 0; i < 8; i++) {
-        if (byte & (1 << i)) {
-            digitalWrite(i, HIGH);
-        }
-        else {
-            digitalWrite(i, LOW);
-        }
-    }
-    // Clear all relevant bits on PORTD, PORTE, and PORTF
-    // PORTD &= ~((1 << PD1) | (1 << PD0) | (1 << PD4) | (1 << PD6) | (1 << PD7));
-    // PORTE &= ~(1 << PE6);
-    // PORTF &= ~((1 << PF7) | (1 << PF6));
-
-    // // Set the bits based on the input byte
-    // PORTD |= ((byte & 0x01) << PD1) |  // Bit 0 -> PD1 (Pin 2)
-    //     ((byte & 0x02) >> 1) |    // Bit 1 -> PD0 (Pin 3)
-    //     ((byte & 0x04) << 2) |    // Bit 2 -> PD4 (Pin 4)
-    //     ((byte & 0x08) << 3) |    // Bit 3 -> PD6 (Pin 5)
-    //     ((byte & 0x10) << 3);     // Bit 4 -> PD7 (Pin 6)
-    // PORTE |= ((byte & 0x20) >> 5);     // Bit 5 -> PE6 (Pin 7)
-    // PORTF |= ((byte & 0x40) >> 1) |    // Bit 6 -> PF7 (Pin 0)
-    //     ((byte & 0x80) >> 1);     // Bit 7 -> PF6 (Pin 1)
-}
-
-uint8_t get_port_b() {
-    uint8_t data = 0;
-    // data |= PINB & 0x10 ? 0x01 : 0x00;
-    // data |= PINB & 0x20 ? 0x02 : 0x00;
-    // data |= PINB & 0x40 ? 0x04 : 0x00;
-    // data |= PINB & 0x80 ? 0x08 : 0x00;
-    // data |= PIND & 0x40 ? 0x10 : 0x00;
-    // data |= PINC & 0x80 ? 0x20 : 0x00;
-    for (int i = 8; i <= 13; i++) {
-        data |= digitalRead(i) ? 1 << (i - 8) : 0x00;
-    }
-    return data;
-}
-
 #ifdef SERIAL_DEBUG
+void debug_setup() {}
+
 void debug_buf(const char* msg) {
     rurp_log("DEBUG", msg);
 }
 #endif
-
 #endif
+
+

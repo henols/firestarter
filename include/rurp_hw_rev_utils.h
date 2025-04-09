@@ -1,23 +1,24 @@
-#ifndef RURP_HW_REV_UTILS_H
-#define RURP_HW_REV_UTILS_H
+#ifndef __RURP_HW_REV_UTILS_H__
+#define __RURP_HW_REV_UTILS_H__
+
+#ifdef HARDWARE_REVISION
 
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include <stdint.h>
 #include <string.h>
 
-#ifdef HARDWARE_REVISION
 uint8_t revision = 0xFF;
 
-uint8_t rurp_map_ctrl_reg_to_hardware_revision(uint16_t data) {
+uint8_t rurp_map_ctrl_reg_for_hardware_revision(rurp_register_t data) {
     uint8_t ctrl_reg = 0;
     uint8_t hw = rurp_get_hardware_revision();
     switch (hw) {
     case REVISION_2:
-        ctrl_reg = data & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | A17 | READ_WRITE | REGULATOR);
+        ctrl_reg = data & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | ADDRESS_LINE_17 | READ_WRITE | REGULATOR);
         ctrl_reg |= data & VPE_TO_VPP ? REV_2_VPE_TO_VPP : 0;
-        ctrl_reg |= data & A16 ? REV_2_A16 : 0;
-        ctrl_reg |= data & A18 ? REV_2_A18 : 0;
+        ctrl_reg |= data & ADDRESS_LINE_16 ? REV_2_ADDRESS_LINE_16 : 0;
+        ctrl_reg |= data & ADDRESS_LINE_18 ? REV_2_ADDRESS_LINE_18 : 0;
         break;
     case REVISION_0:
     case REVISION_1:
@@ -64,4 +65,4 @@ uint8_t rurp_get_hardware_revision() {
 
 #endif
 
-#endif // RURP_HW_REV_UTILS_H
+#endif // __RURP_HW_REV_UTILS_H__

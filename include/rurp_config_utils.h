@@ -1,5 +1,5 @@
-#ifndef RURP_CONFIG_UTILS_H
-#define RURP_CONFIG_UTILS_H
+#ifndef __RURP_CONFIG_UTILS_H__
+#define __RURP_CONFIG_UTILS_H__
 
 #include <stdint.h>
 #include <EEPROM.h>
@@ -42,4 +42,4 @@ void rurp_validate_config(rurp_configuration_t* rurp_config) {
         rurp_save_config(rurp_config);
     }
 }
-#endif // RURP_CONFIG_UTILS_H
+#endif // __RURP_CONFIG_UTILS_H__

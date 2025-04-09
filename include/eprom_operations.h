@@ -1,5 +1,5 @@
-#ifndef IC_OPERATIONS_H
-#define IC_OPERATIONS_H
+#ifndef __EPROM_OPERATIONS_H__
+#define __EPROM_OPERATIONS_H__
 #include "firestarter.h"
 #ifdef __cplusplus
 extern "C" {
@@ -16,4 +16,4 @@ extern "C" {
 }
 #endif
 
-#endif // IC_OPERATIONS_H
+#endif // __EPROM_OPERATIONS_H__

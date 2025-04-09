@@ -5,8 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef SRAM_H
-#define SRAM_H
+#ifndef __SRAM_H__
+#define __SRAM_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,4 +19,4 @@ extern "C" {
 }
 #endif
 
-#endif // SRAM_H
+#endif // __SRAM_H__

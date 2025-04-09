@@ -5,8 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef RURP_SHIELD_H
-#define RURP_SHIELD_H
+#ifndef __RURP_SHIELD_H__
+#define __RURP_SHIELD_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,13 +21,13 @@ extern "C" {
     // CONTROL REGISTER
 #ifndef HARDWARE_REVISION
 #define VPE_TO_VPP      0x01
-#define A16             VPE_TO_VPP
+#define ADDRESS_LINE_16             VPE_TO_VPP
 #define A9_VPP_ENABLE   0x02
 #define VPE_ENABLE      0x04
 #define P1_VPP_ENABLE   0x08
-#define A17             0x10
-#define A18             0x20
-#define RW              0x40
+#define ADDRESS_LINE_17             0x10
+#define ADDRESS_LINE_18             0x20
+#define READ_WRITE      0x40
 #define REGULATOR       0x80
 
 #else
@@ -36,21 +36,21 @@ extern "C" {
 #define REVISION_1 1
 #define REVISION_2 2
 
-#define A16             0x01
+#define ADDRESS_LINE_16             0x01
 #define A9_VPP_ENABLE   0x02
 #define VPE_ENABLE      0x04
 #define P1_VPP_ENABLE   0x08
-#define A17             0x10
-#define A18             0x20
-#define READ_WRITE              0x40
+#define ADDRESS_LINE_17             0x10
+#define ADDRESS_LINE_18             0x20
+#define READ_WRITE      0x40
 #define REGULATOR       0x80
 #define VPE_TO_VPP      0x100
 
 #endif
 
-#define A13             0x20
-#ifdef HARDWARE_REVISION
+#define ADDRESS_LINE_13             0x20
 
+#ifdef HARDWARE_REVISION
 // REV 1
 #define REV_1_VPE_TO_VPP      0x01
 #define REV_1_A9_VPP_ENABLE   0x02
@@ -59,9 +59,9 @@ extern "C" {
 #define REV_1_RW              0x40
 #define REV_1_REGULATOR       0x80
 
-#define REV_1_A16             REV_1_VPE_TO_VPP
-#define REV_1_A17             0x10
-#define REV_1_A18             0x20
+#define REV_1_ADDRESS_LINE_16             REV_1_VPE_TO_VPP
+#define REV_1_ADDRESS_LINE_17             0x10
+#define REV_1_ADDRESS_LINE_18             0x20
 
 // REV 2
 #define REV_2_VPE_TO_VPP      0x01
@@ -75,9 +75,9 @@ extern "C" {
 
 #define REV_2_P1              P1_VPP_ENABLE
 #define REV_2_RW              REV_2_P31
-#define REV_2_A16             REV_2_P2
-#define REV_2_A17             REV_2_P30
-#define REV_2_A18             P1_VPP_ENABLE
+#define REV_2_ADDRESS_LINE_16             REV_2_P2
+#define REV_2_ADDRESS_LINE_17             REV_2_P30
+#define REV_2_ADDRESS_LINE_18             P1_VPP_ENABLE
 #endif
 
 
@@ -93,14 +93,13 @@ extern "C" {
 #define MOST_SIGNIFICANT_BYTE 0x02   // MOST SIGNIFICANT BYTE
 #define OUTPUT_ENABLE 0x04           // OUTPUT ENABLE
 #define CONTROL_REGISTER 0x08        // CONTROL REGISTER
-#define USRBTN 0x10                  // USER BUTTON
 #define CHIP_ENABLE 0x20             // CHIP ENABLE
 
 
 #ifndef HARDWARE_REVISION
-#define register_t uint8_t
+#define rurp_register_t uint8_t
 #else
-#define register_t uint16_t
+#define rurp_register_t uint16_t
 #endif
 
 // Struct definition
@@ -113,7 +112,6 @@ extern "C" {
 
     // Function prototypes
     void rurp_board_setup();
-    void rurp_detect_hardware_revision();
     void rurp_load_config();
 
 
@@ -132,21 +130,22 @@ extern "C" {
 
     void rurp_log(const char* type, const char* msg);
 
-    void rurp_set_data_as_output();
-    void rurp_set_data_as_input();
+    void rurp_set_data_output();
+    void rurp_set_data_input();
 
-#define rurp_chip_enable() rurp_set_chip_enable(0)
-#define rurp_chip_disable() rurp_set_chip_enable(1)
-#define rurp_chip_output() rurp_set_chip_output(0)
-#define rurp_chip_input() rurp_set_chip_output(1)
+#define rurp_chip_enable() rurp_set_chip_enable(0)  // CE (chip enable) on, enable chip
+#define rurp_chip_disable() rurp_set_chip_enable(1) // CE (chip enable) off, disable chip
+#define rurp_chip_output() rurp_set_chip_output(0)  // OE (output enable) on, enable output
+#define rurp_chip_input() rurp_set_chip_output(1)   // OE (output enable) off, enable input
+
 
 #define rurp_set_chip_enable(state) rurp_set_control_pin(CHIP_ENABLE, state)
 #define rurp_set_chip_output(state) rurp_set_control_pin(OUTPUT_ENABLE, state)
 
     void rurp_set_control_pin(uint8_t pin, uint8_t state);
 
-    void rurp_write_to_register(uint8_t reg, register_t data);
-    register_t rurp_read_from_register(uint8_t reg);
+    void rurp_write_to_register(uint8_t reg, rurp_register_t data);
+    rurp_register_t rurp_read_from_register(uint8_t reg);
 
     void rurp_write_data_buffer(uint8_t data);
     uint8_t rurp_read_data_buffer();
@@ -154,11 +153,14 @@ extern "C" {
     double rurp_read_vcc();
     double rurp_read_voltage();
 
+    uint8_t rurp_user_button_pressed();
+
     rurp_configuration_t* rurp_get_config();
     void rurp_save_config(rurp_configuration_t* config);
     void rurp_validate_config(rurp_configuration_t* config);
 
 #ifdef HARDWARE_REVISION
+    void rurp_detect_hardware_revision();
     uint8_t rurp_get_hardware_revision();
     uint8_t rurp_get_physical_hardware_revision();
 #endif
@@ -167,4 +169,4 @@ extern "C" {
 }
 #endif
 
-#endif // RURP_SHIELD_H
+#endif // __RURP_SHIELD_H__

@@ -7,6 +7,7 @@
 
 #include "memory.h"
 #include <Arduino.h>
+#include <stdint.h>
 
 #include "memory_utils.h"
 #include "eprom.h"
@@ -21,12 +22,16 @@
 #define TYPE_FLASH_TYPE_3 3
 #define TYPE_SRAM 4
 
+#ifndef min
+#define min(a,b) ((a)<(b)?(a):(b))
+#endif
+
 void memory_read_execute(firestarter_handle_t* handle);
 void memory_write_execute(firestarter_handle_t* handle);
 void memory_verify_execute(firestarter_handle_t* handle);
 
-void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state);
-bool memory_get_control_register(firestarter_handle_t* handle, register_t bit);
+void memory_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state);
+bool memory_get_control_register(firestarter_handle_t* handle, rurp_register_t bit);
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address);
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data);
 
@@ -53,14 +58,12 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_get_data = memory_get_data;
     handle->firestarter_set_data = memory_set_data;
 
-    handle->firestarter_set_address = m_util_set_address;
+    handle->firestarter_set_address = mem_util_set_address;
 
     handle->firestarter_set_control_register = memory_set_control_register;
     handle->firestarter_get_control_register = memory_get_control_register;
 
-#ifdef POWER_THROUGH_ADDRESS_LINES
-    m_util_set_address(handle, 0);
-#endif
+    mem_util_set_address(handle, 0);
 
     if (handle->mem_type == TYPE_EPROM) {
         configure_eprom(handle);
@@ -81,46 +84,42 @@ void configure_memory(firestarter_handle_t* handle) {
     firestarter_error_response_format("Memory type 0x%02x not supported", handle->mem_type);
 }
 
-void memory_set_control_register(firestarter_handle_t* handle, register_t bit, bool state) {
-    register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
-    register_t data = state ? control_register | (bit) : control_register & ~(bit);
+void memory_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
+    rurp_register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
+    rurp_register_t data = state ? control_register | (bit) : control_register & ~(bit);
     rurp_write_to_register(CONTROL_REGISTER, data);
 }
 
-bool memory_get_control_register(firestarter_handle_t* handle, register_t bit) {
-    register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
+bool memory_get_control_register(firestarter_handle_t* handle, rurp_register_t bit) {
+    rurp_register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
     return control_register & bit;
 }
 
 
-void m_util_set_address(firestarter_handle_t* handle, uint32_t address) {
+void mem_util_set_address(firestarter_handle_t* handle, uint32_t address) {
 #ifdef DEBUG_ADDRESS
     debug_format("Address 0x%06x", address);
 #endif
     uint8_t lsb = address & 0xFF;
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
     uint8_t msb = ((address >> 8) & 0xFF);
-#ifdef POWER_THROUGH_ADDRESS_LINES
     if (handle->pins == 24) {
-        msb |= A13;
+        msb |= ADDRESS_LINE_13;
     }
-#endif
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 
-    register_t top_address = ((uint32_t)address >> 16) & (A16 | A17 | A18 | READ_WRITE);
-    register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
+    rurp_register_t top_address = ((uint32_t)address >> 16) & (ADDRESS_LINE_16 | ADDRESS_LINE_17 | ADDRESS_LINE_18 | READ_WRITE);
+    rurp_register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
     if (((top_address & READ_WRITE) && READ_WRITE == WRITE_FLAG) || handle->pins < 32) {
-        // This breaks 128K+ ROMs since VPE_TO_VPP and A16 are shared -
+        // This breaks 128K+ ROMs since VPE_TO_VPP and ADDRESS_LINE_16 are shared -
         // can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
         mask |= VPE_TO_VPP;
     }
     top_address |= rurp_read_from_register(CONTROL_REGISTER) & mask;
 
-#ifdef POWER_THROUGH_ADDRESS_LINES
     if (handle->pins == 28) {
-        top_address |= A17;
+        top_address |= ADDRESS_LINE_17;
     }
-#endif
 #ifdef DEBUG_ADDRESS
     debug_format("top msb lsb %02x %02x %02x", top_address, msb, lsb);
 #endif
@@ -140,10 +139,10 @@ void memory_read_execute(firestarter_handle_t* handle) {
 
 uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
     rurp_chip_output();
-    address = m_util_remap_address_bus(handle, address, READ_FLAG);
+    address = mem_util_remap_address_bus(handle, address, READ_FLAG);
 
     handle->firestarter_set_address(handle, address);
-    rurp_set_data_as_input();
+    rurp_set_data_input();
     rurp_chip_enable();
     delayMicroseconds(3);
     uint8_t data = rurp_read_data_buffer();
@@ -159,7 +158,8 @@ void memory_write_execute(firestarter_handle_t* handle) {
 }
 
 void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t data) {
-    address = m_util_remap_address_bus(handle, address, WRITE_FLAG);
+    rurp_chip_input();
+    address = mem_util_remap_address_bus(handle, address, WRITE_FLAG);
 
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
@@ -181,8 +181,7 @@ void memory_verify_execute(firestarter_handle_t* handle) {
 }
 
 // Utility functions
-
-uint32_t m_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
+uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
     bus_config_t config = handle->bus_config;
     if (config.address_lines[0] != 0xff || config.rw_line != 0xff) {
 
@@ -195,16 +194,21 @@ uint32_t m_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t a
         if (config.rw_line != 0xFF) {
             reorg_address |= (uint32_t)read_write << config.rw_line;
         }
+
+        // Set VPP to high if VPP line is not 0xFF and not 0x0F or 0x15
+        if (config.vpp_line != 0xFF && !(config.vpp_line == 0x0F || config.vpp_line == 0x15)) {
+            reorg_address |= (uint32_t)1 << config.vpp_line;
+        }
         return reorg_address;
     }
     return address;
 }
 
-void m_util_blank_check(firestarter_handle_t* handle) {
+void mem_util_blank_check(firestarter_handle_t* handle) {
     for (uint32_t i = 0; i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
-            firestarter_error_response_format("Memory is not blank, at 0x%06x, value: 0x%02x", i, val);
+            firestarter_error_response_format("Mem not blank, at 0x%06x, v: 0x%02x", i, val);
             return;
         }
     }

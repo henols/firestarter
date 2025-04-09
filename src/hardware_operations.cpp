@@ -70,11 +70,12 @@ bool hw_get_config(firestarter_handle_t* handle) {
 
 void hw_init_read_voltage(firestarter_handle_t* handle) {
   debug("Init read voltage");
+  #ifdef HARDWARE_REVISION
   if (rurp_get_hardware_revision() == REVISION_0) {
     firestarter_error_response("Rev0 dont support reading VPP/VPE");
     return;
   }
-
+#endif
   if (handle->state == STATE_READ_VPP) {
     debug("Setting up VPP");
     rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP); // Enable regulator and drop voltage to VPP

@@ -5,8 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef __UTILS_H
-#define __UTILS_H
+#ifndef __OPERATION_UTILS_H__
+#define __OPERATION_UTILS_H__
 
 #include "firestarter.h"
 #ifdef __cplusplus
@@ -14,6 +14,7 @@ extern "C" {
 #endif
     int op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
     int op_execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
+    int op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
 
     void op_reset_timeout();
 
@@ -23,4 +24,4 @@ extern "C" {
 }
 #endif
 
-#endif // __UTILS_H
+#endif // __OPERATION_UTILS_H__

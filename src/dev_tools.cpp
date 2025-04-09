@@ -34,7 +34,7 @@ bool dt_set_registers(firestarter_handle_t* handle) {
     rurp_set_chip_enable(is_flag_set(FLAG_CHIP_ENABLE) == 0);
     rurp_set_chip_output(is_flag_set(FLAG_OUTPUT_ENABLE) == 0);
 
-    while (true) {
+    while (!rurp_user_button_pressed()) {
         delay(200);
     }
     rurp_set_communication_mode();
@@ -43,16 +43,16 @@ bool dt_set_registers(firestarter_handle_t* handle) {
 }
 
 bool dt_set_address(firestarter_handle_t* handle) {
-    uint32_t address = m_util_remap_address_bus(handle, handle->address, is_flag_set(FLAG_OUTPUT_ENABLE));
+    uint32_t address = mem_util_remap_address_bus(handle, handle->address, is_flag_set(FLAG_OUTPUT_ENABLE));
     log_info_format("Address: 0x%06x, CE: %d, OE: %d, flags: %d", handle->address, is_flag_set(FLAG_CHIP_ENABLE), is_flag_set(FLAG_OUTPUT_ENABLE), handle->ctrl_flags);
     log_info_format("Remappend address: 0x%06x", address);
     rurp_set_programmer_mode();
 
-    m_util_set_address(handle, address);
+    mem_util_set_address(handle, address);
 
     rurp_set_chip_enable(is_flag_set(FLAG_CHIP_ENABLE) == 0);
     rurp_set_chip_output(is_flag_set(FLAG_OUTPUT_ENABLE) == 0);
-    while (true) {
+    while (!rurp_user_button_pressed()) {
         delay(200);
     }
     rurp_set_communication_mode();

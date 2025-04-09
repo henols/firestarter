@@ -5,8 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef EPROM_H
-#define EPROM_H
+#ifndef __EPROM_H__
+#define __EPROM_H__
 
 #include "firestarter.h"
 #ifdef __cplusplus
@@ -18,4 +18,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif // EPROM_H
+#endif // __EPROM_H__

@@ -11,3 +11,5 @@
 firestarter_app
 
 .vscode/
+
+*.bin

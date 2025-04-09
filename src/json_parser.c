@@ -8,12 +8,7 @@
 
 #include "json_parser.h"
 #include "logging.h"
-#include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <Arduino.h>
 
 #include "jsmn.h"
 
@@ -25,7 +20,6 @@ int json_init(char* json, int len, jsmntok_t* tokens) {
 
 #define jsoneq(json, tok, s) \
     jsoneq_(json, tok, PSTR(s))
-// jsoneq_(json, tok, s)
 
 static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {
     if (tok->type == JSMN_STRING && (int)strlen_P(s) == tok->end - tok->start &&
@@ -79,7 +73,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     handle->address = 0;
     handle->ctrl_flags = 0;
     handle->bus_config.rw_line = 0xFF;
-    handle->bus_config.vpp_line = 0;
+    handle->bus_config.vpp_line = 0xFF;
     handle->bus_config.address_lines[0] = 0xFF;
     handle->chip_id = 0;
 
