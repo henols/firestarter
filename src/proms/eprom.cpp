@@ -47,7 +47,9 @@ void configure_eprom(firestarter_handle_t* handle) {
             break;
         case STATE_ERASE:
             handle->firestarter_operation_execute = eprom_erase_execute;
-            handle->firestarter_operation_end = mem_util_blank_check;
+            if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
+                handle->firestarter_operation_end = mem_util_blank_check;
+            }
             break;
         case STATE_BLANK_CHECK:
             handle->firestarter_operation_execute = mem_util_blank_check;
@@ -230,11 +232,11 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
 }
 
 void eprom_generic_init(firestarter_handle_t* handle) {
-    eprom_check_vpp(handle);
-    if (handle->response_code == RESPONSE_CODE_ERROR) {
-        return;
-    }
     if (handle->chip_id > 0) {
+        eprom_check_vpp(handle);
+        if (handle->response_code == RESPONSE_CODE_ERROR) {
+            return;
+        }
         eprom_internal_check_chip_id(handle, is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR);
     }
 }
