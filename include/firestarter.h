@@ -70,7 +70,7 @@
     handle->response_code = code;
 
 #define firestarter_response_format(code, msg, ...) \
-    format(handle->response_msg, msg, __VA_ARGS__); \
+    log_format(handle->response_msg, msg, __VA_ARGS__); \
     handle->response_code = code;
 
 #define is_flag_set(flag) \

@@ -31,7 +31,7 @@
   log_ok(handle->response_msg)
 
 #define log_ok_format( cformat, ...) \
-  {format(handle->response_msg, cformat, __VA_ARGS__);} \
+  {log_format(handle->response_msg, cformat, __VA_ARGS__);} \
   log_ok(handle->response_msg)
 
 #ifndef LOG_LEVEL_INFO
@@ -49,7 +49,7 @@
   log_info(handle->response_msg)
 
 #define log_info_format( cformat, ...) \
-  {format(handle->response_msg, cformat, __VA_ARGS__);} \
+  {log_format(handle->response_msg, cformat, __VA_ARGS__);} \
   log_info(handle->response_msg)
 #endif
 
@@ -61,7 +61,7 @@
   log_data(handle->response_msg)
 
 #define log_data_format( cformat, ...) \
-  {format(handle->response_msg, cformat, __VA_ARGS__);} \
+  {log_format(handle->response_msg, cformat, __VA_ARGS__);} \
   log_data(handle->response_msg)
 
 
@@ -94,14 +94,14 @@
   log_error_format_buf(handle->response_msg, cformat, __VA_ARGS__)
 
 #define log_error_format_buf(buf, cformat, ...) \
-  {format(buf, cformat, __VA_ARGS__);} \
+  {log_format(buf, cformat, __VA_ARGS__);} \
   log_error(buf)
 
 
 #define copy_to_buffer(buf, msg) \
   strcpy_P(buf, PSTR(msg)); \
 
-#define format(buf, cformat, ...) \
+#define log_format(buf, cformat, ...) \
   char msg[RESPONSE_MSG_SIZE]; \
   copy_to_buffer(msg, cformat);\
   sprintf(buf, msg, __VA_ARGS__)
@@ -119,7 +119,7 @@ void debug_buf(const char* msg);
 
 #define debug_format(cformat, ...) \
     { \
-        format(debug_msg_buffer, cformat, __VA_ARGS__); \
+        log_format(debug_msg_buffer, cformat, __VA_ARGS__); \
         debug_buf(debug_msg_buffer); \
     }
 

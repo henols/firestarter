@@ -5,7 +5,7 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifdef ARDUINO_AVR_UNO
+#if  defined(ARDUINO_AVR_UNO) || defined( ARDUINO_AVR_ATmega328P) || defined(ARDUINO_AVR_ATmega328PB)
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include "rurp_config_utils.h"

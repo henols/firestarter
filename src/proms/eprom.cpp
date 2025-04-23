@@ -140,7 +140,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
         if (!mismatch) {
             handle->response_msg[0] = '\0';
             if (retries > 0) {
-                format(handle->response_msg, "Number of reties: %d", retries);
+                log_format(handle->response_msg, "Number of reties: %d", retries);
             }
             handle->pulse_delay = org_delay;
             return;
