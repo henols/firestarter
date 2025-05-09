@@ -12,6 +12,7 @@
 #include "memory_utils.h"
 #include "eprom.h"
 #include "sram.h"
+#include "flash_type_2.h"
 #include "flash_type_3.h"
 #include "rurp_shield.h"
 #include "logging.h"
@@ -72,8 +73,12 @@ void configure_memory(firestarter_handle_t* handle) {
         configure_sram(handle);
         return;
     }
+    else if (handle->mem_type == TYPE_FLASH_TYPE_2) {
+        configure_flash_2(handle);
+        return;
+    }
     else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
-        configure_flash3(handle);
+        configure_flash_3(handle);
         return;
     }
     firestarter_error_response_format("Memory type 0x%02x not supported", handle->mem_type);
