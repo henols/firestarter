@@ -5,12 +5,14 @@
  * Permission is hereby granted under MIT license.
  */
 
-
 #include "json_parser.h"
-#include "logging.h"
+
 #include <stdlib.h>
 
 #include "jsmn.h"
+#include "logging.h"
+
+uint8_t get_cmd(char* json, jsmntok_t* tokens, int pos);
 
 int json_init(char* json, int len, jsmntok_t* tokens) {
     jsmn_parser parser;
@@ -24,7 +26,6 @@ int json_init(char* json, int len, jsmntok_t* tokens) {
 static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {
     if (tok->type == JSMN_STRING && (int)strlen_P(s) == tok->end - tok->start &&
         strncmp_P(json + tok->start, s, tok->end - tok->start) == 0) {
-        // strcmp_P(json + tok->start, s) == 0) {
         return 0;
     }
     return -1;
@@ -42,21 +43,18 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
                 handle->bus_config.address_lines[j] = atoi(json + tokens[bus_array_start + j + 1].start);
                 if (handle->bus_config.address_lines[j] == j) {
                     handle->bus_config.address_mask |= 1 << j;
-                }
-                else if (handle->bus_config.matching_lines == 0xff) {
+                } else if (handle->bus_config.matching_lines == 0xff) {
                     handle->bus_config.matching_lines = j;
                 }
             }
             handle->bus_config.address_lines[bus_array_size] = 0xFF;
             i += bus_array_size + 1;
             consumed_tokens += bus_array_size + 2;
-        }
-        else if (jsoneq(json, &tokens[i], "rw-pin") == 0) {
+        } else if (jsoneq(json, &tokens[i], "rw-pin") == 0) {
             handle->bus_config.rw_line = atoi(json + tokens[i + 1].start);
             i++;
             consumed_tokens += 2;
-        }
-        else if (jsoneq(json, &tokens[i], "vpp-pin") == 0) {
+        } else if (jsoneq(json, &tokens[i], "vpp-pin") == 0) {
             handle->bus_config.vpp_line = atoi(json + tokens[i + 1].start);
             i++;
             consumed_tokens += 2;
@@ -78,51 +76,41 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     handle->chip_id = 0;
 
     for (int i = 1; i < token_count; i++) {
-        if (jsoneq(json, &tokens[i], "state") == 0) {
-            handle->cmd = atoi(json + tokens[i + 1].start);
+        uint8_t cmd = get_cmd(json, tokens, i);
+        if (cmd != 0xFF) {
+            handle->cmd = cmd;
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "verbose") == 0) {
+        } else if (jsoneq(json, &tokens[i], "verbose") == 0) {
             handle->verbose = checkBoolean(json + tokens[i + 1].start);
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "memory-size") == 0) {
+        } else if (jsoneq(json, &tokens[i], "memory-size") == 0) {
             handle->mem_size = atol(json + tokens[i + 1].start);
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "address") == 0) {
+        } else if (jsoneq(json, &tokens[i], "address") == 0) {
             handle->address = atol(json + tokens[i + 1].start);
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "flags") == 0) {
+        } else if (jsoneq(json, &tokens[i], "flags") == 0) {
             handle->ctrl_flags = atol(json + tokens[i + 1].start);
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "chip-id") == 0) {
+        } else if (jsoneq(json, &tokens[i], "chip-id") == 0) {
             handle->chip_id = atoi(json + tokens[i + 1].start);
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "type") == 0) {
+        } else if (jsoneq(json, &tokens[i], "type") == 0) {
             handle->mem_type = atoi(json + tokens[i + 1].start);
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "pin-count") == 0) {
+        } else if (jsoneq(json, &tokens[i], "pin-count") == 0) {
             handle->pins = atoi(json + tokens[i + 1].start);
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "vpp") == 0) {
+        } else if (jsoneq(json, &tokens[i], "vpp") == 0) {
             handle->vpp = atof(json + tokens[i + 1].start);
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "pulse-delay") == 0) {
+        } else if (jsoneq(json, &tokens[i], "pulse-delay") == 0) {
             handle->pulse_delay = atol(json + tokens[i + 1].start);
             i++;
-        }
-        else if (jsoneq(json, &tokens[i], "bus-config") == 0) {
+        } else if (jsoneq(json, &tokens[i], "bus-config") == 0) {
             int consumed_tokens = parse_bus_config(handle, json, &tokens[i], token_count - i);
             i += consumed_tokens + 1;
-        }
-        else {
+        } else {
             firestarter_error_response_format("Unknown field: %s", json + tokens[i].start);
             return -1;
         }
@@ -133,7 +121,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
 int json_parse_config(char* json, jsmntok_t* tokens, int token_count, rurp_configuration_t* config) {
     int res = 0;
     for (int i = 1; i < token_count; i++) {
-        if (jsoneq(json, &tokens[i], "state") == 0) {
+        if (get_cmd(json, tokens, i) != 0xFF) {
             i++;
         }
 #ifdef HARDWARE_REVISION
@@ -147,24 +135,30 @@ int json_parse_config(char* json, jsmntok_t* tokens, int token_count, rurp_confi
             config->r1 = atol(json + tokens[i + 1].start);
             i++;
             res = 1;
-        }
-        else if (jsoneq(json, &tokens[i], "r2") == 0) {
+        } else if (jsoneq(json, &tokens[i], "r2") == 0) {
             config->r2 = atol(json + tokens[i + 1].start);
             i++;
             res = 1;
-        }
-        else {
+        } else {
             return -1;
         }
     }
     return res;
 }
 
-int json_get_cmd(char* json, jsmntok_t* tokens, int token_count) {
+uint8_t json_get_cmd(char* json, jsmntok_t* tokens, int token_count) {
     for (int i = 0; i < token_count; i++) {
-        if (jsoneq(json, &tokens[i], "state") == 0) {
-            return atoi(json + tokens[i + 1].start);
+        int cmd = get_cmd(json, tokens, i);
+        if (cmd != 0xFF) {
+            return cmd;
         }
     }
-    return -1;
+    return 0xFF;
+}
+
+uint8_t get_cmd(char* json, jsmntok_t* tokens, int pos) {
+    if (jsoneq(json, &tokens[pos], "cmd") == 0 || jsoneq(json, &tokens[pos], "state") == 0) {
+        return atoi(json + tokens[pos + 1].start);
+    }
+    return 0xFF;
 }
