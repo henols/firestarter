@@ -79,7 +79,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
 
     for (int i = 1; i < token_count; i++) {
         if (jsoneq(json, &tokens[i], "state") == 0) {
-            handle->state = atoi(json + tokens[i + 1].start);
+            handle->cmd = atoi(json + tokens[i + 1].start);
             i++;
         }
         else if (jsoneq(json, &tokens[i], "verbose") == 0) {
@@ -160,7 +160,7 @@ int json_parse_config(char* json, jsmntok_t* tokens, int token_count, rurp_confi
     return res;
 }
 
-int json_get_state(char* json, jsmntok_t* tokens, int token_count) {
+int json_get_cmd(char* json, jsmntok_t* tokens, int token_count) {
     for (int i = 0; i < token_count; i++) {
         if (jsoneq(json, &tokens[i], "state") == 0) {
             return atoi(json + tokens[i + 1].start);

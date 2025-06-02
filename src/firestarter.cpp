@@ -46,7 +46,7 @@ void setup() {
   #endif
   rurp_board_setup();
 
-  handle.state = STATE_IDLE;
+  handle.cmd = CMD_IDLE;
   debug("Firestarter started");
   debug_format("Firmware version: %s", VERSION);
   debug_format("Hardware revision: %d", rurp_get_physical_hardware_revision());
@@ -70,35 +70,33 @@ bool parse_json(firestarter_handle_t* handle) {
   }
   log_info_format("Token count: %d", token_count);
 
-  handle->state = json_get_state(handle->data_buffer, tokens, token_count);
-  if (handle->state < 0) {
-    log_error_const("Unknown state");
+  handle->cmd = json_get_cmd(handle->data_buffer, tokens, token_count);
+  if (handle->cmd < 0) {
+    log_error_const("Unknown cmd");
     return false;
   }
 
-  debug_format("State: %d", handle->state);
-  if (handle->state < STATE_READ_VPP) {
+  debug_format("Cmd: %d", handle->cmd);
+  if (handle->cmd < CMD_READ_VPP) {
     json_parse(handle->data_buffer, tokens, token_count, handle);
+    if (handle->response_code == RESPONSE_CODE_ERROR) {
+      log_error(handle->response_msg);
+      return false;
+    }
     log_info_format("Force: %d", is_flag_set(FLAG_FORCE));
     log_info_format("Can erase: %d", is_flag_set(FLAG_CAN_ERASE));
     log_info_format("Skip erase: %d", is_flag_set(FLAG_SKIP_ERASE));
     log_info_format("Skip blank check: %d", is_flag_set(FLAG_SKIP_BLANK_CHECK));
     log_info_format("VPE as VPP: %d", is_flag_set(FLAG_VPE_AS_VPP));
-    #ifdef DEV_TOOLS
-    log_info_format("Output enable: %d", is_flag_set(FLAG_OUTPUT_ENABLE));
-    log_info_format("Chip enable: %d", is_flag_set(FLAG_CHIP_ENABLE));
-    #endif
-    if (handle->response_code == RESPONSE_CODE_ERROR) {
-      log_error(handle->response_msg);
-      return false;
-    }
 #ifdef DEV_TOOLS
-    if (handle->state < STATE_DEV_ADDRESS) {
-      if (!op_execute_function(configure_memory, handle)) {
-        log_error_const("Setup error");
-        return false;
-      }
-    }
+if (handle->cmd < CMD_DEV_ADDRESS) {
+  if (!op_execute_function(configure_memory, handle)) {
+    log_error_const("Setup error");
+    return false;
+  }else {
+  log_info_format("Output enable: %d", is_flag_set(FLAG_OUTPUT_ENABLE));
+  log_info_format("Chip enable: %d", is_flag_set(FLAG_CHIP_ENABLE));
+  }}
 #else
     if (!op_execute_function(configure_memory, handle)) {
       log_error_const("Setup error");
@@ -106,7 +104,7 @@ bool parse_json(firestarter_handle_t* handle) {
     }
 #endif
   }
-  else if (handle->state == STATE_CONFIG) {
+  else if (handle->cmd == CMD_CONFIG) {
     rurp_configuration_t* config = rurp_get_config();
     int res = json_parse_config(handle->data_buffer, tokens, token_count, config);
     if (res < 0) {
@@ -137,40 +135,40 @@ bool init_programmer(firestarter_handle_t* handle) {
     return false;
   };
 
-  if (handle->state > STATE_IDLE && handle->state < STATE_READ_VPP) {
+  if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
     log_info_format("Memory size 0x%lx", handle->mem_size);
   }
 
 #ifdef HARDWARE_REVISION
-#define PARSE_RESPONSE "FW: " FW_VERSION ", HW: Rev%d, State 0x%02x"
-  log_ok_format(PARSE_RESPONSE, rurp_get_hardware_revision(), handle->state);
+#define PARSE_RESPONSE "FW: " FW_VERSION ", HW: Rev%d, Cmd: 0x%02x"
+  log_ok_format(PARSE_RESPONSE, rurp_get_hardware_revision(), handle->cmd);
 #else
-#define PARSE_RESPONSE "FW: " FW_VERSION ", State 0x%02x"
-  log_ok_format(PARSE_RESPONSE, handle->state);
+#define PARSE_RESPONSE "FW: " FW_VERSION ", Cmd: 0x%02x"
+  log_ok_format(PARSE_RESPONSE, handle->cmd);
 #endif
   op_reset_timeout();
   return true;
 }
 
 void command_done(firestarter_handle_t* handle) {
-  debug("State done");
+  debug("Cmd done");
   rurp_set_programmer_mode();
   rurp_chip_disable();
   rurp_write_to_register(CONTROL_REGISTER, 0x00);
   rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, 0x00);
   rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
-  handle->state = STATE_IDLE;
+  handle->cmd = CMD_IDLE;
   rurp_set_communication_mode();
   handle->response_msg[0] = '\0';
 }
 
 void loop() {
-  if (handle.state != STATE_IDLE && timeout < millis()) {
-    log_error_const_buf(handle.response_msg, "Timeout");
+  if (handle.cmd != CMD_IDLE && timeout < millis()) {
+    log_error_const_buf(handle.response_msg, "Timeout = x");
     command_done(&handle);
   }
   else
-    if (handle.state == STATE_IDLE) {
+    if (handle.cmd == CMD_IDLE) {
       if (rurp_communication_available() > 0) {
         if (init_programmer(&handle)) {
           return;
@@ -182,54 +180,54 @@ void loop() {
     }
 
   bool done = false;
-  switch (handle.state) {
-  case STATE_READ:
+  switch (handle.cmd) {
+  case CMD_READ:
     done = eprom_read(&handle);
     break;
-  case STATE_WRITE:
+  case CMD_WRITE:
     done = eprom_write(&handle);
     break;
-  case STATE_VERIFY:
+  case CMD_VERIFY:
     done = eprom_verify(&handle);
     break;
-  case STATE_ERASE:
+  case CMD_ERASE:
     done = eprom_erase(&handle);
     break;
-  case STATE_BLANK_CHECK:
+  case CMD_BLANK_CHECK:
     done = eprom_blank_check(&handle);
     break;
-  case STATE_CHECK_CHIP_ID:
+  case CMD_CHECK_CHIP_ID:
     done = eprom_check_chip_id(&handle);
     break;
-  case STATE_READ_VPP:
-  case STATE_READ_VPE:
+  case CMD_READ_VPP:
+  case CMD_READ_VPE:
     done = hw_read_voltage(&handle);
     break;
-  case STATE_IDLE:
+  case CMD_IDLE:
     break;
-  case STATE_FW_VERSION:
+  case CMD_FW_VERSION:
     done = fw_get_version(&handle);
     break;
 #ifdef HARDWARE_REVISION
-  case STATE_HW_VERSION:
+  case CMD_HW_VERSION:
     done = hw_get_version(&handle);
     break;
 #endif
 #ifdef DEV_TOOLS
-  case  STATE_DEV_REGISTER:
+  case  CMD_DEV_REGISTER:
     done = dt_set_registers(&handle);
     break;
-  case STATE_DEV_ADDRESS:
+  case CMD_DEV_ADDRESS:
     done = dt_set_address(&handle);
     break;
 #endif
 
-  case STATE_CONFIG:
+  case CMD_CONFIG:
     done = hw_get_config(&handle);
     break;
 
   default:
-    log_error_format_buf(handle.response_msg, "Unknown state: %d", handle.state);
+    log_error_format_buf(handle.response_msg, "Unknown cmd: %d", handle.cmd);
     done = true;
     break;
   }

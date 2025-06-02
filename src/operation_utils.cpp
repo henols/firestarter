@@ -14,7 +14,7 @@ int op_check_response(firestarter_handle_t* handle);
 
 int op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
     if (handle->init == 1 && callback != NULL) {
-        log_info_format("Init function state: %d", handle->state);
+        log_info_format("Init function cmd: %d", handle->cmd);
         handle->init = 0;
         int res = op_execute_function(callback, handle);
         log_info_const("Init done");  

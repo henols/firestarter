@@ -42,16 +42,16 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_operation_execute = NULL;
     handle->firestarter_operation_end = NULL;
 
-    switch (handle->state) {
-    case STATE_READ:
-        handle->firestarter_operation_execute = memory_read_execute;
-        break;
-    case STATE_WRITE:
-        handle->firestarter_operation_execute = memory_write_execute;
-        break;
-    case STATE_VERIFY:
-        handle->firestarter_operation_execute = memory_verify_execute;
-        break;
+    switch (handle->cmd) {
+        case CMD_READ:
+            handle->firestarter_operation_execute = memory_read_execute;
+            break;
+        case CMD_WRITE:
+            handle->firestarter_operation_execute = memory_write_execute;
+            break;
+        case CMD_VERIFY:
+            handle->firestarter_operation_execute = memory_verify_execute;
+            break;
     }
 
     handle->firestarter_get_data = memory_get_data;
