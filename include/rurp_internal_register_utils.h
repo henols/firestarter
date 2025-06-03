@@ -1,5 +1,5 @@
-#ifndef __RURP_REGESTERS_UTILS_H__
-#define __RURP_REGESTERS_UTILS_H__
+#ifndef __RURP_INTERNAL_REGISTERS_UTILS_H__
+#define __RURP_INTERNAL_REGISTERS_UTILS_H__
 
 #include "rurp_shield.h"
 
@@ -13,4 +13,4 @@ void rurp_internal_write_to_register(uint8_t reg, rurp_register_t data);
 
 
 
-#endif // __RURP_REGESTERS_UTILS_H__
+#endif // __RURP_INTERNAL_REGISTERS_UTILS_H__

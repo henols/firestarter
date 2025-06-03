@@ -69,8 +69,8 @@ extern "C" {
 #define REV_2_VPE_ENABLE      0x04
 #define REV_2_P1_VPP_ENABLE   0x08
 #define REV_2_ADDRESS_LINE_17             0x10
-#define REV_2_ADDRESS_LINE_16              0x20
-#define REV_2_RW             0x40
+#define REV_2_ADDRESS_LINE_16             0x20
+#define REV_2_RW              0x40
 #define REV_2_REGULATOR       0x80
 
 #define REV_2_ADDRESS_LINE_18             P1_VPP_ENABLE
