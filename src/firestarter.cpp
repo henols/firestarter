@@ -82,25 +82,22 @@ bool parse_json(firestarter_handle_t* handle) {
             log_error(handle->response_msg);
             return false;
         }
-        log_info_format("Force: %d", is_flag_set(FLAG_FORCE));
-        log_info_format("Can erase: %d", is_flag_set(FLAG_CAN_ERASE));
-        log_info_format("Skip erase: %d", is_flag_set(FLAG_SKIP_ERASE));
-        log_info_format("Skip blank check: %d", is_flag_set(FLAG_SKIP_BLANK_CHECK));
-        log_info_format("VPE as VPP: %d", is_flag_set(FLAG_VPE_AS_VPP));
 #ifdef DEV_TOOLS
         if (handle->cmd < CMD_DEV_ADDRESS) {
+#endif
+            log_info_format("Force: %d", is_flag_set(FLAG_FORCE));
+            log_info_format("Can erase: %d", is_flag_set(FLAG_CAN_ERASE));
+            log_info_format("Skip erase: %d", is_flag_set(FLAG_SKIP_ERASE));
+            log_info_format("Skip blank check: %d", is_flag_set(FLAG_SKIP_BLANK_CHECK));
+            log_info_format("VPE as VPP: %d", is_flag_set(FLAG_VPE_AS_VPP));
             if (!op_execute_function(configure_memory, handle)) {
                 log_error_const("Setup error");
                 return false;
-            } else {
-                log_info_format("Output enable: %d", is_flag_set(FLAG_OUTPUT_ENABLE));
-                log_info_format("Chip enable: %d", is_flag_set(FLAG_CHIP_ENABLE));
             }
-        }
-#else
-        if (!op_execute_function(configure_memory, handle)) {
-            log_error_const("Setup error");
-            return false;
+#ifdef DEV_TOOLS
+        } else {
+            log_info_format("Output enable: %d", is_flag_set(FLAG_OUTPUT_ENABLE));
+            log_info_format("Chip enable: %d", is_flag_set(FLAG_CHIP_ENABLE));
         }
 #endif
     } else if (handle->cmd == CMD_CONFIG) {
