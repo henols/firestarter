@@ -68,15 +68,11 @@ extern "C" {
 #define REV_2_A9_VPP_ENABLE   0x02
 #define REV_2_VPE_ENABLE      0x04
 #define REV_2_P1_VPP_ENABLE   0x08
-#define REV_2_P30             0x10
-#define REV_2_P2              0x20
-#define REV_2_P31             0x40
+#define REV_2_ADDRESS_LINE_17             0x10
+#define REV_2_ADDRESS_LINE_16             0x20
+#define REV_2_RW              0x40
 #define REV_2_REGULATOR       0x80
 
-#define REV_2_P1              P1_VPP_ENABLE
-#define REV_2_RW              REV_2_P31
-#define REV_2_ADDRESS_LINE_16             REV_2_P2
-#define REV_2_ADDRESS_LINE_17             REV_2_P30
 #define REV_2_ADDRESS_LINE_18             P1_VPP_ENABLE
 #endif
 
@@ -163,6 +159,7 @@ extern "C" {
     void rurp_detect_hardware_revision();
     uint8_t rurp_get_hardware_revision();
     uint8_t rurp_get_physical_hardware_revision();
+    uint8_t rurp_map_ctrl_reg_for_hardware_revision(rurp_register_t data);
 #endif
 
 #ifdef __cplusplus

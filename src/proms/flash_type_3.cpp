@@ -25,19 +25,19 @@ void flash3_generic_init(firestarter_handle_t* handle);
 void configure_flash3(firestarter_handle_t* handle) {
     debug("Configuring Flash");
     handle->firestarter_operation_init = flash3_generic_init;
-    switch (handle->state) {
-    case STATE_WRITE:
+    switch (handle->cmd) {
+    case CMD_WRITE:
         handle->firestarter_operation_init = flash3_write_init;
         handle->firestarter_operation_execute = flash3_write_execute;
         break;
-    case STATE_ERASE:
+    case CMD_ERASE:
         handle->firestarter_operation_execute = flash3_erase_execute;
         // handle->firestarter_operation_end = memory_blank_check;
         break;
-    case STATE_BLANK_CHECK:
+    case CMD_BLANK_CHECK:
         handle->firestarter_operation_execute = mem_util_blank_check;
         break;
-    case STATE_CHECK_CHIP_ID:
+    case CMD_CHECK_CHIP_ID:
         handle->firestarter_operation_init = NULL;
         handle->firestarter_operation_execute = flash3_check_chip_id_execute;
         break;

@@ -20,24 +20,24 @@
 #endif
 #define RESPONSE_MSG_SIZE 96
 
-#define STATE_IDLE 0
-#define STATE_READ 1
-#define STATE_WRITE 2
-#define STATE_ERASE 3
-#define STATE_BLANK_CHECK 4
-#define STATE_CHECK_CHIP_ID 5
-#define STATE_VERIFY 6
+#define CMD_IDLE 0
+#define CMD_READ 1
+#define CMD_WRITE 2
+#define CMD_ERASE 3
+#define CMD_BLANK_CHECK 4
+#define CMD_CHECK_CHIP_ID 5
+#define CMD_VERIFY 6
 
 #ifdef DEV_TOOLS
-#define STATE_DEV_ADDRESS 7
-#define STATE_DEV_REGISTER 8
+#define CMD_DEV_ADDRESS 7
+#define CMD_DEV_REGISTER 8
 #endif
 
-#define STATE_READ_VPP 11
-#define STATE_READ_VPE 12
-#define STATE_FW_VERSION 13
-#define STATE_CONFIG 14
-#define STATE_HW_VERSION 15
+#define CMD_READ_VPP 11
+#define CMD_READ_VPE 12
+#define CMD_FW_VERSION 13
+#define CMD_CONFIG 14
+#define CMD_HW_VERSION 15
 
 #define RESPONSE_CODE_OK 1
 #define RESPONSE_CODE_WARNING 2
@@ -86,7 +86,7 @@ typedef struct bus_config {
 
 typedef struct firestarter_handle {
     uint8_t verbose;
-    uint8_t state;
+    uint8_t cmd;
     uint8_t init;
     uint8_t response_code;
     char response_msg[RESPONSE_MSG_SIZE];

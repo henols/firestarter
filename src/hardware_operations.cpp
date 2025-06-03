@@ -25,7 +25,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
   }
 
   double voltage = rurp_read_voltage();
-  const char* type = (handle->state == STATE_READ_VPE) ? "VPE" : "VPP";
+  const char* type = (handle->cmd == CMD_READ_VPE) ? "VPE" : "VPP";
   char vStr[10];
   dtostrf(voltage, 2, 2, vStr);
   char vcc[10];
@@ -76,17 +76,17 @@ void hw_init_read_voltage(firestarter_handle_t* handle) {
     return;
   }
 #endif
-  if (handle->state == STATE_READ_VPP) {
+  if (handle->cmd == CMD_READ_VPP) {
     debug("Setting up VPP");
     rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP); // Enable regulator and drop voltage to VPP
     copy_to_buffer(handle->response_msg, "Setting up VPP");
   }
-  else if (handle->state == STATE_READ_VPE) {
+  else if (handle->cmd == CMD_READ_VPE) {
     debug("Setting up VPE");
     rurp_write_to_register(CONTROL_REGISTER, REGULATOR); // Enable regulator
   }
   else {
-    firestarter_error_response("Error state");
+    firestarter_error_response("Error cmd");
   }
 }
 

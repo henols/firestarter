@@ -6,15 +6,16 @@
  */
 
 #include "memory.h"
+
 #include <Arduino.h>
 #include <stdint.h>
 
-#include "memory_utils.h"
 #include "eprom.h"
-#include "sram.h"
 #include "flash_type_3.h"
-#include "rurp_shield.h"
 #include "logging.h"
+#include "memory_utils.h"
+#include "rurp_shield.h"
+#include "sram.h"
 
 #define TYPE_EPROM 1
 #define TYPE_FLASH_TYPE_2 2
@@ -22,7 +23,7 @@
 #define TYPE_SRAM 4
 
 #ifndef min
-#define min(a,b) ((a)<(b)?(a):(b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 void memory_read_execute(firestarter_handle_t* handle);
@@ -42,16 +43,16 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_operation_execute = NULL;
     handle->firestarter_operation_end = NULL;
 
-    switch (handle->state) {
-    case STATE_READ:
-        handle->firestarter_operation_execute = memory_read_execute;
-        break;
-    case STATE_WRITE:
-        handle->firestarter_operation_execute = memory_write_execute;
-        break;
-    case STATE_VERIFY:
-        handle->firestarter_operation_execute = memory_verify_execute;
-        break;
+    switch (handle->cmd) {
+        case CMD_READ:
+            handle->firestarter_operation_execute = memory_read_execute;
+            break;
+        case CMD_WRITE:
+            handle->firestarter_operation_execute = memory_write_execute;
+            break;
+        case CMD_VERIFY:
+            handle->firestarter_operation_execute = memory_verify_execute;
+            break;
     }
 
     handle->firestarter_get_data = memory_get_data;
@@ -67,12 +68,10 @@ void configure_memory(firestarter_handle_t* handle) {
     if (handle->mem_type == TYPE_EPROM) {
         configure_eprom(handle);
         return;
-    }
-    else if (handle->mem_type == TYPE_SRAM) {
+    } else if (handle->mem_type == TYPE_SRAM) {
         configure_sram(handle);
         return;
-    }
-    else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
+    } else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
         configure_flash3(handle);
         return;
     }
@@ -89,20 +88,19 @@ bool memory_get_control_register(firestarter_handle_t* handle, rurp_register_t b
     rurp_register_t control_register = rurp_read_from_register(CONTROL_REGISTER);
     return control_register & bit;
 }
+rurp_register_t mem_util_calculate_lsb_register(firestarter_handle_t* handle, uint32_t address) {
+    return address & 0xFF;
+}
 
-
-void mem_util_set_address(firestarter_handle_t* handle, uint32_t address) {
-#ifdef DEBUG_ADDRESS
-    debug_format("Address 0x%06x", address);
-#endif
-    uint8_t lsb = address & 0xFF;
-    rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
+rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, uint32_t address) {
     uint8_t msb = ((address >> 8) & 0xFF);
     if (handle->pins == 24) {
         msb |= ADDRESS_LINE_13;
     }
-    rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
+    return msb;
+}
 
+rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* handle, uint32_t address) {
     rurp_register_t top_address = ((uint32_t)address >> 16) & (ADDRESS_LINE_16 | ADDRESS_LINE_17 | ADDRESS_LINE_18 | READ_WRITE);
     rurp_register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
     if (((top_address & READ_WRITE) && READ_WRITE == WRITE_FLAG) || handle->pins < 32) {
@@ -115,10 +113,25 @@ void mem_util_set_address(firestarter_handle_t* handle, uint32_t address) {
     if (handle->pins == 28) {
         top_address |= ADDRESS_LINE_17;
     }
+    return top_address;
+}
+
+void mem_util_set_address(firestarter_handle_t* handle, uint32_t address) {
+#ifdef DEBUG_ADDRESS
+    debug_format("Address 0x%06x", address);
+#endif
+    uint8_t lsb = mem_util_calculate_lsb_register(handle, address);
+    rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
+
+    uint8_t msb = mem_util_calculate_msb_register(handle, address);
+    rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
+
+    rurp_register_t top_address = mem_util_calculate_top_address_register(handle, address);
+    rurp_write_to_register(CONTROL_REGISTER, top_address);
+
 #ifdef DEBUG_ADDRESS
     debug_format("top msb lsb %02x %02x %02x", top_address, msb, lsb);
 #endif
-    rurp_write_to_register(CONTROL_REGISTER, top_address);
 }
 
 void memory_read_execute(firestarter_handle_t* handle) {
@@ -158,7 +171,7 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
 
     handle->firestarter_set_address(handle, address);
     rurp_write_data_buffer(data);
-    delayMicroseconds(3); //Needed for slower address changes like slow ROMs and "Power through address lines"
+    delayMicroseconds(3);  // Needed for slower address changes like slow ROMs and "Power through address lines"
     rurp_chip_enable();
     delayMicroseconds(handle->pulse_delay);
     rurp_chip_disable();
@@ -178,8 +191,7 @@ void memory_verify_execute(firestarter_handle_t* handle) {
 // Utility functions
 uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
     bus_config_t config = handle->bus_config;
-    if (config.address_lines[0] != 0xff || config.rw_line != 0xff) {
-
+    if (config.address_lines[0] != 0xFF || config.rw_line != 0xFF || config.vpp_line != 0xFF) {
         uint32_t reorg_address = config.address_mask & address;
         for (int i = config.matching_lines; i < 19 && config.address_lines[i] != 0xFF; i++) {
             if (config.address_lines[i] != i && address & (uint32_t)1 << i) {
