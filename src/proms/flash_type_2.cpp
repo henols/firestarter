@@ -38,7 +38,7 @@ void flash2_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
 void f2_get_chip_id(firestarter_handle_t* handle, chip_info_t* chip_info);
 void f2_internal_erase(firestarter_handle_t* handle);
 
-void f2_dissable_protection(firestarter_handle_t* handle);
+void f2_disable_protection(firestarter_handle_t* handle);
 void f2_enable_protection(firestarter_handle_t* handle);
 
 void (*f2_set_data)(struct firestarter_handle*, uint32_t, uint8_t);
