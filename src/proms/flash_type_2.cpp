@@ -74,7 +74,7 @@ void flash2_generic_init(firestarter_handle_t* handle) {
     if (handle->chip_id > 0) {
         flash2_check_chip_id_execute(handle);
     } // If chip_id is 0 or negative, it's intentionally ignored.
-}
+    } // If chip_id is 0 or negative, it's intentionally ignored.
 }
 
 void flash2_write_init(firestarter_handle_t* handle) {
