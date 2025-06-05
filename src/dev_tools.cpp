@@ -31,7 +31,7 @@ void dt_decode_register(firestarter_handle_t* handle, const char* reg_name, uint
         d8[0] = '|';
         d8[1] = ' ';
         // d8[2] = '0' + pins[8];
-        d8[2] = pins[8]?'1':'0';
+        d8[2] = pins[8] ? '1' : '0';
     }
     log_info_format("%s| %d| %d| %d| %d| %d| %d| %d| %d|", d8, pins[7], pins[6], pins[5], pins[4], pins[3], pins[2], pins[1], pins[0]);
 }
@@ -40,14 +40,14 @@ bool dt_set_registers(firestarter_handle_t* handle) {
     if (rurp_communication_available() < 6 || !op_check_for_ok(handle)) {
         return false;
     };
-    
+
     uint8_t msb = rurp_communication_read();
     uint8_t lsb = rurp_communication_read();
     uint16_t ctrl_reg = rurp_communication_read() << 8;
     ctrl_reg |= rurp_communication_read();
     int firestarter_reg = ctrl_reg & 0x8000;
     ctrl_reg &= 0x01FF;
-    
+
     log_info_format("CE: %d, OE: %d", is_flag_set(FLAG_CHIP_ENABLE), is_flag_set(FLAG_OUTPUT_ENABLE));
     dt_decode_register(handle, "MSB", msb, 8);
     dt_decode_register(handle, "LSB", lsb, 8);
@@ -60,9 +60,8 @@ bool dt_set_registers(firestarter_handle_t* handle) {
         dt_decode_register(handle, "CTRL", ctrl_reg, 8);
     }
 #else
-// dt_decode_ctrl(ctrl_reg);
 #endif
-
+    log_ok("");
     rurp_set_programmer_mode();
 
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
@@ -87,7 +86,7 @@ bool dt_set_registers(firestarter_handle_t* handle) {
 bool dt_set_address(firestarter_handle_t* handle) {
     log_info_format("CE: %d, OE: %d", is_flag_set(FLAG_CHIP_ENABLE), is_flag_set(FLAG_OUTPUT_ENABLE));
     log_info_format("Address: 0x%06x", handle->address);
-        uint32_t address = mem_util_remap_address_bus(handle, handle->address, is_flag_set(FLAG_OUTPUT_ENABLE));
+    uint32_t address = mem_util_remap_address_bus(handle, handle->address, is_flag_set(FLAG_OUTPUT_ENABLE));
     log_info_format("Address: 0x%06x remappend", address);
 
     uint8_t msb = mem_util_calculate_msb_register(handle, address);
@@ -102,7 +101,7 @@ bool dt_set_address(firestarter_handle_t* handle) {
 #else
     // dt_decode_ctrl(top_address);
 #endif
-
+    log_ok("");
     rurp_set_programmer_mode();
     mem_util_set_address(handle, address);
     rurp_set_chip_enable(is_flag_set(FLAG_CHIP_ENABLE) == 0);
