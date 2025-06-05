@@ -131,7 +131,7 @@ void flash2_check_chip_id_execute(firestarter_handle_t* handle) {
     }
 }
 
-void f2_dissable_protection(firestarter_handle_t* handle) {
+void f2_disable_protection(firestarter_handle_t* handle) {
     flash_execute_command(FLASH_DISABLE_WRITE_PROTECTION);
     // flash_byte_flipping(handle, flash_disable_write_protection, sizeof(flash_disable_write_protection) / sizeof(flash_disable_write_protection[0]));
     delayMicroseconds(1);
