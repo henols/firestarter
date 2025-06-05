@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-import datetime
 import re
-import subprocess
 import os
-import json
 from datetime import timezone
-import sys
 
 
 def get_header_version():
