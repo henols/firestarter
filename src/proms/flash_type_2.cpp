@@ -83,7 +83,7 @@ void flash2_write_init(firestarter_handle_t* handle) {
         return;
     }
 
-    f2_dissable_protection(handle);
+    f2_disable_protection(handle);
 
     if (is_flag_set(FLAG_CAN_ERASE)) {
         if (!is_flag_set(FLAG_SKIP_ERASE)) {
