@@ -143,12 +143,8 @@ void f2_enable_protection(firestarter_handle_t* handle) {
 
 void f2_internal_erase(firestarter_handle_t* handle) {
     flash_execute_command(FLASH_ERASE);
-    // delayMicroseconds(1);
-void f2_internal_erase(firestarter_handle_t* handle) {
-    flash_execute_command(FLASH_ERASE);
     delay(1); // Add a small delay to allow erase to complete
     f_util_verify_operation(handle, 0xFF);
-}
 }
 
 void f2_get_chip_id(firestarter_handle_t* handle, chip_info_t* chip_info) {
