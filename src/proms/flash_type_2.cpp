@@ -113,7 +113,7 @@ void flash2_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
 }
 
 void flash2_erase_execute(firestarter_handle_t* handle) {
-    f2_dissable_protection(handle);
+    f2_disable_protection(handle);
     f2_internal_erase(handle);
     f2_enable_protection(handle);
 }
