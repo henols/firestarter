@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 import re
 import os
-from datetime import timezone
 
 
 def get_header_version():
     header_file = "include/version.h"
 
     # rxs = "^#define VERSION (\w+)"
-    rxs = "^#define VERSION(.\")([0-9\.]+)"
+    rxs = '^#define VERSION(.")([0-9\.]+)'
 
     txt = [line for line in open(header_file)]
 
@@ -18,12 +17,13 @@ def get_header_version():
             major, minor, patch = str(m.group(2)).split(".")
             return (major, minor, patch)
 
+
 def update_version(major, minor, patch):
     """Update the version number in the header file."""
     header_file = "include/version.h"
 
     rxs = "^(#define VERSION )"
-    
+
     txt = [line for line in open(header_file)]
 
     fout = open(header_file, "w")
@@ -31,7 +31,7 @@ def update_version(major, minor, patch):
     for line in txt:
         m = re.match(rxs, line)
         if m:
-            line = m.groups(0)[0] + f"\"{major}.{minor}.{patch}\"\n"
+            line = m.groups(0)[0] + f'"{major}.{minor}.{patch}"\n'
             fout.write(line)
         else:
             fout.write(line)
