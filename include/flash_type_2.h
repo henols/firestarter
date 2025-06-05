@@ -19,4 +19,4 @@ extern "C" {
 }
 #endif
 
-#endif // FALSH__TYPE_2_H
+#endif // FLASH__TYPE_2_H
