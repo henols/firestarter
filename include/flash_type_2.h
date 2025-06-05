@@ -5,7 +5,7 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifndef FALSH__TYPE_2_H
+#ifndef FLASH__TYPE_2_H
 #define FALSH__TYPE_2_H
 
 #ifdef __cplusplus
