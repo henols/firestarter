@@ -41,11 +41,13 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
             int bus_array_size = tokens[bus_array_start].size;
             for (int j = 0; j < bus_array_size && j < 19; j++) {
                 handle->bus_config.address_lines[j] = atoi(json + tokens[bus_array_start + j + 1].start);
-                if (handle->bus_config.address_lines[j] == j) {
-                    handle->bus_config.address_mask |= 1 << j;
-                } else if (handle->bus_config.matching_lines == 0xff) {
+                handle->bus_config.address_mask |= (1 << handle->bus_config.address_lines[j]);
+                if (handle->bus_config.matching_lines == 0xff && handle->bus_config.address_lines[j] != j) {
                     handle->bus_config.matching_lines = j;
                 }
+            }
+            if(handle->bus_config.matching_lines == 0xff){
+                handle->bus_config.matching_lines = bus_array_size;
             }
             handle->bus_config.address_lines[bus_array_size] = 0xFF;
             i += bus_array_size + 1;
@@ -73,6 +75,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     handle->bus_config.rw_line = 0xFF;
     handle->bus_config.vpp_line = 0xFF;
     handle->bus_config.address_lines[0] = 0xFF;
+    handle->bus_config.address_mask = 0x00;    
     handle->chip_id = 0;
 
     for (int i = 1; i < token_count; i++) {

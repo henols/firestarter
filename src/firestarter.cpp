@@ -132,6 +132,8 @@ bool init_programmer(firestarter_handle_t* handle) {
 
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
         log_info_format("Memory size 0x%lx", handle->mem_size);
+        log_info_format("Address mask 0x%x", handle->bus_config.address_mask);
+        log_info_format("Matching lines %u", handle->bus_config.matching_lines);
     }
 
 #ifdef HARDWARE_REVISION

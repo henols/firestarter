@@ -50,6 +50,10 @@ extern "C" {
 
 #define ADDRESS_LINE_13             0x20
 
+#define VPP_P1_32_DIP               0x15
+#define VPP_P1_28_DIP               0x0F
+
+
 #ifdef HARDWARE_REVISION
 // REV 1
 #define REV_1_VPE_TO_VPP      0x01

@@ -147,7 +147,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
         }
         retries = w + 1;
         handle->pulse_delay = org_delay + (org_delay * retries / NUMBER_OF_RETRIES);
-        debug_format("Mismatch, retrying with increased pulse delay from %d to %d", org_delay, handle->pulse_delay);   
+        debug_format("Mismatch, retrying with increased pulse delay from %d to %d", org_delay, handle->pulse_delay);
     }
     handle->firestarter_set_control_register(handle, REGULATOR, 0);
 
@@ -156,7 +156,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
 
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
 void eprom_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
-    if (bit & VPE_ENABLE && (handle->bus_config.vpp_line == 0x0F || handle->bus_config.vpp_line == 0x15)) {
+    if (bit & VPE_ENABLE && using_p1_as_vpp(handle)) {
         bit &= ~VPE_ENABLE;
         bit |= P1_VPP_ENABLE;
     }

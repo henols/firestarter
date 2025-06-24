@@ -191,24 +191,28 @@ void memory_verify_execute(firestarter_handle_t* handle) {
 // Utility functions
 uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
     bus_config_t config = handle->bus_config;
-    if (config.address_lines[0] != 0xFF || config.rw_line != 0xFF || config.vpp_line != 0xFF) {
-        uint32_t reorg_address = config.address_mask & address;
+
+    uint32_t reorg_address = config.address_mask == 0x00 ? 0xFFFF & address : config.address_mask & address;
+    if (config.address_lines[0] != 0xFF) {
         for (int i = config.matching_lines; i < 19 && config.address_lines[i] != 0xFF; i++) {
-            if (config.address_lines[i] != i && address & (uint32_t)1 << i) {
-                reorg_address |= (uint32_t)1 << config.address_lines[i];
+            uint32_t line_bit =(uint32_t)1 << config.address_lines[i];
+            reorg_address &= ~line_bit;
+            if (address & (uint32_t)1 << i) {
+                reorg_address |= line_bit;
             }
         }
-        if (config.rw_line != 0xFF) {
-            reorg_address |= (uint32_t)read_write << config.rw_line;
-        }
-
-        // Set VPP to high if VPP line is not 0xFF
-        if (config.vpp_line != 0xFF) {
-            reorg_address |= (uint32_t)1 << config.vpp_line;
-        }
-        return reorg_address;
     }
-    return address;
+
+    if (config.rw_line != 0xFF) {
+        reorg_address |= (uint32_t)read_write << config.rw_line;
+    }
+
+    // Set VPP to high while reading
+    // if (config.rw_line != 0xFF && !using_p1_as_vpp(handle)) {
+    if (config.rw_line != 0xFF && read_write == READ_FLAG) {
+        reorg_address |= (uint32_t)1 << config.vpp_line;
+    }
+    return reorg_address;
 }
 
 void mem_util_blank_check(firestarter_handle_t* handle) {
