@@ -76,8 +76,10 @@
 #define is_flag_set(flag) \
     ((handle->ctrl_flags & flag) == flag)
 
+#define ADDRESS_LINES_SIZE 20
+
 typedef struct bus_config {
-    uint8_t address_lines[19];  // Array mapping address lines
+    uint8_t address_lines[ADDRESS_LINES_SIZE];  // Array mapping address lines
     uint32_t address_mask;      // Mask for address lines
     uint8_t matching_lines;     // Number of matching address lines
     uint8_t rw_line;            // RW line mapping

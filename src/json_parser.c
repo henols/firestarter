@@ -30,7 +30,6 @@ static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {
     }
     return -1;
 }
-
 int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* tokens, int token_count) {
     int consumed_tokens = 0;
 
@@ -39,15 +38,19 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
             handle->bus_config.matching_lines = 0xff;
             int bus_array_start = i + 1;
             int bus_array_size = tokens[bus_array_start].size;
-            for (int j = 0; j < bus_array_size && j < 19; j++) {
+            for (int j = 0; j < bus_array_size && j < ADDRESS_LINES_SIZE; j++) {
                 handle->bus_config.address_lines[j] = atoi(json + tokens[bus_array_start + j + 1].start);
-                if (handle->bus_config.address_lines[j] == j) {
-                    handle->bus_config.address_mask |= 1 << j;
-                } else if (handle->bus_config.matching_lines == 0xff) {
+                handle->bus_config.address_mask |= 1UL << handle->bus_config.address_lines[j];
+                if (handle->bus_config.matching_lines == 0xff && handle->bus_config.address_lines[j] != j) {
                     handle->bus_config.matching_lines = j;
                 }
             }
-            handle->bus_config.address_lines[bus_array_size] = 0xFF;
+            if (handle->bus_config.matching_lines == 0xff) {
+                handle->bus_config.matching_lines = bus_array_size;
+            }
+            if (bus_array_size < ADDRESS_LINES_SIZE) {
+                handle->bus_config.address_lines[bus_array_size] = 0xFF;
+            }
             i += bus_array_size + 1;
             consumed_tokens += bus_array_size + 2;
         } else if (jsoneq(json, &tokens[i], "rw-pin") == 0) {
@@ -62,6 +65,7 @@ int parse_bus_config(firestarter_handle_t* handle, const char* json, jsmntok_t* 
     }
     return consumed_tokens;
 }
+
 int checkBoolean(const char* json) {
     return strncmp(json, "true", 4) == 0;
 }
@@ -73,6 +77,7 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
     handle->bus_config.rw_line = 0xFF;
     handle->bus_config.vpp_line = 0xFF;
     handle->bus_config.address_lines[0] = 0xFF;
+    handle->bus_config.address_mask = 0;
     handle->chip_id = 0;
 
     for (int i = 1; i < token_count; i++) {
