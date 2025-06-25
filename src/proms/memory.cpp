@@ -191,7 +191,7 @@ void memory_verify_execute(firestarter_handle_t* handle) {
 // Utility functions
 uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write) {
     bus_config_t config = handle->bus_config;
-    uint32_t reorg_address = config.address_mask == 0x00 ? (uint32_t)0xFFFF & address : config.address_mask & address;
+    uint32_t reorg_address = config.address_mask & address;
     if (config.address_lines[0] != 0xFF) {
         for (int i = config.matching_lines; i < ADDRESS_LINES_SIZE && config.address_lines[i] != 0xFF; i++) {
             uint32_t line_bit = (uint32_t)1 << config.address_lines[i];
