@@ -120,6 +120,9 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
             return -1;
         }
     }
+    if (handle->bus_config.address_lines[0] == 0xFF) {
+       handle->bus_config.address_mask = 0xFFFF;
+    }
     return 0;
 }
 
