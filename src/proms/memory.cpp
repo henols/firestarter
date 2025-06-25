@@ -221,7 +221,14 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
 }
 
 void mem_util_blank_check(firestarter_handle_t* handle) {
-    for (uint32_t i = 0; i < handle->mem_size; i++) {
+    // This function is a callback for an operation. It checks one chunk of memory.
+    // The calling context (e.g., eprom_blank_check in eprom_operations.cpp) is responsible
+    // for iterating through the whole memory, updating handle->address, and reporting progress.
+    uint32_t end_address = handle->address + handle->data_size;
+    if (end_address > handle->mem_size) {
+        end_address = handle->mem_size;
+    }
+    for (uint32_t i = handle->address; i < end_address; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
             firestarter_error_response_format("Mem not blank, at 0x%06x, v: 0x%02x", i, val);
