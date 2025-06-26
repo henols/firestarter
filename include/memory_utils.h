@@ -22,6 +22,8 @@ rurp_register_t mem_util_calculate_lsb_register(firestarter_handle_t* handle, ui
 rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, uint32_t address);
 rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* handle, uint32_t address);
 
+#define using_p1_as_vpp(handle) ((handle->pins == 32 && handle->bus_config.vpp_line == VPP_P1_32_DIP) || (handle->pins < 32 && handle->bus_config.vpp_line == VPP_P1_28_DIP))
+
 #ifdef __cplusplus
 }
 #endif
