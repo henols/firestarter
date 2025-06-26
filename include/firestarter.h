@@ -76,20 +76,44 @@
 #define is_flag_set(flag) \
     ((handle->ctrl_flags & flag) == flag)
 
+
+
+#define INITZIATED 0x01
+#define INITZIATION_IN_PROGRESS 0x02
+#define ENDED 0x04
+#define ENDING_IN_PROGRESS 0x08
+
+#define prefered_operation_state(flag) \
+    (handle->operation_state = flag<<4 | (handle->operation_state & 0x0F))
+
+#define set_prefered_operation_state() \
+    (handle->operation_state |= flag>>4)
+
+#define clear_prefered_operation_state() \
+    (handle->operation_state &= ~flag>>4)
+
+#define check_operation_state(flag) \
+    ((handle->operation_state & flag) == flag)
+
+#define set_operation_state(flag) \
+    (handle->operation_state |= flag)
+#define clear_operation_state(flag) \
+    (handle->operation_state &= ~flag)
+
 #define ADDRESS_LINES_SIZE 20
 
 typedef struct bus_config {
     uint8_t address_lines[ADDRESS_LINES_SIZE];  // Array mapping address lines
-    uint32_t address_mask;      // Mask for address lines
-    uint8_t matching_lines;     // Number of matching address lines
-    uint8_t rw_line;            // RW line mapping
-    uint8_t vpp_line;           // VPP line mapping
+    uint32_t address_mask;                      // Mask for address lines
+    uint8_t matching_lines;                     // Number of matching address lines
+    uint8_t rw_line;                            // RW line mapping
+    uint8_t vpp_line;                           // VPP line mapping
 } bus_config_t;
 
 typedef struct firestarter_handle {
     uint8_t verbose;
     uint8_t cmd;
-    uint8_t init;
+    uint8_t operation_state;
     uint8_t response_code;
     char response_msg[RESPONSE_MSG_SIZE];
     uint8_t mem_type;

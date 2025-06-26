@@ -13,22 +13,32 @@
 int op_check_response(firestarter_handle_t* handle);
 
 int op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
-    if (handle->init == 1 && callback != NULL) {
+    prefered_operation_state(INITZIATION_IN_PROGRESS);
+    if (!check_operation_state(INITZIATED)  && callback != NULL) {
         log_info_format("Init function cmd: %d", handle->cmd);
-        handle->init = 0;
         int res = op_execute_function(callback, handle);
-        log_info_const("Init done");  
-
+        if(res){
+            log_info_const("Init done");  
+        }
+        if(!check_operation_state(INITZIATION_IN_PROGRESS)){
+            set_operation_state(INITZIATED);
+        }
         return res;
     }           
     return 1;              
 }
 
 int op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
+    prefered_operation_state(ENDING_IN_PROGRESS);
     if (callback != NULL) {
         log_info_const("End func");
         int res = op_execute_function(callback, handle);
-        log_info_const("End done");  
+        if(res){
+            log_info_const("End done");  
+        }
+        if(!check_operation_state(ENDING_IN_PROGRESS)){
+            set_operation_state(ENDED);
+        }
         return res;
     }           
     return 1;              

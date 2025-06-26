@@ -183,16 +183,40 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
   if (!op_check_for_ok(handle)) {
     return false;
   }
-  debug("Blank check PROM");
-  if (excecute_operation(handle)) {
-    if (handle->response_code == RESPONSE_CODE_OK) {
-      log_ok_const("Blank");
+
+  debug("Blank check");
+  if (!op_execute_init(handle->firestarter_operation_init, handle)) {
+    return true;
+  }
+  
+  if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
+    return true;
+  }
+
+  log_data_format("Blank check: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
+  rurp_communication_write(handle->data_buffer, handle->data_size);
+  // debug_format("Read buffer: %.10s...", handle->data_buffer);
+
+  handle->address += handle->data_size;
+  if (handle->address > handle->mem_size - 1) {
+    while (!op_check_for_ok(handle));
+    if (op_execute_end(handle->firestarter_operation_end, handle)) {
+      log_ok_const("Blank check done");
     }
+    return true;
   }
-  else {
-    log_error_const("Not supported");
-  }
-  return true;
+  return false;
+
+  // debug("Blank check PROM");
+  // if (excecute_operation(handle)) {
+  //   if (handle->response_code == RESPONSE_CODE_OK) {
+  //     log_ok_const("Blank");
+  //   }
+  // }
+  // else {
+  //   log_error_const("Not supported");
+  // }
+  // return true;
 }
 
 

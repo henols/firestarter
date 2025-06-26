@@ -16,7 +16,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
     return false;
   }
 
-  if (handle->init) {
+  if (handle->operation_state) {
     debug("Read voltage");
     int res = op_execute_init(hw_init_read_voltage, handle);
     if (res <= 0) {

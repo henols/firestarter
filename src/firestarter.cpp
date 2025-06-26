@@ -115,7 +115,7 @@ bool parse_json(firestarter_handle_t* handle) {
 
 bool init_programmer(firestarter_handle_t* handle) {
     handle->response_code = RESPONSE_CODE_OK;
-    handle->init = 1;
+    handle->operation_state = 0;
 
     handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
     log_info_format("Buffer size: %d", handle->data_size);
