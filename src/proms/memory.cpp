@@ -205,18 +205,10 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
         reorg_address |= (uint32_t)read_write << config.rw_line;
     }
 
-// #define DISABLE_ON_VPP_LINES
-#ifdef DISABLE_ON_VPP_LINES
     // Set VPP line to high if VPP is not on P1
     if (config.vpp_line != 0xFF && !using_p1_as_vpp(handle)) {
         reorg_address |= 1UL << config.vpp_line;
     }
-#else
-    // Set VPP line to high while reading
-    if (config.vpp_line != 0xFF && read_write == READ_FLAG) {
-        reorg_address |= 1UL << config.vpp_line;
-    }
-#endif
     return reorg_address;
 }
 
