@@ -11,7 +11,6 @@
 #include "operation_utils.h"
 #include "rurp_shield.h"
 
-bool excecute_operation(firestarter_handle_t* handle);
 
 bool eprom_read(firestarter_handle_t* handle) {
   if (!op_check_for_ok(handle)) {
@@ -145,13 +144,8 @@ bool eprom_erase(firestarter_handle_t* handle) {
   }
 
   debug("Erase PROM");
-  if (is_flag_set(FLAG_CAN_ERASE) && excecute_operation(handle)) {
-    if (handle->response_code == RESPONSE_CODE_OK) {
-      log_ok_const("Erased");
-    }
-    else {
-      log_error_const("Failed");
-    }
+  if (is_flag_set(FLAG_CAN_ERASE)) {
+    return op_excecute_operation(handle);
   }
   else {
     log_error_const("Not supported");
@@ -168,13 +162,10 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
     log_error_const("No chip ID");
     return true;
   }
-  if (excecute_operation(handle)) {
+  if (!op_excecute_operation(handle)) {
     if (handle->response_code == RESPONSE_CODE_OK) {
       log_ok_const("Chip ID matches");
     }
-  }
-  else {
-    log_error_const("Not supported");
   }
   return true;
 }
@@ -184,52 +175,33 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
     return false;
   }
 
-  debug("Blank check");
-  if (!op_execute_init(handle->firestarter_operation_init, handle)) {
-    return true;
-  }
+  // debug("Blank check");
+  // if (!op_execute_init(handle->firestarter_operation_init, handle)) {
+  //   return true;
+  // }
   
-  if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
-    return true;
-  }
+  // if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
+  //   return true;
+  // }
 
-  log_data_format("Blank check: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
-  rurp_communication_write(handle->data_buffer, handle->data_size);
-  // debug_format("Read buffer: %.10s...", handle->data_buffer);
-
-  handle->address += handle->data_size;
-  if (handle->address > handle->mem_size - 1) {
-    while (!op_check_for_ok(handle));
-    if (op_execute_end(handle->firestarter_operation_end, handle)) {
-      log_ok_const("Blank check done");
-    }
-    return true;
-  }
-  return false;
-
-  // debug("Blank check PROM");
-  // if (excecute_operation(handle)) {
-  //   if (handle->response_code == RESPONSE_CODE_OK) {
-  //     log_ok_const("Blank");
+  
+  // handle->address += handle->data_size;
+  // if (handle->address > handle->mem_size - 1) {
+  //   while (!op_check_for_ok(handle));
+  //   if (op_execute_end(handle->firestarter_operation_end, handle)) {
+  //     log_ok_const("Blank check done");
   //   }
+  //   return true;
   // }
-  // else {
-  //   log_error_const("Not supported");
-  // }
-  // return true;
-}
+  // return false;
 
-
-bool excecute_operation(firestarter_handle_t* handle) {
-  if (handle->firestarter_operation_execute) {
-    if (!op_execute_init(handle->firestarter_operation_init, handle)) {
-      return true;
+  debug("Blank check PROM");
+  if (!op_excecute_operation(handle)) {
+    if (handle->response_code == RESPONSE_CODE_OK) {
+      log_ok_const("Blank");
     }
-    if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
-      return true;
-    }
-    op_execute_end(handle->firestarter_operation_end, handle);
-    return true;
   }
-  return false;
+  return true;
 }
+
+

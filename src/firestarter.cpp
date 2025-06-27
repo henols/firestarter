@@ -174,6 +174,7 @@ void loop() {
     }
 
     bool done = false;
+    handle.response_code = RESPONSE_CODE_OK;
     switch (handle.cmd) {
         case CMD_READ:
             done = eprom_read(&handle);

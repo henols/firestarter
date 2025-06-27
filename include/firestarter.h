@@ -40,6 +40,7 @@
 #define CMD_HW_VERSION 15
 
 #define RESPONSE_CODE_OK 1
+#define RESPONSE_CODE_DATA 3
 #define RESPONSE_CODE_WARNING 2
 #define RESPONSE_CODE_ERROR 0
 
@@ -76,29 +77,6 @@
 #define is_flag_set(flag) \
     ((handle->ctrl_flags & flag) == flag)
 
-
-
-#define INITZIATED 0x01
-#define INITZIATION_IN_PROGRESS 0x02
-#define ENDED 0x04
-#define ENDING_IN_PROGRESS 0x08
-
-#define prefered_operation_state(flag) \
-    (handle->operation_state = flag<<4 | (handle->operation_state & 0x0F))
-
-#define set_prefered_operation_state() \
-    (handle->operation_state |= flag>>4)
-
-#define clear_prefered_operation_state() \
-    (handle->operation_state &= ~flag>>4)
-
-#define check_operation_state(flag) \
-    ((handle->operation_state & flag) == flag)
-
-#define set_operation_state(flag) \
-    (handle->operation_state |= flag)
-#define clear_operation_state(flag) \
-    (handle->operation_state &= ~flag)
 
 #define ADDRESS_LINES_SIZE 20
 
