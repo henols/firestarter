@@ -34,7 +34,7 @@ bool eprom_read(firestarter_handle_t* handle) {
   if (handle->address > handle->mem_size - 1) {
     while (!op_check_for_ok(handle));
     if (op_execute_end(handle->firestarter_operation_end, handle)) {
-      log_ok_const("Read done");
+      log_ok_const("Read");
     }
     return true;
   }
@@ -82,7 +82,7 @@ bool eprom_write(firestarter_handle_t* handle) {
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
       if (op_execute_end(handle->firestarter_operation_end, handle)) {
-        log_ok_const("Write done");
+        log_ok_const("Written");
       }
       return true;
     }
@@ -99,7 +99,7 @@ bool eprom_verify(firestarter_handle_t* handle) {
     if (handle->data_size == 0) {
       log_warn_const("Premature end of data");
       if (op_execute_end(handle->firestarter_operation_end, handle) > 0) {
-        log_ok_const("Verify done");
+        log_ok_const("Verified");
       }
       return true;
     }
@@ -130,7 +130,7 @@ bool eprom_verify(firestarter_handle_t* handle) {
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
       if (op_execute_end(handle->firestarter_operation_end, handle)) {
-        log_ok_const("Verify done");
+        log_ok_const("Verified");
       }
       return true;
     }
@@ -145,7 +145,10 @@ bool eprom_erase(firestarter_handle_t* handle) {
 
   debug("Erase PROM");
   if (is_flag_set(FLAG_CAN_ERASE)) {
-    return op_excecute_operation(handle);
+    op_excecute_operation(handle);
+    if (handle->response_code == RESPONSE_CODE_OK) {
+    log_ok_const("Erased");
+    }
   }
   else {
     log_error_const("Not supported");
@@ -164,7 +167,7 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
   }
   if (!op_excecute_operation(handle)) {
     if (handle->response_code == RESPONSE_CODE_OK) {
-      log_ok_const("Chip ID matches");
+      log_ok_const("Match");
     }
   }
   return true;

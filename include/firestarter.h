@@ -54,6 +54,8 @@
 #define FLAG_OUTPUT_ENABLE 0x20
 #define FLAG_CHIP_ENABLE 0x40
 
+#define FLAG_VERBOSE 0x80
+
 #define firestarter_warning_response(msg) \
     firestarter_set_responce(RESPONSE_CODE_WARNING, msg)
 
@@ -89,7 +91,6 @@ typedef struct bus_config {
 } bus_config_t;
 
 typedef struct firestarter_handle {
-    uint8_t verbose;
     uint8_t cmd;
     uint8_t operation_state;
     uint8_t response_code;

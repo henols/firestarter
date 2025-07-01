@@ -71,7 +71,6 @@ int checkBoolean(const char* json) {
 }
 
 int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle) {
-    handle->verbose = 0;
     handle->address = 0;
     handle->ctrl_flags = 0;
     handle->bus_config.rw_line = 0xFF;
@@ -84,9 +83,6 @@ int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handl
         uint8_t cmd = get_cmd(json, tokens, i);
         if (cmd != 0xFF) {
             handle->cmd = cmd;
-            i++;
-        } else if (jsoneq(json, &tokens[i], "verbose") == 0) {
-            handle->verbose = checkBoolean(json + tokens[i + 1].start);
             i++;
         } else if (jsoneq(json, &tokens[i], "memory-size") == 0) {
             handle->mem_size = atol(json + tokens[i + 1].start);
