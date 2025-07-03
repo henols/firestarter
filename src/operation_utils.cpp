@@ -75,13 +75,11 @@ bool op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_
 }
 
 bool op_execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
-    bool res = 0;
     if (callback != NULL) {
         log_info_const("Execute operation");
-        res = _execute_operation(callback, handle);
-        // log_info_const("Execute done");
+        return _execute_operation(callback, handle);
     }
-    return res;
+    return false;
 }
 
 bool _execute_operation(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {

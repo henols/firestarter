@@ -18,14 +18,15 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
         return false;
     }
 
-    if (handle->operation_state) {
+    if (handle->operation_state == 0) {
         debug("Read voltage");
-        int res = op_execute_init(hw_init_read_voltage, handle);
+        int res = op_execute_function(hw_init_read_voltage, handle);
         if (res <= 0) {
             return true;
         }
+        handle->operation_state = 1;
     }
-
+    
     double voltage = rurp_read_voltage();
     const char* type = (handle->cmd == CMD_READ_VPE) ? "VPE" : "VPP";
     char vStr[10];

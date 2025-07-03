@@ -203,24 +203,6 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
         return false;
     }
 
-    // debug("Blank check");
-    // if (!op_execute_init(handle->firestarter_operation_init, handle)) {
-    //   return true;
-    // }
-
-    // if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
-    //   return true;
-    // }
-
-    // handle->address += handle->data_size;
-    // if (handle->address > handle->mem_size - 1) {
-    //   while (!op_check_for_ok(handle));
-    //   if (op_execute_end(handle->firestarter_operation_end, handle)) {
-    //     log_ok_const("Blank check done");
-    //   }
-    //   return true;
-    // }
-    // return false;
 
     debug("Blank check PROM");
     if (!op_excecute_operation(handle)) {
