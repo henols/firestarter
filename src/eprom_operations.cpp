@@ -13,7 +13,7 @@
 #include "rurp_shield.h"
 
 bool eprom_read(firestarter_handle_t* handle) {
-    if (!op_check_for_ok(handle)) {
+    if (!op_check_for_ok()) {
         return false;
     }
 
@@ -70,26 +70,28 @@ bool eprom_write(firestarter_handle_t* handle) {
         set_operation_state(OPERATION);
     }
 
-    if (rurp_communication_available() >= 2 && is_operation_started(OPERATION)) {
+    if (rurp_communication_available() > 0 && is_operation_started(OPERATION)) {
         debug("Write PROM");
-        // if (op_check_for_done(handle)) {
-        //     set_operation_state_done();
-        //     return false;
-        // }
+        int done_status = op_check_for_done();
+        if (done_status != 0) {
+            if (done_status == 1) {
+                set_operation_state_done();
+            }
+            return false;
+        }
 
-        handle->data_size = rurp_communication_read() << 8 | rurp_communication_read();
-        // if (handle->data_size == 0) {
-        //     log_warn_const("Premature end of data");
-        //     if (op_execute_end(handle->firestarter_operation_end, handle)) {
-        //         log_ok_const("Write done");
-        //     }
-        //     return true;
-        // }
+        int data_size = op_check_for_number();
+        if(data_size == -1){
+            return false;
+        }
+        handle->data_size = data_size;
 
         log_info_format("Expecting %d bytes", handle->data_size);
         int len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
 
         if ((uint32_t)len != handle->data_size) {
+            log_info(handle->data_buffer);
+            
             log_error_format("Not enough data: %d > %d", (int)handle->data_size, len);
             return true;
         }
@@ -99,7 +101,6 @@ bool eprom_write(firestarter_handle_t* handle) {
             return true;
         }
 
-        // debug("Write PROM exec");
         if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
             return true;
         }
@@ -112,19 +113,40 @@ bool eprom_write(firestarter_handle_t* handle) {
 }
 
 bool eprom_verify(firestarter_handle_t* handle) {
-    if (rurp_communication_available() >= 2) {
+    if (!op_execute_init(handle->firestarter_operation_init, handle)) {
+        return true;
+    }
+
+    if (!op_execute_end(handle->firestarter_operation_end, handle)) {
+        return true;
+    }
+
+    if ((handle->operation_state & 0x2F) == ENDED - 1) {
+        return true;
+    }
+
+    if (can_operation_start(OPERATION)) {
+        log_info_const("Start verify");
+        set_operation_state(OPERATION);
+    }
+
+    if (rurp_communication_available() > 0 && is_operation_started(OPERATION)) {
         debug("Verify PROM");
-        handle->data_size = rurp_communication_read() << 8;
-        handle->data_size |= rurp_communication_read();
-        if (handle->data_size == 0) {
-            log_warn_const("Premature end of data");
-            if (op_execute_end(handle->firestarter_operation_end, handle) > 0) {
-                log_ok_const("Verified");
+        int done_status = op_check_for_done();
+        if (done_status != 0) {
+            if (done_status == 1) {
+                set_operation_state_done();
             }
-            return true;
+            return false;
         }
 
-        log_ok_format("Expecting %d bytes", handle->data_size);
+        int data_size = op_check_for_number();
+        if(data_size == -1){
+            return false;
+        }
+        handle->data_size = data_size;
+
+        log_info_format("Expecting %d bytes", handle->data_size);
         int len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
 
         if ((uint32_t)len != handle->data_size) {
@@ -132,34 +154,18 @@ bool eprom_verify(firestarter_handle_t* handle) {
             return true;
         }
 
-        if (handle->address + len > handle->mem_size) {
-            log_error_const("Address out of range");
-            return true;
-        }
-
-        if (!op_execute_init(handle->firestarter_operation_init, handle)) {
-            return true;
-        }
-
         if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
             return true;
         }
 
-        log_ok_format("Verify: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
-
+        log_ok_format("Verify: 0x%04lx - 0x%04lx", handle->address, (handle->address + handle->data_size));
         handle->address += handle->data_size;
-        if (handle->address >= handle->mem_size) {
-            if (op_execute_end(handle->firestarter_operation_end, handle)) {
-                log_ok_const("Verified");
-            }
-            return true;
-        }
     }
     return false;
 }
 
 bool eprom_erase(firestarter_handle_t* handle) {
-    if (!op_check_for_ok(handle)) {
+    if (!op_check_for_ok()) {
         return false;
     }
 
@@ -176,7 +182,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
 }
 
 bool eprom_check_chip_id(firestarter_handle_t* handle) {
-    if (!op_check_for_ok(handle)) {
+    if (!op_check_for_ok()) {
         return false;
     }
     debug("Check Chip ID");
@@ -193,7 +199,7 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
 }
 
 bool eprom_blank_check(firestarter_handle_t* handle) {
-    if (!op_check_for_ok(handle)) {
+    if (!op_check_for_ok()) {
         return false;
     }
 
@@ -224,3 +230,4 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
     }
     return true;
 }
+    

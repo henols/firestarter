@@ -37,7 +37,7 @@ void dt_decode_register(firestarter_handle_t* handle, const char* reg_name, uint
 }
 
 bool dt_set_registers(firestarter_handle_t* handle) {
-    if (rurp_communication_available() < 6 || !op_check_for_ok(handle)) {
+    if (rurp_communication_available() < 6 || !op_check_for_ok()) {
         return false;
     };
 

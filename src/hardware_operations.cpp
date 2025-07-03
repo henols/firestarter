@@ -14,7 +14,7 @@ void hw_version_overide(char* revStr);
 void hw_init_read_voltage(firestarter_handle_t* handle);
 
 bool hw_read_voltage(firestarter_handle_t* handle) {
-    if (!op_check_for_ok(handle)) {
+    if (!op_check_for_ok()) {
         return false;
     }
 

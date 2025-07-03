@@ -119,22 +119,36 @@ bool _check_response(firestarter_handle_t* handle) {
     return true;
 }
 
-int op_check_for_ok(firestarter_handle_t* handle) {
-    if (rurp_communication_available() < 2 || rurp_communication_peak() != 'O') {
-        return 0;
+int op_check_for_ok() {
+    if (rurp_communication_available() > 0 || rurp_communication_peak() == 'O') {
+        if (rurp_communication_available() < 2) {
+            return -1;
+        }
+        return rurp_communication_read() == 'O' && rurp_communication_read() == 'K';
     }
-    if (rurp_communication_read() != 'O' || rurp_communication_read() != 'K') {
-        log_info_const("Expecting OK");
-        return 0;
-    }
-    return 1;
+
+    return -1;
 }
 
-int op_check_for_done(firestarter_handle_t* handle) {
-    if (rurp_communication_available() < 4 || rurp_communication_peak() != 'D') {
-        return 0;
+int op_check_for_done() {
+    if (rurp_communication_available() > 0 && rurp_communication_peak() == 'D') {
+        if (rurp_communication_available() < 4) {
+            return -1;  // Indeterminate, wait for more data
+        }
+        char buf[4];
+        rurp_communication_read_bytes(buf, 4);
+        return !strncmp_P(buf, PSTR("DONE"), 4);
     }
-    char buf[4];
-    rurp_communication_read_bytes(buf, 4);
-    return !strncmp_P(buf, PSTR("DONE"), 4);
+    return 0;  // Not "DONE"
+}
+
+int op_check_for_number() {
+    if (rurp_communication_available() > 0 && rurp_communication_peak() == '#') {
+        if (rurp_communication_available() < 3) {
+            return -1;  // Indeterminate, wait for more data
+        }
+        rurp_communication_read();
+        return rurp_communication_read() << 8 | rurp_communication_read();
+    }
+    return -1;  // Not "DONE"
 }
