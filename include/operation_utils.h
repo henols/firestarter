@@ -9,6 +9,8 @@
 #define __OPERATION_UTILS_H__
 
 #include "firestarter.h"
+#include "logging.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,6 +18,7 @@ extern "C" {
 #define INITZIATION 1
 #define OPERATION 3
 #define CLEANUP 5
+#define ENDED 7
 
 #define IN_PROGRESS 0x40
 #define PROGRESS_DONE 0x80
@@ -50,6 +53,7 @@ bool op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_
 void op_reset_timeout();
 
 int op_check_for_ok(firestarter_handle_t* handle);
+int op_check_for_done(firestarter_handle_t* handle);
 
 #ifdef __cplusplus
 }

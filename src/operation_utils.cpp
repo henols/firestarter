@@ -30,7 +30,7 @@ bool op_excecute_operation(firestarter_handle_t* handle) {
             return true;
         }
         // log_ok_format("State: %d", handle->operation_state);
-   
+
         return false;
     }
     return true;
@@ -48,6 +48,8 @@ bool op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter
         if (!check_operation_in_progress()) {
             set_operation_state_done();
             log_info_const("Init done");
+            log_init_done();
+            break;
         }
     }
     return true;
@@ -65,6 +67,8 @@ bool op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_
         if (!check_operation_in_progress()) {
             set_operation_state_done();
             log_info_const("Cleanup done");
+            log_end_done();
+            break;
         }
     }
     return true;
@@ -101,10 +105,10 @@ bool _check_response(firestarter_handle_t* handle) {
             log_warn(handle->response_msg);
             break;
         case RESPONSE_CODE_DATA:
-            if (is_operation_started(CLEANUP)) {
-                log_data_format("End: %s", handle->response_msg);
-            } else if (is_operation_started(INITZIATION)) {
+            if (is_operation_started(INITZIATION)) {
                 log_data_format("Init: %s", handle->response_msg);
+            } else if (is_operation_started(CLEANUP)) {
+                log_data_format("End: %s", handle->response_msg);
             }
             break;
         case RESPONSE_CODE_ERROR:
@@ -116,7 +120,7 @@ bool _check_response(firestarter_handle_t* handle) {
 }
 
 int op_check_for_ok(firestarter_handle_t* handle) {
-    if (rurp_communication_available() < 2) {
+    if (rurp_communication_available() < 2 || rurp_communication_peak() != 'O') {
         return 0;
     }
     if (rurp_communication_read() != 'O' || rurp_communication_read() != 'K') {
@@ -126,3 +130,11 @@ int op_check_for_ok(firestarter_handle_t* handle) {
     return 1;
 }
 
+int op_check_for_done(firestarter_handle_t* handle) {
+    if (rurp_communication_available() < 4 || rurp_communication_peak() != 'D') {
+        return 0;
+    }
+    char buf[4];
+    rurp_communication_read_bytes(buf, 4);
+    return !strncmp_P(buf, PSTR("DONE"), 4);
+}

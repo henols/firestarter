@@ -34,7 +34,9 @@ extern "C" {
 #define HARDWARE_REVISION_PIN A3
 #define REVISION_0 0
 #define REVISION_1 1
-#define REVISION_2 2
+#define REVISION_2_0 2
+#define REVISION_2_1 3
+#define REVISION_2_2 4
 
 #define ADDRESS_LINE_16             0x01
 #define A9_VPP_ENABLE   0x02
@@ -124,6 +126,7 @@ extern "C" {
 
     int rurp_communication_available();
     int rurp_communication_read();
+    int rurp_communication_peak();
     size_t rurp_communication_write(const char* buffer, size_t size);
     size_t rurp_communication_read_bytes(char* buffer, size_t length);
 

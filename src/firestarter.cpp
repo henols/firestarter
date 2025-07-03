@@ -62,14 +62,15 @@ bool parse_json(firestarter_handle_t* handle) {
     int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
     handle->response_msg[0] = '\0';
     if (token_count <= 0) {
+        handle->ctrl_flags = 0x80;
         log_info_format("Buf val: 0x%02x", handle->data_buffer[0]);
         log_error_const("Bad JSON");
 
         return false;
     }
-    log_info_format("Token count: %d", token_count);
 
-    handle->cmd = json_get_cmd(handle->data_buffer, tokens, token_count);
+    handle->cmd = json_get_cmd(handle->data_buffer, tokens, token_count, handle);
+    log_info_format("Token count: %d", token_count);
     if (handle->cmd == 0xFF) {
         log_error_const("No cmd");
         return false;
@@ -102,7 +103,7 @@ bool parse_json(firestarter_handle_t* handle) {
 #endif
     } else if (handle->cmd == CMD_CONFIG) {
         rurp_configuration_t* config = rurp_get_config();
-        int res = json_parse_config(handle->data_buffer, tokens, token_count, config);
+        int res = json_parse_config(handle->data_buffer, tokens, token_count, config, handle);
         if (res < 0) {
             log_error_const("Failed parsing config");
             return false;
@@ -234,3 +235,4 @@ void loop() {
 void op_reset_timeout() {
     timeout = millis() + 1000;
 }
+

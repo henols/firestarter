@@ -14,12 +14,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define NUMBER_JSNM_TOKENS 64
+#define NUMBER_JSNM_TOKENS 32
 
-    int json_init(char* json, int len, jsmntok_t* tokens);
-    uint8_t json_get_cmd(char* json, jsmntok_t* tokens, int token_count);
-    int json_parse(char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle);
-    int json_parse_config(char* json, jsmntok_t* tokens, int token_count, rurp_configuration_t* config);
+    int json_init(const char* json, int len, jsmntok_t* tokens);
+    uint8_t json_get_cmd(const char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle);
+    int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle);
+    int json_parse_config(const char* json, jsmntok_t* tokens, int token_count, rurp_configuration_t* config, firestarter_handle_t* handle);
 
 #ifdef __cplusplus
 }

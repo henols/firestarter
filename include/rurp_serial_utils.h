@@ -32,11 +32,17 @@ int rurp_communication_read() {
     return SERIAL_PORT.read();
 }
 
+int rurp_communication_peak() {
+    return SERIAL_PORT.peek();
+}
+
 size_t rurp_communication_read_bytes(char* buffer, size_t length) {
     return SERIAL_PORT.readBytes(buffer, length);
 }
 
 size_t rurp_communication_write(const char* buffer, size_t size) {
+    SERIAL_PORT.write(size >> 8);
+    SERIAL_PORT.write(size & 0xFF);
     size_t bytes = SERIAL_PORT.write(buffer, size);
     SERIAL_PORT.flush();
     return bytes;

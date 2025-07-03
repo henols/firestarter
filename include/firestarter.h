@@ -56,25 +56,6 @@
 
 #define FLAG_VERBOSE 0x80
 
-#define firestarter_warning_response(msg) \
-    firestarter_set_responce(RESPONSE_CODE_WARNING, msg)
-
-#define firestarter_warning_response_format(msg, ...) \
-    firestarter_response_format(RESPONSE_CODE_WARNING, msg, __VA_ARGS__)
-
-#define firestarter_error_response(msg) \
-    firestarter_set_responce(RESPONSE_CODE_ERROR, msg)
-
-#define firestarter_error_response_format(msg, ...) \
-    firestarter_response_format(RESPONSE_CODE_ERROR, msg, __VA_ARGS__)
-
-#define firestarter_set_responce(code, msg)    \
-    copy_to_buffer(handle->response_msg, msg); \
-    handle->response_code = code;
-
-#define firestarter_response_format(code, msg, ...) \
-    format(handle->response_msg, msg, __VA_ARGS__); \
-    handle->response_code = code;
 
 #define is_flag_set(flag) \
     ((handle->ctrl_flags & flag) == flag)

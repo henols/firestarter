@@ -14,13 +14,32 @@
 #include "firestarter.h"
 #include "rurp_shield.h"
 
+// #define INFO_LOG_METHODE
+
+#ifdef INFO_LOG_METHODE
+void _log_info(const char* msg, firestarter_handle_t* handle);
+#endif
+
+
 #define LOG_LEVEL_INFO
 
 #define LOG_OK_MSG "OK"
+#define LOG_INIT_DONE_MSG "INIT"
+#define LOG_END_DONE_MSG "END"
+#define LOG_DONE_MSG "DONE"
 #define LOG_INFO_MSG "INFO"
 #define LOG_DATA_MSG "DATA"
 #define LOG_WARN_MSG "WARN"
 #define LOG_ERROR_MSG "ERROR"
+
+#define log_done() \
+    rurp_log(LOG_DONE_MSG, "")
+
+#define log_init_done() \
+    rurp_log(LOG_INIT_DONE_MSG, "")
+
+#define log_end_done() \
+    rurp_log(LOG_END_DONE_MSG, "")
 
 #define log_ok(msg) \
     rurp_log(LOG_OK_MSG, msg)
@@ -40,10 +59,17 @@
 #define log_info_const(msg)
 #define log_info_format(cformat, ...)
 #else
+
+#ifndef INFO_LOG_METHODE
 #define log_info(msg)                               \
     if (strlen(msg) && is_flag_set(FLAG_VERBOSE)) { \
         rurp_log(LOG_INFO_MSG, msg);                \
     }
+#else
+
+#define log_info(msg) \
+    _log_info(msg, handle);
+#endif
 
 #define log_info_const(msg)                        \
     if (is_flag_set(FLAG_VERBOSE)) {               \
@@ -138,5 +164,29 @@ void debug_buf(const char* msg);
 #define debug_buf(msg)
 #define log_debug(type, msg)
 #endif
+
+#define firestarter_warning_response(msg) \
+    firestarter_set_responce(RESPONSE_CODE_WARNING, msg)
+
+#define firestarter_warning_response_format(msg, ...) \
+    firestarter_response_format(RESPONSE_CODE_WARNING, msg, __VA_ARGS__)
+
+#define firestarter_error_response(msg) \
+    firestarter_set_responce(RESPONSE_CODE_ERROR, msg)
+
+#define firestarter_error_response_format(msg, ...) \
+    firestarter_response_format(RESPONSE_CODE_ERROR, msg, __VA_ARGS__)
+
+// void _firestarter_set_response( uint8_t code, const char* msg, firestarter_handle_t* handle);
+
+#define firestarter_set_responce(code, msg)    \
+    copy_to_buffer(handle->response_msg, msg); \
+    handle->response_code = code;
+
+// _firestarter_set_response( code,  PSTR(msg), handle);
+
+#define firestarter_response_format(code, msg, ...) \
+    format(handle->response_msg, msg, __VA_ARGS__); \
+    handle->response_code = code;
 
 #endif  // __LOGGING_H__
