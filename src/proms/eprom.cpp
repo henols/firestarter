@@ -13,6 +13,8 @@
 #include "logging.h"
 #include "memory_utils.h"
 #include "rurp_shield.h"
+#include "operation_utils.h"
+
 
 #define NUMBER_OF_RETRIES 20
 
@@ -79,17 +81,18 @@ void eprom_erase_execute(firestarter_handle_t* handle) {
 }
 
 void eprom_write_init(firestarter_handle_t* handle) {
-    
-    eprom_generic_init(handle);
-    if (handle->response_code == RESPONSE_CODE_ERROR) {
-        return;
-    }
-
-    if (is_flag_set(FLAG_CAN_ERASE)) {
-        if (!is_flag_set(FLAG_SKIP_ERASE)) {
-            eprom_internal_erase(handle);
-        } else {
-            copy_to_buffer(handle->response_msg, "Skipping erase.");
+    if(!is_operation_in_progress()){
+        eprom_generic_init(handle);
+        if (handle->response_code == RESPONSE_CODE_ERROR) {
+            return;
+        }
+        
+        if (is_flag_set(FLAG_CAN_ERASE)) {
+            if (!is_flag_set(FLAG_SKIP_ERASE)) {
+                eprom_internal_erase(handle);
+            } else {
+                copy_to_buffer(handle->response_msg, "Skipping erase.");
+            }
         }
     }
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {

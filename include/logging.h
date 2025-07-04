@@ -165,21 +165,27 @@ void debug_buf(const char* msg);
 #define log_debug(type, msg)
 #endif
 
-#define firestarter_warning_response(msg) \
-    firestarter_set_responce(RESPONSE_CODE_WARNING, msg)
+#define firestarter_data_response(msg) \
+    firestarter_set_response(RESPONSE_CODE_DATA, msg)
+
+#define firestarter_data_response_format(msg, ...) \
+    firestarter_response_format(RESPONSE_CODE_DATA, msg, __VA_ARGS__)
+
+    #define firestarter_warning_response(msg) \
+    firestarter_set_response(RESPONSE_CODE_WARNING, msg)
 
 #define firestarter_warning_response_format(msg, ...) \
     firestarter_response_format(RESPONSE_CODE_WARNING, msg, __VA_ARGS__)
 
 #define firestarter_error_response(msg) \
-    firestarter_set_responce(RESPONSE_CODE_ERROR, msg)
+    firestarter_set_response(RESPONSE_CODE_ERROR, msg)
 
 #define firestarter_error_response_format(msg, ...) \
     firestarter_response_format(RESPONSE_CODE_ERROR, msg, __VA_ARGS__)
 
 // void _firestarter_set_response( uint8_t code, const char* msg, firestarter_handle_t* handle);
 
-#define firestarter_set_responce(code, msg)    \
+#define firestarter_set_response(code, msg)    \
     copy_to_buffer(handle->response_msg, msg); \
     handle->response_code = code;
 

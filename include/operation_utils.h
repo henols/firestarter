@@ -30,9 +30,6 @@ extern "C" {
     handle->operation_state++;     \
     handle->operation_state &= 0x2F
 
-#define check_operation_in_progress() \
-    (((handle->operation_state & IN_PROGRESS) << 1) ^ (handle->operation_state & PROGRESS_DONE))
-
 #define is_operation_started(state) \
     ((handle->operation_state & 0x2F) == state)
 
@@ -40,26 +37,30 @@ extern "C" {
     is_operation_started(state - 1)
 
 #define execute_operation_state(state) \
-    (can_operation_start(state) || (is_operation_started(state) && check_operation_in_progress()))
+    (can_operation_start(state) || (is_operation_started(state) && is_operation_in_progress()))
+
+#define is_operation_in_progress() \
+    (((handle->operation_state & IN_PROGRESS) << 1) ^ (handle->operation_state & PROGRESS_DONE))
 
 #define set_operation_in_progress() \
     (handle->operation_state |= IN_PROGRESS)
+
+#define set_operation_progress_done() \
+    (handle->operation_state |= PROGRESS_DONE)
 
 #define is_operations_done() \
     is_operation_started(ENDED)
 
 bool op_excecute_single_step_operation(firestarter_handle_t* handle);
-bool op_excecute_multi_step_operation(bool  (*callback)(firestarter_handle_t* handle),firestarter_handle_t* handle);
-bool op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
+bool op_excecute_multi_step_operation(bool (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
+
 bool op_execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
-bool op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
 
 void op_reset_timeout();
 
 int op_check_ack();
 int op_check_done();
 int op_read_data(firestarter_handle_t* handle);
-
 
 #ifdef __cplusplus
 }

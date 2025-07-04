@@ -14,6 +14,7 @@
 #include "flash_type_3.h"
 #include "logging.h"
 #include "memory_utils.h"
+#include "operation_utils.h"
 #include "rurp_shield.h"
 #include "sram.h"
 
@@ -212,28 +213,58 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
     return reorg_address;
 }
 
-void mem_util_blank_check(firestarter_handle_t* handle) {
-    // This function is a callback for an operation. It checks one chunk of memory.
-    // The calling context (e.g., eprom_blank_check in eprom_operations.cpp) is responsible
-    // for iterating through the whole memory, updating handle->address, and reporting progress.
+typedef struct {
+    uint32_t address;
+} blank_check_progress_data_t;
 
-    // uint32_t end_address = handle->address + handle->data_size;
-    // if (end_address > handle->mem_size) {
-    //     end_address = handle->mem_size;
-    // }
-    // for (uint32_t i = handle->address; i < end_address; i++) {
-    //     uint8_t val = handle->firestarter_get_data(handle, i);
-    //     if (val != 0xFF) {
-    //         firestarter_error_response_format("Mem not blank, at 0x%06x, v: 0x%02x", i, val);
-    //         return;
-    //     }
-    // }
-    
-    for (uint32_t i = handle->address; i < handle->mem_size;  i++) {
+#define BLANK_CHECK_CHUNK_SIZE 2048
+void uint32_to_bytes(char* buffer, int pos, uint32_t value) {
+    buffer[pos] = (value >> 24) & 0xFF;     
+    buffer[pos++] = (value >> 16) & 0xFF;   
+    buffer[pos++] = (value >> 8) & 0xFF;    
+    buffer[pos++] = value & 0xFF;
+}
+
+void mem_util_blank_check(firestarter_handle_t* handle) {
+    blank_check_progress_data_t* progress_data;
+    if (!is_operation_in_progress()) {
+        set_operation_in_progress();
+        handle->proggress_data = malloc(sizeof(blank_check_progress_data_t));
+        progress_data = (blank_check_progress_data_t*)handle->proggress_data;
+        progress_data->address = handle->address;
+        handle->address = 0;
+    } else {
+        progress_data = (blank_check_progress_data_t*)handle->proggress_data;
+        if (handle->address >= handle->mem_size) {
+            set_operation_progress_done();
+            handle->address = progress_data->address;
+            free(handle->proggress_data);
+            handle->proggress_data = NULL;
+            return;
+        }
+    }
+
+    for (uint32_t i = handle->address; i < handle->address + BLANK_CHECK_CHUNK_SIZE; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
             firestarter_error_response_format("Mem not blank, at 0x%06x, v: 0x%02x", i, val);
             return;
         }
     }
+    firestarter_data_response("Blank check");
+    handle->address += BLANK_CHECK_CHUNK_SIZE;
+
+    // zzzz.member1 = 0;
+    // memcpy(handle->data_buffer , zzzz.member2, 4);
+    // zzzz.member1 = handle->address;
+    // memcpy(handle->data_buffer +4, zzzz.member2, 4);
+    // zzzz.member1 = handle->mem_size;
+    // memcpy(handle->data_buffer +8, zzzz.member2, 4);
+
+    // set the start address, current address and mem_size as bytes big endian to handle->data_buffer and the length to handle->data_size
+    uint32_to_bytes(handle->data_buffer, 0, (uint32_t)0);
+    uint32_to_bytes(handle->data_buffer, 4, handle->address);
+    uint32_to_bytes(handle->data_buffer, 8, handle->mem_size);
+    handle->data_size = 12;
+
 }
