@@ -166,12 +166,18 @@ void loop() {
         command_done(&handle);
     } else if (handle.cmd == CMD_IDLE) {
         if (rurp_communication_available() > 0) {
-            if (init_programmer(&handle)) {
-                return;
+            // Look for the start of a JSON object '{' before trying to parse.
+            // This makes the command reception more robust against spurious
+            // characters on the serial line.
+            if (rurp_communication_peak() == '{') {
+                if (init_programmer(&handle)) {
+                    return;
+                }
+            } else {
+                rurp_communication_read();  // Discard non-'{' character
             }
-        } else {
-            return;
         }
+        return;
     }
 
     bool done = false;
@@ -235,4 +241,3 @@ void loop() {
 void op_reset_timeout() {
     timeout = millis() + 1000;
 }
-
