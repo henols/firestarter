@@ -12,55 +12,19 @@
 #include "operation_utils.h"
 #include "rurp_shield.h"
 
-bool _cunsume_data(const char* op_name, firestarter_handle_t* handle);
-
 bool _write_eprom(firestarter_handle_t* handle);
-
 bool _verify_eprom(firestarter_handle_t* handle);
-// bool _read_eprom(firestarter_handle_t* handle);
+
+bool _read_data(const char* op_name, firestarter_handle_t* handle);
+bool _send_data(firestarter_handle_t* handle);
 
 bool eprom_read(firestarter_handle_t* handle) {
-    if (!op_check_for_ok()) {
-        return false;
-    }
-
-    debug("Read PROM");
-    if (!op_execute_init(handle->firestarter_operation_init, handle)) {
-        return true;
-    }
-
-    if (!op_execute_end(handle->firestarter_operation_end, handle)) {
-        return true;
-    }
-
-    if ((handle->operation_state & 0x2F) == ENDED - 1) {
-        return true;
-    }
-
-    if (can_operation_start(OPERATION)) {
-        log_info_const("Start read");
-        set_operation_state(OPERATION);
-    }
-
-    if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
-        return true;
-    }
-
-    log_data_format("Read: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
-
-    rurp_communication_write(handle->data_buffer, handle->data_size);
-    // debug_format("Read buffer: %.10s...", handle->data_buffer);
-
-    handle->address += handle->data_size;
-    if (handle->address > handle->mem_size - 1) {
-        set_operation_state_done();
-        log_done();
-    }
-    return false;
+    return op_excecute_multi_step_operation(_send_data, handle);
 }
+
 bool _write_eprom(firestarter_handle_t* handle) {
     debug("Write EPROM");
-    if (_cunsume_data("Write", handle)) {
+    if (_read_data("Write", handle)) {
         return true;
     }
     return false;
@@ -72,7 +36,7 @@ bool eprom_write(firestarter_handle_t* handle) {
 
 bool _eprom_verify(firestarter_handle_t* handle) {
     debug("Verify PROM");
-    if (_cunsume_data("Verify", handle)) {
+    if (_read_data("Verify", handle)) {
         return true;
     }
     return false;
@@ -125,7 +89,7 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
     return true;
 }
 
-bool _cunsume_data(const char* op_name, firestarter_handle_t* handle) {
+bool _read_data(const char* op_name, firestarter_handle_t* handle) {
     int done_status = op_check_for_done();
     if (done_status != 0) {
         if (done_status == 1) {
@@ -148,7 +112,29 @@ bool _cunsume_data(const char* op_name, firestarter_handle_t* handle) {
     }
 
     handle->address += handle->data_size;
-    log_ok_format("%s: 0x%04lx - 0x%04lx",op_name, handle->address - handle->data_size, (handle->address));
+    log_ok_format("%s: 0x%04lx - 0x%04lx", op_name, handle->address - handle->data_size, (handle->address));
 
+    return false;
+}
+
+bool _send_data(firestarter_handle_t* handle) {
+    // Wait for recever to be ready
+    if (!op_check_for_ok()) {
+        return false;
+    }
+
+    if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
+        return true;
+    }
+
+    log_data_format("Read: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
+
+    rurp_communication_write(handle->data_buffer, handle->data_size);
+
+    handle->address += handle->data_size;
+    if (handle->address >= handle->mem_size) {
+        set_operation_state_done();
+        log_done();
+    }
     return false;
 }
