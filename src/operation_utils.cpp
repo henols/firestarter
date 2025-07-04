@@ -13,24 +13,53 @@
 
 bool _check_response(firestarter_handle_t* handle);
 bool _execute_operation(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
+bool _execute_operation_house_keeping(firestarter_handle_t* handle);
 
-bool op_excecute_operation(firestarter_handle_t* handle) {
+bool _execute_operation_house_keeping(firestarter_handle_t* handle) {
+    if (!op_execute_init(handle->firestarter_operation_init, handle)) {
+        return true;
+    }
+    if (!op_execute_end(handle->firestarter_operation_end, handle)) {
+        return true;
+    }
+    if (is_operations_done()) {
+        return true;
+    }
+    if (can_operation_start(OPERATION)) {
+        set_operation_state(OPERATION);
+    }
+
+    return false;
+}
+
+bool op_excecute_single_step_operation(firestarter_handle_t* handle) {
     if (handle->firestarter_operation_execute) {
         if (!op_execute_init(handle->firestarter_operation_init, handle)) {
             return true;
         }
-        // log_ok_format("State: %d", handle->operation_state);
         set_operation_state(OPERATION);
         if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
             return true;
         }
         set_operation_state_done();
-        // log_ok_format("State: %d", handle->operation_state);
         if (!op_execute_end(handle->firestarter_operation_end, handle)) {
             return true;
         }
-        // log_ok_format("State: %d", handle->operation_state);
+        return false;
+    }
+    return true;
+}
 
+bool op_excecute_multi_step_operation(bool (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
+    if (handle->firestarter_operation_execute) {
+        if (_execute_operation_house_keeping(handle)) {
+            return true;
+        }
+        if (is_operation_started(OPERATION)) {
+            if (callback(handle)) {
+                return true;
+            }
+        }
         return false;
     }
     return true;
@@ -137,16 +166,25 @@ int op_check_for_done() {
         rurp_communication_read_bytes(buf, 4);
         return !strncmp_P(buf, PSTR("DONE"), 4);
     }
-    return 0;  // Not "DONE"
+    return 0; 
 }
 
-int op_check_for_number() {
+int op_read_data(firestarter_handle_t* handle) {
     if (rurp_communication_available() > 0 && rurp_communication_peak() == '#') {
         if (rurp_communication_available() < 3) {
             return -1;  // Indeterminate, wait for more data
         }
         rurp_communication_read();
-        return rurp_communication_read() << 8 | rurp_communication_read();
+        handle->data_size = rurp_communication_read() << 8 | rurp_communication_read();
+
+        size_t len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
+        log_info_format("Expecting %d bytes", handle->data_size);
+        if (handle->data_size > (uint32_t)len) {
+            log_error_format("Not enough data: %d > %d", (int)handle->data_size, len);
+            return true;
+        }
+
+        return len;
     }
-    return -1;  // Not "DONE"
+    return -1;
 }

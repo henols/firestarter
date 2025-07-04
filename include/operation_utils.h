@@ -18,7 +18,7 @@ extern "C" {
 #define INITZIATION 1
 #define OPERATION 3
 #define CLEANUP 5
-#define ENDED 7
+#define ENDED 6
 
 #define IN_PROGRESS 0x40
 #define PROGRESS_DONE 0x80
@@ -45,7 +45,11 @@ extern "C" {
 #define set_operation_in_progress() \
     (handle->operation_state |= IN_PROGRESS)
 
-bool op_excecute_operation(firestarter_handle_t* handle);
+#define is_operations_done() \
+    is_operation_started(ENDED)
+
+bool op_excecute_single_step_operation(firestarter_handle_t* handle);
+bool op_excecute_multi_step_operation(bool  (*callback)(firestarter_handle_t* handle),firestarter_handle_t* handle);
 bool op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
 bool op_execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
 bool op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
@@ -54,7 +58,7 @@ void op_reset_timeout();
 
 int op_check_for_ok();
 int op_check_for_done();
-int op_check_for_number();
+int op_read_data(firestarter_handle_t* handle);
 
 
 #ifdef __cplusplus
