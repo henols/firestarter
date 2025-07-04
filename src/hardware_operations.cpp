@@ -14,7 +14,7 @@ void hw_version_overide(char* revStr);
 void hw_init_read_voltage(firestarter_handle_t* handle);
 
 bool hw_read_voltage(firestarter_handle_t* handle) {
-    if (!op_check_for_ok()) {
+    if (!op_check_ack()) {
         return false;
     }
 
@@ -42,7 +42,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
 bool fw_get_version(firestarter_handle_t* handle) {
     // rurp_get_hardware_revision();
     debug("Get FW version");
-    log_ok_const(FW_VERSION);
+    send_ack_const(FW_VERSION);
     return true;
 }
 
@@ -51,7 +51,7 @@ bool hw_get_version(firestarter_handle_t* handle) {
     debug("Get HW version");
     char revStr[24];
     hw_version_overide(revStr);
-    log_ok_format("Rev%d%s", rurp_get_physical_hardware_revision(), revStr);
+    send_ack_format("Rev%d%s", rurp_get_physical_hardware_revision(), revStr);
     return true;
 }
 #endif
@@ -62,9 +62,9 @@ bool hw_get_config(firestarter_handle_t* handle) {
 #ifdef HARDWARE_REVISION
     char revStr[24];
     hw_version_overide(revStr);
-    log_ok_format("R1: %ld, R2: %ld%s", rurp_config->r1, rurp_config->r2, revStr);
+    send_ack_format("R1: %ld, R2: %ld%s", rurp_config->r1, rurp_config->r2, revStr);
 #else
-    log_ok_format("R1: %ld, R2: %ld", rurp_config->r1, rurp_config->r2);
+    send_ack_format("R1: %ld, R2: %ld", rurp_config->r1, rurp_config->r2);
 #endif
     return true;
 }

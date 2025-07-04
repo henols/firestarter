@@ -139,17 +139,17 @@ bool init_programmer(firestarter_handle_t* handle) {
 
 #ifdef HARDWARE_REVISION
 #define PARSE_RESPONSE "FW: " FW_VERSION ", HW: Rev%d, Cmd: 0x%02x"
-    log_ok_format(PARSE_RESPONSE, rurp_get_hardware_revision(), handle->cmd);
+    send_ack_format(PARSE_RESPONSE, rurp_get_hardware_revision(), handle->cmd);
 #else
 #define PARSE_RESPONSE "FW: " FW_VERSION ", Cmd: 0x%02x"
-    log_ok_format(PARSE_RESPONSE, handle->cmd);
+    send_ack_format(PARSE_RESPONSE, handle->cmd);
 #endif
     op_reset_timeout();
     return true;
 }
 
 void command_done(firestarter_handle_t* handle) {
-    debug("Cmd done");
+    debug("Cmd finished");
     rurp_set_programmer_mode();
     rurp_chip_disable();
     rurp_write_to_register(CONTROL_REGISTER, 0x00);
@@ -180,60 +180,60 @@ void loop() {
         return;
     }
 
-    bool done = false;
+    bool finished = false;
     handle.response_code = RESPONSE_CODE_OK;
     switch (handle.cmd) {
         case CMD_READ:
-            done = eprom_read(&handle);
+            finished = eprom_read(&handle);
             break;
         case CMD_WRITE:
-            done = eprom_write(&handle);
+            finished = eprom_write(&handle);
             break;
         case CMD_VERIFY:
-            done = eprom_verify(&handle);
+            finished = eprom_verify(&handle);
             break;
         case CMD_ERASE:
-            done = eprom_erase(&handle);
+            finished = eprom_erase(&handle);
             break;
         case CMD_BLANK_CHECK:
-            done = eprom_blank_check(&handle);
+            finished = eprom_blank_check(&handle);
             break;
         case CMD_CHECK_CHIP_ID:
-            done = eprom_check_chip_id(&handle);
+            finished = eprom_check_chip_id(&handle);
             break;
         case CMD_READ_VPP:
         case CMD_READ_VPE:
-            done = hw_read_voltage(&handle);
+            finished = hw_read_voltage(&handle);
             break;
         case CMD_IDLE:
             break;
         case CMD_FW_VERSION:
-            done = fw_get_version(&handle);
+            finished = fw_get_version(&handle);
             break;
 #ifdef HARDWARE_REVISION
         case CMD_HW_VERSION:
-            done = hw_get_version(&handle);
+            finished = hw_get_version(&handle);
             break;
 #endif
 #ifdef DEV_TOOLS
         case CMD_DEV_REGISTER:
-            done = dt_set_registers(&handle);
+            finished = dt_set_registers(&handle);
             break;
         case CMD_DEV_ADDRESS:
-            done = dt_set_address(&handle);
+            finished = dt_set_address(&handle);
             break;
 #endif
 
         case CMD_CONFIG:
-            done = hw_get_config(&handle);
+            finished = hw_get_config(&handle);
             break;
 
         default:
             log_error_format_buf(handle.response_msg, "Unknown cmd: %d", handle.cmd);
-            done = true;
+            finished = true;
             break;
     }
-    if (done) {
+    if (finished) {
         command_done(&handle);
     }
 }

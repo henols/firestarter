@@ -77,7 +77,7 @@ bool op_execute_init(void (*callback)(firestarter_handle_t* handle), firestarter
         if (!check_operation_in_progress()) {
             set_operation_state_done();
             log_info_const("Init done");
-            log_init_done();
+            send_init_done();
             break;
         }
     }
@@ -96,7 +96,7 @@ bool op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_
         if (!check_operation_in_progress()) {
             set_operation_state_done();
             log_info_const("Cleanup done");
-            log_end_done();
+            send_end_done();
             break;
         }
     }
@@ -146,18 +146,18 @@ bool _check_response(firestarter_handle_t* handle) {
     return true;
 }
 
-int op_check_for_ok() {
+int op_check_ack() {
     if (rurp_communication_available() > 0 || rurp_communication_peak() == 'O') {
         if (rurp_communication_available() < 2) {
-            return -1;
+            return 0;
         }
         return rurp_communication_read() == 'O' && rurp_communication_read() == 'K';
     }
 
-    return -1;
+    return 0;
 }
 
-int op_check_for_done() {
+int op_check_done() {
     if (rurp_communication_available() > 0 && rurp_communication_peak() == 'D') {
         if (rurp_communication_available() < 4) {
             return -1;  // Indeterminate, wait for more data
@@ -166,7 +166,7 @@ int op_check_for_done() {
         rurp_communication_read_bytes(buf, 4);
         return !strncmp_P(buf, PSTR("DONE"), 4);
     }
-    return 0; 
+    return 0;
 }
 
 int op_read_data(firestarter_handle_t* handle) {
@@ -178,31 +178,31 @@ int op_read_data(firestarter_handle_t* handle) {
         handle->data_size = rurp_communication_read() << 8 | rurp_communication_read();
 
         uint8_t checksum_rcvd = rurp_communication_read();
-
-        uint8_t checksum = 0;
-
+// #define EXCEIVE_ERROR_CHECKING
+#ifdef EXCEIVE_ERROR_CHECKING
         if (handle->data_size > DATA_BUFFER_SIZE || handle->data_size == 0) {
             log_error_format("Invalid data size received: %d", (int)handle->data_size);
-            return -1; // Error
+            return -1;  // Error
         }
-
+#endif
+        log_info_format("Expecting %d bytes", handle->data_size);
         size_t len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
 
-        for(size_t i = 0; i < len; i++) {
+        uint8_t checksum = 0;
+        for (size_t i = 0; i < len; i++) {
             checksum ^= handle->data_buffer[i];
         }
-        if (checksum != checksum_rcvd){
+        if (checksum != checksum_rcvd) {
             log_error_format("Checksum error %02X != %02X", checksum, checksum_rcvd);
             return -1;
         }
 
-
-        log_info_format("Expecting %d bytes", handle->data_size);
+#ifdef EXCEIVE_ERROR_CHECKING
         if (handle->data_size > (uint32_t)len) {
             log_error_format("Not enough data: %d > %d", (int)handle->data_size, len);
-            return true;
+            return -1;
         }
-
+#endif
         return len;
     }
     return -1;

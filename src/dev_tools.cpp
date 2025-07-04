@@ -37,7 +37,7 @@ void dt_decode_register(firestarter_handle_t* handle, const char* reg_name, uint
 }
 
 bool dt_set_registers(firestarter_handle_t* handle) {
-    if (rurp_communication_available() < 6 || !op_check_for_ok()) {
+    if (rurp_communication_available() < 6 || !op_check_ack()) {
         return false;
     };
 
@@ -61,7 +61,7 @@ bool dt_set_registers(firestarter_handle_t* handle) {
     }
 #else
 #endif
-    log_ok("");
+    send_ack("");
     rurp_set_programmer_mode();
 
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
@@ -101,7 +101,7 @@ bool dt_set_address(firestarter_handle_t* handle) {
 #else
     // dt_decode_ctrl(top_address);
 #endif
-    log_ok("");
+    send_ack("");
     rurp_set_programmer_mode();
     mem_util_set_address(handle, address);
     rurp_set_chip_enable(is_flag_set(FLAG_CHIP_ENABLE) == 0);

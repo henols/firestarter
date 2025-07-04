@@ -32,27 +32,27 @@ void _log_info(const char* msg, firestarter_handle_t* handle);
 #define LOG_WARN_MSG "WARN"
 #define LOG_ERROR_MSG "ERROR"
 
-#define log_done() \
+#define send_done() \
     rurp_log(LOG_DONE_MSG, "")
 
-#define log_init_done() \
+#define send_init_done() \
     rurp_log(LOG_INIT_DONE_MSG, "")
 
-#define log_end_done() \
+#define send_end_done() \
     rurp_log(LOG_END_DONE_MSG, "")
 
-#define log_ok(msg) \
+#define send_ack(msg) \
     rurp_log(LOG_OK_MSG, msg)
 
-#define log_ok_const(msg)                      \
+#define send_ack_const(msg)                      \
     copy_to_buffer(handle->response_msg, msg); \
-    log_ok(handle->response_msg)
+    send_ack(handle->response_msg)
 
-#define log_ok_format(cformat, ...)                         \
+#define send_ack_format(cformat, ...)                         \
     {                                                       \
         format(handle->response_msg, cformat, __VA_ARGS__); \
     }                                                       \
-    log_ok(handle->response_msg)
+    send_ack(handle->response_msg)
 
 #ifndef LOG_LEVEL_INFO
 #define log_info(msg)

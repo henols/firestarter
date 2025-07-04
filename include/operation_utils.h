@@ -56,8 +56,8 @@ bool op_execute_end(void (*callback)(firestarter_handle_t* handle), firestarter_
 
 void op_reset_timeout();
 
-int op_check_for_ok();
-int op_check_for_done();
+int op_check_ack();
+int op_check_done();
 int op_read_data(firestarter_handle_t* handle);
 
 

@@ -19,6 +19,10 @@ bool _read_data(const char* op_name, firestarter_handle_t* handle);
 bool _send_data(firestarter_handle_t* handle);
 
 bool eprom_read(firestarter_handle_t* handle) {
+    // Wait for recever to be ready
+    if (!op_check_ack()) {
+        return false;
+    }
     return op_excecute_multi_step_operation(_send_data, handle);
 }
 
@@ -46,7 +50,7 @@ bool eprom_verify(firestarter_handle_t* handle) {
 }
 
 bool eprom_erase(firestarter_handle_t* handle) {
-    if (!op_check_for_ok()) {
+    if (!op_check_ack()) {
         return false;
     }
 
@@ -54,7 +58,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
     if (is_flag_set(FLAG_CAN_ERASE)) {
         op_excecute_single_step_operation(handle);
         if (handle->response_code == RESPONSE_CODE_OK) {
-            log_ok_const("Erased");
+            send_ack_const("Erased");
         }
     } else {
         log_error_const("Not supported");
@@ -63,7 +67,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
 }
 
 bool eprom_check_chip_id(firestarter_handle_t* handle) {
-    if (!op_check_for_ok()) {
+    if (!op_check_ack()) {
         return false;
     }
     debug("Check Chip ID");
@@ -72,25 +76,25 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
         return true;
     }
     if (!op_excecute_single_step_operation(handle)) {
-        log_ok_const("Match");
+        send_ack_const("Match");
     }
     return true;
 }
 
 bool eprom_blank_check(firestarter_handle_t* handle) {
-    if (!op_check_for_ok()) {
+    if (!op_check_ack()) {
         return false;
     }
 
     debug("Blank check PROM");
     if (!op_excecute_single_step_operation(handle)) {
-        log_ok_const("Blank");
+        send_ack_const("Blank");
     }
     return true;
 }
 
 bool _read_data(const char* op_name, firestarter_handle_t* handle) {
-    int done_status = op_check_for_done();
+    int done_status = op_check_done();
     if (done_status != 0) {
         if (done_status == 1) {
             set_operation_state_done();
@@ -112,17 +116,12 @@ bool _read_data(const char* op_name, firestarter_handle_t* handle) {
     }
 
     handle->address += handle->data_size;
-    log_ok_format("%s: 0x%04lx - 0x%04lx", op_name, handle->address - handle->data_size, (handle->address));
+    send_ack_format("%s: 0x%04lx - 0x%04lx", op_name, handle->address - handle->data_size, (handle->address));
 
     return false;
 }
 
 bool _send_data(firestarter_handle_t* handle) {
-    // Wait for recever to be ready
-    if (!op_check_for_ok()) {
-        return false;
-    }
-
     if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
         return true;
     }
@@ -134,7 +133,7 @@ bool _send_data(firestarter_handle_t* handle) {
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
         set_operation_state_done();
-        log_done();
+        send_done();
     }
     return false;
 }
