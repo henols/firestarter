@@ -171,13 +171,32 @@ int op_check_for_done() {
 
 int op_read_data(firestarter_handle_t* handle) {
     if (rurp_communication_available() > 0 && rurp_communication_peak() == '#') {
-        if (rurp_communication_available() < 3) {
+        if (rurp_communication_available() < 4) {
             return -1;  // Indeterminate, wait for more data
         }
         rurp_communication_read();
         handle->data_size = rurp_communication_read() << 8 | rurp_communication_read();
 
+        uint8_t checksum_rcvd = rurp_communication_read();
+
+        uint8_t checksum = 0;
+
+        if (handle->data_size > DATA_BUFFER_SIZE || handle->data_size == 0) {
+            log_error_format("Invalid data size received: %d", (int)handle->data_size);
+            return -1; // Error
+        }
+
         size_t len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
+
+        for(size_t i = 0; i < len; i++) {
+            checksum ^= handle->data_buffer[i];
+        }
+        if (checksum != checksum_rcvd){
+            log_error_format("Checksum error %02X != %02X", checksum, checksum_rcvd);
+            return -1;
+        }
+
+
         log_info_format("Expecting %d bytes", handle->data_size);
         if (handle->data_size > (uint32_t)len) {
             log_error_format("Not enough data: %d > %d", (int)handle->data_size, len);

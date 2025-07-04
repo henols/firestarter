@@ -1,7 +1,6 @@
 #ifndef __RURP_SERIAL_UTILS_H__
 #define __RURP_SERIAL_UTILS_H__
 
-
 #ifndef SERIAL_PORT
 #include <Arduino.h>
 #define SERIAL_PORT Serial
@@ -36,19 +35,23 @@ int rurp_communication_peak() {
     return SERIAL_PORT.peek();
 }
 
-
 size_t rurp_communication_read_bytes(char* buffer, size_t size) {
     return SERIAL_PORT.readBytes(buffer, size);
 }
 
 size_t rurp_communication_write(const char* buffer, size_t size) {
+    uint8_t checksum = 0;
+    for (size_t i = 0; i < size; i++) {
+        checksum ^= buffer[i];
+    }
+
     SERIAL_PORT.write(size >> 8);
     SERIAL_PORT.write(size & 0xFF);
+    SERIAL_PORT.write(checksum);
     size_t bytes = SERIAL_PORT.write(buffer, size);
     SERIAL_PORT.flush();
     return bytes;
 }
-
 
 #ifndef RURP_CUSTOM_LOG
 void rurp_log(const char* type, const char* msg) {
@@ -61,5 +64,4 @@ void rurp_log_internal(const char* type, const char* msg) {
     SERIAL_PORT.flush();
 }
 
-
-#endif // __RURP_SERIAL_UTILS_H__
+#endif  // __RURP_SERIAL_UTILS_H__
