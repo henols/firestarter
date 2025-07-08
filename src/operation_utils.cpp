@@ -103,7 +103,7 @@ bool op_execute_function(void (*callback)(firestarter_handle_t* handle), firesta
 }
 
 bool op_wait_for_ack(firestarter_handle_t* handle) {
-    unsigned long timeout = millis() + 2000;
+    unsigned long timeout = millis() + 1000;
     while (millis() < timeout) {
         op_message_type msg_type = op_get_message(handle);
         if (msg_type == OP_MSG_ACK) {
