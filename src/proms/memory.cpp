@@ -41,18 +41,18 @@ uint8_t programming = 0;
 void configure_memory(firestarter_handle_t* handle) {
     debug("Configuring memory");
     handle->firestarter_operation_init = NULL;
-    handle->firestarter_operation_execute = NULL;
+    handle->firestarter_operation_main = NULL;
     handle->firestarter_operation_end = NULL;
 
     switch (handle->cmd) {
         case CMD_READ:
-            handle->firestarter_operation_execute = memory_read_execute;
+            handle->firestarter_operation_main = memory_read_execute;
             break;
         case CMD_WRITE:
-            handle->firestarter_operation_execute = memory_write_execute;
+            handle->firestarter_operation_main = memory_write_execute;
             break;
         case CMD_VERIFY:
-            handle->firestarter_operation_execute = memory_verify_execute;
+            handle->firestarter_operation_main = memory_verify_execute;
             break;
     }
 
@@ -240,6 +240,7 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
             handle->address = progress_data->address;
             free(handle->proggress_data);
             handle->proggress_data = NULL;
+            // firestarter_ok_response("Blank");
             return;
         }
     }
@@ -251,20 +252,11 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
             return;
         }
     }
-    firestarter_data_response("Blank check");
+    // Do not send a DATA response here. The host's simple command handler expects a single OK at the end.
+    // firestarter_data_response("Blank");
     handle->address += BLANK_CHECK_CHUNK_SIZE;
 
-    // zzzz.member1 = 0;
-    // memcpy(handle->data_buffer , zzzz.member2, 4);
-    // zzzz.member1 = handle->address;
-    // memcpy(handle->data_buffer +4, zzzz.member2, 4);
-    // zzzz.member1 = handle->mem_size;
-    // memcpy(handle->data_buffer +8, zzzz.member2, 4);
-
-    // set the start address, current address and mem_size as bytes big endian to handle->data_buffer and the length to handle->data_size
-    uint32_to_bytes(handle->data_buffer, 0, (uint32_t)0);
-    uint32_to_bytes(handle->data_buffer, 4, handle->address);
-    uint32_to_bytes(handle->data_buffer, 8, handle->mem_size);
-    handle->data_size = 12;
-
+    uint32_to_bytes(handle->data_buffer, 0, handle->address);
+    uint32_to_bytes(handle->data_buffer, 4, handle->mem_size);
+    handle->data_size = 8;
 }

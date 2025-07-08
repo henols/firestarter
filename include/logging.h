@@ -25,15 +25,16 @@ void _log_info(const char* msg, firestarter_handle_t* handle);
 
 #define LOG_OK_MSG "OK"
 #define LOG_INIT_DONE_MSG "INIT"
+#define LOG_MAIN_DONE_MSG "MAIN"
 #define LOG_END_DONE_MSG "END"
-#define LOG_DONE_MSG "DONE"
 #define LOG_INFO_MSG "INFO"
 #define LOG_DATA_MSG "DATA"
 #define LOG_WARN_MSG "WARN"
 #define LOG_ERROR_MSG "ERROR"
 
-#define send_done() \
-    rurp_log(LOG_DONE_MSG, "")
+
+#define send_main_done() \
+    rurp_log(LOG_MAIN_DONE_MSG, "")
 
 #define send_init_done() \
     rurp_log(LOG_INIT_DONE_MSG, "")

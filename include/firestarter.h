@@ -91,7 +91,7 @@ typedef struct firestarter_handle {
     void* proggress_data;
 
     void (*firestarter_operation_init)(struct firestarter_handle*);
-    void (*firestarter_operation_execute)(struct firestarter_handle*);
+    void (*firestarter_operation_main)(struct firestarter_handle*);
     void (*firestarter_operation_end)(struct firestarter_handle*);
 
     void (*firestarter_set_data)(struct firestarter_handle*, uint32_t, uint8_t);

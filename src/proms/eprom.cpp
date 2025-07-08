@@ -45,20 +45,20 @@ void configure_eprom(firestarter_handle_t* handle) {
     switch (handle->cmd) {
         case CMD_WRITE:
             handle->firestarter_operation_init = eprom_write_init;
-            handle->firestarter_operation_execute = eprom_write_execute;
+            handle->firestarter_operation_main = eprom_write_execute;
             break;
         case CMD_ERASE:
-            handle->firestarter_operation_execute = eprom_erase_execute;
+            handle->firestarter_operation_main = eprom_erase_execute;
             if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
                 handle->firestarter_operation_end = mem_util_blank_check;
             }
             break;
         case CMD_BLANK_CHECK:
-            handle->firestarter_operation_execute = mem_util_blank_check;
+            handle->firestarter_operation_main = mem_util_blank_check;
             break;
         case CMD_CHECK_CHIP_ID:
             handle->firestarter_operation_init = eprom_check_chip_id_init;
-            handle->firestarter_operation_execute = eprom_check_chip_id_execute;
+            handle->firestarter_operation_main = eprom_check_chip_id_execute;
             break;
     }
 

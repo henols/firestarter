@@ -12,128 +12,105 @@
 #include "operation_utils.h"
 #include "rurp_shield.h"
 
-bool _write_eprom(firestarter_handle_t* handle);
-bool _verify_eprom(firestarter_handle_t* handle);
+bool _write_eprom_callback(firestarter_handle_t* handle);
+bool _verify_eprom_callback(firestarter_handle_t* handle);
 
-bool _read_data(const char* op_name, firestarter_handle_t* handle);
-bool _send_data(firestarter_handle_t* handle);
+bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle);
+bool _process_outgoing_data(firestarter_handle_t* handle);
 
 bool eprom_read(firestarter_handle_t* handle) {
-    // Wait for recever to be ready
-    if (!op_check_ack()) {
-        return false;
-    }
-    return op_excecute_multi_step_operation(_send_data, handle);
+    return op_execute_callback_operation(_process_outgoing_data, handle);
 }
 
-bool _write_eprom(firestarter_handle_t* handle) {
+bool _write_eprom_callback(firestarter_handle_t* handle) {
     debug("Write EPROM");
-    if (_read_data("Write", handle)) {
-        return true;
-    }
-    return false;
+    // Return true if ok, false on error
+    return _process_incoming_data("Write", handle);
 }
 
 bool eprom_write(firestarter_handle_t* handle) {
-    return op_excecute_multi_step_operation(_write_eprom, handle);
+    return !op_execute_callback_operation(_write_eprom_callback, handle);
 }
 
-bool _eprom_verify(firestarter_handle_t* handle) {
+bool _verify_eprom_callback(firestarter_handle_t* handle) {
     debug("Verify PROM");
-    if (_read_data("Verify", handle)) {
-        return true;
-    }
-    return false;
+    // Return true if ok, false on error
+    return _process_incoming_data("Verify", handle);
 }
+
 bool eprom_verify(firestarter_handle_t* handle) {
-    return op_excecute_multi_step_operation(_eprom_verify, handle);
+    return !op_execute_callback_operation(_verify_eprom_callback, handle);
 }
 
 bool eprom_erase(firestarter_handle_t* handle) {
-    if (!op_check_ack()) {
-        return false;
-    }
-
     debug("Erase PROM");
-    if (is_flag_set(FLAG_CAN_ERASE)) {
-        op_excecute_single_step_operation(handle);
-        if (handle->response_code == RESPONSE_CODE_OK) {
-            send_ack_const("Erased");
-        }
-    } else {
+    if (!is_flag_set(FLAG_CAN_ERASE)) {
         log_error_const("Not supported");
+        return true;
     }
-    return true;
+    return !op_execute_operation(handle);
 }
 
 bool eprom_check_chip_id(firestarter_handle_t* handle) {
-    if (!op_check_ack()) {
-        return false;
-    }
     debug("Check Chip ID");
     if (handle->chip_id == 0) {
         log_error_const("No chip ID");
         return true;
     }
-    if (!op_excecute_single_step_operation(handle)) {
-        send_ack_const("Match");
-    }
-    return true;
+    return !op_execute_operation(handle);
 }
 
 bool eprom_blank_check(firestarter_handle_t* handle) {
-    if (!op_check_ack()) {
-        return false;
-    }
-
     debug("Blank check PROM");
-    if (!op_excecute_single_step_operation(handle)) {
-        send_ack_const("Blank");
-    }
-    return true;
+    return !op_execute_operation(handle);
 }
 
-bool _read_data(const char* op_name, firestarter_handle_t* handle) {
-    int done_status = op_check_done();
-    if (done_status != 0) {
-        if (done_status == 1) {
-            set_operation_state_done();
-        }
-        return false;
+// Returns true on success/continue, false on error.
+bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle) {
+    op_message_type msg_type = op_get_message(handle);
+
+    switch (msg_type) {
+        case OP_MSG_DONE:
+            set_operation_to_done(handle);
+            return true;  // Finished is a success.
+        case OP_MSG_DATA:
+            // Data packet was read by op_get_message and is in handle->data_buffer
+            if (handle->address + handle->data_size > handle->mem_size) {
+                log_error_const("Out of range");
+                return false;  // Error.
+            }
+            break;  // Continue to process data
+        case OP_MSG_INCOMPLETE:
+            return true;  // Not an error, just no data yet.
+        default:
+            return false;  // Error or unexpected message
     }
 
-    int len = op_read_data(handle);
-    if (len < 1) {
-        return false;
-    }
-    if (handle->address + len > handle->mem_size) {
-        log_error_const("Address out of range");
-        return true;
-    }
-
-    if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
-        return true;
+    if (!op_execute_function(handle->firestarter_operation_main, handle)) {
+        return false; // Error.
     }
 
     handle->address += handle->data_size;
     send_ack_format("%s: 0x%04lx - 0x%04lx", op_name, handle->address - handle->data_size, (handle->address));
-
-    return false;
+    return true; // Success.
 }
 
-bool _send_data(firestarter_handle_t* handle) {
-    if (!op_execute_function(handle->firestarter_operation_execute, handle)) {
-        return true;
+// Returns true on success/continue, false on error.
+bool _process_outgoing_data(firestarter_handle_t* handle) {
+    if (!op_execute_function(handle->firestarter_operation_main, handle)) {
+        return false; // Error, so finished.
     }
 
     log_data_format("Read: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
-
     rurp_communication_write(handle->data_buffer, handle->data_size);
+
+    if (!op_wait_for_ack(handle)) {
+        return false;
+    }
 
     handle->address += handle->data_size;
     if (handle->address >= handle->mem_size) {
-        set_operation_state_done();
-        send_done();
+        set_operation_to_done(handle);
     }
-    return false;
+    return true; 
 }

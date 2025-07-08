@@ -37,7 +37,12 @@ void dt_decode_register(firestarter_handle_t* handle, const char* reg_name, uint
 }
 
 bool dt_set_registers(firestarter_handle_t* handle) {
-    if (rurp_communication_available() < 6 || !op_check_ack()) {
+    // Wait for an ACK message that precedes the register data
+    if (op_get_message(handle) != OP_MSG_ACK) {
+        return false;
+    };
+
+    if (rurp_communication_available() < 4) {
         return false;
     };
 
