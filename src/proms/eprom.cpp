@@ -230,7 +230,8 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
     delay(100);
     rurp_chip_enable();
     delayMicroseconds(handle->pulse_delay);
-    rurp_chip_output();
+    // After the erase pulse, we should disable the chip to end the programming cycle.
+    rurp_chip_disable();
 
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
 }

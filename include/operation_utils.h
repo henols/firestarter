@@ -15,9 +15,9 @@
 extern "C" {
 #endif
 
-#define INITZIATION 1
-#define OPERATION 3
-#define CLEANUP 5
+#define INIT 1
+#define MAIN 3
+#define END 5
 #define ENDED 6
 
 #define IN_PROGRESS 0x40

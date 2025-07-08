@@ -245,18 +245,24 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
         }
     }
 
-    for (uint32_t i = handle->address; i < handle->address + BLANK_CHECK_CHUNK_SIZE; i++) {
+    // for (uint32_t i = handle->address; i < handle->address + BLANK_CHECK_CHUNK_SIZE; i++) {
+    uint32_t end_address = handle->address + BLANK_CHECK_CHUNK_SIZE;
+    for (uint32_t i = handle->address; i < end_address && i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
             firestarter_error_response_format("Mem not blank, at 0x%06x, v: 0x%02x", i, val);
             return;
         }
     }
-    // Do not send a DATA response here. The host's simple command handler expects a single OK at the end.
-    // firestarter_data_response("Blank");
-    handle->address += BLANK_CHECK_CHUNK_SIZE;
 
-    uint32_to_bytes(handle->data_buffer, 0, handle->address);
-    uint32_to_bytes(handle->data_buffer, 4, handle->mem_size);
-    handle->data_size = 8;
+    //     uint32_to_bytes(handle->data_buffer, 0, handle->address);
+    // uint32_to_bytes(handle->data_buffer, 4, handle->mem_size);
+    // handle->data_size = 8;
+  
+    handle->address += BLANK_CHECK_CHUNK_SIZE;
+    if (handle->address > handle->mem_size) {
+        handle->address = handle->mem_size;
+    }
+    // Send progress back to the client
+    firestarter_data_response_format("%lu/%lu", handle->address, handle->mem_size);
 }

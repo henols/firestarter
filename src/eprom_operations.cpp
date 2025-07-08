@@ -19,7 +19,7 @@ bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle);
 bool _process_outgoing_data(firestarter_handle_t* handle);
 
 bool eprom_read(firestarter_handle_t* handle) {
-    return op_execute_callback_operation(_process_outgoing_data, handle);
+    return !op_execute_callback_operation(_process_outgoing_data, handle);
 }
 
 bool _write_eprom_callback(firestarter_handle_t* handle) {
@@ -38,6 +38,7 @@ bool _verify_eprom_callback(firestarter_handle_t* handle) {
     return _process_incoming_data("Verify", handle);
 }
 
+// Return true if the operation is done, otherwise false
 bool eprom_verify(firestarter_handle_t* handle) {
     return !op_execute_callback_operation(_verify_eprom_callback, handle);
 }
