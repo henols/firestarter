@@ -76,17 +76,17 @@ bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle) {
         return true;
     }
 
-    // 1. If not waiting for data, request a chunk from the host and set the flag.
-    if (!is_operation_waiting_for_data()) {
-        send_ack_format("Data: 0x%04lx - 0x%04lx", handle->address, handle->address + DATA_BUFFER_SIZE);
-        set_operation_waiting_for_data();
-    }
-
-    // 2. Wait for the host to send a message (either DATA or DONE).
+    // 1. Check for an incoming message from the host first. This prevents a race
+    // condition where the firmware requests data after the host has already sent "DONE".
     op_message_type msg_type = op_get_message(handle);
 
     if (msg_type == OP_MSG_INCOMPLETE) {
-        return true;  // Not an error, just no data yet. Keep waiting.
+        // No message from host. If we are not already waiting for data, request it.
+        if (!is_operation_waiting_for_data()) {
+            send_ack_format("Data: 0x%04lx - 0x%04lx", handle->address, handle->address + DATA_BUFFER_SIZE);
+            set_operation_waiting_for_data();
+        }
+        return true;  // Continue waiting.
     }
 
     // We have received a message. Clear the flag so we can request the next chunk.
@@ -94,15 +94,18 @@ bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle) {
 
     switch (msg_type) {
         case OP_MSG_DONE:
+            // The host has signaled it has no more data to send.
             set_operation_to_done(handle);
             return true;
         case OP_MSG_DATA:
+            // The host sent a data packet.
             if (handle->address + handle->data_size > handle->mem_size) {
                 log_error_const("Out of range");
                 return false;
             }
             break;
         default:
+            // An error occurred in op_get_message or an unexpected message was received.
             return false;
     }
 
