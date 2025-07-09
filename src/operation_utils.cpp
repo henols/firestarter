@@ -20,12 +20,13 @@
 #define set_operation_state(state) \
     (handle->operation_state = (handle->operation_state & 0xc0) | state)
 
+// Preserve flags (top 2 bits), increment state (lower 6 bits)
 #define set_operation_state_done() \
-    handle->operation_state++;     \
-    handle->operation_state &= 0x2F
+    handle->operation_state = (handle->operation_state & 0xC0) | ((handle->operation_state & 0x3F) + 1)
 
+// Check state (lower 6 bits), ignore flags (top 2 bits)
 #define is_operation_started(state) \
-    ((handle->operation_state & 0x2F) == state)
+    ((handle->operation_state & 0x3F) == state)
 
 #define can_operation_start(state) \
     is_operation_started(state - 1)
@@ -139,7 +140,6 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                 }
                 // Not "OK", 'O' is consumed. Loop will treat next char as junk.
                 break;
-                ;
 
             case 'D':  // Potential "DONE"
                 if (rurp_communication_available() < 4) {
@@ -158,35 +158,12 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                     return OP_MSG_INCOMPLETE;
                 }
                 rurp_communication_read();  // consume '#'
-
-                uint8_t size_buf[2];
-                if (rurp_communication_read_bytes((char*)size_buf, 2) != 2) return OP_MSG_ERROR;
-                handle->data_size = (size_buf[0] << 8) | size_buf[1];
-
-                uint8_t checksum_rcvd;
-                if (rurp_communication_read_bytes((char*)&checksum_rcvd, 1) != 1) return OP_MSG_ERROR;
-
-                if (handle->data_size > DATA_BUFFER_SIZE || handle->data_size == 0) {
-                    log_error_format("BAd data size: %d", (int)handle->data_size);
+                int res = rurp_communication_read_data(handle->data_buffer);
+                if (res < 0) {
+                    log_error_format("Error reading data %d", res);
                     return OP_MSG_ERROR;
                 }
-
-                log_info_format("Expecting %d bytes", handle->data_size);
-                size_t len = rurp_communication_read_bytes(handle->data_buffer, handle->data_size);
-
-                if (len < handle->data_size) {
-                    log_error_const("Timeout, data packet.");
-                    return OP_MSG_ERROR;
-                }
-
-                uint8_t checksum = 0;
-                for (size_t i = 0; i < len; i++) {
-                    checksum ^= handle->data_buffer[i];
-                }
-                if (checksum != checksum_rcvd) {
-                    log_error_format("Bad checksum %02X != %02X", checksum, checksum_rcvd);
-                    return OP_MSG_ERROR;
-                }
+                handle->data_size = res;
                 return OP_MSG_DATA;
             } break;
             default:
@@ -210,7 +187,7 @@ void set_operation_to_done(firestarter_handle_t* handle) {
  * @return
  */
 int _execute_operation_house_keeping(firestarter_handle_t* handle) {
-    log_info_format("Housekeeping: state=0x%02x", handle->operation_state);
+    // log_info_format("Housekeeping: state=0x%02x", handle->operation_state);
     if (is_all_operations_done()) {
         // log_info_const("Operations done");
         return CONTINUE;
@@ -226,7 +203,7 @@ int _execute_operation_house_keeping(firestarter_handle_t* handle) {
         // if (msg != OP_MSG_ACK) {
         //     return (msg == OP_MSG_INCOMPLETE) ? RETURN : ERROR;
         // }
-        if(!op_wait_for_ack(handle) ){
+        if (!op_wait_for_ack(handle)) {
             return ERROR;
         }
         op_reset_timeout();

@@ -1,11 +1,12 @@
 #ifndef __RURP_SERIAL_UTILS_H__
 #define __RURP_SERIAL_UTILS_H__
 
+#include "firestarter.h"
+#include "logging.h"
 #ifndef SERIAL_PORT
 #include <Arduino.h>
 #define SERIAL_PORT Serial
 #endif
-
 #ifdef SERIAL_DEBUG
 char* debug_msg_buffer;
 #endif
@@ -37,6 +38,46 @@ int rurp_communication_peak() {
 
 size_t rurp_communication_read_bytes(char* buffer, size_t size) {
     return SERIAL_PORT.readBytes(buffer, size);
+}
+
+int rurp_communication_read_data(char* buffer) {
+    uint8_t size_buf[2];
+    if (rurp_communication_read_bytes((char*)size_buf, 2) != 2) {
+        return -1;
+    }
+    size_t data_size = (size_buf[0] << 8) | size_buf[1];
+
+    uint8_t checksum_rcvd;
+    if (rurp_communication_read_bytes((char*)&checksum_rcvd, 1) != 1) {
+        return -1;
+    }
+
+    if (data_size > DATA_BUFFER_SIZE) {
+        // log_error_format("Bad size: %d", (int)handle->data_size);
+        return -2;
+    }
+
+    size_t len = 0;
+    unsigned long start_time = millis();
+    unsigned long timeout_ms = 2000;  // A 2-second timeout for the entire data block
+    while (len < data_size) {
+        if (millis() - start_time > timeout_ms) {
+            // log_error_const("Timeout reading data block");
+            return -3;
+        }
+        // Read remaining bytes. readBytes will timeout and return what it has if data flow stops.
+        len += rurp_communication_read_bytes(buffer + len, data_size - len);
+    }
+
+    uint8_t checksum = 0;
+    for (size_t i = 0; i < len; i++) {
+        checksum ^= buffer[i];
+    }
+    if (checksum != checksum_rcvd) {
+        // log_error_format("Bad checksum %02X != %02X", checksum, checksum_rcvd);
+        return -4;
+    }
+    return len;
 }
 
 size_t rurp_communication_write(const char* buffer, size_t size) {

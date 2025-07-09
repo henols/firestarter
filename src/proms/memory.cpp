@@ -236,11 +236,10 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
     } else {
         progress_data = (blank_check_progress_data_t*)handle->proggress_data;
         if (handle->address >= handle->mem_size) {
-            set_operation_progress_done();
+            clear_operation_in_progress();
             handle->address = progress_data->address;
             free(handle->proggress_data);
             handle->proggress_data = NULL;
-            // firestarter_ok_response("Blank");
             return;
         }
     }
@@ -250,19 +249,22 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
     for (uint32_t i = handle->address; i < end_address && i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
-            firestarter_error_response_format("Mem not blank, at 0x%06x, v: 0x%02x", i, val);
+            firestarter_error_response_format("Not blank, at 0x%06x, v: 0x%02x", i, val);
             return;
         }
     }
-
-    //     uint32_to_bytes(handle->data_buffer, 0, handle->address);
-    // uint32_to_bytes(handle->data_buffer, 4, handle->mem_size);
-    // handle->data_size = 8;
-  
     handle->address += BLANK_CHECK_CHUNK_SIZE;
+#define RAW_DATA_PROGRESS
+#ifdef RAW_DATA_PROGRESS
+handle->response_code = RESPONSE_CODE_DATA;
+    uint32_to_bytes(handle->data_buffer, 0, handle->address);
+    uint32_to_bytes(handle->data_buffer, 4, handle->mem_size);
+    handle->data_size = 8;
+  #elif
     if (handle->address > handle->mem_size) {
         handle->address = handle->mem_size;
     }
     // Send progress back to the client
     firestarter_data_response_format("%lu/%lu", handle->address, handle->mem_size);
+    #endif
 }

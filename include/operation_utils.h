@@ -20,8 +20,8 @@ extern "C" {
 #define END 5
 #define ENDED 6
 
-#define IN_PROGRESS 0x40
-#define PROGRESS_DONE 0x80
+#define OPERATION_IN_PROGRESS 0x40
+#define OPERATION_WAITING_FOR_DATA 0x80
 
 enum op_message_type {
     OP_MSG_ACK,
@@ -32,14 +32,24 @@ enum op_message_type {
 };
 
 
-#define is_operation_in_progress() \
-    (((handle->operation_state & IN_PROGRESS) << 1) ^ (handle->operation_state & PROGRESS_DONE))
-
 #define set_operation_in_progress() \
-    (handle->operation_state |= IN_PROGRESS)
+(handle->operation_state |= OPERATION_IN_PROGRESS)
 
-#define set_operation_progress_done() \
-    (handle->operation_state |= PROGRESS_DONE)
+#define clear_operation_in_progress() \
+(handle->operation_state &= ~OPERATION_IN_PROGRESS)
+
+#define is_operation_in_progress() \
+    ((handle->operation_state & OPERATION_IN_PROGRESS) == OPERATION_IN_PROGRESS)
+
+#define set_operation_waiting_for_data() \
+    (handle->operation_state |= OPERATION_WAITING_FOR_DATA)
+
+#define clear_operation_waiting_for_data() \
+    (handle->operation_state &= ~OPERATION_WAITING_FOR_DATA)
+
+#define is_operation_waiting_for_data() \
+    ((handle->operation_state & OPERATION_WAITING_FOR_DATA) == OPERATION_WAITING_FOR_DATA)
+
 
 
 bool op_execute_operation(firestarter_handle_t* handle);

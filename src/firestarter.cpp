@@ -239,5 +239,5 @@ void loop() {
 }
 
 void op_reset_timeout() {
-    timeout = millis() + 1000;
+    timeout = millis() + TIMEOUT_MS;
 }

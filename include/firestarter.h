@@ -20,6 +20,9 @@
 #endif
 #define RESPONSE_MSG_SIZE 96
 
+#define TIMEOUT_MS 1000
+
+
 #define CMD_IDLE 0
 #define CMD_READ 1
 #define CMD_WRITE 2

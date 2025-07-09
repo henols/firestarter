@@ -129,6 +129,8 @@ extern "C" {
     int rurp_communication_peak();
     size_t rurp_communication_write(const char* buffer, size_t size);
     size_t rurp_communication_read_bytes(char* buffer, size_t length);
+    int rurp_communication_read_data(char* buffer);
+    
 
     void rurp_log(const char* type, const char* msg);
 

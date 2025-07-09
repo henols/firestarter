@@ -68,32 +68,50 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
 
 // Returns true on success/continue, false on error.
 bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle) {
+    // The operation is "pull" based. The firmware requests a data chunk when it's ready.
+    // This provides software flow control and allows for larger data chunks, improving speed.
+    // We use a state flag to track if we are waiting for data.
+    if (handle->address >= handle->mem_size) {
+        set_operation_to_done(handle);
+        return true;
+    }
+
+    // 1. If not waiting for data, request a chunk from the host and set the flag.
+    if (!is_operation_waiting_for_data()) {
+        send_ack("");
+        set_operation_waiting_for_data();
+    }
+
+    // 2. Wait for the host to send a message (either DATA or DONE).
     op_message_type msg_type = op_get_message(handle);
+
+    if (msg_type == OP_MSG_INCOMPLETE) {
+        return true;  // Not an error, just no data yet. Keep waiting.
+    }
+
+    // We have received a message. Clear the flag so we can request the next chunk.
+    clear_operation_waiting_for_data();
 
     switch (msg_type) {
         case OP_MSG_DONE:
             set_operation_to_done(handle);
-            return true;  // Finished is a success.
+            return true;
         case OP_MSG_DATA:
-            // Data packet was read by op_get_message and is in handle->data_buffer
             if (handle->address + handle->data_size > handle->mem_size) {
                 log_error_const("Out of range");
-                return false;  // Error.
+                return false;
             }
-            break;  // Continue to process data
-        case OP_MSG_INCOMPLETE:
-            return true;  // Not an error, just no data yet.
+            break;
         default:
-            return false;  // Error or unexpected message
+            return false;
     }
 
     if (!op_execute_function(handle->firestarter_operation_main, handle)) {
-        return false; // Error.
+        return false;
     }
 
     handle->address += handle->data_size;
-    send_ack_format("%s: 0x%04lx - 0x%04lx", op_name, handle->address - handle->data_size, (handle->address));
-    return true; // Success.
+    return true;
 }
 
 // Returns true on success/continue, false on error.
