@@ -24,7 +24,7 @@ bool com_mode = true;
 #define RX_DEBUG  A0
 #define TX_DEBUG  A1
 
-void log_debug(const char* type, const char* msg);
+void log_debug(PGM_P type, const char* msg);
 #else
 #define log_debug(type, msg)
 #endif
@@ -59,10 +59,22 @@ void rurp_set_programmer_mode() {
 }
 
 
-void rurp_log(const char* type, const char* msg) {
+void rurp_log(PGM_P type, const char* msg) {
     log_debug(type, msg);
     if (com_mode) {
         rurp_log_internal(type, msg);
+    }
+}
+
+void rurp_log_P(PGM_P type, PGM_P msg) {
+    // For debug logging, we need to copy the PROGMEM message to RAM.
+    // We can reuse the debug_msg_buffer for this.
+    #ifdef SERIAL_DEBUG
+    strcpy_P(debug_msg_buffer, msg);
+    log_debug(type, debug_msg_buffer);
+    #endif
+    if (com_mode) {
+        rurp_log_internal_P(type, msg);
     }
 }
 
@@ -147,8 +159,11 @@ void debug_buf(const char* msg) {
     log_debug("DEBUG", msg);
 }
 
-void log_debug(const char* type, const char* msg) {
-    debugSerial.print(type);
+void log_debug(PGM_P type, const char* msg) {
+    // Copy the PROGMEM type string to a RAM buffer to print.
+    char type_buf[10];
+    strcpy_P(type_buf, type);
+    debugSerial.print(type_buf);
     debugSerial.print(": ");
     debugSerial.println(msg);
     debugSerial.flush();

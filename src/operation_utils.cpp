@@ -8,6 +8,7 @@
 #include "operation_utils.h"
 
 #include <Arduino.h>
+#include <stdlib.h>
 
 #include "firestarter.h"
 #include "logging.h"
@@ -37,28 +38,28 @@
 #define is_all_operations_done() \
     is_operation_started(ENDED)
 
-bool _check_response(firestarter_handle_t* handle);
-int _execute_operation(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
-int _execute_operation_house_keeping(firestarter_handle_t* handle);
-int _execute_operation_house_keeping_func(void (*callback)(firestarter_handle_t* handle), int state, const char* name, firestarter_handle_t* handle);
-bool _single_step_operation_callback(firestarter_handle_t* handle);
+static inline bool _check_response(firestarter_handle_t* handle);
+static inline int _execute_operation(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
+static inline int _execute_operation_house_keeping(firestarter_handle_t* handle);
+static inline int _execute_operation_house_keeping_func(void (*callback)(firestarter_handle_t* handle), int state, firestarter_handle_t* handle);
+static inline bool _single_step_operation_callback(firestarter_handle_t* handle);
 
 /**
- * @brief Executes a single-step operation.
+ * @brief Executes a simple, non-stateful operation.
  *
- * This function is a wrapper around op_excecute_multi_step_operation for operations
- * that are expected to complete within a single execution cycle of the main operation callback.
- * It calls the operation's `firestarter_operation_execute` function until it's no longer
- * in progress.
+ * This is a wrapper around op_execute_stateful_operation for operations that are
+ * expected to complete within a single logical step (e.g., blank check). It uses
+ * a callback that executes the main operation logic and marks the operation as
+ * done immediately after.
  *
  * @param handle Pointer to the firestarter handle.
- * @return true if the operation is ongoing, false if it completed (with or without an error).
+ * @return true if the operation is still ongoing (e.g., waiting for ACKs), false when fully completed.
  */
-bool op_execute_operation(firestarter_handle_t* handle) {
-    return op_execute_callback_operation(_single_step_operation_callback, handle);
+bool op_execute_simple_operation(firestarter_handle_t* handle) {
+    return op_execute_stateful_operation(_single_step_operation_callback, handle);
 }
 
-bool op_execute_callback_operation(bool (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
+bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
     if (handle->firestarter_operation_main) {
         if (is_all_operations_done()) {
             // The operation is complete from the firmware's perspective.
@@ -97,7 +98,6 @@ bool op_execute_callback_operation(bool (*callback)(firestarter_handle_t* handle
  */
 bool op_execute_function(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
     if (callback != NULL) {
-        log_info_const("Execute operation");
         return _execute_operation(callback, handle) != ERROR;
     }
     return false;
@@ -115,10 +115,18 @@ bool op_wait_for_ack(firestarter_handle_t* handle) {
         }
         delay(10);
     }
-    log_error_const("Timeout ACK");
+    log_error_const("Timeout");
     return false;
 }
 
+/**
+ * @brief Parses the incoming serial stream for messages from the host.
+ *
+ * This function is non-blocking. It checks for "OK" (ACK), "DONE", and data packets ('#').
+ * It consumes junk characters until a valid message start is found.
+ * @param handle Pointer to the firestarter handle, used to store incoming data.
+ * @return An op_message_type enum value indicating the message found, or OP_MSG_INCOMPLETE if no full message is available.
+ */
 op_message_type op_get_message(firestarter_handle_t* handle) {
     if (rurp_communication_available() <= 0) {
         return OP_MSG_INCOMPLETE;
@@ -160,33 +168,37 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                 rurp_communication_read();  // consume '#'
                 int res = rurp_communication_read_data(handle->data_buffer);
                 if (res < 0) {
-                    log_error_format("Error reading data %d", res);
+                    log_error_P_int("Data err ", res);
                     return OP_MSG_ERROR;
                 }
                 handle->data_size = res;
                 return OP_MSG_DATA;
-            } break;
+            }
             default:
                 // log_info_format("op_get_message: Consuming junk char '%c' (0x%02x)", (char)peek, peek);
                 rurp_communication_read();
+                break;
         }
     }
     return OP_MSG_INCOMPLETE;  // Nothing in buffer
 }
 
 void set_operation_to_done(firestarter_handle_t* handle) {
-    log_info_const("Main done");
+    log_info_const("Maine Done");
     set_operation_state_done();
     send_main_done();
 }
 
 /**
- * @brief Manages the housekeeping states of an operation (init and cleanup).
+ * @brief Manages the state transitions of an operation (INIT, MAIN, END).
+ *
+ * This function orchestrates the execution of the init and end phases of an operation,
+ * ensuring they run in the correct order around the main operation logic.
  *
  * @param handle Pointer to the firestarter handle.
- * @return
+ * @return CONTINUE if the state machine should proceed, RETURN or ERROR to stop.
  */
-int _execute_operation_house_keeping(firestarter_handle_t* handle) {
+static inline int _execute_operation_house_keeping(firestarter_handle_t* handle) {
     // log_info_format("Housekeeping: state=0x%02x", handle->operation_state);
     if (is_all_operations_done()) {
         // log_info_const("Operations done");
@@ -203,29 +215,29 @@ int _execute_operation_house_keeping(firestarter_handle_t* handle) {
         }
         op_reset_timeout();
         set_operation_state(MAIN);
-        log_info_const("Main started");
+        log_info_const("Main start");
         return CONTINUE;
     }
-    int res = _execute_operation_house_keeping_func(handle->firestarter_operation_init, INIT, "Init", handle);
+    int res = _execute_operation_house_keeping_func(handle->firestarter_operation_init, INIT, handle);
     if (res != CONTINUE) {
         return res;
     }
 
-    return _execute_operation_house_keeping_func(handle->firestarter_operation_end, END, "End", handle);
+    return _execute_operation_house_keeping_func(handle->firestarter_operation_end, END, handle);
 }
 
 /**
- * @brief Executes a housekeeping function (init or end) for an operation.
+ * @brief Executes a specific housekeeping phase (INIT or END) for an operation.
  *
- * This function handles the execution loop for a specific state (INITZIATION or END).
+ * This function handles the execution loop for a specific state (INIT or END).
+ * It waits for an ACK, runs the provided callback, and sends a completion message.
  *
  * @param callback The function to call (e.g., firestarter_operation_init).
- * @param state The operation state to manage (e.g., INITZIATION).
- * @param name The name of the state for logging purposes (e.g., "Init").
+ * @param state The operation state to manage (e.g., INIT).
  * @param handle Pointer to the firestarter handle.
- * @return
+ * @return CONTINUE if the phase is complete, RETURN or ERROR to stop.
  */
-int _execute_operation_house_keeping_func(void (*callback)(firestarter_handle_t* handle), int state, const char* name, firestarter_handle_t* handle) {
+static inline int _execute_operation_house_keeping_func(void (*callback)(firestarter_handle_t* handle), int state, firestarter_handle_t* handle) {
     // log_info_format("%s function, state: %d, current state: %d", name, state, handle->operation_state);
     if (execute_operation_state(state)) {
         // log_info_format("%s function, state: %d, can start: %d", name, state, can_operation_start(state));
@@ -234,9 +246,11 @@ int _execute_operation_house_keeping_func(void (*callback)(firestarter_handle_t*
             if (!op_wait_for_ack(handle)) {
                 return ERROR;
             }
-            log_info_format("ACK for %s", name);
-            // op_reset_timeout();
-            // log_info_format("%s func", name);
+            if (state == INIT) {
+                log_info_const("Init start");
+            } else {
+                log_info_const("End start");
+            }
             set_operation_state(state);
         }
 
@@ -247,7 +261,7 @@ int _execute_operation_house_keeping_func(void (*callback)(firestarter_handle_t*
         if (is_operation_in_progress()) {
             return RETURN;
         }
-        log_info_format("%s done", name);
+
         if (state == INIT) {
             send_init_done();
         } else {
@@ -259,15 +273,15 @@ int _execute_operation_house_keeping_func(void (*callback)(firestarter_handle_t*
 }
 
 /**
- * @brief The main execution loop for a single-step operation.
+ * @brief A callback for simple operations that completes in one step.
  *
- * This function is used as a callback for op_excecute_single_step_operation.
- * It repeatedly calls the main execute function until the operation is no longer in progress.
+ * This function is used as a callback for op_execute_simple_operation.
+ * It calls the main operation function and, if successful, immediately marks the operation as done.
  *
  * @param handle Pointer to the firestarter handle.
- * @return
+ * @return true on success, false on error.
  */
-bool _single_step_operation_callback(firestarter_handle_t* handle) {
+static inline bool _single_step_operation_callback(firestarter_handle_t* handle) {
     int res = _execute_operation(handle->firestarter_operation_main, handle);
     if (res == ERROR) {
         return false;
@@ -282,10 +296,10 @@ bool _single_step_operation_callback(firestarter_handle_t* handle) {
  * @brief Executes a callback function, wrapping it with mode changes and response checking.
  *
  * @param callback The function to execute.
- * @param handle Pointer to the firestarter handle.
+ * @param handle Pointer to the firestarter handle, which will be passed to the callback.
  * @return true if the operation was successful, false on error.
  */
-int _execute_operation(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
+static inline int _execute_operation(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
     if (callback != NULL) {
         handle->response_msg[0] = '\0';
         rurp_set_programmer_mode();
@@ -304,7 +318,7 @@ int _execute_operation(void (*callback)(firestarter_handle_t* handle), firestart
  * @param handle Pointer to the firestarter handle.
  * @return true if the response is OK, WARNING, or DATA. false if it's an ERROR.
  */
-bool _check_response(firestarter_handle_t* handle) {
+static inline bool _check_response(firestarter_handle_t* handle) {
     switch (handle->response_code) {
         case RESPONSE_CODE_OK:
             log_info(handle->response_msg);

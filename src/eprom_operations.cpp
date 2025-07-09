@@ -12,35 +12,26 @@
 #include "operation_utils.h"
 #include "rurp_shield.h"
 
-bool _write_eprom_callback(firestarter_handle_t* handle);
-bool _verify_eprom_callback(firestarter_handle_t* handle);
-
-bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle);
-bool _process_outgoing_data(firestarter_handle_t* handle);
+static inline bool _process_incoming_data(firestarter_handle_t* handle);
+static inline bool _process_outgoing_data(firestarter_handle_t* handle);
 
 bool eprom_read(firestarter_handle_t* handle) {
-    return !op_execute_callback_operation(_process_outgoing_data, handle);
-}
-
-bool _write_eprom_callback(firestarter_handle_t* handle) {
-    debug("Write EPROM");
-    // Return true if ok, false on error
-    return _process_incoming_data("Write", handle);
+    return !op_execute_stateful_operation(_process_outgoing_data, handle);
 }
 
 bool eprom_write(firestarter_handle_t* handle) {
-    return !op_execute_callback_operation(_write_eprom_callback, handle);
-}
-
-bool _verify_eprom_callback(firestarter_handle_t* handle) {
-    debug("Verify PROM");
-    // Return true if ok, false on error
-    return _process_incoming_data("Verify", handle);
+#ifdef SERIAL_DEBUG
+    debug("Write EPROM");
+#endif
+    return !op_execute_stateful_operation(_process_incoming_data, handle);
 }
 
 // Return true if the operation is done, otherwise false
 bool eprom_verify(firestarter_handle_t* handle) {
-    return !op_execute_callback_operation(_verify_eprom_callback, handle);
+#ifdef SERIAL_DEBUG
+    debug("Verify PROM");
+#endif
+    return !op_execute_stateful_operation(_process_incoming_data, handle);
 }
 
 bool eprom_erase(firestarter_handle_t* handle) {
@@ -49,7 +40,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
         log_error_const("Not supported");
         return true;
     }
-    return !op_execute_operation(handle);
+    return !op_execute_simple_operation(handle);
 }
 
 bool eprom_check_chip_id(firestarter_handle_t* handle) {
@@ -58,16 +49,16 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
         log_error_const("No chip ID");
         return true;
     }
-    return !op_execute_operation(handle);
+    return !op_execute_simple_operation(handle);
 }
 
 bool eprom_blank_check(firestarter_handle_t* handle) {
     debug("Blank check PROM");
-    return !op_execute_operation(handle);
+    return !op_execute_simple_operation(handle);
 }
 
 // Returns true on success/continue, false on error.
-bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle) {
+static inline bool _process_incoming_data(firestarter_handle_t* handle) {
     // The operation is "pull" based. The firmware requests a data chunk when it's ready.
     // This provides software flow control and allows for larger data chunks, improving speed.
     // We use a state flag to track if we are waiting for data.
@@ -83,7 +74,8 @@ bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle) {
     if (msg_type == OP_MSG_INCOMPLETE) {
         // No message from host. If we are not already waiting for data, request it.
         if (!is_operation_waiting_for_data()) {
-            send_ack_format("Data: 0x%04lx - 0x%04lx", handle->address, handle->address + DATA_BUFFER_SIZE);
+            // The host application shows its own progress, so we just ask for data.
+            send_ack_const("Data?");
             set_operation_waiting_for_data();
         }
         return true;  // Continue waiting.
@@ -118,12 +110,13 @@ bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle) {
 }
 
 // Returns true on success/continue, false on error.
-bool _process_outgoing_data(firestarter_handle_t* handle) {
+static inline bool _process_outgoing_data(firestarter_handle_t* handle) {
     if (!op_execute_function(handle->firestarter_operation_main, handle)) {
-        return false; // Error, so finished.
+        return false;  // Error, so finished.
     }
 
-    log_data_format("Read: 0x%04lx - 0x%04lx", handle->address, handle->address + handle->data_size);
+    // The host application shows its own progress, so we send a simple message.
+    log_data_const("Read data");
     rurp_communication_write(handle->data_buffer, handle->data_size);
 
     if (!op_wait_for_ack(handle)) {
@@ -134,5 +127,5 @@ bool _process_outgoing_data(firestarter_handle_t* handle) {
     if (handle->address >= handle->mem_size) {
         set_operation_to_done(handle);
     }
-    return true; 
+    return true;
 }

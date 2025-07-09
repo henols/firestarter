@@ -1,16 +1,14 @@
 #include "logging.h"
+
 #include "firestarter.h"
 
-// void _firestarter_set_responce(uint8_t code, const char* msg, firestarter_handle_t* handle) {
-//         strcpy_P(handle->response_msg, msg);
-//     // copy_to_buffer(handle.response_msg, msg); 
-//     handle->response_code = code;
-// }
-
-#ifdef INFO_LOG_METHODE
-void _log_info(const char* msg, firestarter_handle_t* handle)                               {
-    if (strlen(msg) && is_flag_set(FLAG_VERBOSE)) { 
-        rurp_log(LOG_INFO_MSG, msg);                
-    }
-}
-#endif
+// Define all logging type strings in PROGMEM to save RAM and flash.
+// These are declared as extern in logging.h
+const char LOG_OK_MSG[] PROGMEM = "OK";
+const char LOG_INIT_DONE_MSG[] PROGMEM = "INIT";
+const char LOG_MAIN_DONE_MSG[] PROGMEM = "MAIN";
+const char LOG_END_DONE_MSG[] PROGMEM = "END";
+const char LOG_INFO_MSG[] PROGMEM = "INFO";
+const char LOG_DATA_MSG[] PROGMEM = "DATA";
+const char LOG_WARN_MSG[] PROGMEM = "WARN";
+const char LOG_ERROR_MSG[] PROGMEM = "ERROR";

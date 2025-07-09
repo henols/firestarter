@@ -2,6 +2,7 @@
 #define __RURP_SERIAL_UTILS_H__
 
 #include "firestarter.h"
+#include <avr/pgmspace.h>
 #include "logging.h"
 #ifndef SERIAL_PORT
 #include <Arduino.h>
@@ -10,6 +11,25 @@
 #ifdef SERIAL_DEBUG
 char* debug_msg_buffer;
 #endif
+
+// --- Core Logging Functions ---
+// Use static inline functions to give the compiler optimization flexibility.
+
+// Core logging function for RAM messages. Takes type from PROGMEM.
+static inline void _firestarter_log_ram(PGM_P type, const char* msg) {
+    SERIAL_PORT.print((const __FlashStringHelper*)type);
+    SERIAL_PORT.print(F(": "));  // F() macro stores the string in PROGMEM
+    SERIAL_PORT.println(msg);
+    SERIAL_PORT.flush();
+}
+
+// Core logging function for PROGMEM messages.
+static inline void _firestarter_log_progmem(PGM_P type, PGM_P p_msg) {
+    SERIAL_PORT.print((const __FlashStringHelper*)type);
+    SERIAL_PORT.print(F(": "));
+    SERIAL_PORT.println((const __FlashStringHelper*)p_msg);
+    SERIAL_PORT.flush();
+}
 
 void rurp_serial_begin(unsigned long baud) {
     SERIAL_PORT.begin(baud);
@@ -95,14 +115,19 @@ size_t rurp_communication_write(const char* buffer, size_t size) {
 }
 
 #ifndef RURP_CUSTOM_LOG
-void rurp_log(const char* type, const char* msg) {
-#else
-void rurp_log_internal(const char* type, const char* msg) {
-#endif
-    SERIAL_PORT.print(type);
-    SERIAL_PORT.print(": ");
-    SERIAL_PORT.println(msg);
-    SERIAL_PORT.flush();
+void rurp_log(PGM_P type, const char* msg) {
+    _firestarter_log_ram(type, msg);
 }
+void rurp_log_P(PGM_P type, PGM_P msg) {
+    _firestarter_log_progmem(type, msg);
+}
+#else
+void rurp_log_internal(PGM_P type, const char* msg) {
+    _firestarter_log_ram(type, msg);
+}
+void rurp_log_internal_P(PGM_P type, PGM_P msg) {
+    _firestarter_log_progmem(type, msg);
+}
+#endif
 
 #endif  // __RURP_SERIAL_UTILS_H__

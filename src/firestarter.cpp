@@ -229,7 +229,7 @@ void loop() {
             break;
 
         default:
-            log_error_format_buf(handle.response_msg, "Unknown cmd: %d", handle.cmd);
+            log_error_P_int_buf(handle.response_msg, "Unknown cmd: ", handle.cmd);
             finished = true;
             break;
     }

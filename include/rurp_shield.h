@@ -15,6 +15,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <avr/pgmspace.h>
 
 #define VOLTAGE_MEASURE_PIN A2
 
@@ -132,7 +133,8 @@ extern "C" {
     int rurp_communication_read_data(char* buffer);
     
 
-    void rurp_log(const char* type, const char* msg);
+    void rurp_log(PGM_P type, const char* msg);
+    void rurp_log_P(PGM_P type, PGM_P msg);
 
     void rurp_set_data_output();
     void rurp_set_data_input();
