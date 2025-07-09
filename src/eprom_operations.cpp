@@ -78,7 +78,7 @@ bool _process_incoming_data(const char* op_name, firestarter_handle_t* handle) {
 
     // 1. If not waiting for data, request a chunk from the host and set the flag.
     if (!is_operation_waiting_for_data()) {
-        send_ack("");
+        send_ack_format("Data: 0x%04lx - 0x%04lx", handle->address, handle->address + DATA_BUFFER_SIZE);
         set_operation_waiting_for_data();
     }
 

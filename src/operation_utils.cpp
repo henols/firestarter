@@ -123,19 +123,19 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
     if (rurp_communication_available() <= 0) {
         return OP_MSG_INCOMPLETE;
     }
-    log_info_format("op_get_message: %d bytes available", rurp_communication_available());
+    // log_info_format("op_get_message: %d bytes available", rurp_communication_available());
     while (rurp_communication_available() > 0) {
         int peek = rurp_communication_peak();
         switch (peek) {
             case 'O':  // Potential "OK"
-                log_info_const("op_get_message: Found 'O'");
+                // log_info_const("op_get_message: Found 'O'");
                 if (rurp_communication_available() < 2) {
                     return OP_MSG_INCOMPLETE;
                 }
                 rurp_communication_read();  // consume 'O'
                 if (rurp_communication_peak() == 'K') {
                     rurp_communication_read();  // consume 'K'
-                    log_info_const("op_get_message: ACK received");
+                    // log_info_const("op_get_message: ACK received");
                     return OP_MSG_ACK;
                 }
                 // Not "OK", 'O' is consumed. Loop will treat next char as junk.
@@ -167,7 +167,7 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                 return OP_MSG_DATA;
             } break;
             default:
-                log_info_format("op_get_message: Consuming junk char '%c' (0x%02x)", (char)peek, peek);
+                // log_info_format("op_get_message: Consuming junk char '%c' (0x%02x)", (char)peek, peek);
                 rurp_communication_read();
         }
     }
@@ -198,11 +198,6 @@ int _execute_operation_house_keeping(firestarter_handle_t* handle) {
     }
     // log_info_format("Can operation start: %d", can_operation_start(OPERATION));
     if (can_operation_start(MAIN)) {
-        // log_info_format("Check Ack: %s", rurp_communication_peak());
-        // op_message_type msg = op_get_message(handle);
-        // if (msg != OP_MSG_ACK) {
-        //     return (msg == OP_MSG_INCOMPLETE) ? RETURN : ERROR;
-        // }
         if (!op_wait_for_ack(handle)) {
             return ERROR;
         }
@@ -235,21 +230,13 @@ int _execute_operation_house_keeping_func(void (*callback)(firestarter_handle_t*
     if (execute_operation_state(state)) {
         // log_info_format("%s function, state: %d, can start: %d", name, state, can_operation_start(state));
         if (can_operation_start(state)) {
-            log_info_format("Waiting for ACK to start %s phase", name);
+            // log_info_format("Waiting for ACK to start %s phase", name);
             if (!op_wait_for_ack(handle)) {
                 return ERROR;
             }
-            // op_message_type msg = op? RETURN: ERROR;
-            // op_message_type msg = op_get_message(handle);
-            // if (msg != OP_MSG_ACK) {
-            //     if (msg == OP_MSG_ERROR) {
-            //         log_error_format("Error message received while waiting for %s ACK", name);
-            //     }
-            //     return (msg == OP_MSG_INCOMPLETE)? RETURN: ERROR;
-            // }
-            log_info_format("ACK received for %s phase", name);
-            op_reset_timeout();
-            log_info_format("%s func", name);
+            log_info_format("ACK for %s", name);
+            // op_reset_timeout();
+            // log_info_format("%s func", name);
             set_operation_state(state);
         }
 
