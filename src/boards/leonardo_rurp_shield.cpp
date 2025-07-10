@@ -111,20 +111,16 @@ uint16_t rurp_read_vcc_mv() {
     ADCSRA |= _BV(ADSC);              // Start conversion
     while (bit_is_set(ADCSRA, ADSC))  // Wait for conversion to complete
         ;
-    ADCSRA |= _BV(ADSC);              // Start conversion
-    while (bit_is_set(ADCSRA, ADSC))  // measuring
-        ;
     long result = ADCL;
     result |= ADCH << 8;
 
     // Calculate Vcc (supply voltage) in millivolts
     // VCC_mV = (1.1V * 1024 * 1000 mV/V) / ADC_reading
     if (result == 0) return 0;  // Avoid division by zero
-    return 1125300L / result;
+    return 1125300L / result; // 1.1V * 1023 * 1000
 }
 
-uint16_t rurp_read_voltage_mv() {
-    uint16_t vcc_mv = rurp_read_vcc_mv();
+uint16_t rurp_read_voltage_mv(uint16_t vcc_mv) {
     rurp_configuration_t* rurp_config = rurp_get_config();
     uint32_t r1 = rurp_config->r1;
     uint32_t r2 = rurp_config->r2;

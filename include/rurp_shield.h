@@ -157,7 +157,7 @@ extern "C" {
     uint8_t rurp_read_data_buffer();
 
     uint16_t rurp_read_vcc_mv();
-    uint16_t rurp_read_voltage_mv();
+    uint16_t rurp_read_voltage_mv(uint16_t vcc_mv);
 
     uint8_t rurp_user_button_pressed();
 

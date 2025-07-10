@@ -196,7 +196,8 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
     }
 
     delay(100);
-    uint16_t vpp_mv = rurp_read_voltage_mv();
+    uint16_t vcc_mv = rurp_read_vcc_mv();
+    uint16_t vpp_mv = rurp_read_voltage_mv(vcc_mv);
 #ifdef SERIAL_DEBUG
     debug_format("Checking VPP voltage %u mV", vpp_mv);
 #endif

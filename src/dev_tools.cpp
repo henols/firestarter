@@ -20,20 +20,30 @@
 // void rurp_internal_write_to_register(uint8_t reg, rurp_register_t data);
 
 void dt_decode_register(firestarter_handle_t* handle, const char* reg_name, uint16_t reg, uint8_t size) {
-    log_info_format("%s: 0x%02x", reg_name, reg);
+    log_info_format("%s: 0x%02X", reg_name, reg);
+
+    // Header
     log_info_format("%s|D7|D6|D5|D4|D3|D2|D1|D0|", size == 9 ? "|D8" : "");
-    byte pins[size];
-    for (int i = 0; i < size; i++) {
-        pins[i] = (reg >> i) & 1;
-    }
-    char d8[4] = {0};
+
+    // Values - build string manually to be more efficient than many-arg sprintf
+    char bit_str[40];  // "| 1" is 3 chars. 9 bits -> 3*9=27. 8 bits -> 3*8=24. 40 is safe.
+    char* p = bit_str;
+
     if (size == 9) {
-        d8[0] = '|';
-        d8[1] = ' ';
-        // d8[2] = '0' + pins[8];
-        d8[2] = pins[8] ? '1' : '0';
+        *p++ = '|';
+        *p++ = ' ';
+        *p++ = ((reg >> 8) & 1) ? '1' : '0';
     }
-    log_info_format("%s| %d| %d| %d| %d| %d| %d| %d| %d|", d8, pins[7], pins[6], pins[5], pins[4], pins[3], pins[2], pins[1], pins[0]);
+
+    for (int i = 7; i >= 0; i--) {
+        *p++ = '|';
+        *p++ = ' ';
+        *p++ = ((reg >> i) & 1) ? '1' : '0';
+    }
+    *p++ = '|';
+    *p = '\0';
+
+    log_info(bit_str);
 }
 
 bool dt_set_registers(firestarter_handle_t* handle) {
@@ -77,8 +87,8 @@ bool dt_set_registers(firestarter_handle_t* handle) {
         rurp_internal_write_to_register(CONTROL_REGISTER, ctrl_reg);
     }
 
-    rurp_set_chip_enable(is_flag_set(FLAG_CHIP_ENABLE) == 0);
-    rurp_set_chip_output(is_flag_set(FLAG_OUTPUT_ENABLE) == 0);
+    rurp_set_chip_enable(!is_flag_set(FLAG_CHIP_ENABLE));
+    rurp_set_chip_output(!is_flag_set(FLAG_OUTPUT_ENABLE));
 
     while (!rurp_user_button_pressed()) {
         delay(200);
@@ -109,8 +119,8 @@ bool dt_set_address(firestarter_handle_t* handle) {
     send_ack("");
     rurp_set_programmer_mode();
     mem_util_set_address(handle, address);
-    rurp_set_chip_enable(is_flag_set(FLAG_CHIP_ENABLE) == 0);
-    rurp_set_chip_output(is_flag_set(FLAG_OUTPUT_ENABLE) == 0);
+    rurp_set_chip_enable(!is_flag_set(FLAG_CHIP_ENABLE));
+    rurp_set_chip_output(!is_flag_set(FLAG_OUTPUT_ENABLE));
     while (!rurp_user_button_pressed()) {
         delay(200);
     }
