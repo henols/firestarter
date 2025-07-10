@@ -84,7 +84,7 @@ typedef struct firestarter_handle {
     uint8_t pins;
     uint32_t mem_size;
     uint32_t address;
-    float vpp;
+    uint16_t vpp_mv;
     uint32_t pulse_delay;
     uint32_t ctrl_flags;
     uint16_t chip_id;

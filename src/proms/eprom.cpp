@@ -196,26 +196,16 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
     }
 
     delay(100);
-    double vpp = rurp_read_voltage();
+    uint16_t vpp_mv = rurp_read_voltage_mv();
 #ifdef SERIAL_DEBUG
-    char vppStr[6];
-    dtostrf(vpp, 2, 2, vppStr);
-    debug_format("Checking VPP voltage %s", vppStr);
+    debug_format("Checking VPP voltage %u mV", vpp_mv);
 #endif
 
-    if (vpp > handle->vpp * 1.02) {
-        char vStr[6];
-        dtostrf(vpp, 2, 2, vStr);
-        char rStr[6];
-        dtostrf(handle->vpp, 2, 2, rStr);
+    if (vpp_mv > (uint32_t)handle->vpp_mv * 102 / 100) {
         int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        firestarter_response_format(response_code, "VPP is high: %sv > %sv", vStr, rStr);
-    } else if (vpp < handle->vpp * .95) {
-        char vStr[6];
-        dtostrf(vpp, 2, 2, vStr);
-        char rStr[6];
-        dtostrf(handle->vpp, 2, 2, rStr);
-        firestarter_warning_response_format("VPP is low: %sv < %sv", vStr, rStr);
+        firestarter_response_format(response_code, "VPP is high: %umV > %umV", vpp_mv, handle->vpp_mv);
+    } else if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100) {
+        firestarter_warning_response_format("VPP is low: %umV < %umV", vpp_mv, handle->vpp_mv);
     }
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
 }

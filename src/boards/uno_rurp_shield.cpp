@@ -110,40 +110,45 @@ void rurp_set_data_input() {
 }
 
 
-double rurp_read_vcc() {
+uint16_t rurp_read_vcc_mv() {
     // Read 1.1V reference against AVcc
     // Set the analog reference to the internal 1.1V
     // Default is analogReference(DEFAULT) which is connected to the external 5V
     ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
 
     delay(2); // Wait for voltage to stabilize
-    ADCSRA |= _BV(ADSC); // Start conversion
-    while (bit_is_set(ADCSRA, ADSC)); // Wait for conversion to complete
+    ADCSRA |= _BV(ADSC);              // Start conversion
+    while (bit_is_set(ADCSRA, ADSC))  // Wait for conversion to complete
+        ;
 
     long result = ADCL;
     result |= ADCH << 8;
 
     // Calculate Vcc (supply voltage) in millivolts
-    // 1100 mV * 1024 ADC steps / ADC reading
-    return 1126400L / (double)result / 1000;
+    // VCC_mV = (1.1V * 1024 * 1000 mV/V) / ADC_reading = 1126400 / ADC_reading
+    if (result == 0) return 0;  // Avoid division by zero
+    return 1126400L / result;
 }
 
-
-
-double rurp_read_voltage() {
-    double refRes = rurp_read_vcc() / INPUT_RESOLUTION;
+uint16_t rurp_read_voltage_mv() {
+    uint16_t vcc_mv = rurp_read_vcc_mv();
     rurp_configuration_t* rurp_config = rurp_get_config();
-    long r1 = rurp_config->r1;
-    long r2 = rurp_config->r2;
+    uint32_t r1 = rurp_config->r1;
+    uint32_t r2 = rurp_config->r2;
 
-    // Correct voltage divider ratio calculation
-    double voltageDivider = 1.0 + static_cast<double>(r1) / r2;
+    if (r2 == 0) {
+        return 0;  // Avoid division by zero
+    }
 
-    // Read the analog value and convert to voltage
-    double vout = analogRead(VOLTAGE_MEASURE_PIN) * refRes;
+    // Set analog reference to default (VCC) for the measurement
+    analogReference(DEFAULT);
+    uint32_t adc_reading = analogRead(VOLTAGE_MEASURE_PIN);
 
-    // Calculate the input voltage
-    return vout * voltageDivider;
+    // Vin_mV = (ADC_reading * VCC_mV * (R1 + R2)) / (1024 * R2)
+    // Use 64-bit integer to avoid overflow during calculation.
+    uint64_t vin_mv = (uint64_t)adc_reading * vcc_mv * (r1 + r2) / (1024UL * r2);
+
+    return (uint16_t)vin_mv;
 }
 
 

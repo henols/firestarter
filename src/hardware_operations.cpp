@@ -8,13 +8,12 @@
 #include "operation_utils.h"
 #include "rurp_shield.h"
 #include "version.h"
-#include "logging.h"
 
 void hw_version_overide(char* revStr);
 void hw_init_read_voltage(firestarter_handle_t* handle);
 
 bool hw_read_voltage(firestarter_handle_t* handle) {
-     if (op_get_message(handle) != OP_MSG_ACK) {
+    if (op_get_message(handle) != OP_MSG_ACK) {
         return false;
     }
 
@@ -26,14 +25,12 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
         }
         handle->operation_state = 1;
     }
-    
-    double voltage = rurp_read_voltage();
-    const char* type = (handle->cmd == CMD_READ_VPE) ? "VPE" : "VPP";
-    char vStr[10];
-    dtostrf(voltage, 2, 2, vStr);
-    char vcc[10];
-    dtostrf(rurp_read_vcc(), 2, 2, vcc);
-    log_data_format("%s: %sv, Internal VCC: %sv", type, vStr, vcc);
+
+    uint16_t voltage_mv = rurp_read_voltage_mv();
+    uint16_t vcc_mv = rurp_read_vcc_mv();
+    const char* type = (handle->cmd == CMD_READ_VPE) ? ("VPE") : ("VPP");
+
+    log_data_format("%s: %u.%02uv, Internal VCC: %u.%02uv", type, voltage_mv / 1000, (voltage_mv % 1000) / 10, vcc_mv / 1000, (vcc_mv % 1000) / 10);
     delay(200);
     op_reset_timeout();
     return false;
