@@ -73,16 +73,16 @@ static inline bool _process_incoming_data(firestarter_handle_t* handle) {
 
     if (msg_type == OP_MSG_INCOMPLETE) {
         // No message from host. If we are not already waiting for data, request it.
-        if (!is_operation_waiting_for_data()) {
+        if (!is_operation_waiting_for_data(handle)) {
             // The host application shows its own progress, so we just ask for data.
             send_ack_const("Data?");
-            set_operation_waiting_for_data();
+            set_operation_waiting_for_data(handle);
         }
         return true;  // Continue waiting.
     }
 
     // We have received a message. Clear the flag so we can request the next chunk.
-    clear_operation_waiting_for_data();
+    clear_operation_waiting_for_data(handle);
 
     switch (msg_type) {
         case OP_MSG_DONE:

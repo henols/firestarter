@@ -8,7 +8,6 @@
 #ifdef ARDUINO_AVR_UNO
 #include "rurp_shield.h"
 #include <Arduino.h>
-#include "rurp_config_utils.h"
 #include "rurp_register_utils.h"
 
 #define RURP_CUSTOM_LOG
@@ -31,9 +30,12 @@ void log_debug(PGM_P type, const char* msg);
 
 
 void rurp_board_setup() {
-    // rurp_set_data_as_output();
-
-    DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE | READ_WRITE;
+    // Set control pins on PORTB to output.
+    // PB0-3 are register select lines, PB5 is Chip Enable.
+    // PB4 is User Button input.
+    // NOTE: The original code included `READ_WRITE` (0x40), which would attempt to control PB6.
+    // On a standard Uno, PB6 is a crystal pin and should not be used for I/O. It has been removed.
+    DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE;
     PORTB = USER_BUTTON;
 
     rurp_chip_disable();
@@ -80,11 +82,13 @@ void rurp_log_P(PGM_P type, PGM_P msg) {
 
 
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
+    // This function modifies only the specified control pin on PORTB,
+    // leaving other bits (like the USER_BUTTON pull-up) untouched.
+    // The original implementation was flawed and could clear other bits.
     if (state) {
-        PORTB |= pin | USER_BUTTON;
-    }
-    else {
-        PORTB &= ~(pin) | USER_BUTTON;
+        PORTB |= pin;
+    } else {
+        PORTB &= ~pin;
     }
 }
 
@@ -125,29 +129,10 @@ uint16_t rurp_read_vcc_mv() {
     result |= ADCH << 8;
 
     // Calculate Vcc (supply voltage) in millivolts
-    // VCC_mV = (1.1V * 1024 * 1000 mV/V) / ADC_reading = 1126400 / ADC_reading
+    // VCC_mV = (V_bandgap * ADC_resolution * 1000) / ADC_reading
+    // VCC_mV = (1.1V * 1024 steps * 1000 mV/V) / ADC_reading = 1126400 / ADC_reading
     if (result == 0) return 0;  // Avoid division by zero
     return 1126400L / result;
-}
-
-uint16_t rurp_read_voltage_mv(uint16_t ref_voltage) {
-    rurp_configuration_t* rurp_config = rurp_get_config();
-    uint32_t r1 = rurp_config->r1;
-    uint32_t r2 = rurp_config->r2;
-
-    if (r2 == 0) {
-        return 0;  // Avoid division by zero
-    }
-
-    // Set analog reference to default (VCC) for the measurement
-    analogReference(DEFAULT);
-    uint32_t adc_reading = analogRead(VOLTAGE_MEASURE_PIN);
-
-    // Vin_mV = (ADC_reading * VCC_mV * (R1 + R2)) / (1024 * R2)
-    // Use 64-bit integer to avoid overflow during calculation.
-    uint64_t vin_mv = (uint64_t)adc_reading * ref_voltage * (r1 + r2) / (1024UL * r2);
-
-    return (uint16_t)vin_mv;
 }
 
 

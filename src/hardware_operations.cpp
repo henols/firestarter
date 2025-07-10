@@ -63,8 +63,8 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
     const char* type = (handle->cmd == CMD_READ_VPE) ? "VPE" : "VPP";
 
     // Send the data back to the client.
-    log_data_format("%s: %u.%02uv, Internal VCC: %u.%03uv", type, voltage_mv / 1000, voltage_mv % 1000,
-                    vcc_mv / 1000, vcc_mv % 1000);
+    log_data_format("%s: %u.%02uV, Internal VCC: %u.%02uV", type, voltage_mv / 1000, (voltage_mv % 1000) / 10,
+                    vcc_mv / 1000, (vcc_mv % 1000) / 10);
                     
     op_reset_timeout();  // Reset the command timeout since we're actively communicating.
 

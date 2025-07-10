@@ -39,25 +39,29 @@ enum op_message_type {
 };
 
 
-#define set_operation_in_progress() \
-(handle->operation_state |= OPERATION_IN_PROGRESS)
+static inline void set_operation_in_progress(firestarter_handle_t* handle) {
+    handle->operation_state |= OPERATION_IN_PROGRESS;
+}
 
-#define clear_operation_in_progress() \
-(handle->operation_state &= ~OPERATION_IN_PROGRESS)
+static inline void clear_operation_in_progress(firestarter_handle_t* handle) {
+    handle->operation_state &= ~OPERATION_IN_PROGRESS;
+}
 
-#define is_operation_in_progress() \
-    ((handle->operation_state & OPERATION_IN_PROGRESS) == OPERATION_IN_PROGRESS)
+static inline bool is_operation_in_progress(const firestarter_handle_t* handle) {
+    return (handle->operation_state & OPERATION_IN_PROGRESS) == OPERATION_IN_PROGRESS;
+}
 
-#define set_operation_waiting_for_data() \
-    (handle->operation_state |= OPERATION_WAITING_FOR_DATA)
+static inline void set_operation_waiting_for_data(firestarter_handle_t* handle) {
+    handle->operation_state |= OPERATION_WAITING_FOR_DATA;
+}
 
-#define clear_operation_waiting_for_data() \
-    (handle->operation_state &= ~OPERATION_WAITING_FOR_DATA)
+static inline void clear_operation_waiting_for_data(firestarter_handle_t* handle) {
+    handle->operation_state &= ~OPERATION_WAITING_FOR_DATA;
+}
 
-#define is_operation_waiting_for_data() \
-    ((handle->operation_state & OPERATION_WAITING_FOR_DATA) == OPERATION_WAITING_FOR_DATA)
-
-
+static inline bool is_operation_waiting_for_data(const firestarter_handle_t* handle) {
+    return (handle->operation_state & OPERATION_WAITING_FOR_DATA) == OPERATION_WAITING_FOR_DATA;
+}
 
 /**
  * @brief Executes a simple, non-stateful operation that completes in a single logical step.

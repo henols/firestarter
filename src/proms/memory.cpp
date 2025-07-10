@@ -227,8 +227,8 @@ void uint32_to_bytes(char* buffer, int pos, uint32_t value) {
 
 void mem_util_blank_check(firestarter_handle_t* handle) {
     blank_check_progress_data_t* progress_data;
-    if (!is_operation_in_progress()) {
-        set_operation_in_progress();
+    if (!is_operation_in_progress(handle)) {
+        set_operation_in_progress(handle);
         handle->proggress_data = malloc(sizeof(blank_check_progress_data_t));
         progress_data = (blank_check_progress_data_t*)handle->proggress_data;
         progress_data->address = handle->address;
@@ -236,7 +236,7 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
     } else {
         progress_data = (blank_check_progress_data_t*)handle->proggress_data;
         if (handle->address >= handle->mem_size) {
-            clear_operation_in_progress();
+            clear_operation_in_progress(handle);
             handle->address = progress_data->address;
             free(handle->proggress_data);
             handle->proggress_data = NULL;

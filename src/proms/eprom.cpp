@@ -81,7 +81,7 @@ void eprom_erase_execute(firestarter_handle_t* handle) {
 }
 
 void eprom_write_init(firestarter_handle_t* handle) {
-    if(!is_operation_in_progress()){
+    if(!is_operation_in_progress(handle)){
         eprom_generic_init(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;

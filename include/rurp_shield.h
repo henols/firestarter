@@ -16,6 +16,7 @@ extern "C" {
 #include <stddef.h>
 #include <string.h>
 #include <avr/pgmspace.h>
+#include "rurp_types.h"
 
 #define VOLTAGE_MEASURE_PIN A2
 
@@ -97,21 +98,6 @@ extern "C" {
 #define CONTROL_REGISTER 0x08        // CONTROL REGISTER
 #define CHIP_ENABLE 0x20             // CHIP ENABLE
 
-
-#ifndef HARDWARE_REVISION
-#define rurp_register_t uint8_t
-#else
-#define rurp_register_t uint16_t
-#endif
-
-// Struct definition
-    typedef struct rurp_configuration {
-        char version[6];
-        long  r1;
-        long  r2;
-        uint8_t hardware_revision;
-    } rurp_configuration_t;
-
     // Function prototypes
     void rurp_board_setup();
     void rurp_load_config();
@@ -121,8 +107,8 @@ extern "C" {
     void rurp_set_programmer_mode();
     void rurp_set_communication_mode();
 #else
-#define rurp_set_programmer_mode();
-#define rurp_set_communication_mode();
+#define rurp_set_programmer_mode() ((void)0)
+#define rurp_set_communication_mode() ((void)0)
 #endif
 
     int rurp_communication_available();

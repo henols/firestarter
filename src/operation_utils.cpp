@@ -258,7 +258,7 @@ static inline int _execute_operation_house_keeping_func(void (*callback)(firesta
             return ERROR;
         }
 
-        if (is_operation_in_progress()) {
+        if (is_operation_in_progress(handle)) {
             return RETURN;
         }
 
@@ -286,7 +286,7 @@ static inline bool _single_step_operation_callback(firestarter_handle_t* handle)
     if (res == ERROR) {
         return false;
     }
-    if (!is_operation_in_progress()) {
+    if (!is_operation_in_progress(handle)) {
         set_operation_to_done(handle);
     }
     return true;  // Success,
