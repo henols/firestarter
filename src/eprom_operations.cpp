@@ -75,7 +75,7 @@ static inline bool _process_incoming_data(firestarter_handle_t* handle) {
         // No message from host. If we are not already waiting for data, request it.
         if (!is_operation_waiting_for_data(handle)) {
             // The host application shows its own progress, so we just ask for data.
-            send_ack_const("Data?");
+            send_ack_const("Req data");
             set_operation_waiting_for_data(handle);
         }
         return true;  // Continue waiting.
@@ -116,7 +116,7 @@ static inline bool _process_outgoing_data(firestarter_handle_t* handle) {
     }
 
     // The host application shows its own progress, so we send a simple message.
-    log_data_const("Read data");
+    log_data_const("Sending data");
     rurp_communication_write(handle->data_buffer, handle->data_size);
 
     if (!op_wait_for_ack(handle)) {

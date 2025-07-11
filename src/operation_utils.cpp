@@ -184,7 +184,7 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
 }
 
 void set_operation_to_done(firestarter_handle_t* handle) {
-    log_info_const("Maine Done");
+    log_info_const("Main done");
     set_operation_state_done();
     send_main_done();
 }

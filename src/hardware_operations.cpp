@@ -33,9 +33,9 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
             log_error_const("Error cmd");
             return true;  // Finish command with an error.
         }
-        delay(100);                  // Allow voltage to stabilize.
-        rurp_set_communication_mode(); // Switch back to communication mode to send the ready signal.
-        handle->operation_state = 1; // Transition to the reading state.
+        delay(100);                     // Allow voltage to stabilize.
+        rurp_set_communication_mode();  // Switch back to communication mode to send the ready signal.
+        handle->operation_state = 1;    // Transition to the reading state.
 
         // Send a ready signal to the client to prompt it for the first ACK.
         // This establishes a handshake and avoids a race condition.
@@ -64,7 +64,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
     // Send the data back to the client.
     log_data_format("%s: %u.%02uV, Internal VCC: %u.%02uV", type, voltage_mv / 1000, (voltage_mv % 1000) / 10,
                     vcc_mv / 1000, (vcc_mv % 1000) / 10);
-                    
+
     op_reset_timeout();  // Reset the command timeout since we're actively communicating.
 
     // Return false to indicate the command is not finished. It will continue
