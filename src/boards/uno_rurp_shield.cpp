@@ -10,7 +10,6 @@
 #include <Arduino.h>
 #include "rurp_register_utils.h"
 
-#define RURP_CUSTOM_LOG
 #include "rurp_serial_utils.h"
 
 #define USER_BUTTON 0x10             // USER BUTTON
@@ -64,7 +63,7 @@ void rurp_set_programmer_mode() {
 void rurp_log(PGM_P type, const char* msg) {
     log_debug(type, msg);
     if (com_mode) {
-        rurp_log_internal(type, msg);
+        _firestarter_log_ram(type, msg);
     }
 }
 
@@ -76,7 +75,7 @@ void rurp_log_P(PGM_P type, PGM_P msg) {
     log_debug(type, debug_msg_buffer);
     #endif
     if (com_mode) {
-        rurp_log_internal_P(type, msg);
+        _firestarter_log_progmem(type, msg);
     }
 }
 

@@ -24,6 +24,11 @@
 
 constexpr int INPUT_RESOLUTION = 1023;
 
+// Constant for VCC calculation using the internal 1.1V bandgap reference.
+// Formula: (1.1V * 1024 ADC steps * 1000 mV/V)
+static constexpr long VCC_CALC_CONSTANT = 1126400L;
+
+
 uint8_t control_pins = 0x00;
 
 void rurp_board_setup() {
@@ -151,11 +156,10 @@ uint16_t rurp_read_vcc_mv() {
     result |= ADCH << 8;
 
     // Calculate Vcc (supply voltage) in millivolts
-    // VCC_mV = (V_bandgap * ADC_resolution * 1000) / ADC_reading
-    // VCC_mV = (1.1V * 1024 steps * 1000 mV/V) / ADC_reading = 1126400 / ADC_reading
+    // VCC_mV = VCC_CALC_CONSTANT / ADC_reading
     // The original value 1125300L was based on 1023 steps, which is slightly less accurate.
     if (result == 0) return 0;  // Avoid division by zero
-    return 1126400L / result;
+    return VCC_CALC_CONSTANT / result;
 }
 
 
