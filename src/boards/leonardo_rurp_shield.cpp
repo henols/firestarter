@@ -22,7 +22,6 @@
 #define PORTD_CONTROL_MASK 0x40 // D12 (PD6)
 #define PORTC_CONTROL_MASK 0x80
 
-constexpr int INPUT_RESOLUTION = 1023;
 
 // Constant for VCC calculation using the internal 1.1V bandgap reference.
 // Formula: (1.1V * 1024 ADC steps * 1000 mV/V)

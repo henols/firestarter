@@ -53,12 +53,11 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
         // Returning false keeps the command active without doing anything.
         return false;
     }
+    delay(500);
 
-    rurp_set_programmer_mode();
     // An ACK was received. Proceed with taking a measurement.
     uint16_t vcc_mv = rurp_read_vcc_mv();
     uint16_t voltage_mv = rurp_read_voltage_mv(vcc_mv);
-    rurp_set_communication_mode();
 
     const char* type = (handle->cmd == CMD_READ_VPE) ? "VPE" : "VPP";
 
