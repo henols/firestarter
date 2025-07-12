@@ -22,7 +22,6 @@
 
 #define TIMEOUT_MS 1000
 
-
 #define CMD_IDLE 0
 #define CMD_READ 1
 #define CMD_WRITE 2
@@ -59,10 +58,8 @@
 
 #define FLAG_VERBOSE 0x80
 
-
 #define is_flag_set(flag) \
     ((handle->ctrl_flags & flag) == flag)
-
 
 #define ADDRESS_LINES_SIZE 20
 
