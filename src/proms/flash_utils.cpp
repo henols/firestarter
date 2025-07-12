@@ -31,16 +31,17 @@ void flash_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_
 
     unsigned long timeout = millis() + 150;
     while (millis() < timeout) {
-        // Check Data# Polling (DQ7)
-        // if ((fu_flash_data_poll() & 0x80) == (expected_data & 0x80)) { //Only check if bit 7 has flipped
-            // Verify completion with an additional read
-            if ((fu_flash_data_poll() & 0x80) == (fu_flash_data_poll() & 0x80)) { //No assuming other bits
+        // Data Polling: Read from the address and check DQ7.
+        // When the write is complete, the data read back will have the same DQ7 as the data written.
+        if ((fu_flash_data_poll() & 0x80) == (expected_data & 0x80)) {
+            // Some datasheets recommend reading a second time to confirm the write has completed.
+            if ((fu_flash_data_poll() & 0x80) == (expected_data & 0x80)) {
                 rurp_set_data_output();
                 rurp_chip_disable();
                 rurp_chip_input();
                 return;  // Operation completed successfully
             }
-        // }
+        }
     }
     firestarter_error_response("Operation timed out");
     return;
@@ -71,4 +72,3 @@ uint8_t fu_flash_data_poll() {
     rurp_chip_input();
     return data;
 }
-

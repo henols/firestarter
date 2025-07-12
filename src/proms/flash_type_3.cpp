@@ -22,6 +22,10 @@ uint16_t flash3_get_chip_id(firestarter_handle_t* handle);
 
 void flash3_generic_init(firestarter_handle_t* handle);
 
+// Worst-case erase time for older flash chips can be up to 100ms.
+// Add a 5ms buffer for safety.
+const int FLASH_ERASE_DELAY_MS = 105;
+
 void configure_flash3(firestarter_handle_t* handle) {
     debug("Configuring Flash");
     handle->firestarter_operation_init = flash3_generic_init;
@@ -62,7 +66,7 @@ void flash3_write_init(firestarter_handle_t* handle) {
     if (is_flag_set(FLAG_CAN_ERASE)) {
         if (!is_flag_set(FLAG_SKIP_ERASE)) {
             flash3_erase_execute(handle);
-            delay(105); //Old chips, worst case assumed to 5% longer to erase 
+            delay(FLASH_ERASE_DELAY_MS); 
         }
         else {
             debug("Skipping erase of memory");
@@ -107,4 +111,3 @@ uint16_t flash3_get_chip_id(firestarter_handle_t* handle) {
     flash_execute_command(FLASH_DISABLE_ID);
     return chip_id;
 }
-
