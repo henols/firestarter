@@ -13,6 +13,8 @@
 #include "logging.h"
 #include "memory_utils.h"
 #include "rurp_shield.h"
+#include "operation_utils.h"
+
 
 #define NUMBER_OF_RETRIES 20
 
@@ -43,20 +45,20 @@ void configure_eprom(firestarter_handle_t* handle) {
     switch (handle->cmd) {
         case CMD_WRITE:
             handle->firestarter_operation_init = eprom_write_init;
-            handle->firestarter_operation_execute = eprom_write_execute;
+            handle->firestarter_operation_main = eprom_write_execute;
             break;
         case CMD_ERASE:
-            handle->firestarter_operation_execute = eprom_erase_execute;
+            handle->firestarter_operation_main = eprom_erase_execute;
             if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
                 handle->firestarter_operation_end = mem_util_blank_check;
             }
             break;
         case CMD_BLANK_CHECK:
-            handle->firestarter_operation_execute = mem_util_blank_check;
+            handle->firestarter_operation_main = mem_util_blank_check;
             break;
         case CMD_CHECK_CHIP_ID:
             handle->firestarter_operation_init = eprom_check_chip_id_init;
-            handle->firestarter_operation_execute = eprom_check_chip_id_execute;
+            handle->firestarter_operation_main = eprom_check_chip_id_execute;
             break;
     }
 
@@ -79,16 +81,18 @@ void eprom_erase_execute(firestarter_handle_t* handle) {
 }
 
 void eprom_write_init(firestarter_handle_t* handle) {
-    eprom_generic_init(handle);
-    if (handle->response_code == RESPONSE_CODE_ERROR) {
-        return;
-    }
-
-    if (is_flag_set(FLAG_CAN_ERASE)) {
-        if (!is_flag_set(FLAG_SKIP_ERASE)) {
-            eprom_internal_erase(handle);
-        } else {
-            copy_to_buffer(handle->response_msg, "Skipping erase.");
+    if(!is_operation_in_progress(handle)){
+        eprom_generic_init(handle);
+        if (handle->response_code == RESPONSE_CODE_ERROR) {
+            return;
+        }
+        
+        if (is_flag_set(FLAG_CAN_ERASE)) {
+            if (!is_flag_set(FLAG_SKIP_ERASE)) {
+                eprom_internal_erase(handle);
+            } else {
+                copy_to_buffer(handle->response_msg, "Skipping erase.");
+            }
         }
     }
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
@@ -192,26 +196,20 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
     }
 
     delay(100);
-    double vpp = rurp_read_voltage();
+    uint16_t vpp_mv = rurp_read_voltage_mv();
 #ifdef SERIAL_DEBUG
-    char vppStr[6];
-    dtostrf(vpp, 2, 2, vppStr);
-    debug_format("Checking VPP voltage %s", vppStr);
+    debug_format("Checking VPP voltage %u mV", vpp_mv);
 #endif
-
-    if (vpp > handle->vpp * 1.02) {
-        char vStr[6];
-        dtostrf(vpp, 2, 2, vStr);
-        char rStr[6];
-        dtostrf(handle->vpp, 2, 2, rStr);
+                   
+    if (vpp_mv > (uint32_t)handle->vpp_mv + 500) {
         int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        firestarter_response_format(response_code, "VPP is high: %sv > %sv", vStr, rStr);
-    } else if (vpp < handle->vpp * .95) {
-        char vStr[6];
-        dtostrf(vpp, 2, 2, vStr);
-        char rStr[6];
-        dtostrf(handle->vpp, 2, 2, rStr);
-        firestarter_warning_response_format("VPP is low: %sv < %sv", vStr, rStr);
+        firestarter_response_format(response_code, "VPP is high: %u.%uV > %u.%uV",
+                                    (vpp_mv + 50) / 1000, (((vpp_mv + 50) / 100) % 10),
+                                    (handle->vpp_mv + 50) / 1000, (((handle->vpp_mv + 50) / 100) % 10));
+    } else if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100) {
+        firestarter_warning_response_format("VPP is low: %u.%uV < %u.%uV",
+                                            (vpp_mv + 50) / 1000, (((vpp_mv + 50) / 100) % 10),
+                                            (handle->vpp_mv + 50) / 1000, (((handle->vpp_mv + 50) / 100) % 10));
     }
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
 }
@@ -226,7 +224,8 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
     delay(100);
     rurp_chip_enable();
     delayMicroseconds(handle->pulse_delay);
-    rurp_chip_output();
+    // After the erase pulse, we should disable the chip to end the programming cycle.
+    rurp_chip_disable();
 
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
 }

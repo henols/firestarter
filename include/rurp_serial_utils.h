@@ -1,58 +1,39 @@
 #ifndef __RURP_SERIAL_UTILS_H__
 #define __RURP_SERIAL_UTILS_H__
 
+#include "firestarter.h"
+#include <avr/pgmspace.h>
 
+#include "firestarter.h"
+#include "logging.h"
 #ifndef SERIAL_PORT
 #include <Arduino.h>
 #define SERIAL_PORT Serial
 #endif
-
 #ifdef SERIAL_DEBUG
 char* debug_msg_buffer;
 #endif
 
-void rurp_serial_begin(unsigned long baud) {
-    SERIAL_PORT.begin(baud);
-    while (!SERIAL_PORT) {
-        delayMicroseconds(1);
-    }
-    delay(50);
-}
+// --- Core Logging Functions ---
+// Core logging function for RAM messages. Takes type from PROGMEM.
+void _firestarter_log_ram(PGM_P type, const char* msg);
 
-void rurp_serial_end() {
-    SERIAL_PORT.end();
-    delay(5);
-}
+// Core logging function for PROGMEM messages.
+void _firestarter_log_progmem(PGM_P type, PGM_P p_msg);
 
-int rurp_communication_available() {
-    return SERIAL_PORT.available();
-}
+void rurp_serial_begin(unsigned long baud);
 
-int rurp_communication_read() {
-    return SERIAL_PORT.read();
-}
+void rurp_serial_end();
 
-size_t rurp_communication_read_bytes(char* buffer, size_t length) {
-    return SERIAL_PORT.readBytes(buffer, length);
-}
+int rurp_communication_available();
 
-size_t rurp_communication_write(const char* buffer, size_t size) {
-    size_t bytes = SERIAL_PORT.write(buffer, size);
-    SERIAL_PORT.flush();
-    return bytes;
-}
+int rurp_communication_read();
 
+int rurp_communication_peak();
 
-#ifndef RURP_CUSTOM_LOG
-void rurp_log(const char* type, const char* msg) {
-#else
-void rurp_log_internal(const char* type, const char* msg) {
-#endif
-    SERIAL_PORT.print(type);
-    SERIAL_PORT.print(": ");
-    SERIAL_PORT.println(msg);
-    SERIAL_PORT.flush();
-}
+size_t rurp_communication_read_bytes(char* buffer, size_t size);
 
+int rurp_communication_read_data(char* buffer);
+size_t rurp_communication_write(const char* buffer, size_t size);
 
-#endif // __RURP_SERIAL_UTILS_H__
+#endif  // __RURP_SERIAL_UTILS_H__

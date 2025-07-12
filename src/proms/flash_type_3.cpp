@@ -28,18 +28,18 @@ void configure_flash3(firestarter_handle_t* handle) {
     switch (handle->cmd) {
     case CMD_WRITE:
         handle->firestarter_operation_init = flash3_write_init;
-        handle->firestarter_operation_execute = flash3_write_execute;
+        handle->firestarter_operation_main = flash3_write_execute;
         break;
     case CMD_ERASE:
-        handle->firestarter_operation_execute = flash3_erase_execute;
+        handle->firestarter_operation_main = flash3_erase_execute;
         // handle->firestarter_operation_end = memory_blank_check;
         break;
     case CMD_BLANK_CHECK:
-        handle->firestarter_operation_execute = mem_util_blank_check;
+        handle->firestarter_operation_main = mem_util_blank_check;
         break;
     case CMD_CHECK_CHIP_ID:
         handle->firestarter_operation_init = NULL;
-        handle->firestarter_operation_execute = flash3_check_chip_id_execute;
+        handle->firestarter_operation_main = flash3_check_chip_id_execute;
         break;
     }
 }

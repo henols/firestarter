@@ -7,11 +7,10 @@
 
 #ifndef __MEMORY_UTILS_H__
 #define __MEMORY_UTILS_H__
-#ifdef __cplusplus
 #include "firestarter.h"
+#ifdef __cplusplus
 extern "C" {
 #endif
-
 #define WRITE_FLAG 0
 #define READ_FLAG 1
 
@@ -22,8 +21,10 @@ rurp_register_t mem_util_calculate_lsb_register(firestarter_handle_t* handle, ui
 rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, uint32_t address);
 rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* handle, uint32_t address);
 
-#define using_p1_as_vpp(handle) ((handle->pins == 32 && handle->bus_config.vpp_line == VPP_P1_32_DIP) || (handle->pins < 32 && handle->bus_config.vpp_line == VPP_P1_28_DIP))
-
+static inline bool using_p1_as_vpp(const firestarter_handle_t* handle) {
+    return (handle->pins == 32 && handle->bus_config.vpp_line == VPP_P1_32_DIP) ||
+           (handle->pins < 32 && handle->bus_config.vpp_line == VPP_P1_28_DIP);
+}
 #ifdef __cplusplus
 }
 #endif

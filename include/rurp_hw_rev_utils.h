@@ -7,6 +7,7 @@
 #include <Arduino.h>
 #include <stdint.h>
 #include <string.h>
+#include "logging.h"
 
 uint8_t revision = 0xFF;
 
@@ -14,7 +15,9 @@ uint8_t rurp_map_ctrl_reg_for_hardware_revision(rurp_register_t data) {
     uint8_t ctrl_reg = 0;
     uint8_t hw = rurp_get_hardware_revision();
     switch (hw) {
-    case REVISION_2:
+    case REVISION_2_0:
+    case REVISION_2_1:
+    case REVISION_2_2: 
         ctrl_reg = data & (A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | ADDRESS_LINE_17 | READ_WRITE | REGULATOR);
         ctrl_reg |= data & VPE_TO_VPP ? REV_2_VPE_TO_VPP : 0;
         ctrl_reg |= data & ADDRESS_LINE_16 ? REV_2_ADDRESS_LINE_16 : 0;
@@ -46,7 +49,7 @@ void rurp_detect_hardware_revision() {
         revision = analogRead(VOLTAGE_MEASURE_PIN) < 1000 ? REVISION_1 : REVISION_0;
         break;
     case 0:
-        revision = REVISION_2;
+        revision = REVISION_2_0;
         break;
     default:
         // Unknown hardware revision

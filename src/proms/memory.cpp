@@ -14,6 +14,7 @@
 #include "flash_type_3.h"
 #include "logging.h"
 #include "memory_utils.h"
+#include "operation_utils.h"
 #include "rurp_shield.h"
 #include "sram.h"
 
@@ -40,18 +41,18 @@ uint8_t programming = 0;
 void configure_memory(firestarter_handle_t* handle) {
     debug("Configuring memory");
     handle->firestarter_operation_init = NULL;
-    handle->firestarter_operation_execute = NULL;
+    handle->firestarter_operation_main = NULL;
     handle->firestarter_operation_end = NULL;
 
     switch (handle->cmd) {
         case CMD_READ:
-            handle->firestarter_operation_execute = memory_read_execute;
+            handle->firestarter_operation_main = memory_read_execute;
             break;
         case CMD_WRITE:
-            handle->firestarter_operation_execute = memory_write_execute;
+            handle->firestarter_operation_main = memory_write_execute;
             break;
         case CMD_VERIFY:
-            handle->firestarter_operation_execute = memory_verify_execute;
+            handle->firestarter_operation_main = memory_verify_execute;
             break;
     }
 
@@ -182,7 +183,7 @@ void memory_verify_execute(firestarter_handle_t* handle) {
         uint8_t byte = handle->firestarter_get_data(handle, handle->address + i);
         uint8_t expected = handle->data_buffer[i];
         if (byte != expected) {
-            firestarter_error_response_format("Expecting 0x%02x got 0x%02x at 0x%04x", expected, byte, handle->address + i);
+            firestarter_error_response_format("0x%02x != 0x%02x at 0x%06x", expected, byte, handle->address + i);
             return;
         }
     }
@@ -212,12 +213,58 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
     return reorg_address;
 }
 
+typedef struct {
+    uint32_t address;
+} blank_check_progress_data_t;
+
+#define BLANK_CHECK_CHUNK_SIZE 2048
+void uint32_to_bytes(char* buffer, int pos, uint32_t value) {
+    buffer[pos] = (value >> 24) & 0xFF;
+    buffer[pos++] = (value >> 16) & 0xFF;
+    buffer[pos++] = (value >> 8) & 0xFF;
+    buffer[pos++] = value & 0xFF;
+}
+
 void mem_util_blank_check(firestarter_handle_t* handle) {
-    for (uint32_t i = 0; i < handle->mem_size; i++) {
-        uint8_t val = handle->firestarter_get_data(handle, i);
-        if (val != 0xFF) {
-            firestarter_error_response_format("Mem not blank, at 0x%06x, v: 0x%02x", i, val);
+    blank_check_progress_data_t* progress_data;
+    if (!is_operation_in_progress(handle)) {
+        set_operation_in_progress(handle);
+        handle->proggress_data = malloc(sizeof(blank_check_progress_data_t));
+        progress_data = (blank_check_progress_data_t*)handle->proggress_data;
+        progress_data->address = handle->address;
+        handle->address = 0;
+    } else {
+        progress_data = (blank_check_progress_data_t*)handle->proggress_data;
+        if (handle->address >= handle->mem_size) {
+            clear_operation_in_progress(handle);
+            handle->address = progress_data->address;
+            free(handle->proggress_data);
+            handle->proggress_data = NULL;
             return;
         }
     }
+
+    // for (uint32_t i = handle->address; i < handle->address + BLANK_CHECK_CHUNK_SIZE; i++) {
+    uint32_t end_address = handle->address + BLANK_CHECK_CHUNK_SIZE;
+    for (uint32_t i = handle->address; i < end_address && i < handle->mem_size; i++) {
+        uint8_t val = handle->firestarter_get_data(handle, i);
+        if (val != 0xFF) {
+            firestarter_error_response_format("Not blank, at 0x%06x, v: 0x%02x", i, val);
+            return;
+        }
+    }
+    handle->address += BLANK_CHECK_CHUNK_SIZE;
+// #define RAW_DATA_PROGRESS
+#ifdef RAW_DATA_PROGRESS
+    handle->response_code = RESPONSE_CODE_DATA;
+    uint32_to_bytes(handle->data_buffer, 0, handle->address);
+    uint32_to_bytes(handle->data_buffer, 4, handle->mem_size);
+    handle->data_size = 8;
+#else
+    if (handle->address > handle->mem_size) {
+        handle->address = handle->mem_size;
+    }
+    // Send progress back to the client
+    firestarter_data_response_format("%lu/%lu", handle->address, handle->mem_size);
+#endif
 }

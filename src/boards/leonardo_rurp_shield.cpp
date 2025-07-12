@@ -9,32 +9,33 @@
 #ifdef ARDUINO_AVR_LEONARDO
 #include "rurp_shield.h"
 #include <Arduino.h>
-#include "rurp_config_utils.h"
 #include "rurp_register_utils.h"
 #include "logging.h"
 
 #include "rurp_serial_utils.h"
 
 #define PORTC_DATA_MASK 0x40
-#define PORTD_DATA_MASK 0x9f
+#define PORTD_DATA_MASK 0x9f // D0(PD2), D1(PD3), D2(PD1), D3(PD0), D4(PD4), D7(PD7)
 #define PORTE_DATA_MASK 0x40
 
 #define PORTB_CONTROL_MASK 0xf0
-#define PORTD_CONTROL_MASK 0x40
+#define PORTD_CONTROL_MASK 0x40 // D12 (PD6)
 #define PORTC_CONTROL_MASK 0x80
 
-#define USER_BUTTON PORTD_CONTROL_MASK
 
-constexpr int INPUT_RESOLUTION = 1023;
+// Constant for VCC calculation using the internal 1.1V bandgap reference.
+// Formula: (1.1V * 1024 ADC steps * 1000 mV/V)
+static constexpr long VCC_CALC_CONSTANT = 1126400L;
+
 
 uint8_t control_pins = 0x00;
 
 void rurp_board_setup() {
     DDRB |= PORTB_CONTROL_MASK; // Set pins D8-D13 as output
-    DDRC |= PORTC_CONTROL_MASK; // Set pin D13 as output
+    DDRC |= PORTC_CONTROL_MASK; // Set pin D13 as output (PC7)
+    DDRD |= PORTD_CONTROL_MASK; // Set pin D12 as output (PD6)
 
-    DDRD &= ~USER_BUTTON; // Set pin D12 as input
-    PORTD |= USER_BUTTON; // Enable pull-up resistor on pin D12
+    // Note: User button is not available on Leonardo shield revision.
 
     SERIAL_PORT.begin(MONITOR_SPEED);
     while (!SERIAL_PORT) {
@@ -45,47 +46,86 @@ void rurp_board_setup() {
 }
 
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
-    // log_info("Setting control pins");
-    control_pins = state ? control_pins | pin : control_pins & ~(pin);
-    uint8_t nbyte = control_pins << 2;
-    
-    PORTC = (PORTC & ~PORTC_CONTROL_MASK) | (nbyte & PORTC_CONTROL_MASK); // set pins D13 (PC7 in PORTC) from byte bits 5
-    PORTB = (PORTB & ~PORTB_CONTROL_MASK) | (nbyte << 2); // set pins D8-D11 (PB4-PB7 in PORTB) from byte bits 0-3
+    // Update the state of the logical control pins
+    control_pins = state ? (control_pins | pin) : (control_pins & ~pin);
+
+    // Map logical control_pins bits to physical port pins
+    // The control lines are scattered across PORTB, PORTC, and PORTD.
+    // Logical Bit -> Arduino Pin -> MCU Pin
+    // ---------------------------------------
+    // Bit 0       -> D8          -> PB4
+    // Bit 1       -> D9          -> PB5
+    // Bit 2       -> D10         -> PB6
+    // Bit 3       -> D11         -> PB7
+    // Bit 4       -> D12         -> PD6
+    // Bit 5       -> D13         -> PC7
+
+    // Bits 0-3 -> PB4-PB7
+    uint8_t portb_val = control_pins << 4;
+    // Bit 4 -> PD6
+    uint8_t portd_val = (control_pins & 0x10) << 2;
+    // Bit 5 -> PC7
+    uint8_t portc_val = (control_pins & 0x20) << 2;
+
+    // Atomically update the ports using read-modify-write
+    PORTB = (PORTB & ~PORTB_CONTROL_MASK) | portb_val;
+    PORTD = (PORTD & ~PORTD_CONTROL_MASK) | portd_val;
+    PORTC = (PORTC & ~PORTC_CONTROL_MASK) | portc_val;
 }
 
 uint8_t rurp_user_button_pressed() {
-    return (PIND & USER_BUTTON) == 0;
+    // User button is not connected on the Leonardo shield revision.
+    return 0;
 }
 
 void rurp_write_data_buffer(uint8_t data) {
     rurp_set_data_output(); // Ensure data lines are output
-    
-    uint8_t portd_val = data & 0x10;        // bit 4 -> PD4
 
-    uint8_t lbyte = data << 1;
-    uint8_t portc_val = lbyte & PORTC_DATA_MASK; // bit 5 -> PC6
-    portd_val |= (lbyte & 0x80) | ((lbyte << 1) & 0x0c);     // bit 6 -> PD7, bit 2 -> PD1, bit 3 -> PD0
+    // Map data bus bits (D0-D7) to their respective port pins for Leonardo.
+    // This is complex due to the non-contiguous pinout.
+    // Data Bit -> Arduino Pin -> MCU Pin
+    // -----------------------------------
+    // D0       -> D0          -> PD2
+    // D1       -> D1          -> PD3
+    // D2       -> D2          -> PD1
+    // D3       -> D3          -> PD0
+    // D4       -> D4          -> PD4
+    // D5       -> D5          -> PC6
+    // D6       -> D6          -> PD7
+    // D7       -> D7          -> PE6
 
-    uint8_t rbyte = data >> 1;
-    uint8_t porte_val = rbyte & PORTE_DATA_MASK; // bit 7 -> PE6
-    portd_val |= (rbyte & 0x02) | ((rbyte >> 2) & 0x01); // bit 0 -> PD2, bit 1 -> PD3
+    uint8_t portd_val = ((data & _BV(0)) << 2) | // D0 to PD2
+                        ((data & _BV(1)) << 2) | // D1 to PD3
+                        ((data & _BV(2)) >> 1) | // D2 to PD1
+                        ((data & _BV(3)) >> 3) | // D3 to PD0
+                        (data & _BV(4)) |        // D4 to PD4
+                        ((data & _BV(6)) << 1);  // D6 to PD7
 
-    // Clear the bits we are about to update, then set the new bits.
+    uint8_t portc_val = (data & _BV(5)) << 1;    // D5 to PC6
+    uint8_t porte_val = (data & _BV(7)) >> 1;    // D7 to PE6
+
+    // Atomically update the ports using read-modify-write
     PORTD = (PORTD & ~PORTD_DATA_MASK) | portd_val;
     PORTC = (PORTC & ~PORTC_DATA_MASK) | portc_val;
     PORTE = (PORTE & ~PORTE_DATA_MASK) | porte_val;
 }
 
 uint8_t rurp_read_data_buffer() {
-    uint8_t data = PIND & 0x10; // PD4 -> bit 4.
-    uint8_t rpind = PIND >> 1;
-    data |= rpind & 0x40; // PD7 -> bit 6.
-    data |= (rpind >> 1) & 0x03; // PD2 -> bit 0, PD3 -> bit 1.
+    // Read from ports and map back to data bus bits (D0-D7)
+    uint8_t pind_val = PIND;
+    uint8_t pinc_val = PINC;
+    uint8_t pine_val = PINE;
 
-    uint8_t lpind = PIND << 1;
-    data |= (lpind & 0x04) | ((lpind << 2) & 0x08); // PD1 -> bit 2, PD0 -> bit 3.
+    uint8_t data = 0;
+    data |= ((pind_val & _BV(2)) >> 2); // PD2 -> D0
+    data |= ((pind_val & _BV(3)) >> 2); // PD3 -> D1
+    data |= ((pind_val & _BV(1)) << 1); // PD1 -> D2
+    data |= ((pind_val & _BV(0)) << 3); // PD0 -> D3
+    data |= (pind_val & _BV(4));        // PD4 -> D4
+    data |= ((pinc_val & _BV(6)) >> 1); // PC6 -> D5
+    data |= ((pind_val & _BV(7)) >> 1); // PD7 -> D6
+    data |= ((pine_val & _BV(6)) << 1); // PE6 -> D7
 
-    data |= ((PINC >> 1) & 0x20) | ((PINE << 1) & 0x80);
     return data;
 }
 
@@ -101,41 +141,6 @@ void rurp_set_data_input() {
     DDRE &= ~PORTE_DATA_MASK; // Set pin D6 as output
 }
 
-double rurp_read_vcc() {
-    // Read 1.1V reference against AVcc
-    // Set the analog reference to the internal 1.1V
-    // Default is analogReference(DEFAULT) which is connected to the external 5V
-    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
-
-    delay(2); // Wait for voltage to stabilize
-    ADCSRA |= _BV(ADSC); // Start conversion
-    while (bit_is_set(ADCSRA, ADSC)); // Wait for conversion to complete
-    ADCSRA |= _BV(ADSC); // Start conversion
-    while (bit_is_set(ADCSRA, ADSC)); // measuring
-    long result = ADCL;
-    result |= ADCH << 8;
-
-    // Calculate Vcc (supply voltage) in millivolts
-    // 1100 mV * 1024 ADC steps / ADC reading
-    return 1125300L / result / 1000;
-}
-
-double rurp_read_voltage() {
-    double refRes = rurp_read_vcc() / INPUT_RESOLUTION;
-    rurp_configuration_t* rurp_config = rurp_get_config();
-    long r1 = rurp_config->r1;
-    long r2 = rurp_config->r2;
-
-    // Correct voltage divider ratio calculation
-    double voltageDivider = 1.0 + static_cast<double>(r1) / r2;
-
-    // Read the analog value and convert to voltage
-    double vout = analogRead(VOLTAGE_MEASURE_PIN) * refRes;
-
-    // Calculate the input voltage
-    return vout * voltageDivider;
-}
-
 #ifdef SERIAL_DEBUG
 void debug_setup() {}
 
@@ -144,5 +149,3 @@ void debug_buf(const char* msg) {
 }
 #endif
 #endif
-
-

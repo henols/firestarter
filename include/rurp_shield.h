@@ -15,6 +15,8 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <avr/pgmspace.h>
+#include "rurp_types.h"
 
 #define VOLTAGE_MEASURE_PIN A2
 
@@ -34,7 +36,9 @@ extern "C" {
 #define HARDWARE_REVISION_PIN A3
 #define REVISION_0 0
 #define REVISION_1 1
-#define REVISION_2 2
+#define REVISION_2_0 2
+#define REVISION_2_1 3
+#define REVISION_2_2 4
 
 #define ADDRESS_LINE_16             0x01
 #define A9_VPP_ENABLE   0x02
@@ -94,21 +98,6 @@ extern "C" {
 #define CONTROL_REGISTER 0x08        // CONTROL REGISTER
 #define CHIP_ENABLE 0x20             // CHIP ENABLE
 
-
-#ifndef HARDWARE_REVISION
-#define rurp_register_t uint8_t
-#else
-#define rurp_register_t uint16_t
-#endif
-
-// Struct definition
-    typedef struct rurp_configuration {
-        char version[6];
-        long  r1;
-        long  r2;
-        uint8_t hardware_revision;
-    } rurp_configuration_t;
-
     // Function prototypes
     void rurp_board_setup();
     void rurp_load_config();
@@ -118,16 +107,20 @@ extern "C" {
     void rurp_set_programmer_mode();
     void rurp_set_communication_mode();
 #else
-#define rurp_set_programmer_mode();
-#define rurp_set_communication_mode();
+#define rurp_set_programmer_mode() ((void)0)
+#define rurp_set_communication_mode() ((void)0)
 #endif
 
     int rurp_communication_available();
     int rurp_communication_read();
+    int rurp_communication_peak();
     size_t rurp_communication_write(const char* buffer, size_t size);
     size_t rurp_communication_read_bytes(char* buffer, size_t length);
+    int rurp_communication_read_data(char* buffer);
+    
 
-    void rurp_log(const char* type, const char* msg);
+    void rurp_log(PGM_P type, const char* msg);
+    void rurp_log_P(PGM_P type, PGM_P msg);
 
     void rurp_set_data_output();
     void rurp_set_data_input();
@@ -149,9 +142,10 @@ extern "C" {
     void rurp_write_data_buffer(uint8_t data);
     uint8_t rurp_read_data_buffer();
 
-    double rurp_read_vcc();
-    double rurp_read_voltage();
+    uint16_t rurp_read_vcc_mv();
+    uint16_t rurp_read_voltage_mv();
 
+    long rurp_get_bandgap_adc_reading();
     uint8_t rurp_user_button_pressed();
 
     rurp_configuration_t* rurp_get_config();
