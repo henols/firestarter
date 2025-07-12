@@ -112,29 +112,6 @@ void rurp_set_data_input() {
     DDRD = 0x00;
 }
 
-
-uint16_t rurp_read_vcc_mv() {
-    // Read 1.1V reference against AVcc
-    // Set the analog reference to the internal 1.1V
-    // Default is analogReference(DEFAULT) which is connected to the external 5V
-    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
-
-    delay(2); // Wait for voltage to stabilize
-    ADCSRA |= _BV(ADSC);              // Start conversion
-    while (bit_is_set(ADCSRA, ADSC))  // Wait for conversion to complete
-        ;
-
-    long result = ADCL;
-    result |= ADCH << 8;
-
-    // Calculate Vcc (supply voltage) in millivolts
-    // VCC_mV = (V_bandgap * ADC_resolution * 1000) / ADC_reading
-    // VCC_mV = (1.1V * 1024 steps * 1000 mV/V) / ADC_reading = 1126400 / ADC_reading
-    if (result == 0) return 0;  // Avoid division by zero
-    return 1126400L / result;
-}
-
-
 #ifdef SERIAL_DEBUG
 #include <SoftwareSerial.h>
 SoftwareSerial debugSerial(RX_DEBUG, TX_DEBUG);

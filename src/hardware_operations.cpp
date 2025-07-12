@@ -57,13 +57,14 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
 
     // An ACK was received. Proceed with taking a measurement.
     uint16_t vcc_mv = rurp_read_vcc_mv();
-    uint16_t voltage_mv = rurp_read_voltage_mv(vcc_mv);
+    uint16_t voltage_mv = rurp_read_voltage_mv();
 
     const char* type = (handle->cmd == CMD_READ_VPE) ? "VPE" : "VPP";
 
     // Send the data back to the client.
-    log_data_format("%s: %u.%02uV, Internal VCC: %u.%02uV", type, voltage_mv / 1000, (voltage_mv % 1000) / 10,
-                    vcc_mv / 1000, (vcc_mv % 1000) / 10);
+    log_data_format("%s: %u.%uV, Internal VCC: %u.%uV", type,
+                    (voltage_mv + 50) / 1000, (((voltage_mv + 50) / 100) % 10),
+                    (vcc_mv + 50) / 1000, (((vcc_mv + 50) / 100) % 10));
 
     op_reset_timeout();  // Reset the command timeout since we're actively communicating.
 

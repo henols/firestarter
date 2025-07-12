@@ -54,11 +54,12 @@ void setup() {
 bool parse_json(firestarter_handle_t* handle) {
     debug("Parse JSON");
 #ifdef EXTRA_INFO_LOGGING
-    log_info((const char*)handle->data_buffer);
+    // log_info_format("'%s'", handle->data_buffer);
+
 #endif
 
     jsmn_parser parser;
-    jsmntok_t tokens[NUMBER_JSNM_TOKENS];
+    static jsmntok_t tokens[NUMBER_JSNM_TOKENS];
 
     jsmn_init(&parser);
     int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
@@ -125,7 +126,10 @@ bool init_programmer(firestarter_handle_t* handle) {
     handle->operation_state = 0;
 
     handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
+#ifdef EXTRA_INFO_LOGGING
+    handle->ctrl_flags = 0x80;
     log_info_format("Buffer size: %d", handle->data_size);
+#endif
     if (handle->data_size == 0) {
         log_error_const("Empty input");
         return false;
@@ -137,7 +141,7 @@ bool init_programmer(firestarter_handle_t* handle) {
         return false;
     };
 
-    #ifdef EXTRA_INFO_LOGGING
+#ifdef EXTRA_INFO_LOGGING
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
         log_info_format("Memory size 0x%lx", handle->mem_size);
         log_info_format("Address mask 0x%lx", handle->bus_config.address_mask);

@@ -6,6 +6,7 @@
  */
 
 #include "json_parser.h"
+#include <stdio.h>
 
 #include "jsmn.h"
 #include "logging.h"
@@ -80,31 +81,52 @@ int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter
     handle->bus_config.address_mask = 0;
     handle->chip_id = 0;
 
-    for (int i = 1; i < token_count; i++) {
-        uint8_t cmd = get_cmd(json, tokens, i);
-        if (cmd != 0xFF) {
-            handle->cmd = cmd;
-            i++;
+    if (token_count < 1 || tokens[0].type != JSMN_OBJECT) {
+        return -1; // Not a JSON object
+    }
+
+    int num_pairs = tokens[0].size;
+    int token_idx = 1;
+
+    for (int i = 0; i < num_pairs; i++) {
+        if (token_idx >= token_count) {
+            return -1; // Should not happen with valid JSON
+        }
+
+        jsmntok_t* key_token = &tokens[token_idx];
+
+        // The 'cmd' key is handled by json_get_cmd before this function is called.
+        // We just need to identify and skip it here.
+        if (jsoneq(json, key_token, "cmd") == 0 || jsoneq(json, key_token, "state") == 0) {
+            token_idx += 2; // Skip key and value
             continue;
         }
 
-        bool parsed = false;
+        bool found = false;
         for (size_t j = 0; j < sizeof(key_parsers) / sizeof(key_parsers[0]); j++) {
             PGM_P key = (PGM_P)pgm_read_ptr(&key_parsers[j].key);
-            if (jsoneq_(json, &tokens[i], key) == 0) {
+            if (jsoneq_(json, key_token, key) == 0) {
                 bool (*parser_func)(const char*, jsmntok_t*, int, firestarter_handle_t*) = (void*)pgm_read_ptr(&key_parsers[j].parser_func);
-                parser_func(json, tokens, i, handle);
-                parsed = true;
+                parser_func(json, tokens, token_idx, handle);
+                token_idx += 2; // Skip key and simple value
+                found = true;
                 break;
             }
         }
 
-        if (parsed) {
-            i++; // Skip the value token
-        } else if (jsoneq(json, &tokens[i], "bus-config") == 0) {
-            i +=  parse_bus_config(json, &tokens[i], token_count - i, handle) + 1;
+        if (found) {
+            continue;
+        }
+
+        if (jsoneq(json, key_token, "bus-config") == 0) {
+            int consumed = parse_bus_config(json, &tokens[token_idx], token_count - token_idx, handle);
+            if (consumed < 0) return -1;
+            token_idx += 1 + consumed; // Advance past the key and the entire object value
         } else {
-            firestarter_error_response_format("Unknown field: %s", json + tokens[i].start);
+            char field_name[32];
+            int len = key_token->end - key_token->start;
+            snprintf(field_name, sizeof(field_name), "%.*s", len, json + key_token->start);
+            firestarter_error_response_format("Unknown field: %s", field_name);
             return -1;
         }
     }
@@ -169,37 +191,54 @@ uint8_t get_cmd(const char* json, jsmntok_t* tokens, int pos) {
 }
 
 int parse_bus_config(const char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle) {
-    int consumed_tokens = 0;
+    // tokens[0] is the "bus-config" key.
+    // tokens[1] is the object token. Its `size` is the number of key-value pairs.
+    if (token_count < 2 || tokens[1].type != JSMN_OBJECT) {
+        return 0;
+    }
 
-    for (int i = 1; i < token_count; i++) {
-        if (jsoneq(json, &tokens[i], "bus") == 0) {
+    int num_pairs = tokens[1].size;
+    int total_consumed_tokens = 1; // Account for the object token itself.
+    int current_token_idx = 2;     // Start at the first key inside the object.
+
+    for (int i = 0; i < num_pairs; i++) {
+        if (current_token_idx >= token_count) {
+            return -1; // Should not happen with valid JSON
+        }
+        jsmntok_t* key_token = &tokens[current_token_idx];
+
+        if (jsoneq(json, key_token, "bus") == 0) {
+            jsmntok_t* array_token = &tokens[current_token_idx + 1];
+            if (array_token->type != JSMN_ARRAY) return -1;
+
+            int bus_array_size = array_token->size;
+            int bus_array_start_idx = current_token_idx + 1;
+
             handle->bus_config.matching_lines = 0xff;
-            int bus_array_start = i + 1;
-            int bus_array_size = tokens[bus_array_start].size;
             for (int j = 0; j < bus_array_size && j < ADDRESS_LINES_SIZE; j++) {
-                handle->bus_config.address_lines[j] = simple_strtoul(json + tokens[bus_array_start + j + 1].start);
+                handle->bus_config.address_lines[j] = simple_strtoul(json + tokens[bus_array_start_idx + j + 1].start);
                 handle->bus_config.address_mask |= 1UL << handle->bus_config.address_lines[j];
                 if (handle->bus_config.matching_lines == 0xff && handle->bus_config.address_lines[j] != j) {
                     handle->bus_config.matching_lines = j;
                 }
             }
-            if (handle->bus_config.matching_lines == 0xff) {
-                handle->bus_config.matching_lines = bus_array_size;
-            }
-            if (bus_array_size < ADDRESS_LINES_SIZE) {
-                handle->bus_config.address_lines[bus_array_size] = 0xFF;
-            }
-            i += bus_array_size + 1;
-            consumed_tokens += bus_array_size + 2;
-        } else if (get_rw_pin(json, tokens, i, handle)) {
-            i++;
-            consumed_tokens += 2;
-        } else if (get_vpp_pin(json, tokens, i, handle)) {
-            i++;
-            consumed_tokens += 2;
+            if (handle->bus_config.matching_lines == 0xff) { handle->bus_config.matching_lines = bus_array_size; }
+            if (bus_array_size < ADDRESS_LINES_SIZE) { handle->bus_config.address_lines[bus_array_size] = 0xFF; }
+
+            int pair_tokens = 1 + 1 + bus_array_size; // key + array_token + elements
+            total_consumed_tokens += pair_tokens;
+            current_token_idx += pair_tokens;
+        } else if (get_rw_pin(json, tokens, current_token_idx, handle)) {
+            total_consumed_tokens += 2;
+            current_token_idx += 2;
+        } else if (get_vpp_pin(json, tokens, current_token_idx, handle)) {
+            total_consumed_tokens += 2;
+            current_token_idx += 2;
+        } else {
+            return -1; // Unknown key in bus-config
         }
     }
-    return consumed_tokens;
+    return total_consumed_tokens;
 }
 
 static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {

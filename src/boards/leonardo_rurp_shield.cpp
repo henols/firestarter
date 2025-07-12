@@ -141,27 +141,6 @@ void rurp_set_data_input() {
     DDRE &= ~PORTE_DATA_MASK; // Set pin D6 as output
 }
 
-uint16_t rurp_read_vcc_mv() {
-    // Read 1.1V reference against AVcc
-    // Set the analog reference to the internal 1.1V
-    // Default is analogReference(DEFAULT) which is connected to the external 5V
-    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
-
-    delay(2); // Wait for voltage to stabilize
-    ADCSRA |= _BV(ADSC);              // Start conversion
-    while (bit_is_set(ADCSRA, ADSC))  // Wait for conversion to complete
-        ;
-    long result = ADCL;
-    result |= ADCH << 8;
-
-    // Calculate Vcc (supply voltage) in millivolts
-    // VCC_mV = VCC_CALC_CONSTANT / ADC_reading
-    // The original value 1125300L was based on 1023 steps, which is slightly less accurate.
-    if (result == 0) return 0;  // Avoid division by zero
-    return VCC_CALC_CONSTANT / result;
-}
-
-
 #ifdef SERIAL_DEBUG
 void debug_setup() {}
 
