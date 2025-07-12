@@ -8,6 +8,6 @@
 #ifndef __VERSION_H__
 #define __VERSION_H__
 
-#define VERSION "2.0.x"
+#define VERSION "2.0.0"
 
 #endif // __VERSION_H__
