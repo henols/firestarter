@@ -100,14 +100,11 @@ void eprom_write_init(firestarter_handle_t* handle) {
     }
 }
 
-// In eprom.cpp
-
-// New helper to program only the bytes that have failed so far
+// Helper to program only the bytes that have failed so far
 static void program_mismatched_bytes(firestarter_handle_t* handle, const uint8_t* mismatch_bitmask) {
     handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
-    delay(10); // Consider making this a named constant
+    delay(10); 
     for (uint32_t i = 0; i < handle->data_size; i++) {
-        // Use the corrected bitwise-AND operator here
         if (mismatch_bitmask[i / 8] & (1 << (i % 8))) {
             handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
         }
@@ -115,7 +112,7 @@ static void program_mismatched_bytes(firestarter_handle_t* handle, const uint8_t
     handle->firestarter_set_control_register(handle, VPE_ENABLE, 0);
 }
 
-// New helper to verify bytes and update the mismatch mask
+// Helper to verify bytes and update the mismatch mask
 static int verify_and_update_mask(firestarter_handle_t* handle, uint8_t* mismatch_bitmask) {
     int mismatch_count = 0;
     for (uint32_t i = 0; i < handle->data_size; i++) {
@@ -173,7 +170,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
 
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
 void eprom_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
-    if (bit & VPE_ENABLE && using_p1_as_vpp(handle)) {
+    if ((bit & VPE_ENABLE ) && (using_p1_as_vpp(handle) || using_p21_24dip_as_vpp(handle))) {
         bit &= ~VPE_ENABLE;
         bit |= P1_VPP_ENABLE;
     }

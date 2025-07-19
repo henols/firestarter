@@ -23,7 +23,10 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
 
 static inline bool using_p1_as_vpp(const firestarter_handle_t* handle) {
     return (handle->pins == 32 && handle->bus_config.vpp_line == VPP_P1_32_DIP) ||
-           (handle->pins < 32 && handle->bus_config.vpp_line == VPP_P1_28_DIP);
+           (handle->pins ==28 && handle->bus_config.vpp_line == VPP_P1_28_DIP);
+}
+static inline bool using_p21_24dip_as_vpp(const firestarter_handle_t* handle) {
+    return (handle->pins ==24 && handle->bus_config.vpp_line == VPP_P21_24_DIP);
 }
 #ifdef __cplusplus
 }

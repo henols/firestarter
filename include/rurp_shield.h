@@ -56,6 +56,7 @@ extern "C" {
 
 #define VPP_P1_32_DIP               0x15
 #define VPP_P1_28_DIP               0x0F
+#define VPP_P21_24_DIP               0x0B
 
 #ifdef HARDWARE_REVISION
 // REV 1
