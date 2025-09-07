@@ -26,7 +26,7 @@ extern "C" {
         {0x2AAA, 0x55},
         {0x5555, 0x90},
     };
-    const byte_flip FLASH_DISABLE_ID[] = {
+    const byte_flip_t FLASH_DISABLE_ID[] = {
         {0x5555, 0xAA},
         {0x2AAA, 0x55},
         {0x5555, 0xF0},
@@ -60,7 +60,7 @@ extern "C" {
     };
 
     void flash_util_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_flips, size_t size);
-    void flash_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_data);
+    void flash_util_verify_operation(firestarter_handle_t* handle, uint32_t program_address, uint8_t expected_data);
 
 #ifdef __cplusplus
 }

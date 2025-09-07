@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #include "eprom.h"
-#include "flash_type_3.h"
+#include "flash.h"
 #include "logging.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
@@ -19,8 +19,8 @@
 #include "sram.h"
 
 #define TYPE_EPROM 1
-#define TYPE_FLASH_TYPE_2 2
-#define TYPE_FLASH_TYPE_3 3
+#define TYPE_FLASH_INTEL_STYLE 2
+#define TYPE_FLASH_AMD_STYLE 3
 #define TYPE_SRAM 4
 
 #ifndef min
@@ -72,9 +72,12 @@ void configure_memory(firestarter_handle_t* handle) {
     } else if (handle->mem_type == TYPE_SRAM) {
         configure_sram(handle);
         return;
-    } else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
-        configure_flash3(handle);
+    } else if (handle->mem_type == TYPE_FLASH_AMD_STYLE) {
+        configure_flash_amd_type(handle);
         return;
+    // } else if (handle->mem_type == TYPE_FLASH_INTEL_STYLE) {
+    //     configure_flash_intel_type(handle);
+    //     return;
     }
     firestarter_error_response_format("Memory type 0x%02x not supported", handle->mem_type);
 }

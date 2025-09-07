@@ -5,7 +5,8 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifdef ARDUINO_AVR_UNO
+#define ATMEGA328PB
+#if defined(ARDUINO_AVR_UNO) or defined(ATMEGA328PB)
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include "rurp_register_utils.h"

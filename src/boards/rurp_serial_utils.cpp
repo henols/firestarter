@@ -8,6 +8,7 @@
 
 #include "rurp_serial_utils.h"
 #include "rurp_shield.h"
+#include "logging.h"
 
 // --- Core Logging Functions ---
 
@@ -72,6 +73,10 @@ int rurp_communication_read_data(char* buffer) {
         // log_error_format("Bad size: %d", (int)handle->data_size);
         return -2;
     }
+
+    // Send OK response after receiving size and hash, before receiving actual data
+    
+    send_ack_const("");
 
     size_t len = 0;
     unsigned long start_time = millis();

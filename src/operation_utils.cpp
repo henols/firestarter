@@ -168,7 +168,7 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                 rurp_communication_read();  // consume '#'
                 int res = rurp_communication_read_data(handle->data_buffer);
                 if (res < 0) {
-                    log_error_P_int("Data err ", res);
+                    log_error_P_int("Data err: ", res);
                     return OP_MSG_ERROR;
                 }
                 handle->data_size = res;
