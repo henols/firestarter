@@ -220,7 +220,20 @@ typedef struct {
     uint32_t address;
 } blank_check_progress_data_t;
 
-#define BLANK_CHECK_CHUNK_SIZE 2048
+#define MIN_PROGRESS_REPORTS 4
+#define MAX_CHUNK_SIZE 8192
+#define MIN_CHUNK_SIZE 512
+
+uint32_t calculate_adaptive_chunk_size(uint32_t memory_size) {
+    uint32_t adaptive_chunk = memory_size / MIN_PROGRESS_REPORTS;
+    
+    // Clamp between reasonable bounds
+    if (adaptive_chunk > MAX_CHUNK_SIZE) return MAX_CHUNK_SIZE;
+    if (adaptive_chunk < MIN_CHUNK_SIZE) return MIN_CHUNK_SIZE;
+    
+    return adaptive_chunk;
+}
+
 void uint32_to_bytes(char* buffer, int pos, uint32_t value) {
     buffer[pos] = (value >> 24) & 0xFF;
     buffer[pos++] = (value >> 16) & 0xFF;
@@ -247,8 +260,9 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
         }
     }
 
-    // for (uint32_t i = handle->address; i < handle->address + BLANK_CHECK_CHUNK_SIZE; i++) {
-    uint32_t end_address = handle->address + BLANK_CHECK_CHUNK_SIZE;
+    // Calculate adaptive chunk size based on memory size
+    uint32_t chunk_size = calculate_adaptive_chunk_size(handle->mem_size);
+    uint32_t end_address = handle->address + chunk_size;
     for (uint32_t i = handle->address; i < end_address && i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
@@ -256,7 +270,7 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
             return;
         }
     }
-    handle->address += BLANK_CHECK_CHUNK_SIZE;
+    handle->address += chunk_size;
 // #define RAW_DATA_PROGRESS
 #ifdef RAW_DATA_PROGRESS
     handle->response_code = RESPONSE_CODE_DATA;
