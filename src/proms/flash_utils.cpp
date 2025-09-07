@@ -42,7 +42,14 @@ void flash_util_verify_operation(firestarter_handle_t* handle, uint32_t program_
             // Double-check to confirm completion (recommended by datasheets)
             uint8_t confirm_read = handle->firestarter_get_data(handle, program_address);
             if ((confirm_read & 0x80) == (expected_data & 0x80)) {
-                return; // Success
+                // Final verification: read the actual data
+                uint8_t final_read = handle->firestarter_get_data(handle, program_address);
+                if (final_read == expected_data) {
+                    return; // Success
+                } else {
+                    firestarter_error_response("Flash verification failed - data mismatch");
+                    return;
+                }
             }
         }
         
@@ -51,12 +58,14 @@ void flash_util_verify_operation(firestarter_handle_t* handle, uint32_t program_
             // Re-read to check if operation completed during DQ5 handling
             uint8_t dq5_reread = handle->firestarter_get_data(handle, program_address);
             if ((dq5_reread & 0x80) == (expected_data & 0x80)) {
-                return; // Operation completed successfully
-            } else {
-                // True timeout error - operation failed
-                firestarter_error_response("Flash operation failed (DQ5 timeout)");
-                return;
+                uint8_t final_read = handle->firestarter_get_data(handle, program_address);
+                if (final_read == expected_data) {
+                    return; // Operation completed successfully
+                }
             }
+            // True timeout error - operation failed
+            firestarter_error_response("Flash operation failed (DQ5 timeout)");
+            return;
         }
         
         // DQ6 Toggle Check: DQ6 should toggle during operation, stop when complete
@@ -64,9 +73,12 @@ void flash_util_verify_operation(firestarter_handle_t* handle, uint32_t program_
             bool dq6_toggling = ((current_read ^ last_read) & 0x40) != 0;
             if (!dq6_toggling) {
                 // DQ6 stopped toggling - operation may be complete
-                // Verify with DQ7 check
+                // Verify with DQ7 check and final data read
                 if ((current_read & 0x80) == (expected_data & 0x80)) {
-                    return; // Success
+                    uint8_t final_read = handle->firestarter_get_data(handle, program_address);
+                    if (final_read == expected_data) {
+                        return; // Success
+                    }
                 }
             }
         }
