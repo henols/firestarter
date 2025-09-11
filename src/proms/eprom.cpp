@@ -100,11 +100,9 @@ void eprom_write_init(firestarter_handle_t* handle) {
     }
 }
 
-// In eprom.cpp
-
 // New helper to program only the bytes that have failed so far
 static void program_mismatched_bytes(firestarter_handle_t* handle, const uint8_t* mismatch_bitmask) {
-    handle->firestarter_set_control_register(handle, VPE_ENABLE, 1);
+    eprom_set_control_register(handle, VPE_ENABLE, 1);
     delay(10); // Consider making this a named constant
     for (uint32_t i = 0; i < handle->data_size; i++) {
         // Use the corrected bitwise-AND operator here
@@ -112,7 +110,7 @@ static void program_mismatched_bytes(firestarter_handle_t* handle, const uint8_t
             handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
         }
     }
-    handle->firestarter_set_control_register(handle, VPE_ENABLE, 0);
+    eprom_set_control_register(handle, VPE_ENABLE, 0);
 }
 
 // New helper to verify bytes and update the mismatch mask
