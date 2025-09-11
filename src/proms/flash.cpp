@@ -12,6 +12,9 @@
 #include "flash_utils.h"
 #include "firestarter.h"
 #include "logging.h"
+#include "operation_utils.h"
+
+// # define USE_BATCH_PROGRAMMING
 
 void flash3_erase_execute(firestarter_handle_t* handle);
 void flash3_write_init(firestarter_handle_t* handle);
@@ -71,7 +74,8 @@ void flash3_write_init(firestarter_handle_t* handle) {
     if (is_flag_set(FLAG_CAN_ERASE)) {
         if (!is_flag_set(FLAG_SKIP_ERASE)) {
             flash3_erase_execute(handle);
-            delay(FLASH_ERASE_DELAY_MS); 
+            // Use existing improved polling to verify erase completion (check for 0xFF at address 0)
+            flash_util_verify_operation(handle, 0x0000, 0xFF);
         }
         else {
             debug("Skipping erase of memory");
@@ -84,15 +88,49 @@ void flash3_write_init(firestarter_handle_t* handle) {
 }
 
 void flash3_write_execute(firestarter_handle_t* handle) {
-    for (uint32_t i = 0; i < handle->data_size; i++) {
-        flash_execute_command(FLASH_ENABLE_WRITE);
-        handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+    // Use batch programming for SST39SF040, fallback to byte programming for others
+    
+    #ifdef USE_BATCH_PROGRAMMING
 
-        flash_util_verify_operation(handle, handle->address + i, handle->data_buffer[i]);
-        if (handle->response_code == RESPONSE_CODE_ERROR) {
-            return;
+        // Conservative batch programming: unlock sequence per byte but batch verification
+        // Write all bytes with individual unlock sequences
+        for (uint32_t i = 0; i < handle->data_size; i++) {
+            flash_execute_command(FLASH_ENABLE_WRITE);
+            handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
         }
-    }
+        
+        // Reset timeout after write phase to prevent timeout during verification
+        op_reset_timeout();
+        
+        // Small delay to allow all bytes to complete programming before verification
+        delayMicroseconds(100);
+        
+        // Batch verification: verify only every 8th byte and the last byte for speed
+        for (uint32_t i = 0; i < handle->data_size; i += 8) {
+            flash_util_verify_operation(handle, handle->address + i, handle->data_buffer[i]);
+            if (handle->response_code == RESPONSE_CODE_ERROR) {
+                return;
+            }
+        }
+        // Always verify the last byte
+        if ((handle->data_size - 1) % 8 != 0) {
+            flash_util_verify_operation(handle, handle->address + handle->data_size - 1, handle->data_buffer[handle->data_size - 1]);
+            if (handle->response_code == RESPONSE_CODE_ERROR) {
+                return;
+            }
+        }
+    #else 
+        // Fallback: Traditional byte-by-byte programming for compatibility
+        for (uint32_t i = 0; i < handle->data_size; i++) {
+            flash_execute_command(FLASH_ENABLE_WRITE);
+            handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
+
+            flash_util_verify_operation(handle, handle->address + i, handle->data_buffer[i]);
+            if (handle->response_code == RESPONSE_CODE_ERROR) {
+                return;
+            }
+        }
+    #endif 
 }
 
 void flash3_erase_execute(firestarter_handle_t* handle) {

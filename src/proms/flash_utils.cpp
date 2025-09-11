@@ -27,7 +27,7 @@ void flash_util_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* b
 
 void flash_util_verify_operation(firestarter_handle_t* handle, uint32_t program_address, uint8_t expected_data) {
     unsigned long start_time = millis();
-    unsigned long timeout = start_time + 150; // 150ms max timeout
+    unsigned long timeout = start_time + 150; // 150ms timeout (original conservative value that works)
     
     uint8_t last_read = 0xFF;
     uint8_t current_read = 0xFF;
@@ -86,8 +86,8 @@ void flash_util_verify_operation(firestarter_handle_t* handle, uint32_t program_
         last_read = current_read;
         first_read = false;
         
-        // Small delay to prevent bus hammering
-        delayMicroseconds(10);
+        // Small delay to prevent bus hammering - optimized for speed
+        delayMicroseconds(1);
     }
     
     // Final timeout

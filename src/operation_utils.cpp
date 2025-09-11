@@ -173,7 +173,7 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                 }
                 handle->data_size = res;
                 return OP_MSG_DATA;
-            }
+            } 
             default:
                 // log_info_format("op_get_message: Consuming junk char '%c' (0x%02x)", (char)peek, peek);
                 rurp_communication_read();

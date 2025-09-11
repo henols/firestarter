@@ -106,6 +106,7 @@ static inline bool _process_incoming_data(firestarter_handle_t* handle) {
     }
 
     handle->address += handle->data_size;
+    op_reset_timeout();  // Reset timeout after successful data processing
     return true;
 }
 
