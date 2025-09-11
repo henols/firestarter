@@ -25,7 +25,6 @@ void eprom_write_execute(firestarter_handle_t* handle);
 void eprom_check_chip_id_init(firestarter_handle_t* handle);
 void eprom_check_chip_id_execute(firestarter_handle_t* handle);
 
-void eprom_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool cmd);
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle);
 
 void eprom_check_vpp(firestarter_handle_t* handle);
@@ -33,6 +32,7 @@ void eprom_check_vpp(firestarter_handle_t* handle);
 void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_code);
 void eprom_internal_erase(firestarter_handle_t* handle);
 
+void eprom_internal_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool cmd);
 void (*ep_set_control_register)(struct firestarter_handle*, rurp_register_t, bool);
 
 void eprom_generic_init(firestarter_handle_t* handle);
@@ -63,7 +63,7 @@ void configure_eprom(firestarter_handle_t* handle) {
     }
 
     ep_set_control_register = handle->firestarter_set_control_register;
-    handle->firestarter_set_control_register = eprom_set_control_register;
+    handle->firestarter_set_control_register = eprom_internal_set_control_register;
 }
 
 void eprom_check_chip_id_init(firestarter_handle_t* handle) {
@@ -102,7 +102,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
 
 // New helper to program only the bytes that have failed so far
 static void program_mismatched_bytes(firestarter_handle_t* handle, const uint8_t* mismatch_bitmask) {
-    eprom_set_control_register(handle, VPE_ENABLE, 1);
+    handle->firestarter_set_control_register(handle, VPE_TO_VPP, 1);
     delay(10); // Consider making this a named constant
     for (uint32_t i = 0; i < handle->data_size; i++) {
         // Use the corrected bitwise-AND operator here
@@ -110,7 +110,7 @@ static void program_mismatched_bytes(firestarter_handle_t* handle, const uint8_t
             handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
         }
     }
-    eprom_set_control_register(handle, VPE_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, VPE_TO_VPP, 0);
 }
 
 // New helper to verify bytes and update the mismatch mask
@@ -169,14 +169,6 @@ void eprom_write_execute(firestarter_handle_t* handle) {
     firestarter_error_response_format("Failed to write memory, 0x%06x, retries: %d, bad bytes: %d", handle->address, retries, mismatch);
 }
 
-// Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
-void eprom_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
-    if (bit & VPE_ENABLE && using_p1_as_vpp(handle)) {
-        bit &= ~VPE_ENABLE;
-        bit |= P1_VPP_ENABLE;
-    }
-    ep_set_control_register(handle, bit, state);
-}
 
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
     debug("Get chip ID");
@@ -256,5 +248,20 @@ void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_co
     uint16_t chip_id = eprom_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
         firestarter_response_format(error_code, "Chip ID: %#x dont match: %#x", chip_id, handle->chip_id);
+    }
+}
+// Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
+void eprom_internal_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
+    if (bit & VPE_ENABLE && using_p1_as_vpp(handle)) {
+        bit &= ~VPE_ENABLE;
+        bit |= P1_VPP_ENABLE;
+    }
+    ep_set_control_register(handle, bit, state);
+}
+
+void eprom_internal_ensure_regulator_enabled(firestarter_handle_t* handle) {
+    if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
+        handle->firestarter_set_control_register(handle, REGULATOR, 1);
+        delay(500);
     }
 }
