@@ -13,3 +13,7 @@ firestarter_app
 .vscode/
 
 *.bin
+
+CLAUDE.md
+
+.claude/
