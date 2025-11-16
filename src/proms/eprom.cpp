@@ -103,9 +103,6 @@ void eprom_write_init(firestarter_handle_t* handle) {
 // New helper to program only the bytes that have failed so far
 static void program_mismatched_bytes(firestarter_handle_t* handle, const uint8_t* mismatch_bitmask) {
      rurp_register_t programming_bits = VPE_ENABLE;
-    if (!using_p1_as_vpp(handle)) {
-        programming_bits |= A9_VPP_ENABLE;
-    }
 
     handle->firestarter_set_control_register(handle, programming_bits, 1);
     delay(10); // Consider making this a named constant
