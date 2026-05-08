@@ -81,6 +81,7 @@ int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter
     handle->bus_config.vpp_line = 0xFF;
     handle->bus_config.address_lines[0] = 0xFF;
     handle->bus_config.address_mask = 0;
+    handle->bus_config.static_high_mask = 0;
     handle->chip_id = 0;
 
     if (token_count < 1 || tokens[0].type != JSMN_OBJECT) {
@@ -225,6 +226,20 @@ int parse_bus_config(const char* json, jsmntok_t* tokens, int token_count, fires
             if (bus_array_size < ADDRESS_LINES_SIZE) { handle->bus_config.address_lines[bus_array_size] = 0xFF; }
 
             int pair_tokens = 1 + 1 + bus_array_size; // key + array_token + elements
+            total_consumed_tokens += pair_tokens;
+            current_token_idx += pair_tokens;
+        } else if (jsoneq(json, key_token, "static-high") == 0) {
+            jsmntok_t* array_token = &tokens[current_token_idx + 1];
+            if (array_token->type != JSMN_ARRAY) return -1;
+
+            int sh_array_size = array_token->size;
+            int sh_array_start_idx = current_token_idx + 1;
+            for (int j = 0; j < sh_array_size; j++) {
+                uint8_t line = simple_strtoul(json + tokens[sh_array_start_idx + j + 1].start);
+                handle->bus_config.static_high_mask |= 1UL << line;
+            }
+
+            int pair_tokens = 1 + 1 + sh_array_size; // key + array_token + elements
             total_consumed_tokens += pair_tokens;
             current_token_idx += pair_tokens;
         } else if (get_rw_pin(json, tokens, current_token_idx, handle)) {

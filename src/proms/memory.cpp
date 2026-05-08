@@ -111,19 +111,15 @@ rurp_register_t mem_util_calculate_lsb_register(firestarter_handle_t* handle, ui
 }
 
 rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, uint32_t address) {
-    uint8_t msb = ((address >> 8) & 0xFF);
-    if (handle->pins == 24) {
-        msb |= ADDRESS_LINE_13;
-    }
-    return msb;
+    return ((address >> 8) & 0xFF);
 }
 
 rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* handle, uint32_t address) {
     rurp_register_t top_address = ((uint32_t)address >> 16) & (ADDRESS_LINE_16 | ADDRESS_LINE_17 | ADDRESS_LINE_18 | READ_WRITE);
     rurp_register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
-    if (((top_address & READ_WRITE) && READ_WRITE == WRITE_FLAG) || handle->pins < 32) {
-        // This breaks 128K+ ROMs since VPE_TO_VPP and ADDRESS_LINE_16 are shared -
-        // can only write to top half etc (or write at different voltages by removing VPE_TO_VPP)
+    if (handle->pins < 32) {
+        // VPE_TO_VPP and ADDRESS_LINE_16 share the same CONTROL bit — preserving VPE_TO_VPP
+        // would corrupt A16 for 32-pin (512KB) chips. DIP32 chips use P1_VPP_ENABLE instead.
         mask |= VPE_TO_VPP;
     }
     top_address |= rurp_read_from_register(CONTROL_REGISTER) & mask;
@@ -227,6 +223,8 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
     if (config.vpp_line != 0xFF && !using_p1_as_vpp(handle)) {
         reorg_address |= 1UL << config.vpp_line;
     }
+
+    reorg_address |= config.static_high_mask;
     return reorg_address;
 }
 

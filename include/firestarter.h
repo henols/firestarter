@@ -69,6 +69,7 @@ typedef struct bus_config {
     uint8_t matching_lines;                     // Number of matching address lines
     uint8_t rw_line;                            // RW line mapping
     uint8_t vpp_line;                           // VPP line mapping
+    uint32_t static_high_mask;                  // Bus lines unconditionally driven HIGH (e.g. CE2, tied-high NC pins)
 } bus_config_t;
 
 typedef struct firestarter_handle {
