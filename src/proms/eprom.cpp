@@ -204,10 +204,11 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
         return;
     }
 #endif
-    if (is_flag_set(FLAG_VPE_AS_VPP)) {
+    if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP)) {
+        // EPROM_LEGACY: direct VPE path
         handle->firestarter_set_control_register(handle, REGULATOR, 1);
     } else {
-        // Regulator defaults to VEP (~2V higher than VPP so it must be dropped)
+        // EPROM_STD / EPROM_QUICK: VPE through dropping resistor to produce VPP
         handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
     }
 
