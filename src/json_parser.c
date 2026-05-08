@@ -234,7 +234,9 @@ int parse_bus_config(const char* json, jsmntok_t* tokens, int token_count, fires
             total_consumed_tokens += 2;
             current_token_idx += 2;
         } else {
-            return -1; // Unknown key in bus-config
+            // Unknown key — skip key + value tokens
+            total_consumed_tokens += 2;
+            current_token_idx += 2;
         }
     }
     return total_consumed_tokens;
