@@ -248,11 +248,11 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
 }
 
 void eprom_generic_init(firestarter_handle_t* handle) {
+    eprom_check_vpp(handle);
+    if (handle->response_code == RESPONSE_CODE_ERROR) {
+        return;
+    }
     if (handle->chip_id > 0) {
-        eprom_check_vpp(handle);
-        if (handle->response_code == RESPONSE_CODE_ERROR) {
-            return;
-        }
         eprom_internal_check_chip_id(handle, is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR);
     }
 }
