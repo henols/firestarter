@@ -14,6 +14,7 @@
 #include "flash_type_3.h"
 #include "flash_type_4.h"
 #include "flash_intel.h"
+#include "eeprom_28c.h"
 #include "logging.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
@@ -71,6 +72,11 @@ void configure_memory(firestarter_handle_t* handle) {
 
     if (handle->protocol == 0x10) {
         configure_flash_intel(handle);
+        return;
+    }
+
+    if (handle->protocol == 0x0D) {
+        configure_eeprom28c(handle);
         return;
     }
 
