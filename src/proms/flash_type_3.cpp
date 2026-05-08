@@ -14,6 +14,7 @@
 #include "logging.h"
 
 void flash3_erase_execute(firestarter_handle_t* handle);
+void flash3_sector_erase(firestarter_handle_t* handle, uint32_t sector_address);
 void flash3_write_init(firestarter_handle_t* handle);
 void flash3_write_execute(firestarter_handle_t* handle);
 void flash3_check_chip_id_execute(firestarter_handle_t* handle);
@@ -91,8 +92,25 @@ void flash3_write_execute(firestarter_handle_t* handle) {
 }
 
 void flash3_erase_execute(firestarter_handle_t* handle) {
-    debug("Erase");
-    flash_execute_command(FLASH_ERASE);
+    if (handle->address != 0) {
+        debug("Sector erase");
+        flash3_sector_erase(handle, handle->address);
+    } else {
+        debug("Chip erase");
+        flash_execute_command(FLASH_ERASE);
+    }
+}
+
+void flash3_sector_erase(firestarter_handle_t* handle, uint32_t sector_address) {
+    byte_flip_t sector_erase_seq[6] = {
+        {0x5555, 0xAA},
+        {0x2AAA, 0x55},
+        {0x5555, 0x80},
+        {0x5555, 0xAA},
+        {0x2AAA, 0x55},
+        {sector_address, 0x30},
+    };
+    flash_util_byte_flipping(handle, sector_erase_seq, 6);
 }
 
 
