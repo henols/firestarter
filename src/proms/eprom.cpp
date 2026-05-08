@@ -64,6 +64,15 @@ void configure_eprom(firestarter_handle_t* handle) {
 
     ep_set_control_register = handle->firestarter_set_control_register;
     handle->firestarter_set_control_register = eprom_internal_set_control_register;
+
+    // Set default pulse_delay from protocol when Python doesn't supply one
+    if (handle->pulse_delay == 0) {
+        switch (handle->protocol) {
+            case 0x08: handle->pulse_delay = 100;  break;  // EPROM_QUICK: 100µs
+            case 0x0B: handle->pulse_delay = 500;  break;  // EPROM_LEGACY: 500µs
+            default:   handle->pulse_delay = 1000; break;  // EPROM_STD: 1ms
+        }
+    }
 }
 
 void eprom_check_chip_id_init(firestarter_handle_t* handle) {
