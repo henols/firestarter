@@ -13,6 +13,7 @@
 #include "eprom.h"
 #include "flash_type_3.h"
 #include "flash_type_4.h"
+#include "flash_intel.h"
 #include "logging.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
@@ -67,6 +68,11 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_get_control_register = memory_get_control_register;
 
     mem_util_set_address(handle, 0);
+
+    if (handle->protocol == 0x10) {
+        configure_flash_intel(handle);
+        return;
+    }
 
     if (handle->mem_type == TYPE_EPROM) {
         configure_eprom(handle);
