@@ -125,11 +125,8 @@ int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter
             if (consumed < 0) return -1;
             token_idx += 1 + consumed; // Advance past the key and the entire object value
         } else {
-            char field_name[32];
-            int len = key_token->end - key_token->start;
-            snprintf(field_name, sizeof(field_name), "%.*s", len, json + key_token->start);
-            firestarter_error_response_format("Unknown field: %s", field_name);
-            return -1;
+            // Unknown field — skip key + value token (forward-compatible with new Python fields)
+            token_idx += 2;
         }
     }
     if (handle->bus_config.address_lines[0] == 0xFF) {
