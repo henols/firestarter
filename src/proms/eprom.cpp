@@ -141,9 +141,11 @@ static int verify_and_update_mask(firestarter_handle_t* handle, uint8_t* mismatc
 
 void eprom_write_execute(firestarter_handle_t* handle) {
     if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
-        if (is_flag_set(FLAG_VPE_AS_VPP)) {
+        if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP)) {
+            // EPROM_LEGACY: direct VPE path — no VPE_TO_VPP dropping resistor
             handle->firestarter_set_control_register(handle, REGULATOR, 1);
         } else {
+            // EPROM_STD / EPROM_QUICK: VPE_TO_VPP dropping path for precise VPP
             handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
         }
         delay(500);
