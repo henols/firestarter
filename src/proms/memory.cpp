@@ -22,7 +22,6 @@
 #include "sram.h"
 
 #define TYPE_EPROM 1
-#define TYPE_FLASH_TYPE_2 2
 #define TYPE_FLASH_TYPE_3 3
 #define TYPE_SRAM 4
 #define TYPE_FLASH_TYPE_4 5
