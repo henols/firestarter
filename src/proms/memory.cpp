@@ -79,6 +79,27 @@ void configure_memory(firestarter_handle_t* handle) {
         return;
     }
 
+    if (handle->protocol == 0x06) {
+        configure_flash3(handle);
+        return;
+    }
+
+    if (handle->protocol == 0x05 || handle->protocol == 0x35 || handle->protocol == 0x39) {
+        configure_flash4(handle);
+        return;
+    }
+
+    if (handle->protocol == 0x07 || handle->protocol == 0x08 || handle->protocol == 0x0B) {
+        configure_eprom(handle);
+        return;
+    }
+
+    if (handle->protocol == 0x0E || handle->protocol == 0x27 ||
+        handle->protocol == 0x28 || handle->protocol == 0x29) {
+        configure_sram(handle);
+        return;
+    }
+
     if (handle->mem_type == TYPE_EPROM) {
         configure_eprom(handle);
         return;

@@ -24,6 +24,14 @@
 #define PSTR(s) (s)
 #endif
 
+/* Phase 12 Wave 1: PGM_P is referenced by rurp_shield.h's rurp_log /
+ * rurp_log_P prototypes. ArduinoFake provides its own arduino/pgmspace.h
+ * later in the include order, which also defines PGM_P. Both definitions
+ * resolve to `const char *`, so guard with #ifndef to avoid clashes. */
+#ifndef PGM_P
+#define PGM_P const char *
+#endif
+
 #ifndef pgm_read_byte
 #define pgm_read_byte(addr) (*(const uint8_t*)(addr))
 #endif
