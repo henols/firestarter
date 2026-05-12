@@ -12,9 +12,8 @@
  * Mock chip-id bytes are injected through the handle's firestarter_get_data
  * function pointer (Option M2 — no link-time rurp_* overrides needed).
  *
- * Wave 0 state (Task 1): test bodies are empty stubs — they compile, link, and
- * trivially PASS. Task 2 fills the bodies with assertions and wires the
- * production code check into eeprom28c_write_init.
+ * Task 2: test bodies filled with real assertions; eeprom28c_check_chip_id
+ * static helper wired into eeprom28c_write_init before EEPROM_SDP_DISABLE.
  */
 
 #include <Arduino.h>
@@ -80,19 +79,59 @@ static firestarter_handle_t make_28c_handle(uint16_t expected_chip_id, uint32_t 
     return h;
 }
 
-/* Task 1 skeleton: empty bodies — trivially PASS.
- * Task 2 fills these with real assertions. */
-
+/*
+ * Test: matching chip-id (mock bytes = {0x1F, 0x08}, handle.chip_id = 0x1F08).
+ * Helper reads mfr_addr = 32768 - 64 = 0x7FC0 (returns 0x1F) and 0x7FC1
+ * (returns 0x08), packs as 0x1F08, matches handle.chip_id — no error.
+ * Init proceeds past SDP-disable; response_code must NOT be ERROR.
+ */
 void test_eeprom28c_matching_chip_id_proceeds(void) {
+    s_mock_bytes[0] = 0x1F;
+    s_mock_bytes[1] = 0x08;
+    firestarter_handle_t h = make_28c_handle(0x1F08, 0);
+    configure_memory(&h);
+    h.firestarter_operation_init(&h);
+    TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
+/*
+ * Test: mismatching chip-id (mock bytes = {0xDE, 0xAD}, handle.chip_id = 0x1F08).
+ * Helper packs 0xDEAD, compares unequal — RESPONSE_CODE_ERROR set;
+ * early-return fires before flash_execute_command(EEPROM_SDP_DISABLE).
+ */
 void test_eeprom28c_mismatching_chip_id_errors(void) {
+    s_mock_bytes[0] = 0xDE;
+    s_mock_bytes[1] = 0xAD;
+    firestarter_handle_t h = make_28c_handle(0x1F08, 0);
+    configure_memory(&h);
+    h.firestarter_operation_init(&h);
+    TEST_ASSERT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
+/*
+ * Test: chip_id == 0 — gate evaluates false, helper never called.
+ * s_mock_byte_idx must remain 0 after init (no firestarter_get_data calls).
+ * This asserts the gate, not the response_code.
+ */
 void test_eeprom28c_zero_chip_id_skips_check(void) {
+    firestarter_handle_t h = make_28c_handle(0, 0);
+    configure_memory(&h);
+    h.firestarter_operation_init(&h);
+    TEST_ASSERT_EQUAL(0, s_mock_byte_idx);
 }
 
+/*
+ * Test: mismatching chip-id + FLAG_FORCE.
+ * Same {0xDE, 0xAD} / 0x1F08 mismatch, but FLAG_FORCE set on ctrl_flags.
+ * FORCE downgrade: RESPONSE_CODE_WARNING instead of RESPONSE_CODE_ERROR.
+ */
 void test_eeprom28c_mismatching_chip_id_with_force_warns(void) {
+    s_mock_bytes[0] = 0xDE;
+    s_mock_bytes[1] = 0xAD;
+    firestarter_handle_t h = make_28c_handle(0x1F08, FLAG_FORCE);
+    configure_memory(&h);
+    h.firestarter_operation_init(&h);
+    TEST_ASSERT_EQUAL(RESPONSE_CODE_WARNING, h.response_code);
 }
 
 int main(int, char**) {
