@@ -59,7 +59,7 @@ const char key_flags[] PROGMEM = "flags";
 const char key_chip_id[] PROGMEM = "chip-id";
 const char key_pin_count[] PROGMEM = "pin-count";
 const char key_pulse_delay[] PROGMEM = "pulse-delay";
-const char key_vpp[] PROGMEM = "vpp";
+const char key_vpp_mv[] PROGMEM = "vpp_mv";
 const char key_type[] PROGMEM = "type";
 const char key_algorithm[] PROGMEM = "algorithm";
 
@@ -71,7 +71,7 @@ typedef struct {
 static const key_parser_t key_parsers[] PROGMEM = {
     {key_mem_size, get_memory_size}, {key_address, get_address},       {key_flags, get_flags},
     {key_chip_id, get_chip_id},      {key_pin_count, get_pin_count},   {key_pulse_delay, get_delay},
-    {key_vpp, get_vpp_mv},           {key_type, get_type},             {key_algorithm, get_algorithm},
+    {key_vpp_mv, get_vpp_mv},        {key_type, get_type},             {key_algorithm, get_algorithm},
 };
 
 int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle) {
@@ -306,7 +306,7 @@ bool get_delay(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_
 }
 
 bool get_vpp_mv(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
-    extract_int("vpp", handle->vpp_mv);
+    extract_int("vpp_mv", handle->vpp_mv);
 }
 
 bool get_algorithm(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {

@@ -71,7 +71,7 @@ The firmware receives JSON commands over serial at 250000 baud. The `algorithm` 
 Key fields:
 - `algorithm` — integer protocol ID, stored in `handle->protocol`
 - `type` — legacy `mem_type` integer (fallback when algorithm is absent)
-- `vpp` / `vpp_mv` — VPP voltage for ADC validation
+- `vpp_mv` — VPP voltage in millivolts (used by SAF-04 ADC validation)
 - `memory-size` — chip size in bytes
 - `pulse-delay` — write pulse width in µs (0 = use handler default)
 - `chip-id` — expected manufacturer+device ID (0 = skip ID check)
