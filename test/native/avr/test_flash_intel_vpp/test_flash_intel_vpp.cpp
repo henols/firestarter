@@ -33,8 +33,20 @@ using namespace fakeit;
 extern "C" void set_mock_vpp_mv(uint16_t mv);
 extern "C" void set_mock_hw_rev(uint8_t rev);
 
-/* TU-private no-op function-pointer mocks for the handle. */
-static void mock_set_ctrl_reg(struct firestarter_handle*, rurp_register_t, bool) {}
+/* TU-private mocks for the handle. mock_set_ctrl_reg records the last write so
+ * tests can assert hardware-state side effects (SAF-04 regression coverage:
+ * after a high-VPP ERROR, REGULATOR | P1_VPP_ENABLE must be driven low so the
+ * socket is not left at 12V on the unsafe-voltage early-return path). */
+static rurp_register_t s_last_ctrl_reg = 0;
+static bool s_last_ctrl_state = false;
+static unsigned s_ctrl_writes_with_p1_low = 0;
+static void mock_set_ctrl_reg(struct firestarter_handle*, rurp_register_t reg, bool state) {
+    s_last_ctrl_reg = reg;
+    s_last_ctrl_state = state;
+    if ((reg & P1_VPP_ENABLE) && state == false) {
+        s_ctrl_writes_with_p1_low++;
+    }
+}
 static bool mock_get_ctrl_reg(struct firestarter_handle*, rurp_register_t) { return 0; }
 static void mock_set_data(struct firestarter_handle*, uint32_t, uint8_t) {}
 static uint8_t mock_get_data(struct firestarter_handle*, uint32_t) { return 0xFF; }
@@ -46,6 +58,9 @@ void setUp(void) {
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
     set_mock_vpp_mv(0);
     set_mock_hw_rev(1);  /* non-REV0 default */
+    s_last_ctrl_reg = 0;
+    s_last_ctrl_state = false;
+    s_ctrl_writes_with_p1_low = 0;
 }
 
 void tearDown(void) {
@@ -140,6 +155,39 @@ void test_flash_intel_rev0_skips_vpp_check(void) {
     TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
+/*
+ * SAF-04 regression: high-VPP ERROR must leave the regulator cleared.
+ *
+ * Reproduces a defect found in code review (CR-01): the original write_init
+ * early-returned on RESPONSE_CODE_ERROR without driving REGULATOR | P1_VPP_ENABLE
+ * low, leaving 12V applied to socket pin 1 after the firmware had just
+ * detected unsafe over-voltage — the exact hazard the safety check exists
+ * to prevent. flash_intel_cleanup is only called on the END phase; an INIT
+ * error skips END entirely.
+ *
+ * Assertion: at least one write of P1_VPP_ENABLE with state=false occurred
+ * during the operation_init call, and the last control-register write was
+ * the regulator-clear (state=false with the P1_VPP_ENABLE bit set).
+ */
+void test_flash_intel_high_vpp_error_clears_regulator(void) {
+    set_mock_vpp_mv(12700);
+    firestarter_handle_t h = make_intel_handle(12000, 0);
+    configure_memory(&h);
+    /* configure_memory() rewires firestarter_set_control_register to
+     * memory_set_control_register → rurp_write_to_register (host-stub no-op),
+     * which would bypass our recorder. Re-assign the mock so this test can
+     * observe control-register writes from the production code path.
+     * Same D-10 pattern as test_eeprom28c_chip_id/. */
+    h.firestarter_set_control_register = mock_set_ctrl_reg;
+    h.firestarter_operation_init(&h);
+    TEST_ASSERT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
+    TEST_ASSERT_TRUE_MESSAGE(s_ctrl_writes_with_p1_low > 0,
+        "SAF-04: high-VPP ERROR path left P1_VPP_ENABLE asserted (socket still at 12V)");
+    TEST_ASSERT_BITS_HIGH(P1_VPP_ENABLE, s_last_ctrl_reg);
+    TEST_ASSERT_FALSE_MESSAGE(s_last_ctrl_state,
+        "SAF-04: final control-register write must drive regulator low after VPP error");
+}
+
 int main(int, char**) {
     UNITY_BEGIN();
     RUN_TEST(test_flash_intel_vpp_nominal_proceeds);
@@ -147,5 +195,6 @@ int main(int, char**) {
     RUN_TEST(test_flash_intel_high_vpp_errors);
     RUN_TEST(test_flash_intel_high_vpp_with_force_warns);
     RUN_TEST(test_flash_intel_rev0_skips_vpp_check);
+    RUN_TEST(test_flash_intel_high_vpp_error_clears_regulator);
     return UNITY_END();
 }

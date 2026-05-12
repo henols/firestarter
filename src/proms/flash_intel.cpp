@@ -76,11 +76,17 @@ void flash_intel_write_init(firestarter_handle_t* handle) {
     delay(500);
     flash_intel_check_vpp(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
+        // Safety: clear VPP regulator before early-return so 12V is not left
+        // applied to socket pin 1 after an unsafe-voltage detection. Without
+        // this, flash_intel_cleanup (END phase) is never reached and the
+        // hazard the check exists to prevent stays asserted.
+        handle->firestarter_set_control_register(handle, REGULATOR | P1_VPP_ENABLE, 0);
         return;
     }
     if (handle->chip_id > 0) {
         flash_intel_check_chip_id(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {
+            handle->firestarter_set_control_register(handle, REGULATOR | P1_VPP_ENABLE, 0);
             return;
         }
     }
