@@ -27,7 +27,7 @@ The protocol-prefix chain covers every entry in `KNOWN_PROTOCOLS` (`0x05, 0x06,
 0x07, 0x08, 0x0B, 0x0D, 0x0E, 0x10, 0x27, 0x28, 0x29, 0x35, 0x39`). The
 `mem_type` chain is retained as a backward-compatibility fallback for
 hand-crafted JSON commands or older host versions that omit `algorithm`; for any
-chip emitted by the regenerated `minipro_complete_db.json` the protocol-prefix
+chip emitted by the regenerated `chip_database.json` the protocol-prefix
 chain always fires first.
 
 Dispatch order in `memory.cpp:configure_memory` (source-of-truth — must match
