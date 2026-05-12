@@ -54,6 +54,14 @@ void configure_eeprom28c(firestarter_handle_t* handle) {
 // no declaration in eeprom_28c.h (static — internal linkage only).
 static void eeprom28c_check_chip_id(firestarter_handle_t* handle) {
     debug("Check chip ID (28C)");
+    // Underflow guard: mem_size < 64 would wrap mfr_addr to ~0xFFFFFFC0 and drive
+    // 12V on A9 of an arbitrary address. Canonical DB entries are >= 2 KiB, but
+    // hand-crafted JSON could reach here. Treat as configuration error.
+    if (handle->mem_size < 64) {
+        int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
+        firestarter_response_format(response_code, "mem_size %lu too small for chip-id check", (unsigned long)handle->mem_size);
+        return;
+    }
     handle->firestarter_set_control_register(handle, REGULATOR, 1);
     delay(50);
     handle->firestarter_set_control_register(handle, A9_VPP_ENABLE, 1);
