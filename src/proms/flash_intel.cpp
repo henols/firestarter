@@ -22,6 +22,33 @@ void flash_intel_cleanup(firestarter_handle_t* handle);
 void flash_intel_check_chip_id(firestarter_handle_t* handle);
 static bool flash_intel_poll_sr(firestarter_handle_t* handle, uint16_t timeout_ms);
 
+static void flash_intel_check_vpp(firestarter_handle_t* handle) {
+    debug("Check VPP (Intel)");
+#ifdef HARDWARE_REVISION
+    if (rurp_get_hardware_revision() == REVISION_0) {
+        firestarter_warning_response("Rev0 dont support reading VPP/VPE");
+        return;
+    }
+#endif
+    // Caller (flash_intel_write_init) already asserted REGULATOR | P1_VPP_ENABLE
+    // and delayed 500ms; do not toggle the regulator here.
+    uint16_t vpp_mv = rurp_read_voltage_mv();
+#ifdef SERIAL_DEBUG
+    debug_format("Checking VPP voltage %u mV", vpp_mv);
+#endif
+    if (vpp_mv > (uint32_t)handle->vpp_mv + 500) {
+        int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
+        firestarter_response_format(response_code, "VPP is high: %u.%uV > %u.%uV",
+                                    (vpp_mv + 50) / 1000, (((vpp_mv + 50) / 100) % 10),
+                                    (handle->vpp_mv + 50) / 1000, (((handle->vpp_mv + 50) / 100) % 10));
+    } else if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100) {
+        firestarter_warning_response_format("VPP is low: %u.%uV < %u.%uV",
+                                            (vpp_mv + 50) / 1000, (((vpp_mv + 50) / 100) % 10),
+                                            (handle->vpp_mv + 50) / 1000, (((handle->vpp_mv + 50) / 100) % 10));
+    }
+    // NO regulator clear — caller continues to use REGULATOR | P1_VPP_ENABLE through the write pulse.
+}
+
 void configure_flash_intel(firestarter_handle_t* handle) {
     debug("Configuring Intel Flash");
     handle->firestarter_operation_end = flash_intel_cleanup;
@@ -47,6 +74,10 @@ void configure_flash_intel(firestarter_handle_t* handle) {
 void flash_intel_write_init(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, REGULATOR | P1_VPP_ENABLE, 1);
     delay(500);
+    flash_intel_check_vpp(handle);
+    if (handle->response_code == RESPONSE_CODE_ERROR) {
+        return;
+    }
     if (handle->chip_id > 0) {
         flash_intel_check_chip_id(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {

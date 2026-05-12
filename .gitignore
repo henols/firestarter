@@ -15,3 +15,6 @@ firestarter_app
 *.bin
 
 .claude/
+
+# Core dump files from native test crashes
+core.*
