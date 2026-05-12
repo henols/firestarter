@@ -47,8 +47,10 @@ static uint8_t mock_get_data_scripted(struct firestarter_handle*, uint32_t /*add
 void setUp(void) {
     ArduinoFakeReset();
     /* delay() is called by eeprom28c_check_chip_id (50ms + 100ms regulator settle).
+     * delayMicroseconds() is called by eeprom28c_wait_for_write (10µs poll loop).
      * ArduinoFake requires mock setup before a virtual is called or it aborts. */
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
+    When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
     s_mock_byte_idx = 0;
     memset(s_mock_bytes, 0xFF, sizeof(s_mock_bytes));
 }
@@ -83,13 +85,27 @@ static firestarter_handle_t make_28c_handle(uint16_t expected_chip_id, uint32_t 
  * Test: matching chip-id (mock bytes = {0x1F, 0x08}, handle.chip_id = 0x1F08).
  * Helper reads mfr_addr = 32768 - 64 = 0x7FC0 (returns 0x1F) and 0x7FC1
  * (returns 0x08), packs as 0x1F08, matches handle.chip_id — no error.
- * Init proceeds past SDP-disable; response_code must NOT be ERROR.
+ * After chip-id passes, init proceeds to flash_execute_command(EEPROM_SDP_DISABLE)
+ * then eeprom28c_wait_for_write(handle, 0x5555, 0x20). s_mock_bytes[2] = 0x20
+ * satisfies the wait on the first poll so the init completes without timeout.
+ * response_code must NOT be ERROR.
+ *
+ * NOTE: configure_memory() overwrites handle->firestarter_get_data with
+ * memory_get_data (the real hardware reader stub). We re-assign to
+ * mock_get_data_scripted after configure_memory() so the chip-id reads
+ * and wait poll both go through the scripted-byte mock. This mirrors the
+ * same pattern discovered in Plan 01-01 (D-10): configure_memory() resets
+ * function pointers before calling configure_eeprom28c(); the test must
+ * restore the mock pointers before driving operation_init().
  */
 void test_eeprom28c_matching_chip_id_proceeds(void) {
     s_mock_bytes[0] = 0x1F;
     s_mock_bytes[1] = 0x08;
+    s_mock_bytes[2] = 0x20;  /* satisfies eeprom28c_wait_for_write(0x5555, 0x20) */
     firestarter_handle_t h = make_28c_handle(0x1F08, 0);
     configure_memory(&h);
+    /* Re-assign after configure_memory() overwrites the function pointer. */
+    h.firestarter_get_data = mock_get_data_scripted;
     h.firestarter_operation_init(&h);
     TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
@@ -104,32 +120,47 @@ void test_eeprom28c_mismatching_chip_id_errors(void) {
     s_mock_bytes[1] = 0xAD;
     firestarter_handle_t h = make_28c_handle(0x1F08, 0);
     configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_scripted;
     h.firestarter_operation_init(&h);
     TEST_ASSERT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
 /*
  * Test: chip_id == 0 — gate evaluates false, helper never called.
- * s_mock_byte_idx must remain 0 after init (no firestarter_get_data calls).
- * This asserts the gate, not the response_code.
+ * After configure_memory() reassigns firestarter_get_data, we re-assign it
+ * to mock_get_data_scripted so that any chip-id reads (if helper were wrongly
+ * called) would advance s_mock_byte_idx. We also supply s_mock_bytes[0]=0x20
+ * so the SDP-disable wait succeeds in one read (idx becomes 1).
+ * If chip-id helper had run, it would consume indices 0+1 first, then the
+ * wait would need index 2 (which is 0xFF → timeout → ERROR). The gate
+ * prevents this; only the wait reads 1 byte → s_mock_byte_idx == 1.
+ * This assertion proves the chip-id helper was NOT called (correct gate behavior).
  */
 void test_eeprom28c_zero_chip_id_skips_check(void) {
+    s_mock_bytes[0] = 0x20;  /* satisfies eeprom28c_wait_for_write(0x5555, 0x20) */
     firestarter_handle_t h = make_28c_handle(0, 0);
     configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_scripted;
     h.firestarter_operation_init(&h);
-    TEST_ASSERT_EQUAL(0, s_mock_byte_idx);
+    /* 1 byte consumed by eeprom28c_wait_for_write; 0 by chip-id helper (gate skipped).
+     * If helper had run: 2 bytes (chip-id) + wait would need byte[2]=0xFF (no match → timeout). */
+    TEST_ASSERT_EQUAL(1, s_mock_byte_idx);
 }
 
 /*
  * Test: mismatching chip-id + FLAG_FORCE.
  * Same {0xDE, 0xAD} / 0x1F08 mismatch, but FLAG_FORCE set on ctrl_flags.
  * FORCE downgrade: RESPONSE_CODE_WARNING instead of RESPONSE_CODE_ERROR.
+ * s_mock_bytes[2] = 0x20 satisfies the SDP-disable wait after chip-id check
+ * (warning path continues to SDP-disable, not an early return).
  */
 void test_eeprom28c_mismatching_chip_id_with_force_warns(void) {
     s_mock_bytes[0] = 0xDE;
     s_mock_bytes[1] = 0xAD;
+    s_mock_bytes[2] = 0x20;  /* satisfies eeprom28c_wait_for_write(0x5555, 0x20) */
     firestarter_handle_t h = make_28c_handle(0x1F08, FLAG_FORCE);
     configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_scripted;
     h.firestarter_operation_init(&h);
     TEST_ASSERT_EQUAL(RESPONSE_CODE_WARNING, h.response_code);
 }
