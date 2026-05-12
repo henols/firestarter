@@ -66,7 +66,7 @@ unrecognized `mem_type` reaches step 11.
 
 ### JSON Wire Protocol
 
-The firmware receives JSON commands over serial at 250000 baud. The `algorithm` field (integer, minipro `protocol_id`) is parsed into `handle->protocol` and is the primary dispatch key.
+The firmware receives JSON commands over serial at 250000 baud. The `algorithm` field (integer, upstream `protocol_id`) is parsed into `handle->protocol` and is the primary dispatch key.
 
 Key fields:
 - `algorithm` — integer protocol ID, stored in `handle->protocol`
