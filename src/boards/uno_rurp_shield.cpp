@@ -129,6 +129,13 @@ void rurp_set_data_output() {
 }
 
 void rurp_set_data_input() {
+    // Clear PORTD before switching to input so internal pullups are disabled
+    // on every data line. Without this, residual PORTD bits from the last
+    // register-strobe or rurp_set_communication_mode (PORTD bit 0 = 1) leave
+    // 1..2 data pins weakly biased HIGH against the chip's drive. Defensive
+    // — does not on its own fix the FM1608 byte-0 read failure on Uno (see
+    // .planning/debug/fm1608-fresh-chip-baseline.md).
+    PORTD = 0x00;
     DDRD = 0x00;
 }
 
