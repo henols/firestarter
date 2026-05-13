@@ -12,6 +12,7 @@
 #include "flash_utils.h"
 #include "firestarter.h"
 #include "logging.h"
+#include "operation_utils.h"
 
 void flash3_erase_execute(firestarter_handle_t* handle);
 void flash3_sector_erase(firestarter_handle_t* handle, uint32_t sector_address);
@@ -57,21 +58,34 @@ void flash3_generic_init(firestarter_handle_t* handle) {
 
 
 void flash3_write_init(firestarter_handle_t* handle) {
-    if (handle->chip_id > 0) {
-        flash3_check_chip_id_execute(handle);
-        if (handle->response_code == RESPONSE_CODE_ERROR) {
-            return;
+    // Gate one-time init (chip-ID + erase + erase-settle delay) behind
+    // is_operation_in_progress so it runs exactly ONCE per write command.
+    // Without this guard the INIT-phase state machine re-invokes
+    // flash3_write_init for every 2KB chunk of the stateful blank-check
+    // (mem_util_blank_check progresses 2KB per call). For a 512KB chip
+    // that is 256 re-runs of: chip-ID check + chip-erase command + 105ms
+    // settle delay. Each chip-erase command starts an internal erase that
+    // takes ~100ms; sending another erase command before the chip
+    // completes the previous one leaves it in an undefined state. The
+    // accumulated 27+ seconds of pointless settle delay also stalls INIT
+    // dramatically. Matches the flash4_write_init pattern.
+    if (!is_operation_in_progress(handle)) {
+        if (handle->chip_id > 0) {
+            flash3_check_chip_id_execute(handle);
+            if (handle->response_code == RESPONSE_CODE_ERROR) {
+                return;
+            }
         }
-    }
 
-    if (is_flag_set(FLAG_CAN_ERASE)) {
-        if (!is_flag_set(FLAG_SKIP_ERASE)) {
-            flash3_erase_execute(handle);
-            delay(FLASH_ERASE_DELAY_MS); 
-        }
-        else {
-            debug("Skipping erase of memory");
-            copy_to_buffer(handle->response_msg, "Skipping erase of memory");
+        if (is_flag_set(FLAG_CAN_ERASE)) {
+            if (!is_flag_set(FLAG_SKIP_ERASE)) {
+                flash3_erase_execute(handle);
+                delay(FLASH_ERASE_DELAY_MS);
+            }
+            else {
+                debug("Skipping erase of memory");
+                copy_to_buffer(handle->response_msg, "Skipping erase of memory");
+            }
         }
     }
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
