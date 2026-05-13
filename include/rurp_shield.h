@@ -56,6 +56,16 @@ extern "C" {
 
 #define VPP_P1_32_DIP               0x15
 #define VPP_P1_28_DIP               0x0F
+// 24-pin EPROM VPP magic constant. Stock DIP24_2716 pinout has vpp-pin=[21];
+// the Python host's pin_conversions[24][21] = 11 = 0x0B, so the host emits
+// bus_config.vpp_line = 0x0B for these chips. With this constant in place,
+// using_p1_as_vpp() returns true → eprom.cpp redirects VPE_ENABLE to
+// P1_VPP_ENABLE → HV exits on socket pin 1, where the operator's bodge wire
+// (or Rev 2.2's built-in "red" JP4 alt-position) carries it to the chip's
+// actual VPP pin (chip pin 21 = socket pin 25 with bottom-aligned 24-pin
+// chip). See .planning/phases/04-hardware-validation-rurp-shield/
+// 04-HW-24PIN-INVESTIGATION.md for the full hardware analysis.
+#define VPP_P21_24_DIP              0x0B
 
 #ifdef HARDWARE_REVISION
 // REV 1
