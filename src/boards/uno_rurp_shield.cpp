@@ -48,8 +48,28 @@ void rurp_board_setup() {
 }
 
 void rurp_set_communication_mode() {
+    // PD0 doubles as UART RX and data-bus bit 0. During programming we
+    // drive PD0 as output, value = last data byte's bit 0. If we just
+    // clear DDRD bit 0 and immediately call Serial.begin(), UART RXEN0 is
+    // enabled while PD0 may still be LOW — UART then samples that as a
+    // START BIT and queues spurious bytes (patterns reflecting data-bus
+    // state during programming) into the RX ring buffer. The host reads
+    // those bytes concatenated with the legitimate "OK: Req data\r\n"
+    // via readline(), and if the corruption happens to break the OK
+    // prefix the parser times out. Bench-discovered via FIRESTARTER_RX_TRACE
+    // (firestarter_prom .planning/...04-HW-VALIDATION.md).
+    //
+    // Two-part fix:
+    //   1. Set PORTD bit 0 = 1 BEFORE clearing DDRD bit 0. With DDR=1 and
+    //      PORTD bit 0=1 the pin is actively driven HIGH. When DDR
+    //      transitions to 0 (input), the internal pull-up keeps PD0 HIGH.
+    //      UART hardware sees idle when RXEN0 enables — no false start bit.
+    //   2. After Serial.begin() drain any RX bytes that leaked into the
+    //      ring buffer (belt and braces).
+    PORTD |= 0x01;
     DDRD &= ~(0x01);
     rurp_serial_begin(MONITOR_SPEED);
+    while (SERIAL_PORT.available()) SERIAL_PORT.read();
     com_mode = true;
 }
 
