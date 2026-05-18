@@ -181,7 +181,7 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
 void set_operation_to_done(firestarter_handle_t* handle) {
     LOG_INFO_ID(MSG_INFO_MAIN_DONE);
     set_operation_state_done();
-    send_main_done();
+    LOG_MAIN_ID(MSG_MAIN_DONE);
 }
 
 /**
@@ -251,9 +251,9 @@ static inline int _execute_operation_house_keeping_func(void (*callback)(firesta
         }
 
         if (state == INIT) {
-            send_init_done();
+            LOG_INIT_ID(MSG_INIT_DONE);
         } else {
-            send_end_done();
+            LOG_END_ID(MSG_END_DONE);
         }
         set_operation_state_done();
     }
