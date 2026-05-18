@@ -86,24 +86,25 @@ static uint8_t ref_crc8(const uint8_t* data, size_t n) {
 void test_zero_param_frame(void) {
     rurp_log_id(0x01, NULL, 0);
 
-    // 4 magic + 1 len + 1 id + 1 crc + 1 anchor = 8 bytes.
-    TEST_ASSERT_EQUAL_size_t(8, captured.size());
+    // 4 magic + 2 len (u16 W-04) + 1 id + 1 crc + 1 anchor = 9 bytes.
+    TEST_ASSERT_EQUAL_size_t(9, captured.size());
 
     TEST_ASSERT_EQUAL_HEX8(0xAA, captured[0]);
     TEST_ASSERT_EQUAL_HEX8(0x55, captured[1]);
     TEST_ASSERT_EQUAL_HEX8(0xAA, captured[2]);
     TEST_ASSERT_EQUAL_HEX8(0x55, captured[3]);
-    TEST_ASSERT_EQUAL_HEX8(0x02, captured[4]);    // len = 1 (id) + 0 (params) + 1 (crc)
-    TEST_ASSERT_EQUAL_HEX8(0x01, captured[5]);    // id
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[4]);    // len MSB (= 0x00 since len <= 0xFF)
+    TEST_ASSERT_EQUAL_HEX8(0x02, captured[5]);    // len LSB = 1 (id) + 0 (params) + 1 (crc)
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[6]);    // id
 
     // CRC over [0x01] = 0x07 — pins the polynomial choice (D-03).
-    TEST_ASSERT_EQUAL_HEX8(0x07, captured[6]);
+    TEST_ASSERT_EQUAL_HEX8(0x07, captured[7]);
 
     // Also verify against the table-free reference (defence-in-depth).
     uint8_t body[1] = { 0x01 };
-    TEST_ASSERT_EQUAL_HEX8(ref_crc8(body, 1), captured[6]);
+    TEST_ASSERT_EQUAL_HEX8(ref_crc8(body, 1), captured[7]);
 
-    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[7]);    // re-sync anchor
+    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[8]);    // re-sync anchor
 }
 
 void test_u32_param_frame(void) {
@@ -111,8 +112,8 @@ void test_u32_param_frame(void) {
     uint8_t params[4] = { 0x00, 0x01, 0x00, 0x00 };
     rurp_log_id(MSG_INFO_MEM_SIZE, params, 4);
 
-    // 4 magic + 1 len + 1 id + 4 params + 1 crc + 1 anchor = 12 bytes.
-    TEST_ASSERT_EQUAL_size_t(12, captured.size());
+    // 4 magic + 2 len (u16 W-04) + 1 id + 4 params + 1 crc + 1 anchor = 13 bytes.
+    TEST_ASSERT_EQUAL_size_t(13, captured.size());
 
     // Magic preamble.
     TEST_ASSERT_EQUAL_HEX8(0xAA, captured[0]);
@@ -120,25 +121,26 @@ void test_u32_param_frame(void) {
     TEST_ASSERT_EQUAL_HEX8(0xAA, captured[2]);
     TEST_ASSERT_EQUAL_HEX8(0x55, captured[3]);
 
-    // len = 1 (id) + 4 (params) + 1 (crc) = 0x06.
-    TEST_ASSERT_EQUAL_HEX8(0x06, captured[4]);
+    // len = 1 (id) + 4 (params) + 1 (crc) = 0x06, encoded as u16 big-endian.
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[4]);    // len MSB
+    TEST_ASSERT_EQUAL_HEX8(0x06, captured[5]);    // len LSB
 
     // id.
-    TEST_ASSERT_EQUAL_HEX8(0x4E, captured[5]);
-    TEST_ASSERT_EQUAL_HEX8((uint8_t)MSG_INFO_MEM_SIZE, captured[5]);
+    TEST_ASSERT_EQUAL_HEX8(0x4E, captured[6]);
+    TEST_ASSERT_EQUAL_HEX8((uint8_t)MSG_INFO_MEM_SIZE, captured[6]);
 
     // Params.
-    TEST_ASSERT_EQUAL_HEX8(0x00, captured[6]);
-    TEST_ASSERT_EQUAL_HEX8(0x01, captured[7]);
-    TEST_ASSERT_EQUAL_HEX8(0x00, captured[8]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[7]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[8]);
     TEST_ASSERT_EQUAL_HEX8(0x00, captured[9]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[10]);
 
     // CRC over [0x4E, 0x00, 0x01, 0x00, 0x00] — table-free reference.
     uint8_t body[5] = { 0x4E, 0x00, 0x01, 0x00, 0x00 };
-    TEST_ASSERT_EQUAL_HEX8(ref_crc8(body, 5), captured[10]);
+    TEST_ASSERT_EQUAL_HEX8(ref_crc8(body, 5), captured[11]);
 
     // Anchor.
-    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[11]);
+    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[12]);
 }
 
 void test_multi_param_frame(void) {
@@ -147,8 +149,8 @@ void test_multi_param_frame(void) {
     uint8_t params[6] = { 0x01, 0xF4, 0xA2, 0x05, 0x00, 0x03 };
     rurp_log_id(0xB1, params, 6);
 
-    // 4 + 1 + 1 + 6 + 1 + 1 = 14 bytes.
-    TEST_ASSERT_EQUAL_size_t(14, captured.size());
+    // 4 + 2 (len u16 W-04) + 1 + 6 + 1 + 1 = 15 bytes.
+    TEST_ASSERT_EQUAL_size_t(15, captured.size());
 
     // Magic.
     TEST_ASSERT_EQUAL_HEX8(0xAA, captured[0]);
@@ -156,26 +158,27 @@ void test_multi_param_frame(void) {
     TEST_ASSERT_EQUAL_HEX8(0xAA, captured[2]);
     TEST_ASSERT_EQUAL_HEX8(0x55, captured[3]);
 
-    // len = 1 + 6 + 1 = 0x08.
-    TEST_ASSERT_EQUAL_HEX8(0x08, captured[4]);
+    // len = 1 + 6 + 1 = 0x08, encoded as u16 big-endian.
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[4]);    // len MSB
+    TEST_ASSERT_EQUAL_HEX8(0x08, captured[5]);    // len LSB
 
     // id.
-    TEST_ASSERT_EQUAL_HEX8(0xB1, captured[5]);
+    TEST_ASSERT_EQUAL_HEX8(0xB1, captured[6]);
 
     // Params.
-    TEST_ASSERT_EQUAL_HEX8(0x01, captured[6]);
-    TEST_ASSERT_EQUAL_HEX8(0xF4, captured[7]);
-    TEST_ASSERT_EQUAL_HEX8(0xA2, captured[8]);
-    TEST_ASSERT_EQUAL_HEX8(0x05, captured[9]);
-    TEST_ASSERT_EQUAL_HEX8(0x00, captured[10]);
-    TEST_ASSERT_EQUAL_HEX8(0x03, captured[11]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[7]);
+    TEST_ASSERT_EQUAL_HEX8(0xF4, captured[8]);
+    TEST_ASSERT_EQUAL_HEX8(0xA2, captured[9]);
+    TEST_ASSERT_EQUAL_HEX8(0x05, captured[10]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[11]);
+    TEST_ASSERT_EQUAL_HEX8(0x03, captured[12]);
 
     // CRC over [0xB1, 0x01, 0xF4, 0xA2, 0x05, 0x00, 0x03].
     uint8_t body[7] = { 0xB1, 0x01, 0xF4, 0xA2, 0x05, 0x00, 0x03 };
-    TEST_ASSERT_EQUAL_HEX8(ref_crc8(body, 7), captured[12]);
+    TEST_ASSERT_EQUAL_HEX8(ref_crc8(body, 7), captured[13]);
 
     // Anchor.
-    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[13]);
+    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[14]);
 }
 
 void test_crc_polynomial_smoke(void) {
@@ -185,47 +188,63 @@ void test_crc_polynomial_smoke(void) {
     uint8_t params[4] = { 0x12, 0x34, 0x56, 0x78 };
     rurp_log_id(0x4E, params, 4);
 
-    TEST_ASSERT_EQUAL_size_t(12, captured.size());
+    // 4 magic + 2 len (u16 W-04) + 1 id + 4 params + 1 crc + 1 anchor = 13 bytes.
+    TEST_ASSERT_EQUAL_size_t(13, captured.size());
 
     uint8_t body[5] = { 0x4E, 0x12, 0x34, 0x56, 0x78 };
     uint8_t expected_crc = ref_crc8(body, 5);
 
     // CRC is the second-to-last byte (anchor 0x0A is the last).
-    TEST_ASSERT_EQUAL_HEX8(expected_crc, captured[10]);
-    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[11]);
+    TEST_ASSERT_EQUAL_HEX8(expected_crc, captured[11]);
+    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[12]);
 }
 
 void test_oversize_param_count_rejected(void) {
-    // Phase 6 WR-02: _firestarter_emit_frame must refuse param_count values
-    // that would wrap the length byte. `len = 1 (id) + param_count + 1 (crc)`
-    // overflows for param_count >= 254 (254 + 2 == 256 → 0). The guard drops
-    // the frame silently rather than emit a wrap-corrupted length prefix that
-    // the host decoder would parse as a shorter body, producing desync.
+    // Phase 8 W-04: _firestarter_emit_frame guard raised from 253 to 65533.
+    // `len = 1 (id) + param_count + 1 (crc)` is now a u16, so no uint8_t
+    // param_count value (max 255) can exceed the new guard. The guard matters
+    // for future callers that pass > 255 via an internal wide path.
     //
-    // Dummy params buffer — only the count matters; nothing is read past the
-    // guard. Sized at 254 to match the boundary value under test.
-    uint8_t params[254];
+    // Under the u16 len, param_count = 253 (previously the largest accepted)
+    // must still emit a well-formed frame.
+    // param_count = 254, 255 also EMIT now (they were rejected under u8 len
+    // because 254+2=256 wrapped; under u16 they are valid small values).
+    //
+    // Dummy params buffer — sized at 255 to cover the uint8_t maximum.
+    uint8_t params[255];
     memset(params, 0xCC, sizeof(params));
 
-    rurp_log_id(0x01, params, 254);
-
-    // Strict invariant: zero serial bytes captured. If any byte landed on the
-    // wire, the guard let an unsafe frame through.
-    TEST_ASSERT_EQUAL_size_t(0, captured.size());
-
-    // Also pin the 255 case explicitly — same expectation.
-    rurp_log_id(0x01, params, 255);
-    TEST_ASSERT_EQUAL_size_t(0, captured.size());
-
-    // Defence-in-depth: the boundary just below the guard (253) MUST still
-    // emit a well-formed frame so we know the cutoff is exact, not
-    // off-by-one. 253 params → 4 magic + 1 len + 1 id + 253 params + 1 crc
-    // + 1 anchor = 261 bytes. len = 1 + 253 + 1 = 255 (0xFF, max valid).
+    // --- 253 params: must emit (was the u8-era max; still accepted). ---
+    // Frame: 4 magic + 2 len + 1 id + 253 params + 1 crc + 1 anchor = 262 bytes.
+    // len_u16 = 1 + 253 + 1 = 255 (0x00FF).
     rurp_log_id(0x01, params, 253);
-    TEST_ASSERT_EQUAL_size_t(261, captured.size());
-    TEST_ASSERT_EQUAL_HEX8(0xFF, captured[4]);   // len = 255
-    TEST_ASSERT_EQUAL_HEX8(0x01, captured[5]);   // id
-    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[260]); // anchor
+    TEST_ASSERT_EQUAL_size_t(262, captured.size());
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[4]);   // len MSB = 0x00
+    TEST_ASSERT_EQUAL_HEX8(0xFF, captured[5]);   // len LSB = 0xFF (255)
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[6]);   // id
+    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[261]); // anchor
+
+    captured.clear();
+
+    // --- 254 params: must emit (previously rejected; now valid under u16). ---
+    // Frame: 4 + 2 + 1 + 254 + 1 + 1 = 263 bytes. len_u16 = 256 (0x0100).
+    rurp_log_id(0x01, params, 254);
+    TEST_ASSERT_EQUAL_size_t(263, captured.size());
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[4]);   // len MSB = 0x01
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[5]);   // len LSB = 0x00
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[6]);   // id
+    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[262]); // anchor
+
+    captured.clear();
+
+    // --- 255 params: must emit (previously rejected; now valid under u16). ---
+    // Frame: 4 + 2 + 1 + 255 + 1 + 1 = 264 bytes. len_u16 = 257 (0x0101).
+    rurp_log_id(0x01, params, 255);
+    TEST_ASSERT_EQUAL_size_t(264, captured.size());
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[4]);   // len MSB = 0x01
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[5]);   // len LSB = 0x01
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[6]);   // id
+    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[263]); // anchor
 }
 
 int main(int argc, char** argv) {

@@ -112,11 +112,11 @@ size_t rurp_communication_write(const char* buffer, size_t size) {
 
 // --- Phase 6: ID-encoded log frame emitter (CONTEXT §D-01..D-04) ---
 //
-// Wire frame layout (8+ bytes):
+// Wire frame layout (9+ bytes, W-04 u16 len):
 //     bytes 0..3 : 0xAA 0x55 0xAA 0x55         (magic preamble)
-//     byte 4     : len = 1 + param_count + 1    (id + params + crc)
-//     byte 5     : id
-//     bytes 6..N : params (raw, MSB-first per type encoded by caller)
+//     bytes 4..5 : len_u16 = 1 + param_count + 1, big-endian MSB first (id + params + crc)
+//     byte 6     : id
+//     bytes 7..N : params (raw, MSB-first per type encoded by caller)
 //     byte N+1   : crc8 over [id, params] — poly 0x07, seed 0x00, no refl, no XOR
 //     byte N+2   : 0x0A re-sync anchor (NOT a delimiter; len is authoritative)
 
@@ -162,7 +162,7 @@ void _firestarter_emit_frame(uint8_t id, const uint8_t* params, uint8_t param_co
     // callers (including future LOG_ID_BYTES users) cannot trip the wrap.
     // Silent drop is deliberate — we cannot emit a valid frame on the same
     // serial channel without risking the desync we are trying to prevent.
-    if (param_count > 253) {
+    if (param_count > 65533) {   // u16 max (65535) - 2 (for id + crc)
         return;
     }
 
@@ -172,9 +172,11 @@ void _firestarter_emit_frame(uint8_t id, const uint8_t* params, uint8_t param_co
     SERIAL_PORT.write((uint8_t)pgm_read_byte(&MAGIC_PREAMBLE[2]));
     SERIAL_PORT.write((uint8_t)pgm_read_byte(&MAGIC_PREAMBLE[3]));
 
-    // Length byte: counts id + params + crc; excludes len itself and trailing 0x0A.
-    uint8_t len = (uint8_t)(1 + param_count + 1);
-    SERIAL_PORT.write(len);
+    // Length field (u16 big-endian, W-04): counts id + params + crc;
+    // excludes the len field itself and the trailing 0x0A anchor.
+    uint16_t len_u16 = (uint16_t)(1 + param_count + 1);
+    SERIAL_PORT.write((uint8_t)(len_u16 >> 8));    // MSB
+    SERIAL_PORT.write((uint8_t)(len_u16 & 0xFF));  // LSB
 
     // CRC8 accumulator runs over [id, params].
     uint8_t crc = 0;
