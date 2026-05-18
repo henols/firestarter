@@ -12,6 +12,7 @@
 
 #include "firestarter.h"
 #include "logging.h"
+#include "logging_id.h"
 #include "rurp_shield.h"
 
 #define ERROR -1
@@ -75,9 +76,7 @@ bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle
         if (res != CONTINUE) {
             return res == RETURN;
         }
-        // log_info_format("Operation started: %d, state: %d", is_operation_started(OPERATION), handle->operation_state);
         if (is_operation_started(MAIN)) {
-            // log_info_const("Execute operation");
             return callback(handle);
         }
         return true;
@@ -115,7 +114,7 @@ bool op_wait_for_ack(firestarter_handle_t* handle) {
         }
         delay(10);
     }
-    log_error_const("Timeout");
+    LOG_ERROR_ID(MSG_ERR_TIMEOUT);
     return false;
 }
 
@@ -131,19 +130,16 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
     if (rurp_communication_available() <= 0) {
         return OP_MSG_INCOMPLETE;
     }
-    // log_info_format("op_get_message: %d bytes available", rurp_communication_available());
     while (rurp_communication_available() > 0) {
         int peek = rurp_communication_peak();
         switch (peek) {
             case 'O':  // Potential "OK"
-                // log_info_const("op_get_message: Found 'O'");
                 if (rurp_communication_available() < 2) {
                     return OP_MSG_INCOMPLETE;
                 }
                 rurp_communication_read();  // consume 'O'
                 if (rurp_communication_peak() == 'K') {
                     rurp_communication_read();  // consume 'K'
-                    // log_info_const("op_get_message: ACK received");
                     return OP_MSG_ACK;
                 }
                 // Not "OK", 'O' is consumed. Loop will treat next char as junk.
@@ -168,14 +164,13 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                 rurp_communication_read();  // consume '#'
                 int res = rurp_communication_read_data(handle->data_buffer);
                 if (res < 0) {
-                    log_error_P_int("Data err ", res);
+                    LOG_ERROR_ID_U16(MSG_ERR_DATA_ERR_N, (uint16_t)res);
                     return OP_MSG_ERROR;
                 }
                 handle->data_size = res;
                 return OP_MSG_DATA;
             }
             default:
-                // log_info_format("op_get_message: Consuming junk char '%c' (0x%02x)", (char)peek, peek);
                 rurp_communication_read();
                 break;
         }
@@ -184,7 +179,7 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
 }
 
 void set_operation_to_done(firestarter_handle_t* handle) {
-    log_info_const("Main done");
+    LOG_INFO_ID(MSG_INFO_MAIN_DONE);
     set_operation_state_done();
     send_main_done();
 }
@@ -199,23 +194,19 @@ void set_operation_to_done(firestarter_handle_t* handle) {
  * @return CONTINUE if the state machine should proceed, RETURN or ERROR to stop.
  */
 static inline int _execute_operation_house_keeping(firestarter_handle_t* handle) {
-    // log_info_format("Housekeeping: state=0x%02x", handle->operation_state);
     if (is_all_operations_done()) {
-        // log_info_const("Operations done");
         return CONTINUE;
     }
     if (is_operation_started(MAIN)) {
-        // log_info_const("Operation is started");
         return CONTINUE;
     }
-    // log_info_format("Can operation start: %d", can_operation_start(OPERATION));
     if (can_operation_start(MAIN)) {
         if (!op_wait_for_ack(handle)) {
             return ERROR;
         }
         op_reset_timeout();
         set_operation_state(MAIN);
-        log_info_const("Main start");
+        LOG_INFO_ID(MSG_INFO_MAIN_START);
         return CONTINUE;
     }
     int res = _execute_operation_house_keeping_func(handle->firestarter_operation_init, INIT, handle);
@@ -238,18 +229,15 @@ static inline int _execute_operation_house_keeping(firestarter_handle_t* handle)
  * @return CONTINUE if the phase is complete, RETURN or ERROR to stop.
  */
 static inline int _execute_operation_house_keeping_func(void (*callback)(firestarter_handle_t* handle), int state, firestarter_handle_t* handle) {
-    // log_info_format("%s function, state: %d, current state: %d", name, state, handle->operation_state);
     if (execute_operation_state(state)) {
-        // log_info_format("%s function, state: %d, can start: %d", name, state, can_operation_start(state));
         if (can_operation_start(state)) {
-            // log_info_format("Waiting for ACK to start %s phase", name);
             if (!op_wait_for_ack(handle)) {
                 return ERROR;
             }
             if (state == INIT) {
-                log_info_const("Init start");
+                LOG_INFO_ID(MSG_INFO_INIT_START);
             } else {
-                log_info_const("End start");
+                LOG_INFO_ID(MSG_INFO_END_START);
             }
             set_operation_state(state);
         }
@@ -322,10 +310,8 @@ static inline bool _check_response(firestarter_handle_t* handle) {
     switch (handle->response_code) {
         case RESPONSE_CODE_OK:
             log_info(handle->response_msg);
-            // log_info_const("- OK -");
             break;
         case RESPONSE_CODE_WARNING:
-            log_warn(handle->response_msg);
             break;
         case RESPONSE_CODE_DATA:
             log_data(handle->response_msg);
@@ -333,7 +319,6 @@ static inline bool _check_response(firestarter_handle_t* handle) {
             break;
         case RESPONSE_CODE_ERROR:
         default:
-            log_error(handle->response_msg);
             return false;
     }
     op_reset_timeout();
