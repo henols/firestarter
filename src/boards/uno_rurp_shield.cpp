@@ -88,32 +88,17 @@ void rurp_log(PGM_P type, const char* msg) {
 }
 
 void rurp_log_P(PGM_P type, PGM_P msg) {
-    // For debug logging, we need to copy the PROGMEM message to RAM.
-    // We can reuse the debug_msg_buffer for this.
-    #ifdef SERIAL_DEBUG
-    strcpy_P(debug_msg_buffer, msg);
-    log_debug(type, debug_msg_buffer);
-    #endif
     if (com_mode) {
         _firestarter_log_progmem(type, msg);
     }
 }
 
-// Phase 6 — Uno strong override of rurp_log_id. Mirrors rurp_log_P discipline:
-// terse debug summary first (under SERIAL_DEBUG), then com_mode-gated
-// production emit via the board-agnostic frame emitter. The com_mode gate
-// is critical: emitting on the wire while PORTD is repurposed as the data
-// bus would corrupt the programming pulse (per CONTEXT §"Specific Ideas").
+// Phase 6 — Uno strong override of rurp_log_id. The com_mode gate is critical:
+// emitting on the wire while PORTD is repurposed as the data bus would corrupt
+// the programming pulse (per CONTEXT §"Specific Ideas").
+// Phase 8 Plan 07: debug_msg_buffer path removed; LOG_DEBUG_ID_SUB* now handles
+// structured debug output directly via catalog frames.
 void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count) {
-    (void)params;  // Debug path summarises by id + length only; keep terse.
-    #ifdef SERIAL_DEBUG
-    // Buffer size matches the conservative 64-byte slot in logging.h; the
-    // formatted string is at most ~26 chars including NUL.
-    snprintf_P(debug_msg_buffer, 64,
-               PSTR("LOG_ID: id=0x%02X bytes=%d"),
-               (unsigned)id, (int)param_count);
-    log_debug(PSTR("LOG"), debug_msg_buffer);
-    #endif
     if (com_mode) {
         _firestarter_emit_frame(id, params, param_count);
     }
@@ -122,12 +107,6 @@ void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count) {
 // Uno strong override for rurp_log_id_wide (W-04 MSG_DATA_CHUNK path).
 // Same com_mode discipline as rurp_log_id; calls the wide frame emitter.
 void rurp_log_id_wide(uint8_t id, const uint8_t* params, uint16_t param_count) {
-    #ifdef SERIAL_DEBUG
-    snprintf_P(debug_msg_buffer, 64,
-               PSTR("LOG_ID_WIDE: id=0x%02X bytes=%u"),
-               (unsigned)id, (unsigned)param_count);
-    log_debug(PSTR("LOG"), debug_msg_buffer);
-    #endif
     if (com_mode) {
         _firestarter_emit_frame_wide(id, params, param_count);
     }

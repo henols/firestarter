@@ -10,10 +10,6 @@
 #include <Arduino.h>
 #define SERIAL_PORT Serial
 #endif
-#ifdef SERIAL_DEBUG
-char* debug_msg_buffer;
-#endif
-
 // --- Core Logging Functions ---
 // Core logging function for RAM messages. Takes type from PROGMEM.
 void _firestarter_log_ram(PGM_P type, const char* msg);

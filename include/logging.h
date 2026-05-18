@@ -148,27 +148,12 @@ extern const char LOG_ERROR_MSG[] PROGMEM;
     log_error_P_int_buf(handle->response_msg, progmem_str, value)
 
 #ifdef SERIAL_DEBUG
-extern char* debug_msg_buffer;
-
+// Phase 8 Plan 07: debug_msg_buffer, debug_buf(), debug(), debug_format() deleted.
+// All debug emit call-sites now use LOG_DEBUG_ID_SUB* from logging_id.h.
+// debug_setup() retained: board-specific debug serial port init (SoftwareSerial on Uno).
 void debug_setup();
-void debug_buf(const char* msg);
-
-#define debug(msg)      \
-    {                   \
-        debug_buf(msg); \
-    }
-
-#define debug_format(cformat, ...)                      \
-    {                                                   \
-        format(debug_msg_buffer, cformat, __VA_ARGS__); \
-        debug_buf(debug_msg_buffer);                    \
-    }
-
 #else
-#define debug(msg)
-#define debug_format(cformat, ...)
 #define debug_setup()
-#define debug_buf(msg)
 #define log_debug(type, msg)
 #endif
 
