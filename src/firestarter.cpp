@@ -14,6 +14,7 @@
 #include "hardware_operations.h"
 #include "json_parser.h"
 #include "logging.h"
+#include "logging_id.h"
 #include "memory.h"
 #include "operation_utils.h"
 #include "rurp_shield.h"
@@ -66,45 +67,41 @@ bool parse_json(firestarter_handle_t* handle) {
     handle->response_msg[0] = '\0';
     if (token_count <= 0) {
         handle->ctrl_flags = 0x80;
-        log_info_format("Buf val: 0x%02x", handle->data_buffer[0]);
-        log_error_const("Bad JSON");
+        LOG_INFO_ID_U8(MSG_INFO_BUF_VAL, handle->data_buffer[0]);
+        LOG_ERROR_ID(MSG_ERR_BAD_JSON);
 
         return false;
     }
 
     handle->cmd = json_get_cmd(handle->data_buffer, tokens, token_count, handle);
-    log_info_format("Token count: %d", token_count);
+    LOG_INFO_ID_U16(MSG_INFO_TOKEN_COUNT, (uint16_t)token_count);
     if (handle->cmd == 0xFF) {
-        log_error_const("No cmd");
+        LOG_ERROR_ID(MSG_ERR_NO_CMD);
         return false;
     }
 
     debug_format("Cmd: %d", handle->cmd);
     if (handle->cmd < CMD_READ_VPP) {
         json_parse(handle->data_buffer, tokens, token_count, handle);
-        if (handle->response_code == RESPONSE_CODE_ERROR) {
-            log_error(handle->response_msg);
-            return false;
-        }
 #ifdef DEV_TOOLS
         if (handle->cmd < CMD_DEV_ADDRESS) {
 #endif
 #ifdef EXTRA_INFO_LOGGING
-            log_info_format("Force: %d", is_flag_set(FLAG_FORCE));
-            log_info_format("Can erase: %d", is_flag_set(FLAG_CAN_ERASE));
-            log_info_format("Skip erase: %d", is_flag_set(FLAG_SKIP_ERASE));
-            log_info_format("Skip blank check: %d", is_flag_set(FLAG_SKIP_BLANK_CHECK));
-            log_info_format("VPE as VPP: %d", is_flag_set(FLAG_VPE_AS_VPP));
+            LOG_INFO_ID_U8(MSG_INFO_FLAG_FORCE, is_flag_set(FLAG_FORCE));
+            LOG_INFO_ID_U8(MSG_INFO_FLAG_CAN_ERASE, is_flag_set(FLAG_CAN_ERASE));
+            LOG_INFO_ID_U8(MSG_INFO_FLAG_SKIP_ERASE, is_flag_set(FLAG_SKIP_ERASE));
+            LOG_INFO_ID_U8(MSG_INFO_FLAG_SKIP_BLANK, is_flag_set(FLAG_SKIP_BLANK_CHECK));
+            LOG_INFO_ID_U8(MSG_INFO_FLAG_VPE_AS_VPP, is_flag_set(FLAG_VPE_AS_VPP));
 #endif
             if (!op_execute_function(configure_memory, handle)) {
-                log_error_const("Setup error");
+                LOG_ERROR_ID(MSG_ERR_SETUP);
                 return false;
             }
 #ifdef DEV_TOOLS
 #ifdef EXTRA_INFO_LOGGING
         } else {
-            log_info_format("Output enable: %d", is_flag_set(FLAG_OUTPUT_ENABLE));
-            log_info_format("Chip enable: %d", is_flag_set(FLAG_CHIP_ENABLE));
+            LOG_INFO_ID_U8(MSG_INFO_FLAG_OUTPUT_EN, is_flag_set(FLAG_OUTPUT_ENABLE));
+            LOG_INFO_ID_U8(MSG_INFO_FLAG_CHIP_EN, is_flag_set(FLAG_CHIP_ENABLE));
 #endif
         }
 #endif
@@ -112,7 +109,7 @@ bool parse_json(firestarter_handle_t* handle) {
         rurp_configuration_t* config = rurp_get_config();
         int res = json_parse_config(handle->data_buffer, tokens, token_count, config, handle);
         if (res < 0) {
-            log_error_const("Failed parsing config");
+            LOG_ERROR_ID(MSG_ERR_PARSE_CFG);
             return false;
         } else if (res == 1) {
             rurp_save_config(config);
@@ -128,10 +125,10 @@ bool init_programmer(firestarter_handle_t* handle) {
     handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
 #ifdef EXTRA_INFO_LOGGING
     handle->ctrl_flags = 0x80;
-    log_info_format("Buffer size: %d", handle->data_size);
+    LOG_INFO_ID_U16(MSG_INFO_BUFFER_SIZE, (uint16_t)handle->data_size);
 #endif
     if (handle->data_size == 0) {
-        log_error_const("Empty input");
+        LOG_ERROR_ID(MSG_ERR_EMPTY_INPUT);
         return false;
     }
     debug("Setup");
@@ -143,9 +140,9 @@ bool init_programmer(firestarter_handle_t* handle) {
 
 #ifdef EXTRA_INFO_LOGGING
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
-        log_info_format("Memory size 0x%lx", handle->mem_size);
-        log_info_format("Address mask 0x%lx", handle->bus_config.address_mask);
-        log_info_format("Matching lines %u", handle->bus_config.matching_lines);
+        LOG_INFO_ID_U32(MSG_INFO_MEM_SIZE, (uint32_t)handle->mem_size);
+        LOG_INFO_ID_U32(MSG_INFO_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
+        LOG_INFO_ID_U16(MSG_INFO_MATCH_LINES, (uint16_t)handle->bus_config.matching_lines);
     }
 #endif
 #ifdef HARDWARE_REVISION
@@ -173,7 +170,7 @@ void command_done(firestarter_handle_t* handle) {
 
 void loop() {
     if (handle.cmd != CMD_IDLE && timeout < millis()) {
-        log_error_format_buf(handle.response_msg, "Cmd: %d, timeout", handle.cmd);
+        LOG_ERROR_ID_U8(MSG_ERR_CMD_TIMEOUT, handle.cmd);
         command_done(&handle);
     } else if (handle.cmd == CMD_IDLE) {
         if (rurp_communication_available() > 0) {
@@ -240,7 +237,7 @@ void loop() {
             break;
 
         default:
-            log_error_P_int_buf(handle.response_msg, "Unknown cmd: ", handle.cmd);
+            LOG_ERROR_ID_U8(MSG_ERR_UNKNOWN_CMD, handle.cmd);
             finished = true;
             break;
     }
