@@ -16,6 +16,7 @@
 #include "flash_intel.h"
 #include "eeprom_28c.h"
 #include "logging.h"
+#include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
 #include "rurp_shield.h"
@@ -113,7 +114,8 @@ void configure_memory(firestarter_handle_t* handle) {
         configure_flash4(handle);
         return;
     }
-    firestarter_error_response_format("Memory type 0x%02x not supported", handle->mem_type);
+    LOG_ERROR_ID_U8(MSG_ERR_MEM_TYPE_UNSUPPORTED, handle->mem_type);
+    handle->response_code = RESPONSE_CODE_ERROR;
 }
 
 void memory_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
@@ -216,7 +218,18 @@ void memory_verify_execute(firestarter_handle_t* handle) {
         uint8_t byte = handle->firestarter_get_data(handle, handle->address + i);
         uint8_t expected = handle->data_buffer[i];
         if (byte != expected) {
-            firestarter_error_response_format("0x%02x != 0x%02x at 0x%06x", expected, byte, handle->address + i);
+            {
+                uint32_t addr = (uint32_t)(handle->address + i);
+                uint8_t _b[5] = {
+                    (uint8_t)expected,
+                    (uint8_t)byte,
+                    (uint8_t)((addr >> 16) & 0xFF),
+                    (uint8_t)((addr >> 8) & 0xFF),
+                    (uint8_t)(addr & 0xFF),
+                };
+                LOG_ERROR_ID_BYTES(MSG_ERR_VERIFY, _b, 5);
+            }
+            handle->response_code = RESPONSE_CODE_ERROR;
             return;
         }
     }
@@ -284,7 +297,16 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
     for (uint32_t i = handle->address; i < end_address && i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
-            firestarter_error_response_format("Not blank, at 0x%06x, v: 0x%02x", i, val);
+            {
+                uint8_t _b[4] = {
+                    (uint8_t)((i >> 16) & 0xFF),
+                    (uint8_t)((i >> 8) & 0xFF),
+                    (uint8_t)(i & 0xFF),
+                    (uint8_t)val,
+                };
+                LOG_ERROR_ID_BYTES(MSG_ERR_NOT_BLANK, _b, 4);
+            }
+            handle->response_code = RESPONSE_CODE_ERROR;
             return;
         }
     }

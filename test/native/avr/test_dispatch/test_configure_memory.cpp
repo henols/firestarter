@@ -41,6 +41,14 @@ using namespace fakeit;
 
 void setUp(void) {
     ArduinoFakeReset();
+    /* Stub Serial.write and Serial.flush so that LOG_ERROR_ID_* calls in the
+     * error dispatch path (e.g. MSG_ERR_MEM_TYPE_UNSUPPORTED) don't abort.
+     * Dispatch tests never assert on serial output — only on response_code. */
+    When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t)))
+        .AlwaysReturn(1);
+    When(OverloadedMethod(ArduinoFake(Serial), write, size_t(const uint8_t*, size_t)))
+        .AlwaysReturn(1);
+    When(Method(ArduinoFake(Serial), flush)).AlwaysReturn();
 }
 
 void tearDown(void) {
