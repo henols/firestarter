@@ -22,22 +22,18 @@ bool eprom_read(firestarter_handle_t* handle) {
 }
 
 bool eprom_write(firestarter_handle_t* handle) {
-#ifdef SERIAL_DEBUG
-    debug("Write EPROM");
-#endif
+    LOG_DEBUG_ID_SUB(DBG_WRITE_EPROM);
     return !op_execute_stateful_operation(_process_incoming_data, handle);
 }
 
 // Return true if the operation is done, otherwise false
 bool eprom_verify(firestarter_handle_t* handle) {
-#ifdef SERIAL_DEBUG
-    debug("Verify PROM");
-#endif
+    LOG_DEBUG_ID_SUB(DBG_VERIFY_PROM);
     return !op_execute_stateful_operation(_process_incoming_data, handle);
 }
 
 bool eprom_erase(firestarter_handle_t* handle) {
-    debug("Erase PROM");
+    LOG_DEBUG_ID_SUB(DBG_ERASE_PROM);
     if (!is_flag_set(FLAG_CAN_ERASE)) {
         LOG_ERROR_ID(MSG_ERR_NOT_SUPPORTED);
         return true;
@@ -46,7 +42,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
 }
 
 bool eprom_check_chip_id(firestarter_handle_t* handle) {
-    debug("Check Chip ID");
+    LOG_DEBUG_ID_SUB(DBG_CHECK_CHIP_ID_OP);
     if (handle->chip_id == 0) {
         LOG_ERROR_ID(MSG_ERR_NO_CHIP_ID);
         return true;
@@ -55,7 +51,7 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
 }
 
 bool eprom_blank_check(firestarter_handle_t* handle) {
-    debug("Blank check PROM");
+    LOG_DEBUG_ID_SUB(DBG_BLANK_CHECK_PROM);
     return !op_execute_simple_operation(handle);
 }
 
