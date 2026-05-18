@@ -132,6 +132,10 @@ extern "C" {
     void rurp_log(PGM_P type, const char* msg);
     void rurp_log_P(PGM_P type, PGM_P msg);
 
+    // Phase 6 — ID-encoded wire frame emit per CONTEXT §D-01..D-04.
+    // Coexists with rurp_log/rurp_log_P (LMIG-01).
+    void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count);
+
     void rurp_set_data_output();
     void rurp_set_data_input();
 

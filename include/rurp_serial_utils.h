@@ -21,6 +21,11 @@ void _firestarter_log_ram(PGM_P type, const char* msg);
 // Core logging function for PROGMEM messages.
 void _firestarter_log_progmem(PGM_P type, PGM_P p_msg);
 
+// Phase 6 — board-agnostic ID-encoded frame emitter (CONTEXT §D-01..D-04).
+// Defined in rurp_serial_utils.cpp; the Uno strong override of rurp_log_id
+// calls into this after applying the com_mode gate.
+void _firestarter_emit_frame(uint8_t id, const uint8_t* params, uint8_t param_count);
+
 void rurp_serial_begin(unsigned long baud);
 
 void rurp_serial_end();

@@ -99,6 +99,26 @@ void rurp_log_P(PGM_P type, PGM_P msg) {
     }
 }
 
+// Phase 6 — Uno strong override of rurp_log_id. Mirrors rurp_log_P discipline:
+// terse debug summary first (under SERIAL_DEBUG), then com_mode-gated
+// production emit via the board-agnostic frame emitter. The com_mode gate
+// is critical: emitting on the wire while PORTD is repurposed as the data
+// bus would corrupt the programming pulse (per CONTEXT §"Specific Ideas").
+void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count) {
+    (void)params;  // Debug path summarises by id + length only; keep terse.
+    #ifdef SERIAL_DEBUG
+    // Buffer size matches the conservative 64-byte slot in logging.h; the
+    // formatted string is at most ~26 chars including NUL.
+    snprintf_P(debug_msg_buffer, 64,
+               PSTR("LOG_ID: id=0x%02X bytes=%d"),
+               (unsigned)id, (int)param_count);
+    log_debug(PSTR("LOG"), debug_msg_buffer);
+    #endif
+    if (com_mode) {
+        _firestarter_emit_frame(id, params, param_count);
+    }
+}
+
 
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
     // This function modifies only the specified control pin on PORTB,
