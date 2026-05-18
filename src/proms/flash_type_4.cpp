@@ -12,6 +12,7 @@
 #include "firestarter.h"
 #include "flash_utils.h"
 #include "logging.h"
+#include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
 
@@ -85,7 +86,16 @@ static bool flash4_wait_for_page_write(firestarter_handle_t* handle, uint32_t ad
         }
     }
 
-    firestarter_error_response_format("Timeout verifying 0x%02x at 0x%06lx (got 0x%02x)", expected, address, observed);
+    {
+        uint8_t _b[5];
+        _b[0] = (uint8_t)expected;
+        _b[1] = (uint8_t)((address >> 16) & 0xFF);
+        _b[2] = (uint8_t)((address >> 8) & 0xFF);
+        _b[3] = (uint8_t)(address & 0xFF);
+        _b[4] = (uint8_t)observed;
+        LOG_ERROR_ID_BYTES(MSG_ERR_FL4_VERIFY_TIMEOUT, _b, 5);
+        handle->response_code = RESPONSE_CODE_ERROR;
+    }
     return false;
 }
 
