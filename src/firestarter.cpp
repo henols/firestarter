@@ -36,7 +36,6 @@ unsigned long timeout = 0;
 
 void setup() {
 #ifdef SERIAL_DEBUG
-    debug_msg_buffer = (char*)malloc(80);
     debug_setup();
 #endif
 
@@ -47,13 +46,13 @@ void setup() {
     rurp_board_setup();
 
     handle.cmd = CMD_IDLE;
-    debug("Firestarter started");
-    debug_format("Firmware version: %s", VERSION);
-    debug_format("Hardware revision: %d", rurp_get_physical_hardware_revision());
+    LOG_DEBUG_ID_SUB(DBG_FIRESTARTER_STARTED);
+    LOG_DEBUG_ID_SUB_ASTR(DBG_FIRMWARE_VERSION, VERSION);
+    LOG_DEBUG_ID_SUB_U8(DBG_HARDWARE_REVISION, (uint8_t)rurp_get_physical_hardware_revision());
 }
 
 bool parse_json(firestarter_handle_t* handle) {
-    debug("Parse JSON");
+    LOG_DEBUG_ID_SUB(DBG_PARSE_JSON);
 #ifdef EXTRA_INFO_LOGGING
     // log_info_format("'%s'", handle->data_buffer);
 
@@ -79,7 +78,7 @@ bool parse_json(firestarter_handle_t* handle) {
         return false;
     }
 
-    debug_format("Cmd: %d", handle->cmd);
+    LOG_DEBUG_ID_SUB_U8(DBG_CMD, (uint8_t)handle->cmd);
     if (handle->cmd < CMD_READ_VPP) {
         json_parse(handle->data_buffer, tokens, token_count, handle);
 #ifdef DEV_TOOLS
@@ -130,7 +129,7 @@ bool init_programmer(firestarter_handle_t* handle) {
         LOG_ERROR_ID(MSG_ERR_EMPTY_INPUT);
         return false;
     }
-    debug("Setup");
+    LOG_DEBUG_ID_SUB(DBG_SETUP);
     handle->data_buffer[handle->data_size] = '\0';
 
     if (!parse_json(handle)) {
@@ -158,7 +157,7 @@ bool init_programmer(firestarter_handle_t* handle) {
 }
 
 void command_done(firestarter_handle_t* handle) {
-    debug("Cmd finished");
+    LOG_DEBUG_ID_SUB(DBG_CMD_FINISHED);
     rurp_set_programmer_mode();
     rurp_chip_disable();
     rurp_write_to_register(CONTROL_REGISTER, 0x00);
