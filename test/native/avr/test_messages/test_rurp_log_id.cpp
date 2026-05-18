@@ -195,6 +195,39 @@ void test_crc_polynomial_smoke(void) {
     TEST_ASSERT_EQUAL_HEX8(0x0A, captured[11]);
 }
 
+void test_oversize_param_count_rejected(void) {
+    // Phase 6 WR-02: _firestarter_emit_frame must refuse param_count values
+    // that would wrap the length byte. `len = 1 (id) + param_count + 1 (crc)`
+    // overflows for param_count >= 254 (254 + 2 == 256 → 0). The guard drops
+    // the frame silently rather than emit a wrap-corrupted length prefix that
+    // the host decoder would parse as a shorter body, producing desync.
+    //
+    // Dummy params buffer — only the count matters; nothing is read past the
+    // guard. Sized at 254 to match the boundary value under test.
+    uint8_t params[254];
+    memset(params, 0xCC, sizeof(params));
+
+    rurp_log_id(0x01, params, 254);
+
+    // Strict invariant: zero serial bytes captured. If any byte landed on the
+    // wire, the guard let an unsafe frame through.
+    TEST_ASSERT_EQUAL_size_t(0, captured.size());
+
+    // Also pin the 255 case explicitly — same expectation.
+    rurp_log_id(0x01, params, 255);
+    TEST_ASSERT_EQUAL_size_t(0, captured.size());
+
+    // Defence-in-depth: the boundary just below the guard (253) MUST still
+    // emit a well-formed frame so we know the cutoff is exact, not
+    // off-by-one. 253 params → 4 magic + 1 len + 1 id + 253 params + 1 crc
+    // + 1 anchor = 261 bytes. len = 1 + 253 + 1 = 255 (0xFF, max valid).
+    rurp_log_id(0x01, params, 253);
+    TEST_ASSERT_EQUAL_size_t(261, captured.size());
+    TEST_ASSERT_EQUAL_HEX8(0xFF, captured[4]);   // len = 255
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[5]);   // id
+    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[260]); // anchor
+}
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
@@ -204,6 +237,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_u32_param_frame);
     RUN_TEST(test_multi_param_frame);
     RUN_TEST(test_crc_polynomial_smoke);
+    RUN_TEST(test_oversize_param_count_rejected);
 
     return UNITY_END();
 }

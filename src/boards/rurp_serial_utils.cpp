@@ -154,6 +154,18 @@ static uint8_t crc8_ccitt(uint8_t crc, uint8_t b) {
 // gates this call. Leonardo's USB-CDC has no PORTD aliasing risk so it
 // uses the weak default of rurp_log_id which calls this unconditionally.
 void _firestarter_emit_frame(uint8_t id, const uint8_t* params, uint8_t param_count) {
+    // Wire-frame budget guard: `len = 1 (id) + param_count + 1 (crc)` must
+    // fit in a uint8_t. With param_count >= 254 the `len` byte wraps silently
+    // and the host decoder reads a shorter body than we actually emit — frame
+    // desync. The catalog enforces a 24-byte PARAM_BUDGET cap upstream, but
+    // this is the wire boundary; refuse oversize frames here regardless so
+    // callers (including future LOG_ID_BYTES users) cannot trip the wrap.
+    // Silent drop is deliberate — we cannot emit a valid frame on the same
+    // serial channel without risking the desync we are trying to prevent.
+    if (param_count > 253) {
+        return;
+    }
+
     // Magic preamble (4 bytes from PROGMEM).
     SERIAL_PORT.write((uint8_t)pgm_read_byte(&MAGIC_PREAMBLE[0]));
     SERIAL_PORT.write((uint8_t)pgm_read_byte(&MAGIC_PREAMBLE[1]));
