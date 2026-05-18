@@ -309,12 +309,10 @@ static inline int _execute_operation(void (*callback)(firestarter_handle_t* hand
 static inline bool _check_response(firestarter_handle_t* handle) {
     switch (handle->response_code) {
         case RESPONSE_CODE_OK:
-            log_info(handle->response_msg);
             break;
         case RESPONSE_CODE_WARNING:
             break;
         case RESPONSE_CODE_DATA:
-            log_data(handle->response_msg);
             rurp_communication_write(handle->data_buffer, handle->data_size);
             break;
         case RESPONSE_CODE_ERROR:
