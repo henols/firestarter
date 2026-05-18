@@ -43,7 +43,7 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
 uint8_t programming = 0;
 
 void configure_memory(firestarter_handle_t* handle) {
-    debug("Configuring memory");
+    LOG_DEBUG_ID_SUB(DBG_CONFIGURING_MEMORY);
     handle->firestarter_operation_init = NULL;
     handle->firestarter_operation_main = NULL;
     handle->firestarter_operation_end = NULL;
@@ -154,7 +154,7 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
 
 void mem_util_set_address(firestarter_handle_t* handle, uint32_t address) {
 #ifdef DEBUG_ADDRESS
-    debug_format("Address 0x%06x", address);
+    LOG_DEBUG_ID_SUB_U24(DBG_ADDRESS, address);
 #endif
     uint8_t lsb = mem_util_calculate_lsb_register(handle, address);
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
@@ -166,13 +166,13 @@ void mem_util_set_address(firestarter_handle_t* handle, uint32_t address) {
     rurp_write_to_register(CONTROL_REGISTER, top_address);
 
 #ifdef DEBUG_ADDRESS
-    debug_format("top msb lsb %02x %02x %02x", top_address, msb, lsb);
+    LOG_DEBUG_ID_SUB_U8_U8_U8(DBG_TOP_MSB_LSB, (uint8_t)top_address, msb, lsb);
 #endif
 }
 
 void memory_read_execute(firestarter_handle_t* handle) {
     int buf_size = min(handle->mem_size - handle->address, DATA_BUFFER_SIZE);
-    debug_format("Reading from address 0x%06x", handle->address);
+    LOG_DEBUG_ID_SUB_U24(DBG_READING_FROM_ADDRESS, handle->address);
     for (int i = 0; i < buf_size; i++) {
         uint8_t data = handle->firestarter_get_data(handle, handle->address + i);
         // debug_format("Data 0x%02x %c", data, data);
