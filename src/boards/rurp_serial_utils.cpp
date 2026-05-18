@@ -69,8 +69,7 @@ int rurp_communication_read_data(char* buffer) {
     }
 
     if (data_size > DATA_BUFFER_SIZE) {
-        // log_error_format("Bad size: %d", (int)handle->data_size);
-        return -2;
+        return -2;  // Payload too large for buffer
     }
 
     size_t len = 0;
@@ -78,8 +77,7 @@ int rurp_communication_read_data(char* buffer) {
     unsigned long timeout_ms = 2000;  // A 2-second timeout for the entire data block
     while (len < data_size) {
         if (millis() - start_time > timeout_ms) {
-            // log_error_const("Timeout reading data block");
-            return -3;
+            return -3;  // Timeout reading data block
         }
         // Read remaining bytes. readBytes will timeout and return what it has if data flow stops.
         len += rurp_communication_read_bytes(buffer + len, data_size - len);
@@ -90,8 +88,7 @@ int rurp_communication_read_data(char* buffer) {
         checksum ^= buffer[i];
     }
     if (checksum != checksum_rcvd) {
-        // log_error_format("Bad checksum %02X != %02X", checksum, checksum_rcvd);
-        return -4;
+        return -4;  // Checksum mismatch
     }
     return len;
 }

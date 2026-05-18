@@ -10,6 +10,7 @@
 #include <Arduino.h>
 #include "rurp_register_utils.h"
 
+#include "logging.h"
 #include "rurp_serial_utils.h"
 
 #define USER_BUTTON 0x10             // USER BUTTON
@@ -21,10 +22,6 @@ bool com_mode = true;
 #ifdef SERIAL_DEBUG
 #define RX_DEBUG  A0
 #define TX_DEBUG  A1
-
-void log_debug(PGM_P type, const char* msg);
-#else
-#define log_debug(type, msg)
 #endif
 
 
@@ -54,7 +51,7 @@ void rurp_set_communication_mode() {
     // enabled while PD0 may still be LOW — UART then samples that as a
     // START BIT and queues spurious bytes (patterns reflecting data-bus
     // state during programming) into the RX ring buffer. The host reads
-    // those bytes concatenated with the legitimate "OK: Req data\r\n"
+    // those bytes concatenated with the legitimate "OK: Request data\r\n"
     // via readline(), and if the corruption happens to break the OK
     // prefix the parser times out. Bench-discovered via FIRESTARTER_RX_TRACE
     // (firestarter_prom .planning/...04-HW-VALIDATION.md).
@@ -158,10 +155,6 @@ SoftwareSerial debugSerial(RX_DEBUG, TX_DEBUG);
 
 void debug_setup() {
     debugSerial.begin(57600);
-}
-
-void debug_buf(const char* msg) {
-    log_debug("DEBUG", msg);
 }
 
 void log_debug(PGM_P type, const char* msg) {

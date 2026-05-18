@@ -175,7 +175,6 @@ void memory_read_execute(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB_U24(DBG_READING_FROM_ADDRESS, handle->address);
     for (int i = 0; i < buf_size; i++) {
         uint8_t data = handle->firestarter_get_data(handle, handle->address + i);
-        // debug_format("Data 0x%02x %c", data, data);
         handle->data_buffer[i] = data;
     }
     handle->data_size = buf_size;

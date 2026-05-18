@@ -53,10 +53,6 @@ void setup() {
 
 bool parse_json(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_PARSE_JSON);
-#ifdef EXTRA_INFO_LOGGING
-    // log_info_format("'%s'", handle->data_buffer);
-
-#endif
 
     jsmn_parser parser;
     static jsmntok_t tokens[NUMBER_JSNM_TOKENS];

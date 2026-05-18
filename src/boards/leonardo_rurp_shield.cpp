@@ -143,9 +143,5 @@ void rurp_set_data_input() {
 
 #ifdef SERIAL_DEBUG
 void debug_setup() {}
-
-void debug_buf(const char* msg) {
-    rurp_log("DEBUG", msg);
-}
 #endif
 #endif
