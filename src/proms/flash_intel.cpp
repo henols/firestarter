@@ -11,6 +11,7 @@
 
 #include "firestarter.h"
 #include "logging.h"
+#include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
 #include "rurp_shield.h"
@@ -26,7 +27,8 @@ static void flash_intel_check_vpp(firestarter_handle_t* handle) {
     debug("Check VPP (Intel)");
 #ifdef HARDWARE_REVISION
     if (rurp_get_hardware_revision() == REVISION_0) {
-        firestarter_warning_response("Rev0 dont support reading VPP/VPE");
+        LOG_WARN_ID(MSG_WARN_REV0_VPP_UNSUPPORTED);
+        handle->response_code = RESPONSE_CODE_WARNING;
         return;
     }
 #endif
@@ -37,14 +39,46 @@ static void flash_intel_check_vpp(firestarter_handle_t* handle) {
     debug_format("Checking VPP voltage %u mV", vpp_mv);
 #endif
     if (vpp_mv > (uint32_t)handle->vpp_mv + 500) {
-        int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        firestarter_response_format(response_code, "VPP is high: %u.%uV > %u.%uV",
-                                    (vpp_mv + 50) / 1000, (((vpp_mv + 50) / 100) % 10),
-                                    (handle->vpp_mv + 50) / 1000, (((handle->vpp_mv + 50) / 100) % 10));
+        {
+            uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
+            uint16_t _v1 = (uint16_t)((((vpp_mv + 50) / 100) % 10));
+            uint16_t _v2 = (uint16_t)((handle->vpp_mv + 50) / 1000);
+            uint16_t _v3 = (uint16_t)((((handle->vpp_mv + 50) / 100) % 10));
+            uint8_t _b[8];
+            _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
+            _b[1] = (uint8_t)(_v0 & 0xFF);
+            _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
+            _b[3] = (uint8_t)(_v1 & 0xFF);
+            _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
+            _b[5] = (uint8_t)(_v2 & 0xFF);
+            _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
+            _b[7] = (uint8_t)(_v3 & 0xFF);
+            if (is_flag_set(FLAG_FORCE)) {
+                LOG_WARN_ID_BYTES(MSG_WARN_VPP_HIGH, _b, 8);
+                handle->response_code = RESPONSE_CODE_WARNING;
+            } else {
+                LOG_ERROR_ID_BYTES(MSG_ERR_VPP_HIGH, _b, 8);
+                handle->response_code = RESPONSE_CODE_ERROR;
+            }
+        }
     } else if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100) {
-        firestarter_warning_response_format("VPP is low: %u.%uV < %u.%uV",
-                                            (vpp_mv + 50) / 1000, (((vpp_mv + 50) / 100) % 10),
-                                            (handle->vpp_mv + 50) / 1000, (((handle->vpp_mv + 50) / 100) % 10));
+        {
+            uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
+            uint16_t _v1 = (uint16_t)((((vpp_mv + 50) / 100) % 10));
+            uint16_t _v2 = (uint16_t)((handle->vpp_mv + 50) / 1000);
+            uint16_t _v3 = (uint16_t)((((handle->vpp_mv + 50) / 100) % 10));
+            uint8_t _b[8];
+            _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
+            _b[1] = (uint8_t)(_v0 & 0xFF);
+            _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
+            _b[3] = (uint8_t)(_v1 & 0xFF);
+            _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
+            _b[5] = (uint8_t)(_v2 & 0xFF);
+            _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
+            _b[7] = (uint8_t)(_v3 & 0xFF);
+            LOG_WARN_ID_BYTES(MSG_WARN_VPP_LOW, _b, 8);
+            handle->response_code = RESPONSE_CODE_WARNING;
+        }
     }
     // NO regulator clear — caller continues to use REGULATOR | P1_VPP_ENABLE through the write pulse.
 }
@@ -132,19 +166,22 @@ static bool flash_intel_poll_sr(firestarter_handle_t* handle, uint16_t timeout_m
         uint8_t sr = handle->firestarter_get_data(handle, 0);
         if (sr & 0x80) {
             if (sr & 0x10) {
-                firestarter_error_response("Intel flash: VPP error");
+                LOG_ERROR_ID(MSG_ERR_INTEL_VPP);
+                handle->response_code = RESPONSE_CODE_ERROR;
                 handle->firestarter_set_data(handle, 0, 0xFF);
                 return false;
             }
             if (sr & 0x08) {
-                firestarter_error_response("Intel flash: program error");
+                LOG_ERROR_ID(MSG_ERR_INTEL_PROGRAM);
+                handle->response_code = RESPONSE_CODE_ERROR;
                 handle->firestarter_set_data(handle, 0, 0xFF);
                 return false;
             }
             return true;
         }
     }
-    firestarter_error_response("Intel flash: SR timeout");
+    LOG_ERROR_ID(MSG_ERR_INTEL_SR_TIMEOUT);
+    handle->response_code = RESPONSE_CODE_ERROR;
     handle->firestarter_set_data(handle, 0, 0xFF);
     return false;
 }
@@ -155,7 +192,17 @@ void flash_intel_check_chip_id(firestarter_handle_t* handle) {
     chip_id |= handle->firestarter_get_data(handle, 0x0001);
     handle->firestarter_set_data(handle, 0, 0xFF);  // exit autoselect
     if (chip_id != handle->chip_id) {
-        int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        firestarter_response_format(response_code, "Chip ID %#04x dont match expected ID %#04x", chip_id, handle->chip_id);
+        uint8_t _b[4];
+        _b[0] = (uint8_t)((chip_id >> 8) & 0xFF);
+        _b[1] = (uint8_t)(chip_id & 0xFF);
+        _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
+        _b[3] = (uint8_t)(handle->chip_id & 0xFF);
+        if (is_flag_set(FLAG_FORCE)) {
+            LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
+            handle->response_code = RESPONSE_CODE_WARNING;
+        } else {
+            LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+            handle->response_code = RESPONSE_CODE_ERROR;
+        }
     }
 }
