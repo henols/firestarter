@@ -249,4 +249,103 @@
         rurp_log_id((id), _b, (uint8_t)(3 + _slen));                   \
     } while (0)
 
+// --- SERIAL_DEBUG-gated DEBUG severity (B-01..B-04) ---
+//
+// In production builds (SERIAL_DEBUG undefined) every macro expands to nothing:
+//   • zero flash cost — debug string literals never enter PROGMEM
+//   • zero runtime cost — no branch, no buffer, no wire byte
+// In development builds (-D SERIAL_DEBUG) each macro emits an ID frame:
+//   MAGIC | len_u16 | MSG_DEBUG | sub_id [params] | crc | 0x0A
+// The sub_id identifies the specific debug message in the [debug] catalog section
+// (messages.toml / messages.h DBG_* defines from Plan 01).
+
+#ifdef SERIAL_DEBUG
+
+// Zero-param: sub_id only (1 wire byte of params after MSG_DEBUG id byte).
+// Reuses LOG_ID_U8 treating sub_id as the single u8 param of MSG_DEBUG.
+#define LOG_DEBUG_ID_SUB(sub_id)    LOG_ID_U8(MSG_DEBUG, (sub_id))
+
+// One u8 param: sub_id + 1 byte.
+#define LOG_DEBUG_ID_SUB_U8(sub_id, p1)                                    \
+    do {                                                                    \
+        uint8_t _b[2] = { (uint8_t)(sub_id), (uint8_t)(p1) };              \
+        rurp_log_id(MSG_DEBUG, _b, 2);                                      \
+    } while (0)
+
+// Two u8 params: sub_id + 2 bytes.
+#define LOG_DEBUG_ID_SUB_U8_U8(sub_id, p1, p2)                             \
+    do {                                                                    \
+        uint8_t _b[3] = { (uint8_t)(sub_id), (uint8_t)(p1),                \
+                          (uint8_t)(p2) };                                  \
+        rurp_log_id(MSG_DEBUG, _b, 3);                                      \
+    } while (0)
+
+// Three u8 params: sub_id + 3 bytes.
+#define LOG_DEBUG_ID_SUB_U8_U8_U8(sub_id, p1, p2, p3)                      \
+    do {                                                                    \
+        uint8_t _b[4] = { (uint8_t)(sub_id), (uint8_t)(p1),                \
+                          (uint8_t)(p2), (uint8_t)(p3) };                   \
+        rurp_log_id(MSG_DEBUG, _b, 4);                                      \
+    } while (0)
+
+// One u16 param: sub_id + 2 bytes MSB-first.
+#define LOG_DEBUG_ID_SUB_U16(sub_id, p1)                                    \
+    do {                                                                    \
+        uint16_t _v = (uint16_t)(p1);                                       \
+        uint8_t _b[3] = { (uint8_t)(sub_id),                               \
+                          (uint8_t)((_v >> 8) & 0xFF),                      \
+                          (uint8_t)(_v & 0xFF) };                           \
+        rurp_log_id(MSG_DEBUG, _b, 3);                                      \
+    } while (0)
+
+// One u24 param: sub_id + 3 bytes MSB-first (top byte of u32 dropped).
+#define LOG_DEBUG_ID_SUB_U24(sub_id, p1)                                    \
+    do {                                                                    \
+        uint32_t _v = (uint32_t)(p1);                                       \
+        uint8_t _b[4] = { (uint8_t)(sub_id),                               \
+                          (uint8_t)((_v >> 16) & 0xFF),                     \
+                          (uint8_t)((_v >>  8) & 0xFF),                     \
+                          (uint8_t)(_v & 0xFF) };                           \
+        rurp_log_id(MSG_DEBUG, _b, 4);                                      \
+    } while (0)
+
+// One u32 param: sub_id + 4 bytes MSB-first.
+#define LOG_DEBUG_ID_SUB_U32(sub_id, p1)                                    \
+    do {                                                                    \
+        uint32_t _v = (uint32_t)(p1);                                       \
+        uint8_t _b[5] = { (uint8_t)(sub_id),                               \
+                          (uint8_t)((_v >> 24) & 0xFF),                     \
+                          (uint8_t)((_v >> 16) & 0xFF),                     \
+                          (uint8_t)((_v >>  8) & 0xFF),                     \
+                          (uint8_t)(_v & 0xFF) };                           \
+        rurp_log_id(MSG_DEBUG, _b, 5);                                      \
+    } while (0)
+
+// ascii_str param: sub_id + length-prefix byte + N string bytes (capped at 32).
+// Mirror of LOG_OK_ID_U8_U8_ASTR composite — string.h available via rurp_shield.h.
+#define LOG_DEBUG_ID_SUB_ASTR(sub_id, str_ptr)                              \
+    do {                                                                    \
+        const char* _s = (str_ptr);                                         \
+        uint8_t _slen = (uint8_t)strlen(_s);                                \
+        if (_slen > 32) _slen = 32;                                         \
+        uint8_t _b[1 + 1 + 32];                                             \
+        _b[0] = (uint8_t)(sub_id);                                          \
+        _b[1] = _slen;                                                      \
+        memcpy(_b + 2, _s, _slen);                                          \
+        rurp_log_id(MSG_DEBUG, _b, (uint8_t)(2 + _slen));                   \
+    } while (0)
+
+#else  // !SERIAL_DEBUG — production no-op fallback
+
+#define LOG_DEBUG_ID_SUB(sub_id)
+#define LOG_DEBUG_ID_SUB_U8(sub_id, p1)
+#define LOG_DEBUG_ID_SUB_U8_U8(sub_id, p1, p2)
+#define LOG_DEBUG_ID_SUB_U8_U8_U8(sub_id, p1, p2, p3)
+#define LOG_DEBUG_ID_SUB_U16(sub_id, p1)
+#define LOG_DEBUG_ID_SUB_U24(sub_id, p1)
+#define LOG_DEBUG_ID_SUB_U32(sub_id, p1)
+#define LOG_DEBUG_ID_SUB_ASTR(sub_id, str_ptr)
+
+#endif  // SERIAL_DEBUG
+
 #endif  // __LOGGING_ID_H__
