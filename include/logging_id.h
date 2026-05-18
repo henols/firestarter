@@ -118,4 +118,22 @@
         }                                                              \
     } while (0)
 
+// --- Unconditional ERROR severity ---
+
+#define LOG_ERROR_ID(id)               LOG_ID(id)
+#define LOG_ERROR_ID_U8(id, p1)        LOG_ID_U8((id), (p1))
+#define LOG_ERROR_ID_U16(id, p1)       LOG_ID_U16((id), (p1))
+#define LOG_ERROR_ID_U24(id, p1)       LOG_ID_U24((id), (p1))
+#define LOG_ERROR_ID_U32(id, p1)       LOG_ID_U32((id), (p1))
+#define LOG_ERROR_ID_BYTES(id, b, n)   LOG_ID_BYTES((id), (b), (n))
+
+// --- Unconditional WARN severity ---
+
+#define LOG_WARN_ID(id)                LOG_ID(id)
+#define LOG_WARN_ID_U8(id, p1)         LOG_ID_U8((id), (p1))
+#define LOG_WARN_ID_U16(id, p1)        LOG_ID_U16((id), (p1))
+#define LOG_WARN_ID_U24(id, p1)        LOG_ID_U24((id), (p1))
+#define LOG_WARN_ID_U32(id, p1)        LOG_ID_U32((id), (p1))
+#define LOG_WARN_ID_BYTES(id, b, n)    LOG_ID_BYTES((id), (b), (n))
+
 #endif  // __LOGGING_ID_H__
