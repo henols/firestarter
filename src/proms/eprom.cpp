@@ -11,6 +11,7 @@
 
 #include "firestarter.h"
 #include "logging.h"
+#include "logging_id.h"
 #include "memory_utils.h"
 #include "rurp_shield.h"
 #include "operation_utils.h"
@@ -179,7 +180,17 @@ void eprom_write_execute(firestarter_handle_t* handle) {
     }
 
     handle->firestarter_set_control_register(handle, REGULATOR, 0);
-    firestarter_error_response_format("Failed to write memory, 0x%06x, retries: %d, bad bytes: %d", handle->address, retries, mismatch);
+    {
+        uint8_t _b[6];
+        _b[0] = (uint8_t)((handle->address >> 16) & 0xFF);
+        _b[1] = (uint8_t)((handle->address >> 8)  & 0xFF);
+        _b[2] = (uint8_t)( handle->address        & 0xFF);
+        _b[3] = (uint8_t)retries;
+        _b[4] = (uint8_t)(((uint16_t)mismatch >> 8) & 0xFF);
+        _b[5] = (uint8_t)( (uint16_t)mismatch       & 0xFF);
+        LOG_ERROR_ID_BYTES(MSG_ERR_WRITE_FAILED, _b, 6);
+    }
+    handle->response_code = RESPONSE_CODE_ERROR;
 }
 
 
@@ -200,7 +211,8 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
     debug("Check VPP");
 #ifdef HARDWARE_REVISION
     if (rurp_get_hardware_revision() == REVISION_0) {
-        firestarter_warning_response("Rev0 dont support reading VPP/VPE");
+        LOG_WARN_ID(MSG_WARN_REV0_VPP_UNSUPPORTED);
+        handle->response_code = RESPONSE_CODE_WARNING;
         return;
     }
 #endif
@@ -219,14 +231,46 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 #endif
                    
     if (vpp_mv > (uint32_t)handle->vpp_mv + 500) {
-        int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        firestarter_response_format(response_code, "VPP is high: %u.%uV > %u.%uV",
-                                    (vpp_mv + 50) / 1000, (((vpp_mv + 50) / 100) % 10),
-                                    (handle->vpp_mv + 50) / 1000, (((handle->vpp_mv + 50) / 100) % 10));
+        {
+            uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
+            uint16_t _v1 = (uint16_t)((((vpp_mv + 50) / 100) % 10));
+            uint16_t _v2 = (uint16_t)((handle->vpp_mv + 50) / 1000);
+            uint16_t _v3 = (uint16_t)((((handle->vpp_mv + 50) / 100) % 10));
+            uint8_t _b[8];
+            _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
+            _b[1] = (uint8_t)(_v0 & 0xFF);
+            _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
+            _b[3] = (uint8_t)(_v1 & 0xFF);
+            _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
+            _b[5] = (uint8_t)(_v2 & 0xFF);
+            _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
+            _b[7] = (uint8_t)(_v3 & 0xFF);
+            if (is_flag_set(FLAG_FORCE)) {
+                LOG_WARN_ID_BYTES(MSG_WARN_VPP_HIGH, _b, 8);
+                handle->response_code = RESPONSE_CODE_WARNING;
+            } else {
+                LOG_ERROR_ID_BYTES(MSG_ERR_VPP_HIGH, _b, 8);
+                handle->response_code = RESPONSE_CODE_ERROR;
+            }
+        }
     } else if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100) {
-        firestarter_warning_response_format("VPP is low: %u.%uV < %u.%uV",
-                                            (vpp_mv + 50) / 1000, (((vpp_mv + 50) / 100) % 10),
-                                            (handle->vpp_mv + 50) / 1000, (((handle->vpp_mv + 50) / 100) % 10));
+        {
+            uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
+            uint16_t _v1 = (uint16_t)((((vpp_mv + 50) / 100) % 10));
+            uint16_t _v2 = (uint16_t)((handle->vpp_mv + 50) / 1000);
+            uint16_t _v3 = (uint16_t)((((handle->vpp_mv + 50) / 100) % 10));
+            uint8_t _b[8];
+            _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
+            _b[1] = (uint8_t)(_v0 & 0xFF);
+            _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
+            _b[3] = (uint8_t)(_v1 & 0xFF);
+            _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
+            _b[5] = (uint8_t)(_v2 & 0xFF);
+            _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
+            _b[7] = (uint8_t)(_v3 & 0xFF);
+            LOG_WARN_ID_BYTES(MSG_WARN_VPP_LOW, _b, 8);
+            handle->response_code = RESPONSE_CODE_WARNING;
+        }
     }
     handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
 }
@@ -261,7 +305,18 @@ void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_co
     debug("Check chip ID");
     uint16_t chip_id = eprom_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
-        firestarter_response_format(error_code, "Chip ID: %#x dont match: %#x", chip_id, handle->chip_id);
+        uint8_t _b[4];
+        _b[0] = (uint8_t)((chip_id >> 8) & 0xFF);
+        _b[1] = (uint8_t)(chip_id & 0xFF);
+        _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
+        _b[3] = (uint8_t)(handle->chip_id & 0xFF);
+        if (error_code == RESPONSE_CODE_WARNING) {
+            LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
+            handle->response_code = RESPONSE_CODE_WARNING;
+        } else {
+            LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+            handle->response_code = RESPONSE_CODE_ERROR;
+        }
     }
 }
 // Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
