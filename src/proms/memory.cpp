@@ -322,6 +322,6 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
         handle->address = handle->mem_size;
     }
     // Send progress back to the client
-    firestarter_data_response_format("%lu/%lu", handle->address, handle->mem_size);
+    LOG_DATA_ID_U32_U32(MSG_DATA_PROGRESS, handle->address, handle->mem_size);
 #endif
 }
