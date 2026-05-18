@@ -136,4 +136,75 @@
 #define LOG_WARN_ID_U32(id, p1)        LOG_ID_U32((id), (p1))
 #define LOG_WARN_ID_BYTES(id, b, n)    LOG_ID_BYTES((id), (b), (n))
 
+// --- Unconditional OK severity ---
+
+#define LOG_OK_ID(id)                  LOG_ID(id)
+#define LOG_OK_ID_U8(id, p1)           LOG_ID_U8((id), (p1))
+#define LOG_OK_ID_U16(id, p1)          LOG_ID_U16((id), (p1))
+#define LOG_OK_ID_U24(id, p1)          LOG_ID_U24((id), (p1))
+#define LOG_OK_ID_U32(id, p1)          LOG_ID_U32((id), (p1))
+#define LOG_OK_ID_BYTES(id, b, n)      LOG_ID_BYTES((id), (b), (n))
+
+// --- Unconditional INIT severity ---
+
+#define LOG_INIT_ID(id)                LOG_ID(id)
+#define LOG_INIT_ID_U8(id, p1)         LOG_ID_U8((id), (p1))
+#define LOG_INIT_ID_U16(id, p1)        LOG_ID_U16((id), (p1))
+#define LOG_INIT_ID_U24(id, p1)        LOG_ID_U24((id), (p1))
+#define LOG_INIT_ID_U32(id, p1)        LOG_ID_U32((id), (p1))
+#define LOG_INIT_ID_BYTES(id, b, n)    LOG_ID_BYTES((id), (b), (n))
+
+// --- Unconditional MAIN severity ---
+
+#define LOG_MAIN_ID(id)                LOG_ID(id)
+#define LOG_MAIN_ID_U8(id, p1)         LOG_ID_U8((id), (p1))
+#define LOG_MAIN_ID_U16(id, p1)        LOG_ID_U16((id), (p1))
+#define LOG_MAIN_ID_U24(id, p1)        LOG_ID_U24((id), (p1))
+#define LOG_MAIN_ID_U32(id, p1)        LOG_ID_U32((id), (p1))
+#define LOG_MAIN_ID_BYTES(id, b, n)    LOG_ID_BYTES((id), (b), (n))
+
+// --- Unconditional END severity ---
+
+#define LOG_END_ID(id)                 LOG_ID(id)
+#define LOG_END_ID_U8(id, p1)          LOG_ID_U8((id), (p1))
+#define LOG_END_ID_U16(id, p1)         LOG_ID_U16((id), (p1))
+#define LOG_END_ID_U24(id, p1)         LOG_ID_U24((id), (p1))
+#define LOG_END_ID_U32(id, p1)         LOG_ID_U32((id), (p1))
+#define LOG_END_ID_BYTES(id, b, n)     LOG_ID_BYTES((id), (b), (n))
+
+// --- Unconditional DATA severity ---
+
+#define LOG_DATA_ID(id)                LOG_ID(id)
+#define LOG_DATA_ID_U8(id, p1)         LOG_ID_U8((id), (p1))
+#define LOG_DATA_ID_U16(id, p1)        LOG_ID_U16((id), (p1))
+#define LOG_DATA_ID_U24(id, p1)        LOG_ID_U24((id), (p1))
+#define LOG_DATA_ID_U32(id, p1)        LOG_ID_U32((id), (p1))
+#define LOG_DATA_ID_BYTES(id, b, n)    LOG_ID_BYTES((id), (b), (n))
+
+// --- DATA multi-param composites ---
+
+// Two u16 values packed as 4 big-endian bytes.
+#define LOG_DATA_ID_U16_U16(id, p1, p2)                                \
+    do {                                                               \
+        uint16_t _v1 = (uint16_t)(p1); uint16_t _v2 = (uint16_t)(p2); \
+        uint8_t _b[4] = {                                              \
+            (uint8_t)((_v1 >> 8) & 0xFF), (uint8_t)(_v1 & 0xFF),      \
+            (uint8_t)((_v2 >> 8) & 0xFF), (uint8_t)(_v2 & 0xFF)       \
+        };                                                             \
+        rurp_log_id((id), _b, 4);                                      \
+    } while (0)
+
+// Two u32 values packed as 8 big-endian bytes.
+#define LOG_DATA_ID_U32_U32(id, p1, p2)                                \
+    do {                                                               \
+        uint32_t _v1 = (uint32_t)(p1); uint32_t _v2 = (uint32_t)(p2); \
+        uint8_t _b[8] = {                                              \
+            (uint8_t)((_v1 >> 24) & 0xFF), (uint8_t)((_v1 >> 16) & 0xFF), \
+            (uint8_t)((_v1 >> 8)  & 0xFF), (uint8_t)(_v1 & 0xFF),     \
+            (uint8_t)((_v2 >> 24) & 0xFF), (uint8_t)((_v2 >> 16) & 0xFF), \
+            (uint8_t)((_v2 >> 8)  & 0xFF), (uint8_t)(_v2 & 0xFF)      \
+        };                                                             \
+        rurp_log_id((id), _b, 8);                                      \
+    } while (0)
+
 #endif  // __LOGGING_ID_H__
