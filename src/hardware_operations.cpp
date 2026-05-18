@@ -5,6 +5,8 @@
 
 #include "firestarter.h"
 #include "logging.h"
+#include "logging_id.h"
+#include "messages.h"
 #include "operation_utils.h"
 #include "rurp_shield.h"
 #include "version.h"
@@ -17,7 +19,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
         debug("Init read voltage");
 #ifdef HARDWARE_REVISION
         if (rurp_get_hardware_revision() == REVISION_0) {
-            log_error_const("Rev0 dont support reading VPP/VPE");
+            LOG_ERROR_ID(MSG_ERR_REV0_VPP_RD);
             return true;  // Finish command with an error.
         }
 #endif
@@ -30,7 +32,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
             rurp_write_to_register(CONTROL_REGISTER, REGULATOR);
         } else {
             rurp_set_communication_mode();
-            log_error_const("Error cmd");
+            LOG_ERROR_ID(MSG_ERR_CMD);
             return true;  // Finish command with an error.
         }
         delay(100);                     // Allow voltage to stabilize.
