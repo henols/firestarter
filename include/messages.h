@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 68
+ * Total messages: 69
  */
 
 #ifndef __MESSAGES_H__
@@ -100,6 +100,7 @@ extern "C" {
 #define MSG_ERR_INTEL_PROGRAM          0xB5
 #define MSG_ERR_INTEL_SR_TIMEOUT       0xB6
 #define MSG_ERR_OP_TIMEOUT             0xB7
+#define MSG_ERR_VPP_HIGH               0xB8
 #define MSG_DATA_PROGRESS              0xE0
 #define MSG_DATA_VOLTAGE               0xE1
 #define MSG_DATA_SENDING               0xE2
