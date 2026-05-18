@@ -30,7 +30,7 @@ void flash3_generic_init(firestarter_handle_t* handle);
 const int FLASH_ERASE_DELAY_MS = 105;
 
 void configure_flash3(firestarter_handle_t* handle) {
-    debug("Configuring Flash");
+    LOG_DEBUG_ID_SUB(DBG_CONFIGURING_FLASH);
     handle->firestarter_operation_init = flash3_generic_init;
     switch (handle->cmd) {
     case CMD_WRITE:
@@ -84,7 +84,7 @@ void flash3_write_init(firestarter_handle_t* handle) {
                 delay(FLASH_ERASE_DELAY_MS);
             }
             else {
-                debug("Skipping erase of memory");
+                LOG_DEBUG_ID_SUB(DBG_SKIPPING_ERASE_MEMORY);
                 LOG_INFO_ID(MSG_INFO_SKIPPING_ERASE_MEM);
             }
         }
@@ -108,10 +108,10 @@ void flash3_write_execute(firestarter_handle_t* handle) {
 
 void flash3_erase_execute(firestarter_handle_t* handle) {
     if (handle->address != 0) {
-        debug("Sector erase");
+        LOG_DEBUG_ID_SUB(DBG_SECTOR_ERASE);
         flash3_sector_erase(handle, handle->address);
     } else {
-        debug("Chip erase");
+        LOG_DEBUG_ID_SUB(DBG_CHIP_ERASE);
         flash_execute_command(FLASH_ERASE);
     }
 }
