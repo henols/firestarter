@@ -49,7 +49,7 @@ void flash4_write_init(firestarter_handle_t* handle) {
             if (!is_flag_set(FLAG_SKIP_ERASE)) {
                 flash4_erase_execute(handle);
             } else {
-                copy_to_buffer(handle->response_msg, "Skipping erase.");
+                LOG_INFO_ID(MSG_INFO_SKIPPING_ERASE);
             }
         }
     }
