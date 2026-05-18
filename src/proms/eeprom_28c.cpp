@@ -12,6 +12,7 @@
 #include "firestarter.h"
 #include "flash_utils.h"
 #include "logging.h"
+#include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
 
@@ -58,8 +59,13 @@ static void eeprom28c_check_chip_id(firestarter_handle_t* handle) {
     // 12V on A9 of an arbitrary address. Canonical DB entries are >= 2 KiB, but
     // hand-crafted JSON could reach here. Treat as configuration error.
     if (handle->mem_size < 64) {
-        int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        firestarter_response_format(response_code, "mem_size %lu too small for chip-id check", (unsigned long)handle->mem_size);
+        if (is_flag_set(FLAG_FORCE)) {
+            LOG_WARN_ID_U32(MSG_WARN_MEM_SIZE_TOO_SMALL, (uint32_t)handle->mem_size);
+            handle->response_code = RESPONSE_CODE_WARNING;
+        } else {
+            LOG_ERROR_ID_U32(MSG_ERR_MEM_SIZE_TOO_SMALL, (uint32_t)handle->mem_size);
+            handle->response_code = RESPONSE_CODE_ERROR;
+        }
         return;
     }
     handle->firestarter_set_control_register(handle, REGULATOR, 1);
@@ -71,8 +77,20 @@ static void eeprom28c_check_chip_id(firestarter_handle_t* handle) {
     chip_id |= handle->firestarter_get_data(handle, mfr_addr + 1);
     handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE, 0);
     if (chip_id != handle->chip_id) {
-        int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        firestarter_response_format(response_code, "Chip ID %#04x dont match expected ID %#04x", chip_id, handle->chip_id);
+        {
+            uint8_t _b[4];
+            _b[0] = (uint8_t)(((uint16_t)chip_id >> 8) & 0xFF);
+            _b[1] = (uint8_t)((uint16_t)chip_id & 0xFF);
+            _b[2] = (uint8_t)(((uint16_t)handle->chip_id >> 8) & 0xFF);
+            _b[3] = (uint8_t)((uint16_t)handle->chip_id & 0xFF);
+            if (is_flag_set(FLAG_FORCE)) {
+                LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
+                handle->response_code = RESPONSE_CODE_WARNING;
+            } else {
+                LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+                handle->response_code = RESPONSE_CODE_ERROR;
+            }
+        }
     }
 }
 
@@ -123,6 +141,15 @@ static bool eeprom28c_wait_for_write(firestarter_handle_t* handle, uint32_t addr
             return true;
         }
     }
-    firestarter_error_response_format("EEPROM timeout at 0x%06lx: wrote 0x%02x got 0x%02x", address, expected, observed);
+    {
+        uint8_t _b[5];
+        _b[0] = (uint8_t)((address >> 16) & 0xFF);
+        _b[1] = (uint8_t)((address >> 8) & 0xFF);
+        _b[2] = (uint8_t)(address & 0xFF);
+        _b[3] = (uint8_t)expected;
+        _b[4] = (uint8_t)observed;
+        LOG_ERROR_ID_BYTES(MSG_ERR_EEPROM_TIMEOUT, _b, 5);
+    }
+    handle->response_code = RESPONSE_CODE_ERROR;
     return false;
 }
