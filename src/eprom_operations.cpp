@@ -9,6 +9,8 @@
 
 #include "firestarter.h"
 #include "logging.h"
+#include "logging_id.h"
+#include "messages.h"
 #include "operation_utils.h"
 #include "rurp_shield.h"
 
@@ -37,7 +39,7 @@ bool eprom_verify(firestarter_handle_t* handle) {
 bool eprom_erase(firestarter_handle_t* handle) {
     debug("Erase PROM");
     if (!is_flag_set(FLAG_CAN_ERASE)) {
-        log_error_const("Not supported");
+        LOG_ERROR_ID(MSG_ERR_NOT_SUPPORTED);
         return true;
     }
     return !op_execute_simple_operation(handle);
@@ -46,7 +48,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
 bool eprom_check_chip_id(firestarter_handle_t* handle) {
     debug("Check Chip ID");
     if (handle->chip_id == 0) {
-        log_error_const("No chip ID");
+        LOG_ERROR_ID(MSG_ERR_NO_CHIP_ID);
         return true;
     }
     return !op_execute_simple_operation(handle);
@@ -92,7 +94,7 @@ static inline bool _process_incoming_data(firestarter_handle_t* handle) {
         case OP_MSG_DATA:
             // The host sent a data packet.
             if (handle->address + handle->data_size > handle->mem_size) {
-                log_error_const("Out of range");
+                LOG_ERROR_ID(MSG_ERR_OUT_OF_RANGE);
                 return false;
             }
             break;
