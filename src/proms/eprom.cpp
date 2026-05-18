@@ -39,7 +39,7 @@ void (*ep_set_control_register)(struct firestarter_handle*, rurp_register_t, boo
 void eprom_generic_init(firestarter_handle_t* handle);
 
 void configure_eprom(firestarter_handle_t* handle) {
-    debug("Configuring EPROM");
+    LOG_DEBUG_ID_SUB(DBG_CONFIGURING_EPROM);
 
     handle->firestarter_operation_init = eprom_generic_init;
 
@@ -81,12 +81,12 @@ void eprom_check_chip_id_init(firestarter_handle_t* handle) {
 }
 
 void eprom_check_chip_id_execute(firestarter_handle_t* handle) {
-    debug("Check chip ID");
+    LOG_DEBUG_ID_SUB(DBG_CHECK_CHIP_ID);
     eprom_internal_check_chip_id(handle, RESPONSE_CODE_ERROR);
 }
 
 void eprom_erase_execute(firestarter_handle_t* handle) {
-    debug("Erase");
+    LOG_DEBUG_ID_SUB(DBG_ERASE);
     eprom_internal_erase(handle);
 }
 
@@ -175,7 +175,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
 
         retries = w + 1;
         handle->pulse_delay = org_delay + (org_delay * retries / NUMBER_OF_RETRIES);
-        debug_format("Mismatch, retrying with increased pulse delay from %d to %d", org_delay, handle->pulse_delay);
+        LOG_DEBUG_ID_SUB_U16_U16(DBG_PULSE_DELAY_MISMATCH, (uint16_t)org_delay, (uint16_t)handle->pulse_delay);
     }
 
     handle->firestarter_set_control_register(handle, REGULATOR, 0);
@@ -194,7 +194,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
 
 
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
-    debug("Get chip ID");
+    LOG_DEBUG_ID_SUB(DBG_GET_CHIP_ID);
     handle->firestarter_set_control_register(handle, REGULATOR, 1);
     delay(50);
 
@@ -207,7 +207,7 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
 }
 
 void eprom_check_vpp(firestarter_handle_t* handle) {
-    debug("Check VPP");
+    LOG_DEBUG_ID_SUB(DBG_CHECK_VPP);
 #ifdef HARDWARE_REVISION
     if (rurp_get_hardware_revision() == REVISION_0) {
         LOG_WARN_ID(MSG_WARN_REV0_VPP_UNSUPPORTED);
@@ -225,10 +225,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 
     delay(100);
     uint16_t vpp_mv = rurp_read_voltage_mv();
-#ifdef SERIAL_DEBUG
-    debug_format("Checking VPP voltage %u mV", vpp_mv);
-#endif
-                   
+    LOG_DEBUG_ID_SUB_U16(DBG_CHECKING_VPP_VOLTAGE, vpp_mv);
     if (vpp_mv > (uint32_t)handle->vpp_mv + 500) {
         {
             uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
@@ -275,7 +272,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 }
 
 void eprom_internal_erase(firestarter_handle_t* handle) {
-    debug("Internal erase");
+    LOG_DEBUG_ID_SUB(DBG_INTERNAL_ERASE);
     rurp_chip_input();
     handle->firestarter_set_control_register(handle, REGULATOR, 1);  // Enable regulator without dropping resistor
     delay(100);
@@ -301,7 +298,7 @@ void eprom_generic_init(firestarter_handle_t* handle) {
 }
 
 void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_code) {
-    debug("Check chip ID");
+    LOG_DEBUG_ID_SUB(DBG_CHECK_CHIP_ID);
     uint16_t chip_id = eprom_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
         uint8_t _b[4];

@@ -288,6 +288,16 @@
         rurp_log_id(MSG_DEBUG, _b, 4);                                      \
     } while (0)
 
+// Two u16 params: sub_id + 4 bytes MSB-first (for pairs of values that may exceed u8).
+#define LOG_DEBUG_ID_SUB_U16_U16(sub_id, p1, p2)                            \
+    do {                                                                    \
+        uint16_t _v1 = (uint16_t)(p1); uint16_t _v2 = (uint16_t)(p2);      \
+        uint8_t _b[5] = { (uint8_t)(sub_id),                               \
+                          (uint8_t)((_v1 >> 8) & 0xFF), (uint8_t)(_v1 & 0xFF), \
+                          (uint8_t)((_v2 >> 8) & 0xFF), (uint8_t)(_v2 & 0xFF) }; \
+        rurp_log_id(MSG_DEBUG, _b, 5);                                      \
+    } while (0)
+
 // One u16 param: sub_id + 2 bytes MSB-first.
 #define LOG_DEBUG_ID_SUB_U16(sub_id, p1)                                    \
     do {                                                                    \
@@ -341,6 +351,7 @@
 #define LOG_DEBUG_ID_SUB_U8(sub_id, p1)
 #define LOG_DEBUG_ID_SUB_U8_U8(sub_id, p1, p2)
 #define LOG_DEBUG_ID_SUB_U8_U8_U8(sub_id, p1, p2, p3)
+#define LOG_DEBUG_ID_SUB_U16_U16(sub_id, p1, p2)
 #define LOG_DEBUG_ID_SUB_U16(sub_id, p1)
 #define LOG_DEBUG_ID_SUB_U24(sub_id, p1)
 #define LOG_DEBUG_ID_SUB_U32(sub_id, p1)
