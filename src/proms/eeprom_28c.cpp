@@ -33,7 +33,7 @@ const byte_flip_t EEPROM_SDP_DISABLE[] = {
 };
 
 void configure_eeprom28c(firestarter_handle_t* handle) {
-    debug("Configuring EEPROM 28C");
+    LOG_DEBUG_ID_SUB(DBG_CONFIGURING_EEPROM_28C);
     // AT28C page write timing requires fast consecutive writes; no pulse delay needed
     handle->pulse_delay = 0;
     switch (handle->cmd) {
@@ -54,7 +54,7 @@ void configure_eeprom28c(firestarter_handle_t* handle) {
 // AT28C64 = 0x1FC0/0x1FC1, etc. Caller-visible via response_code only;
 // no declaration in eeprom_28c.h (static — internal linkage only).
 static void eeprom28c_check_chip_id(firestarter_handle_t* handle) {
-    debug("Check chip ID (28C)");
+    LOG_DEBUG_ID_SUB(DBG_CHECK_CHIP_ID_28C);
     // Underflow guard: mem_size < 64 would wrap mfr_addr to ~0xFFFFFFC0 and drive
     // 12V on A9 of an arbitrary address. Canonical DB entries are >= 2 KiB, but
     // hand-crafted JSON could reach here. Treat as configuration error.
