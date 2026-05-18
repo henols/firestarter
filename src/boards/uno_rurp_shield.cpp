@@ -119,6 +119,20 @@ void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count) {
     }
 }
 
+// Uno strong override for rurp_log_id_wide (W-04 MSG_DATA_CHUNK path).
+// Same com_mode discipline as rurp_log_id; calls the wide frame emitter.
+void rurp_log_id_wide(uint8_t id, const uint8_t* params, uint16_t param_count) {
+    #ifdef SERIAL_DEBUG
+    snprintf_P(debug_msg_buffer, 64,
+               PSTR("LOG_ID_WIDE: id=0x%02X bytes=%u"),
+               (unsigned)id, (unsigned)param_count);
+    log_debug(PSTR("LOG"), debug_msg_buffer);
+    #endif
+    if (com_mode) {
+        _firestarter_emit_frame_wide(id, params, param_count);
+    }
+}
+
 
 void rurp_set_control_pin(uint8_t pin, uint8_t state) {
     // This function modifies only the specified control pin on PORTB,

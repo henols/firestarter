@@ -201,6 +201,49 @@ void _firestarter_emit_frame(uint8_t id, const uint8_t* params, uint8_t param_co
     SERIAL_PORT.flush();
 }
 
+// Phase 8 W-04 — wide variant of _firestarter_emit_frame that accepts a
+// uint16_t param_count so MSG_DATA_CHUNK payloads up to 512 / 1024 bytes
+// do not overflow the uint8_t loop counter. All other wire-frame fields
+// (magic preamble, u16 len, CRC8, 0x0A anchor) are identical.
+void _firestarter_emit_frame_wide(uint8_t id, const uint8_t* params, uint16_t param_count) {
+    if (param_count > 65533) {   // u16 max (65535) - 2 (for id + crc)
+        return;
+    }
+
+    // Magic preamble (4 bytes from PROGMEM).
+    SERIAL_PORT.write((uint8_t)pgm_read_byte(&MAGIC_PREAMBLE[0]));
+    SERIAL_PORT.write((uint8_t)pgm_read_byte(&MAGIC_PREAMBLE[1]));
+    SERIAL_PORT.write((uint8_t)pgm_read_byte(&MAGIC_PREAMBLE[2]));
+    SERIAL_PORT.write((uint8_t)pgm_read_byte(&MAGIC_PREAMBLE[3]));
+
+    // Length field (u16 big-endian, W-04).
+    uint16_t len_u16 = (uint16_t)(1 + param_count + 1);
+    SERIAL_PORT.write((uint8_t)(len_u16 >> 8));    // MSB
+    SERIAL_PORT.write((uint8_t)(len_u16 & 0xFF));  // LSB
+
+    // CRC8 accumulator over [id, params].
+    uint8_t crc = 0;
+
+    // ID.
+    SERIAL_PORT.write(id);
+    crc = crc8_ccitt(crc, id);
+
+    // Params — uint16_t loop counter for large chunks.
+    for (uint16_t i = 0; i < param_count; i++) {
+        uint8_t b = params[i];
+        SERIAL_PORT.write(b);
+        crc = crc8_ccitt(crc, b);
+    }
+
+    // CRC byte.
+    SERIAL_PORT.write(crc);
+
+    // 0x0A re-sync anchor.
+    SERIAL_PORT.write((uint8_t)0x0A);
+
+    SERIAL_PORT.flush();
+}
+
 // Provide weak default implementations for logging.
 // These can be overridden by a strong implementation in board-specific code.
 __attribute__((weak)) void rurp_log(PGM_P type, const char* msg) {
@@ -215,4 +258,13 @@ __attribute__((weak)) void rurp_log_P(PGM_P type, PGM_P msg) {
 // and (under SERIAL_DEBUG) emits a terse hex-dump summary to log_debug.
 __attribute__((weak)) void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count) {
     _firestarter_emit_frame(id, params, param_count);
+}
+
+// Weak default for rurp_log_id_wide — wide variant for large payloads
+// (W-04 MSG_DATA_CHUNK). Uno's strong override in uno_rurp_shield.cpp should
+// also provide rurp_log_id_wide; until it does, this weak default works for
+// both boards (Leonardo has no com_mode gate; Uno should not call this path
+// outside communication mode, which the operation-loop already ensures).
+__attribute__((weak)) void rurp_log_id_wide(uint8_t id, const uint8_t* params, uint16_t param_count) {
+    _firestarter_emit_frame_wide(id, params, param_count);
 }

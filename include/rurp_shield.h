@@ -136,6 +136,10 @@ extern "C" {
     // Coexists with rurp_log/rurp_log_P (LMIG-01).
     void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count);
 
+    // Phase 8 W-04 — wide variant for MSG_DATA_CHUNK payloads > 255 bytes.
+    // param_count is uint16_t to avoid overflow for 512 / 1024-byte chunks.
+    void rurp_log_id_wide(uint8_t id, const uint8_t* params, uint16_t param_count);
+
     void rurp_set_data_output();
     void rurp_set_data_input();
 

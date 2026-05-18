@@ -117,9 +117,13 @@ static inline bool _process_outgoing_data(firestarter_handle_t* handle) {
         return false;  // Error, so finished.
     }
 
-    // The host application shows its own progress, so we send a simple message.
+    // Phase 8 W-04: wrap the raw chip-byte chunk in a MSG_DATA_CHUNK ID frame.
+    // MSG_DATA_SENDING signals the start of the batch (host may see this before
+    // the first chunk). Then the actual data follows as a framed MSG_DATA_CHUNK.
     LOG_DATA_ID(MSG_DATA_SENDING);
-    rurp_communication_write(handle->data_buffer, handle->data_size);
+    rurp_log_id_wide(MSG_DATA_CHUNK,
+                     (const uint8_t*)handle->data_buffer,
+                     (uint16_t)handle->data_size);
 
     if (!op_wait_for_ack(handle)) {
         return false;
