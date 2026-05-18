@@ -145,13 +145,15 @@ bool init_programmer(firestarter_handle_t* handle) {
         LOG_INFO_ID_U16(MSG_INFO_MATCH_LINES, (uint16_t)handle->bus_config.matching_lines);
     }
 #endif
+    {
+        uint8_t hw_rev;
 #ifdef HARDWARE_REVISION
-#define PARSE_RESPONSE "FW: " FW_VERSION ", HW: Rev%d, Cmd: 0x%02x"
-    send_ack_format(PARSE_RESPONSE, rurp_get_hardware_revision(), handle->cmd);
+        hw_rev = (uint8_t)rurp_get_hardware_revision();
 #else
-#define PARSE_RESPONSE "FW: " FW_VERSION ", Cmd: 0x%02x"
-    send_ack_format(PARSE_RESPONSE, handle->cmd);
+        hw_rev = 0xFF;  // P-04 sentinel: no hardware revision override
 #endif
+        LOG_OK_ID_U8_U8_ASTR(MSG_OK_FW_HANDSHAKE, hw_rev, (uint8_t)handle->cmd, FW_VERSION);
+    }
     op_reset_timeout();
     return true;
 }
