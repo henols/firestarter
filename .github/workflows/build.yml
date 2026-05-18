@@ -9,9 +9,7 @@ on:
     - '.gitignore'
     - 'docs/**'
     - 'documents/**'
-    - 'test/**'
     - 'images/**'
-    - '.github/**'
     - '.vscode/**'
     - '.editorconfig/**'
   pull_request:
@@ -23,9 +21,7 @@ on:
     - '.gitignore'
     - 'docs/**'
     - 'documents/**'
-    - 'test/**'
     - 'images/**'
-    - '.github/**'
     - '.vscode/**'
     - '.editorconfig/**'
 
@@ -47,20 +43,15 @@ jobs:
 
       - uses: actions/setup-python@v4
 
-      # - name: install gh
-      #   run: apt update && apt install gh
-
-      - name: Generate release version
-        id: version
-        run: .github/scripts/update_version.py
-
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        # with:
-        #   tagging_message: ${{ steps.version.outputs.version }}
-        # env:
-        #   GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
-      # Phase 6 (LCI-01 + LCI-04): codegen drift + catalog validity. Drift fails CI visibly in the PR.
+      # Phase 6 WR-05: codegen drift + catalog validity must run BEFORE the
+      # version-bump auto-commit. The drift gate is read-only and runs on a
+      # fresh checkout; if it fails, the version bump and the auto-commit
+      # don't happen. The previous step ordering ran update_version.py +
+      # git-auto-commit-action FIRST, which pushed a version-bump commit to
+      # the branch (including main) BEFORE the gate had a chance to veto it.
+      # On main that was particularly bad: the auto-commit landed on the
+      # protected branch and the operator now had a published commit they
+      # had to revert / overwrite if the gate failed.
       - name: Set up Python 3.11 for codegen
         uses: actions/setup-python@v5
         with:
@@ -83,6 +74,25 @@ jobs:
 
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
+
+      # Phase 6 WR-01: run the native Unity suite (host-side, no AVR board
+      # required) in CI. test_messages pins the CRC8 polynomial + the exact
+      # wire-frame byte sequence — a silent refactor that breaks the locked
+      # frame contract from CONTEXT D-01..D-04 must fail CI, not slip
+      # through because CI only built and never executed the tests.
+      - name: Run native unit tests
+        run: pio test -e native
+
+      # --- Version bump + tag commit now gated by everything above ---
+      - name: Generate release version
+        id: version
+        run: .github/scripts/update_version.py
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        # with:
+        #   tagging_message: ${{ steps.version.outputs.version }}
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Build PlatformIO Project
         run: pio run
