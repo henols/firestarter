@@ -101,7 +101,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
             if (!is_flag_set(FLAG_SKIP_ERASE)) {
                 eprom_internal_erase(handle);
             } else {
-                copy_to_buffer(handle->response_msg, "Skipping erase.");
+                LOG_INFO_ID(MSG_INFO_SKIPPING_ERASE);
             }
         }
     }
@@ -168,7 +168,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
         if (!mismatch) {
             handle->response_msg[0] = '\0';
             if (retries > 0) {
-                format(handle->response_msg, "Number of retries: %d", retries);
+                LOG_INFO_ID_U8(MSG_INFO_RETRIES, (uint8_t)retries);
             }
             handle->pulse_delay = org_delay;
             return;
