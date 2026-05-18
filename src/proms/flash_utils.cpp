@@ -9,6 +9,7 @@
 #include <Arduino.h>
 #include "rurp_shield.h"
 #include "logging.h"
+#include "logging_id.h"
 #include <stdio.h>
 
 
@@ -43,7 +44,8 @@ void flash_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_
             }
         }
     }
-    firestarter_error_response("Operation timed out");
+    LOG_ERROR_ID(MSG_ERR_OP_TIMEOUT);
+    handle->response_code = RESPONSE_CODE_ERROR;
     return;
 }
 
