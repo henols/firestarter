@@ -85,7 +85,7 @@ void flash3_write_init(firestarter_handle_t* handle) {
             }
             else {
                 debug("Skipping erase of memory");
-                copy_to_buffer(handle->response_msg, "Skipping erase of memory");
+                LOG_INFO_ID(MSG_INFO_SKIPPING_ERASE_MEM);
             }
         }
     }
