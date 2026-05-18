@@ -14,7 +14,7 @@
 bool hw_read_voltage(firestarter_handle_t* handle) {
     // State 0: Initialization. This runs only once per command.
     if (handle->operation_state == 0) {
-        debug("Init read voltage");
+        LOG_DEBUG_ID_SUB(DBG_INIT_READ_VOLTAGE);
 #ifdef HARDWARE_REVISION
         if (rurp_get_hardware_revision() == REVISION_0) {
             LOG_ERROR_ID(MSG_ERR_REV0_VPP_RD);
@@ -23,10 +23,10 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
 #endif
         rurp_set_programmer_mode();
         if (handle->cmd == CMD_READ_VPP) {
-            debug("Setting up VPP");
+            LOG_DEBUG_ID_SUB(DBG_SETTING_UP_VPP);
             rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP);
         } else if (handle->cmd == CMD_READ_VPE) {
-            debug("Setting up VPE");
+            LOG_DEBUG_ID_SUB(DBG_SETTING_UP_VPE);
             rurp_write_to_register(CONTROL_REGISTER, REGULATOR);
         } else {
             rurp_set_communication_mode();
@@ -80,7 +80,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
 }
 
 bool fw_get_version(firestarter_handle_t* handle) {
-    debug("Get FW version");
+    LOG_DEBUG_ID_SUB(DBG_GET_FW_VERSION);
     // Phase 8 / P-01 / LFW-05: MSG_OK_FW_VERSION stays text-emitted to preserve
     // the host's _probe_port bootstrap path, which parses "FW: ..." as text.
     send_ack_const(FW_VERSION);
@@ -89,7 +89,7 @@ bool fw_get_version(firestarter_handle_t* handle) {
 
 #ifdef HARDWARE_REVISION
 bool hw_get_version(firestarter_handle_t* handle) {
-    debug("Get HW version");
+    LOG_DEBUG_ID_SUB(DBG_GET_HW_VERSION);
     rurp_configuration_t* rurp_config = rurp_get_config();
     uint8_t physical  = (uint8_t)rurp_get_physical_hardware_revision();
     uint8_t effective = (rurp_config->hardware_revision < 0xFF)
@@ -101,7 +101,7 @@ bool hw_get_version(firestarter_handle_t* handle) {
 #endif
 
 bool hw_get_config(firestarter_handle_t* handle) {
-    debug("Get config");
+    LOG_DEBUG_ID_SUB(DBG_GET_CONFIG);
     rurp_configuration_t* rurp_config = rurp_get_config();
     // P-03: pack u32 r1 + u32 r2 + u8 override (0xFF = no override) into 9 bytes.
     uint8_t override_byte = (rurp_config->hardware_revision < 0xFF)
