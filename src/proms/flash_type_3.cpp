@@ -12,6 +12,7 @@
 #include "flash_utils.h"
 #include "firestarter.h"
 #include "logging.h"
+#include "logging_id.h"
 #include "operation_utils.h"
 
 void flash3_erase_execute(firestarter_handle_t* handle);
@@ -131,8 +132,18 @@ void flash3_sector_erase(firestarter_handle_t* handle, uint32_t sector_address) 
 void flash3_check_chip_id_execute(firestarter_handle_t* handle) {
     uint16_t chip_id = flash3_get_chip_id(handle);
     if (chip_id != handle->chip_id) {
-        int response_code = is_flag_set(FLAG_FORCE) ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
-        firestarter_response_format(response_code, "Chip ID %#04x dont match expected ID %#04x", chip_id, handle->chip_id);
+        uint8_t _b[4];
+        _b[0] = (uint8_t)((chip_id >> 8) & 0xFF);
+        _b[1] = (uint8_t)(chip_id & 0xFF);
+        _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
+        _b[3] = (uint8_t)(handle->chip_id & 0xFF);
+        if (is_flag_set(FLAG_FORCE)) {
+            LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
+            handle->response_code = RESPONSE_CODE_WARNING;
+        } else {
+            LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+            handle->response_code = RESPONSE_CODE_ERROR;
+        }
     }
 }
 
