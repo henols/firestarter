@@ -14,7 +14,20 @@ on:
     - '.github/**'
     - '.vscode/**'
     - '.editorconfig/**'
-    - 'tools/**'
+  pull_request:
+    branches:
+    - main
+    paths-ignore:
+    - '**.md'
+    - '**.sh'
+    - '.gitignore'
+    - 'docs/**'
+    - 'documents/**'
+    - 'test/**'
+    - 'images/**'
+    - '.github/**'
+    - '.vscode/**'
+    - '.editorconfig/**'
 
 jobs:
   build:
@@ -36,7 +49,7 @@ jobs:
 
       # - name: install gh
       #   run: apt update && apt install gh
-      
+
       - name: Generate release version
         id: version
         run: .github/scripts/update_version.py
@@ -46,6 +59,28 @@ jobs:
         #   tagging_message: ${{ steps.version.outputs.version }}
         # env:
         #   GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      # Phase 6 (LCI-01 + LCI-04): codegen drift + catalog validity. Drift fails CI visibly in the PR.
+      - name: Set up Python 3.11 for codegen
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Catalog validity check
+        run: python3 tools/catalog/codegen.py --catalog tools/catalog/messages.toml --check
+
+      - name: Codegen drift gate (messages.h + messages.c)
+        run: |
+          python3 tools/catalog/codegen.py \
+            --catalog tools/catalog/messages.toml \
+            --target include/messages.h \
+            --language cpp
+          python3 tools/catalog/codegen.py \
+            --catalog tools/catalog/messages.toml \
+            --target src/messages.c \
+            --language cpp-table
+          git diff --exit-code include/messages.h src/messages.c
+
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
@@ -55,7 +90,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: .pio/build/**/firestarter_*.hex        
+          files: .pio/build/**/firestarter_*.hex
           tag_name: ${{ steps.version.outputs.version }}
           make_latest: true
           # token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
