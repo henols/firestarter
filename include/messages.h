@@ -107,15 +107,6 @@ extern "C" {
 #define MSG_DATA_VOLTAGE               0xE1
 #define MSG_DATA_SENDING               0xE2
 
-// --- Param-count lookup (PROGMEM table, 256 bytes flat) ---
-// MSG_PARAM_COUNT(id) returns the wire-byte count of the params for the
-// given ID, or 0xFF for unallocated IDs or variable-length (ascii_str)
-// payloads. Callers needing fixed-shape byte counts at compile time
-// should consult the catalog directly.
-extern const uint8_t MSG_PARAM_BYTES_TABLE[256] PROGMEM;
-
-#define MSG_PARAM_COUNT(id) ((uint8_t)pgm_read_byte(&MSG_PARAM_BYTES_TABLE[(id)]))
-
 #ifdef __cplusplus
 }
 #endif

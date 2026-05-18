@@ -60,17 +60,13 @@ jobs:
       - name: Catalog validity check
         run: python3 tools/catalog/codegen.py --catalog tools/catalog/messages.toml --check
 
-      - name: Codegen drift gate (messages.h + messages.c)
+      - name: Codegen drift gate (messages.h)
         run: |
           python3 tools/catalog/codegen.py \
             --catalog tools/catalog/messages.toml \
             --target include/messages.h \
             --language cpp
-          python3 tools/catalog/codegen.py \
-            --catalog tools/catalog/messages.toml \
-            --target src/messages.c \
-            --language cpp-table
-          git diff --exit-code include/messages.h src/messages.c
+          git diff --exit-code include/messages.h
 
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio

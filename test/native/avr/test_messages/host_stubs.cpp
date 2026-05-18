@@ -8,10 +8,12 @@
  * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * test_messages stubs the host-side AVR-only symbols that
- * boards/rurp_serial_utils.cpp + messages.c indirectly reference. The
- * widened [env:native] src_filter pulls those two real TUs into the test
- * binary so the production CRC8 table, MAGIC_PREAMBLE, _firestarter_emit_frame,
- * and PROGMEM MSG_PARAM_BYTES_TABLE are exercised end-to-end.
+ * boards/rurp_serial_utils.cpp indirectly references. The widened
+ * [env:native] src_filter pulls the real TU into the test binary so the
+ * production CRC8 table, MAGIC_PREAMBLE, and _firestarter_emit_frame are
+ * exercised end-to-end. (messages.c was a 256-byte PROGMEM byte-count
+ * table backing MSG_PARAM_COUNT; it had no firmware callers and was
+ * deleted post-Phase-7 to reclaim ~256 B of Leonardo flash.)
  *
  * Suite-specific extensions: NONE — test_messages uses the canonical
  * default for every stub. This TU is a pure pass-through to the shared
