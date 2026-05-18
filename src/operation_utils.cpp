@@ -289,7 +289,6 @@ static inline bool _single_step_operation_callback(firestarter_handle_t* handle)
  */
 static inline int _execute_operation(void (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle) {
     if (callback != NULL) {
-        handle->response_msg[0] = '\0';
         rurp_set_programmer_mode();
         callback(handle);
         rurp_set_communication_mode();

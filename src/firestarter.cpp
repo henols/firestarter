@@ -64,7 +64,6 @@ bool parse_json(firestarter_handle_t* handle) {
 
     jsmn_init(&parser);
     int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
-    handle->response_msg[0] = '\0';
     if (token_count <= 0) {
         handle->ctrl_flags = 0x80;
         LOG_INFO_ID_U8(MSG_INFO_BUF_VAL, handle->data_buffer[0]);
@@ -167,7 +166,6 @@ void command_done(firestarter_handle_t* handle) {
     rurp_write_to_register(MOST_SIGNIFICANT_BYTE, 0x00);
     handle->cmd = CMD_IDLE;
     rurp_set_communication_mode();
-    handle->response_msg[0] = '\0';
 }
 
 void loop() {

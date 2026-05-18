@@ -89,9 +89,6 @@ extern const char LOG_ERROR_MSG[] PROGMEM;
     format(buf, cformat, __VA_ARGS__);          \
     log_error(buf)
 
-#define copy_to_buffer(buf, msg) \
-    strcpy_P(buf, PSTR(msg));
-
 // Use sprintf_P to read the format string directly from PROGMEM.
 // This avoids copying the format string to a temporary RAM buffer first.
 #define format(buf, cformat, ...) \

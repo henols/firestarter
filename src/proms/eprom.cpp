@@ -166,7 +166,6 @@ void eprom_write_execute(firestarter_handle_t* handle) {
         mismatch = verify_and_update_mask(handle, mismatch_bitmask);
 
         if (!mismatch) {
-            handle->response_msg[0] = '\0';
             if (retries > 0) {
                 LOG_INFO_ID_U8(MSG_INFO_RETRIES, (uint8_t)retries);
             }

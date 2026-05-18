@@ -18,7 +18,6 @@
 #ifndef DATA_BUFFER_SIZE
 #define DATA_BUFFER_SIZE 512
 #endif
-#define RESPONSE_MSG_SIZE 96
 
 #define TIMEOUT_MS 1000
 
@@ -76,7 +75,6 @@ typedef struct firestarter_handle {
     uint8_t cmd;
     uint8_t operation_state;
     uint8_t response_code;
-    char response_msg[RESPONSE_MSG_SIZE];
     uint8_t mem_type;
     uint32_t protocol;
     uint8_t pins;
