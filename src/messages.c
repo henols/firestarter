@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 70
+ * Total messages: 71
  */
 
 #include "messages.h"
@@ -207,7 +207,7 @@ const uint8_t MSG_PARAM_BYTES_TABLE[256] PROGMEM = {
     [0xB7] = 0,  // MSG_ERR_OP_TIMEOUT
     [0xB8] = 8,  // MSG_ERR_VPP_HIGH
     [0xB9] = 4,  // MSG_ERR_CHIP_ID_MISMATCH
-    [0xBA] = 0xFF,
+    [0xBA] = 4,  // MSG_ERR_MEM_SIZE_TOO_SMALL
     [0xBB] = 0xFF,
     [0xBC] = 0xFF,
     [0xBD] = 0xFF,

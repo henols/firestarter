@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 70
+ * Total messages: 71
  */
 
 #ifndef __MESSAGES_H__
@@ -102,6 +102,7 @@ extern "C" {
 #define MSG_ERR_OP_TIMEOUT             0xB7
 #define MSG_ERR_VPP_HIGH               0xB8
 #define MSG_ERR_CHIP_ID_MISMATCH       0xB9
+#define MSG_ERR_MEM_SIZE_TOO_SMALL     0xBA
 #define MSG_DATA_PROGRESS              0xE0
 #define MSG_DATA_VOLTAGE               0xE1
 #define MSG_DATA_SENDING               0xE2
