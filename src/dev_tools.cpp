@@ -12,6 +12,7 @@
 
 #include "firestarter.h"
 #include "logging.h"
+#include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
 #include "rurp_internal_register_utils.h"
@@ -20,10 +21,25 @@
 // void rurp_internal_write_to_register(uint8_t reg, rurp_register_t data);
 
 void dt_decode_register(firestarter_handle_t* handle, const char* reg_name, uint16_t reg, uint8_t size) {
-    log_info_format("%s: 0x%02X", reg_name, reg);
+    {
+        uint8_t _len = (uint8_t)strlen(reg_name);
+        if (_len > 14) _len = 14;
+        uint8_t _b[16];
+        _b[0] = _len;
+        memcpy(&_b[1], reg_name, _len);
+        _b[1 + _len] = (uint8_t)reg;
+        LOG_INFO_ID_BYTES(MSG_INFO_REG_HEADER, _b, 1 + _len + 1);
+    }
 
     // Header
-    log_info_format("%s|D7|D6|D5|D4|D3|D2|D1|D0|", size == 9 ? "|D8" : "");
+    {
+        const char* _prefix = (size == 9 ? "|D8" : "");
+        uint8_t _len = (uint8_t)strlen(_prefix);
+        uint8_t _b[8];
+        _b[0] = _len;
+        memcpy(&_b[1], _prefix, _len);
+        LOG_INFO_ID_BYTES(MSG_INFO_BIT_HEADER, _b, 1 + _len);
+    }
 
     // Values - build string manually to be more efficient than many-arg sprintf
     char bit_str[40];  // "| 1" is 3 chars. 9 bits -> 3*9=27. 8 bits -> 3*8=24. 40 is safe.
@@ -43,7 +59,14 @@ void dt_decode_register(firestarter_handle_t* handle, const char* reg_name, uint
     *p++ = '|';
     *p = '\0';
 
-    log_info(bit_str);
+    {
+        uint8_t _len = (uint8_t)strlen(bit_str);
+        if (_len > 31) _len = 31;
+        uint8_t _b[32];
+        _b[0] = _len;
+        memcpy(&_b[1], bit_str, _len);
+        LOG_INFO_ID_BYTES(MSG_INFO_BIT_STR, _b, 1 + _len);
+    }
 }
 
 bool dt_set_registers(firestarter_handle_t* handle) {
@@ -63,7 +86,13 @@ bool dt_set_registers(firestarter_handle_t* handle) {
     int firestarter_reg = ctrl_reg & 0x8000;
     ctrl_reg &= 0x01FF;
 
-    log_info_format("CE: %d, OE: %d", is_flag_set(FLAG_CHIP_ENABLE), is_flag_set(FLAG_OUTPUT_ENABLE));
+    {
+        uint8_t _b[2] = {
+            (uint8_t)is_flag_set(FLAG_CHIP_ENABLE),
+            (uint8_t)is_flag_set(FLAG_OUTPUT_ENABLE),
+        };
+        LOG_INFO_ID_BYTES(MSG_INFO_CE_OE, _b, 2);
+    }
     dt_decode_register(handle, "MSB", msb, 8);
     dt_decode_register(handle, "LSB", lsb, 8);
 #ifdef HARDWARE_REVISION
@@ -99,10 +128,16 @@ bool dt_set_registers(firestarter_handle_t* handle) {
 }
 
 bool dt_set_address(firestarter_handle_t* handle) {
-    log_info_format("CE: %d, OE: %d", is_flag_set(FLAG_CHIP_ENABLE), is_flag_set(FLAG_OUTPUT_ENABLE));
-    log_info_format("Address: 0x%06x", handle->address);
+    {
+        uint8_t _b[2] = {
+            (uint8_t)is_flag_set(FLAG_CHIP_ENABLE),
+            (uint8_t)is_flag_set(FLAG_OUTPUT_ENABLE),
+        };
+        LOG_INFO_ID_BYTES(MSG_INFO_CE_OE, _b, 2);
+    }
+    LOG_INFO_ID_U24(MSG_INFO_ADDR, handle->address);
     uint32_t address = mem_util_remap_address_bus(handle, handle->address, is_flag_set(FLAG_OUTPUT_ENABLE));
-    log_info_format("Address: 0x%06x remappend", address);
+    LOG_INFO_ID_U24(MSG_INFO_ADDR_REMAP, address);
 
     uint8_t msb = mem_util_calculate_msb_register(handle, address);
     uint8_t lsb = mem_util_calculate_lsb_register(handle, address);
