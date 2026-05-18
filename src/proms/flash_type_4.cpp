@@ -24,7 +24,7 @@ void flash4_write_execute(firestarter_handle_t* handle);
 static bool flash4_wait_for_page_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected);
 
 void configure_flash4(firestarter_handle_t* handle) {
-    debug("Configuring Flash 4");
+    LOG_DEBUG_ID_SUB(DBG_CONFIGURING_FLASH4);
     switch (handle->cmd) {
         case CMD_WRITE:
             handle->firestarter_operation_init = flash4_write_init;
