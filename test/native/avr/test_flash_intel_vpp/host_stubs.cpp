@@ -147,21 +147,16 @@ extern "C" void rurp_validate_config(rurp_configuration_t* config) {
     (void)config;
 }
 
-/* Communication API — proms TUs don't call these directly, but other firmware
- * sources we may pull in via the same src_filter might. Cheap no-ops. */
-extern "C" int rurp_communication_available() { return 0; }
-extern "C" int rurp_communication_read() { return -1; }
-extern "C" int rurp_communication_peak() { return -1; }
-extern "C" size_t rurp_communication_write(const char* buffer, size_t size) {
-    (void)buffer;
-    return size;
-}
-extern "C" size_t rurp_communication_read_bytes(char* buffer, size_t length) {
-    (void)buffer;
-    (void)length;
-    return 0;
-}
-extern "C" int rurp_communication_read_data(char* buffer) {
-    (void)buffer;
-    return 0;
+/* Communication API — Phase 6 widened the [env:native] src_filter to include
+ * src/boards/rurp_serial_utils.cpp. That TU now provides the production
+ * rurp_communication_* implementations, so this suite no longer stubs them.
+ * Removed to avoid multiple-definition link errors. */
+
+/* ArduinoFake declares Serial_::operator bool() in its USB-CDC header but
+ * does not define it. rurp_serial_utils.cpp's rurp_serial_begin loop
+ * references the operator; provide a host-side definition (link-only — the
+ * test never calls rurp_serial_begin). */
+#include <Arduino.h>
+Serial_::operator bool() {
+    return true;
 }
