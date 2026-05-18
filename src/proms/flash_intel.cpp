@@ -24,7 +24,7 @@ void flash_intel_check_chip_id(firestarter_handle_t* handle);
 static bool flash_intel_poll_sr(firestarter_handle_t* handle, uint16_t timeout_ms);
 
 static void flash_intel_check_vpp(firestarter_handle_t* handle) {
-    debug("Check VPP (Intel)");
+    LOG_DEBUG_ID_SUB(DBG_CHECK_VPP_INTEL);
 #ifdef HARDWARE_REVISION
     if (rurp_get_hardware_revision() == REVISION_0) {
         LOG_WARN_ID(MSG_WARN_REV0_VPP_UNSUPPORTED);
@@ -35,9 +35,7 @@ static void flash_intel_check_vpp(firestarter_handle_t* handle) {
     // Caller (flash_intel_write_init) already asserted REGULATOR | P1_VPP_ENABLE
     // and delayed 500ms; do not toggle the regulator here.
     uint16_t vpp_mv = rurp_read_voltage_mv();
-#ifdef SERIAL_DEBUG
-    debug_format("Checking VPP voltage %u mV", vpp_mv);
-#endif
+    LOG_DEBUG_ID_SUB_U16(DBG_CHECKING_VPP_VOLTAGE, vpp_mv);
     if (vpp_mv > (uint32_t)handle->vpp_mv + 500) {
         {
             uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
@@ -84,7 +82,7 @@ static void flash_intel_check_vpp(firestarter_handle_t* handle) {
 }
 
 void configure_flash_intel(firestarter_handle_t* handle) {
-    debug("Configuring Intel Flash");
+    LOG_DEBUG_ID_SUB(DBG_CONFIGURING_INTEL_FLASH);
     handle->firestarter_operation_end = flash_intel_cleanup;
     switch (handle->cmd) {
         case CMD_WRITE:
@@ -152,7 +150,7 @@ void flash_intel_erase_execute(firestarter_handle_t* handle) {
     if (!flash_intel_poll_sr(handle, 15000)) {
         return;
     }
-    debug("Erase complete");
+    LOG_DEBUG_ID_SUB(DBG_ERASE_COMPLETE);
 }
 
 void flash_intel_cleanup(firestarter_handle_t* handle) {
