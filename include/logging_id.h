@@ -118,6 +118,23 @@
         }                                                              \
     } while (0)
 
+// ascii_str param: length-prefix byte + N string bytes (capped at 32).
+// Wire shape: [slen][s_data...] — matches catalog `type = "ascii_str"` so
+// the host decoder reads slen first, then exactly slen string bytes.
+// string.h (strlen + memcpy) available via rurp_shield.h transitively.
+#define LOG_INFO_ID_ASTR(id, str_ptr)                                  \
+    do {                                                               \
+        if (is_flag_set(FLAG_VERBOSE)) {                               \
+            const char* _s = (str_ptr);                                \
+            uint8_t _slen = (uint8_t)strlen(_s);                       \
+            if (_slen > 32) _slen = 32;                                \
+            uint8_t _b[1 + 32];                                        \
+            _b[0] = _slen;                                             \
+            memcpy(_b + 1, _s, _slen);                                 \
+            rurp_log_id((id), _b, (uint8_t)(1 + _slen));               \
+        }                                                              \
+    } while (0)
+
 // --- Unconditional ERROR severity ---
 
 #define LOG_ERROR_ID(id)               LOG_ID(id)

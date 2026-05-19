@@ -129,17 +129,10 @@ bool init_programmer(firestarter_handle_t* handle) {
         LOG_DEBUG_ID_SUB_U32(DBG_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
         LOG_DEBUG_ID_SUB_U16(DBG_MATCH_LINES, (uint16_t)handle->bus_config.matching_lines);
     }
-    // Per-command identity echo (INFO severity — visible in host verbose mode,
-    // filtered out of the OK/ERROR ack chain). MSG_INFO_FW reuses the LFW-05
-    // ascii_str pack pattern (see MSG_INFO_REG_HEADER pattern in dev_tools.cpp).
-    {
-        uint8_t _slen = (uint8_t)strlen(FW_VERSION);
-        if (_slen > 32) _slen = 32;
-        uint8_t _b[1 + 32];
-        _b[0] = _slen;
-        memcpy(_b + 1, FW_VERSION, _slen);
-        LOG_INFO_ID_BYTES(MSG_INFO_FW, _b, (uint8_t)(1 + _slen));
-    }
+    // Per-command identity echo (INFO severity, FLAG_VERBOSE-gated at the
+    // macro level — visible in host verbose mode, filtered out of the
+    // OK/ERROR ack chain).
+    LOG_INFO_ID_ASTR(MSG_INFO_FW, FW_VERSION);
 #ifdef HARDWARE_REVISION
     LOG_INFO_ID_U8(MSG_INFO_PHYSICAL_HW, (uint8_t)rurp_get_physical_hardware_revision());
     LOG_INFO_ID_U8(MSG_INFO_HW, (uint8_t)rurp_get_hardware_revision());
