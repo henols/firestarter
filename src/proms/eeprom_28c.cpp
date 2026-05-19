@@ -11,7 +11,6 @@
 
 #include "firestarter.h"
 #include "flash_utils.h"
-#include "logging.h"
 #include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"

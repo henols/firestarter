@@ -4,10 +4,10 @@
 #include <stdlib.h>
 
 #include "firestarter.h"
-#include "logging.h"
 #include "logging_id.h"
 #include "messages.h"
 #include "operation_utils.h"
+#include "rurp_serial_utils.h"
 #include "rurp_shield.h"
 #include "version.h"
 

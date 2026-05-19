@@ -129,11 +129,12 @@ extern "C" {
     int rurp_communication_read_data(char* buffer);
     
 
-    void rurp_log(PGM_P type, const char* msg);
-    void rurp_log_P(PGM_P type, PGM_P msg);
+    // Phase 9: deleted the two legacy text-prefix log declarations
+    // (RAM body + PROGMEM body). See 09-CONTEXT.md D-02.
 
     // Phase 6 — ID-encoded wire frame emit per CONTEXT §D-01..D-04.
-    // Coexists with rurp_log/rurp_log_P (LMIG-01).
+    // Phase 9: sole surviving log surface after the legacy text-prefix
+    // helpers were deleted (LMIG-01 closed).
     void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count);
 
     // Phase 8 W-04 — wide variant for MSG_DATA_CHUNK payloads > 255 bytes.

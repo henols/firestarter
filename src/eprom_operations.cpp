@@ -8,7 +8,6 @@
 #include "eprom_operations.h"
 
 #include "firestarter.h"
-#include "logging.h"
 #include "logging_id.h"
 #include "messages.h"
 #include "operation_utils.h"

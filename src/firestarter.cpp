@@ -13,7 +13,6 @@
 #include "eprom_operations.h"
 #include "hardware_operations.h"
 #include "json_parser.h"
-#include "logging.h"
 #include "logging_id.h"
 #include "memory.h"
 #include "operation_utils.h"
@@ -35,9 +34,8 @@ firestarter_handle_t handle;
 unsigned long timeout = 0;
 
 void setup() {
-#ifdef SERIAL_DEBUG
-    debug_setup();
-#endif
+    // Phase 9: deleted the SERIAL_DEBUG bootstrap call (legacy soft-serial
+    // debug path replaced by LOG_DEBUG_ID_SUB* from Phase 8 Plan 07).
 
     rurp_load_config();
 #ifdef HARDWARE_REVISION

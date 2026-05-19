@@ -15,7 +15,6 @@
 #include "flash_type_4.h"
 #include "flash_intel.h"
 #include "eeprom_28c.h"
-#include "logging.h"
 #include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"

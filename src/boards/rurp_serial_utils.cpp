@@ -9,23 +9,8 @@
 #include "rurp_serial_utils.h"
 #include "rurp_shield.h"
 
-// --- Core Logging Functions ---
-
-// Core logging function for RAM messages. Takes type from PROGMEM.
- void _firestarter_log_ram(PGM_P type, const char* msg) {
-    SERIAL_PORT.print((const __FlashStringHelper*)type);
-    SERIAL_PORT.print(F(": ")); 
-    SERIAL_PORT.println(msg);
-    SERIAL_PORT.flush();
-}
-
-// Core logging function for PROGMEM messages.
- void _firestarter_log_progmem(PGM_P type, PGM_P p_msg) {
-    SERIAL_PORT.print((const __FlashStringHelper*)type);
-    SERIAL_PORT.print(F(": "));
-    SERIAL_PORT.println((const __FlashStringHelper*)p_msg);
-    SERIAL_PORT.flush();
-}
+// Phase 9: deleted the two legacy text-prefix log helpers (RAM body +
+// PROGMEM body). See 09-CONTEXT.md D-02.
 
 void rurp_serial_begin(unsigned long baud) {
     SERIAL_PORT.begin(baud);
@@ -145,11 +130,11 @@ static uint8_t crc8_ccitt(uint8_t crc, uint8_t b) {
     return pgm_read_byte(&CRC8_TABLE[crc ^ b]);
 }
 
-// Board-agnostic frame emitter. Sibling to _firestarter_log_ram /
-// _firestarter_log_progmem — same line discipline (single-byte writes,
-// .flush() at end). Does NOT consult com_mode; the strong override on Uno
-// gates this call. Leonardo's USB-CDC has no PORTD aliasing risk so it
-// uses the weak default of rurp_log_id which calls this unconditionally.
+// Board-agnostic frame emitter — same line discipline as Phase-9-deleted
+// text-prefix log helpers (single-byte writes, .flush() at end). Does NOT
+// consult com_mode; the strong override on Uno gates this call. Leonardo's
+// USB-CDC has no PORTD aliasing risk so it uses the weak default of
+// rurp_log_id which calls this unconditionally.
 void _firestarter_emit_frame(uint8_t id, const uint8_t* params, uint8_t param_count) {
     // Wire-frame budget guard: `len = 1 (id) + param_count + 1 (crc)` must
     // fit in a uint8_t. With param_count >= 254 the `len` byte wraps silently
@@ -241,18 +226,11 @@ void _firestarter_emit_frame_wide(uint8_t id, const uint8_t* params, uint16_t pa
     SERIAL_PORT.flush();
 }
 
-// Provide weak default implementations for logging.
-// These can be overridden by a strong implementation in board-specific code.
-__attribute__((weak)) void rurp_log(PGM_P type, const char* msg) {
-    _firestarter_log_ram(type, msg);
-}
-__attribute__((weak)) void rurp_log_P(PGM_P type, PGM_P msg) {
-    _firestarter_log_progmem(type, msg);
-}
+// Phase 9: deleted the two weak-default text-prefix log helpers
+// (RAM body + PROGMEM body). See 09-CONTEXT.md D-02.
 
 // Weak default for rurp_log_id — no com_mode gate (Leonardo path). Uno
-// provides a strong override in uno_rurp_shield.cpp that gates by com_mode
-// and (under SERIAL_DEBUG) emits a terse hex-dump summary to log_debug.
+// provides a strong override in uno_rurp_shield.cpp that gates by com_mode.
 __attribute__((weak)) void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count) {
     _firestarter_emit_frame(id, params, param_count);
 }

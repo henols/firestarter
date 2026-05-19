@@ -9,7 +9,6 @@
 #include "firestarter.h"
 #include "rurp_shield.h"
 #include <stdio.h>
-#include "logging.h"
 #include "logging_id.h"
 #include "messages.h"
 

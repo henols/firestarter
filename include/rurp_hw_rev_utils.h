@@ -7,7 +7,6 @@
 #include <Arduino.h>
 #include <stdint.h>
 #include <string.h>
-#include "logging.h"
 
 uint8_t revision = 0xFF;
 

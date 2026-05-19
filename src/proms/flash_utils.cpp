@@ -8,7 +8,6 @@
 #include "flash_utils.h"
 #include <Arduino.h>
 #include "rurp_shield.h"
-#include "logging.h"
 #include "logging_id.h"
 #include <stdio.h>
 

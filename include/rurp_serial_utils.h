@@ -5,17 +5,12 @@
 #include <avr/pgmspace.h>
 
 #include "firestarter.h"
-#include "logging.h"
 #ifndef SERIAL_PORT
 #include <Arduino.h>
 #define SERIAL_PORT Serial
 #endif
-// --- Core Logging Functions ---
-// Core logging function for RAM messages. Takes type from PROGMEM.
-void _firestarter_log_ram(PGM_P type, const char* msg);
-
-// Core logging function for PROGMEM messages.
-void _firestarter_log_progmem(PGM_P type, PGM_P p_msg);
+// Phase 9: deleted the two legacy text-prefix log helper declarations
+// (RAM body + PROGMEM body). See 09-CONTEXT.md D-02.
 
 // Phase 6 — board-agnostic ID-encoded frame emitter (CONTEXT §D-01..D-04).
 // Defined in rurp_serial_utils.cpp; the Uno strong override of rurp_log_id

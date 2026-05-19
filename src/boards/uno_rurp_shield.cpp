@@ -10,7 +10,6 @@
 #include <Arduino.h>
 #include "rurp_register_utils.h"
 
-#include "logging.h"
 #include "rurp_serial_utils.h"
 
 #define USER_BUTTON 0x10             // USER BUTTON
@@ -19,10 +18,8 @@ constexpr int INPUT_RESOLUTION = 1023;
 
 bool com_mode = true;
 
-#ifdef SERIAL_DEBUG
-#define RX_DEBUG  A0
-#define TX_DEBUG  A1
-#endif
+// Phase 9: deleted the legacy SERIAL_DEBUG infrastructure (debug pin defines
+// plus the soft-serial debug channel). See 09-CONTEXT.md D-02 + D-08.
 
 
 void rurp_board_setup() {
@@ -77,18 +74,8 @@ void rurp_set_programmer_mode() {
 }
 
 
-void rurp_log(PGM_P type, const char* msg) {
-    log_debug(type, msg);
-    if (com_mode) {
-        _firestarter_log_ram(type, msg);
-    }
-}
-
-void rurp_log_P(PGM_P type, PGM_P msg) {
-    if (com_mode) {
-        _firestarter_log_progmem(type, msg);
-    }
-}
+// Phase 9: deleted the two legacy text-prefix log Uno strong overrides
+// (RAM body + PROGMEM body). See 09-CONTEXT.md D-02.
 
 // Phase 6 — Uno strong override of rurp_log_id. The com_mode gate is critical:
 // emitting on the wire while PORTD is repurposed as the data bus would corrupt
@@ -149,22 +136,9 @@ void rurp_set_data_input() {
     DDRD = 0x00;
 }
 
-#ifdef SERIAL_DEBUG
-#include <SoftwareSerial.h>
-SoftwareSerial debugSerial(RX_DEBUG, TX_DEBUG);
-
-void debug_setup() {
-    debugSerial.begin(57600);
-}
-
-void log_debug(PGM_P type, const char* msg) {
-    // Copy the PROGMEM type string to a RAM buffer to print.
-    char type_buf[10];
-    strcpy_P(type_buf, type);
-    debugSerial.print(type_buf);
-    debugSerial.print(": ");
-    debugSerial.println(msg);
-    debugSerial.flush();
-}
-#endif
+// Phase 9: deleted the legacy SERIAL_DEBUG soft-serial debug channel
+// (helper-setup + log-helper + debug-channel). See 09-CONTEXT.md D-02 + D-08.
+// Replacement is LOG_DEBUG_ID_SUB* from logging_id.h (Phase 8 Plan 07), which
+// routes structured debug emit through the main serial port via id-frames
+// rather than a separate channel.
 #endif

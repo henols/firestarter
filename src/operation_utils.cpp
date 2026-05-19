@@ -11,7 +11,6 @@
 #include <stdlib.h>
 
 #include "firestarter.h"
-#include "logging.h"
 #include "logging_id.h"
 #include "rurp_shield.h"
 

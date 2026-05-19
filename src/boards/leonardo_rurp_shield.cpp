@@ -10,7 +10,6 @@
 #include "rurp_shield.h"
 #include <Arduino.h>
 #include "rurp_register_utils.h"
-#include "logging.h"
 
 #include "rurp_serial_utils.h"
 
@@ -141,7 +140,5 @@ void rurp_set_data_input() {
     DDRE &= ~PORTE_DATA_MASK; // Set pin D6 as output
 }
 
-#ifdef SERIAL_DEBUG
-void debug_setup() {}
-#endif
+// Phase 9: deleted the Leonardo SERIAL_DEBUG bootstrap stub. See 09-CONTEXT.md D-02.
 #endif

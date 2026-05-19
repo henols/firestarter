@@ -16,7 +16,6 @@
  * and state management required for operations like reading, writing, and verifying EPROMs.
  */
 #include "firestarter.h"
-#include "logging.h"
 
 #ifdef __cplusplus
 extern "C" {

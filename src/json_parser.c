@@ -9,7 +9,6 @@
 #include <stdio.h>
 
 #include "jsmn.h"
-#include "logging.h"
 
 uint8_t get_cmd(const char* json, jsmntok_t* tokens, int pos);
 

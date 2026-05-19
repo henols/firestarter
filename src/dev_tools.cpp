@@ -11,7 +11,6 @@
 #include <Arduino.h>
 
 #include "firestarter.h"
-#include "logging.h"
 #include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
