@@ -27,48 +27,13 @@
 // Zero-param: emit just the ID, no params.
 #define LOG_ID(id) rurp_log_id((id), NULL, 0)
 
-// Single u8 param, raw byte on the wire.
-#define LOG_ID_U8(id, p1)                                              \
-    do {                                                               \
-        uint8_t _b[1] = { (uint8_t)(p1) };                             \
-        rurp_log_id((id), _b, 1);                                      \
-    } while (0)
-
-// Single u16 param, MSB-first (2 wire bytes).
-#define LOG_ID_U16(id, p1)                                             \
-    do {                                                               \
-        uint16_t _v = (uint16_t)(p1);                                  \
-        uint8_t _b[2] = {                                              \
-            (uint8_t)((_v >> 8) & 0xFF),                               \
-            (uint8_t)(_v & 0xFF),                                      \
-        };                                                             \
-        rurp_log_id((id), _b, 2);                                      \
-    } while (0)
-
-// Single u24 param, MSB-first (3 wire bytes). Caller passes u32-ish; top byte dropped.
-#define LOG_ID_U24(id, p1)                                             \
-    do {                                                               \
-        uint32_t _v = (uint32_t)(p1);                                  \
-        uint8_t _b[3] = {                                              \
-            (uint8_t)((_v >> 16) & 0xFF),                              \
-            (uint8_t)((_v >> 8) & 0xFF),                               \
-            (uint8_t)(_v & 0xFF),                                      \
-        };                                                             \
-        rurp_log_id((id), _b, 3);                                      \
-    } while (0)
-
-// Single u32 param, MSB-first (4 wire bytes).
-#define LOG_ID_U32(id, p1)                                             \
-    do {                                                               \
-        uint32_t _v = (uint32_t)(p1);                                  \
-        uint8_t _b[4] = {                                              \
-            (uint8_t)((_v >> 24) & 0xFF),                              \
-            (uint8_t)((_v >> 16) & 0xFF),                              \
-            (uint8_t)((_v >> 8) & 0xFF),                               \
-            (uint8_t)(_v & 0xFF),                                      \
-        };                                                             \
-        rurp_log_id((id), _b, 4);                                      \
-    } while (0)
+// Fixed-shape param macros — thin wrappers over the rurp_log_id_u{8,16,24,32}
+// helpers in rurp_serial_utils.cpp. The macros exist so call sites keep the
+// LOG_ID_U* spelling, but no byte-array build is inlined at each invocation.
+#define LOG_ID_U8(id, p1)     rurp_log_id_u8((id), (uint8_t)(p1))
+#define LOG_ID_U16(id, p1)    rurp_log_id_u16((id), (uint16_t)(p1))
+#define LOG_ID_U24(id, p1)    rurp_log_id_u24((id), (uint32_t)(p1))
+#define LOG_ID_U32(id, p1)    rurp_log_id_u32((id), (uint32_t)(p1))
 
 // Escape hatch — caller-supplied buffer + count.
 #define LOG_ID_BYTES(id, buf_array, count) \

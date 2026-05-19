@@ -235,6 +235,43 @@ __attribute__((weak)) void rurp_log_id(uint8_t id, const uint8_t* params, uint8_
     _firestarter_emit_frame(id, params, param_count);
 }
 
+// Fixed-shape packers. Each LOG_*_ID_U{8,16,24,32} macro previously inlined
+// the byte-array build at every call site (~10-30 instructions × ~30 sites).
+// Sharing the pack here keeps the call site to a single CALL and reduces
+// Flash use by ~200-400 B on AVR. No com_mode gate needed; rurp_log_id
+// itself routes through the strong override on Uno.
+void rurp_log_id_u8(uint8_t id, uint8_t v) {
+    uint8_t b[1] = { v };
+    rurp_log_id(id, b, 1);
+}
+
+void rurp_log_id_u16(uint8_t id, uint16_t v) {
+    uint8_t b[2] = {
+        (uint8_t)((v >> 8) & 0xFF),
+        (uint8_t)(v & 0xFF),
+    };
+    rurp_log_id(id, b, 2);
+}
+
+void rurp_log_id_u24(uint8_t id, uint32_t v) {
+    uint8_t b[3] = {
+        (uint8_t)((v >> 16) & 0xFF),
+        (uint8_t)((v >> 8) & 0xFF),
+        (uint8_t)(v & 0xFF),
+    };
+    rurp_log_id(id, b, 3);
+}
+
+void rurp_log_id_u32(uint8_t id, uint32_t v) {
+    uint8_t b[4] = {
+        (uint8_t)((v >> 24) & 0xFF),
+        (uint8_t)((v >> 16) & 0xFF),
+        (uint8_t)((v >> 8) & 0xFF),
+        (uint8_t)(v & 0xFF),
+    };
+    rurp_log_id(id, b, 4);
+}
+
 // Weak default for rurp_log_id_wide — wide variant for large payloads
 // (W-04 MSG_DATA_CHUNK). Uno's strong override in uno_rurp_shield.cpp should
 // also provide rurp_log_id_wide; until it does, this weak default works for

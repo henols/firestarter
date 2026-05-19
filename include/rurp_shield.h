@@ -137,6 +137,15 @@ extern "C" {
     // helpers were deleted (LMIG-01 closed).
     void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count);
 
+    // Fixed-shape packers — wrap the byte-array pack + rurp_log_id call so
+    // each LOG_*_ID_U{8,16,24,32} macro invocation collapses to a single
+    // CALL instruction at the call site. MSB-first wire encoding per
+    // CONTEXT §D-01..D-04.
+    void rurp_log_id_u8(uint8_t id, uint8_t v);
+    void rurp_log_id_u16(uint8_t id, uint16_t v);
+    void rurp_log_id_u24(uint8_t id, uint32_t v);
+    void rurp_log_id_u32(uint8_t id, uint32_t v);
+
     // Phase 8 W-04 — wide variant for MSG_DATA_CHUNK payloads > 255 bytes.
     // param_count is uint16_t to avoid overflow for 512 / 1024-byte chunks.
     void rurp_log_id_wide(uint8_t id, const uint8_t* params, uint16_t param_count);
