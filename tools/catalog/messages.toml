@@ -340,6 +340,21 @@ format      = "Skipping erase of memory"
 params      = []
 wire_format = "id_frame"
 
+# Verbose-build diagnostic emit (EXTRA_INFO_LOGGING-gated in firmware).
+# Replaces the per-command MSG_OK_FW_HANDSHAKE wire chatter — same shape,
+# now INFO severity + verbose-only. hw=0xFF sentinel = no HARDWARE_REVISION.
+[[messages]]
+id          = 0x5A
+name        = "MSG_INFO_FW_HANDSHAKE"
+severity    = "INFO"
+format      = "HW: %u, Cmd: 0x%02x, FW: %s"
+params      = [
+    { type = "u8" },
+    { type = "u8" },
+    { type = "ascii_str" },
+]
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # WARN (0x80..0x9F)
 # ---------------------------------------------------------------------------
