@@ -17,7 +17,8 @@
  *
  * Test cases:
  *  - test_zero_param_frame:  id=0x01, no params. Asserts CRC(0x01) == 0x07.
- *  - test_u32_param_frame:   id=0x4E, params={0x00,0x01,0x00,0x00}.
+ *  - test_u32_param_frame:   id=0x84, params={0x00,0x01,0x00,0x00}.
+ *    Generic u32-shape fixture using MSG_WARN_MEM_SIZE_TOO_SMALL.
  *  - test_multi_param_frame: id=0xB1, params={0x01,0xF4,0xA2,0x05,0x00,0x03}.
  *  - test_crc_polynomial_smoke: independent ref CRC vs frame CRC for an
  *    arbitrary payload — pins poly 0x07 seed 0x00.
@@ -108,9 +109,9 @@ void test_zero_param_frame(void) {
 }
 
 void test_u32_param_frame(void) {
-    // MSG_INFO_MEM_SIZE (id=0x4E) with u32=0x00010000 encoded MSB-first.
+    // MSG_WARN_MEM_SIZE_TOO_SMALL (id=0x84) with u32=0x00010000 encoded MSB-first.
     uint8_t params[4] = { 0x00, 0x01, 0x00, 0x00 };
-    rurp_log_id(MSG_INFO_MEM_SIZE, params, 4);
+    rurp_log_id(MSG_WARN_MEM_SIZE_TOO_SMALL, params, 4);
 
     // 4 magic + 2 len (u16 W-04) + 1 id + 4 params + 1 crc + 1 anchor = 13 bytes.
     TEST_ASSERT_EQUAL_size_t(13, captured.size());
@@ -126,8 +127,8 @@ void test_u32_param_frame(void) {
     TEST_ASSERT_EQUAL_HEX8(0x06, captured[5]);    // len LSB
 
     // id.
-    TEST_ASSERT_EQUAL_HEX8(0x4E, captured[6]);
-    TEST_ASSERT_EQUAL_HEX8((uint8_t)MSG_INFO_MEM_SIZE, captured[6]);
+    TEST_ASSERT_EQUAL_HEX8(0x84, captured[6]);
+    TEST_ASSERT_EQUAL_HEX8((uint8_t)MSG_WARN_MEM_SIZE_TOO_SMALL, captured[6]);
 
     // Params.
     TEST_ASSERT_EQUAL_HEX8(0x00, captured[7]);
@@ -135,8 +136,8 @@ void test_u32_param_frame(void) {
     TEST_ASSERT_EQUAL_HEX8(0x00, captured[9]);
     TEST_ASSERT_EQUAL_HEX8(0x00, captured[10]);
 
-    // CRC over [0x4E, 0x00, 0x01, 0x00, 0x00] — table-free reference.
-    uint8_t body[5] = { 0x4E, 0x00, 0x01, 0x00, 0x00 };
+    // CRC over [0x84, 0x00, 0x01, 0x00, 0x00] — table-free reference.
+    uint8_t body[5] = { 0x84, 0x00, 0x01, 0x00, 0x00 };
     TEST_ASSERT_EQUAL_HEX8(ref_crc8(body, 5), captured[11]);
 
     // Anchor.
@@ -186,12 +187,12 @@ void test_crc_polynomial_smoke(void) {
     // production CRC8_TABLE is ever regenerated with the wrong polynomial,
     // seed, reflection, or final XOR, the two values disagree.
     uint8_t params[4] = { 0x12, 0x34, 0x56, 0x78 };
-    rurp_log_id(0x4E, params, 4);
+    rurp_log_id(0x84, params, 4);
 
     // 4 magic + 2 len (u16 W-04) + 1 id + 4 params + 1 crc + 1 anchor = 13 bytes.
     TEST_ASSERT_EQUAL_size_t(13, captured.size());
 
-    uint8_t body[5] = { 0x4E, 0x12, 0x34, 0x56, 0x78 };
+    uint8_t body[5] = { 0x84, 0x12, 0x34, 0x56, 0x78 };
     uint8_t expected_crc = ref_crc8(body, 5);
 
     // CRC is the second-to-last byte (anchor 0x0A is the last).

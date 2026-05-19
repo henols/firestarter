@@ -45,7 +45,7 @@ void setup() {
 
     handle.cmd = CMD_IDLE;
     LOG_DEBUG_ID_SUB(DBG_FIRESTARTER_STARTED);
-    LOG_DEBUG_ID_SUB_ASTR(DBG_FIRMWARE_VERSION, VERSION);
+    LOG_DEBUG_ID_SUB_ASTR(DBG_FIRMWARE_VERSION, FW_VERSION);
     LOG_DEBUG_ID_SUB_U8(DBG_HARDWARE_REVISION, (uint8_t)rurp_get_physical_hardware_revision());
 }
 
@@ -59,14 +59,14 @@ bool parse_json(firestarter_handle_t* handle) {
     int token_count = jsmn_parse(&parser, handle->data_buffer, handle->data_size, tokens, NUMBER_JSNM_TOKENS);
     if (token_count <= 0) {
         handle->ctrl_flags = 0x80;
-        LOG_INFO_ID_U8(MSG_INFO_BUF_VAL, handle->data_buffer[0]);
+        LOG_DEBUG_ID_SUB_U8(DBG_BUF_VAL, handle->data_buffer[0]);
         LOG_ERROR_ID(MSG_ERR_BAD_JSON);
 
         return false;
     }
 
     handle->cmd = json_get_cmd(handle->data_buffer, tokens, token_count, handle);
-    LOG_INFO_ID_U16(MSG_INFO_TOKEN_COUNT, (uint16_t)token_count);
+    LOG_DEBUG_ID_SUB_U16(DBG_TOKEN_COUNT, (uint16_t)token_count);
     if (handle->cmd == 0xFF) {
         LOG_ERROR_ID(MSG_ERR_NO_CMD);
         return false;
@@ -78,23 +78,19 @@ bool parse_json(firestarter_handle_t* handle) {
 #ifdef DEV_TOOLS
         if (handle->cmd < CMD_DEV_ADDRESS) {
 #endif
-#ifdef EXTRA_INFO_LOGGING
-            LOG_INFO_ID_U8(MSG_INFO_FLAG_FORCE, is_flag_set(FLAG_FORCE));
-            LOG_INFO_ID_U8(MSG_INFO_FLAG_CAN_ERASE, is_flag_set(FLAG_CAN_ERASE));
-            LOG_INFO_ID_U8(MSG_INFO_FLAG_SKIP_ERASE, is_flag_set(FLAG_SKIP_ERASE));
-            LOG_INFO_ID_U8(MSG_INFO_FLAG_SKIP_BLANK, is_flag_set(FLAG_SKIP_BLANK_CHECK));
-            LOG_INFO_ID_U8(MSG_INFO_FLAG_VPE_AS_VPP, is_flag_set(FLAG_VPE_AS_VPP));
-#endif
+            LOG_DEBUG_ID_SUB_U8(DBG_FLAG_FORCE, is_flag_set(FLAG_FORCE));
+            LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CAN_ERASE, is_flag_set(FLAG_CAN_ERASE));
+            LOG_DEBUG_ID_SUB_U8(DBG_FLAG_SKIP_ERASE, is_flag_set(FLAG_SKIP_ERASE));
+            LOG_DEBUG_ID_SUB_U8(DBG_FLAG_SKIP_BLANK, is_flag_set(FLAG_SKIP_BLANK_CHECK));
+            LOG_DEBUG_ID_SUB_U8(DBG_FLAG_VPE_AS_VPP, is_flag_set(FLAG_VPE_AS_VPP));
             if (!op_execute_function(configure_memory, handle)) {
                 LOG_ERROR_ID(MSG_ERR_SETUP);
                 return false;
             }
 #ifdef DEV_TOOLS
-#ifdef EXTRA_INFO_LOGGING
         } else {
-            LOG_INFO_ID_U8(MSG_INFO_FLAG_OUTPUT_EN, is_flag_set(FLAG_OUTPUT_ENABLE));
-            LOG_INFO_ID_U8(MSG_INFO_FLAG_CHIP_EN, is_flag_set(FLAG_CHIP_ENABLE));
-#endif
+            LOG_DEBUG_ID_SUB_U8(DBG_FLAG_OUTPUT_EN, is_flag_set(FLAG_OUTPUT_ENABLE));
+            LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CHIP_EN, is_flag_set(FLAG_CHIP_ENABLE));
         }
 #endif
     } else if (handle->cmd == CMD_CONFIG) {
@@ -115,10 +111,8 @@ bool init_programmer(firestarter_handle_t* handle) {
     handle->operation_state = 0;
 
     handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
-#ifdef EXTRA_INFO_LOGGING
     handle->ctrl_flags = 0x80;
-    LOG_INFO_ID_U16(MSG_INFO_BUFFER_SIZE, (uint16_t)handle->data_size);
-#endif
+    LOG_DEBUG_ID_SUB_U16(DBG_BUFFER_SIZE, (uint16_t)handle->data_size);
     if (handle->data_size == 0) {
         LOG_ERROR_ID(MSG_ERR_EMPTY_INPUT);
         return false;
@@ -130,26 +124,18 @@ bool init_programmer(firestarter_handle_t* handle) {
         return false;
     };
 
-#ifdef EXTRA_INFO_LOGGING
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
-        LOG_INFO_ID_U32(MSG_INFO_MEM_SIZE, (uint32_t)handle->mem_size);
-        LOG_INFO_ID_U32(MSG_INFO_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
-        LOG_INFO_ID_U16(MSG_INFO_MATCH_LINES, (uint16_t)handle->bus_config.matching_lines);
+        LOG_DEBUG_ID_SUB_U32(DBG_MEM_SIZE, (uint32_t)handle->mem_size);
+        LOG_DEBUG_ID_SUB_U32(DBG_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
+        LOG_DEBUG_ID_SUB_U16(DBG_MATCH_LINES, (uint16_t)handle->bus_config.matching_lines);
     }
-    // Verbose-build diagnostics (mirror of dropped per-command FW handshake).
-    {
-        uint8_t _slen = (uint8_t)strlen(FW_VERSION);
-        if (_slen > 32) _slen = 32;
-        uint8_t _b[1 + 32];
-        _b[0] = _slen;
-        memcpy(_b + 1, FW_VERSION, _slen);
-        LOG_INFO_ID_BYTES(MSG_INFO_FW, _b, (uint8_t)(1 + _slen));
-    }
+    // Per-command FW/HW/CMD diagnostics (SERIAL_DEBUG-gated at macro level).
+    LOG_DEBUG_ID_SUB_ASTR(DBG_FIRMWARE_VERSION, FW_VERSION);
 #ifdef HARDWARE_REVISION
-    LOG_INFO_ID_U8(MSG_INFO_HW, (uint8_t)rurp_get_hardware_revision());
+    LOG_DEBUG_ID_SUB_U8(DBG_PHYSICAL_HARDWARE_REVISION, (uint8_t)rurp_get_physical_hardware_revision());
+    LOG_DEBUG_ID_SUB_U8(DBG_HARDWARE_REVISION, (uint8_t)rurp_get_hardware_revision());
 #endif
-    LOG_INFO_ID_U8(MSG_INFO_CMD, (uint8_t)handle->cmd);
-#endif
+    LOG_DEBUG_ID_SUB_U8(DBG_CMD, (uint8_t)handle->cmd);
     LOG_OK_ID(MSG_OK_READY);
     op_reset_timeout();
     return true;
