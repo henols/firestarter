@@ -105,7 +105,7 @@ bool dt_set_registers(firestarter_handle_t* handle) {
     }
 #else
 #endif
-    send_ack("");
+    LOG_OK_ID(MSG_OK_READY);  // D-04: was send_ack(""); semantics ≈ "setup done, waiting on user button"
     rurp_set_programmer_mode();
 
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
