@@ -81,9 +81,13 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
 
 bool fw_get_version(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_GET_FW_VERSION);
-    // Phase 8 / P-01 / LFW-05: MSG_OK_FW_VERSION stays text-emitted to preserve
-    // the host's _probe_port bootstrap path, which parses "FW: ..." as text.
-    send_ack_const(FW_VERSION);
+    // Phase 9 / LFW-05: lone surviving text-format emit. Inlined here after the
+    // legacy send-ack-const / rurp-log-P chain was deleted. F("OK: FW: ") keeps
+    // the literal in PROGMEM with no named symbol — same exemption class as
+    // MAGIC_PREAMBLE / CRC8_TABLE (SC#1).
+    SERIAL_PORT.print(F("OK: FW: "));
+    SERIAL_PORT.println(FW_VERSION);
+    SERIAL_PORT.flush();
     return true;
 }
 
