@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 60
+ * Total messages: 64
  */
 
 #ifndef __MESSAGES_H__
@@ -57,6 +57,10 @@ extern "C" {
 #define MSG_INFO_ADDR_REMAP            0x57
 #define MSG_INFO_SKIPPING_ERASE        0x58
 #define MSG_INFO_SKIPPING_ERASE_MEM    0x59
+#define MSG_INFO_FW                    0x5A
+#define MSG_INFO_HW                    0x5B
+#define MSG_INFO_PHYSICAL_HW           0x5C
+#define MSG_INFO_CMD                   0x5D
 #define MSG_WARN_REV0_VPP_UNSUPPORTED  0x80
 #define MSG_WARN_VPP_LOW               0x81
 #define MSG_WARN_VPP_HIGH              0x82
@@ -97,61 +101,60 @@ extern "C" {
 #define MSG_DEBUG                      0xF0
 
 // --- Debug sub-IDs (sorted ascending) ---
-#define DBG_FIRESTARTER_STARTED         0x00
-#define DBG_FIRMWARE_VERSION            0x01
-#define DBG_HARDWARE_REVISION           0x02
-#define DBG_PARSE_JSON                  0x03
-#define DBG_CMD                         0x04
-#define DBG_SETUP                       0x05
-#define DBG_CMD_FINISHED                0x06
-#define DBG_WRITE_EPROM                 0x07
-#define DBG_VERIFY_PROM                 0x08
-#define DBG_ERASE_PROM                  0x09
-#define DBG_CHECK_CHIP_ID_OP            0x0A
-#define DBG_BLANK_CHECK_PROM            0x0B
-#define DBG_INIT_READ_VOLTAGE           0x0C
-#define DBG_SETTING_UP_VPP              0x0D
-#define DBG_SETTING_UP_VPE              0x0E
-#define DBG_GET_FW_VERSION              0x0F
-#define DBG_GET_HW_VERSION              0x10
-#define DBG_GET_CONFIG                  0x11
-#define DBG_CONFIGURING_EPROM           0x12
-#define DBG_CHECK_CHIP_ID               0x13
-#define DBG_ERASE                       0x14
-#define DBG_PULSE_DELAY_MISMATCH        0x15
-#define DBG_GET_CHIP_ID                 0x16
-#define DBG_CHECK_VPP                   0x17
-#define DBG_CHECKING_VPP_VOLTAGE        0x18
-#define DBG_INTERNAL_ERASE              0x19
-#define DBG_CHECK_VPP_INTEL             0x1A
-#define DBG_CONFIGURING_INTEL_FLASH     0x1B
-#define DBG_ERASE_COMPLETE              0x1C
-#define DBG_CONFIGURING_FLASH           0x1D
-#define DBG_SKIPPING_ERASE_MEMORY       0x1E
-#define DBG_SECTOR_ERASE                0x1F
-#define DBG_CHIP_ERASE                  0x20
-#define DBG_CONFIGURING_FLASH4          0x21
-#define DBG_CONFIGURING_SRAM            0x22
-#define DBG_CONFIGURING_MEMORY          0x23
-#define DBG_ADDRESS                     0x24
-#define DBG_TOP_MSB_LSB                 0x25
-#define DBG_READING_FROM_ADDRESS        0x26
-#define DBG_CONFIGURING_EEPROM_28C      0x27
-#define DBG_CHECK_CHIP_ID_28C           0x28
-#define DBG_BUF_VAL                     0x29
-#define DBG_TOKEN_COUNT                 0x2A
-#define DBG_FLAG_FORCE                  0x2B
-#define DBG_FLAG_CAN_ERASE              0x2C
-#define DBG_FLAG_SKIP_ERASE             0x2D
-#define DBG_FLAG_SKIP_BLANK             0x2E
-#define DBG_FLAG_VPE_AS_VPP             0x2F
-#define DBG_FLAG_OUTPUT_EN              0x30
-#define DBG_FLAG_CHIP_EN                0x31
-#define DBG_BUFFER_SIZE                 0x32
-#define DBG_MEM_SIZE                    0x33
-#define DBG_ADDR_MASK                   0x34
-#define DBG_MATCH_LINES                 0x35
-#define DBG_PHYSICAL_HARDWARE_REVISION  0x36
+#define DBG_FIRESTARTER_STARTED      0x00
+#define DBG_FIRMWARE_VERSION         0x01
+#define DBG_HARDWARE_REVISION        0x02
+#define DBG_PARSE_JSON               0x03
+#define DBG_CMD                      0x04
+#define DBG_SETUP                    0x05
+#define DBG_CMD_FINISHED             0x06
+#define DBG_WRITE_EPROM              0x07
+#define DBG_VERIFY_PROM              0x08
+#define DBG_ERASE_PROM               0x09
+#define DBG_CHECK_CHIP_ID_OP         0x0A
+#define DBG_BLANK_CHECK_PROM         0x0B
+#define DBG_INIT_READ_VOLTAGE        0x0C
+#define DBG_SETTING_UP_VPP           0x0D
+#define DBG_SETTING_UP_VPE           0x0E
+#define DBG_GET_FW_VERSION           0x0F
+#define DBG_GET_HW_VERSION           0x10
+#define DBG_GET_CONFIG               0x11
+#define DBG_CONFIGURING_EPROM        0x12
+#define DBG_CHECK_CHIP_ID            0x13
+#define DBG_ERASE                    0x14
+#define DBG_PULSE_DELAY_MISMATCH     0x15
+#define DBG_GET_CHIP_ID              0x16
+#define DBG_CHECK_VPP                0x17
+#define DBG_CHECKING_VPP_VOLTAGE     0x18
+#define DBG_INTERNAL_ERASE           0x19
+#define DBG_CHECK_VPP_INTEL          0x1A
+#define DBG_CONFIGURING_INTEL_FLASH  0x1B
+#define DBG_ERASE_COMPLETE           0x1C
+#define DBG_CONFIGURING_FLASH        0x1D
+#define DBG_SKIPPING_ERASE_MEMORY    0x1E
+#define DBG_SECTOR_ERASE             0x1F
+#define DBG_CHIP_ERASE               0x20
+#define DBG_CONFIGURING_FLASH4       0x21
+#define DBG_CONFIGURING_SRAM         0x22
+#define DBG_CONFIGURING_MEMORY       0x23
+#define DBG_ADDRESS                  0x24
+#define DBG_TOP_MSB_LSB              0x25
+#define DBG_READING_FROM_ADDRESS     0x26
+#define DBG_CONFIGURING_EEPROM_28C   0x27
+#define DBG_CHECK_CHIP_ID_28C        0x28
+#define DBG_BUF_VAL                  0x29
+#define DBG_TOKEN_COUNT              0x2A
+#define DBG_FLAG_FORCE               0x2B
+#define DBG_FLAG_CAN_ERASE           0x2C
+#define DBG_FLAG_SKIP_ERASE          0x2D
+#define DBG_FLAG_SKIP_BLANK          0x2E
+#define DBG_FLAG_VPE_AS_VPP          0x2F
+#define DBG_FLAG_OUTPUT_EN           0x30
+#define DBG_FLAG_CHIP_EN             0x31
+#define DBG_BUFFER_SIZE              0x32
+#define DBG_MEM_SIZE                 0x33
+#define DBG_ADDR_MASK                0x34
+#define DBG_MATCH_LINES              0x35
 
 #ifdef __cplusplus
 }
