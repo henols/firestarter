@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 74
+ * Total messages: 73
  */
 
 #ifndef __MESSAGES_H__
@@ -41,7 +41,6 @@ extern "C" {
 #define MSG_OK_FW_VERSION              0x03
 #define MSG_OK_REV                     0x04
 #define MSG_OK_CFG                     0x05
-#define MSG_OK_FW_HANDSHAKE            0x06
 #define MSG_INIT_DONE                  0x10
 #define MSG_MAIN_DONE                  0x20
 #define MSG_END_DONE                   0x30

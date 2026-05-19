@@ -222,7 +222,7 @@
         rurp_log_id((id), _b, 8);                                      \
     } while (0)
 
-// --- OK multi-param composites (P-02, P-04) ---
+// --- OK multi-param composites (P-02) ---
 
 // P-02: two u8 values packed as 2 bytes.
 // Used by MSG_OK_REV (physical hw revision + effective/override, 0xFF = no override).
@@ -230,23 +230,6 @@
     do {                                                               \
         uint8_t _b[2] = { (uint8_t)(p1), (uint8_t)(p2) };             \
         rurp_log_id((id), _b, 2);                                      \
-    } while (0)
-
-// P-04: u8 + u8 + ascii_str composite (used by MSG_OK_FW_HANDSHAKE).
-// Wire shape: [p1][p2][slen][s_data ...] — fixed-shape params precede ascii_str
-// per Phase 6 D-04 convention. String capped at 32 bytes on the wire.
-// string.h (strlen + memcpy) available via rurp_shield.h transitively.
-#define LOG_OK_ID_U8_U8_ASTR(id, p1, p2, str_ptr)                     \
-    do {                                                               \
-        const char* _s = (str_ptr);                                    \
-        uint8_t _slen = (uint8_t)strlen(_s);                           \
-        if (_slen > 32) _slen = 32;                                    \
-        uint8_t _b[2 + 1 + 32];                                        \
-        _b[0] = (uint8_t)(p1);                                         \
-        _b[1] = (uint8_t)(p2);                                         \
-        _b[2] = _slen;                                                 \
-        memcpy(_b + 3, _s, _slen);                                     \
-        rurp_log_id((id), _b, (uint8_t)(3 + _slen));                   \
     } while (0)
 
 // --- SERIAL_DEBUG-gated DEBUG severity (B-01..B-04) ---
@@ -332,7 +315,8 @@
     } while (0)
 
 // ascii_str param: sub_id + length-prefix byte + N string bytes (capped at 32).
-// Mirror of LOG_OK_ID_U8_U8_ASTR composite — string.h available via rurp_shield.h.
+// Wire shape: [sub_id][slen][s_data ...]. string.h (strlen + memcpy) available
+// via rurp_shield.h transitively.
 #define LOG_DEBUG_ID_SUB_ASTR(sub_id, str_ptr)                              \
     do {                                                                    \
         const char* _s = (str_ptr);                                         \
