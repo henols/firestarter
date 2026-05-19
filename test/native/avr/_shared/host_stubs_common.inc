@@ -39,33 +39,6 @@
  * deliberately minimal.
  */
 
-/* PROGMEM log-tag strings — defined in src/logging.c on AVR; replicated here
- * so the [env:native] link finds them. The PSTR() macro in the pgmspace stub
- * is a no-op, so these are plain const char[] in the host binary. */
-extern "C" {
-const char LOG_OK_MSG[] PROGMEM = "OK";
-const char LOG_INIT_DONE_MSG[] PROGMEM = "INIT";
-const char LOG_MAIN_DONE_MSG[] PROGMEM = "MAIN";
-const char LOG_END_DONE_MSG[] PROGMEM = "END";
-const char LOG_INFO_MSG[] PROGMEM = "INFO";
-const char LOG_DATA_MSG[] PROGMEM = "DATA";
-const char LOG_WARN_MSG[] PROGMEM = "WARN";
-const char LOG_ERROR_MSG[] PROGMEM = "ERROR";
-}
-
-/* rurp_log* — no-op on host. The dispatch tests never read serial output;
- * test_messages exercises rurp_log_id (binary frame path) which does not
- * route through these text-frame helpers. */
-extern "C" void rurp_log(PGM_P type, const char* msg) {
-    (void)type;
-    (void)msg;
-}
-
-extern "C" void rurp_log_P(PGM_P type, PGM_P msg) {
-    (void)type;
-    (void)msg;
-}
-
 /* rurp_shield register I/O — the dispatch path's only direct hardware use
  * is mem_util_set_address(handle, 0) -> rurp_write_to_register(...). Stub it
  * so the call resolves and returns. */
