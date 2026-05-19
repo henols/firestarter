@@ -136,24 +136,19 @@ bool init_programmer(firestarter_handle_t* handle) {
         LOG_INFO_ID_U32(MSG_INFO_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
         LOG_INFO_ID_U16(MSG_INFO_MATCH_LINES, (uint16_t)handle->bus_config.matching_lines);
     }
+    // Verbose-build diagnostics (mirror of dropped per-command FW handshake).
     {
-        // Verbose diagnostic: hw_rev + cmd + FW_VERSION (mirror of dropped
-        // per-command MSG_OK_FW_HANDSHAKE — now INFO + verbose-only).
-        uint8_t _hw;
-#ifdef HARDWARE_REVISION
-        _hw = (uint8_t)rurp_get_hardware_revision();
-#else
-        _hw = 0xFF;  // sentinel: no HARDWARE_REVISION override
-#endif
         uint8_t _slen = (uint8_t)strlen(FW_VERSION);
         if (_slen > 32) _slen = 32;
-        uint8_t _b[2 + 1 + 32];
-        _b[0] = _hw;
-        _b[1] = (uint8_t)handle->cmd;
-        _b[2] = _slen;
-        memcpy(_b + 3, FW_VERSION, _slen);
-        LOG_INFO_ID_BYTES(MSG_INFO_FW_HANDSHAKE, _b, (uint8_t)(3 + _slen));
+        uint8_t _b[1 + 32];
+        _b[0] = _slen;
+        memcpy(_b + 1, FW_VERSION, _slen);
+        LOG_INFO_ID_BYTES(MSG_INFO_FW, _b, (uint8_t)(1 + _slen));
     }
+#ifdef HARDWARE_REVISION
+    LOG_INFO_ID_U8(MSG_INFO_HW, (uint8_t)rurp_get_hardware_revision());
+#endif
+    LOG_INFO_ID_U8(MSG_INFO_CMD, (uint8_t)handle->cmd);
 #endif
     LOG_OK_ID(MSG_OK_READY);
     op_reset_timeout();

@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 74
+ * Total messages: 76
  */
 
 #ifndef __MESSAGES_H__
@@ -70,7 +70,9 @@ extern "C" {
 #define MSG_INFO_ADDR_REMAP            0x57
 #define MSG_INFO_SKIPPING_ERASE        0x58
 #define MSG_INFO_SKIPPING_ERASE_MEM    0x59
-#define MSG_INFO_FW_HANDSHAKE          0x5A
+#define MSG_INFO_FW                    0x5A
+#define MSG_INFO_HW                    0x5B
+#define MSG_INFO_CMD                   0x5C
 #define MSG_WARN_REV0_VPP_UNSUPPORTED  0x80
 #define MSG_WARN_VPP_LOW               0x81
 #define MSG_WARN_VPP_HIGH              0x82
