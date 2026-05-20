@@ -2,6 +2,13 @@
 import re
 import os
 
+# Module-level constant added for test monkeypatching (Wave 0, Plan 15-01).
+# Zero behavior change: both get_header_version() and update_version() define
+# header_file as local variables that shadow this constant at runtime.
+# Wave 1 (Plan 15-03) will refactor these functions to read the module-level
+# constant instead of redefining it locally.
+header_file = "include/version.h"
+
 
 def get_header_version():
     header_file = "include/version.h"
