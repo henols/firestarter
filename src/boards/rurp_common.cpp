@@ -7,7 +7,7 @@
 
 #include "rurp_shield.h"
 
-#if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_LEONARDO)
+#if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_ATmega328PB) || defined(ARDUINO_AVR_LEONARDO)
 
 #include <Arduino.h>
 
@@ -20,7 +20,7 @@
 long rurp_get_bandgap_adc_reading() {
     // Set the analog reference to the internal 1.1V and select the bandgap channel.
     // The MUX settings are different for Uno and Leonardo.
-#if defined(ARDUINO_AVR_UNO)
+#if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_ATmega328PB)
     ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
 #elif defined(ARDUINO_AVR_LEONARDO)
     ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
