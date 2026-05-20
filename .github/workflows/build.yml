@@ -79,6 +79,12 @@ jobs:
       - name: Run native unit tests
         run: pio test -e native
 
+      - name: Install pytest for script tests
+        run: pip install pytest
+
+      - name: Run update_version.py tests
+        run: pytest tests/ -v
+
       # --- Version bump + tag commit now gated by everything above ---
       - name: Generate release version
         id: version
