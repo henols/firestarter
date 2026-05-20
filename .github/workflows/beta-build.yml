@@ -76,11 +76,28 @@ jobs:
       - name: Build PlatformIO Project
         run: pio run
 
+      - name: Resolve release target SHA
+        id: release_target
+        run: |
+          # Phase 20 E2E-03 (firmware mirror): pin the tag to the post-auto-
+          # commit HEAD so the Pre-release points at the version-bumped
+          # commit, not the trigger commit.
+          SHA=$(git rev-parse HEAD)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Release target SHA: $SHA"
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: .pio/build/**/firestarter_*.hex
           tag_name: ${{ steps.version.outputs.version }}
+          target_commitish: ${{ steps.release_target.outputs.sha }}
           prerelease: true
           make_latest: false
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        env:
+          # Phase 20 E2E-05: PERSONAL_ACCESS_TOKEN is not configured on the
+          # firmware repo. Unlike the app, the firmware Release has no
+          # downstream workflow that needs `release.published` to cascade
+          # (no PyPI publish step), so the built-in GITHUB_TOKEN is
+          # sufficient and avoids requiring a PAT.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
