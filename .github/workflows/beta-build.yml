@@ -1,0 +1,86 @@
+name: Firestarter beta pre-release build
+on:
+  push:
+    branches:
+    - beta
+    paths-ignore:
+    - '**.md'
+    - '**.sh'
+    - '.gitignore'
+    - 'docs/**'
+    - 'documents/**'
+    - 'images/**'
+    - '.vscode/**'
+    - '.editorconfig/**'
+  workflow_dispatch:
+    inputs:
+      beta_version:
+        description: 'Explicit PEP 440 pre-release version (e.g. 3.1.0b1). Leave blank for auto-increment via git-tag scan.'
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
+      - name: Set up Python 3.11 for codegen
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Catalog validity check
+        run: python3 tools/catalog/codegen.py --catalog tools/catalog/messages.toml --check
+
+      - name: Codegen drift gate (messages.h)
+        run: |
+          python3 tools/catalog/codegen.py \
+            --catalog tools/catalog/messages.toml \
+            --target include/messages.h \
+            --language cpp
+          git diff --exit-code include/messages.h
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Run native unit tests
+        run: pio test -e native
+
+      - name: Install pytest for script tests
+        run: pip install pytest
+
+      - name: Run update_version.py tests
+        run: pytest tests/ -v
+
+      - name: Generate release version
+        id: version
+        env:
+          BETA_VERSION: ${{ github.event.inputs.beta_version }}
+        run: .github/scripts/update_version.py
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+
+      - name: Build PlatformIO Project
+        run: pio run
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: .pio/build/**/firestarter_*.hex
+          tag_name: ${{ steps.version.outputs.version }}
+          prerelease: true
+          make_latest: false
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
