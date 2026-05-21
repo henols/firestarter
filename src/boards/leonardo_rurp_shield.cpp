@@ -135,6 +135,16 @@ void rurp_set_data_output() {
 }
 
 void rurp_set_data_input() {
+    // Clear data-bit pullups on PORTD/PORTC/PORTE before switching DDR
+    // to input. Without this, residual PORTx bits from prior
+    // rurp_set_control_pins / rurp_write_data_buffer strobes leave 1-2
+    // data pins weakly biased HIGH against the chip's drive. On a partially
+    // erased EPROM (weak drive) this produces single-bit data corruption
+    // (78% single-bit XOR flips per Phase 27 RCA on Leonardo W27C512).
+    // Mirror of uno_rurp_shield.cpp:rurp_set_data_input (commit df5fb44).
+    PORTD &= ~PORTD_DATA_MASK;
+    PORTC &= ~PORTC_DATA_MASK;
+    PORTE &= ~PORTE_DATA_MASK;
     DDRD &= ~PORTD_DATA_MASK; // Set pins D0-D3 and D4-D7 as output
     DDRC &= ~PORTC_DATA_MASK; // Set pin D5 as output
     DDRE &= ~PORTE_DATA_MASK; // Set pin D6 as output
