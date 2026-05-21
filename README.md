@@ -32,7 +32,20 @@ never accidentally pull beta firmware.
 2. **Direct download:** Visit https://github.com/henols/firestarter/releases, filter the page by
    selecting the "Pre-release" tag (the GitHub Releases page has a built-in pre-release filter
    dropdown), then download `firestarter_{board}.hex` (e.g. `firestarter_uno.hex`,
-   `firestarter_leonardo.hex`) for the target board and flash it manually with `avrdude`.
+   `firestarter_uno328pb.hex`, `firestarter_leonardo.hex`) for the target board and flash it
+   manually with `avrdude`.
+
+### Supported boards
+
+Since v1.5, three firmware build targets are emitted per release:
+
+| Board | PlatformIO env | MCU | Bootloader | Notes |
+|-------|----------------|-----|------------|-------|
+| `uno` | `[env:uno]` | ATmega328P | optiboot (stk500v1 `arduino`) | Arduino Uno R3 + RURP shield |
+| `uno328pb` | `[env:uno328pb]` | ATmega328PB | Urclock (MiniCore default) | Arduino Uno R3 carrier board re-MCU'd with ATmega328PB; pin-compatible with `uno` |
+| `leonardo` | `[env:leonardo]` | ATmega32U4 | Caterina (avr109) | Arduino Leonardo + RURP shield (1024-byte data buffer) |
+
+The firmware reports its board name in the handshake response (`board:` field of `MSG_OK_FW_HANDSHAKE`), and the host CLI's `firestarter fw -i` uses that string to resolve the matching `.hex` asset from the GitHub Release.
 
 ### Stability guarantee
 
@@ -46,7 +59,7 @@ When reporting a bug against a beta firmware build, please include:
   OR the firmware handshake string printed on `firestarter hw` startup,
   OR the row in `firestarter fw --list` matching the installed version
 - **Commit SHA:** from the GitHub Release page's commit reference
-- **Board:** `uno` or `leonardo` (or other configured board)
+- **Board:** `uno`, `uno328pb`, or `leonardo` (or other configured board)
 - **Chip part number + manufacturer** (for hardware-specific issues)
 - **Repro steps**
 
