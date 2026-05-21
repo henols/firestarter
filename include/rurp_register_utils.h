@@ -60,7 +60,7 @@ void rurp_write_to_register(uint8_t reg, rurp_register_t data) {
 
 
 void rurp_internal_write_to_register(uint8_t reg, rurp_register_t data) {
-#ifdef ARDUINO_AVR_UNO
+#if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_ATmega328PB)
     // On Uno, PORTD bit 6 doubles as the chip socket's data line D6 AND the
     // 74HC573 MSB latch's D6 input. When an MSB strobe writes a value with
     // bit 6 HIGH (read mode for chips with R/W on MSB bit 6, e.g. FM1608 and
