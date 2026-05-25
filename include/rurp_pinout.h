@@ -46,6 +46,21 @@ extern "C" {
 #define PIN_HW_REVISION_DETECT_ADC A3
 #endif
 
+// ---- Section 1b: ADC voltage-band thresholds (HARDWARE_REVISION-gated) -------
+// Consumed by rurp_detect_hardware_revision() in rurp_hw_rev_utils.h to decode
+// the R41-on-A3 detect divider into a per-rev enum. Voltage-band math sourced
+// from Phase 34 RESEARCH §ADC Voltage Band Math + the §9 per-rev band table in
+// .planning/v1.7-SHIELD-REVS.md (D-03 + D-11). Values picked with strict
+// numerical ordering (200 < 220 < 600) per D-11 + a 20-count guard gap between
+// the 4k7 ceiling and the 10k floor (reads in [200, 220) → REVISION_UNKNOWN).
+// #define (NOT constexpr) per Phase 33 D-07 — preprocessor constants resolve
+// at compile time and contribute 0 B to the .hex until referenced.
+#ifdef HARDWARE_REVISION
+#define ADC_BAND_R41_4K7_HIGH 200  // upper edge of 4k7 bucket (Rev 2.0/2.1/2.2)
+#define ADC_BAND_R41_10K_LOW  220  // lower edge of 10k bucket (Rev 2.3); [200, 220) -> REVISION_UNKNOWN
+#define ADC_BAND_R41_10K_HIGH 600  // upper edge of 10k bucket; above -> high band / no R41
+#endif
+
 // ---- Section 2: Control-register bits (CTRL_*) -------------------------
 // Mirrors rurp_shield.h:24-53 VERBATIM under new names.
 
