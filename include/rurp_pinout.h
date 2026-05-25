@@ -25,12 +25,18 @@
 #ifndef __RURP_PINOUT_H__
 #define __RURP_PINOUT_H__
 
+// NOTE: this header intentionally does NOT include <Arduino.h>. The `A2`/`A3`
+// pin macros below expand to plain integer literals from Arduino's
+// pins_arduino.h, which every consumer pulls via <Arduino.h> in their own TU.
+// Including <Arduino.h> here would force C++ classes (String, etc.) through
+// the extern-C wrappers of upstream headers like firestarter.h / flash_utils.h
+// — a latent bracketing bug uncovered when rurp_shield.h started including
+// rurp_pinout.h in Wave 3's D-06 atomic delete.
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
-#include <Arduino.h>
 
 // ---- Section 1: Arduino-pin assignments (PIN_*) ------------------------
 
