@@ -5,6 +5,7 @@
 
 #include "rurp_shield.h"
 #include "rurp_pinout.h"
+#include "logging_id.h"
 #include <Arduino.h>
 #include <stdint.h>
 #include <string.h>
@@ -85,6 +86,14 @@ void rurp_detect_hardware_revision() {
         // escape hatch. 0xFE NOT 0xFF — 0xFF stays reserved as the
         // EEPROM-override-absent sentinel per D-07.
         revision = REVISION_UNKNOWN;
+    }
+
+    // CR-02 hard-fail-loud (Phase 35 D-02 — Path b planner-final)
+    // One-shot boot-time warn surfaces detect-inconclusive; dispatcher silent
+    // ctrl_reg=0 fail-safe + EEPROM override escape hatch both preserved per
+    // RESEARCH §Caller Audit. Re-uses MSG_INFO_HW (0x5B) per Phase 34 D-09 lock.
+    if (revision == REVISION_UNKNOWN && rurp_get_config()->hardware_revision == 0xFF) {
+        LOG_WARN_ID_U8(MSG_INFO_HW, (uint8_t)REVISION_UNKNOWN);
     }
 }
 
