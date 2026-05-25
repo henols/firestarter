@@ -58,8 +58,9 @@ static uint16_t analog_read_avg8(uint8_t pin) {
 }
 
 void rurp_detect_hardware_revision() {
-    pinMode(PIN_HW_REVISION_DETECT_ADC, INPUT_PULLUP);
-    pinMode(PIN_VPP_VOLTAGE_ADC, INPUT_PULLUP);
+    // CR-01/CR-01b (Phase 35 D-01): both ADC pins INPUT (high-Z); let the R41+R_top divider drive A3 per RESEARCH §ADC Voltage Band Math.
+    pinMode(PIN_HW_REVISION_DETECT_ADC, INPUT);
+    pinMode(PIN_VPP_VOLTAGE_ADC, INPUT);
 
     // 8-sample averaging on the A3 detect divider to robustify against AVcc
     // switching noise (see Phase 34 RESEARCH §ADC Voltage Band Math).
@@ -85,7 +86,6 @@ void rurp_detect_hardware_revision() {
         // EEPROM-override-absent sentinel per D-07.
         revision = REVISION_UNKNOWN;
     }
-    pinMode(PIN_VPP_VOLTAGE_ADC, INPUT);
 }
 
 uint8_t rurp_get_hardware_revision() {
