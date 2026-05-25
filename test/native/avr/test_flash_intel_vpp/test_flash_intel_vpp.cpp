@@ -26,6 +26,7 @@ extern "C" {
 #include "memory.h"
 }
 #include "firestarter.h"
+#include "rurp_pinout.h"
 
 using namespace fakeit;
 
@@ -35,7 +36,7 @@ extern "C" void set_mock_hw_rev(uint8_t rev);
 
 /* TU-private mocks for the handle. mock_set_ctrl_reg records the last write so
  * tests can assert hardware-state side effects (SAF-04 regression coverage:
- * after a high-VPP ERROR, REGULATOR | P1_VPP_ENABLE must be driven low so the
+ * after a high-VPP ERROR, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE must be driven low so the
  * socket is not left at 12V on the unsafe-voltage early-return path). */
 static rurp_register_t s_last_ctrl_reg = 0;
 static bool s_last_ctrl_state = false;
@@ -43,7 +44,7 @@ static unsigned s_ctrl_writes_with_p1_low = 0;
 static void mock_set_ctrl_reg(struct firestarter_handle*, rurp_register_t reg, bool state) {
     s_last_ctrl_reg = reg;
     s_last_ctrl_state = state;
-    if ((reg & P1_VPP_ENABLE) && state == false) {
+    if ((reg & CTRL_VPP_P1_ENABLE) && state == false) {
         s_ctrl_writes_with_p1_low++;
     }
 }
@@ -159,15 +160,15 @@ void test_flash_intel_rev0_skips_vpp_check(void) {
  * SAF-04 regression: high-VPP ERROR must leave the regulator cleared.
  *
  * Reproduces a defect found in code review (CR-01): the original write_init
- * early-returned on RESPONSE_CODE_ERROR without driving REGULATOR | P1_VPP_ENABLE
+ * early-returned on RESPONSE_CODE_ERROR without driving CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE
  * low, leaving 12V applied to socket pin 1 after the firmware had just
  * detected unsafe over-voltage — the exact hazard the safety check exists
  * to prevent. flash_intel_cleanup is only called on the END phase; an INIT
  * error skips END entirely.
  *
- * Assertion: at least one write of P1_VPP_ENABLE with state=false occurred
+ * Assertion: at least one write of CTRL_VPP_P1_ENABLE with state=false occurred
  * during the operation_init call, and the last control-register write was
- * the regulator-clear (state=false with the P1_VPP_ENABLE bit set).
+ * the regulator-clear (state=false with the CTRL_VPP_P1_ENABLE bit set).
  */
 void test_flash_intel_high_vpp_error_clears_regulator(void) {
     set_mock_vpp_mv(12700);
@@ -182,8 +183,8 @@ void test_flash_intel_high_vpp_error_clears_regulator(void) {
     h.firestarter_operation_init(&h);
     TEST_ASSERT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
     TEST_ASSERT_TRUE_MESSAGE(s_ctrl_writes_with_p1_low > 0,
-        "SAF-04: high-VPP ERROR path left P1_VPP_ENABLE asserted (socket still at 12V)");
-    TEST_ASSERT_BITS_HIGH(P1_VPP_ENABLE, s_last_ctrl_reg);
+        "SAF-04: high-VPP ERROR path left CTRL_VPP_P1_ENABLE asserted (socket still at 12V)");
+    TEST_ASSERT_BITS_HIGH(CTRL_VPP_P1_ENABLE, s_last_ctrl_reg);
     TEST_ASSERT_FALSE_MESSAGE(s_last_ctrl_state,
         "SAF-04: final control-register write must drive regulator low after VPP error");
 }
