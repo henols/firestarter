@@ -9,6 +9,7 @@
 #include "operation_utils.h"
 #include "rurp_serial_utils.h"
 #include "rurp_shield.h"
+#include "rurp_pinout.h"
 #include "version.h"
 
 bool hw_read_voltage(firestarter_handle_t* handle) {
@@ -24,10 +25,10 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
         rurp_set_programmer_mode();
         if (handle->cmd == CMD_READ_VPP) {
             LOG_DEBUG_ID_SUB(DBG_SETTING_UP_VPP);
-            rurp_write_to_register(CONTROL_REGISTER, REGULATOR | VPE_TO_VPP);
+            rurp_write_to_register(CONTROL_REGISTER, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE);
         } else if (handle->cmd == CMD_READ_VPE) {
             LOG_DEBUG_ID_SUB(DBG_SETTING_UP_VPE);
-            rurp_write_to_register(CONTROL_REGISTER, REGULATOR);
+            rurp_write_to_register(CONTROL_REGISTER, CTRL_VPP_REGULATOR_ENABLE);
         } else {
             rurp_set_communication_mode();
             LOG_ERROR_ID(MSG_ERR_CMD);
