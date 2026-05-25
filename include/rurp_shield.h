@@ -27,6 +27,8 @@ extern "C" {
 #define REVISION_2_0 2
 #define REVISION_2_1 3
 #define REVISION_2_2 4
+#define REVISION_2_3 5
+#define REVISION_UNKNOWN 0xFE  // ADC band-gap fall-through; 0xFF reserved for EEPROM-override-absent sentinel
 #endif
 
 // VPP DIP-bus magic constants. Set by the Python host in bus_config.vpp_line;
