@@ -19,6 +19,7 @@
 #include "memory_utils.h"
 #include "operation_utils.h"
 #include "rurp_shield.h"
+#include "rurp_pinout.h"
 #include "sram.h"
 
 #define TYPE_EPROM 1
@@ -136,17 +137,17 @@ rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, ui
 }
 
 rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* handle, uint32_t address) {
-    rurp_register_t top_address = ((uint32_t)address >> 16) & (ADDRESS_LINE_16 | ADDRESS_LINE_17 | ADDRESS_LINE_18 | READ_WRITE);
-    rurp_register_t mask = A9_VPP_ENABLE | VPE_ENABLE | P1_VPP_ENABLE | REGULATOR;
+    rurp_register_t top_address = ((uint32_t)address >> 16) & (CTRL_ADDRESS_LINE_16 | CTRL_ADDRESS_LINE_17 | CTRL_ADDRESS_LINE_18 | CTRL_READ_WRITE);
+    rurp_register_t mask = CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE | CTRL_VPP_P1_ENABLE | CTRL_VPP_REGULATOR_ENABLE;
     if (handle->pins < 32) {
-        // VPE_TO_VPP and ADDRESS_LINE_16 share the same CONTROL bit — preserving VPE_TO_VPP
-        // would corrupt A16 for 32-pin (512KB) chips. DIP32 chips use P1_VPP_ENABLE instead.
-        mask |= VPE_TO_VPP;
+        // CTRL_VPP_VPE_DROP_ENABLE and CTRL_ADDRESS_LINE_16 share the same CONTROL bit — preserving CTRL_VPP_VPE_DROP_ENABLE
+        // would corrupt A16 for 32-pin (512KB) chips. DIP32 chips use CTRL_VPP_P1_ENABLE instead.
+        mask |= CTRL_VPP_VPE_DROP_ENABLE;
     }
     top_address |= rurp_read_from_register(CONTROL_REGISTER) & mask;
 
     if (handle->pins == 28) {
-        top_address |= ADDRESS_LINE_17;
+        top_address |= CTRL_ADDRESS_LINE_17;
     }
     return top_address;
 }
