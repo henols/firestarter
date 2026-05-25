@@ -14,6 +14,7 @@
 #include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
+#include "rurp_pinout.h"
 
 #define PAGE_SIZE 64
 
@@ -67,14 +68,14 @@ static void eeprom28c_check_chip_id(firestarter_handle_t* handle) {
         }
         return;
     }
-    handle->firestarter_set_control_register(handle, REGULATOR, 1);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 1);
     delay(50);
-    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE, 1);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_A9_ENABLE, 1);
     delay(100);
     uint32_t mfr_addr = handle->mem_size - 64;  // 0x7FC0 (AT28C256) / 0x1FC0 (AT28C64) / ...
     uint16_t chip_id = handle->firestarter_get_data(handle, mfr_addr) << 8;
     chip_id |= handle->firestarter_get_data(handle, mfr_addr + 1);
-    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_A9_ENABLE, 0);
     if (chip_id != handle->chip_id) {
         {
             uint8_t _b[4];
