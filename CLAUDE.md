@@ -53,8 +53,8 @@ unrecognized `mem_type` reaches step 11.
 
 | Protocol               | Name           | File              | VPP             | Notes                                                        |
 |------------------------|----------------|-------------------|-----------------|--------------------------------------------------------------|
-| 0x07                   | EPROM_STD      | eprom.cpp         | 13V VPE_TO_VPP  | 1ms pulse, DQ7 verify                                        |
-| 0x08                   | EPROM_QUICK    | eprom.cpp         | 13V VPE_TO_VPP  | 100µs pulse                                                  |
+| 0x07                   | EPROM_STD      | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 1ms pulse, DQ7 verify                                        |
+| 0x08                   | EPROM_QUICK    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 100µs pulse                                                  |
 | 0x0B                   | EPROM_LEGACY   | eprom.cpp         | 12–18V direct   | 500µs pulse, 24-pin                                          |
 | 0x0D                   | EEPROM_POLL    | eeprom_28c.cpp    | None (5V)       | SDP disable + DQ7 page poll                                  |
 | 0x0E / 0x27 / 0x28 / 0x29 | SRAM_*       | sram.cpp          | None (5V)       | Generic read/write; no VPP regulator (BLOCKER-2 mitigation)  |
@@ -62,7 +62,7 @@ unrecognized `mem_type` reaches step 11.
 | 0x05                   | FLASH_AMD_STD  | flash_type_4.cpp  | None (5V)       | Page write + DQ7                                             |
 | 0x35                   | FLASH_EEPROM   | flash_type_4.cpp  | None (5V)       | Page write + DQ7                                             |
 | 0x39                   | FLASH_EEPROM2  | flash_type_4.cpp  | None (5V)       | Future-proofed (0 chips in current DB; dispatched by analogy with 0x35) |
-| 0x10                   | FLASH_INTEL    | flash_intel.cpp   | 12V P1_VPP      | Command register, SR polling                                 |
+| 0x10                   | FLASH_INTEL    | flash_intel.cpp   | 12V via CTRL_VPP_P1_ENABLE | Command register, SR polling                                 |
 
 ### JSON Wire Protocol
 
@@ -81,16 +81,16 @@ Key fields:
 - `src/json_parser.c` — parses JSON command into `firestarter_handle_t`; unknown fields silently skipped
 - `src/proms/memory.cpp` — top-level dispatch (`configure_memory()`)
 - `include/firestarter.h` — `firestarter_handle_t` struct definition
-- `include/rurp_shield.h` — control register bit definitions (REGULATOR, VPE_TO_VPP, P1_VPP_ENABLE, etc.)
+- `include/rurp_pinout.h` — control register bit definitions (CTRL_VPP_REGULATOR_ENABLE, CTRL_VPP_VPE_DROP_ENABLE, CTRL_VPP_P1_ENABLE, etc.)
 
 ### Constants
 
-Control register bits (from `rurp_shield.h`):
-- `REGULATOR (0x80)` — enable VPP boost regulator
-- `VPE_TO_VPP (0x01)` — drop VPE through resistor to VPP level
-- `P1_VPP_ENABLE (0x08)` — route VPP to socket pin 1
-- `A9_VPP_ENABLE (0x02)` — route VPP to A9 (for EPROM chip ID read)
-- `VPE_ENABLE (0x04)` — apply VPE directly to PGM pin
+Control register bits (from `rurp_pinout.h`):
+- `CTRL_VPP_REGULATOR_ENABLE (0x80)` — enable VPP boost regulator
+- `CTRL_VPP_VPE_DROP_ENABLE (0x01 legacy / 0x100 rev2)` — drop VPE through resistor to VPP level
+- `CTRL_VPP_P1_ENABLE (0x08)` — route VPP to socket pin 1
+- `CTRL_VPP_A9_ENABLE (0x02)` — route VPP to A9 (for EPROM chip ID read)
+- `CTRL_VPE_ENABLE (0x04)` — apply VPE directly to PGM pin
 
 Firmware flags (from `firestarter.h`):
 - `FLAG_FORCE (0x01)` — treat ID mismatch as warning, not error
