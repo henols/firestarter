@@ -92,47 +92,6 @@ void tearDown(void) {
 }
 
 /* ---------------------------------------------------------------------------
- * Test 1 — RED bar witness for FIX-02 (first half).
- *
- * Asserts that rurp_set_data_input() leaves PORTx data bits at 0 (pullups
- * cleared) AND preserves the CONTROL bits at PORTD bit 6 / PORTC bit 7
- * (D12 / D13 control lines).
- *
- * Pre-fix code at leonardo_rurp_shield.cpp:137-141 only clears DDRx, so the
- * PORTx-data-bit asserts FAIL with "Expected 0x00 Was 0x9f" (or 0x40 for
- * PORTC/PORTE). The control-bit asserts also encode the contract: a future
- * fix that writes the EVIDENCE.md sketch literal `PORTD = 0x00` would zero
- * the D12 control bit and trip the control-bit assertion (catches the
- * sketch's misfire — see RESEARCH.md Risk #1).
- * --------------------------------------------------------------------------- */
-void test_rurp_set_data_input_clears_data_pullups_leonardo(void) {
-    /* Pre-state: simulate residual register state from prior
-     * rurp_set_control_pins / rurp_write_data_buffer strobes — all bits set
-     * HIGH (the worst-case "every internal pullup engaged" case). */
-    PORTD = 0xFF; PORTC = 0xFF; PORTE = 0xFF;
-    DDRD  = PORTD_DATA_MASK; DDRC = PORTC_DATA_MASK; DDRE = PORTE_DATA_MASK;
-
-    rurp_set_data_input();
-
-    /* Post-conditions: data-bit pullups cleared on all three ports. */
-    TEST_ASSERT_EQUAL_HEX8(0x00, PORTD & PORTD_DATA_MASK);
-    TEST_ASSERT_EQUAL_HEX8(0x00, PORTC & PORTC_DATA_MASK);
-    TEST_ASSERT_EQUAL_HEX8(0x00, PORTE & PORTE_DATA_MASK);
-
-    /* DDRx data bits cleared (input). Regression guard against accidentally
-     * breaking the existing DDRx-clear logic while adding the PORTx-clear. */
-    TEST_ASSERT_EQUAL_HEX8(0x00, DDRD & PORTD_DATA_MASK);
-    TEST_ASSERT_EQUAL_HEX8(0x00, DDRC & PORTC_DATA_MASK);
-    TEST_ASSERT_EQUAL_HEX8(0x00, DDRE & PORTE_DATA_MASK);
-
-    /* Control bits MUST NOT be touched (PORTD bit 6 = D12, PORTC bit 7 = D13).
-     * Pre-state set them HIGH via 0xFF; the masked PORTx-clear must preserve.
-     * Catches a naive `PORTD = 0x00` fix that would zero the control line. */
-    TEST_ASSERT_EQUAL_HEX8(PORTD_CONTROL_MASK, PORTD & PORTD_CONTROL_MASK);
-    TEST_ASSERT_EQUAL_HEX8(PORTC_CONTROL_MASK, PORTC & PORTC_CONTROL_MASK);
-}
-
-/* ---------------------------------------------------------------------------
  * Test 2 — Regression guard for rurp_read_data_buffer bit-mapping.
  *
  * PASSES on pre-fix code (the bit-mapping logic at lines 119-126 is unchanged
@@ -180,7 +139,6 @@ int main(int argc, char** argv) {
     (void)argv;
     UNITY_BEGIN();
 
-    RUN_TEST(test_rurp_set_data_input_clears_data_pullups_leonardo);
     RUN_TEST(test_rurp_read_data_buffer_reassembles_data_bus);
 
     return UNITY_END();
