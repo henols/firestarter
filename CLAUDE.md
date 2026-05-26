@@ -99,6 +99,14 @@ Firmware flags (from `firestarter.h`):
 - `FLAG_SKIP_BLANK_CHECK (0x08)` — skip blank check
 - `FLAG_VPE_AS_VPP (0x10)` — legacy: direct VPE path (backward compat)
 
+### Hardware Revision Documentation
+
+The operator-facing canonical RURP shield revision reference at `firestarter/doc/SHIELD-REVISIONS.md` is a subset clone of the Firestarter meta-repo investigation document at `.planning/v1.7-SHIELD-REVS.md`. It contains the inventory (§1), per-rev capability matrix (§6), silkscreen → code alias table (§7), and per-rev ADC band table (§9). If any of those sections changes in the meta-repo, update the sub-repo doc in lockstep (Phase 35 / v1.7 — close).
+
+The `rurp_pinout.h` `ADC_BAND_R41_*` `#define` values are the firmware-side source of truth for the band-lookup math; the §4 ADC Band Table in `doc/SHIELD-REVISIONS.md` mirrors those values verbatim. Drift between the two = bug; if the values change in `rurp_pinout.h`, update the doc's §4 table + the meta-repo §9 in the same commit-pair.
+
+Post-Phase-35 semantic note: Plan 01 switched `pinMode(PIN_HW_REVISION_DETECT_ADC)` from `INPUT_PULLUP` to `INPUT` (high-Z), disabling the MCU internal pull-up. The R41 detect divider's R_top is therefore no longer active; the existing ADC band thresholds (`200/220/600`) characterize *A3-net composition* (R41-only-to-GND = low; external-pull-up-active = mid; floating = high), not R41 value. Future v1.8 Rev 2.4 PCB could add an external R_top to restore the original schematic-divider semantics.
+
 ## Native (Host) Test Environment
 
 The dispatch logic in `configure_memory` is exercised by Unity tests that run

@@ -65,6 +65,14 @@ When reporting a bug against a beta firmware build, please include:
 
 Report firmware issues at: https://github.com/henols/firestarter/issues
 
+## Shield Revision Support
+
+The firmware detects the connected RURP shield's silkscreen revision at boot via an ADC voltage-band lookup on pin A3. Rev 2.0+ shields carry the R41 detect divider; pre-detect-resistor boards (Rev 0 / Rev 1) and any board landing in the guard gap fall through to `rev_unknown` and honor the EEPROM `hw_revision` byte override. The detected silkscreen string surfaces on the firmware handshake (`MSG_OK_REV`).
+
+For the per-revision capability matrix, the silkscreen → code alias table, and the per-rev expected ADC band table, see [`doc/SHIELD-REVISIONS.md`](./doc/SHIELD-REVISIONS.md).
+
+If detection lands in the guard gap (`rev_unknown`) on a board where you know the revision, set the EEPROM override byte via the host CLI: `firestarter rev <N>` (see the `firestarter_app` README for the byte values).
+
 ## License
 [MIT](https://raw.githubusercontent.com/henols/firestarter/main/LICENSE)
 
