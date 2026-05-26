@@ -14,6 +14,7 @@
 #include "logging_id.h"
 #include "memory_utils.h"
 #include "operation_utils.h"
+#include "rurp_pinout.h"
 
 #define PAGE_SIZE 64
 
@@ -105,7 +106,7 @@ void flash4_erase_execute(firestarter_handle_t* handle) {
     address = mem_util_remap_address_bus(handle, 0, READ_FLAG);
     handle->firestarter_set_address(handle, address);
     rurp_chip_disable();
-    handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP | VPE_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE | CTRL_VPE_ENABLE, 0);
 
     delay(2);
 
@@ -113,7 +114,7 @@ void flash4_erase_execute(firestarter_handle_t* handle) {
     rurp_chip_enable();
 
     //^OE -> 12v
-    handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP | VPE_ENABLE, 1);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE | CTRL_VPE_ENABLE, 1);
 
     delay(2);
     //^WE -> LOW
@@ -129,5 +130,5 @@ void flash4_erase_execute(firestarter_handle_t* handle) {
     rurp_chip_disable();
 
     //^OE -> 12v
-    handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP | VPE_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE | CTRL_VPE_ENABLE, 0);
 }

@@ -13,6 +13,7 @@
 #include "logging_id.h"
 #include "memory_utils.h"
 #include "rurp_shield.h"
+#include "rurp_pinout.h"
 #include "operation_utils.h"
 
 
@@ -111,7 +112,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
 
 // New helper to program only the bytes that have failed so far
 static void program_mismatched_bytes(firestarter_handle_t* handle, const uint8_t* mismatch_bitmask) {
-     rurp_register_t programming_bits = VPE_ENABLE;
+     rurp_register_t programming_bits = CTRL_VPE_ENABLE;
 
     handle->firestarter_set_control_register(handle, programming_bits, 1);
     delay(10); // Consider making this a named constant
@@ -140,13 +141,13 @@ static int verify_and_update_mask(firestarter_handle_t* handle, uint8_t* mismatc
 }
 
 void eprom_write_execute(firestarter_handle_t* handle) {
-    if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
+    if (handle->firestarter_get_control_register(handle, CTRL_VPP_REGULATOR_ENABLE) == 0) {
         if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP)) {
-            // EPROM_LEGACY: direct VPE path — no VPE_TO_VPP dropping resistor
-            handle->firestarter_set_control_register(handle, REGULATOR, 1);
+            // EPROM_LEGACY: direct VPE path — no CTRL_VPP_VPE_DROP_ENABLE dropping resistor
+            handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 1);
         } else {
-            // EPROM_STD / EPROM_QUICK: VPE_TO_VPP dropping path for precise VPP
-            handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
+            // EPROM_STD / EPROM_QUICK: CTRL_VPP_VPE_DROP_ENABLE dropping path for precise VPP
+            handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE, 1);
         }
         delay(500);
     }
@@ -177,7 +178,7 @@ void eprom_write_execute(firestarter_handle_t* handle) {
         LOG_DEBUG_ID_SUB_U16_U16(DBG_PULSE_DELAY_MISMATCH, (uint16_t)org_delay, (uint16_t)handle->pulse_delay);
     }
 
-    handle->firestarter_set_control_register(handle, REGULATOR, 0);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 0);
     {
         uint8_t _b[6];
         _b[0] = (uint8_t)((handle->address >> 16) & 0xFF);
@@ -194,14 +195,14 @@ void eprom_write_execute(firestarter_handle_t* handle) {
 
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_GET_CHIP_ID);
-    handle->firestarter_set_control_register(handle, REGULATOR, 1);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 1);
     delay(50);
 
-    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE, 1);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_A9_ENABLE, 1);
     delay(100);
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
     chip_id |= (handle->firestarter_get_data(handle, 0x0001));
-    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_A9_ENABLE, 0);
     return chip_id;
 }
 
@@ -216,10 +217,10 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
 #endif
     if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP)) {
         // EPROM_LEGACY: direct VPE path
-        handle->firestarter_set_control_register(handle, REGULATOR, 1);
+        handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 1);
     } else {
         // EPROM_STD / EPROM_QUICK: VPE through dropping resistor to produce VPP
-        handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 1);
+        handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE, 1);
     }
 
     delay(100);
@@ -267,23 +268,23 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
             handle->response_code = RESPONSE_CODE_WARNING;
         }
     }
-    handle->firestarter_set_control_register(handle, REGULATOR | VPE_TO_VPP, 0);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE, 0);
 }
 
 void eprom_internal_erase(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_INTERNAL_ERASE);
     rurp_chip_input();
-    handle->firestarter_set_control_register(handle, REGULATOR, 1);  // Enable regulator without dropping resistor
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 1);  // Enable regulator without dropping resistor
     delay(100);
     handle->firestarter_set_address(handle, 0x0000);
-    handle->firestarter_set_control_register(handle, A9_VPP_ENABLE | VPE_ENABLE, 1);  // Erase with VPE - assumes VPE_TO_VPP isn't set and left active previously
+    handle->firestarter_set_control_register(handle, CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE, 1);  // Erase with VPE - assumes CTRL_VPP_VPE_DROP_ENABLE isn't set and left active previously
     delay(100);
     rurp_chip_enable();
     delayMicroseconds(handle->pulse_delay);
     // After the erase pulse, we should disable the chip to end the programming cycle.
     rurp_chip_disable();
 
-    handle->firestarter_set_control_register(handle, REGULATOR | A9_VPP_ENABLE | VPE_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE, 0);
 }
 
 void eprom_generic_init(firestarter_handle_t* handle) {
@@ -314,18 +315,18 @@ void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_co
         }
     }
 }
-// Use this function to set the control register and flip VPE_ENABLE bit to VPE_ENABLE or P1_VPP_ENABLE
+// Use this function to set the control register and flip CTRL_VPE_ENABLE bit to CTRL_VPE_ENABLE or CTRL_VPP_P1_ENABLE
 void eprom_internal_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
-    if (bit & VPE_ENABLE && using_p1_as_vpp(handle)) {
-        bit &= ~VPE_ENABLE;
-        bit |= P1_VPP_ENABLE;
+    if (bit & CTRL_VPE_ENABLE && using_p1_as_vpp(handle)) {
+        bit &= ~CTRL_VPE_ENABLE;
+        bit |= CTRL_VPP_P1_ENABLE;
     }
     ep_set_control_register(handle, bit, state);
 }
 
 void eprom_internal_ensure_regulator_enabled(firestarter_handle_t* handle) {
-    if (handle->firestarter_get_control_register(handle, REGULATOR) == 0) {
-        handle->firestarter_set_control_register(handle, REGULATOR, 1);
+    if (handle->firestarter_get_control_register(handle, CTRL_VPP_REGULATOR_ENABLE) == 0) {
+        handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 1);
         delay(500);
     }
 }

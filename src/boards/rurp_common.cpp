@@ -5,11 +5,12 @@
  * Permission is hereby granted under MIT license.
  */
 
+#include <Arduino.h>
 #include "rurp_shield.h"
+#include "rurp_pinout.h"
 
 #if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_ATmega328PB) || defined(ARDUINO_AVR_LEONARDO)
 
-#include <Arduino.h>
 
 /**
  * @brief Reads the raw ADC value for the internal 1.1V bandgap reference.
@@ -55,7 +56,7 @@ uint16_t rurp_read_voltage_mv() {
 
     // Set analog reference to default (VCC) for the measurement
     analogReference(DEFAULT);
-    uint32_t voltage_adc_reading = analogRead(VOLTAGE_MEASURE_PIN);
+    uint32_t voltage_adc_reading = analogRead(PIN_VPP_VOLTAGE_ADC);
 
     long bandgap_adc_reading = rurp_get_bandgap_adc_reading();
     if (bandgap_adc_reading == 0 || r2 == 0) return 0; // Avoid division by zero

@@ -8,6 +8,7 @@
 #include "flash_utils.h"
 #include <Arduino.h>
 #include "rurp_shield.h"
+#include "rurp_pinout.h"
 #include "logging_id.h"
 #include <stdio.h>
 
@@ -18,16 +19,16 @@ uint8_t fu_flash_data_poll();
 
 void flash_util_byte_flipping(firestarter_handle_t* handle, const byte_flip_t* byte_flips, size_t size) {
 
-    handle->firestarter_set_control_register(handle, READ_WRITE, 0);
+    handle->firestarter_set_control_register(handle, CTRL_READ_WRITE, 0);
     for (size_t i = 0; i < size; i++) {
         fu_flash_flip_data(handle, byte_flips[i].address, byte_flips[i].byte);
     }
-    handle->firestarter_set_control_register(handle, READ_WRITE, 0);
+    handle->firestarter_set_control_register(handle, CTRL_READ_WRITE, 0);
 }
 
 void flash_util_verify_operation(firestarter_handle_t* handle, uint8_t expected_data) {
 
-    handle->firestarter_set_control_register(handle, READ_WRITE, 1);
+    handle->firestarter_set_control_register(handle, CTRL_READ_WRITE, 1);
 
     unsigned long timeout = millis() + 150;
     while (millis() < timeout) {

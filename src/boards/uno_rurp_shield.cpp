@@ -26,7 +26,7 @@ void rurp_board_setup() {
     // Set control pins on PORTB to output.
     // PB0-3 are register select lines, PB5 is Chip Enable.
     // PB4 is User Button input.
-    // NOTE: The original code included `READ_WRITE` (0x40), which would attempt to control PB6.
+    // NOTE: The original code included `CTRL_READ_WRITE` (0x40), which would attempt to control PB6.
     // On a standard Uno, PB6 is a crystal pin and should not be used for I/O. It has been removed.
     DDRB = LEAST_SIGNIFICANT_BYTE | MOST_SIGNIFICANT_BYTE | CONTROL_REGISTER | OUTPUT_ENABLE | CHIP_ENABLE;
     PORTB = USER_BUTTON;

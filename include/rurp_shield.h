@@ -17,81 +17,29 @@ extern "C" {
 #include <string.h>
 #include <avr/pgmspace.h>
 #include "rurp_types.h"
+#include "rurp_pinout.h"
 
-#define VOLTAGE_MEASURE_PIN A2
-
-    // CONTROL REGISTER
-#ifndef HARDWARE_REVISION
-#define VPE_TO_VPP      0x01
-#define ADDRESS_LINE_16             VPE_TO_VPP
-#define A9_VPP_ENABLE   0x02
-#define VPE_ENABLE      0x04
-#define P1_VPP_ENABLE   0x08
-#define ADDRESS_LINE_17             0x10
-#define ADDRESS_LINE_18             0x20
-#define READ_WRITE      0x40
-#define REGULATOR       0x80
-
-#else
-#define HARDWARE_REVISION_PIN A3
+#ifdef HARDWARE_REVISION
+// Hardware-revision enum values (out of D-03 alias-scope per Phase 33 RESEARCH —
+// these are revision identifiers, not RURP-signal aliases).
 #define REVISION_0 0
 #define REVISION_1 1
 #define REVISION_2_0 2
 #define REVISION_2_1 3
 #define REVISION_2_2 4
-
-#define ADDRESS_LINE_16             0x01
-#define A9_VPP_ENABLE   0x02
-#define VPE_ENABLE      0x04
-#define P1_VPP_ENABLE   0x08
-#define ADDRESS_LINE_17             0x10
-#define ADDRESS_LINE_18             0x20
-#define READ_WRITE      0x40
-#define REGULATOR       0x80
-#define VPE_TO_VPP      0x100
-
+#define REVISION_2_3 5
+#define REVISION_UNKNOWN 0xFE  // ADC band-gap fall-through; 0xFF reserved for EEPROM-override-absent sentinel
 #endif
 
-#define ADDRESS_LINE_13             0x20
-
+// VPP DIP-bus magic constants. Set by the Python host in bus_config.vpp_line;
+// firmware's using_p1_as_vpp() (memory_utils.h) detects 24/28/32-pin chips
+// whose physical VPP pin is socket pin 1 (after bodge wire / Rev 2.2 JP4) and
+// redirects CTRL_VPE_ENABLE → CTRL_VPP_P1_ENABLE in eprom.cpp. See
+// .planning/phases/04-hardware-validation-rurp-shield/04-HW-24PIN-INVESTIGATION.md
+// for the full hardware analysis.
 #define VPP_P1_32_DIP               0x15
 #define VPP_P1_28_DIP               0x0F
-// 24-pin EPROM VPP magic constant. Stock DIP24_2716 pinout has vpp-pin=[21];
-// the Python host's pin_conversions[24][21] = 11 = 0x0B, so the host emits
-// bus_config.vpp_line = 0x0B for these chips. With this constant in place,
-// using_p1_as_vpp() returns true → eprom.cpp redirects VPE_ENABLE to
-// P1_VPP_ENABLE → HV exits on socket pin 1, where the operator's bodge wire
-// (or Rev 2.2's built-in "red" JP4 alt-position) carries it to the chip's
-// actual VPP pin (chip pin 21 = socket pin 25 with bottom-aligned 24-pin
-// chip). See .planning/phases/04-hardware-validation-rurp-shield/
-// 04-HW-24PIN-INVESTIGATION.md for the full hardware analysis.
 #define VPP_P21_24_DIP              0x0B
-
-#ifdef HARDWARE_REVISION
-// REV 1
-#define REV_1_VPE_TO_VPP      0x01
-#define REV_1_A9_VPP_ENABLE   0x02
-#define REV_1_VPE_ENABLE      0x04
-#define REV_1_P1_VPP_ENABLE   0x08
-#define REV_1_RW              0x40
-#define REV_1_REGULATOR       0x80
-
-#define REV_1_ADDRESS_LINE_16             REV_1_VPE_TO_VPP
-#define REV_1_ADDRESS_LINE_17             0x10
-#define REV_1_ADDRESS_LINE_18             0x20
-
-// REV 2
-#define REV_2_VPE_TO_VPP      0x01
-#define REV_2_A9_VPP_ENABLE   0x02
-#define REV_2_VPE_ENABLE      0x04
-#define REV_2_P1_VPP_ENABLE   0x08
-#define REV_2_ADDRESS_LINE_17             0x10
-#define REV_2_ADDRESS_LINE_16             0x20
-#define REV_2_RW              0x40
-#define REV_2_REGULATOR       0x80
-
-#define REV_2_ADDRESS_LINE_18             P1_VPP_ENABLE
-#endif
 
 
 // Constants

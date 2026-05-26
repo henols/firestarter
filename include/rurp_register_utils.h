@@ -2,6 +2,7 @@
 #define __RURP_REGISTERS_UTILS_H__
 
 #include "rurp_shield.h"
+#include "rurp_pinout.h"
 #include "rurp_internal_register_utils.h"
 
 #ifdef HARDWARE_REVISION
@@ -14,7 +15,7 @@ rurp_register_t control_register = 0xff;
 
 // Function to write data to a specific register on the RURP shield
 // This function also caches the register values and adds a small delay
-// if the P1_VPP_ENABLE bit is being cleared, to allow voltage to settle.
+// if the CTRL_VPP_P1_ENABLE bit is being cleared, to allow voltage to settle.
 // It also maps the control register data based on the hardware revision.
 //
 // Parameters:
@@ -39,7 +40,7 @@ void rurp_write_to_register(uint8_t reg, rurp_register_t data) {
         if (control_register == data) {
             return;
         }
-        if ((control_register & P1_VPP_ENABLE) > (data & P1_VPP_ENABLE)) {
+        if ((control_register & CTRL_VPP_P1_ENABLE) > (data & CTRL_VPP_P1_ENABLE)) {
             settle = true;
         }
         control_register = data;

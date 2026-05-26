@@ -14,6 +14,7 @@
 #include "memory_utils.h"
 #include "operation_utils.h"
 #include "rurp_shield.h"
+#include "rurp_pinout.h"
 
 void flash_intel_write_init(firestarter_handle_t* handle);
 void flash_intel_write_execute(firestarter_handle_t* handle);
@@ -31,7 +32,7 @@ static void flash_intel_check_vpp(firestarter_handle_t* handle) {
         return;
     }
 #endif
-    // Caller (flash_intel_write_init) already asserted REGULATOR | P1_VPP_ENABLE
+    // Caller (flash_intel_write_init) already asserted CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE
     // and delayed 500ms; do not toggle the regulator here.
     uint16_t vpp_mv = rurp_read_voltage_mv();
     LOG_DEBUG_ID_SUB_U16(DBG_CHECKING_VPP_VOLTAGE, vpp_mv);
@@ -77,7 +78,7 @@ static void flash_intel_check_vpp(firestarter_handle_t* handle) {
             handle->response_code = RESPONSE_CODE_WARNING;
         }
     }
-    // NO regulator clear — caller continues to use REGULATOR | P1_VPP_ENABLE through the write pulse.
+    // NO regulator clear — caller continues to use CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE through the write pulse.
 }
 
 void configure_flash_intel(firestarter_handle_t* handle) {
@@ -103,7 +104,7 @@ void configure_flash_intel(firestarter_handle_t* handle) {
 }
 
 void flash_intel_write_init(firestarter_handle_t* handle) {
-    handle->firestarter_set_control_register(handle, REGULATOR | P1_VPP_ENABLE, 1);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE, 1);
     delay(500);
     flash_intel_check_vpp(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
@@ -111,13 +112,13 @@ void flash_intel_write_init(firestarter_handle_t* handle) {
         // applied to socket pin 1 after an unsafe-voltage detection. Without
         // this, flash_intel_cleanup (END phase) is never reached and the
         // hazard the check exists to prevent stays asserted.
-        handle->firestarter_set_control_register(handle, REGULATOR | P1_VPP_ENABLE, 0);
+        handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE, 0);
         return;
     }
     if (handle->chip_id > 0) {
         flash_intel_check_chip_id(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {
-            handle->firestarter_set_control_register(handle, REGULATOR | P1_VPP_ENABLE, 0);
+            handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE, 0);
             return;
         }
     }
@@ -142,7 +143,7 @@ void flash_intel_write_execute(firestarter_handle_t* handle) {
 }
 
 void flash_intel_erase_execute(firestarter_handle_t* handle) {
-    handle->firestarter_set_control_register(handle, REGULATOR | P1_VPP_ENABLE, 1);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE, 1);
     delay(500);
     handle->firestarter_set_data(handle, 0, 0x20);  // erase setup
     handle->firestarter_set_data(handle, 0, 0xD0);  // erase confirm
@@ -154,7 +155,7 @@ void flash_intel_erase_execute(firestarter_handle_t* handle) {
 
 void flash_intel_cleanup(firestarter_handle_t* handle) {
     handle->firestarter_set_data(handle, 0, 0xFF);  // reset to read array mode
-    handle->firestarter_set_control_register(handle, REGULATOR | P1_VPP_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE, 0);
 }
 
 static bool flash_intel_poll_sr(firestarter_handle_t* handle, uint16_t timeout_ms) {
