@@ -47,18 +47,25 @@ extern "C" {
 #endif
 
 // ---- Section 1b: ADC voltage-band thresholds (HARDWARE_REVISION-gated) -------
-// Consumed by rurp_detect_hardware_revision() in rurp_hw_rev_utils.h to decode
-// the R41-on-A3 detect divider into a per-rev enum. Voltage-band math sourced
-// from Phase 34 RESEARCH §ADC Voltage Band Math + the §9 per-rev band table in
-// .planning/v1.7-SHIELD-REVS.md (D-03 + D-11). Values picked with strict
-// numerical ordering (200 < 220 < 600) per D-11 + a 20-count guard gap between
-// the 4k7 ceiling and the 10k floor (reads in [200, 220) → REVISION_UNKNOWN).
+// Consumed by rurp_detect_hardware_revision() in rurp_hw_rev_utils.h.
+// Phase 35 Wave 3 D-02 follow-through: thresholds UNCHANGED — Phase 35 Wave 3
+// bench (2026-05-26) validated 0/15 reads in the [200, 220) guard gap across
+// 3 shield revisions; the existing 20-count gap is empirically sufficient.
+// SEMANTIC CHANGE post-Phase 35 Plan 01 INPUT high-Z fix: bands now characterize
+// A3-net composition (R41-only-to-GND = low; external-pull-up-to-+5V = mid;
+// floating = high), NOT R41 value alone. The internal pull-up R_top assumed in
+// the Phase 34 band-math (INPUT_PULLUP at rurp_hw_rev_utils.h:43-pre-Plan-01)
+// is disabled post-Plan 01 — R41 value no longer drives ADC variance.
+// See .planning/v1.7-SHIELD-REVS.md §8 "Phase 35 ASCII correction" + §9 table
+// + .planning/v1.7/bench-evidence-35.md §"Band-math semantics under Plan 01
+// INPUT high-Z" for full analysis. v1.8 substrate seed: future Rev 2.4 PCB
+// could add an external R_top to restore the original divider semantics.
 // #define (NOT constexpr) per Phase 33 D-07 — preprocessor constants resolve
 // at compile time and contribute 0 B to the .hex until referenced.
 #ifdef HARDWARE_REVISION
-#define ADC_BAND_R41_4K7_HIGH 200  // upper edge of 4k7 bucket (Rev 2.0/2.1/2.2)
-#define ADC_BAND_R41_10K_LOW  220  // lower edge of 10k bucket (Rev 2.3); [200, 220) -> REVISION_UNKNOWN
-#define ADC_BAND_R41_10K_HIGH 600  // upper edge of 10k bucket; above -> high band / no R41
+#define ADC_BAND_R41_4K7_HIGH 200  // upper edge of low band (R41-only-to-GND; Rev 2.0/2.1/2.2 + Rev 2.3 stock post-Plan 01)
+#define ADC_BAND_R41_10K_LOW  220  // lower edge of mid band (external pull-up active — operator-reworked boards); [200, 220) -> REVISION_UNKNOWN guard gap
+#define ADC_BAND_R41_10K_HIGH 600  // upper edge of mid band; above -> high band / floating / no R41
 #endif
 
 // ---- Section 2: Control-register bits (CTRL_*) -------------------------
