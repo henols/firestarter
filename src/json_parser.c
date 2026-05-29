@@ -23,6 +23,8 @@ bool get_pin_count(const char* json, jsmntok_t* tokens, int pos, firestarter_han
 bool get_delay(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_vpp_mv(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_algorithm(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+bool get_read_settling(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+bool get_read_strobe(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 
 bool get_rw_pin(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_vpp_pin(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
@@ -61,6 +63,9 @@ const char key_pulse_delay[] PROGMEM = "pulse-delay";
 const char key_vpp_mv[] PROGMEM = "vpp_mv";
 const char key_type[] PROGMEM = "type";
 const char key_algorithm[] PROGMEM = "algorithm";
+/* Phase 44 — host-tunable read-timing knobs (D-04 sweep params) */
+const char key_read_settling[] PROGMEM = "read-settling-delay";
+const char key_read_strobe[]   PROGMEM = "read-strobe-us";
 
 typedef struct {
     PGM_P key;
@@ -68,9 +73,11 @@ typedef struct {
 } key_parser_t;
 
 static const key_parser_t key_parsers[] PROGMEM = {
-    {key_mem_size, get_memory_size}, {key_address, get_address},       {key_flags, get_flags},
-    {key_chip_id, get_chip_id},      {key_pin_count, get_pin_count},   {key_pulse_delay, get_delay},
-    {key_vpp_mv, get_vpp_mv},        {key_type, get_type},             {key_algorithm, get_algorithm},
+    {key_mem_size, get_memory_size}, {key_address, get_address},         {key_flags, get_flags},
+    {key_chip_id, get_chip_id},      {key_pin_count, get_pin_count},     {key_pulse_delay, get_delay},
+    {key_vpp_mv, get_vpp_mv},        {key_type, get_type},               {key_algorithm, get_algorithm},
+    /* Phase 44 — read-timing sweep knobs (RCA-01 causal proof, D-04) */
+    {key_read_settling, get_read_settling},                              {key_read_strobe, get_read_strobe},
 };
 
 int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle) {
@@ -330,4 +337,36 @@ bool get_r2(const char* json, jsmntok_t* tokens, int pos, rurp_configuration_t* 
 
 bool get_rev(const char* json, jsmntok_t* tokens, int pos, rurp_configuration_t* config) {
     extract_int("rev", config->hardware_revision);
+}
+
+/*
+ * Phase 44 — read-timing sweep knobs (RCA-01 / D-04).
+ *
+ * T-44-01 cap: both knobs are clamped to READ_TIMING_MAX_US at parse time so
+ * an absurd JSON value cannot pass an unbounded value to delayMicroseconds()
+ * in the read loop.  Values < 3µs are below delayMicroseconds() accuracy on
+ * 16 MHz AVR (Pitfall 5) — documented by the caller in memory_get_data().
+ *
+ * Zero-ambiguity:
+ *   read_settling_us == 0 → no settling delay (explicit test point; D-04)
+ *   read_strobe_us   == 0 → use firmware default 3µs (preserves current behaviour)
+ */
+#define READ_TIMING_MAX_US 1000UL   /* T-44-01 sane max (~1ms); caps both knobs */
+
+bool get_read_settling(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+    if (jsoneq(json, &tokens[pos], "read-settling-delay") == 0) {
+        unsigned long v = simple_strtoul(json + tokens[pos + 1].start);
+        handle->read_settling_us = (uint32_t)(v > READ_TIMING_MAX_US ? READ_TIMING_MAX_US : v);
+        return 1;
+    }
+    return 0;
+}
+
+bool get_read_strobe(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+    if (jsoneq(json, &tokens[pos], "read-strobe-us") == 0) {
+        unsigned long v = simple_strtoul(json + tokens[pos + 1].start);
+        handle->read_strobe_us = (uint32_t)(v > READ_TIMING_MAX_US ? READ_TIMING_MAX_US : v);
+        return 1;
+    }
+    return 0;
 }

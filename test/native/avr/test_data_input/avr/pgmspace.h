@@ -63,4 +63,8 @@
 #define memcpy_P(dst, src, n) memcpy((dst), (src), (n))
 #endif
 
+#ifndef strncmp_P
+#define strncmp_P(s1, s2, n) strncmp((s1), (s2), (n))
+#endif
+
 #endif /* _AVR_PGMSPACE_H_STUB_ */

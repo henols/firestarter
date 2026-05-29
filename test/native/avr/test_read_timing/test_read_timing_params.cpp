@@ -27,6 +27,7 @@
 
 extern "C" {
 #include "json_parser.h"
+#include "jsmn.h"
 }
 #include "firestarter.h"
 
@@ -57,10 +58,16 @@ static firestarter_handle_t make_handle(uint8_t cmd) {
     return h;
 }
 
-/* Helper: parse a JSON string into a handle, return the json_parse result. */
+/* Helper: parse a JSON string into a handle, return the json_parse result.
+ * Note: json_init() uses sizeof(tokens)/sizeof(tokens[0]) which is wrong when
+ * tokens is a pointer arg (evaluates to pointer-size/element-size on host).
+ * Call jsmn_parse directly with NUMBER_JSNM_TOKENS to avoid the off-by-many. */
 static int parse_json(const char* json_str, firestarter_handle_t* handle) {
     jsmntok_t tokens[NUMBER_JSNM_TOKENS];
-    int token_count = json_init(json_str, (int)strlen(json_str), tokens);
+    jsmn_parser parser;
+    jsmn_init(&parser);
+    int token_count = jsmn_parse(&parser, json_str, strlen(json_str),
+                                 tokens, NUMBER_JSNM_TOKENS);
     if (token_count < 0) return token_count;
     return json_parse(json_str, tokens, token_count, handle);
 }

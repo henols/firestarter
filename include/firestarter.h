@@ -82,6 +82,8 @@ typedef struct firestarter_handle {
     uint32_t address;
     uint16_t vpp_mv;
     uint32_t pulse_delay;
+    uint32_t read_settling_us;   /* address-settling delay before /CE assert (µs; 0 = no settling delay) */
+    uint32_t read_strobe_us;     /* /CE read-strobe pulse width (µs; 0 = use default 3µs) */
     uint32_t ctrl_flags;
     uint16_t chip_id;
     char data_buffer[DATA_BUFFER_SIZE];
