@@ -41,41 +41,153 @@ size_t rurp_communication_read_bytes(char* buffer, size_t size) {
     return SERIAL_PORT.readBytes(buffer, size);
 }
 
-int rurp_communication_read_data(char* buffer) {
-    uint8_t size_buf[2];
-    if (rurp_communication_read_bytes((char*)size_buf, 2) != 2) {
-        return -1;
-    }
-    size_t data_size = (size_buf[0] << 8) | size_buf[1];
+// Phase 50 Plan 02: streaming COBS decode-in-place + CRC8 verify + drain-to-0x00 resync.
+//
+// Frame contract: [COBS(payload + CRC8(payload))][0x00 delimiter]
+// (The '#' marker is consumed by the caller before this function is called.)
+//
+// Algorithm (decode-in-place, no second ~512 B buffer — FRAME-03 / Pattern 2):
+//
+//   The logical COBS-encoded stream represents [payload | CRC8_byte].  We use
+//   a 1-byte output lookahead (`last_byte`) so the final decoded byte (the
+//   CRC8) never needs to be written to buffer[], keeping out ≤ DATA_BUFFER_SIZE
+//   even for a payload of exactly DATA_BUFFER_SIZE bytes.
+//
+//   Key invariant: every decoded byte is "queued" by calling push_decoded_byte()
+//   which commits the PREVIOUS `last_byte` to buffer[out] and holds the new
+//   byte in `last_byte`.  When the 0x00 delimiter arrives, `last_byte` = CRC8
+//   (it was never committed).
+//
+//   Implicit-zero rule: after a non-254 run completes, an implicit 0x00 follows
+//   the run data in the decoded stream — BUT only if more encoded data follows
+//   (i.e. NOT at stream end).  We defer the decision using `implicit_zero_pending`:
+//   set it when a non-254 run ends, and emit the zero (via push_decoded_byte(0))
+//   when the next run-code arrives (confirming we are not at stream end).  When
+//   the 0x00 delimiter arrives, `implicit_zero_pending` is simply discarded.
+//
+//   State (~6 B stack):
+//     out                   — committed payload bytes in buffer[]
+//     block_remaining       — data bytes remaining in current COBS run
+//     was_254_run           — current run started with 0xFF (no implicit zero)
+//     implicit_zero_pending — a deferred implicit zero from the last run
+//     has_last              — `last_byte` holds a valid unwritten decoded byte
+//     last_byte             — 1-byte output lookahead
+//
+//   Overflow guard (T-50-01): if out == DATA_BUFFER_SIZE on a commit attempt,
+//   drain to the next 0x00 and return -2 (payload too large).
+//   Error invariant (Pattern 3 / D-06): on ANY COBS/CRC failure, drain bytes
+//   up to AND INCLUDING the next 0x00 so the RX cursor re-anchors at a frame
+//   boundary.
+//
+// SC1 win: the 2 s timeout_ms loop is GONE; frame boundary = 0x00 delimiter.
+// Negative-code contract: callers check res<0 only (Assumption A4).
 
-    uint8_t checksum_rcvd;
-    if (rurp_communication_read_bytes((char*)&checksum_rcvd, 1) != 1) {
-        return -1;
-    }
+/* Forward declaration: crc8_ccitt is defined below with the PROGMEM table. */
+static uint8_t crc8_ccitt(uint8_t crc, uint8_t b);
 
-    if (data_size > DATA_BUFFER_SIZE) {
-        return -2;  // Payload too large for buffer
-    }
-
-    size_t len = 0;
-    unsigned long start_time = millis();
-    unsigned long timeout_ms = 2000;  // A 2-second timeout for the entire data block
-    while (len < data_size) {
-        if (millis() - start_time > timeout_ms) {
-            return -3;  // Timeout reading data block
+static void _drain_to_delimiter(void) {
+    /* Consume bytes up to and including the next 0x00 delimiter to re-anchor
+     * the RX cursor at a frame boundary (Pattern 3 / D-06). */
+    while (1) {
+        while (rurp_communication_available() <= 0) {}
+        int d = rurp_communication_read();
+        if (d < 0 || (uint8_t)d == 0x00) {
+            break;
         }
-        // Read remaining bytes. readBytes will timeout and return what it has if data flow stops.
-        len += rurp_communication_read_bytes(buffer + len, data_size - len);
+    }
+}
+
+int rurp_communication_read_data(char* buffer) {
+    size_t out = 0;                   /* committed payload bytes in buffer[]         */
+    uint8_t block_remaining = 0;      /* data bytes remaining in current COBS run    */
+    bool was_254_run = false;         /* current run started with 0xFF (no impl zero) */
+    bool implicit_zero_pending = false; /* deferred implicit zero from last run       */
+    bool has_last = false;            /* `last_byte` holds a valid unwritten byte     */
+    uint8_t last_byte = 0;            /* 1-byte output lookahead                     */
+
+    /* push_decoded_byte: commit previous `last_byte` to buffer, hold `b` as the
+     * new `last_byte`.  Returns false and drains on overflow. */
+#define PUSH(b_)                                                   \
+    do {                                                           \
+        if (has_last) {                                            \
+            if (out >= DATA_BUFFER_SIZE) {                         \
+                _drain_to_delimiter();                             \
+                return -2;                                         \
+            }                                                      \
+            buffer[out++] = (char)last_byte;                       \
+        }                                                          \
+        last_byte = (b_);                                          \
+        has_last = true;                                           \
+    } while (0)
+
+    while (1) {
+        /* Delimiter-driven: spin until a byte is available. */
+        while (rurp_communication_available() <= 0) {}
+
+        int b = rurp_communication_read();
+        if (b < 0) {
+            _drain_to_delimiter();
+            return -1; /* read() underrun */
+        }
+        uint8_t byte = (uint8_t)b;
+
+        if (byte == 0x00) {
+            /* Frame delimiter — end of encoded stream. */
+            if (block_remaining != 0) {
+                /* 0x00 mid-run: COBS violation. Delimiter consumed; no drain. */
+                return -3;
+            }
+            /* `implicit_zero_pending` is discarded: it is the trailing zero
+             * that COBS omits at stream end.  `last_byte` IS the CRC8. */
+            break;
+        }
+
+        if (block_remaining > 0) {
+            /* Data byte inside current run. */
+            PUSH(byte);
+            block_remaining--;
+            if (block_remaining == 0 && !was_254_run) {
+                implicit_zero_pending = true;
+            }
+        } else {
+            /* Run-code byte (block_remaining == 0, not a delimiter). */
+            /* The run-code's arrival confirms any pending implicit zero is
+             * non-trailing (more data follows), so emit it now. */
+            if (implicit_zero_pending) {
+                PUSH(0);
+                implicit_zero_pending = false;
+            }
+            was_254_run = (byte == 0xFF);
+            block_remaining = byte - 1;
+            /* Run code 0x01: no data bytes, one deferred implicit zero.
+             * Flag it the same way as a completed non-254 run. */
+            if (block_remaining == 0 && !was_254_run) {
+                implicit_zero_pending = true;
+            }
+        }
     }
 
-    uint8_t checksum = 0;
-    for (size_t i = 0; i < len; i++) {
-        checksum ^= buffer[i];
+#undef PUSH
+
+    /* --- Normal frame end --- */
+    if (!has_last) {
+        /* Empty frame — no CRC byte decoded. */
+        return -1;
     }
-    if (checksum != checksum_rcvd) {
-        return -4;  // Checksum mismatch
+    uint8_t rcvd_crc = last_byte; /* 1-byte lookahead holds the CRC8 */
+
+    /* Recompute CRC8-CCITT over the decoded payload using the EXISTING PROGMEM
+     * table accessor (D-05 / CRC-01 — UNCHANGED, no new CRC routine). */
+    uint8_t computed_crc = 0;
+    for (size_t i = 0; i < out; i++) {
+        computed_crc = crc8_ccitt(computed_crc, (uint8_t)buffer[i]);
     }
-    return len;
+    if (computed_crc != rcvd_crc) {
+        /* CRC8 mismatch. Delimiter already consumed — no further drain needed. */
+        return -4;
+    }
+
+    return (int)out;
 }
 
 size_t rurp_communication_write(const char* buffer, size_t size) {
