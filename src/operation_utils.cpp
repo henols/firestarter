@@ -157,7 +157,10 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                 break;
 
             case '#': {  // Data packet
-                if (rurp_communication_available() < 4) {
+                // Phase 50 Plan 02: COBS framing is delimiter-driven (no fixed
+                // header size).  Only gate on 1+ bytes available; the decoder
+                // accumulates until the 0x00 frame delimiter.
+                if (rurp_communication_available() <= 0) {
                     return OP_MSG_INCOMPLETE;
                 }
                 rurp_communication_read();  // consume '#'

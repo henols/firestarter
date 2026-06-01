@@ -190,18 +190,94 @@ int rurp_communication_read_data(char* buffer) {
     return (int)out;
 }
 
+// Phase 50 Plan 02: COBS streaming encoder — the dormant mirror of
+// rurp_communication_read_data above (see RESEARCH Trace Target 2: dead code
+// in all shipping envs, rewritten for contract symmetry / Unity round-trip).
+//
+// Emit [COBS(payload + CRC8(payload))][0x00] directly to SERIAL_PORT.
+// ~6 B stack: run_start, run_len, crc.  No second buffer: run data bytes are
+// emitted via SERIAL_PORT.write(buffer+run_start, run_len) from the source
+// buffer; the single CRC byte is held in a 1-byte local.
+//
+// CRC8 uses the EXISTING crc8_ccitt PROGMEM table accessor (D-05/CRC-01).
+// Removes the size>>8 / size&0xFF len_u16 prefix and the XOR checksum.
 size_t rurp_communication_write(const char* buffer, size_t size) {
-    uint8_t checksum = 0;
-    for (size_t i = 0; i < size; i++) {
-        checksum ^= buffer[i];
+    /* Step 1: compute CRC8-CCITT over raw payload. */
+    uint8_t crc = 0;
+    for (size_t k = 0; k < size; k++) {
+        crc = crc8_ccitt(crc, (uint8_t)buffer[k]);
     }
 
-    SERIAL_PORT.write(size >> 8);
-    SERIAL_PORT.write(size & 0xFF);
-    SERIAL_PORT.write(checksum);
-    size_t bytes = SERIAL_PORT.write(buffer, size);
+    /* Step 2: COBS-encode the logical stream [buffer[0..size-1] | crc_byte]
+     * directly to SERIAL_PORT.  Logical stream length = size + 1.
+     *
+     * We scan for runs of ≤254 non-zero bytes.  When a zero is encountered or
+     * the 254-byte run limit is hit, we emit:
+     *   (a) the run-code byte  (run_len+1  for normal run, 0xFF for 254-run)
+     *   (b) the run bytes      (write directly from buffer[] sub-slice)
+     *
+     * The CRC byte is treated as a virtual (size)th index: value = crc,
+     * handled after the payload loop.
+     *
+     * Pitfall 2 (RESEARCH): 254-run code is 0xFF; no implicit zero follows.
+     * The loop variable `i` walks 0..size-1 (payload) then we handle CRC.
+     */
+    size_t run_start = 0;
+    uint8_t run_len = 0;
+
+    for (size_t i = 0; i < size; i++) {
+        uint8_t byte_val = (uint8_t)buffer[i];
+
+        if (byte_val == 0x00) {
+            /* End current run at this zero. Emit code + run bytes. */
+            SERIAL_PORT.write((uint8_t)(run_len + 1));
+            if (run_len > 0) {
+                SERIAL_PORT.write((const uint8_t*)buffer + run_start, run_len);
+            }
+            /* Zero itself is represented by the run-code; not emitted. */
+            run_start = i + 1;
+            run_len = 0;
+        } else {
+            run_len++;
+            if (run_len == 254) {
+                /* 254-byte run limit: emit code 0xFF + run bytes, start new run. */
+                SERIAL_PORT.write((uint8_t)0xFF);
+                SERIAL_PORT.write((const uint8_t*)buffer + run_start, 254);
+                run_start = i + 1;
+                run_len = 0;
+            }
+        }
+    }
+
+    /* Handle the CRC byte as the (N+1)th payload byte (ADR §4.3). */
+    if (crc == 0x00) {
+        /* CRC is zero: end current run, then add a 0x01 run for the zero CRC. */
+        SERIAL_PORT.write((uint8_t)(run_len + 1));
+        if (run_len > 0) {
+            SERIAL_PORT.write((const uint8_t*)buffer + run_start, run_len);
+        }
+        SERIAL_PORT.write((uint8_t)0x01); /* run-code for the zero CRC byte */
+    } else if (run_len == 254) {
+        /* Current run is at the 254-byte limit; emit it, then start a new run
+         * containing only the CRC byte. */
+        SERIAL_PORT.write((uint8_t)0xFF);
+        SERIAL_PORT.write((const uint8_t*)buffer + run_start, 254);
+        SERIAL_PORT.write((uint8_t)0x02); /* run-code: 1 data byte (the CRC) */
+        SERIAL_PORT.write(crc);
+    } else {
+        /* CRC is non-zero and fits in the current run: append it. */
+        SERIAL_PORT.write((uint8_t)(run_len + 2)); /* +2: +1 for run semantics, +1 for CRC */
+        if (run_len > 0) {
+            SERIAL_PORT.write((const uint8_t*)buffer + run_start, run_len);
+        }
+        SERIAL_PORT.write(crc);
+    }
+
+    /* Frame delimiter. */
+    SERIAL_PORT.write((uint8_t)0x00);
     SERIAL_PORT.flush();
-    return bytes;
+
+    return size; /* bytes of payload written (mirrors old interface) */
 }
 
 // --- Phase 6: ID-encoded log frame emitter (CONTEXT §D-01..D-04) ---
