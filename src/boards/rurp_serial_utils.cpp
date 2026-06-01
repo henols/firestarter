@@ -249,7 +249,9 @@ size_t rurp_communication_write(const char* buffer, size_t size) {
         }
     }
 
-    /* Handle the CRC byte as the (N+1)th payload byte (ADR §4.3). */
+    /* Handle the CRC byte as the (N+1)th payload byte (ADR §4.3).
+     * Post-loop invariant: run_len is 0..253 (never 254; the loop resets it
+     * when the 254-run boundary fires).  Only two cases remain. */
     if (crc == 0x00) {
         /* CRC is zero: end current run, then add a 0x01 run for the zero CRC. */
         SERIAL_PORT.write((uint8_t)(run_len + 1));
@@ -257,13 +259,6 @@ size_t rurp_communication_write(const char* buffer, size_t size) {
             SERIAL_PORT.write((const uint8_t*)buffer + run_start, run_len);
         }
         SERIAL_PORT.write((uint8_t)0x01); /* run-code for the zero CRC byte */
-    } else if (run_len == 254) {
-        /* Current run is at the 254-byte limit; emit it, then start a new run
-         * containing only the CRC byte. */
-        SERIAL_PORT.write((uint8_t)0xFF);
-        SERIAL_PORT.write((const uint8_t*)buffer + run_start, 254);
-        SERIAL_PORT.write((uint8_t)0x02); /* run-code: 1 data byte (the CRC) */
-        SERIAL_PORT.write(crc);
     } else {
         /* CRC is non-zero and fits in the current run: append it. */
         SERIAL_PORT.write((uint8_t)(run_len + 2)); /* +2: +1 for run semantics, +1 for CRC */

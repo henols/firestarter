@@ -275,6 +275,32 @@ void test_cobs_all_zero_payload(void) {
 }
 
 /* ------------------------------------------------------------------------ */
+/* test_cobs_254_run_then_zero                                               */
+/*                                                                           */
+/* 254 nonzero bytes immediately followed by one zero byte + a few more     */
+/* bytes.  This is the exact CR-01 trigger pattern: the Python encoder had   */
+/* a branch-order defect that silently dropped the 0x00 at the 254-run      */
+/* boundary.  The firmware decoder must reconstruct the payload exactly.     */
+/* ------------------------------------------------------------------------ */
+void test_cobs_254_run_then_zero(void) {
+    /* 254 nonzero bytes + one zero + three more bytes = 258 bytes total. */
+    uint8_t payload[258];
+    memset(payload, 0x01, 254);
+    payload[254] = 0x00;
+    payload[255] = 0x02;
+    payload[256] = 0x03;
+    payload[257] = 0x04;
+
+    build_cobs_frame_bytes(payload, sizeof(payload), rx_queue);
+    setup_serial_read_mock(rx_queue, rx_pos);
+
+    int res = rurp_communication_read_data(data_buffer);
+    TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res);
+    TEST_ASSERT_EQUAL_size_t(sizeof(payload), (size_t)res);
+    TEST_ASSERT_EQUAL_MEMORY(payload, data_buffer, sizeof(payload));
+}
+
+/* ------------------------------------------------------------------------ */
 /* main                                                                      */
 /* ------------------------------------------------------------------------ */
 int main(int argc, char** argv) {
@@ -285,6 +311,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_cobs_decode_valid_frame);
     RUN_TEST(test_cobs_resync_bounded);
     RUN_TEST(test_cobs_all_zero_payload);
+    RUN_TEST(test_cobs_254_run_then_zero);
 
     return UNITY_END();
 }
