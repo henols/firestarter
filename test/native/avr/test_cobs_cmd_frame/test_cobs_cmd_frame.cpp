@@ -323,6 +323,127 @@ void test_cobs_oversized_frame_bounded_recovery(void) {
 }
 
 /* ------------------------------------------------------------------------ */
+/* test_cobs_exact_buffer_size_payload (CR-01 boundary — RED before Task 2) */
+/*                                                                           */
+/* Feed a payload of EXACTLY DATA_BUFFER_SIZE (512) bytes — all 0x42 so     */
+/* the COBS body is a clean non-zero run, no internal zeros.                 */
+/*                                                                           */
+/* With the Task-2 CR-01 fix: the PUSH overflow guard changes from           */
+/*   `if (out >= DATA_BUFFER_SIZE)`   to                                     */
+/*   `if (out >= DATA_BUFFER_SIZE - 1)`                                      */
+/* reserving the NUL-terminator slot.  A 512-byte payload then takes the     */
+/* overflow/drain path and returns < 0.  No OOB write at data_buffer[512].  */
+/*                                                                           */
+/* Before the fix (RED): rurp_communication_read_data returns 512 (positive),*/
+/* so this TEST_ASSERT_LESS_THAN_INT(0, res) FAILS — demonstrating the       */
+/* missing overflow cap (CR-01 is unguarded in the current source).          */
+/*                                                                           */
+/* CR-01 invariant pinned: the decoder returns n <= DATA_BUFFER_SIZE-1 so   */
+/* that the caller's `data_buffer[n] = '\0'` is always in-bounds.           */
+/* ------------------------------------------------------------------------ */
+void test_cobs_exact_buffer_size_payload(void) {
+    /* All-0x42 payload of exactly DATA_BUFFER_SIZE bytes — clean COBS run. */
+    std::vector<uint8_t> payload(DATA_BUFFER_SIZE, 0x42);
+
+    build_cobs_frame_bytes(payload.data(), payload.size(), rx_queue);
+    setup_serial_read_mock(rx_queue, rx_pos);
+
+    int res = rurp_communication_read_data(data_buffer);
+
+    /* After CR-01 fix: 512-byte payload overflows the cap and returns < 0.
+     * CR-01 invariant: n <= DATA_BUFFER_SIZE-1 always, so
+     * handle.data_buffer[n] = '\0' is in-bounds for every legal payload. */
+    TEST_ASSERT_LESS_THAN_INT(0, res);
+}
+
+/* ------------------------------------------------------------------------ */
+/* test_cobs_max_accepted_payload (CR-01 boundary pin — the MAX legal size) */
+/*                                                                           */
+/* Feed a payload of EXACTLY DATA_BUFFER_SIZE-1 (511) bytes — all 0x42.    */
+/* After the CR-01 fix this is the LARGEST payload the decoder accepts.     */
+/* Assert:                                                                   */
+/*   (a) return value == DATA_BUFFER_SIZE-1 (511)                            */
+/*   (b) data_buffer matches the 511-byte payload                            */
+/*                                                                           */
+/* This pins that the largest legitimate command still decodes correctly AND  */
+/* that n never exceeds DATA_BUFFER_SIZE-1 — so the caller's NUL write at    */
+/* data_buffer[n] is provably in-bounds for every legal payload.             */
+/*                                                                           */
+/* CR-01 invariant: n <= DATA_BUFFER_SIZE-1 always, so                      */
+/* handle.data_buffer[n] = '\0' is in-bounds.                                */
+/* ------------------------------------------------------------------------ */
+void test_cobs_max_accepted_payload(void) {
+    const size_t max_len = DATA_BUFFER_SIZE - 1;  /* 511 bytes */
+    std::vector<uint8_t> payload(max_len, 0x42);
+
+    build_cobs_frame_bytes(payload.data(), payload.size(), rx_queue);
+    setup_serial_read_mock(rx_queue, rx_pos);
+
+    int res = rurp_communication_read_data(data_buffer);
+
+    /* The 511-byte payload must decode successfully (n == DATA_BUFFER_SIZE-1). */
+    TEST_ASSERT_EQUAL_INT((int)max_len, res);
+    TEST_ASSERT_EQUAL_MEMORY(payload.data(), data_buffer, max_len);
+}
+
+/* ------------------------------------------------------------------------ */
+/* test_cobs_truncated_frame_no_hang (CR-02 — RED before Task 2)            */
+/*                                                                           */
+/* Feed the COBS body of a small payload but WITHOUT the trailing 0x00       */
+/* delimiter, then leave the queue exhausted (finite-stream mock: available()*/
+/* returns 0, read() returns -1 after exhaustion).                           */
+/*                                                                           */
+/* The millis() stub in setUp increments +100 ms per call, so the           */
+/* TIMEOUT_MS (1000 ms) inter-byte deadline in the Task-2 fix fires after    */
+/* 10 stub calls — deterministically, with no real wall-clock time.          */
+/*                                                                           */
+/* Assert: rurp_communication_read_data() RETURNS a negative value.         */
+/* The fact that the call returns at all (the test binary terminates) is the  */
+/* proof that no infinite spin occurs.                                        */
+/*                                                                           */
+/* Before the fix (RED): the current `while (rurp_communication_available()  */
+/* <= 0) {}` spin at lines 92 and 125 of rurp_serial_utils.cpp spins        */
+/* forever once the queue is exhausted — hanging the test harness. This case */
+/* therefore CANNOT be run cleanly before Task 2 applies the bounded-wait   */
+/* fix. The RED defect is demonstrated by the hang itself; the GREEN outcome */
+/* is a clean return with a negative result code.                            */
+/*                                                                           */
+/* CR-02 invariant: a truncated command frame (host silence mid-frame) makes */
+/* rurp_communication_read_data() RETURN bounded instead of spinning.        */
+/* ------------------------------------------------------------------------ */
+void test_cobs_truncated_frame_no_hang(void) {
+    /* Build the COBS body for a small payload, but DO NOT append the 0x00
+     * delimiter.  The decoder will consume all bytes and then spin waiting
+     * for the next byte — but with the CR-02 fix the spin is bounded. */
+    const uint8_t partial_payload[] = { 0x01, 0x02, 0x03, 0x04 };
+    size_t payload_len = sizeof(partial_payload);
+
+    uint8_t crc = ref_crc8(partial_payload, payload_len);
+
+    /* Logical stream: payload + crc */
+    std::vector<uint8_t> src(partial_payload, partial_payload + payload_len);
+    src.push_back(crc);
+
+    /* COBS-encode the logical stream — but do NOT append 0x00 (truncated). */
+    size_t max_enc = src.size() + src.size() / 254 + 2;
+    std::vector<uint8_t> encoded(max_enc);
+    size_t enc_len = test_cobs_encode(src.data(), src.size(), encoded.data());
+    rx_queue.insert(rx_queue.end(), encoded.data(), encoded.data() + enc_len);
+    /* Deliberately NO rx_queue.push_back(0x00) — frame is truncated. */
+
+    /* The finite-stream mock exhausts after enc_len bytes: available()
+     * returns 0 and read() returns -1 from that point forward. */
+    setup_serial_read_mock(rx_queue, rx_pos);
+
+    /* After the CR-02 fix: the bounded inter-byte deadline fires and the
+     * call returns negative.  Before the fix: this spins forever (hang). */
+    int res = rurp_communication_read_data(data_buffer);
+
+    /* Must return (no hang) with a negative error code. */
+    TEST_ASSERT_LESS_THAN_INT(0, res);
+}
+
+/* ------------------------------------------------------------------------ */
 /* main                                                                      */
 /* ------------------------------------------------------------------------ */
 int main(int argc, char** argv) {
@@ -334,6 +455,9 @@ int main(int argc, char** argv) {
     RUN_TEST(test_cobs_crc_reject_does_not_reach_parser);
     RUN_TEST(test_cobs_resync_bounded);
     RUN_TEST(test_cobs_oversized_frame_bounded_recovery);
+    RUN_TEST(test_cobs_exact_buffer_size_payload);
+    RUN_TEST(test_cobs_max_accepted_payload);
+    RUN_TEST(test_cobs_truncated_frame_no_hang);
 
     return UNITY_END();
 }
