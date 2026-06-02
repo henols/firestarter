@@ -176,7 +176,14 @@ void loop() {
             int n = rurp_communication_read_data(handle.data_buffer);
             if (n > 0) {
                 handle.data_size = (uint32_t)n;
-                handle.data_buffer[n] = '\0';
+                /* CR-01 belt-and-suspenders: the decoder caps n at
+                 * DATA_BUFFER_SIZE-1 (PUSH guard), so n < DATA_BUFFER_SIZE
+                 * always holds post-fix and data_buffer[n] is in-bounds.
+                 * This guard documents the invariant at the write site and
+                 * protects against any future caller that forgets the cap. */
+                if (n < DATA_BUFFER_SIZE) {
+                    handle.data_buffer[n] = '\0';
+                }
                 if (init_programmer_framed(&handle)) {
                     return;
                 }

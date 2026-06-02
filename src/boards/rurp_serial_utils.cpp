@@ -73,23 +73,51 @@ size_t rurp_communication_read_bytes(char* buffer, size_t size) {
 //     has_last              — `last_byte` holds a valid unwritten decoded byte
 //     last_byte             — 1-byte output lookahead
 //
-//   Overflow guard (T-50-01): if out == DATA_BUFFER_SIZE on a commit attempt,
-//   drain to the next 0x00 and return -2 (payload too large).
+//   Overflow guard (T-50-01, CR-01): if out == DATA_BUFFER_SIZE-1 on a commit
+//   attempt, drain to the next 0x00 and return -2 (payload too large).
+//   The cap is DATA_BUFFER_SIZE-1 (not DATA_BUFFER_SIZE) to reserve the
+//   NUL-terminator slot: the decoder returns n <= DATA_BUFFER_SIZE-1 always,
+//   so the caller's one-past NUL terminate (data_buffer[n] = '\0') is always
+//   in-bounds — no OOB write into handle.data_size (CR-01 closed).
 //   Error invariant (Pattern 3 / D-06): on ANY COBS/CRC failure, drain bytes
 //   up to AND INCLUDING the next 0x00 so the RX cursor re-anchors at a frame
 //   boundary.
 //
 // SC1 win: the 2 s timeout_ms loop is GONE; frame boundary = 0x00 delimiter.
 // Negative-code contract: callers check res<0 only (Assumption A4).
+// CR-02: bounded mid-frame inter-byte deadline on both spin sites — armed only
+// once decoding is underway; the deleted 2 s idle cascade is NOT reintroduced;
+// D-06 intent honored (no idle wall-clock timer on the truly-idle path).
 
 /* Forward declaration: crc8_ccitt is defined below with the PROGMEM table. */
 static uint8_t crc8_ccitt(uint8_t crc, uint8_t b);
 
 static void _drain_to_delimiter(void) {
     /* Consume bytes up to and including the next 0x00 delimiter to re-anchor
-     * the RX cursor at a frame boundary (Pattern 3 / D-06). */
+     * the RX cursor at a frame boundary (Pattern 3 / D-06).
+     *
+     * CR-02: bounded mid-frame inter-byte deadline — armed only when a frame
+     * is already in progress (the caller has consumed at least one byte).
+     * On host silence (available() stays 0 past TIMEOUT_MS), simply return:
+     * the cursor stays where it is; the next loop() iteration re-gates on
+     * available()>0.  The drain itself must never hang (CR-02 closes the
+     * pre-migration regression vs Serial.setTimeout-bounded readBytes).
+     *
+     * NOTE: this is a MID-FRAME INTER-BYTE guard, NOT an idle wall-clock
+     * timer.  The 2 s idle cascade deleted in Phase 50 (SC1 win) is NOT
+     * reintroduced: loop() still gates entry into the decoder on
+     * rurp_communication_available()>0, so the decoder is never entered on
+     * a truly-idle channel and no timer runs while idle. (D-06 intent honored;
+     * D-06 letter consciously refined — see 51-04-PLAN.md design_reasoning.) */
     while (1) {
-        while (rurp_communication_available() <= 0) {}
+        if (rurp_communication_available() <= 0) {
+            unsigned long start = millis();
+            while (rurp_communication_available() <= 0) {
+                if (millis() - start >= TIMEOUT_MS) {
+                    return;  /* deadline: stop draining, return bounded */
+                }
+            }
+        }
         int d = rurp_communication_read();
         if (d < 0 || (uint8_t)d == 0x00) {
             break;
@@ -106,11 +134,17 @@ int rurp_communication_read_data(char* buffer) {
     uint8_t last_byte = 0;            /* 1-byte output lookahead                     */
 
     /* push_decoded_byte: commit previous `last_byte` to buffer, hold `b` as the
-     * new `last_byte`.  Returns false and drains on overflow. */
+     * new `last_byte`.  Drains and returns -2 on overflow.
+     *
+     * CR-01: cap is DATA_BUFFER_SIZE-1 (not DATA_BUFFER_SIZE) to reserve the
+     * NUL-terminator slot.  The decoder returns n <= DATA_BUFFER_SIZE-1 always,
+     * so the caller's `data_buffer[n] = '\0'` is always in-bounds — no OOB
+     * write into handle.data_size (CR-01 closed; T-51-01 mitigated).
+     * A payload of exactly DATA_BUFFER_SIZE bytes takes this overflow path. */
 #define PUSH(b_)                                                   \
     do {                                                           \
         if (has_last) {                                            \
-            if (out >= DATA_BUFFER_SIZE) {                         \
+            if (out >= DATA_BUFFER_SIZE - 1) {                     \
                 _drain_to_delimiter();                             \
                 return -2;                                         \
             }                                                      \
@@ -121,8 +155,24 @@ int rurp_communication_read_data(char* buffer) {
     } while (0)
 
     while (1) {
-        /* Delimiter-driven: spin until a byte is available. */
-        while (rurp_communication_available() <= 0) {}
+        /* Delimiter-driven: wait until a byte is available.
+         * CR-02: bounded mid-frame inter-byte deadline — armed only once
+         * decoding is underway (loop() gated entry on available()>0, so we
+         * arrive here with at least the first byte already consumed).
+         * On host silence past TIMEOUT_MS: drain (bounded) + return negative.
+         * This prevents a truncated frame (host kills connection mid-frame)
+         * from hanging the programmer until physical reset (T-51-02 mitigated).
+         * The truly-idle path is unaffected: loop() guards entry on
+         * rurp_communication_available()>0, so no timer runs while idle. */
+        if (rurp_communication_available() <= 0) {
+            unsigned long start = millis();
+            while (rurp_communication_available() <= 0) {
+                if (millis() - start >= TIMEOUT_MS) {
+                    _drain_to_delimiter();  /* bounded drain before return */
+                    return -1;             /* mid-frame inter-byte deadline exceeded */
+                }
+            }
+        }
 
         int b = rurp_communication_read();
         if (b < 0) {

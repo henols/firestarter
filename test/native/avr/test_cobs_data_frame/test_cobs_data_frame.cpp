@@ -246,14 +246,29 @@ void test_cobs_resync_bounded(void) {
 /* ------------------------------------------------------------------------ */
 /* test_cobs_all_zero_payload (FRAME-04 + Pitfall 2)                        */
 /*                                                                           */
-/* A 512 B all-0x00 payload COBS-encodes to 513 code bytes + delimiter and  */
-/* must round-trip cleanly.                                                  */
+/* Phase 51 Plan 04 (CR-01) update: the PUSH overflow guard was lowered from */
+/* `out >= DATA_BUFFER_SIZE` to `out >= DATA_BUFFER_SIZE - 1` to reserve    */
+/* the NUL-terminator slot.  The largest payload the decoder now accepts is  */
+/* DATA_BUFFER_SIZE-1 (511 bytes).  A 512-byte payload overflows to -2.      */
+/*                                                                           */
+/* This test is updated to use DATA_BUFFER_SIZE-1 (511) bytes of all-zero   */
+/* payload — the maximum accepted size.  The COBS encoding property          */
+/* (no 0x00 in the body before the delimiter) is still verified.             */
+/*                                                                           */
+/* Rationale: rurp_communication_read_data() is the HOST→FW command decoder. */
+/* The fw→host data-block path uses MSG_DATA_CHUNK magic-preamble frames    */
+/* (ADR §4.2, UNCHANGED in v1.10) and never passes a 512-byte payload       */
+/* through this function in production.  The largest legitimate JSON command */
+/* is ~422 B (CONTEXT.md), well under the 511-byte cap.                     */
 /* ------------------------------------------------------------------------ */
 void test_cobs_all_zero_payload(void) {
-    /* 512-byte all-zero payload (blank EPROM content). */
-    static const uint8_t zero_payload[DATA_BUFFER_SIZE] = { 0 };
+    /* DATA_BUFFER_SIZE-1 (511) bytes of zero — the largest accepted payload
+     * after the CR-01 PUSH guard change (Phase 51 Plan 04). */
+    const size_t max_accepted = DATA_BUFFER_SIZE - 1;
+    static uint8_t zero_payload[DATA_BUFFER_SIZE - 1];
+    memset(zero_payload, 0, max_accepted);
 
-    build_cobs_frame_bytes(zero_payload, sizeof(zero_payload), rx_queue);
+    build_cobs_frame_bytes(zero_payload, max_accepted, rx_queue);
 
     /* Verify the encoded body contains no 0x00 before the delimiter. */
     /* (The delimiter is the last byte.) */
@@ -266,9 +281,11 @@ void test_cobs_all_zero_payload(void) {
 
     int res = rurp_communication_read_data(data_buffer);
 
-    /* GREEN condition: decoded to DATA_BUFFER_SIZE bytes of 0x00. */
+    /* GREEN condition: decoded to DATA_BUFFER_SIZE-1 bytes of 0x00.
+     * CR-01 invariant: n <= DATA_BUFFER_SIZE-1, so data_buffer[n] = '\0'
+     * is always in-bounds. */
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res);
-    TEST_ASSERT_EQUAL_size_t((size_t)DATA_BUFFER_SIZE, (size_t)res);
+    TEST_ASSERT_EQUAL_size_t(max_accepted, (size_t)res);
     for (int i = 0; i < res; i++) {
         TEST_ASSERT_EQUAL_HEX8(0x00, (uint8_t)data_buffer[i]);
     }
