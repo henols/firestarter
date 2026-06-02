@@ -270,6 +270,21 @@ static inline int _execute_operation_house_keeping_func(void (*callback)(firesta
  */
 static inline bool _single_step_operation_callback(firestarter_handle_t* handle) {
     int res = _execute_operation(handle->firestarter_operation_main, handle);
+    // _execute_operation runs the main op in programmer mode (com_mode=false) and
+    // restores communication mode before returning. On the Uno, rurp_log_id is
+    // com_mode-gated, so a multi-step op (blank-check) cannot emit progress/errors
+    // from inside programmer mode — they are silently dropped and the host times out.
+    // For the standalone blank-check command, flush those frames HERE, in
+    // communication mode. mem_util_blank_check stashes the not-blank offset+value in
+    // data_buffer (data_size==4) and leaves handle->address as the progress counter.
+    // (#transport-protocol-verify)
+    if (handle->cmd == CMD_BLANK_CHECK) {
+        if (res == ERROR && handle->data_size == 4) {
+            LOG_ERROR_ID_BYTES(MSG_ERR_NOT_BLANK, (const uint8_t*)handle->data_buffer, 4);
+        } else if (res != ERROR && is_operation_in_progress(handle)) {
+            LOG_DATA_ID_U32_U32(MSG_DATA_PROGRESS, handle->address, handle->mem_size);
+        }
+    }
     if (res == ERROR) {
         return false;
     }

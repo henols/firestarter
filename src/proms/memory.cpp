@@ -322,13 +322,25 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
     for (uint32_t i = handle->address; i < end_address && i < handle->mem_size; i++) {
         uint8_t val = handle->firestarter_get_data(handle, i);
         if (val != 0xFF) {
-            {
-                uint8_t _b[4] = {
-                    (uint8_t)((i >> 16) & 0xFF),
-                    (uint8_t)((i >> 8) & 0xFF),
-                    (uint8_t)(i & 0xFF),
-                    (uint8_t)val,
-                };
+            uint8_t _b[4] = {
+                (uint8_t)((i >> 16) & 0xFF),
+                (uint8_t)((i >> 8) & 0xFF),
+                (uint8_t)(i & 0xFF),
+                (uint8_t)val,
+            };
+            // On the Uno, rurp_log_id is com_mode-gated and this function runs in
+            // programmer mode, so a direct emit here is silently dropped. For the
+            // standalone blank-check command, stash the offset+value and let
+            // _single_step_operation_callback emit MSG_ERR_NOT_BLANK in communication
+            // mode. Other callers (write-init / erase-end) keep the direct emit.
+            // (#transport-protocol-verify)
+            if (handle->cmd == CMD_BLANK_CHECK) {
+                handle->data_buffer[0] = (char)_b[0];
+                handle->data_buffer[1] = (char)_b[1];
+                handle->data_buffer[2] = (char)_b[2];
+                handle->data_buffer[3] = (char)_b[3];
+                handle->data_size = 4;
+            } else {
                 LOG_ERROR_ID_BYTES(MSG_ERR_NOT_BLANK, _b, 4);
             }
             handle->response_code = RESPONSE_CODE_ERROR;
@@ -346,7 +358,13 @@ void mem_util_blank_check(firestarter_handle_t* handle) {
     if (handle->address > handle->mem_size) {
         handle->address = handle->mem_size;
     }
-    // Send progress back to the client
-    LOG_DATA_ID_U32_U32(MSG_DATA_PROGRESS, handle->address, handle->mem_size);
+    // Send progress back to the client. For the standalone blank-check command the
+    // emit is deferred to _single_step_operation_callback (communication mode): this
+    // function runs in programmer mode where the Uno's com_mode-gated rurp_log_id
+    // drops frames. Other callers (write-init / erase-end) keep the direct emit.
+    // (#transport-protocol-verify)
+    if (handle->cmd != CMD_BLANK_CHECK) {
+        LOG_DATA_ID_U32_U32(MSG_DATA_PROGRESS, handle->address, handle->mem_size);
+    }
 #endif
 }
