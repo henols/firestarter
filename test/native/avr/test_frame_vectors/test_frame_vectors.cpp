@@ -57,8 +57,8 @@ static size_t rx_pos;
 
 /* ------------------------------------------------------------------------ */
 /* Reference CRC8 (poly 0x07, seed 0x00, no refl, no XOR) — table-free.    */
-/* Copied from test_cobs_cmd_frame.cpp so this suite is fully independent   */
-/* of the production CRC8_TABLE in rurp_serial_utils.cpp.                   */
+/* Copied verbatim from test_cobs_cmd_frame.cpp so this suite is fully      */
+/* independent of the production CRC8_TABLE in rurp_serial_utils.cpp.       */
 /* ------------------------------------------------------------------------ */
 static uint8_t ref_crc8(const uint8_t* data, size_t n) {
     uint8_t crc = 0;
@@ -79,10 +79,12 @@ static uint8_t ref_crc8(const uint8_t* data, size_t n) {
 /* Encodes `src[0..len-1]` into `dst`, returns encoded byte count (without  */
 /* the trailing 0x00 delimiter — caller appends it).                        */
 /*                                                                           */
-/* Standard COBS: scan for 0x00 or end of run (≤254 non-zero bytes), emit  */
+/* Standard COBS: scan for 0x00 or end of run (<=254 non-zero bytes), emit */
 /* run-code byte (run_len+1), then the non-zero bytes.  A 0x00 payload byte */
 /* emits a run-code of 1 with no data bytes.  A 254-run code byte is 0xFF   */
 /* (no implicit zero follows it per RFC COBS).                               */
+/*                                                                           */
+/* Copied verbatim from test_cobs_cmd_frame.cpp.                             */
 /* ------------------------------------------------------------------------ */
 static size_t test_cobs_encode(const uint8_t* src, size_t len, uint8_t* dst) {
     size_t out = 0;
@@ -112,7 +114,8 @@ static size_t test_cobs_encode(const uint8_t* src, size_t len, uint8_t* dst) {
 /* Build the COBS frame byte sequence (no '#' preamble for command frames) into
  * `out_vec`:
  *   COBS(payload + CRC8(payload)) + 0x00
- * This is what rurp_communication_read_data() receives on the command channel. */
+ * This is what rurp_communication_read_data() receives on the command channel.
+ * Copied verbatim from test_cobs_cmd_frame.cpp. */
 static void build_cobs_frame_bytes(
     const uint8_t* payload, size_t payload_len,
     std::vector<uint8_t>& out_vec
@@ -168,12 +171,104 @@ void tearDown(void) {
 }
 
 /* ------------------------------------------------------------------------ */
-/* main — Wave-0 scaffold (compiles + links cleanly; no RUN_TEST yet)       */
+/* test_crc8_known_answer (D-06 / SC4)                                      */
+/*                                                                           */
+/* Pins CRC8 poly 0x07, seed 0x00 independently of the production           */
+/* CRC8_TABLE PROGMEM array in rurp_serial_utils.cpp.                       */
+/*                                                                           */
+/* Known values:                                                             */
+/*   ref_crc8([0x01], 1) == 0x07  — CRC8 of 0x01 is the polynomial itself  */
+/*   ref_crc8(NULL,   0) == 0x00  — empty payload returns seed              */
+/* ------------------------------------------------------------------------ */
+void test_crc8_known_answer(void) {
+    const uint8_t input[] = { 0x01 };
+    TEST_ASSERT_EQUAL_HEX8(0x07, ref_crc8(input, 1));
+    TEST_ASSERT_EQUAL_HEX8(0x00, ref_crc8(NULL, 0));
+}
+
+/* ------------------------------------------------------------------------ */
+/* test_vector_encode_leg (LOCK-01, leg 1)                                  */
+/*                                                                           */
+/* For every golden vector in FRAME_VECTORS (including 512/1024-byte ones): */
+/*   build_cobs_frame_bytes(vec.payload, vec.payload_len) == vec.frame      */
+/*                                                                           */
+/* The encoder has no cap — all vectors exercise the encode leg.            */
+/* ------------------------------------------------------------------------ */
+void test_vector_encode_leg(void) {
+    for (uint16_t i = 0; i < FRAME_VECTOR_COUNT; i++) {
+        /* Read vector from PROGMEM into a local copy. */
+        frame_vector_t vec;
+        memcpy_P(&vec, &FRAME_VECTORS[i], sizeof(frame_vector_t));
+
+        /* Build the expected frame bytes using the test-side encoder. */
+        std::vector<uint8_t> built;
+        build_cobs_frame_bytes(vec.payload, vec.payload_len, built);
+
+        /* Assert byte-for-byte match against the frozen frame bytes. */
+        TEST_ASSERT_EQUAL_size_t(vec.frame_len, built.size());
+        TEST_ASSERT_EQUAL_MEMORY(vec.frame, built.data(), vec.frame_len);
+    }
+}
+
+/* ------------------------------------------------------------------------ */
+/* test_vector_decode_leg (LOCK-01, leg 2)                                  */
+/*                                                                           */
+/* For each golden vector with payload_len <= DATA_BUFFER_SIZE - 1 (511 B): */
+/*   rurp_communication_read_data(vec.frame) returns vec.payload_len and    */
+/*   data_buffer matches vec.payload byte-for-byte.                         */
+/*                                                                           */
+/* Vectors with payload_len > 511 are encoder-only (CR-01 / Pitfall 5).    */
+/* The command-channel decoder caps at DATA_BUFFER_SIZE - 1 bytes; a        */
+/* 512-byte payload overflows the cap and returns < 0. These are the        */
+/* data-block path vectors (VEC_512_*, VEC_1024_*) — their encode leg is   */
+/* asserted in test_vector_encode_leg instead.                              */
+/* ------------------------------------------------------------------------ */
+void test_vector_decode_leg(void) {
+    for (uint16_t i = 0; i < FRAME_VECTOR_COUNT; i++) {
+        /* Read vector from PROGMEM into a local copy. */
+        frame_vector_t vec;
+        memcpy_P(&vec, &FRAME_VECTORS[i], sizeof(frame_vector_t));
+
+        /* Skip encoder-only vectors (decode leg capped at 511 bytes, CR-01). */
+        if (vec.payload_len > DATA_BUFFER_SIZE - 1) {
+            continue;
+        }
+
+        /* Load the frozen frame bytes into the rx_queue mock. */
+        rx_queue.clear();
+        rx_pos = 0;
+        rx_queue.insert(rx_queue.end(), vec.frame, vec.frame + vec.frame_len);
+        setup_serial_read_mock(rx_queue, rx_pos);
+
+        /* Reset the output buffer for each vector. */
+        memset(data_buffer, 0, sizeof(data_buffer));
+
+        /* Decode and assert. */
+        int res = rurp_communication_read_data(data_buffer);
+
+        /* Must return a non-negative result. */
+        TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res);
+        /* Must return the exact payload length. */
+        TEST_ASSERT_EQUAL_size_t(vec.payload_len, (size_t)res);
+        /* Decoded bytes must match the original payload (skip if empty —
+         * Unity treats TEST_ASSERT_EQUAL_MEMORY with size=0 as an error). */
+        if (vec.payload_len > 0) {
+            TEST_ASSERT_EQUAL_MEMORY(vec.payload, data_buffer, vec.payload_len);
+        }
+    }
+}
+
+/* ------------------------------------------------------------------------ */
+/* main                                                                      */
 /* ------------------------------------------------------------------------ */
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
     UNITY_BEGIN();
-    UNITY_END();
-    return 0;
+
+    RUN_TEST(test_crc8_known_answer);
+    RUN_TEST(test_vector_encode_leg);
+    RUN_TEST(test_vector_decode_leg);
+
+    return UNITY_END();
 }
