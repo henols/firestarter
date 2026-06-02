@@ -25,7 +25,7 @@
 #define RX 0
 #define TX 1
 
-bool init_programmer(firestarter_handle_t* handle);
+bool init_programmer_framed(firestarter_handle_t* handle);
 bool parse_json(firestarter_handle_t* handle);
 void command_done(firestarter_handle_t* handle);
 
@@ -106,11 +106,13 @@ bool parse_json(firestarter_handle_t* handle) {
     return true;
 }
 
-bool init_programmer(firestarter_handle_t* handle) {
+bool init_programmer_framed(firestarter_handle_t* handle) {
     handle->response_code = RESPONSE_CODE_OK;
     handle->operation_state = 0;
 
-    handle->data_size = rurp_communication_read_bytes(handle->data_buffer, DATA_BUFFER_SIZE);
+    /* data_buffer and data_size are pre-filled by the CMD_IDLE COBS decode
+     * step (Phase 51 — the rurp_communication_read_bytes call is deleted).
+     * data_buffer[data_size] is already NUL-terminated by the CMD_IDLE branch. */
     handle->ctrl_flags = 0x80;
     LOG_DEBUG_ID_SUB_U16(DBG_BUFFER_SIZE, (uint16_t)handle->data_size);
     if (handle->data_size == 0) {
@@ -118,7 +120,6 @@ bool init_programmer(firestarter_handle_t* handle) {
         return false;
     }
     LOG_DEBUG_ID_SUB(DBG_SETUP);
-    handle->data_buffer[handle->data_size] = '\0';
 
     if (!parse_json(handle)) {
         return false;
@@ -160,15 +161,30 @@ void loop() {
         command_done(&handle);
     } else if (handle.cmd == CMD_IDLE) {
         if (rurp_communication_available() > 0) {
-            // Look for the start of a JSON object '{' before trying to parse.
-            // This makes the command reception more robust against spurious
-            // characters on the serial line.
-            if (rurp_communication_peak() == '{') {
-                if (init_programmer(&handle)) {
+            /* Phase 51: COBS frame decode replaces the legacy '{'-peek /
+             * discard-non-'{' loop (D-05 deleted).
+             *
+             * rurp_communication_read_data() reads through the 0x00 delimiter,
+             * COBS-decodes in place, verifies CRC8 BEFORE any JSON parse byte
+             * is examined (V5 / ADR §4.4 / T-51-01 mitigation), and on any
+             * COBS/CRC/overflow failure calls _drain_to_delimiter() internally
+             * and returns negative — NO additional drain logic needed here.
+             *
+             * Gate STRICTLY on n > 0: a zero-length decode is not a valid
+             * command.  On n <= 0: log the frame error and stay CMD_IDLE
+             * (bounded recovery is fully handled by the decoder; D-06). */
+            int n = rurp_communication_read_data(handle.data_buffer);
+            if (n > 0) {
+                handle.data_size = (uint32_t)n;
+                handle.data_buffer[n] = '\0';
+                if (init_programmer_framed(&handle)) {
                     return;
                 }
             } else {
-                rurp_communication_read();  // Discard non-'{' character
+                /* CRC mismatch, COBS violation, overflow, or read underrun.
+                 * MSG_ERR_EMPTY_INPUT reused (messages.h is codegen; adding
+                 * MSG_ERR_BAD_FRAME requires a TOML catalog update — deferred). */
+                LOG_ERROR_ID(MSG_ERR_EMPTY_INPUT);
             }
         }
         return;
