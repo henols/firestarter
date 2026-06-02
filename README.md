@@ -14,6 +14,25 @@ The Firestarter Firmaware is intedend to be used with the [Firestarter applicati
 
 For more information, see the [Firestarter README](https://github.com/henols/firestarter_app/blob/main/README.md).
 
+## Breaking Changes (v1.10)
+
+### Command-channel wire protocol — COBS framing + CRC8 (breaking change)
+
+The host→firmware JSON command channel now uses COBS framing with a CRC8-CCITT integrity byte.
+Every command — including the firmware version probe — is wrapped as `[COBS(JSON + CRC8)][0x00]`.
+The firmware verifies CRC8 **before** the JSON parser sees any byte; the previous command channel had
+no checksum. The legacy `{`-peek plaintext command path has been removed entirely — there is no
+plaintext fallback.
+
+**This is a breaking wire-protocol change with no mixed-version interop.** A new host cannot drive
+old (unframed) firmware, and an old host cannot drive new firmware. A mismatched pair simply fails
+(timeout or decode error). **Upgrade both the firmware and the host CLI together (lockstep)** —
+exactly as required by the v1.2 Message-ID rework.
+
+**Upgrade:** reflash firmware **and** upgrade the Firestarter CLI together (`pip install --pre firestarter && firestarter fw -i --pre`).
+
+This change is beta-only (v1.10). Nothing is promoted to stable without operator authorization.
+
 ## Beta / Pre-release Channel
 
 Pre-release firmware `.hex` builds are published as GitHub Pre-releases — tagged `X.Y.ZbN`
