@@ -19,6 +19,12 @@
 #define DATA_BUFFER_SIZE 512
 #endif
 
+/* CMD_FRAME_MAX: largest legitimate JSON command frame payload (bytes).
+ * Worst-case JSON command is ~422 B; 512 B gives headroom.
+ * Equals DATA_BUFFER_SIZE — the decoder's internal overflow cap.
+ * Mirrors constants.py CMD_FRAME_MAX per CLAUDE.md parity (FRAME-05 / D-06). */
+#define CMD_FRAME_MAX DATA_BUFFER_SIZE
+
 #define TIMEOUT_MS 1000
 
 #define CMD_IDLE 0
