@@ -18,6 +18,28 @@ constexpr int INPUT_RESOLUTION = 1023;
 
 bool com_mode = true;
 
+// Deferred-log buffer (#transport-protocol-verify, Phase 53).
+// On the Uno, PORTD doubles as the data bus during programmer mode, so emitting a
+// frame on the wire mid-operation would corrupt the programming pulse — hence the
+// com_mode gate below. Historically rurp_log_id simply DROPPED frames while
+// com_mode==false, which silently lost every operation-emitted error/progress
+// frame (blank-check progress, MSG_ERR_VERIFY mismatch, etc.) -> the host saw
+// nothing and timed out (bench-confirmed Uno; Leonardo unaffected — no gate).
+// Instead of dropping, we BUFFER frames emitted during the programmer-mode window
+// and FLUSH them the moment communication mode is restored (wire safe to drive).
+// Sizing: in production builds SERIAL_DEBUG is undefined so DEBUG frames expand to
+// nothing; an operation emits at most ~1-2 critical frames per programmer-mode
+// window, so DEFERRED_LOG_MAX=4 has ample headroom. Narrow frames only — the wide
+// (MSG_DATA_CHUNK) path runs in communication mode and is never deferred.
+#define DEFERRED_LOG_MAX 4
+#define DEFERRED_PARAM_MAX 8  // widest narrow frame (U32_U32 / U16x4 / progress) = 8 bytes
+static uint8_t deferred_count = 0;
+static struct {
+    uint8_t id;
+    uint8_t len;
+    uint8_t params[DEFERRED_PARAM_MAX];
+} deferred_log[DEFERRED_LOG_MAX];
+
 // Phase 9: deleted the legacy SERIAL_DEBUG infrastructure (debug pin defines
 // plus the soft-serial debug channel). See 09-CONTEXT.md D-02 + D-08.
 
@@ -65,6 +87,13 @@ void rurp_set_communication_mode() {
     rurp_serial_begin(MONITOR_SPEED);
     while (SERIAL_PORT.available()) SERIAL_PORT.read();
     com_mode = true;
+
+    // Flush frames deferred during the programmer-mode window now that the UART is
+    // up and the wire is safe to drive (#transport-protocol-verify).
+    for (uint8_t i = 0; i < deferred_count; i++) {
+        _firestarter_emit_frame(deferred_log[i].id, deferred_log[i].params, deferred_log[i].len);
+    }
+    deferred_count = 0;
 }
 
 void rurp_set_programmer_mode() {
@@ -85,7 +114,23 @@ void rurp_set_programmer_mode() {
 void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count) {
     if (com_mode) {
         _firestarter_emit_frame(id, params, param_count);
+        return;
     }
+    // Programmer mode: the wire is the data bus — defer instead of dropping, then
+    // flush in rurp_set_communication_mode (#transport-protocol-verify).
+    if (param_count > DEFERRED_PARAM_MAX) {
+        param_count = DEFERRED_PARAM_MAX;  // truncate; no narrow frame exceeds this
+    }
+    if (deferred_count < DEFERRED_LOG_MAX) {
+        deferred_log[deferred_count].id = id;
+        deferred_log[deferred_count].len = param_count;
+        for (uint8_t i = 0; i < param_count; i++) {
+            deferred_log[deferred_count].params[i] = params[i];
+        }
+        deferred_count++;
+    }
+    // else: buffer full (should not happen in production — see DEFERRED_LOG_MAX);
+    // drop excess rather than risk emitting on the active bus.
 }
 
 // Uno strong override for rurp_log_id_wide (W-04 MSG_DATA_CHUNK path).
