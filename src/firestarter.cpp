@@ -173,7 +173,7 @@ void loop() {
              * Gate STRICTLY on n > 0: a zero-length decode is not a valid
              * command.  On n <= 0: log the frame error and stay CMD_IDLE
              * (bounded recovery is fully handled by the decoder; D-06). */
-            int n = rurp_communication_read_data(handle.data_buffer);
+            int n = rurp_communication_read_data(handle.data_buffer, DATA_BUFFER_SIZE - 1);
             if (n > 0) {
                 handle.data_size = (uint32_t)n;
                 /* CR-01 belt-and-suspenders: the decoder caps n at

@@ -23,16 +23,21 @@
  * Mirrors constants.py CMD_FRAME_MAX per CLAUDE.md parity (FRAME-05 / D-06). */
 #define CMD_FRAME_MAX DATA_BUFFER_SIZE
 
-/* FW identity string: "<version>:<board>:<data_buffer_size>". The trailing
- * data-buffer-size field lets the host size its host->fw data chunks to the
- * board's ACTUAL decode capacity (chunk + CRC8 <= DATA_BUFFER_SIZE-1), so a
- * 1024-buffer board (Leonardo) can use ~1022-byte chunks while a 512-buffer
- * board (Uno) uses 510 — no hardcoded per-board map on the host. Backward
- * compatible: older hosts split on ':' and read only [version]/[board],
- * ignoring the trailing field. (#transport-protocol-verify / Phase 53 1K) */
+/* FW identity string: "<version>:<board>:<data_buffer_size>:<maxchunk>".
+ * Field 3 (<data_buffer_size>): the board's DATA_BUFFER_SIZE (512 Uno /
+ * 1024 Leonardo).
+ * Field 4 (<maxchunk>): the MAIN-path COBS decode capacity — the exact number
+ * of raw payload bytes the firmware can accept in one write/verify data block.
+ * Phase 54 (EVEN-01/D-01 Candidate A): the MAIN-path cap is DATA_BUFFER_SIZE
+ * (full even block, no NUL-slot reservation needed on the data path), so
+ * <maxchunk> == DATA_BUFFER_SIZE.  The host reads this field directly and uses
+ * it as the chunk size — no buf-2 arithmetic (D-04).  The CMD_IDLE/JSON-command
+ * path still caps at DATA_BUFFER_SIZE-1 (CR-01 NUL-slot preserved).
+ * Backward compatible: older hosts split on ':' and read only [version]/[board],
+ * ignoring trailing fields. (#transport-protocol-verify / Phases 53-54) */
 #define FS_STRINGIFY2(x) #x
 #define FS_STRINGIFY(x) FS_STRINGIFY2(x)
-#define FW_VERSION VERSION ":" RURP_BOARD_NAME ":" FS_STRINGIFY(DATA_BUFFER_SIZE)
+#define FW_VERSION VERSION ":" RURP_BOARD_NAME ":" FS_STRINGIFY(DATA_BUFFER_SIZE) ":" FS_STRINGIFY(DATA_BUFFER_SIZE)
 
 #define TIMEOUT_MS 1000
 

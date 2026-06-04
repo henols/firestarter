@@ -161,7 +161,7 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                 // header size).  Execution reaches here only after peak()=='#'
                 // confirmed available()>=1; the inner guard is unreachable.
                 rurp_communication_read();  // consume '#'
-                int res = rurp_communication_read_data(handle->data_buffer);
+                int res = rurp_communication_read_data(handle->data_buffer, DATA_BUFFER_SIZE);
                 if (res < 0) {
                     LOG_ERROR_ID_U16(MSG_ERR_DATA_ERR_N, (uint16_t)res);
                     return OP_MSG_ERROR;

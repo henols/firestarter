@@ -74,7 +74,7 @@ extern "C" {
     int rurp_communication_peak();
     size_t rurp_communication_write(const char* buffer, size_t size);
     size_t rurp_communication_read_bytes(char* buffer, size_t length);
-    int rurp_communication_read_data(char* buffer);
+    int rurp_communication_read_data(char* buffer, size_t cap);
     
 
     // Phase 9: deleted the two legacy text-prefix log declarations

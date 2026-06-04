@@ -125,7 +125,7 @@ static void _drain_to_delimiter(void) {
     }
 }
 
-int rurp_communication_read_data(char* buffer) {
+int rurp_communication_read_data(char* buffer, size_t cap) {
     size_t out = 0;                   /* committed payload bytes in buffer[]         */
     uint8_t block_remaining = 0;      /* data bytes remaining in current COBS run    */
     bool was_254_run = false;         /* current run started with 0xFF (no impl zero) */
@@ -136,22 +136,25 @@ int rurp_communication_read_data(char* buffer) {
     /* push_decoded_byte: commit previous `last_byte` to buffer, hold `b` as the
      * new `last_byte`.  Drains and returns -2 on overflow.
      *
-     * CR-01: cap is DATA_BUFFER_SIZE-1 (not DATA_BUFFER_SIZE) to reserve the
-     * NUL-terminator slot.  The decoder returns n <= DATA_BUFFER_SIZE-1 always,
-     * so the caller's `data_buffer[n] = '\0'` is always in-bounds — no OOB
-     * write into handle.data_size (CR-01 closed; T-51-01 mitigated).
-     * A payload of exactly DATA_BUFFER_SIZE bytes takes this overflow path. */
-#define PUSH(b_)                                                   \
-    do {                                                           \
-        if (has_last) {                                            \
-            if (out >= DATA_BUFFER_SIZE - 1) {                     \
-                _drain_to_delimiter();                             \
-                return -2;                                         \
-            }                                                      \
-            buffer[out++] = (char)last_byte;                       \
-        }                                                          \
-        last_byte = (b_);                                          \
-        has_last = true;                                           \
+     * Phase 54 (EVEN-01/D-01 Candidate A): overflow guard uses caller-supplied
+     * `cap` instead of the hardcoded DATA_BUFFER_SIZE-1 literal.
+     *   CMD_IDLE path (firestarter.cpp): cap = DATA_BUFFER_SIZE-1  (CR-01 NUL-slot
+     *       preserved; data_buffer[n] = '\0' is always in-bounds).
+     *   MAIN data path (operation_utils.cpp): cap = DATA_BUFFER_SIZE  (full block;
+     *       no NUL write follows; consumers use data_buffer[i] index only).
+     * T-54-01: cap is a compile-time constant at both call sites — no runtime
+     * user input controls the bound.  The overflow/drain path is unchanged. */
+#define PUSH(b_)                                \
+    do {                                        \
+        if (has_last) {                         \
+            if (out >= cap) {                   \
+                _drain_to_delimiter();          \
+                return -2;                      \
+            }                                   \
+            buffer[out++] = (char)last_byte;    \
+        }                                       \
+        last_byte = (b_);                       \
+        has_last = true;                        \
     } while (0)
 
     while (1) {
