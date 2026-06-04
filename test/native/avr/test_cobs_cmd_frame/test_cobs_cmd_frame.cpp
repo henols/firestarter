@@ -195,7 +195,7 @@ void test_cobs_decode_valid_json_command(void) {
     build_cobs_frame_bytes(payload, payload_len, rx_queue);
     setup_serial_read_mock(rx_queue, rx_pos);
 
-    int res = rurp_communication_read_data(data_buffer);
+    int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
 
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res);
     TEST_ASSERT_EQUAL_size_t(payload_len, (size_t)res);
@@ -234,7 +234,7 @@ void test_cobs_crc_reject_does_not_reach_parser(void) {
 
     setup_serial_read_mock(rx_queue, rx_pos);
 
-    int res = rurp_communication_read_data(data_buffer);
+    int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
 
     /* The decoder MUST return negative — CRC mismatch rejects before parse. */
     TEST_ASSERT_LESS_THAN_INT(0, res);
@@ -274,12 +274,12 @@ void test_cobs_resync_bounded(void) {
     setup_serial_read_mock(rx_queue, rx_pos);
 
     /* First call: must return error (res < 0). */
-    int res1 = rurp_communication_read_data(data_buffer);
+    int res1 = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
     TEST_ASSERT_LESS_THAN_INT(0, res1);
 
     /* After draining to 0x00, the read cursor is re-anchored at the start
      * of the valid frame.  Second call must decode it correctly. */
-    int res2 = rurp_communication_read_data(data_buffer);
+    int res2 = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res2);
     TEST_ASSERT_EQUAL_size_t(good_len, (size_t)res2);
     TEST_ASSERT_EQUAL_MEMORY(good_payload, data_buffer, good_len);
@@ -312,11 +312,11 @@ void test_cobs_oversized_frame_bounded_recovery(void) {
     setup_serial_read_mock(rx_queue, rx_pos);
 
     /* First call: oversized frame → overflow drain → return < 0 (code -2). */
-    int res1 = rurp_communication_read_data(data_buffer);
+    int res1 = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
     TEST_ASSERT_LESS_THAN_INT(0, res1);
 
     /* Second call: must recover and decode the valid frame cleanly. */
-    int res2 = rurp_communication_read_data(data_buffer);
+    int res2 = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res2);
     TEST_ASSERT_EQUAL_size_t(sizeof(good_payload), (size_t)res2);
     TEST_ASSERT_EQUAL_MEMORY(good_payload, data_buffer, sizeof(good_payload));
@@ -348,7 +348,7 @@ void test_cobs_exact_buffer_size_payload(void) {
     build_cobs_frame_bytes(payload.data(), payload.size(), rx_queue);
     setup_serial_read_mock(rx_queue, rx_pos);
 
-    int res = rurp_communication_read_data(data_buffer);
+    int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
 
     /* After CR-01 fix: 512-byte payload overflows the cap and returns < 0.
      * CR-01 invariant: n <= DATA_BUFFER_SIZE-1 always, so
@@ -379,7 +379,7 @@ void test_cobs_max_accepted_payload(void) {
     build_cobs_frame_bytes(payload.data(), payload.size(), rx_queue);
     setup_serial_read_mock(rx_queue, rx_pos);
 
-    int res = rurp_communication_read_data(data_buffer);
+    int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
 
     /* The 511-byte payload must decode successfully (n == DATA_BUFFER_SIZE-1). */
     TEST_ASSERT_EQUAL_INT((int)max_len, res);
@@ -437,7 +437,7 @@ void test_cobs_truncated_frame_no_hang(void) {
 
     /* After the CR-02 fix: the bounded inter-byte deadline fires and the
      * call returns negative.  Before the fix: this spins forever (hang). */
-    int res = rurp_communication_read_data(data_buffer);
+    int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
 
     /* Must return (no hang) with a negative error code. */
     TEST_ASSERT_LESS_THAN_INT(0, res);

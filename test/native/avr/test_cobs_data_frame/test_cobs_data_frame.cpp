@@ -190,7 +190,7 @@ void test_cobs_decode_valid_frame(void) {
     build_cobs_frame_bytes(payload, payload_len, rx_queue);
     setup_serial_read_mock(rx_queue, rx_pos);
 
-    int res = rurp_communication_read_data(data_buffer);
+    int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
 
     /* GREEN condition (Wave 2): res == payload_len AND buffer == payload */
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res);
@@ -232,12 +232,12 @@ void test_cobs_resync_bounded(void) {
     setup_serial_read_mock(rx_queue, rx_pos);
 
     /* First call: must return error (res < 0). */
-    int res1 = rurp_communication_read_data(data_buffer);
+    int res1 = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
     TEST_ASSERT_LESS_THAN_INT(0, res1);
 
     /* After draining to 0x00, the read cursor is re-anchored at the start
      * of the valid frame.  Second call must decode it correctly. */
-    int res2 = rurp_communication_read_data(data_buffer);
+    int res2 = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res2);
     TEST_ASSERT_EQUAL_size_t(good_len, (size_t)res2);
     TEST_ASSERT_EQUAL_MEMORY(good_payload, data_buffer, good_len);
@@ -279,7 +279,7 @@ void test_cobs_all_zero_payload(void) {
 
     setup_serial_read_mock(rx_queue, rx_pos);
 
-    int res = rurp_communication_read_data(data_buffer);
+    int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
 
     /* GREEN condition: decoded to DATA_BUFFER_SIZE-1 bytes of 0x00.
      * CR-01 invariant: n <= DATA_BUFFER_SIZE-1, so data_buffer[n] = '\0'
@@ -311,7 +311,7 @@ void test_cobs_254_run_then_zero(void) {
     build_cobs_frame_bytes(payload, sizeof(payload), rx_queue);
     setup_serial_read_mock(rx_queue, rx_pos);
 
-    int res = rurp_communication_read_data(data_buffer);
+    int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res);
     TEST_ASSERT_EQUAL_size_t(sizeof(payload), (size_t)res);
     TEST_ASSERT_EQUAL_MEMORY(payload, data_buffer, sizeof(payload));

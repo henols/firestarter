@@ -4,25 +4,33 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 52 Plan 02 — Firmware Unity vector suite.
+ * Phase 52 Plan 02 / Phase 54 Plan 01 — Firmware Unity vector suite.
  *
  * Asserts both legs of the COBS frame contract against the frozen golden
  * vectors generated in Plan 01 (firestarter/include/frame_vectors.h):
  *
  *   Leg 1 (encode):  build_cobs_frame_bytes(vec.payload) == vec.frame
- *   Leg 2 (decode):  rurp_communication_read_data(vec.frame) == vec.payload
+ *   Leg 2a (decode, CMD_IDLE cap):  rurp_communication_read_data(vec.frame,
+ *       DATA_BUFFER_SIZE - 1) == vec.payload  (skips 512/1024-byte vectors)
+ *   Leg 2b (decode, MAIN path cap): rurp_communication_read_data(vec.frame,
+ *       DATA_BUFFER_SIZE) == vec.payload  (ALL vectors, no skip guard for
+ *       full-buffer payloads — EVEN-01 SC1/SC4 proof)
  *
  * A CRC8 known-answer test (D-06/SC4) pins poly 0x07 / seed 0x00
  * independently of the production CRC8_TABLE PROGMEM array.
  *
- * Decode leg constraint (CR-01): rurp_communication_read_data() caps at
- * DATA_BUFFER_SIZE - 1 = 511 bytes. Vectors with payload_len > 511 are
- * encoder-only; the decode loop skips them (Pitfall 5 / RESEARCH §5.5).
+ * Phase 54 additions (EVEN-01):
+ *   test_vector_decode_leg_main_path — MAIN-path cap=DATA_BUFFER_SIZE decode
+ *       for ALL vectors including 512/1024-byte ones (SC1/SC4).
+ *   test_cmd_idle_overflow_at_full_block — CMD_IDLE cap=DATA_BUFFER_SIZE-1
+ *       rejects 512-byte payload (returns < 0); pins CR-01 regression guard.
+ *   test_even_block_no_remainder — arithmetic assertion: 65536 % DATA_BUFFER_SIZE
+ *       == 0 (no remainder chunk for a full 64 KB chip; EVEN-01 SC2).
  *
  * Mirrors the structure of test_cobs_cmd_frame.cpp (Phase 51 Plan 01).
  * Uses serial_read_mock.h for the decode leg (finite-stream semantics).
  *
- * Requirements pinned: LOCK-01, LOCK-02 (SC2/SC4).
+ * Requirements pinned: LOCK-01, LOCK-02 (SC2/SC4), EVEN-01 (SC1/SC2/SC4).
  */
 
 #include <Arduino.h>
@@ -211,17 +219,16 @@ void test_vector_encode_leg(void) {
 }
 
 /* ------------------------------------------------------------------------ */
-/* test_vector_decode_leg (LOCK-01, leg 2)                                  */
+/* test_vector_decode_leg (LOCK-01, leg 2 — CMD_IDLE path)                  */
 /*                                                                           */
 /* For each golden vector with payload_len <= DATA_BUFFER_SIZE - 1 (511 B): */
-/*   rurp_communication_read_data(vec.frame) returns vec.payload_len and    */
-/*   data_buffer matches vec.payload byte-for-byte.                         */
+/*   rurp_communication_read_data(vec.frame, DATA_BUFFER_SIZE - 1) returns  */
+/*   vec.payload_len and data_buffer matches vec.payload byte-for-byte.     */
 /*                                                                           */
-/* Vectors with payload_len > 511 are encoder-only (CR-01 / Pitfall 5).    */
-/* The command-channel decoder caps at DATA_BUFFER_SIZE - 1 bytes; a        */
-/* 512-byte payload overflows the cap and returns < 0. These are the        */
-/* data-block path vectors (VEC_512_*, VEC_1024_*) — their encode leg is   */
-/* asserted in test_vector_encode_leg instead.                              */
+/* Cap = DATA_BUFFER_SIZE - 1 (CMD_IDLE path; CR-01 NUL-slot reserved).    */
+/* Vectors with payload_len > DATA_BUFFER_SIZE - 1 are skipped here —      */
+/* they test the MAIN path (cap = DATA_BUFFER_SIZE) in                      */
+/* test_vector_decode_leg_main_path below (Pitfall 4 / Phase 54 D-07).     */
 /* ------------------------------------------------------------------------ */
 void test_vector_decode_leg(void) {
     for (uint16_t i = 0; i < FRAME_VECTOR_COUNT; i++) {
@@ -229,7 +236,8 @@ void test_vector_decode_leg(void) {
         frame_vector_t vec;
         memcpy_P(&vec, &FRAME_VECTORS[i], sizeof(frame_vector_t));
 
-        /* Skip encoder-only vectors (decode leg capped at 511 bytes, CR-01). */
+        /* Skip vectors that exceed the CMD_IDLE cap (DATA_BUFFER_SIZE - 1).
+         * Those vectors decode on the MAIN path (test_vector_decode_leg_main_path). */
         if (vec.payload_len > DATA_BUFFER_SIZE - 1) {
             continue;
         }
@@ -243,8 +251,8 @@ void test_vector_decode_leg(void) {
         /* Reset the output buffer for each vector. */
         memset(data_buffer, 0, sizeof(data_buffer));
 
-        /* Decode and assert. */
-        int res = rurp_communication_read_data(data_buffer);
+        /* Decode with CMD_IDLE cap (DATA_BUFFER_SIZE - 1). */
+        int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
 
         /* Must return a non-negative result. */
         TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res);
@@ -259,6 +267,120 @@ void test_vector_decode_leg(void) {
 }
 
 /* ------------------------------------------------------------------------ */
+/* test_vector_decode_leg_main_path (EVEN-01 SC1/SC4 — MAIN data path)     */
+/*                                                                           */
+/* For all golden vectors with payload_len <= DATA_BUFFER_SIZE (including   */
+/* the DATA_BUFFER_SIZE-byte full-buffer vectors):                           */
+/*   rurp_communication_read_data(vec.frame, DATA_BUFFER_SIZE) returns      */
+/*   vec.payload_len and data_buffer matches vec.payload byte-for-byte.     */
+/*                                                                           */
+/* Cap = DATA_BUFFER_SIZE (MAIN/write-receive path — Phase 54 Candidate A). */
+/* Full-buffer vectors (payload_len == DATA_BUFFER_SIZE) are the key case:  */
+/* they decode successfully at this cap, proving EVEN-01 SC1/SC4.           */
+/* Proves: cobs_encode(DATA_BUFFER_SIZE bytes + CRC8) → decoder(cap=        */
+/* DATA_BUFFER_SIZE) → original DATA_BUFFER_SIZE bytes (round-trip SC4).   */
+/* data_buffer[] consumed by index only on this path; no NUL write; safe   */
+/* per RESEARCH D-01 source trace.                                           */
+/*                                                                           */
+/* Note: vectors with payload_len > DATA_BUFFER_SIZE (e.g. Leonardo 1024-  */
+/* byte vectors when built in Uno native mode) are skipped here because     */
+/* the static data_buffer is exactly DATA_BUFFER_SIZE bytes — they test a  */
+/* board-specific scenario outside the native test env's buffer capacity.  */
+/* ------------------------------------------------------------------------ */
+void test_vector_decode_leg_main_path(void) {
+    for (uint16_t i = 0; i < FRAME_VECTOR_COUNT; i++) {
+        /* Read vector from PROGMEM into a local copy. */
+        frame_vector_t vec;
+        memcpy_P(&vec, &FRAME_VECTORS[i], sizeof(frame_vector_t));
+
+        /* Skip vectors whose payload exceeds this env's DATA_BUFFER_SIZE
+         * (e.g. 1024-byte Leonardo vectors when DATA_BUFFER_SIZE = 512). */
+        if (vec.payload_len > DATA_BUFFER_SIZE) {
+            continue;
+        }
+
+        /* Load the frozen frame bytes into the rx_queue mock. */
+        rx_queue.clear();
+        rx_pos = 0;
+        rx_queue.insert(rx_queue.end(), vec.frame, vec.frame + vec.frame_len);
+        setup_serial_read_mock(rx_queue, rx_pos);
+
+        /* Reset the output buffer for each vector. */
+        memset(data_buffer, 0, sizeof(data_buffer));
+
+        /* Decode with MAIN-path cap (DATA_BUFFER_SIZE — full even block).
+         * Key assertion: 512-byte payloads decode successfully (no -2 overflow). */
+        int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE);
+
+        /* Must return a non-negative result (including the DATA_BUFFER_SIZE-byte vectors). */
+        TEST_ASSERT_GREATER_OR_EQUAL_INT(0, res);
+        /* Must return the exact payload length. */
+        TEST_ASSERT_EQUAL_size_t(vec.payload_len, (size_t)res);
+        /* Decoded bytes must match the original payload. */
+        if (vec.payload_len > 0) {
+            TEST_ASSERT_EQUAL_MEMORY(vec.payload, data_buffer, vec.payload_len);
+        }
+    }
+}
+
+/* ------------------------------------------------------------------------ */
+/* test_cmd_idle_overflow_at_full_block (CR-01 regression guard — Pitfall 1)*/
+/*                                                                           */
+/* Feed the VEC_512_ALL_FF frame (512-byte payload, 517-byte frame) to the  */
+/* decoder with CMD_IDLE cap (DATA_BUFFER_SIZE - 1 = 511).                  */
+/* Assert return value < 0 (overflow, -2).                                  */
+/*                                                                           */
+/* This pins the CR-01 NUL-slot reservation on the command path: a 512-byte */
+/* payload MUST overflow the CMD_IDLE decoder — if this test regresses to   */
+/* passing (returning > 0), the caller's data_buffer[n] = '\0' write would  */
+/* be an OOB write at data_buffer[512] (into handle.data_size — T-54-02).  */
+/* Guards Pitfall 1: "Forgetting the CMD_IDLE Cap".                         */
+/* ------------------------------------------------------------------------ */
+void test_cmd_idle_overflow_at_full_block(void) {
+    /* Find VEC_512_ALL_FF in the golden-vector catalog (id = 0x09). */
+    frame_vector_t vec512;
+    bool found = false;
+    for (uint16_t i = 0; i < FRAME_VECTOR_COUNT; i++) {
+        frame_vector_t v;
+        memcpy_P(&v, &FRAME_VECTORS[i], sizeof(frame_vector_t));
+        if (v.payload_len == DATA_BUFFER_SIZE) {
+            memcpy(&vec512, &v, sizeof(frame_vector_t));
+            found = true;
+            break;
+        }
+    }
+    /* If no 512-byte vector exists in the catalog, this guard cannot fire. */
+    TEST_ASSERT_TRUE_MESSAGE(found, "No DATA_BUFFER_SIZE-byte vector in catalog");
+
+    /* Load the VEC_512_ALL_FF frame bytes into the rx_queue mock. */
+    rx_queue.clear();
+    rx_pos = 0;
+    rx_queue.insert(rx_queue.end(), vec512.frame, vec512.frame + vec512.frame_len);
+    setup_serial_read_mock(rx_queue, rx_pos);
+
+    memset(data_buffer, 0, sizeof(data_buffer));
+
+    /* Decode with CMD_IDLE cap (DATA_BUFFER_SIZE - 1): must overflow. */
+    int res = rurp_communication_read_data(data_buffer, DATA_BUFFER_SIZE - 1);
+
+    /* Must return a negative value (-2 overflow). CR-01 invariant pinned. */
+    TEST_ASSERT_LESS_THAN_INT(0, res);
+}
+
+/* ------------------------------------------------------------------------ */
+/* test_even_block_no_remainder (EVEN-01 SC2 — no remainder chunk)          */
+/*                                                                           */
+/* Pure arithmetic assertion: 65536 (a full 64 KB chip) divides exactly     */
+/* into DATA_BUFFER_SIZE blocks with zero remainder.                        */
+/* 65536 % 512 == 0 → 128 × 512 = 65536 exactly, no partial last chunk.    */
+/* (Also true for 1024: 65536 % 1024 == 0 → 64 × 1024 = 65536.)           */
+/* No mock needed.                                                           */
+/* ------------------------------------------------------------------------ */
+void test_even_block_no_remainder(void) {
+    TEST_ASSERT_EQUAL_UINT32(0, (uint32_t)(65536 % DATA_BUFFER_SIZE));
+}
+
+/* ------------------------------------------------------------------------ */
 /* main                                                                      */
 /* ------------------------------------------------------------------------ */
 int main(int argc, char** argv) {
@@ -269,6 +391,9 @@ int main(int argc, char** argv) {
     RUN_TEST(test_crc8_known_answer);
     RUN_TEST(test_vector_encode_leg);
     RUN_TEST(test_vector_decode_leg);
+    RUN_TEST(test_vector_decode_leg_main_path);
+    RUN_TEST(test_cmd_idle_overflow_at_full_block);
+    RUN_TEST(test_even_block_no_remainder);
 
     return UNITY_END();
 }
