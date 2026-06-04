@@ -13,8 +13,6 @@
 
 #include "rurp_shield.h"
 
-#define FW_VERSION VERSION ":" RURP_BOARD_NAME
-
 #ifndef DATA_BUFFER_SIZE
 #define DATA_BUFFER_SIZE 512
 #endif
@@ -24,6 +22,17 @@
  * Equals DATA_BUFFER_SIZE — the decoder's internal overflow cap.
  * Mirrors constants.py CMD_FRAME_MAX per CLAUDE.md parity (FRAME-05 / D-06). */
 #define CMD_FRAME_MAX DATA_BUFFER_SIZE
+
+/* FW identity string: "<version>:<board>:<data_buffer_size>". The trailing
+ * data-buffer-size field lets the host size its host->fw data chunks to the
+ * board's ACTUAL decode capacity (chunk + CRC8 <= DATA_BUFFER_SIZE-1), so a
+ * 1024-buffer board (Leonardo) can use ~1022-byte chunks while a 512-buffer
+ * board (Uno) uses 510 — no hardcoded per-board map on the host. Backward
+ * compatible: older hosts split on ':' and read only [version]/[board],
+ * ignoring the trailing field. (#transport-protocol-verify / Phase 53 1K) */
+#define FS_STRINGIFY2(x) #x
+#define FS_STRINGIFY(x) FS_STRINGIFY2(x)
+#define FW_VERSION VERSION ":" RURP_BOARD_NAME ":" FS_STRINGIFY(DATA_BUFFER_SIZE)
 
 #define TIMEOUT_MS 1000
 
