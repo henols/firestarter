@@ -92,7 +92,7 @@ size_t rurp_communication_read_bytes(char* buffer, size_t size) {
 /* Forward declaration: crc8_ccitt is defined below with the PROGMEM table. */
 static uint8_t crc8_ccitt(uint8_t crc, uint8_t b);
 
-static void _drain_to_delimiter(void) {
+static void _drain_to_delimiter(bool wait_on_silence) {
     /* Consume bytes up to and including the next 0x00 delimiter to re-anchor
      * the RX cursor at a frame boundary (Pattern 3 / D-06).
      *
@@ -103,6 +103,16 @@ static void _drain_to_delimiter(void) {
      * available()>0.  The drain itself must never hang (CR-02 closes the
      * pre-migration regression vs Serial.setTimeout-bounded readBytes).
      *
+     * 53-04 optimization: `wait_on_silence`. The mid-frame inter-byte deadline
+     * caller (read-data spin site) has ALREADY established host silence
+     * (available()<=0 sustained for TIMEOUT_MS) with an EMPTY buffer — so a
+     * second TIMEOUT_MS silence-wait here is pure redundant latency (~2 s total
+     * for a truncated/dropped-delimiter frame). It passes wait_on_silence=false:
+     * drain only bytes that are already buffered (re-anchoring is preserved if a
+     * late tail arrived) and return immediately on an empty buffer (~1 s total).
+     * The overflow / read-underrun callers pass true (a frame tail may still be
+     * streaming in, so the bounded silence-wait is still wanted there).
+     *
      * NOTE: this is a MID-FRAME INTER-BYTE guard, NOT an idle wall-clock
      * timer.  The 2 s idle cascade deleted in Phase 50 (SC1 win) is NOT
      * reintroduced: loop() still gates entry into the decoder on
@@ -111,6 +121,9 @@ static void _drain_to_delimiter(void) {
      * D-06 letter consciously refined — see 51-04-PLAN.md design_reasoning.) */
     while (1) {
         if (rurp_communication_available() <= 0) {
+            if (!wait_on_silence) {
+                return;  /* caller already proved silence; nothing buffered to drain */
+            }
             unsigned long start = millis();
             while (rurp_communication_available() <= 0) {
                 if (millis() - start >= TIMEOUT_MS) {
@@ -148,7 +161,7 @@ int rurp_communication_read_data(char* buffer, size_t cap) {
     do {                                        \
         if (has_last) {                         \
             if (out >= cap) {                   \
-                _drain_to_delimiter();          \
+                _drain_to_delimiter(true);      \
                 return -2;                      \
             }                                   \
             buffer[out++] = (char)last_byte;    \
@@ -171,7 +184,10 @@ int rurp_communication_read_data(char* buffer, size_t cap) {
             unsigned long start = millis();
             while (rurp_communication_available() <= 0) {
                 if (millis() - start >= TIMEOUT_MS) {
-                    _drain_to_delimiter();  /* bounded drain before return */
+                    /* 53-04: silence already proven + buffer empty -> drain without a
+                     * second redundant TIMEOUT_MS wait (brings a dropped-delimiter
+                     * frame error from ~2 s to ~1 s). */
+                    _drain_to_delimiter(false);
                     return -1;             /* mid-frame inter-byte deadline exceeded */
                 }
             }
@@ -179,7 +195,7 @@ int rurp_communication_read_data(char* buffer, size_t cap) {
 
         int b = rurp_communication_read();
         if (b < 0) {
-            _drain_to_delimiter();
+            _drain_to_delimiter(true);
             return -1; /* read() underrun */
         }
         uint8_t byte = (uint8_t)b;
