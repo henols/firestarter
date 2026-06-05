@@ -139,7 +139,7 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     LOG_INFO_ID_U8(MSG_INFO_HW, (uint8_t)rurp_get_hardware_revision());
 #endif
     LOG_INFO_ID_U8(MSG_INFO_CMD, (uint8_t)handle->cmd);
-    LOG_OK_ID(MSG_OK_READY);
+    LOG_OK_ID_U16(MSG_OK_READY, (uint16_t)DATA_BUFFER_SIZE);
     op_reset_timeout();
     return true;
 }

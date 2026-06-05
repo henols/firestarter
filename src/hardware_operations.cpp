@@ -40,7 +40,7 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
 
         // Send a ready signal to the client to prompt it for the first ACK.
         // This establishes a handshake and avoids a race condition.
-        LOG_OK_ID(MSG_OK_READY);
+        LOG_OK_ID_U16(MSG_OK_READY, (uint16_t)DATA_BUFFER_SIZE);
 
         // Return false to keep the command active, but do not fall through.
         // The next call will be in state 1, ready to receive the client's ACK.

@@ -104,7 +104,7 @@ bool dt_set_registers(firestarter_handle_t* handle) {
     }
 #else
 #endif
-    LOG_OK_ID(MSG_OK_READY);  // D-04: was legacy ack; semantics ≈ "setup done, waiting on user button"
+    LOG_OK_ID_U16(MSG_OK_READY, (uint16_t)DATA_BUFFER_SIZE);  // D-04: was legacy ack; semantics ≈ "setup done, waiting on user button"
     rurp_set_programmer_mode();
 
     rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
@@ -150,7 +150,7 @@ bool dt_set_address(firestarter_handle_t* handle) {
 #else
     // dt_decode_ctrl(top_address);
 #endif
-    LOG_OK_ID(MSG_OK_READY);  // D-04: was legacy ack; semantics ≈ "setup done, waiting on user button"
+    LOG_OK_ID_U16(MSG_OK_READY, (uint16_t)DATA_BUFFER_SIZE);  // D-04: was legacy ack; semantics ≈ "setup done, waiting on user button"
     rurp_set_programmer_mode();
     mem_util_set_address(handle, address);
     rurp_set_chip_enable(!is_flag_set(FLAG_CHIP_ENABLE));
