@@ -200,6 +200,41 @@ void test_crc_polynomial_smoke(void) {
     TEST_ASSERT_EQUAL_HEX8(0x0A, captured[12]);
 }
 
+void test_ok_ready_u16_param_frame(void) {
+    // SC2 contract: MSG_OK_READY emits a 2-byte big-endian param carrying
+    // DATA_BUFFER_SIZE (512 on Uno). rurp_log_id_u16 packs MSB-first.
+    // Frame: 4 magic + 2 len (u16) + 1 id + 2 params + 1 crc + 1 anchor = 11 bytes.
+    // len = 1 (id) + 2 (params) + 1 (crc) = 4 = 0x0004.
+    rurp_log_id_u16(MSG_OK_READY, 512);
+
+    TEST_ASSERT_EQUAL_size_t(11, captured.size());
+
+    // Magic preamble.
+    TEST_ASSERT_EQUAL_HEX8(0xAA, captured[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x55, captured[1]);
+    TEST_ASSERT_EQUAL_HEX8(0xAA, captured[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x55, captured[3]);
+
+    // len = 4, encoded as u16 big-endian.
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[4]);    // len MSB
+    TEST_ASSERT_EQUAL_HEX8(0x04, captured[5]);    // len LSB
+
+    // id = MSG_OK_READY = 0x01.
+    TEST_ASSERT_EQUAL_HEX8(0x01, captured[6]);
+    TEST_ASSERT_EQUAL_HEX8((uint8_t)MSG_OK_READY, captured[6]);
+
+    // 2-byte big-endian param: 512 = 0x0200, MSB first.
+    TEST_ASSERT_EQUAL_HEX8(0x02, captured[7]);    // 512 >> 8
+    TEST_ASSERT_EQUAL_HEX8(0x00, captured[8]);    // 512 & 0xFF
+
+    // CRC over [0x01, 0x02, 0x00] (body = id + params).
+    uint8_t body[3] = { 0x01, 0x02, 0x00 };
+    TEST_ASSERT_EQUAL_HEX8(ref_crc8(body, 3), captured[9]);
+
+    // Re-sync anchor.
+    TEST_ASSERT_EQUAL_HEX8(0x0A, captured[10]);
+}
+
 void test_oversize_param_count_rejected(void) {
     // Phase 8 W-04: _firestarter_emit_frame guard raised from 253 to 65533.
     // `len = 1 (id) + param_count + 1 (crc)` is now a u16, so no uint8_t
@@ -258,6 +293,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_multi_param_frame);
     RUN_TEST(test_crc_polynomial_smoke);
     RUN_TEST(test_oversize_param_count_rejected);
+    RUN_TEST(test_ok_ready_u16_param_frame);
 
     return UNITY_END();
 }
