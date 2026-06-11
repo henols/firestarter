@@ -17,6 +17,7 @@
 #include "eeprom_28c.h"
 #include "logging_id.h"
 #include "memory_utils.h"
+#include "not_implemented.h"
 #include "operation_utils.h"
 #include "rurp_shield.h"
 #include "rurp_pinout.h"
@@ -101,6 +102,23 @@ void configure_memory(firestarter_handle_t* handle) {
         return;
     }
 
+    // Named infeasibility arms (D-02): FWH and GAL/PLD — infeasible on RURP.
+    // Explicitly recognized per SC#4 / roadmap Phase 64 requirement (DISP-04).
+    if (handle->protocol == 0x11 || handle->protocol == 0x2A ||
+        handle->protocol == 0x2B || handle->protocol == 0x2C) {
+        configure_not_implemented(handle);
+        return;
+    }
+
+    // Generic fail-closed guard: any non-zero unrecognized protocol → not-implemented.
+    // Must sit AFTER all implemented protocol cases and BEFORE the protocol==0 mem_type fallback.
+    // Eliminates the 12V VPP-hazard mem_type fallback for unimplemented protocols (T-64-01).
+    if (handle->protocol != 0) {
+        configure_not_implemented(handle);
+        return;
+    }
+
+    // Legacy mem_type fallback: reachable ONLY when protocol == 0 (DISP-02).
     if (handle->mem_type == TYPE_EPROM) {
         configure_eprom(handle);
         return;
