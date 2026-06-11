@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 64
+ * Total messages: 65
  */
 
 #ifndef __MESSAGES_H__
@@ -35,70 +35,71 @@ extern "C" {
 #define MSG_SEVERITY_DATA  0x08
 
 // --- Message IDs (sorted ascending) ---
-#define MSG_NONE                       0x00
-#define MSG_OK_READY                   0x01
-#define MSG_OK_REQ_DATA                0x02
-#define MSG_OK_FW_VERSION              0x03
-#define MSG_OK_REV                     0x04
-#define MSG_OK_CFG                     0x05
-#define MSG_INIT_DONE                  0x10
-#define MSG_MAIN_DONE                  0x20
-#define MSG_END_DONE                   0x30
-#define MSG_INFO_MAIN_START            0x40
-#define MSG_INFO_MAIN_DONE             0x41
-#define MSG_INFO_INIT_START            0x42
-#define MSG_INFO_END_START             0x43
-#define MSG_INFO_RETRIES               0x51
-#define MSG_INFO_REG_HEADER            0x52
-#define MSG_INFO_BIT_HEADER            0x53
-#define MSG_INFO_BIT_STR               0x54
-#define MSG_INFO_CE_OE                 0x55
-#define MSG_INFO_ADDR                  0x56
-#define MSG_INFO_ADDR_REMAP            0x57
-#define MSG_INFO_SKIPPING_ERASE        0x58
-#define MSG_INFO_SKIPPING_ERASE_MEM    0x59
-#define MSG_INFO_FW                    0x5A
-#define MSG_INFO_HW                    0x5B
-#define MSG_INFO_PHYSICAL_HW           0x5C
-#define MSG_INFO_CMD                   0x5D
-#define MSG_WARN_REV0_VPP_UNSUPPORTED  0x80
-#define MSG_WARN_VPP_LOW               0x81
-#define MSG_WARN_VPP_HIGH              0x82
-#define MSG_WARN_CHIP_ID_MISMATCH      0x83
-#define MSG_WARN_MEM_SIZE_TOO_SMALL    0x84
-#define MSG_ERR_BAD_JSON               0xA0
-#define MSG_ERR_NO_CMD                 0xA1
-#define MSG_ERR_SETUP                  0xA2
-#define MSG_ERR_PARSE_CFG              0xA3
-#define MSG_ERR_EMPTY_INPUT            0xA4
-#define MSG_ERR_NOT_SUPPORTED          0xA5
-#define MSG_ERR_NO_CHIP_ID             0xA6
-#define MSG_ERR_OUT_OF_RANGE           0xA7
-#define MSG_ERR_TIMEOUT                0xA8
-#define MSG_ERR_DATA_ERR_N             0xA9
-#define MSG_ERR_CMD_TIMEOUT            0xAA
-#define MSG_ERR_UNKNOWN_CMD            0xAB
-#define MSG_ERR_REV0_VPP_RD            0xAC
-#define MSG_ERR_CMD                    0xAD
-#define MSG_ERR_MEM_TYPE_UNSUPPORTED   0xAE
-#define MSG_ERR_VERIFY                 0xAF
-#define MSG_ERR_NOT_BLANK              0xB0
-#define MSG_ERR_WRITE_FAILED           0xB1
-#define MSG_ERR_EEPROM_TIMEOUT         0xB2
-#define MSG_ERR_FL4_VERIFY_TIMEOUT     0xB3
-#define MSG_ERR_INTEL_VPP              0xB4
-#define MSG_ERR_INTEL_PROGRAM          0xB5
-#define MSG_ERR_INTEL_SR_TIMEOUT       0xB6
-#define MSG_ERR_OP_TIMEOUT             0xB7
-#define MSG_ERR_VPP_HIGH               0xB8
-#define MSG_ERR_CHIP_ID_MISMATCH       0xB9
-#define MSG_ERR_MEM_SIZE_TOO_SMALL     0xBA
-#define MSG_DATA_PROGRESS              0xE0
-#define MSG_DATA_SENDING               0xE2
-#define MSG_DATA_VPP_VOLTAGE           0xE4
-#define MSG_DATA_VPE_VOLTAGE           0xE5
-#define MSG_DATA_CHUNK                 0xE6
-#define MSG_DEBUG                      0xF0
+#define MSG_NONE                          0x00
+#define MSG_OK_READY                      0x01
+#define MSG_OK_REQ_DATA                   0x02
+#define MSG_OK_FW_VERSION                 0x03
+#define MSG_OK_REV                        0x04
+#define MSG_OK_CFG                        0x05
+#define MSG_INIT_DONE                     0x10
+#define MSG_MAIN_DONE                     0x20
+#define MSG_END_DONE                      0x30
+#define MSG_INFO_MAIN_START               0x40
+#define MSG_INFO_MAIN_DONE                0x41
+#define MSG_INFO_INIT_START               0x42
+#define MSG_INFO_END_START                0x43
+#define MSG_INFO_RETRIES                  0x51
+#define MSG_INFO_REG_HEADER               0x52
+#define MSG_INFO_BIT_HEADER               0x53
+#define MSG_INFO_BIT_STR                  0x54
+#define MSG_INFO_CE_OE                    0x55
+#define MSG_INFO_ADDR                     0x56
+#define MSG_INFO_ADDR_REMAP               0x57
+#define MSG_INFO_SKIPPING_ERASE           0x58
+#define MSG_INFO_SKIPPING_ERASE_MEM       0x59
+#define MSG_INFO_FW                       0x5A
+#define MSG_INFO_HW                       0x5B
+#define MSG_INFO_PHYSICAL_HW              0x5C
+#define MSG_INFO_CMD                      0x5D
+#define MSG_WARN_REV0_VPP_UNSUPPORTED     0x80
+#define MSG_WARN_VPP_LOW                  0x81
+#define MSG_WARN_VPP_HIGH                 0x82
+#define MSG_WARN_CHIP_ID_MISMATCH         0x83
+#define MSG_WARN_MEM_SIZE_TOO_SMALL       0x84
+#define MSG_ERR_BAD_JSON                  0xA0
+#define MSG_ERR_NO_CMD                    0xA1
+#define MSG_ERR_SETUP                     0xA2
+#define MSG_ERR_PARSE_CFG                 0xA3
+#define MSG_ERR_EMPTY_INPUT               0xA4
+#define MSG_ERR_NOT_SUPPORTED             0xA5
+#define MSG_ERR_NO_CHIP_ID                0xA6
+#define MSG_ERR_OUT_OF_RANGE              0xA7
+#define MSG_ERR_TIMEOUT                   0xA8
+#define MSG_ERR_DATA_ERR_N                0xA9
+#define MSG_ERR_CMD_TIMEOUT               0xAA
+#define MSG_ERR_UNKNOWN_CMD               0xAB
+#define MSG_ERR_REV0_VPP_RD               0xAC
+#define MSG_ERR_CMD                       0xAD
+#define MSG_ERR_MEM_TYPE_UNSUPPORTED      0xAE
+#define MSG_ERR_VERIFY                    0xAF
+#define MSG_ERR_NOT_BLANK                 0xB0
+#define MSG_ERR_WRITE_FAILED              0xB1
+#define MSG_ERR_EEPROM_TIMEOUT            0xB2
+#define MSG_ERR_FL4_VERIFY_TIMEOUT        0xB3
+#define MSG_ERR_INTEL_VPP                 0xB4
+#define MSG_ERR_INTEL_PROGRAM             0xB5
+#define MSG_ERR_INTEL_SR_TIMEOUT          0xB6
+#define MSG_ERR_OP_TIMEOUT                0xB7
+#define MSG_ERR_VPP_HIGH                  0xB8
+#define MSG_ERR_CHIP_ID_MISMATCH          0xB9
+#define MSG_ERR_MEM_SIZE_TOO_SMALL        0xBA
+#define MSG_ERR_PROTOCOL_NOT_IMPLEMENTED  0xBB
+#define MSG_DATA_PROGRESS                 0xE0
+#define MSG_DATA_SENDING                  0xE2
+#define MSG_DATA_VPP_VOLTAGE              0xE4
+#define MSG_DATA_VPE_VOLTAGE              0xE5
+#define MSG_DATA_CHUNK                    0xE6
+#define MSG_DEBUG                         0xF0
 
 // --- Debug sub-IDs (sorted ascending) ---
 #define DBG_FIRESTARTER_STARTED      0x00
