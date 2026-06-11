@@ -39,7 +39,9 @@ Dispatch order in `memory.cpp:configure_memory` (source-of-truth — must match
 4. `protocol ∈ {0x05, 0x35, 0x39}` → `configure_flash4()` — page-write flash (0x39 future-proofed, no chips in current DB)
 5. `protocol ∈ {0x07, 0x08, 0x0B}` → `configure_eprom()` — UV-EPROM family
 6. `protocol ∈ {0x0E, 0x27, 0x28, 0x29}` → `configure_sram()` — SRAM/NVRAM (BLOCKER-2 mitigation: never reaches VPP regulator)
-7. `mem_type == TYPE_EPROM (1)` → `configure_eprom()` — fallback for backward compatibility with hand-crafted JSON
+6a. `protocol ∈ {0x11, 0x2A, 0x2B, 0x2C}` → `configure_not_implemented()` — named infeasibility arms: FWH (0x11) and GAL/PLD (0x2A/0x2B/0x2C); infeasible on RURP hardware (DISP-04, Phase 64)
+6b. `protocol != 0` → `configure_not_implemented()` — generic fail-closed guard: any non-zero unrecognized protocol returns MSG_ERR_PROTOCOL_NOT_IMPLEMENTED (0xBB) with zero hardware side effects; eliminates the 12V VPP hazard for unknown protocols (DISP-01, T-64-01, Phase 64)
+7. `protocol == 0` only: `mem_type == TYPE_EPROM (1)` → `configure_eprom()` — fallback for backward compatibility with hand-crafted JSON (steps 7–11 reachable ONLY when protocol == 0, DISP-02)
 8. `mem_type == TYPE_SRAM (4)` → `configure_sram()` — fallback
 9. `mem_type == TYPE_FLASH_TYPE_3 (3)` → `configure_flash3()` — fallback
 10. `mem_type == TYPE_FLASH_TYPE_4 (5)` → `configure_flash4()` — fallback
@@ -48,6 +50,12 @@ Dispatch order in `memory.cpp:configure_memory` (source-of-truth — must match
 There is no `mem_type == 2` dispatch case (the orphan `#define` was removed
 from `memory.cpp` during Phase 12). Any chip with `algorithm == 0` and an
 unrecognized `mem_type` reaches step 11.
+
+**Fail-closed invariant (Phase 64):** Steps 6a and 6b ensure every non-zero
+protocol — whether a named infeasible protocol or a truly-unknown value —
+reaches `configure_not_implemented()` and never falls through to the `mem_type`
+chain. The `mem_type` fallback (steps 7–11) is unreachable for any non-zero
+`protocol` value.
 
 ### Algorithm Handlers
 
