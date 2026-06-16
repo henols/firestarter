@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#define VAL_FAMILY_COUNT 13
+#define VAL_FAMILY_COUNT 11
 
 typedef struct {
     uint32_t protocol;
@@ -20,8 +20,6 @@ static const val_family_entry_t VAL_FAMILIES[] = {
     { 0x0D, "eeprom28c", "configure_eeprom28c" },
     { 0x06, "flash3", "configure_flash3" },
     { 0x05, "flash4", "configure_flash4" },
-    { 0x35, "flash4", "configure_flash4" },
-    { 0x39, "flash4", "configure_flash4" },
     { 0x10, "flash_intel", "configure_flash_intel" },
     { 0x0E, "sram", "configure_sram" },
     { 0x27, "sram", "configure_sram" },
