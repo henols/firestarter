@@ -41,11 +41,43 @@
 
 /* rurp_shield register I/O — the dispatch path's only direct hardware use
  * is mem_util_set_address(handle, 0) -> rurp_write_to_register(...). Stub it
- * so the call resolves and returns. */
+ * so the call resolves and returns.
+ *
+ * Recording bus stub — Phase 71 HARN-01 / D-04.
+ * Define HOST_STUBS_RECORD_BUS before including this file to activate the
+ * recording version. Existing suites (test_dispatch, test_cobs_*,
+ * test_read_timing, test_messages, test_data_input, test_not_implemented,
+ * test_frame_vectors) MUST NOT define this flag — flag off = today's no-op
+ * behavior is preserved byte-exactly. This is an opt-IN guard (inverse of
+ * the opt-OUT HOST_STUBS_CUSTOM_VOLTAGE_MV / HOST_STUBS_CUSTOM_HW_REVISION
+ * guards above). */
+#ifdef HOST_STUBS_RECORD_BUS
+#define HOST_STUBS_MAX_RECORDING 256
+
+struct bus_record_entry_t {
+    uint8_t reg;
+    uint8_t data;
+};
+static bus_record_entry_t s_bus_recording[HOST_STUBS_MAX_RECORDING];
+static int s_bus_recording_count = 0;
+
+extern "C" void clear_bus_recording() { s_bus_recording_count = 0; }
+extern "C" int  bus_recording_count() { return s_bus_recording_count; }
+extern "C" uint8_t recorded_reg(int i)  { return s_bus_recording[i].reg; }
+extern "C" uint8_t recorded_data(int i) { return s_bus_recording[i].data; }
+
 extern "C" void rurp_write_to_register(uint8_t reg, rurp_register_t data) {
-    (void)reg;
-    (void)data;
+    if (s_bus_recording_count < HOST_STUBS_MAX_RECORDING) {
+        s_bus_recording[s_bus_recording_count].reg  = reg;
+        s_bus_recording[s_bus_recording_count].data = (uint8_t)data;
+        s_bus_recording_count++;
+    }
 }
+#else
+extern "C" void rurp_write_to_register(uint8_t reg, rurp_register_t data) {
+    (void)reg; (void)data;
+}
+#endif
 
 extern "C" rurp_register_t rurp_read_from_register(uint8_t reg) {
     (void)reg;
