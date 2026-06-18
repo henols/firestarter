@@ -36,7 +36,7 @@ Dispatch order in `memory.cpp:configure_memory` (source-of-truth — must match
 1. `protocol == 0x10` → `configure_flash_intel()` — Intel 28F command-register flash
 2. `protocol == 0x0D` → `configure_eeprom28c()` — AT28C-series 5V EEPROM with page write
 3. `protocol == 0x06` → `configure_flash3()` — AMD unlock flash (sector erase)
-4. `protocol ∈ {0x05, 0x35, 0x39}` → `configure_flash4()` — page-write flash (0x39 future-proofed, no chips in current DB)
+4. `protocol ∈ {0x05, 0x35, 0x39}` → `configure_flash4()` — page-write flash; 0x05 has DB chips; 0x35 and 0x39 are phantom entries (0 DB chips each — forward-compat dispatch preserved in firmware; host excludes both from KNOWN_PROTOCOLS and routes them to not_implemented)
 5. `protocol ∈ {0x07, 0x08, 0x0B}` → `configure_eprom()` — UV-EPROM family
 6. `protocol ∈ {0x0E, 0x27, 0x28, 0x29}` → `configure_sram()` — SRAM/NVRAM (BLOCKER-2 mitigation: never reaches VPP regulator)
 6a. `protocol ∈ {0x11, 0x2A, 0x2B, 0x2C}` → `configure_not_implemented()` — named infeasibility arms: FWH (0x11) and GAL/PLD (0x2A/0x2B/0x2C); infeasible on RURP hardware (DISP-04, Phase 64)
@@ -68,8 +68,8 @@ chain. The `mem_type` fallback (steps 7–11) is unreachable for any non-zero
 | 0x0E / 0x27 / 0x28 / 0x29 | SRAM_*       | sram.cpp          | None (5V)       | Generic read/write; no VPP regulator (BLOCKER-2 mitigation)  |
 | 0x06                   | FLASH_AMD_ALT  | flash_type_3.cpp  | None (5V)       | AMD unlock, sector erase                                     |
 | 0x05                   | FLASH_AMD_STD  | flash_type_4.cpp  | None (5V)       | Page write + DQ7                                             |
-| 0x35                   | FLASH_EEPROM   | flash_type_4.cpp  | None (5V)       | Page write + DQ7                                             |
-| 0x39                   | FLASH_EEPROM2  | flash_type_4.cpp  | None (5V)       | Future-proofed (0 chips in current DB; dispatched by analogy with 0x35) |
+| 0x35                   | FLASH_EEPROM   | flash_type_4.cpp  | None (5V)       | 0 DB chips (phantom — IC2_ALG_ITE is an ITE EC MCU label, not a memory algo); firmware dispatch preserved for forward-compat; host routes to not_implemented (excluded from KNOWN_PROTOCOLS, DEC-05) |
+| 0x39                   | FLASH_EEPROM2  | flash_type_4.cpp  | None (5V)       | 0 DB chips (phantom — no IC2_ALG constant exists); firmware dispatch preserved for forward-compat; host routes to not_implemented (excluded from KNOWN_PROTOCOLS, DEC-05) |
 | 0x10                   | FLASH_INTEL    | flash_intel.cpp   | 12V via CTRL_VPP_P1_ENABLE | Command register, SR polling                                 |
 
 ### JSON Wire Protocol
