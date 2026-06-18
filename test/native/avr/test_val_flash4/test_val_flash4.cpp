@@ -49,6 +49,10 @@ void setUp(void) {
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t))).AlwaysReturn(1);
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(const uint8_t*, size_t))).AlwaysReturn(1);
     When(Method(ArduinoFake(Serial), flush)).AlwaysReturn();
+    /* delayMicroseconds is called by flash4_wait_for_page_write (10µs poll delay)
+     * and by memory_set_data (3µs write settle). Must be stubbed so the operation-
+     * phase tests (test_flash4_write_execute_*) don't abort on an unmocked call. */
+    When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
     clear_bus_recording();
 }
 
@@ -141,6 +145,110 @@ void test_flash4_0x39_write_configure_no_vpp(void) {
         "configure_flash4 0x39 CMD_WRITE configure-phase must NOT set any VPP-enable CTL bit");
 }
 
+/* ─── FIX-02B (Phase 74 Plan 02): operation-phase SDP emission + VPP-safety ─ */
+/*
+ * These two tests exercise flash4_write_execute (the operation phase, not just
+ * configure), using the recording-bus stub to observe side effects.
+ *
+ * Test setup: configure_memory(CMD_WRITE) wires function pointers including
+ * firestarter_set_data = memory_set_data and the operation_main pointer.
+ * Then clear_bus_recording() resets the capture, fill data_buffer with zeros
+ * (so flash4_wait_for_page_write's DQ7 poll passes in one iteration since the
+ * stub's rurp_read_data_buffer() always returns 0 = expected), set data_size=4
+ * at address=0, and call h.firestarter_operation_main(&h) to drive
+ * flash4_write_execute.
+ *
+ * The recording captures every rurp_write_to_register call:
+ *   - flash_util_byte_flipping (SDP sequence) writes CONTROL_REGISTER
+ *     (CTRL_READ_WRITE) + LSB/MSB for each command address pair.
+ *   - memory_set_data writes LSB/MSB/CONTROL via mem_util_set_address.
+ *
+ * Test 1 (SDP emission, RED before fix): scans for the FLASH_ENABLE_WRITE
+ * address signature — MSB writes of 0x55 (for 0x5555 and 0x5555 again) and
+ * 0x2A (for 0x2AAA) in sequence before the first data address write. FAILS
+ * today because flash4_write_execute has no flash_execute_command(FLASH_ENABLE_WRITE).
+ *
+ * Test 2 (operation-phase VPP-safety): asserts that no CTRL_VPP_REGULATOR_ENABLE
+ * (0x80) or CTRL_VPP_P1_ENABLE (0x08) bit appears in any CONTROL_REGISTER write
+ * during the write-execute call. Passes today and MUST keep passing after the fix.
+ */
+
+/* Helper to build a write handle with 4-byte zero data buffer at address 0. */
+static firestarter_handle_t make_write_handle_with_data(void) {
+    firestarter_handle_t h = {};
+    h.protocol   = 0x05;
+    h.cmd        = CMD_WRITE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id    = 0; /* skip chip-id branch in write_init */
+    h.mem_size   = 524288; /* 512 KB (W29C040) */
+    h.address    = 0;
+    h.data_size  = 4; /* small: 4 zero bytes at page 0; poll passes immediately */
+    /* data_buffer is zero-initialized by {} */
+    /* ctrl_flags = 0: no FLAG_CAN_ERASE, no FLAG_SKIP_BLANK_CHECK —
+     * flash4_write_init would call blank-check, but we bypass init and call
+     * operation_main directly. */
+    return h;
+}
+
+/* Helper: scan recording for FLASH_ENABLE_WRITE address signature.
+ * FLASH_ENABLE_WRITE addresses: 0x5555, 0x2AAA, 0x5555.
+ * fu_flash_fast_address writes (LSB=addr&0xFF, MSB=(addr>>8)&0xFF).
+ * Signature MSB pattern at start: 0x55, 0x2A, 0x55 in consecutive MSB writes.
+ * Returns true if found, false if not. */
+static bool recording_contains_sdp_signature(void) {
+    /* Look for the MSB sequence: 0x55, 0x2A, 0x55 (MSBs of 0x5555, 0x2AAA, 0x5555) */
+    int msb_seq_index = 0;
+    const uint8_t msb_pattern[3] = {0x55, 0x2A, 0x55};
+    for (int i = 0; i < bus_recording_count(); i++) {
+        if (recorded_reg(i) == MOST_SIGNIFICANT_BYTE) {
+            if (recorded_data(i) == msb_pattern[msb_seq_index]) {
+                msb_seq_index++;
+                if (msb_seq_index == 3) {
+                    return true; /* full SDP MSB signature found */
+                }
+            } else {
+                /* Reset if sequence breaks (partial match then mismatch) */
+                msb_seq_index = (recorded_data(i) == msb_pattern[0]) ? 1 : 0;
+            }
+        }
+    }
+    return false;
+}
+
+/* Test 1 (FIX-02B SDP): flash4_write_execute must emit FLASH_ENABLE_WRITE
+ * SDP 3-byte sequence at the start of each page load.
+ * RED before fix (no flash_execute_command(FLASH_ENABLE_WRITE) in write path). */
+void test_flash4_write_execute_emits_sdp(void) {
+    firestarter_handle_t h = make_write_handle_with_data();
+    configure_memory(&h);
+    clear_bus_recording(); /* reset after configure_memory's set_address call */
+
+    h.firestarter_operation_main(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "flash4_write_execute must not error on 4-byte zero write");
+    TEST_ASSERT_TRUE_MESSAGE(recording_contains_sdp_signature(),
+        "flash4_write_execute must emit FLASH_ENABLE_WRITE SDP (0x5555,0x2AAA,0x5555 MSB pattern) at page start");
+}
+
+/* Test 2 (FIX-02B VPP-safety operation phase): flash4_write_execute must NEVER
+ * set CTRL_VPP_REGULATOR_ENABLE (0x80) or CTRL_VPP_P1_ENABLE (0x08) in any
+ * CONTROL_REGISTER write during the write-execute call.
+ * Passes for the bare loop today; MUST remain green after the SDP fix since
+ * flash_util_byte_flipping only sets CTRL_READ_WRITE (not VPP bits). */
+void test_flash4_write_execute_no_vpp(void) {
+    firestarter_handle_t h = make_write_handle_with_data();
+    configure_memory(&h);
+    clear_bus_recording();
+
+    h.firestarter_operation_main(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "flash4_write_execute must not error on 4-byte zero write");
+    assert_no_vpp_in_recording(
+        "flash4_write_execute (operation phase) must NOT set any VPP-enable CTL bit");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -156,6 +264,10 @@ int main(int argc, char** argv) {
     /* Protocol 0x39 configure-phase VPP-safety proof */
     RUN_TEST(test_flash4_0x39_read_configure_no_vpp);
     RUN_TEST(test_flash4_0x39_write_configure_no_vpp);
+
+    /* FIX-02B: operation-phase SDP emission + VPP-safety proofs */
+    RUN_TEST(test_flash4_write_execute_emits_sdp);
+    RUN_TEST(test_flash4_write_execute_no_vpp);
 
     return UNITY_END();
 }

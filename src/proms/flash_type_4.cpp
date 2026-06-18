@@ -16,7 +16,19 @@
 #include "operation_utils.h"
 #include "rurp_pinout.h"
 
-#define PAGE_SIZE 64
+/* Data-driven page size derived from chip capacity (handle->mem_size).
+ * W29C040 (512K = 524288) → 256; SST29EE010 (128K = 131072) → 128;
+ * AT29C256 (32K = 32768) → 64. Flash4 DB chips span 32KB–512KB.
+ * A fixed 256 would over-run smaller chips' 64-byte page buffers;
+ * the old fixed 64 polled mid-page on W29C040 (original bug).
+ * Data-driven sizing fixes W29C040 without changing effective behavior
+ * for smaller chips whose native page is ≤ their derived size.
+ * (Worked examples: ≤65536→64, ≤262144→128, else→256.) */
+static uint32_t flash4_page_size(uint32_t mem_size) {
+    if (mem_size <= 65536)  return 64;
+    if (mem_size <= 262144) return 128;
+    return 256;
+}
 
 void flash4_erase_execute(firestarter_handle_t* handle);
 void flash4_write_init(firestarter_handle_t* handle);
@@ -66,13 +78,25 @@ void flash4_write_init(firestarter_handle_t* handle) {
 }
 
 void flash4_write_execute(firestarter_handle_t* handle) {
+    uint32_t page_size = flash4_page_size(handle->mem_size);
     for (uint32_t i = 0; i < handle->data_size; i++) {
         uint32_t address = handle->address + i;
         uint8_t expected = handle->data_buffer[i];
+
+        /* SDP 3-byte unlock at the start of each page load (AMD/JEDEC SDP).
+         * W29C040 ships with Software Data Protection enabled; without this
+         * sequence the page-buffer write is silently rejected.
+         * Call per-page-START (not per-byte) — calling per-byte would abort
+         * the current page load and restart it after each byte. */
+        bool is_page_start = (address % page_size) == 0;
+        bool is_first_byte = (i == 0);
+        if (is_page_start || is_first_byte) {
+            flash_execute_command(FLASH_ENABLE_WRITE);
+        }
+
         handle->firestarter_set_data(handle, address, expected);
 
-        // We can only write 64 bytes per page-write, then we
-        bool reached_page_end = ((address) % PAGE_SIZE) == PAGE_SIZE - 1;
+        bool reached_page_end = ((address + 1) % page_size) == 0;
         bool is_last_byte = i == handle->data_size - 1;
         if (reached_page_end || is_last_byte) {
             if (!flash4_wait_for_page_write(handle, address, expected)) {
