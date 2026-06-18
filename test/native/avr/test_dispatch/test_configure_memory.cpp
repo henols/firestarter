@@ -162,6 +162,38 @@ void test_protocol_zero_with_mem_type_eprom_dispatches_eprom(void) {
     TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
+/* FIX-02A (Phase 74 Plan 02): configure_flash4 must handle CMD_CHECK_CHIP_ID
+ * by setting a non-NULL operation_main pointer (mirroring configure_flash3).
+ * These three tests are RED before the fix (no case in configure_flash4 switch
+ * → firestarter_operation_main stays NULL). */
+
+void test_flash4_check_chip_id_0x05_sets_operation(void) {
+    firestarter_handle_t h = make_handle(0x05, 0, CMD_CHECK_CHIP_ID);
+    configure_memory(&h);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "CMD_CHECK_CHIP_ID on 0x05 must not error");
+    TEST_ASSERT_NOT_NULL_MESSAGE(h.firestarter_operation_main,
+        "CMD_CHECK_CHIP_ID on 0x05 must set a non-NULL operation_main");
+}
+
+void test_flash4_check_chip_id_0x35_sets_operation(void) {
+    firestarter_handle_t h = make_handle(0x35, 0, CMD_CHECK_CHIP_ID);
+    configure_memory(&h);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "CMD_CHECK_CHIP_ID on 0x35 must not error");
+    TEST_ASSERT_NOT_NULL_MESSAGE(h.firestarter_operation_main,
+        "CMD_CHECK_CHIP_ID on 0x35 must set a non-NULL operation_main");
+}
+
+void test_flash4_check_chip_id_0x39_sets_operation(void) {
+    firestarter_handle_t h = make_handle(0x39, 0, CMD_CHECK_CHIP_ID);
+    configure_memory(&h);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "CMD_CHECK_CHIP_ID on 0x39 must not error");
+    TEST_ASSERT_NOT_NULL_MESSAGE(h.firestarter_operation_main,
+        "CMD_CHECK_CHIP_ID on 0x39 must set a non-NULL operation_main");
+}
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
@@ -185,6 +217,11 @@ int main(int argc, char** argv) {
     /* 1 negative + 1 fallback test (must remain green across every wave) */
     RUN_TEST(test_unknown_protocol_with_unknown_mem_type_errors);
     RUN_TEST(test_protocol_zero_with_mem_type_eprom_dispatches_eprom);
+
+    /* FIX-02A: CMD_CHECK_CHIP_ID dispatch tests (RED before flash_type_4.cpp fix) */
+    RUN_TEST(test_flash4_check_chip_id_0x05_sets_operation);
+    RUN_TEST(test_flash4_check_chip_id_0x35_sets_operation);
+    RUN_TEST(test_flash4_check_chip_id_0x39_sets_operation);
 
     return UNITY_END();
 }

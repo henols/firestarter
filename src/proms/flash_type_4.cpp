@@ -21,7 +21,10 @@
 void flash4_erase_execute(firestarter_handle_t* handle);
 void flash4_write_init(firestarter_handle_t* handle);
 void flash4_write_execute(firestarter_handle_t* handle);
+void flash4_check_chip_id_execute(firestarter_handle_t* handle);
 static bool flash4_wait_for_page_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected);
+
+uint16_t flash4_get_chip_id(firestarter_handle_t* handle);
 
 void configure_flash4(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_CONFIGURING_FLASH4);
@@ -35,6 +38,10 @@ void configure_flash4(firestarter_handle_t* handle) {
             break;
         case CMD_BLANK_CHECK:
             handle->firestarter_operation_main = mem_util_blank_check;
+            break;
+        case CMD_CHECK_CHIP_ID:
+            handle->firestarter_operation_init = NULL;
+            handle->firestarter_operation_main = flash4_check_chip_id_execute;
             break;
     }
 }
@@ -97,6 +104,32 @@ static bool flash4_wait_for_page_write(firestarter_handle_t* handle, uint32_t ad
         handle->response_code = RESPONSE_CODE_ERROR;
     }
     return false;
+}
+
+void flash4_check_chip_id_execute(firestarter_handle_t* handle) {
+    uint16_t chip_id = flash4_get_chip_id(handle);
+    if (chip_id != handle->chip_id) {
+        uint8_t _b[4];
+        _b[0] = (uint8_t)((chip_id >> 8) & 0xFF);
+        _b[1] = (uint8_t)(chip_id & 0xFF);
+        _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
+        _b[3] = (uint8_t)(handle->chip_id & 0xFF);
+        if (is_flag_set(FLAG_FORCE)) {
+            LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
+            handle->response_code = RESPONSE_CODE_WARNING;
+        } else {
+            LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+            handle->response_code = RESPONSE_CODE_ERROR;
+        }
+    }
+}
+
+uint16_t flash4_get_chip_id(firestarter_handle_t* handle) {
+    flash_execute_command(FLASH_ENABLE_ID);
+    uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
+    chip_id |= (handle->firestarter_get_data(handle, 0x0001));
+    flash_execute_command(FLASH_DISABLE_ID);
+    return chip_id;
 }
 
 void flash4_erase_execute(firestarter_handle_t* handle) {
