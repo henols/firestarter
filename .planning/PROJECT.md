@@ -19,6 +19,26 @@
 
 **v1.15 shipped:** 2026-06-25 (Bench Validation of Operator Inventory — 4 phases (81–84), 15 plans; 23 reqs: 21 satisfied · GRAD-03 deferred best-effort (D-22) · FIX-01 closed-by-disposition (D-43). Bench-validated 11 physical chips across 5 algorithm families on Leonardo + RURP Rev 2.0 via full write→read→verify, with a per-chip `EVIDENCE.{md,json}` record + consolidated `DECODE-AUDIT.md`. First Flash/EEPROM auto-erase silicon proof (W29C020); 2516 graduated via a datasheet-grounded user-override entry (genuinely absent from minipro). In-posture FIX-01 fixes shipped — firmware VPP-skip on read/blank-check + host SRAM/FRAM blank-check short-circuit + FM1608 SRAM→FRAM relabel; deeper write-path defects RCA'd + named-tracked (AM27C020 0x08 → FUT-06; W29C040 flash4 → CR-01 / Phase-74 Wave-2; 2516 0x0B read instability → FUT-03). One firmware delta (VPP-skip, fw `cb947c7`); host `4d5b3de`. Meta tagged `v1.15`, gsd planning merged to `beta`; lockstep beta cut `3.0.0b11` + gitlink bump operator-gated (gitlinks PINNED). See `.planning/MILESTONES.md` §v1.15.)
 
+**v1.16 status:** STARTED 2026-06-25 (Protocol-First Architecture Rebuild — defining requirements; phase numbering continues at Phase 85; promoted from the `/gsd-explore` 2026-06-25 seed per operator instruction). See "## Current Milestone" below.
+
+## Current Milestone: v1.16 Protocol-First Architecture Rebuild
+
+**Goal:** Turn Firestarter's inherited-from-minipro hex-ID protocol buckets into a named, datasheet-verified, primitive-decomposed architecture with a per-protocol bench-verification ledger — shrinking the Leonardo flash ceiling (~89.5% today) via shared-primitive reuse, without changing the minipro DB as ground truth.
+
+**Target features (staged):**
+- **Datasheet acquisition** — new top-level `datasheets/` folder: all 11 on-hand ICs + one representative chip per no-silicon minipro protocol bucket, so every protocol has a verification source.
+- **Naming + documentation pass** — author the protocol vocabulary (hex bucket → proper human name → datasheet-verified behavior) and document each firmware handler's *why* (timing, VPP, pin roles, write/erase algorithm). Dispatch structure unchanged; near-zero flash delta.
+- **Primitive decomposition / refactor** — extract shared primitives (address setup, data strobe, poll/verify, VPP gate, page buffer, SDP unlock, chip-id), recompose handlers from them, measure flash savings; incremental, one protocol family at a time, guarded by native register-level tests + `check_dispatch.py` / `diff_db.py`.
+- **Per-protocol bench validation** — bench-prove each protocol with silicon on Leonardo + RURP Rev 2.0; record results in a per-protocol verification ledger composing with the v1.13 per-family matrix + v1.15 `EVIDENCE.{md,json}`; carry no-chip protocols as explicit `UNVERIFIED`.
+
+**Key context (locked decisions from the `/gsd-explore` 2026-06-25 session):**
+- Minipro/infoic-derived `chip_database.json` STAYS the ground truth for firmware control values; datasheets only verify interpretation + document the *why* (preserves algorithm-first dispatch / no-guessing).
+- Naming = both-in-sequence: rename + document existing buckets first (structure stable), THEN re-decompose into shared primitives.
+- "Working" = bench-proven on **Leonardo + RURP Rev 2.0 only** (the only trustworthy combo, v1.9 read bug elsewhere); no-chip protocols stay explicit `UNVERIFIED` — honest gaps, never false confidence.
+- Driver = shrink ~89.5% flash via shared-primitive reuse (duplication across `configure_eprom`/`configure_sram`/`configure_flash`/flash4 is the main culprit).
+- Dual-repo lockstep for any wire-touching change (`constants.py` ↔ `firestarter.h`); reuse-first (no new third-party deps); watch the py3.12-masks-CI-3.11 ruff/codegen trap.
+- Seed: `.planning/seeds/protocol-first-architecture-rebuild.md`; rationale: `.planning/notes/protocol-rebuild-rationale.md`; open research questions: `.planning/research/questions.md` (protocol-rebuild block).
+
 ## v1.15 Archive: Bench Validation of Operator Inventory — Shipped 2026-06-25
 
 **Goal (achieved):** Bench-validate the operator's 11 physical chips (5 algorithm families) on Leonardo + RURP Rev 2.0 via full write→read→verify — proving the on-paper `supported` claim true on real silicon, RCA-ing/fixing failures, validating DB decode, producing a per-chip evidence record, and graduating the one genuine gap (the `2516`).
@@ -461,6 +481,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+
+*Last updated: 2026-06-25 — v1.16 (Protocol-First Architecture Rebuild) STARTED. Re-organize how Firestarter models/names/validates EPROM/Flash/SRAM programming protocols: rename + datasheet-document today's inherited minipro hex-ID buckets (0x05/0x06/0x07/0x08/0x0B/0x40/0x34/…) into a named protocol vocabulary, THEN re-decompose handlers into shared primitives (address setup, data strobe, poll/verify, VPP gate, page buffer, SDP unlock, chip-id) to shrink the ~89.5% Leonardo flash ceiling, with a per-protocol bench ledger (PASS on Leonardo + RURP Rev 2.0 / explicit `UNVERIFIED`). Minipro DB stays ground truth; datasheets only verify + document the *why*. Staged: datasheets/ acquisition → naming/docs → primitive refactor → per-protocol bench validation. Dual-repo lockstep (`constants.py` ↔ `firestarter.h`); reuse-first; py3.12-masks-CI-3.11 trap watch. Phase numbering continues at Phase 85; promoted from the `/gsd-explore` 2026-06-25 seed per operator instruction. Prior footer (v1.15 close) retained below.*
 
 *Last updated: 2026-06-25 — v1.15 (Bench Validation of Operator Inventory) SHIPPED. 4 phases (81–84), 15 plans; 23 reqs (21 satisfied · GRAD-03 deferred best-effort D-22 · FIX-01 closed-by-disposition D-43). Bench-validated 11 physical chips across 5 algorithm families on Leonardo + RURP Rev 2.0 via full write→read→verify, with a per-chip `EVIDENCE.{md,json}` record + consolidated `DECODE-AUDIT.md`. First Flash/EEPROM auto-erase silicon proof (W29C020); 2516 graduated via a datasheet-grounded user-override entry. In-posture FIX-01 fixes shipped (firmware VPP-skip on read/blank-check + host SRAM/FRAM blank-check short-circuit + FM1608 SRAM→FRAM relabel); deeper write-path defects RCA'd + named-tracked (AM27C020 0x08 → FUT-06; W29C040 flash4 → CR-01/Phase-74 Wave-2; 2516 0x0B read → FUT-03). Genuine silicon FAILs (W27E512/W27E040 stuck bits) recorded honestly, not DB/algo faults. Milestone audit `gaps_found` stale (pre-Phase-84); both gaps closed-by-disposition + operator-accepted. One firmware delta (VPP-skip, fw `cb947c7`); host `4d5b3de`. Meta tagged `v1.15`, gsd planning merged to `beta`; lockstep beta cut `3.0.0b11` + gitlink bump operator-gated (gitlinks PINNED). 12 open artifact items acknowledged at close (pre-existing carry-forwards + intentional v1.15 deferrals). Next: `/gsd-new-milestone` (v1.16 protocol-first architecture rebuild seed captured). Prior footer (v1.15 start) retained below.*
 

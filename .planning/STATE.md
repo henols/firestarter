@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.15
-milestone_name: — Bench Validation of Operator Inventory
-status: Awaiting next milestone
-stopped_at: "Phase 84 Plan 06 complete — DECODE-AUDIT.md finalized; FIX-01 closed per D-43; GRAD-03/FUT-03 DEFERRED D-22; SC#3 gate GREEN; ready for /gsd-verify-work"
+milestone: v1.16
+milestone_name: — Protocol-First Architecture Rebuild
+status: planning
+stopped_at: "Milestone v1.16 started — defining requirements"
 last_updated: "2026-06-25T10:43:10.715Z"
-last_activity: 2026-06-25 — Milestone v1.15 completed and archived
+last_activity: 2026-06-25 — Milestone v1.16 started
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,10 +21,10 @@ progress:
 
 ## Current Position
 
-Phase: Milestone v1.15 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-25 — Milestone v1.15 completed and archived
+Status: Defining requirements
+Last activity: 2026-06-25 — Milestone v1.16 (Protocol-First Architecture Rebuild) started
 
 ## Quick Tasks Completed
 
@@ -37,16 +37,18 @@ Last activity: 2026-06-25 — Milestone v1.15 completed and archived
 See: `.planning/PROJECT.md` (v1.15 Current Milestone section + Key Decisions)
 
 **Core value:** Algorithm-first dispatch — minipro `protocol_id` flows authoritative
-from upstream XML → DB → wire JSON → firmware handler. No guessing. **v1.15 proves that
-contract holds on real silicon** for the operator's 11-chip physical inventory.
+from upstream XML → DB → wire JSON → firmware handler. No guessing. The minipro DB stays
+ground truth; v1.16 makes that contract **legible** (named, datasheet-documented protocols)
+and **leaner** (shared-primitive handlers).
 
-**Current focus:** Phase 84 — db-decode-audit-conditional-defect-rca-milestone-evidence-co
-read+blank-check sweep across all 11 chips on Leonardo + RURP Rev 2.0, establishing the evidence
-record and the bench-safety baseline (SAFE-01/02/03) with zero chips consumed. Board LOCKED =
-Leonardo + Rev 2.0 (only trustworthy program/write/verify combo); mostly host-side; firmware
-untouched unless a bench-surfaced defect forces a lockstep fix. v1.14 `3.0.0b11` lockstep beta cut
-remains OPERATOR-GATED (gitlinks PINNED). Standing carry-forward: deferred v1.9 read-bug RCA
-(resumes at Phase 45 → FUT-C).
+**Current focus:** v1.16 (Protocol-First Architecture Rebuild) — defining requirements.
+Rename + datasheet-document today's inherited minipro hex-ID buckets into a named protocol
+vocabulary, THEN re-decompose handlers into shared primitives to shrink the ~89.5% Leonardo
+flash ceiling, with a per-protocol bench ledger (PASS on Leonardo + RURP Rev 2.0 / explicit
+`UNVERIFIED`). Datasheets verify + document the *why*; they do NOT replace the DB. Phase
+numbering continues at Phase 85; dual-repo lockstep for any wire-touching change. Standing
+carry-forwards: v1.14/v1.15 `3.0.0b11` lockstep beta cut OPERATOR-GATED (gitlinks PINNED);
+deferred v1.9 read-bug RCA (resumes at Phase 45 → FUT-C).
 
 ## Roadmap Summary
 
