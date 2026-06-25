@@ -26,6 +26,12 @@ Plan: —
 Status: Awaiting next milestone
 Last activity: 2026-06-25 — Milestone v1.15 completed and archived
 
+## Quick Tasks Completed
+
+| ID | Task | Date | Status | Commit |
+|----|------|------|--------|--------|
+| 260625-f1g | Group dev write-cycle/consistency-check run folders under `firestarter-runs/` (was dumping in launch dir) | 2026-06-25 | complete ✓ | firestarter_app@bc55b29 |
+
 ## Project Reference
 
 See: `.planning/PROJECT.md` (v1.15 Current Milestone section + Key Decisions)

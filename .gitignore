@@ -7,3 +7,10 @@ platformio.ini
 # Python bytecode (codegen tools etc.)
 __pycache__/
 *.py[cod]
+
+# firestarter dev-diagnostic run output (write-cycle / consistency-check).
+# New runs land under firestarter-runs/; the bare-prefixed patterns cover
+# folders left over from before they were grouped under a parent dir.
+firestarter-runs/
+consistency-check-*/
+write-cycle-*/
