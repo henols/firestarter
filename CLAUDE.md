@@ -30,17 +30,22 @@ hand-crafted JSON commands or older host versions that omit `algorithm`; for any
 chip emitted by the regenerated `chip_database.json` the protocol-prefix
 chain always fires first.
 
+Dispatch reads named `PROTO_<NAME>` constants (`include/proto_constants.h`,
+v1.19 naming layer) — every value equals the pre-existing raw-hex dispatch
+key it names; numbers stay the dispatch key end to end (GATE-01). Source of
+truth for the name set: `firestarter/doc/PROTOCOLS.md` (operator-approved).
+
 Dispatch order in `memory.cpp:configure_memory` (source-of-truth — must match
 `firestarter/src/proms/memory.cpp` line-for-line):
 
-1. `protocol == 0x10` → `configure_flash_intel()` — Intel 28F command-register flash
-2. `protocol == 0x0D` → `configure_eeprom28c()` — AT28C-series 5V EEPROM with page write
-3. `protocol == 0x06` → `configure_flash3()` — AMD unlock flash (sector erase)
-4. `protocol ∈ {0x05, 0x35, 0x39}` → `configure_flash4()` — page-write flash; 0x05 has DB chips; 0x35 and 0x39 are phantom entries (0 DB chips each — forward-compat dispatch preserved in firmware; host excludes both from KNOWN_PROTOCOLS and routes them to not_implemented)
-5. `protocol ∈ {0x07, 0x08, 0x0B}` → `configure_eprom()` — UV-EPROM family
-6. `protocol ∈ {0x0E, 0x27, 0x28, 0x29}` → `configure_sram()` — SRAM/NVRAM (BLOCKER-2 mitigation: never reaches VPP regulator)
-6a. `protocol ∈ {0x11, 0x2A, 0x2B, 0x2C}` → `configure_not_implemented()` — named infeasibility arms: FWH (0x11) and GAL/PLD (0x2A/0x2B/0x2C); infeasible on RURP hardware (DISP-04, Phase 64)
-6b. `protocol != 0` → `configure_not_implemented()` — generic fail-closed guard: any non-zero unrecognized protocol returns MSG_ERR_PROTOCOL_NOT_IMPLEMENTED (0xBB) with zero hardware side effects; eliminates the 12V VPP hazard for unknown protocols (DISP-01, T-64-01, Phase 64)
+1. `protocol == PROTO_FLASH_INTEL (0x10)` → `configure_flash_intel()` — Intel 28F command-register flash
+2. `protocol == PROTO_EEPROM_PARALLEL (0x0D)` → `configure_eeprom28c()` — AT28C-series 5V EEPROM with page write
+3. `protocol == PROTO_FLASH_NOR_UNLOCK (0x06)` → `configure_flash3()` — AMD unlock flash (sector erase)
+4. `protocol ∈ {PROTO_FLASH_5V_PAGE (0x05), PROTO_PHANTOM_0x35, PROTO_PHANTOM_0x39}` → `configure_flash4()` — page-write flash; 0x05 has DB chips; 0x35 and 0x39 are phantom entries (0 DB chips each — forward-compat dispatch preserved in firmware; host excludes both from KNOWN_PROTOCOLS and routes them to not_implemented)
+5. `protocol ∈ {PROTO_EPROM_28PIN (0x07), PROTO_EPROM_32PIN (0x08), PROTO_EPROM_24PIN (0x0B)}` → `configure_eprom()` — UV-EPROM family
+6. `protocol ∈ {PROTO_SRAM_32PIN (0x0E), PROTO_SRAM_24PIN (0x27), PROTO_SRAM_28PIN (0x28), PROTO_SRAM_32PIN_NVRAM (0x29)}` → `configure_sram()` — SRAM/NVRAM (BLOCKER-2 mitigation: never reaches VPP regulator)
+6a. `protocol ∈ {0x11, 0x2A, 0x2B, 0x2C}` → `configure_not_implemented()` — named infeasibility arms: FWH (0x11) and GAL/PLD (0x2A/0x2B/0x2C); no approved PROTO_ tokens exist for this arm (out of Phase-100 NAME-01 scope) — left as raw hex; infeasible on RURP hardware (DISP-04, Phase 64)
+6b. `protocol != 0` → `configure_not_implemented()` — generic fail-closed guard: any non-zero unrecognized protocol (including `PROTO_EEPROM_8051BUS` / 0x34, which has no dedicated dispatch arm) returns MSG_ERR_PROTOCOL_NOT_IMPLEMENTED (0xBB) with zero hardware side effects; eliminates the 12V VPP hazard for unknown protocols (DISP-01, T-64-01, Phase 64)
 7. `protocol == 0` only: `mem_type == TYPE_EPROM (1)` → `configure_eprom()` — fallback for backward compatibility with hand-crafted JSON (steps 7–11 reachable ONLY when protocol == 0, DISP-02)
 8. `mem_type == TYPE_SRAM (4)` → `configure_sram()` — fallback
 9. `mem_type == TYPE_FLASH_TYPE_3 (3)` → `configure_flash3()` — fallback
@@ -59,18 +64,22 @@ chain. The `mem_type` fallback (steps 7–11) is unreachable for any non-zero
 
 ### Algorithm Handlers
 
-| Protocol               | Name           | File              | VPP             | Notes                                                        |
-|------------------------|----------------|-------------------|-----------------|--------------------------------------------------------------|
-| 0x07                   | EPROM_STD      | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 1ms pulse, DQ7 verify                                        |
-| 0x08                   | EPROM_QUICK    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 100µs pulse                                                  |
-| 0x0B                   | EPROM_LEGACY   | eprom.cpp         | 12–18V direct   | 500µs pulse, 24-pin                                          |
-| 0x0D                   | EEPROM_POLL    | eeprom_28c.cpp    | None (5V)       | SDP disable + DQ7 page poll                                  |
-| 0x0E / 0x27 / 0x28 / 0x29 | SRAM_*       | sram.cpp          | None (5V)       | Generic read/write; no VPP regulator (BLOCKER-2 mitigation)  |
-| 0x06                   | FLASH_AMD_ALT  | flash_type_3.cpp  | None (5V)       | AMD unlock, sector erase                                     |
-| 0x05                   | FLASH_AMD_STD  | flash_type_4.cpp  | None (5V)       | Page write + DQ7                                             |
-| 0x35                   | FLASH_EEPROM   | flash_type_4.cpp  | None (5V)       | 0 DB chips (phantom — IC2_ALG_ITE is an ITE EC MCU label, not a memory algo); firmware dispatch preserved for forward-compat; host routes to not_implemented (excluded from KNOWN_PROTOCOLS, DEC-05) |
-| 0x39                   | FLASH_EEPROM2  | flash_type_4.cpp  | None (5V)       | 0 DB chips (phantom — no IC2_ALG constant exists); firmware dispatch preserved for forward-compat; host routes to not_implemented (excluded from KNOWN_PROTOCOLS, DEC-05) |
-| 0x10                   | FLASH_INTEL    | flash_intel.cpp   | 12V via CTRL_VPP_P1_ENABLE | Command register, SR polling                                 |
+Protocol column uses the operator-approved `PROTO_<NAME>` tokens (`include/proto_constants.h`,
+source of truth `firestarter/doc/PROTOCOLS.md`) — the label IS the number; no dispatch/value change.
+
+| Protocol               | PROTO_ token           | File              | VPP             | Notes                                                        |
+|------------------------|------------------------|-------------------|-----------------|--------------------------------------------------------------|
+| 0x07                   | `PROTO_EPROM_28PIN`    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 1ms pulse, DQ7 verify                                        |
+| 0x08                   | `PROTO_EPROM_32PIN`    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 100µs pulse                                                  |
+| 0x0B                   | `PROTO_EPROM_24PIN`    | eprom.cpp         | 12–18V direct   | 500µs pulse, 24-pin                                          |
+| 0x0D                   | `PROTO_EEPROM_PARALLEL` | eeprom_28c.cpp   | None (5V)       | SDP disable + DQ7 page poll                                  |
+| 0x0E / 0x27 / 0x28 / 0x29 | `PROTO_SRAM_32PIN` / `PROTO_SRAM_24PIN` / `PROTO_SRAM_28PIN` / `PROTO_SRAM_32PIN_NVRAM` | sram.cpp | None (5V) | Generic read/write; no VPP regulator (BLOCKER-2 mitigation)  |
+| 0x06                   | `PROTO_FLASH_NOR_UNLOCK` | flash_type_3.cpp | None (5V)       | AMD unlock, sector erase                                     |
+| 0x05                   | `PROTO_FLASH_5V_PAGE`  | flash_type_4.cpp  | None (5V)       | Page write + DQ7                                             |
+| 0x35                   | `PROTO_PHANTOM_0x35`   | flash_type_4.cpp  | None (5V)       | 0 DB chips (phantom — IC2_ALG_ITE is an ITE EC MCU label, not a memory algo); firmware dispatch preserved for forward-compat; host routes to not_implemented (excluded from KNOWN_PROTOCOLS, DEC-05) |
+| 0x39                   | `PROTO_PHANTOM_0x39`   | flash_type_4.cpp  | None (5V)       | 0 DB chips (phantom — no IC2_ALG constant exists); firmware dispatch preserved for forward-compat; host routes to not_implemented (excluded from KNOWN_PROTOCOLS, DEC-05) |
+| 0x10                   | `PROTO_FLASH_INTEL`    | flash_intel.cpp   | 12V via CTRL_VPP_P1_ENABLE | Command register, SR polling                                 |
+| 0x34                   | `PROTO_EEPROM_8051BUS` | not_implemented.cpp (PCB-blocked, FUT-01) | None (5V) | No dedicated dispatch arm — falls through the generic `protocol != 0` fail-closed guard |
 
 ### JSON Wire Protocol
 
