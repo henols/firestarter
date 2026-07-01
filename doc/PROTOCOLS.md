@@ -64,7 +64,7 @@ Each section below gives the NAME-01 four facets (write algorithm, erase model, 
 
 ---
 
-### 1.1 — 0x05 FLASH-AMD-STD: 5V Page-Write Flash (EEPROM-like)
+### 1.1 — 0x05 PROTO_FLASH_5V_PAGE: 5V Page-Write Flash (EEPROM-like)
 
 **Folder slug (col 1):** `0x05-FLASH-AMD-STD`
 **Canonical name (col 2):** `PROTO_FLASH_5V_PAGE` — Flash — 5V page-write (EEPROM-like)
@@ -84,7 +84,7 @@ Citation: `datasheets/0x05-FLASH-AMD-STD/W29C020.pdf` p.3 §Pin Description (VCC
 
 ---
 
-### 1.2 — 0x06 FLASH-AMD-ALT: AMD/SST Unlock-Sequence NOR Flash
+### 1.2 — 0x06 PROTO_FLASH_NOR_UNLOCK: AMD/SST Unlock-Sequence NOR Flash
 
 **Folder slug (col 1):** `0x06-FLASH-AMD-ALT`
 **Canonical name (col 2):** `PROTO_FLASH_NOR_UNLOCK` — Flash — AMD/SST unlock-sequence NOR
@@ -104,7 +104,7 @@ Citation: `datasheets/0x06-FLASH-AMD-ALT/SST39SF040.pdf` p.4 §DC Characteristic
 
 ---
 
-### 1.3 — 0x07 EPROM-STD: 28-pin UV-EPROM / EE-EPROM, 13 V VPP
+### 1.3 — 0x07 PROTO_EPROM_28PIN: 28-pin UV-EPROM / EE-EPROM, 13 V VPP
 
 **Folder slug (col 1):** `0x07-EPROM-STD`
 **Canonical name (col 2):** `PROTO_EPROM_28PIN` — EPROM — 28-pin UV/EE, 13V VPP
@@ -124,7 +124,7 @@ Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.5 §5 Pin Description (pin 1
 
 ---
 
-### 1.4 — 0x08 EPROM-QUICK: 32-pin UV-EPROM / EE-EPROM, 13 V VPP
+### 1.4 — 0x08 PROTO_EPROM_32PIN: 32-pin UV-EPROM / EE-EPROM, 13 V VPP
 
 **Folder slug (col 1):** `0x08-EPROM-QUICK`
 **Canonical name (col 2):** `PROTO_EPROM_32PIN` — EPROM — 32-pin UV/EE, 13V VPP
@@ -143,7 +143,7 @@ Citation: `datasheets/0x08-EPROM-QUICK/W27C020.pdf` p.4 §Pin Description (pin 1
 
 ---
 
-### 1.5 — 0x0B EPROM-LEGACY: 24-pin UV-EPROM, 12–25 V Direct-VPE Rail
+### 1.5 — 0x0B PROTO_EPROM_24PIN: 24-pin UV-EPROM, 12–25 V Direct-VPE Rail
 
 **Folder slug (col 1):** `0x0B-EPROM-LEGACY`
 **Canonical name (col 2):** `PROTO_EPROM_24PIN` — EPROM — 24-pin legacy, 12–25V direct-VPE rail
@@ -162,7 +162,7 @@ Citation: `datasheets/0x0B-EPROM-LEGACY/2516_EPROM.pdf` p.2 §Vpp Programming Vo
 
 ---
 
-### 1.6 — 0x0D EEPROM-POLL: 5 V Parallel EEPROM, SDP + DQ7 Page Poll
+### 1.6 — 0x0D PROTO_EEPROM_PARALLEL: 5 V Parallel EEPROM, SDP + DQ7 Page Poll
 
 **Folder slug (col 1):** `0x0D-EEPROM-POLL`
 **Canonical name (col 2):** `PROTO_EEPROM_PARALLEL` — EEPROM — 5V parallel, SDP + DQ7 page poll
@@ -181,7 +181,7 @@ Citation: `datasheets/0x0D-EEPROM-POLL/AT28C256.pdf` p.4 §DC Characteristics (V
 
 ---
 
-### 1.7 — 0x0E SRAM-32PIN: 32-pin Battery-Backed NVRAM
+### 1.7 — 0x0E PROTO_SRAM_32PIN: 32-pin Battery-Backed NVRAM
 
 **Folder slug (col 1):** `0x0E-SRAM-32PIN`
 **Canonical name (col 2):** `PROTO_SRAM_32PIN` — SRAM — 32-pin battery-backed NVRAM, optional 12V write-protect bypass
@@ -200,7 +200,7 @@ Citation: `datasheets/0x0E-SRAM-32PIN/DS1245Y.pdf` p.5 §Write-Protect Override.
 
 ---
 
-### 1.8 — 0x10 FLASH-INTEL: Intel 28F Command-Register NOR Flash, 12 V VPP Mandatory
+### 1.8 — 0x10 PROTO_FLASH_INTEL: Intel 28F Command-Register NOR Flash, 12 V VPP Mandatory
 
 **Folder slug (col 1):** `0x10-FLASH-INTEL`
 **Canonical name (col 2):** `PROTO_FLASH_INTEL` — Flash — Intel 28F command-register, 12V VPP mandatory
@@ -220,7 +220,7 @@ Citation: `datasheets/0x10-FLASH-INTEL/Intel-28F010.pdf` p.6 §VPP Characteristi
 
 ---
 
-### 1.9 — 0x27 SRAM-24PIN: 24-pin Async SRAM, 5 V
+### 1.9 — 0x27 PROTO_SRAM_24PIN: 24-pin Async SRAM, 5 V
 
 **Folder slug (col 1):** `0x27-SRAM-24PIN`
 **Canonical name (col 2):** `PROTO_SRAM_24PIN` — SRAM — 24-pin async, 5V
@@ -239,7 +239,7 @@ Citation: `datasheets/0x27-SRAM-24PIN/6116.pdf` p.2 §Pin Configuration.
 
 ---
 
-### 1.10 — 0x28 SRAM-STD: 28-pin SRAM / FRAM (NAME-04: FM1608 SRAM→FRAM correction)
+### 1.10 — 0x28 PROTO_SRAM_28PIN: 28-pin SRAM / FRAM (NAME-04: FM1608 SRAM→FRAM correction)
 
 **Folder slug (col 1):** `0x28-SRAM-STD`
 **Canonical name (col 2):** `PROTO_SRAM_28PIN` — SRAM/FRAM — 28-pin, 5V (see NAME-04 call-out below)
@@ -277,7 +277,7 @@ via the variant-decode rule that maps this tuple to algorithm=0x28. This conflat
 
 ---
 
-### 1.11 — 0x29 SRAM-512K-1M: 32-pin Large Battery-Backed NVRAM
+### 1.11 — 0x29 PROTO_SRAM_32PIN_NVRAM: 32-pin Large Battery-Backed NVRAM
 
 **Folder slug (col 1):** `0x29-SRAM-512K-1M`
 **Canonical name (col 2):** `PROTO_SRAM_32PIN_NVRAM` — SRAM — 32-pin large battery-backed NVRAM, 512K–1M
@@ -295,7 +295,7 @@ Citation: `datasheets/0x29-SRAM-512K-1M/DS1245Y.pdf` p.3 §Functional Descriptio
 
 ---
 
-### 1.12 — 0x34 EEPROM-X88C64: XICOR 8051-Bus EEPROM, PCB-blocked (FUT-01) (NAME-04 correction)
+### 1.12 — 0x34 PROTO_EEPROM_8051BUS: XICOR 8051-Bus EEPROM, PCB-blocked (FUT-01) (NAME-04 correction)
 
 **Folder slug (col 1):** `0x34-EEPROM-X88C64`
 **Canonical name (col 2):** `PROTO_EEPROM_8051BUS` — EEPROM — XICOR 8051-bus (PCB-blocked, document-only)
@@ -407,14 +407,14 @@ anywhere under the native tree.
 
 ### Cross-links to per-bucket sections
 
-- INV-01, INV-02: [§1.5 (0x0B EPROM-LEGACY)](#15----0x0b-eprom-legacy-24-pin-uv-eprom-12-25-v-direct-vpe-rail)
-- INV-03: [§1.4 (0x08 EPROM-QUICK)](#14----0x08-eprom-quick-32-pin-uv-eprom--ee-eprom-13-v-vpp)
-- INV-04: [§1.1 (0x05 FLASH-AMD-STD)](#11----0x05-flash-amd-std-5v-page-write-flash-eeprom-like)
-- INV-05: [§1.3 (0x07 EPROM-STD)](#13----0x07-eprom-std-28-pin-uv-eprom--ee-eprom-13-v-vpp)
-- INV-06: [§1.4 (0x08 EPROM-QUICK)](#14----0x08-eprom-quick-32-pin-uv-eprom--ee-eprom-13-v-vpp), [§1.5 (0x0B EPROM-LEGACY)](#15----0x0b-eprom-legacy-24-pin-uv-eprom-12-25-v-direct-vpe-rail)
-- INV-07: [§1.10 (0x28 SRAM-STD)](#110----0x28-sram-std-28-pin-sram--fram-name-04-fm1608-sramfram-correction)
-- INV-08: [§1.3 (0x07 EPROM-STD)](#13----0x07-eprom-std-28-pin-uv-eprom--ee-eprom-13-v-vpp)
-- INV-09: [§1.2 (0x06 FLASH-AMD-ALT)](#12----0x06-flash-amd-alt-amdsst-unlock-sequence-nor-flash)
+- INV-01, INV-02: [§1.5 (0x0B PROTO_EPROM_24PIN)](#15----0x0b-proto_eprom_24pin-24-pin-uv-eprom-12-25-v-direct-vpe-rail)
+- INV-03: [§1.4 (0x08 PROTO_EPROM_32PIN)](#14----0x08-proto_eprom_32pin-32-pin-uv-eprom--ee-eprom-13-v-vpp)
+- INV-04: [§1.1 (0x05 PROTO_FLASH_5V_PAGE)](#11----0x05-proto_flash_5v_page-5v-page-write-flash-eeprom-like)
+- INV-05: [§1.3 (0x07 PROTO_EPROM_28PIN)](#13----0x07-proto_eprom_28pin-28-pin-uv-eprom--ee-eprom-13-v-vpp)
+- INV-06: [§1.4 (0x08 PROTO_EPROM_32PIN)](#14----0x08-proto_eprom_32pin-32-pin-uv-eprom--ee-eprom-13-v-vpp), [§1.5 (0x0B PROTO_EPROM_24PIN)](#15----0x0b-proto_eprom_24pin-24-pin-uv-eprom-12-25-v-direct-vpe-rail)
+- INV-07: [§1.10 (0x28 PROTO_SRAM_28PIN)](#110----0x28-proto_sram_28pin-28-pin-sram--fram-name-04-fm1608-sramfram-correction)
+- INV-08: [§1.3 (0x07 PROTO_EPROM_28PIN)](#13----0x07-proto_eprom_28pin-28-pin-uv-eprom--ee-eprom-13-v-vpp)
+- INV-09: [§1.2 (0x06 PROTO_FLASH_NOR_UNLOCK)](#12----0x06-proto_flash_nor_unlock-amdsst-unlock-sequence-nor-flash)
 
 ---
 
