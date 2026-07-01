@@ -27,6 +27,19 @@ the SAFE-02 handoff to Phases 88/89.
 > (NAME-F1 deferred). The 0x0E vs 0x29 32-pin SRAM name collision (D-05) is resolved with two
 > distinct tokens: `PROTO_SRAM_32PIN` (0x0E) and `PROTO_SRAM_32PIN_NVRAM` (0x29).
 
+**Name ↔ Slug Divergence**
+
+> (a) The frozen-slug column (col 1, `datasheets/<hex>-<NAME>/`) below IS the canonical
+> old-slug ↔ new-name map — read a row left-to-right to translate any old minipro-bucket slug
+> (e.g. `0x0B-EPROM-LEGACY`) to its current `PROTO_` token + display name (e.g.
+> `PROTO_EPROM_24PIN` / "EPROM — 24-pin legacy, 12–25V direct-VPE"). (b) The `datasheets/`
+> folder slugs are intentionally frozen and are NOT renamed (NAME-F1 deferred, avoids
+> folder/provenance churn) — this doc *records* the divergence, it does not resolve it.
+> (c) The host CLI ASCII-normalizes dashes (em-dash `—` / en-dash `–` → ASCII hyphen `-`) in
+> its display strings (`firestarter_app/firestarter/ic_layout.py` `_PROTOCOL_DISPLAY_NAME`), a
+> documented punctuation deviation from the em-dash col-2 display names below (Phase 102 D-02)
+> — the names are otherwise identical.
+
 | hex | DB chip count | frozen slug (col 1) | PROTO_ token | display name | handler-family | phantom? |
 |-----|--------------|---------------------|--------------------------|--------------------------|-----------------|----------|
 | 0x05 | 27 | `0x05-FLASH-AMD-STD` | `PROTO_FLASH_5V_PAGE` | Flash — 5V page-write (EEPROM-like) | flash4 (0x05 + phantoms 0x35/0x39) | no |
