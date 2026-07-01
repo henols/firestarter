@@ -216,7 +216,7 @@ Citation: `datasheets/0x10-FLASH-INTEL/Intel-28F010.pdf` p.10 §Quick-Erase Algo
 **VPP behavior:** 12V VPP MANDATORY via `CTRL_VPP_P1_ENABLE (0x08)` — VPP ≤ 6.5V inhibits all program and erase operations. The RURP `CTRL_VPP_REGULATOR_ENABLE` must be set to hold VPP high during the entire program/erase cycle.
 Citation: `datasheets/0x10-FLASH-INTEL/Intel-28F010.pdf` p.6 §VPP Characteristics (VPP < 6.5V = write inhibit).
 
-**Pin roles:** 32-pin DIP. Address A0–A19, D0–D7 (bidirectional), CE, OE, WE, VPP on pin 1. The 0x40/0xC0/0x20/0xA0/0x00/0xFF command sequence is written to the chip's command register — any address suffices. Unlike AMD flash, there is no address-based unlock; commands go directly.
+**Pin roles:** 32-pin DIP. Address A0–A19, D0–D7 (bidirectional), CE, OE, WE, VPP on pin 1. The 0x40/0xC0/0x20/0xA0/0x00/0xFF command sequence is written to the chip's command register — any address suffices. Unlike the unlock-sequence NOR path (0x06 / `PROTO_FLASH_NOR_UNLOCK`), there is no address-based unlock; commands go directly.
 
 ---
 
@@ -349,8 +349,8 @@ reaches them to `not_implemented`.
 | `0x35` | `PROTO_PHANTOM_0x35` | `IC2_ALG_ITE` is an ITE EC microcontroller label in minipro, NOT a memory programming algorithm. Zero chips in `chip_database.json`. Firmware dispatch preserved for forward-compat. |
 | `0x39` | `PROTO_PHANTOM_0x39` | No `IC2_ALG` constant exists for this value in minipro source. Zero chips in `chip_database.json`. Firmware dispatch preserved for forward-compat. |
 
-These are not FLASH-AMD-STD variants, EPROM variants, or any other real protocol. They are
-dead dispatch arms. The old `.planning/research/PROTOCOLS.md` description of 0x35 as "AT29C
+These are not 5V page-write flash (`PROTO_FLASH_5V_PAGE`) variants, EPROM variants, or any
+other real protocol. They are dead dispatch arms. The old `.planning/research/PROTOCOLS.md` description of 0x35 as "AT29C
 series" and 0x39 as "AT49F series" was pre-Phase-86 speculation about minipro intent — the
 Phase-86 DB regeneration confirmed zero DB chips for both.
 
@@ -395,15 +395,15 @@ anywhere under the native tree.
 
 | INV id | One-line behavior | Owning handler file | Planned native test function name | Suite path |
 |--------|-------------------|---------------------|----------------------------------|------------|
-| INV-01 | 0x0B uses `FLAG_VPE_AS_VPP` direct-VPE rail (no `CTRL_VPP_VPE_DROP_ENABLE` drop) | `eprom.cpp` | `test_inv01_eprom_0x0B_direct_vpe_rail` | `test/native/avr/test_val_eprom/` |
-| INV-02 | 0x0B shares OE/VPP pin — read operations skip VPP enable to avoid OE conflict | `eprom.cpp` | `test_inv02_eprom_0x0B_oe_vpp_read_skip` | `test/native/avr/test_val_eprom/` |
-| INV-03 | 0x08 routes VPP to socket pin 1 via `CTRL_VPP_P1_ENABLE` (not drop path) | `eprom.cpp` | `test_inv03_eprom_0x08_p1_as_vpp` | `test/native/avr/test_val_eprom/` |
-| INV-04 | flash4 page size is data-driven from `handle->mem_size` (256B for W29C040 512KB; 128B for 128KB; 64B for 32KB) | `flash_type_4.cpp` | `test_inv04_flash4_256b_page_boundary` | `test/native/avr/test_val_flash4/` |
-| INV-05 | VPP is NOT enabled for CMD_READ or CMD_BLANK_CHECK — firmware skips VPP init on read path (VPP-skip-on-read) | `eprom.cpp` | `test_inv05_eprom_vpp_skip_on_read` | `test/native/avr/test_val_eprom/` |
-| INV-06 | Pulse-delay defaults: 0x08 → 100 µs; 0x0B → 500 µs; all other (0x07 default) → 1000 µs | `eprom.cpp` | `test_inv06_eprom_pulse_delay_defaults` | `test/native/avr/test_val_eprom/` |
-| INV-07 | FM1608 routes to `configure_sram()` as SRAM_STD/FRAM (algorithm=0x28), NOT `configure_eprom()` (BLOCKER-2 mitigation) | `sram.cpp` | `test_inv07_sram_fm1608_routes_to_sram` | `test/native/avr/test_val_sram/` |
-| INV-08 | **(dispatch-only scope)** WARNING-5 (0x07 EE-EPROM chips reclassified to 0x0D) is delivered by Phase-86 variant decode — no `build_db.py` runtime override. The correct `electrical.type` flows from the DB and the dispatch chain honors it. The WARNING-5 retirement itself is **host-side** (`build_db.py`, gated by `diff_db.py`) and is NOT firmware-testable; the native test below pins ONLY the downstream firmware consequence — that 0x07 still dispatches to `configure_eprom`. | `eprom.cpp` / build path | `test_inv08_eprom_warning5_decode_preserved` | `test/native/avr/test_val_eprom/` |
-| INV-09 | SST39SF040 (0x06) retains `electrical.type = Flash/EEPROM` — the `FLAG_CAN_ERASE` + `configure_flash3()` combination must not be confused with the UV-EPROM path | `flash_type_3.cpp` | `test_inv09_flash3_sst39sf040_keep_flash_eeprom` | `test/native/avr/test_val_flash3/` |
+| INV-01 | `PROTO_EPROM_24PIN` (0x0B) uses `FLAG_VPE_AS_VPP` direct-VPE rail (no `CTRL_VPP_VPE_DROP_ENABLE` drop) | `eprom.cpp` | `test_inv01_eprom_0x0B_direct_vpe_rail` | `test/native/avr/test_val_eprom/` |
+| INV-02 | `PROTO_EPROM_24PIN` (0x0B) shares OE/VPP pin — read operations skip VPP enable to avoid OE conflict | `eprom.cpp` | `test_inv02_eprom_0x0B_oe_vpp_read_skip` | `test/native/avr/test_val_eprom/` |
+| INV-03 | `PROTO_EPROM_32PIN` (0x08) routes VPP to socket pin 1 via `CTRL_VPP_P1_ENABLE` (not drop path) | `eprom.cpp` | `test_inv03_eprom_0x08_p1_as_vpp` | `test/native/avr/test_val_eprom/` |
+| INV-04 | `PROTO_FLASH_5V_PAGE` (0x05) flash4 page size is data-driven from `handle->mem_size` (256B for W29C040 512KB; 128B for 128KB; 64B for 32KB) | `flash_type_4.cpp` | `test_inv04_flash4_256b_page_boundary` | `test/native/avr/test_val_flash4/` |
+| INV-05 | `PROTO_EPROM_28PIN` (0x07) — VPP is NOT enabled for CMD_READ or CMD_BLANK_CHECK — firmware skips VPP init on read path (VPP-skip-on-read) | `eprom.cpp` | `test_inv05_eprom_vpp_skip_on_read` | `test/native/avr/test_val_eprom/` |
+| INV-06 | Pulse-delay defaults: `PROTO_EPROM_32PIN` (0x08) → 100 µs; `PROTO_EPROM_24PIN` (0x0B) → 500 µs; all other (`PROTO_EPROM_28PIN` (0x07) default) → 1000 µs | `eprom.cpp` | `test_inv06_eprom_pulse_delay_defaults` | `test/native/avr/test_val_eprom/` |
+| INV-07 | `PROTO_SRAM_28PIN` — FM1608 routes to `configure_sram()` as SRAM_STD/FRAM (algorithm=0x28), NOT `configure_eprom()` (BLOCKER-2 mitigation) | `sram.cpp` | `test_inv07_sram_fm1608_routes_to_sram` | `test/native/avr/test_val_sram/` |
+| INV-08 | `PROTO_EPROM_28PIN` (0x07) — **(dispatch-only scope)** WARNING-5 (0x07 EE-EPROM chips reclassified to 0x0D) is delivered by Phase-86 variant decode — no `build_db.py` runtime override. The correct `electrical.type` flows from the DB and the dispatch chain honors it. The WARNING-5 retirement itself is **host-side** (`build_db.py`, gated by `diff_db.py`) and is NOT firmware-testable; the native test below pins ONLY the downstream firmware consequence — that 0x07 still dispatches to `configure_eprom`. | `eprom.cpp` / build path | `test_inv08_eprom_warning5_decode_preserved` | `test/native/avr/test_val_eprom/` |
+| INV-09 | `PROTO_FLASH_NOR_UNLOCK` (0x06) — SST39SF040 retains `electrical.type = Flash/EEPROM` — the `FLAG_CAN_ERASE` + `configure_flash3()` combination must not be confused with the UV-EPROM path | `flash_type_3.cpp` | `test_inv09_flash3_sst39sf040_keep_flash_eeprom` | `test/native/avr/test_val_flash3/` |
 
 ### Cross-links to per-bucket sections
 
