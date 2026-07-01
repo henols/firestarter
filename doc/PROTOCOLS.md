@@ -21,13 +21,13 @@ the SAFE-02 handoff to Phases 88/89.
 
 **Canonical bucket set** (re-verified from `chip_database.json` before authoring — DB is authoritative):
 
-> **DRAFT — PROPOSED, pending operator approval at the Phase-100 NAME-02 gate.** Every
-> `PROTO_` token and display name below is a draft; the frozen `datasheets/<hex>-<NAME>/` slug
+> **Operator-approved 2026-07-01 at the Phase-100 NAME-02 gate.** Every `PROTO_` token and
+> display name below is final and authoritative; the frozen `datasheets/<hex>-<NAME>/` slug
 > column (col 1) is retained verbatim as the DOC-02 divergence anchor and is NOT renamed
-> (NAME-F1 deferred). The 0x0E vs 0x29 32-pin SRAM name collision (D-05) is called out inline —
-> see the `?? — 0x0E/0x29 tiebreak, operator resolves at gate` marker on the 0x29 row.
+> (NAME-F1 deferred). The 0x0E vs 0x29 32-pin SRAM name collision (D-05) is resolved with two
+> distinct tokens: `PROTO_SRAM_32PIN` (0x0E) and `PROTO_SRAM_32PIN_NVRAM` (0x29).
 
-| hex | DB chip count | frozen slug (col 1) | PROTO_ token (PROPOSED) | display name (PROPOSED) | handler-family | phantom? |
+| hex | DB chip count | frozen slug (col 1) | PROTO_ token | display name | handler-family | phantom? |
 |-----|--------------|---------------------|--------------------------|--------------------------|-----------------|----------|
 | 0x05 | 27 | `0x05-FLASH-AMD-STD` | `PROTO_FLASH_5V_PAGE` | Flash — 5V page-write (EEPROM-like) | flash4 (0x05 + phantoms 0x35/0x39) | no |
 | 0x06 | 190 | `0x06-FLASH-AMD-ALT` | `PROTO_FLASH_NOR_UNLOCK` | Flash — AMD/SST unlock-sequence NOR | flash3 (0x06, single-protocol) | no |
@@ -39,17 +39,17 @@ the SAFE-02 handoff to Phases 88/89.
 | 0x10 | 39 | `0x10-FLASH-INTEL` | `PROTO_FLASH_INTEL` | Flash — Intel 28F command-register, 12V VPP mandatory | flash_intel (0x10, single-protocol) | no |
 | 0x27 | 2 | `0x27-SRAM-24PIN` | `PROTO_SRAM_24PIN` | SRAM — 24-pin async, 5V | sram (0x0E/0x27/0x28/0x29) | no |
 | 0x28 | 34 | `0x28-SRAM-STD` | `PROTO_SRAM_28PIN` | SRAM/FRAM — 28-pin (NAME-04: FM1608, see §1.10) | sram (0x0E/0x27/0x28/0x29) | no |
-| 0x29 | 20 | `0x29-SRAM-512K-1M` | `PROTO_SRAM_32PIN_LARGE` ⚠ **?? — 0x0E/0x29 tiebreak, operator resolves at gate** | SRAM — 32-pin large battery-backed NVRAM, 512K–1M | sram (0x0E/0x27/0x28/0x29) | no |
-| 0x34 | 1 | `0x34-EEPROM-X88C64` | `PROTO_EEPROM_X88C64` | EEPROM — XICOR 8051-bus, PCB-blocked (FUT-01) (NAME-04: X88C64, see §1.12) | not-implemented (0x34, PCB-blocked) | no |
-| 0x35 | 0 | `(none)` | `PROTO_PHANTOM_35` — operator choice: `PROTO_PHANTOM_35` vs `PROTO_PHANTOM_0x35` | (phantom — 0 DB chips, dispatch-preserved for forward-compat) | flash4 dispatch arm | YES |
-| 0x39 | 0 | `(none)` | `PROTO_PHANTOM_39` — operator choice: `PROTO_PHANTOM_39` vs `PROTO_PHANTOM_0x39` | (phantom — 0 DB chips, dispatch-preserved for forward-compat) | flash4 dispatch arm | YES |
+| 0x29 | 20 | `0x29-SRAM-512K-1M` | `PROTO_SRAM_32PIN_NVRAM` | SRAM — 32-pin large battery-backed NVRAM, 512K–1M | sram (0x0E/0x27/0x28/0x29) | no |
+| 0x34 | 1 | `0x34-EEPROM-X88C64` | `PROTO_EEPROM_8051BUS` | EEPROM — XICOR 8051-bus, PCB-blocked (FUT-01) (NAME-04: X88C64, see §1.12) | not-implemented (0x34, PCB-blocked) | no |
+| 0x35 | 0 | `(none)` | `PROTO_PHANTOM_0x35` | (phantom — 0 DB chips, dispatch-preserved for forward-compat) | flash4 dispatch arm | YES |
+| 0x39 | 0 | `(none)` | `PROTO_PHANTOM_0x39` | (phantom — 0 DB chips, dispatch-preserved for forward-compat) | flash4 dispatch arm | YES |
 
 **Handler-family layer (D-09 — names the 7 existing `configure_*` dispatch groupings, grounded in `memory.cpp` lines 74–103):**
 
 | Handler-family | `configure_*` function | File | Protocols |
 |----------------|------------------------|------|-----------|
 | eprom | `configure_eprom()` | `eprom.cpp` | 0x07, 0x08, 0x0B (many-to-one) |
-| sram | `configure_sram()` | `sram.cpp` | 0x0E, 0x27, 0x28, 0x29 (many-to-one; 0x0E/0x29 tiebreak lives here) |
+| sram | `configure_sram()` | `sram.cpp` | 0x0E, 0x27, 0x28, 0x29 (many-to-one; the 0x0E/0x29 D-05 collision is resolved here — `PROTO_SRAM_32PIN` vs `PROTO_SRAM_32PIN_NVRAM`) |
 | flash4 | `configure_flash4()` | `flash_type_4.cpp` | 0x05 (+ phantom dispatch arms 0x35/0x39) |
 | flash3 | `configure_flash3()` | `flash_type_3.cpp` | 0x06 (single-protocol) |
 | eeprom28c | `configure_eeprom28c()` | `eeprom_28c.cpp` | 0x0D (single-protocol) |
@@ -67,7 +67,7 @@ Each section below gives the NAME-01 four facets (write algorithm, erase model, 
 ### 1.1 — 0x05 FLASH-AMD-STD: 5V Page-Write Flash (EEPROM-like)
 
 **Folder slug (col 1):** `0x05-FLASH-AMD-STD`
-**Canonical name (col 2):** `PROTO_FLASH_5V_PAGE` — Flash — 5V page-write (EEPROM-like) (PROPOSED)
+**Canonical name (col 2):** `PROTO_FLASH_5V_PAGE` — Flash — 5V page-write (EEPROM-like)
 **Handler:** `configure_flash4()` → `flash_type_4.cpp`
 **DB chip count:** 27 (AT29C, W29C, SST29EE series)
 
@@ -87,7 +87,7 @@ Citation: `datasheets/0x05-FLASH-AMD-STD/W29C020.pdf` p.3 §Pin Description (VCC
 ### 1.2 — 0x06 FLASH-AMD-ALT: AMD/SST Unlock-Sequence NOR Flash
 
 **Folder slug (col 1):** `0x06-FLASH-AMD-ALT`
-**Canonical name (col 2):** `PROTO_FLASH_NOR_UNLOCK` — Flash — AMD/SST unlock-sequence NOR (PROPOSED)
+**Canonical name (col 2):** `PROTO_FLASH_NOR_UNLOCK` — Flash — AMD/SST unlock-sequence NOR
 **Handler:** `configure_flash3()` → `flash_type_3.cpp`
 **DB chip count:** 190 (AM29F, SST39SF, W39F, MX29F, A29F series — the dominant protocol)
 
@@ -107,7 +107,7 @@ Citation: `datasheets/0x06-FLASH-AMD-ALT/SST39SF040.pdf` p.4 §DC Characteristic
 ### 1.3 — 0x07 EPROM-STD: 28-pin UV-EPROM / EE-EPROM, 13 V VPP
 
 **Folder slug (col 1):** `0x07-EPROM-STD`
-**Canonical name (col 2):** `PROTO_EPROM_28PIN` — EPROM — 28-pin UV/EE, 13V VPP (PROPOSED)
+**Canonical name (col 2):** `PROTO_EPROM_28PIN` — EPROM — 28-pin UV/EE, 13V VPP
 **Handler:** `configure_eprom()` → `eprom.cpp`
 **DB chip count:** 170 (AM27Cxxx, 27Cxxx, W27C512, W27E512, ST M27C512, AT27xxx series)
 
@@ -127,7 +127,7 @@ Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.5 §5 Pin Description (pin 1
 ### 1.4 — 0x08 EPROM-QUICK: 32-pin UV-EPROM / EE-EPROM, 13 V VPP
 
 **Folder slug (col 1):** `0x08-EPROM-QUICK`
-**Canonical name (col 2):** `PROTO_EPROM_32PIN` — EPROM — 32-pin UV/EE, 13V VPP (PROPOSED)
+**Canonical name (col 2):** `PROTO_EPROM_32PIN` — EPROM — 32-pin UV/EE, 13V VPP
 **Handler:** `configure_eprom()` → `eprom.cpp`
 **DB chip count:** 127 (AM27C010, AM27C020, AM27C040, W27C020, AT27C010 series — 1 Mbit–8 Mbit)
 
@@ -146,7 +146,7 @@ Citation: `datasheets/0x08-EPROM-QUICK/W27C020.pdf` p.4 §Pin Description (pin 1
 ### 1.5 — 0x0B EPROM-LEGACY: 24-pin UV-EPROM, 12–25 V Direct-VPE Rail
 
 **Folder slug (col 1):** `0x0B-EPROM-LEGACY`
-**Canonical name (col 2):** `PROTO_EPROM_24PIN` — EPROM — 24-pin legacy, 12–25V direct-VPE rail (PROPOSED)
+**Canonical name (col 2):** `PROTO_EPROM_24PIN` — EPROM — 24-pin legacy, 12–25V direct-VPE rail
 **Handler:** `configure_eprom()` → `eprom.cpp`
 **DB chip count:** 32 (2716, 2732, 2732A, ETC2716, and small 24-pin EEPROMs)
 
@@ -165,7 +165,7 @@ Citation: `datasheets/0x0B-EPROM-LEGACY/2516_EPROM.pdf` p.2 §Vpp Programming Vo
 ### 1.6 — 0x0D EEPROM-POLL: 5 V Parallel EEPROM, SDP + DQ7 Page Poll
 
 **Folder slug (col 1):** `0x0D-EEPROM-POLL`
-**Canonical name (col 2):** `PROTO_EEPROM_PARALLEL` — EEPROM — 5V parallel, SDP + DQ7 page poll (PROPOSED)
+**Canonical name (col 2):** `PROTO_EEPROM_PARALLEL` — EEPROM — 5V parallel, SDP + DQ7 page poll
 **Handler:** `configure_eeprom28c()` → `eeprom_28c.cpp`
 **DB chip count:** 84 (AT28C010, AT28C040, X28C010, M28010, CAT28C series, WE series)
 
@@ -184,7 +184,7 @@ Citation: `datasheets/0x0D-EEPROM-POLL/AT28C256.pdf` p.4 §DC Characteristics (V
 ### 1.7 — 0x0E SRAM-32PIN: 32-pin Battery-Backed NVRAM
 
 **Folder slug (col 1):** `0x0E-SRAM-32PIN`
-**Canonical name (col 2):** `PROTO_SRAM_32PIN` — SRAM — 32-pin battery-backed NVRAM, optional 12V write-protect bypass (PROPOSED)
+**Canonical name (col 2):** `PROTO_SRAM_32PIN` — SRAM — 32-pin battery-backed NVRAM, optional 12V write-protect bypass
 **Handler:** `configure_sram()` → `sram.cpp`
 **DB chip count:** 20 (DS1245Y, DS1249AB, M48T128Y, BQ4013YMA, and sibling series)
 
@@ -203,7 +203,7 @@ Citation: `datasheets/0x0E-SRAM-32PIN/DS1245Y.pdf` p.5 §Write-Protect Override.
 ### 1.8 — 0x10 FLASH-INTEL: Intel 28F Command-Register NOR Flash, 12 V VPP Mandatory
 
 **Folder slug (col 1):** `0x10-FLASH-INTEL`
-**Canonical name (col 2):** `PROTO_FLASH_INTEL` — Flash — Intel 28F command-register, 12V VPP mandatory (PROPOSED)
+**Canonical name (col 2):** `PROTO_FLASH_INTEL` — Flash — Intel 28F command-register, 12V VPP mandatory
 **Handler:** `configure_flash_intel()` → `flash_intel.cpp`
 **DB chip count:** 39 (Intel 28F010/256/512, AM28F010, P28F010, TMS28F010, SST28SF040 series)
 
@@ -223,7 +223,7 @@ Citation: `datasheets/0x10-FLASH-INTEL/Intel-28F010.pdf` p.6 §VPP Characteristi
 ### 1.9 — 0x27 SRAM-24PIN: 24-pin Async SRAM, 5 V
 
 **Folder slug (col 1):** `0x27-SRAM-24PIN`
-**Canonical name (col 2):** `PROTO_SRAM_24PIN` — SRAM — 24-pin async, 5V (PROPOSED)
+**Canonical name (col 2):** `PROTO_SRAM_24PIN` — SRAM — 24-pin async, 5V
 **Handler:** `configure_sram()` → `sram.cpp`
 **DB chip count:** 2 (6116 / 2K×8, DS1220(TEST))
 
@@ -242,7 +242,7 @@ Citation: `datasheets/0x27-SRAM-24PIN/6116.pdf` p.2 §Pin Configuration.
 ### 1.10 — 0x28 SRAM-STD: 28-pin SRAM / FRAM (NAME-04: FM1608 SRAM→FRAM correction)
 
 **Folder slug (col 1):** `0x28-SRAM-STD`
-**Canonical name (col 2):** `PROTO_SRAM_28PIN` — SRAM/FRAM — 28-pin, 5V (PROPOSED) (see NAME-04 call-out below)
+**Canonical name (col 2):** `PROTO_SRAM_28PIN` — SRAM/FRAM — 28-pin, 5V (see NAME-04 call-out below)
 **Handler:** `configure_sram()` → `sram.cpp`
 **DB chip count:** 34 (W24256, W2464, DS1225, BQ4011YMA, 6264, 62256, FM1608, and siblings)
 
@@ -280,7 +280,7 @@ via the variant-decode rule that maps this tuple to algorithm=0x28. This conflat
 ### 1.11 — 0x29 SRAM-512K-1M: 32-pin Large Battery-Backed NVRAM
 
 **Folder slug (col 1):** `0x29-SRAM-512K-1M`
-**Canonical name (col 2):** `PROTO_SRAM_32PIN_LARGE` ⚠ **?? — 0x0E/0x29 tiebreak, operator resolves at gate** — SRAM — 32-pin large battery-backed NVRAM, 512K–1M (PROPOSED)
+**Canonical name (col 2):** `PROTO_SRAM_32PIN_NVRAM` — SRAM — 32-pin large battery-backed NVRAM, 512K–1M
 **Handler:** `configure_sram()` → `sram.cpp`
 **DB chip count:** 20 (DS1245AB(TEST), DS1249AB(TEST), DS1250AB(TEST), BQ4013YMA(TEST), M48T128Y(TEST) series)
 
@@ -298,7 +298,7 @@ Citation: `datasheets/0x29-SRAM-512K-1M/DS1245Y.pdf` p.3 §Functional Descriptio
 ### 1.12 — 0x34 EEPROM-X88C64: XICOR 8051-Bus EEPROM, PCB-blocked (FUT-01) (NAME-04 correction)
 
 **Folder slug (col 1):** `0x34-EEPROM-X88C64`
-**Canonical name (col 2):** `PROTO_EEPROM_X88C64` — EEPROM — XICOR 8051-bus (PCB-blocked, document-only) (PROPOSED)
+**Canonical name (col 2):** `PROTO_EEPROM_8051BUS` — EEPROM — XICOR 8051-bus (PCB-blocked, document-only)
 **Handler:** `configure_not_implemented()` → `not_implemented.cpp`
 **DB chip count:** 1 (X88C64P)
 
@@ -344,10 +344,10 @@ These IDs appear in the `configure_flash4()` dispatch for forward-compatibility 
 DB chips. The host excludes both from `KNOWN_PROTOCOLS` and routes any chip that somehow
 reaches them to `not_implemented`.
 
-| hex | firmware name (PROPOSED — operator choice) | reason |
-|-----|--------------------------------------------|--------|
-| `0x35` | `PROTO_PHANTOM_35` (alt: `PROTO_PHANTOM_0x35`) | `IC2_ALG_ITE` is an ITE EC microcontroller label in minipro, NOT a memory programming algorithm. Zero chips in `chip_database.json`. Firmware dispatch preserved for forward-compat. |
-| `0x39` | `PROTO_PHANTOM_39` (alt: `PROTO_PHANTOM_0x39`) | No `IC2_ALG` constant exists for this value in minipro source. Zero chips in `chip_database.json`. Firmware dispatch preserved for forward-compat. |
+| hex | firmware name | reason |
+|-----|---------------|--------|
+| `0x35` | `PROTO_PHANTOM_0x35` | `IC2_ALG_ITE` is an ITE EC microcontroller label in minipro, NOT a memory programming algorithm. Zero chips in `chip_database.json`. Firmware dispatch preserved for forward-compat. |
+| `0x39` | `PROTO_PHANTOM_0x39` | No `IC2_ALG` constant exists for this value in minipro source. Zero chips in `chip_database.json`. Firmware dispatch preserved for forward-compat. |
 
 These are not FLASH-AMD-STD variants, EPROM variants, or any other real protocol. They are
 dead dispatch arms. The old `.planning/research/PROTOCOLS.md` description of 0x35 as "AT29C
@@ -422,4 +422,4 @@ anywhere under the native tree.
 *Canonical bucket set re-verified from `chip_database.json` (746 chips, 12 real buckets)*
 *Datasheets committed in Phase 85; datasheet citation anchors are best-available locators per D-discretion*
 *INV-01..INV-09 ids are the SAFE-02 handoff to Phases 88/89 — grep-intact through recompose*
-*Phase 100 — Canonical Protocol Name Set (3-field schema: `PROTO_` token + display name + handler-family) | Draft authored 2026-07-01 | Operator-approval date: PENDING (filled in Task 3)*
+*Phase 100 — Canonical Protocol Name Set (3-field schema: `PROTO_` token + display name + handler-family) | Draft authored 2026-07-01 | Operator-approved 2026-07-01 — final name set: 0x0E/0x29 SRAM collision resolved (`PROTO_SRAM_32PIN` / `PROTO_SRAM_32PIN_NVRAM`), phantom tokens `PROTO_PHANTOM_0x35`/`PROTO_PHANTOM_0x39`, 0x34 `PROTO_EEPROM_8051BUS`; all other names approved as drafted*
