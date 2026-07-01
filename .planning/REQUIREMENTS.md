@@ -69,26 +69,26 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| NAME-01 | TBD | Pending |
-| NAME-02 | TBD | Pending |
-| NAME-03 | TBD | Pending |
-| FW-01 | TBD | Pending |
-| FW-02 | TBD | Pending |
-| FW-03 | TBD | Pending |
-| FW-04 | TBD | Pending |
-| HOST-01 | TBD | Pending |
-| HOST-02 | TBD | Pending |
-| HOST-03 | TBD | Pending |
-| DOC-01 | TBD | Pending |
-| DOC-02 | TBD | Pending |
-| GATE-01 | TBD | Pending |
-| GATE-02 | TBD | Pending |
-| GATE-03 | TBD | Pending |
+| NAME-01 | 100 | Pending |
+| NAME-02 | 100 | Pending |
+| NAME-03 | 100 | Pending |
+| FW-01 | 101 | Pending |
+| FW-02 | 101 | Pending |
+| FW-03 | 101 | Pending |
+| FW-04 | 101 | Pending |
+| HOST-01 | 102 | Pending |
+| HOST-02 | 102 | Pending |
+| HOST-03 | 102 | Pending |
+| DOC-01 | 103 | Pending |
+| DOC-02 | 103 | Pending |
+| GATE-01 | 103 | Pending |
+| GATE-02 | 103 | Pending |
+| GATE-03 | 103 | Pending |
 
 **Coverage:**
 - v1 requirements: 15 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15 (Phase 100: NAME-01..03; Phase 101: FW-01..04; Phase 102: HOST-01..03; Phase 103: DOC-01/02, GATE-01..03)
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-01*

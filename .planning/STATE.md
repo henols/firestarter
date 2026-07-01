@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-07-01T13:11:03.472Z"
 last_activity: 2026-07-01
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,42 +20,42 @@ progress:
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-07-01 — Milestone v1.19 started
+Phase: 100 of 103 (NAME — Canonical Protocol Name Set + Operator Approval)
+Plan: — (roadmap created, not yet planned)
+Status: Roadmap created — ready to plan Phase 100
+Last activity: 2026-07-01 — ROADMAP.md created (4 phases, 15/15 requirements mapped)
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (v1.18 Current Milestone section + Key Decisions)
+See: `.planning/PROJECT.md` (v1.19 Current Milestone section + Key Decisions)
 
-**Core value:** Algorithm-first dispatch — minipro `protocol_id` flows authoritative from upstream XML → DB → wire JSON → firmware handler. v1.18 proves that contract on the AM27C020 `0x08` EPROM-QUICK 32-pin write path: root-cause the 0-bits-programmed failure, fix the write/VPP path (RC-1 leading: PGM pin 31 mapped as address line rather than held program-active), and bench-prove byte-exact write→verify on real silicon — gated on Tier-0 writability pre-flight.
+**Core value:** Algorithm-first dispatch — minipro `protocol_id` flows authoritative from upstream XML → DB → wire JSON → firmware handler. v1.19 keeps that contract byte-for-byte (numbers unchanged) and layers a correct, human-readable **name** on top of every protocol so firmware code and host display are legible without a hex lookup.
 
-**Current focus:** Planning next milestone (v1.18 shipped 2026-07-01; run `/gsd-new-milestone`). AM27C020 `0x08` write reliability carried forward as **FUT-08** (program-window VPP-under-load + timing characterization).
+**Current focus:** v1.19 Phase 100 (NAME) — author + get operator approval on the canonical protocol name set before any firmware/host/doc work starts. AM27C020 `0x08` write reliability remains carried forward as **FUT-08** (unrelated to this milestone; program-window VPP-under-load + timing characterization).
 
-## Milestone Context (v1.18)
+## Milestone Context (v1.19)
 
-- **Scope (operator-confirmed 2026-06-29):** Single-chip RCA→fix→bench: AM27C020 `0x08` 32-pin write/VPP path. FUT-06 (carried from v1.15) elevated to the primary target.
-- **Branch base:** Firmware forks off the v1.17 tip (continues prior base), NOT firmware `beta` (stale at v1.13 `a1953c2`; lacks v1.15 VPP-skip + v1.16 recompose + v1.17 fixes). Mirrors v1.15–v1.17 precedent; gitlinks PINNED; lockstep beta cut operator-gated.
-- **Done bar:** byte-exact write→verify SHA on the seated AM27C020 (Leonardo + Rev 2.0). Hard graduation gate contingent on PRE-01 writability — if OTP/dead, clean deferral to FUT is the acceptable alternate outcome.
-- **Bench LOCKED to Leonardo + RURP Rev 2.0.** Standing discipline: live R1/R2 readback each task, verify `controller:` port identity per task, Leonardo chip-OUT-sideload-exempt.
-- **Dual-repo lockstep** (`constants.py` ↔ `firestarter.h`; pinout DB) wherever the fix crosses the wire. Reuse-first. Watch the py3.12-masks-CI-3.11 ruff/codegen drift trap.
-- Phase numbering continues from v1.17's Phase 96 → **v1.18 starts at Phase 97**.
-- Closes **FUT-06** (AM27C020 `0x08` 32-pin write/VPP path; RCA'd at v1.15 Phase 83/84, not trivially fixable, 0-bits-programmed).
+- **Scope (operator-confirmed 2026-07-01):** Readability-only milestone. No `chip_database.json` change, no wire-protocol/lockstep-constant change, no new CLI input grammar. Numbers stay authoritative everywhere; only names/labels are added on top.
+- **Sequencing constraint:** NAME-01/02/03 (Phase 100) is a hard blocking gate — the canonical protocol name set must be operator-approved before FW (101), HOST (102), or DOC (103) work starts. FW and HOST are independent refactors (no lockstep coupling between them); DOC reconciles last, after both land.
+- **Branch base:** Branches off the v1.18 tip in all 3 repos per standing v1.15–v1.18 policy; gitlinks PINNED at b10; lockstep beta cut operator-gated.
+- **Non-regression bar:** FW-04 is a hard gate — golden register traces + dispatch-mirror guard byte-identical, native Unity suite green, Leonardo flash delta near-zero. GATE-01/02/03 (DB IDENTITY, wire/lockstep parity unaffected, no new CLI grammar) close the milestone in Phase 103.
+- Phase numbering continues from v1.18's Phase 99 → **v1.19 starts at Phase 100**.
+- Watch the py3.12-masks-CI-3.11 ruff/codegen drift trap for host changes (Phase 102).
 
-## Roadmap Summary (v1.18 — Phases 97–99)
+## Roadmap Summary (v1.19 — Phases 100–103)
 
-Created 2026-06-29 · granularity Comprehensive · 11/11 requirements mapped (no orphans, no duplicates). Strict sequence: **PRE+RCA → FIX → BENCH+LEDGER**. SAFE-01 homes in Phase 97, SAFE-02 in Phase 98; both recur as preconditions through close.
+Created 2026-07-01 · granularity Comprehensive · 15/15 requirements mapped (no orphans, no duplicates). Strict sequence: **NAME (gate) → {FW, HOST independent} → DOC+GATE (close)**.
 
-| Phase | Goal | Requirements | Bench-gated |
-|-------|------|--------------|-------------|
-| 97 — PRE + RCA | Tier-0 writability pre-flight + reproduce failure signature + differential isolation + named root cause | PRE-01, RCA-01, RCA-02, RCA-03, SAFE-01 | yes (Leonardo + Rev 2.0, seated AM27C020, DMM at pin 1 + pin 31) |
-| 98 — FIX | Correct 0x08 32-pin write/VPP path (golden traces green, dual-repo lockstep, py3.11 CI) | FIX-01, FIX-02, FIX-03, SAFE-02 | no (native + host CI) |
-| 99 — BENCH + LEDGER | Byte-exact write→verify graduation (contingent on PRE-01) or documented FUT deferral + EVIDENCE + PROTOCOL-LEDGER updated | BENCH-01, BENCH-02 | yes (hard graduation gate; deferral is a clean documented outcome) |
+| Phase | Goal | Requirements | Depends on |
+|-------|------|--------------|------------|
+| 100 — NAME | Author canonical protocol name set + operator-approval blocking gate + record as single source of truth | NAME-01, NAME-02, NAME-03 | Nothing (first phase) |
+| 101 — FW | Named constants/labels replace magic hex in dispatch + handler bodies; rename mechanism-jargon handlers (many-to-one kept); golden traces + dispatch-mirror byte-identical, flash delta near-zero | FW-01, FW-02, FW-03, FW-04 | Phase 100 |
+| 102 — HOST | Consolidate scattered `ic_layout.py`/`eprom_info.py` protocol maps into one translation for `info`/`list`/`search`; internal logic unchanged; CI green | HOST-01, HOST-02, HOST-03 | Phase 100 (independent of 101) |
+| 103 (close) — DOC + GATE | Reconcile `PROTOCOLS.md` prose + INV matrix to final names; assert DB/wire/CLI non-regression (GATE-01..03) | DOC-01, DOC-02, GATE-01, GATE-02, GATE-03 | Phase 101, Phase 102 |
 
-**Dependency chain:** 97 → 98 → 99 (linear; RCA must name the cause before FIX is designable; BENCH gates on the committed fix AND on the Tier-0 writability result from Phase 97).
+**Dependency chain:** 100 → {101, 102} → 103 (100 is a hard blocking gate; 101/102 are independent parallel refactors sharing the Phase-100 name set, no lockstep coupling between them; 103 needs both done to reconcile docs + close).
 
-**Firmware/host surfaces:** `firestarter/src/proms/eprom.cpp` (program-pulse / VPP-routing for `using_p1_as_vpp` 32-pin parts); possibly `firestarter_app/firestarter/data/pinouts.json` (new `DIP32_27C020` entry if PGM-as-address-line is the cause); lockstep `firestarter.h` ↔ `constants.py` if a new wire field is needed; `check_dispatch.py` / `diff_db.py` / `PROTOCOL-LEDGER` gates.
+**Firmware/host surfaces:** `firestarter/include/firestarter.h` (named constants), `firestarter/src/proms/memory.cpp` (dispatch labels), `firestarter/src/proms/flash_type_3.cpp`/`flash_type_4.cpp`/eeprom28c handler (renames), `firestarter/doc/PROTOCOLS.md` (vocabulary + INV matrix); `firestarter_app/firestarter/ic_layout.py` + `eprom_info.py` (consolidated display map). No `chip_database.json`, no wire/lockstep constant, no CLI grammar change anywhere in this milestone.
 
 ## Accumulated Context
 
@@ -127,7 +127,7 @@ Transport provably byte-exact (COBS `0x00` + CRC8-CCITT) — settled variable. G
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Review + approve the v1.19 ROADMAP.md, then run `/gsd-plan-phase 100` (NAME — canonical protocol name set + operator approval gate).
 
 ## Decisions
 
