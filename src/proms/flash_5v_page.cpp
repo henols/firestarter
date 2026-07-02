@@ -5,7 +5,7 @@
  * Permission is hereby granted under MIT license.
  */
 
-#include "flash_type_4.h"
+#include "flash_5v_page.h"
 
 #include <Arduino.h>
 
@@ -24,41 +24,41 @@
  * Data-driven sizing fixes W29C040 without changing effective behavior
  * for smaller chips whose native page is ≤ their derived size.
  * (Worked examples: ≤65536→64, ≤262144→128, else→256.) */
-static uint32_t flash4_page_size(uint32_t mem_size) {
+static uint32_t flash_5v_page_page_size(uint32_t mem_size) {
     if (mem_size <= 65536)  return 64;
     if (mem_size <= 262144) return 128;
     return 256;
 }
 
-void flash4_erase_execute(firestarter_handle_t* handle);
-void flash4_write_init(firestarter_handle_t* handle);
-void flash4_write_execute(firestarter_handle_t* handle);
-void flash4_check_chip_id_execute(firestarter_handle_t* handle);
-static bool flash4_wait_for_page_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected);
+void flash_5v_page_erase_execute(firestarter_handle_t* handle);
+void flash_5v_page_write_init(firestarter_handle_t* handle);
+void flash_5v_page_write_execute(firestarter_handle_t* handle);
+void flash_5v_page_check_chip_id_execute(firestarter_handle_t* handle);
+static bool flash_5v_page_wait_for_page_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected);
 
-uint16_t flash4_get_chip_id(firestarter_handle_t* handle);
+uint16_t flash_5v_page_get_chip_id(firestarter_handle_t* handle);
 
-void configure_flash4(firestarter_handle_t* handle) {
+void configure_flash_5v_page(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_CONFIGURING_FLASH4);
     switch (handle->cmd) {
         case CMD_WRITE:
-            handle->firestarter_operation_init = flash4_write_init;
-            handle->firestarter_operation_main = flash4_write_execute;
+            handle->firestarter_operation_init = flash_5v_page_write_init;
+            handle->firestarter_operation_main = flash_5v_page_write_execute;
             break;
         case CMD_ERASE:
-            handle->firestarter_operation_main = flash4_erase_execute;
+            handle->firestarter_operation_main = flash_5v_page_erase_execute;
             break;
         case CMD_BLANK_CHECK:
             handle->firestarter_operation_main = mem_util_blank_check;
             break;
         case CMD_CHECK_CHIP_ID:
             handle->firestarter_operation_init = NULL;
-            handle->firestarter_operation_main = flash4_check_chip_id_execute;
+            handle->firestarter_operation_main = flash_5v_page_check_chip_id_execute;
             break;
     }
 }
 
-void flash4_write_init(firestarter_handle_t* handle) {
+void flash_5v_page_write_init(firestarter_handle_t* handle) {
     if (!is_operation_in_progress(handle)) {
         if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;
@@ -66,7 +66,7 @@ void flash4_write_init(firestarter_handle_t* handle) {
 
         if (is_flag_set(FLAG_CAN_ERASE)) {
             if (!is_flag_set(FLAG_SKIP_ERASE)) {
-                flash4_erase_execute(handle);
+                flash_5v_page_erase_execute(handle);
             } else {
                 LOG_INFO_ID(MSG_INFO_SKIPPING_ERASE);
             }
@@ -77,8 +77,8 @@ void flash4_write_init(firestarter_handle_t* handle) {
     }
 }
 
-void flash4_write_execute(firestarter_handle_t* handle) {
-    uint32_t page_size = flash4_page_size(handle->mem_size);
+void flash_5v_page_write_execute(firestarter_handle_t* handle) {
+    uint32_t page_size = flash_5v_page_page_size(handle->mem_size);
     for (uint32_t i = 0; i < handle->data_size; i++) {
         uint32_t address = handle->address + i;
         uint8_t expected = handle->data_buffer[i];
@@ -99,14 +99,14 @@ void flash4_write_execute(firestarter_handle_t* handle) {
         bool reached_page_end = ((address + 1) % page_size) == 0;
         bool is_last_byte = i == handle->data_size - 1;
         if (reached_page_end || is_last_byte) {
-            if (!flash4_wait_for_page_write(handle, address, expected)) {
+            if (!flash_5v_page_wait_for_page_write(handle, address, expected)) {
                 return;
             }
         }
     }
 }
 
-static bool flash4_wait_for_page_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected) {
+static bool flash_5v_page_wait_for_page_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected) {
     // poll the last byte written until it's correct.
     uint8_t observed = 0;
     for (uint16_t j = 0; j < 1024; j++) {
@@ -130,15 +130,15 @@ static bool flash4_wait_for_page_write(firestarter_handle_t* handle, uint32_t ad
     return false;
 }
 
-void flash4_check_chip_id_execute(firestarter_handle_t* handle) {
+void flash_5v_page_check_chip_id_execute(firestarter_handle_t* handle) {
     flash_util_check_chip_id_execute(handle);
 }
 
-uint16_t flash4_get_chip_id(firestarter_handle_t* handle) {
+uint16_t flash_5v_page_get_chip_id(firestarter_handle_t* handle) {
     return flash_util_get_chip_id(handle);
 }
 
-void flash4_erase_execute(firestarter_handle_t* handle) {
+void flash_5v_page_erase_execute(firestarter_handle_t* handle) {
     uint32_t address;
 
     // Intial state:

@@ -76,8 +76,8 @@ uint8_t fu_flash_data_poll() {
 }
 
 /* Shared AMD/JEDEC chip-ID read: FLASH_ENABLE_ID → read 0x0000/0x0001
- * → FLASH_DISABLE_ID. Used by flash3 and flash4 (Option B flash-budget
- * mitigation — Phase 74 Plan 02). */
+ * → FLASH_DISABLE_ID. Used by flash_nor_unlock and flash_5v_page (Option B
+ * flash-budget mitigation — Phase 74 Plan 02). */
 uint16_t flash_util_get_chip_id(firestarter_handle_t* handle) {
     flash_execute_command(FLASH_ENABLE_ID);
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
