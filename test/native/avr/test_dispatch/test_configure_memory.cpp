@@ -68,25 +68,25 @@ static firestarter_handle_t make_handle(uint32_t protocol, uint8_t mem_type, uin
  * Each asserts that configure_memory() does NOT set response_code to
  * RESPONSE_CODE_ERROR (i.e. dispatch reached a real handler). */
 
-void test_protocol_0x06_dispatches_flash3(void) {
+void test_protocol_0x06_dispatches_nor_unlock(void) {
     firestarter_handle_t h = make_handle(0x06, 0, CMD_READ);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
-void test_protocol_0x05_dispatches_flash4(void) {
+void test_protocol_0x05_dispatches_5v_page(void) {
     firestarter_handle_t h = make_handle(0x05, 0, CMD_READ);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
-void test_protocol_0x35_dispatches_flash4(void) {
+void test_protocol_0x35_dispatches_5v_page(void) {
     firestarter_handle_t h = make_handle(0x35, 0, CMD_READ);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
-void test_protocol_0x39_dispatches_flash4(void) {
+void test_protocol_0x39_dispatches_5v_page(void) {
     firestarter_handle_t h = make_handle(0x39, 0, CMD_READ);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
@@ -162,12 +162,12 @@ void test_protocol_zero_with_mem_type_eprom_dispatches_eprom(void) {
     TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
-/* FIX-02A (Phase 74 Plan 02): configure_flash4 must handle CMD_CHECK_CHIP_ID
- * by setting a non-NULL operation_main pointer (mirroring configure_flash3).
- * These three tests are RED before the fix (no case in configure_flash4 switch
+/* FIX-02A (Phase 74 Plan 02): configure_flash_5v_page must handle CMD_CHECK_CHIP_ID
+ * by setting a non-NULL operation_main pointer (mirroring configure_flash_nor_unlock).
+ * These three tests are RED before the fix (no case in configure_flash_5v_page switch
  * → firestarter_operation_main stays NULL). */
 
-void test_flash4_check_chip_id_0x05_sets_operation(void) {
+void test_5v_page_check_chip_id_0x05_sets_operation(void) {
     firestarter_handle_t h = make_handle(0x05, 0, CMD_CHECK_CHIP_ID);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
@@ -176,7 +176,7 @@ void test_flash4_check_chip_id_0x05_sets_operation(void) {
         "CMD_CHECK_CHIP_ID on 0x05 must set a non-NULL operation_main");
 }
 
-void test_flash4_check_chip_id_0x35_sets_operation(void) {
+void test_5v_page_check_chip_id_0x35_sets_operation(void) {
     firestarter_handle_t h = make_handle(0x35, 0, CMD_CHECK_CHIP_ID);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
@@ -185,7 +185,7 @@ void test_flash4_check_chip_id_0x35_sets_operation(void) {
         "CMD_CHECK_CHIP_ID on 0x35 must set a non-NULL operation_main");
 }
 
-void test_flash4_check_chip_id_0x39_sets_operation(void) {
+void test_5v_page_check_chip_id_0x39_sets_operation(void) {
     firestarter_handle_t h = make_handle(0x39, 0, CMD_CHECK_CHIP_ID);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
@@ -200,10 +200,10 @@ int main(int argc, char** argv) {
     UNITY_BEGIN();
 
     /* 13 protocol-positive tests (one per KNOWN_PROTOCOLS entry) */
-    RUN_TEST(test_protocol_0x06_dispatches_flash3);
-    RUN_TEST(test_protocol_0x05_dispatches_flash4);
-    RUN_TEST(test_protocol_0x35_dispatches_flash4);
-    RUN_TEST(test_protocol_0x39_dispatches_flash4);
+    RUN_TEST(test_protocol_0x06_dispatches_nor_unlock);
+    RUN_TEST(test_protocol_0x05_dispatches_5v_page);
+    RUN_TEST(test_protocol_0x35_dispatches_5v_page);
+    RUN_TEST(test_protocol_0x39_dispatches_5v_page);
     RUN_TEST(test_protocol_0x07_dispatches_eprom);
     RUN_TEST(test_protocol_0x08_dispatches_eprom);
     RUN_TEST(test_protocol_0x0B_dispatches_eprom);
@@ -218,10 +218,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_unknown_protocol_with_unknown_mem_type_errors);
     RUN_TEST(test_protocol_zero_with_mem_type_eprom_dispatches_eprom);
 
-    /* FIX-02A: CMD_CHECK_CHIP_ID dispatch tests (RED before flash_type_4.cpp fix) */
-    RUN_TEST(test_flash4_check_chip_id_0x05_sets_operation);
-    RUN_TEST(test_flash4_check_chip_id_0x35_sets_operation);
-    RUN_TEST(test_flash4_check_chip_id_0x39_sets_operation);
+    /* FIX-02A: CMD_CHECK_CHIP_ID dispatch tests (RED before flash_5v_page.cpp fix) */
+    RUN_TEST(test_5v_page_check_chip_id_0x05_sets_operation);
+    RUN_TEST(test_5v_page_check_chip_id_0x35_sets_operation);
+    RUN_TEST(test_5v_page_check_chip_id_0x39_sets_operation);
 
     return UNITY_END();
 }
