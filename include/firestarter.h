@@ -85,7 +85,6 @@ typedef struct firestarter_handle {
     uint8_t cmd;
     uint8_t operation_state;
     uint8_t response_code;
-    uint8_t mem_type;
     uint32_t protocol;
     uint8_t pins;
     uint32_t mem_size;

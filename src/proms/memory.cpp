@@ -24,11 +24,6 @@
 #include "rurp_pinout.h"
 #include "sram.h"
 
-#define TYPE_EPROM 1
-#define TYPE_FLASH_TYPE_3 3
-#define TYPE_SRAM 4
-#define TYPE_FLASH_TYPE_4 5
-
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -111,30 +106,11 @@ void configure_memory(firestarter_handle_t* handle) {
         return;
     }
 
-    // Generic fail-closed guard: any non-zero unrecognized protocol → not-implemented.
-    // Must sit AFTER all implemented protocol cases and BEFORE the protocol==0 mem_type fallback.
-    // Eliminates the 12V VPP-hazard mem_type fallback for unimplemented protocols (T-64-01).
-    if (handle->protocol != 0) {
-        configure_not_implemented(handle);
-        return;
-    }
-
-    // Legacy mem_type fallback: reachable ONLY when protocol == 0 (DISP-02).
-    if (handle->mem_type == TYPE_EPROM) {
-        configure_eprom(handle);
-        return;
-    } else if (handle->mem_type == TYPE_SRAM) {
-        configure_sram(handle);
-        return;
-    } else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
-        configure_flash_nor_unlock(handle);
-        return;
-    } else if (handle->mem_type == TYPE_FLASH_TYPE_4) {
-        configure_flash_5v_page(handle);
-        return;
-    }
-    LOG_ERROR_ID_U8(MSG_ERR_MEM_TYPE_UNSUPPORTED, handle->mem_type);
-    handle->response_code = RESPONSE_CODE_ERROR;
+    // Generic fail-closed guard: every remaining protocol value — including
+    // protocol == 0 — is unrecognized and reaches not-implemented. Trusts
+    // only handle->protocol end to end; no backward-compat fallback axis
+    // remains (T-64-01, Phase 105 protocol-only dispatch).
+    configure_not_implemented(handle);
 }
 
 void memory_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {

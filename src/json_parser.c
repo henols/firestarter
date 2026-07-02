@@ -18,7 +18,6 @@ bool get_flags(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_
 bool get_memory_size(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_address(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_chip_id(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
-bool get_type(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_pin_count(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_delay(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_vpp_mv(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
@@ -61,7 +60,6 @@ const char key_chip_id[] PROGMEM = "chip-id";
 const char key_pin_count[] PROGMEM = "pin-count";
 const char key_pulse_delay[] PROGMEM = "pulse-delay";
 const char key_vpp_mv[] PROGMEM = "vpp_mv";
-const char key_type[] PROGMEM = "type";
 const char key_algorithm[] PROGMEM = "algorithm";
 /* Phase 44 — host-tunable read-timing knobs (D-04 sweep params) */
 const char key_read_settling[] PROGMEM = "read-settling-delay";
@@ -75,7 +73,7 @@ typedef struct {
 static const key_parser_t key_parsers[] PROGMEM = {
     {key_mem_size, get_memory_size}, {key_address, get_address},         {key_flags, get_flags},
     {key_chip_id, get_chip_id},      {key_pin_count, get_pin_count},     {key_pulse_delay, get_delay},
-    {key_vpp_mv, get_vpp_mv},        {key_type, get_type},               {key_algorithm, get_algorithm},
+    {key_vpp_mv, get_vpp_mv},        {key_algorithm, get_algorithm},
     /* Phase 44 — read-timing sweep knobs (RCA-01 causal proof, D-04) */
     {key_read_settling, get_read_settling},                              {key_read_strobe, get_read_strobe},
 };
@@ -301,10 +299,6 @@ bool get_chip_id(const char* json, jsmntok_t* tokens, int pos, firestarter_handl
 
 bool get_pin_count(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
     extract_int("pin-count", handle->pins);
-}
-
-bool get_type(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
-    extract_int("type", handle->mem_type);
 }
 
 bool get_delay(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {

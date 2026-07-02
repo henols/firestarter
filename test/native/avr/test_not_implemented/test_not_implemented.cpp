@@ -35,11 +35,14 @@ void setUp(void) {
 
 void tearDown(void) {}
 
-/* Build a zero-initialized handle with only the three named fields set. */
+/* Build a zero-initialized handle with only the three named fields set.
+ * mem_type is retained as a vestigial (ignored) parameter to avoid
+ * touching every call site now that firestarter_handle_t.mem_type is gone
+ * (Phase 105 removal). */
 static firestarter_handle_t make_handle(uint32_t protocol, uint8_t mem_type, uint8_t cmd) {
+    (void)mem_type;
     firestarter_handle_t h = {};
     h.protocol = protocol;
-    h.mem_type = mem_type;
     h.cmd = cmd;
     h.response_code = RESPONSE_CODE_OK;
     return h;
@@ -104,15 +107,6 @@ void test_protocol_zero_fail_closes_not_implemented(void) {
     TEST_ASSERT_NULL(h.firestarter_operation_end);
 }
 
-/* --- Legacy fallback re-assertion (DISP-02): protocol==0 + mem_type=1
- * must still route to configure_eprom, not hit the not-implemented guard.
- * Mirrors test_configure_memory.cpp:159-163 — must remain green. --- */
-void test_protocol_zero_with_mem_type_eprom_dispatches_eprom(void) {
-    firestarter_handle_t h = make_handle(0, 1, CMD_READ); /* TYPE_EPROM = 1 */
-    configure_memory(&h);
-    TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
-}
-
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
@@ -129,9 +123,6 @@ int main(int argc, char** argv) {
 
     /* SC#1: protocol == 0 fail-closed (no mem_type fallback) */
     RUN_TEST(test_protocol_zero_fail_closes_not_implemented);
-
-    /* Re-assertion: legacy fallback intact (protocol == 0) */
-    RUN_TEST(test_protocol_zero_with_mem_type_eprom_dispatches_eprom);
 
     return UNITY_END();
 }

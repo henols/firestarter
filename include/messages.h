@@ -80,7 +80,6 @@ extern "C" {
 #define MSG_ERR_UNKNOWN_CMD               0xAB
 #define MSG_ERR_REV0_VPP_RD               0xAC
 #define MSG_ERR_CMD                       0xAD
-#define MSG_ERR_MEM_TYPE_UNSUPPORTED      0xAE
 #define MSG_ERR_VERIFY                    0xAF
 #define MSG_ERR_NOT_BLANK                 0xB0
 #define MSG_ERR_WRITE_FAILED              0xB1

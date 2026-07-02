@@ -7,20 +7,14 @@
  * Phase 12 Wave 0 — dispatch unit tests for configure_memory().
  *
  * One test per protocol in KNOWN_PROTOCOLS (build_db.py:89). Each test
- * constructs a minimal firestarter_handle_t (protocol, mem_type, cmd,
- * response_code) and asserts `configure_memory()` does not raise
- * RESPONSE_CODE_ERROR (i.e. the chip resolved to a real handler, not the
- * "Memory type 0x%02x not supported" fallback).
+ * constructs a minimal firestarter_handle_t (protocol, cmd, response_code)
+ * and asserts `configure_memory()` does not raise RESPONSE_CODE_ERROR (i.e.
+ * the chip resolved to a real handler).
  *
- * RED state on this commit (Wave 0): protocols 0x05, 0x06, 0x07, 0x08, 0x0B,
- * 0x0E, 0x27, 0x28, 0x29, 0x35, 0x39 are NOT yet routed by protocol prefix —
- * they fall through to `firestarter_error_response_format(...)` and set
- * response_code = RESPONSE_CODE_ERROR. Only 0x10 and 0x0D pass today.
- *
- * Wave 1 (Plan 02) lands the C++ dispatch extension and flips these tests
- * GREEN. The negative test (`test_unknown_protocol_with_unknown_mem_type_errors`)
- * must remain GREEN at every wave — it asserts the fallback error path still
- * fires for genuinely-unknown (protocol, mem_type) pairs.
+ * Phase 105 (protocol-only dispatch): dispatch is keyed on `protocol` alone
+ * — there is no backward-compat fallback axis. Any unrecognized protocol,
+ * including 0, reaches `configure_not_implemented()`; see
+ * test_not_implemented.cpp for fail-closed coverage.
  *
  * Why TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, ...) and not an operation-
  * pointer check? `configure_sram()` is a stub today and leaves the
@@ -42,7 +36,7 @@ using namespace fakeit;
 void setUp(void) {
     ArduinoFakeReset();
     /* Stub Serial.write and Serial.flush so that LOG_ERROR_ID_* calls in the
-     * error dispatch path (e.g. MSG_ERR_MEM_TYPE_UNSUPPORTED) don't abort.
+     * error dispatch path (e.g. MSG_ERR_PROTOCOL_NOT_IMPLEMENTED) don't abort.
      * Dispatch tests never assert on serial output — only on response_code. */
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t)))
         .AlwaysReturn(1);
@@ -54,11 +48,14 @@ void setUp(void) {
 void tearDown(void) {
 }
 
-/* Build a zero-initialized handle with only the three named fields set. */
+/* Build a zero-initialized handle with only the three named fields set.
+ * mem_type is retained as a vestigial (ignored) parameter to avoid
+ * touching every call site now that firestarter_handle_t.mem_type is gone
+ * (Phase 105 removal). */
 static firestarter_handle_t make_handle(uint32_t protocol, uint8_t mem_type, uint8_t cmd) {
+    (void)mem_type;
     firestarter_handle_t h = {};
     h.protocol = protocol;
-    h.mem_type = mem_type;
     h.cmd = cmd;
     h.response_code = RESPONSE_CODE_OK;
     return h;
@@ -146,22 +143,6 @@ void test_protocol_0x0D_dispatches_eeprom28c(void) {
     TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
 }
 
-/* Negative test: genuinely-unknown (protocol, mem_type) pair must surface
- * the error response. This must remain green across every wave. */
-void test_unknown_protocol_with_unknown_mem_type_errors(void) {
-    firestarter_handle_t h = make_handle(0, 99, CMD_READ);
-    configure_memory(&h);
-    TEST_ASSERT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
-}
-
-/* Fallback test: protocol=0 with a known mem_type still resolves via the
- * legacy mem_type chain. Must remain green across every wave. */
-void test_protocol_zero_with_mem_type_eprom_dispatches_eprom(void) {
-    firestarter_handle_t h = make_handle(0, 1, CMD_READ); /* TYPE_EPROM = 1 */
-    configure_memory(&h);
-    TEST_ASSERT_NOT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
-}
-
 /* FIX-02A (Phase 74 Plan 02): configure_flash_5v_page must handle CMD_CHECK_CHIP_ID
  * by setting a non-NULL operation_main pointer (mirroring configure_flash_nor_unlock).
  * These three tests are RED before the fix (no case in configure_flash_5v_page switch
@@ -213,10 +194,6 @@ int main(int argc, char** argv) {
     RUN_TEST(test_protocol_0x29_dispatches_sram);
     RUN_TEST(test_protocol_0x10_dispatches_flash_intel);
     RUN_TEST(test_protocol_0x0D_dispatches_eeprom28c);
-
-    /* 1 negative + 1 fallback test (must remain green across every wave) */
-    RUN_TEST(test_unknown_protocol_with_unknown_mem_type_errors);
-    RUN_TEST(test_protocol_zero_with_mem_type_eprom_dispatches_eprom);
 
     /* FIX-02A: CMD_CHECK_CHIP_ID dispatch tests (RED before flash_5v_page.cpp fix) */
     RUN_TEST(test_5v_page_check_chip_id_0x05_sets_operation);
