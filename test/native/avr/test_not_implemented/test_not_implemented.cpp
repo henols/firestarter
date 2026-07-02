@@ -94,6 +94,16 @@ void test_unknown_nonzero_protocol_0x99_not_implemented(void) {
     TEST_ASSERT_NULL(h.firestarter_operation_end);
 }
 
+/* SC#1 (Phase 105): protocol == 0 now fail-closes (no mem_type fallback). */
+void test_protocol_zero_fail_closes_not_implemented(void) {
+    firestarter_handle_t h = make_handle(0, 0, CMD_READ);
+    configure_memory(&h);
+    TEST_ASSERT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
+    TEST_ASSERT_NULL(h.firestarter_operation_init);
+    TEST_ASSERT_NULL(h.firestarter_operation_main);
+    TEST_ASSERT_NULL(h.firestarter_operation_end);
+}
+
 /* --- Legacy fallback re-assertion (DISP-02): protocol==0 + mem_type=1
  * must still route to configure_eprom, not hit the not-implemented guard.
  * Mirrors test_configure_memory.cpp:159-163 — must remain green. --- */
@@ -116,6 +126,9 @@ int main(int argc, char** argv) {
 
     /* Generic catch-all */
     RUN_TEST(test_unknown_nonzero_protocol_0x99_not_implemented);
+
+    /* SC#1: protocol == 0 fail-closed (no mem_type fallback) */
+    RUN_TEST(test_protocol_zero_fail_closes_not_implemented);
 
     /* Re-assertion: legacy fallback intact (protocol == 0) */
     RUN_TEST(test_protocol_zero_with_mem_type_eprom_dispatches_eprom);
