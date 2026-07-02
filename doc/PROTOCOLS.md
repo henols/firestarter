@@ -42,8 +42,8 @@ the SAFE-02 handoff to Phases 88/89.
 
 | hex | DB chip count | frozen slug (col 1) | PROTO_ token | display name | handler-family | phantom? |
 |-----|--------------|---------------------|--------------------------|--------------------------|-----------------|----------|
-| 0x05 | 27 | `0x05-FLASH-AMD-STD` | `PROTO_FLASH_5V_PAGE` | Flash — 5V page-write (EEPROM-like) | flash4 (0x05 + phantoms 0x35/0x39) | no |
-| 0x06 | 190 | `0x06-FLASH-AMD-ALT` | `PROTO_FLASH_NOR_UNLOCK` | Flash — AMD/SST unlock-sequence NOR | flash3 (0x06, single-protocol) | no |
+| 0x05 | 27 | `0x05-FLASH-AMD-STD` | `PROTO_FLASH_5V_PAGE` | Flash — 5V page-write (EEPROM-like) | 5v_page (0x05 + phantoms 0x35/0x39) | no |
+| 0x06 | 190 | `0x06-FLASH-AMD-ALT` | `PROTO_FLASH_NOR_UNLOCK` | Flash — AMD/SST unlock-sequence NOR | nor_unlock (0x06, single-protocol) | no |
 | 0x07 | 170 | `0x07-EPROM-STD` | `PROTO_EPROM_28PIN` | EPROM — 28-pin UV/EE, 13V VPP | eprom (0x07/0x08/0x0B) | no |
 | 0x08 | 127 | `0x08-EPROM-QUICK` | `PROTO_EPROM_32PIN` | EPROM — 32-pin UV/EE, 13V VPP | eprom (0x07/0x08/0x0B) | no |
 | 0x0B | 32 | `0x0B-EPROM-LEGACY` | `PROTO_EPROM_24PIN` | EPROM — 24-pin legacy, 12–25V direct-VPE | eprom (0x07/0x08/0x0B) | no |
@@ -54,8 +54,8 @@ the SAFE-02 handoff to Phases 88/89.
 | 0x28 | 34 | `0x28-SRAM-STD` | `PROTO_SRAM_28PIN` | SRAM/FRAM — 28-pin (NAME-04: FM1608, see §1.10) | sram (0x0E/0x27/0x28/0x29) | no |
 | 0x29 | 20 | `0x29-SRAM-512K-1M` | `PROTO_SRAM_32PIN_NVRAM` | SRAM — 32-pin large battery-backed NVRAM, 512K–1M | sram (0x0E/0x27/0x28/0x29) | no |
 | 0x34 | 1 | `0x34-EEPROM-X88C64` | `PROTO_EEPROM_8051BUS` | EEPROM — XICOR 8051-bus, PCB-blocked (FUT-01) (NAME-04: X88C64, see §1.12) | not-implemented (0x34, PCB-blocked) | no |
-| 0x35 | 0 | `(none)` | `PROTO_PHANTOM_0x35` | (phantom — 0 DB chips, dispatch-preserved for forward-compat) | flash4 dispatch arm | YES |
-| 0x39 | 0 | `(none)` | `PROTO_PHANTOM_0x39` | (phantom — 0 DB chips, dispatch-preserved for forward-compat) | flash4 dispatch arm | YES |
+| 0x35 | 0 | `(none)` | `PROTO_PHANTOM_0x35` | (phantom — 0 DB chips, dispatch-preserved for forward-compat) | 5v_page dispatch arm | YES |
+| 0x39 | 0 | `(none)` | `PROTO_PHANTOM_0x39` | (phantom — 0 DB chips, dispatch-preserved for forward-compat) | 5v_page dispatch arm | YES |
 
 **Handler-family layer (D-09 — names the 7 existing `configure_*` dispatch groupings, grounded in `memory.cpp` lines 74–103):**
 
@@ -63,8 +63,8 @@ the SAFE-02 handoff to Phases 88/89.
 |----------------|------------------------|------|-----------|
 | eprom | `configure_eprom()` | `eprom.cpp` | 0x07, 0x08, 0x0B (many-to-one) |
 | sram | `configure_sram()` | `sram.cpp` | 0x0E, 0x27, 0x28, 0x29 (many-to-one; the 0x0E/0x29 D-05 collision is resolved here — `PROTO_SRAM_32PIN` vs `PROTO_SRAM_32PIN_NVRAM`) |
-| flash4 | `configure_flash4()` | `flash_type_4.cpp` | 0x05 (+ phantom dispatch arms 0x35/0x39) |
-| flash3 | `configure_flash3()` | `flash_type_3.cpp` | 0x06 (single-protocol) |
+| 5v_page | `configure_flash_5v_page()` | `flash_5v_page.cpp` | 0x05 (+ phantom dispatch arms 0x35/0x39) |
+| nor_unlock | `configure_flash_nor_unlock()` | `flash_nor_unlock.cpp` | 0x06 (single-protocol) |
 | eeprom28c | `configure_eeprom28c()` | `eeprom_28c.cpp` | 0x0D (single-protocol) |
 | flash_intel | `configure_flash_intel()` | `flash_intel.cpp` | 0x10 (single-protocol) |
 | not-implemented | `configure_not_implemented()` | `not_implemented.cpp` | 0x34 (PCB-blocked) + infeasible 0x11/0x2A/0x2B/0x2C (out of scope, §2.2) |
@@ -81,7 +81,7 @@ Each section below gives the NAME-01 four facets (write algorithm, erase model, 
 
 **Folder slug (col 1):** `0x05-FLASH-AMD-STD`
 **Canonical name (col 2):** `PROTO_FLASH_5V_PAGE` — Flash — 5V page-write (EEPROM-like)
-**Handler:** `configure_flash4()` → `flash_type_4.cpp`
+**Handler:** `configure_flash_5v_page()` → `flash_5v_page.cpp`
 **DB chip count:** 27 (AT29C, W29C, SST29EE series)
 
 **Write algorithm:** Optional SDP unlock (3 bus cycles: 0xAA→0x5555, 0x55→0x2AAA, 0xA0→0x5555), then up to 64–256 bytes written sequentially to addresses within the same page. All bytes must complete within tBLC (inter-byte window, typically 100–150 µs). After the last byte, the chip's internal write cycle begins (~5–10 ms). DQ7 data polling confirms completion: read the last written address; when DQ7 matches the written bit, the cycle is done.
@@ -93,7 +93,7 @@ Citation: `datasheets/0x05-FLASH-AMD-STD/W29C040.pdf` p.12 §Chip Erase.
 **VPP behavior:** None (5V-only operation). The internal charge pump on the chip drives write electricals; the RURP VPP regulator is not used for this bucket.
 Citation: `datasheets/0x05-FLASH-AMD-STD/W29C020.pdf` p.3 §Pin Description (VCC = 5V only).
 
-**Pin roles:** 32-pin DIP. Standard JEDEC 27-series pinout extension. Address lines A0–A18, data D0–D7, CE active-low (chip enable), OE active-low (output enable), WE active-low (write enable). Page-size is data-driven from `handle->mem_size` at runtime — see INV-04 (flash4 256B page boundary in §3) for the 0x05/0x0B page-size derivation detail, which applies to W29C040 (512KB → 256B page) and smaller siblings.
+**Pin roles:** 32-pin DIP. Standard JEDEC 27-series pinout extension. Address lines A0–A18, data D0–D7, CE active-low (chip enable), OE active-low (output enable), WE active-low (write enable). Page-size is data-driven from `handle->mem_size` at runtime — see INV-04 (5v_page 256B page boundary in §3) for the 0x05/0x0B page-size derivation detail, which applies to W29C040 (512KB → 256B page) and smaller siblings.
 
 ---
 
@@ -101,7 +101,7 @@ Citation: `datasheets/0x05-FLASH-AMD-STD/W29C020.pdf` p.3 §Pin Description (VCC
 
 **Folder slug (col 1):** `0x06-FLASH-AMD-ALT`
 **Canonical name (col 2):** `PROTO_FLASH_NOR_UNLOCK` — Flash — AMD/SST unlock-sequence NOR
-**Handler:** `configure_flash3()` → `flash_type_3.cpp`
+**Handler:** `configure_flash_nor_unlock()` → `flash_nor_unlock.cpp`
 **DB chip count:** 190 (AM29F, SST39SF, W39F, MX29F, A29F series — the dominant protocol)
 
 **Write algorithm:** 3-cycle software unlock before each byte program: write 0xAA→0x5555, 0x55→0x2AAA, 0xA0→0x5555, then data byte to target address PA. The internal program state machine completes in ~10–20 µs per byte. DQ7 data polling: read target address; when DQ7 matches the written bit, done. DQ5 high = timeout indication.
@@ -110,7 +110,7 @@ Citation: `datasheets/0x06-FLASH-AMD-ALT/SST39SF040.pdf` p.7 §Byte-Program Oper
 **Erase model:** Sector erase (6-cycle sequence ending with 0x30→sector address) or chip erase (6-cycle sequence ending with 0x10→0x5555). Chip erase time: ~100 ms (SST39SF040: 100 ms max; AM29F040: 32 sectors × ~25 ms). See INV-09 (SST39SF040 keep-Flash/EEPROM in §3) for the `FLAG_CAN_ERASE` / `electrical.type` classification invariant that gates the erase path for 0x06 chips.
 Citation: `datasheets/0x06-FLASH-AMD-ALT/SST39SF040.pdf` p.8 §Chip-Erase Operation.
 
-**VPP behavior:** None required (5V-only operation). No VPP regulator use for this bucket. The 12V VPP value appearing in some DB records is a legacy minipro artifact — not used electrically by `configure_flash3()`.
+**VPP behavior:** None required (5V-only operation). No VPP regulator use for this bucket. The 12V VPP value appearing in some DB records is a legacy minipro artifact — not used electrically by `configure_flash_nor_unlock()`.
 Citation: `datasheets/0x06-FLASH-AMD-ALT/SST39SF040.pdf` p.4 §DC Characteristics (VCC = 4.5–5.5V).
 
 **Pin roles:** 32-pin DIP. Address A0–A18, data D0–D7, CE, OE, WE. AMD unlock command addresses (0x5555/0x2AAA) are A14-don't-care on 512KB space — firmware uses 0x5555/0x2AAA consistently.
@@ -353,7 +353,7 @@ hardware. They are named here as non-protocols, not as buckets with documented b
 
 ### 2.1 — Phantom Buckets (dispatched-but-dead)
 
-These IDs appear in the `configure_flash4()` dispatch for forward-compatibility but have zero
+These IDs appear in the `configure_flash_5v_page()` dispatch for forward-compatibility but have zero
 DB chips. The host excludes both from `KNOWN_PROTOCOLS` and routes any chip that somehow
 reaches them to `not_implemented`.
 
@@ -402,21 +402,21 @@ anywhere under the native tree.
 
 **Per-INV suite path contract (Plan 03 must honor this mapping):**
 - INV-01, INV-02, INV-03, INV-05, INV-06, INV-08 → `test/native/avr/test_val_eprom/`
-- INV-04 → `test/native/avr/test_val_flash4/`
+- INV-04 → `test/native/avr/test_val_5v_page/`
 - INV-07 → `test/native/avr/test_val_sram/`
-- INV-09 → `test/native/avr/test_val_flash3/`
+- INV-09 → `test/native/avr/test_val_nor_unlock/`
 
 | INV id | One-line behavior | Owning handler file | Planned native test function name | Suite path |
 |--------|-------------------|---------------------|----------------------------------|------------|
 | INV-01 | `PROTO_EPROM_24PIN` (0x0B) uses `FLAG_VPE_AS_VPP` direct-VPE rail (no `CTRL_VPP_VPE_DROP_ENABLE` drop) | `eprom.cpp` | `test_inv01_eprom_0x0B_direct_vpe_rail` | `test/native/avr/test_val_eprom/` |
 | INV-02 | `PROTO_EPROM_24PIN` (0x0B) shares OE/VPP pin — read operations skip VPP enable to avoid OE conflict | `eprom.cpp` | `test_inv02_eprom_0x0B_oe_vpp_read_skip` | `test/native/avr/test_val_eprom/` |
 | INV-03 | `PROTO_EPROM_32PIN` (0x08) routes VPP to socket pin 1 via `CTRL_VPP_P1_ENABLE` (not drop path) | `eprom.cpp` | `test_inv03_eprom_0x08_p1_as_vpp` | `test/native/avr/test_val_eprom/` |
-| INV-04 | `PROTO_FLASH_5V_PAGE` (0x05) flash4 page size is data-driven from `handle->mem_size` (256B for W29C040 512KB; 128B for 128KB; 64B for 32KB) | `flash_type_4.cpp` | `test_inv04_flash4_256b_page_boundary` | `test/native/avr/test_val_flash4/` |
+| INV-04 | `PROTO_FLASH_5V_PAGE` (0x05) 5v_page page size is data-driven from `handle->mem_size` (256B for W29C040 512KB; 128B for 128KB; 64B for 32KB) | `flash_5v_page.cpp` | `test_inv04_5v_page_256b_page_boundary` | `test/native/avr/test_val_5v_page/` |
 | INV-05 | `PROTO_EPROM_28PIN` (0x07) — VPP is NOT enabled for CMD_READ or CMD_BLANK_CHECK — firmware skips VPP init on read path (VPP-skip-on-read) | `eprom.cpp` | `test_inv05_eprom_vpp_skip_on_read` | `test/native/avr/test_val_eprom/` |
 | INV-06 | Pulse-delay defaults: `PROTO_EPROM_32PIN` (0x08) → 100 µs; `PROTO_EPROM_24PIN` (0x0B) → 500 µs; all other (`PROTO_EPROM_28PIN` (0x07) default) → 1000 µs | `eprom.cpp` | `test_inv06_eprom_pulse_delay_defaults` | `test/native/avr/test_val_eprom/` |
 | INV-07 | `PROTO_SRAM_28PIN` — FM1608 routes to `configure_sram()` as SRAM_STD/FRAM (algorithm=0x28), NOT `configure_eprom()` (BLOCKER-2 mitigation) | `sram.cpp` | `test_inv07_sram_fm1608_routes_to_sram` | `test/native/avr/test_val_sram/` |
 | INV-08 | `PROTO_EPROM_28PIN` (0x07) — **(dispatch-only scope)** WARNING-5 (0x07 EE-EPROM chips reclassified to 0x0D) is delivered by Phase-86 variant decode — no `build_db.py` runtime override. The correct `electrical.type` flows from the DB and the dispatch chain honors it. The WARNING-5 retirement itself is **host-side** (`build_db.py`, gated by `diff_db.py`) and is NOT firmware-testable; the native test below pins ONLY the downstream firmware consequence — that 0x07 still dispatches to `configure_eprom`. | `eprom.cpp` / build path | `test_inv08_eprom_warning5_decode_preserved` | `test/native/avr/test_val_eprom/` |
-| INV-09 | `PROTO_FLASH_NOR_UNLOCK` (0x06) — SST39SF040 retains `electrical.type = Flash/EEPROM` — the `FLAG_CAN_ERASE` + `configure_flash3()` combination must not be confused with the UV-EPROM path | `flash_type_3.cpp` | `test_inv09_flash3_sst39sf040_keep_flash_eeprom` | `test/native/avr/test_val_flash3/` |
+| INV-09 | `PROTO_FLASH_NOR_UNLOCK` (0x06) — SST39SF040 retains `electrical.type = Flash/EEPROM` — the `FLAG_CAN_ERASE` + `configure_flash_nor_unlock()` combination must not be confused with the UV-EPROM path | `flash_nor_unlock.cpp` | `test_inv09_nor_unlock_sst39sf040_keep_flash_eeprom` | `test/native/avr/test_val_nor_unlock/` |
 
 ### Cross-links to per-bucket sections
 
