@@ -11,8 +11,8 @@
 #include <stdint.h>
 
 #include "eprom.h"
-#include "flash_type_3.h"
-#include "flash_type_4.h"
+#include "flash_nor_unlock.h"
+#include "flash_5v_page.h"
 #include "flash_intel.h"
 #include "eeprom_28c.h"
 #include "logging_id.h"
@@ -83,12 +83,12 @@ void configure_memory(firestarter_handle_t* handle) {
     }
 
     if (handle->protocol == PROTO_FLASH_NOR_UNLOCK) {
-        configure_flash3(handle);
+        configure_flash_nor_unlock(handle);
         return;
     }
 
     if (handle->protocol == PROTO_FLASH_5V_PAGE || handle->protocol == PROTO_PHANTOM_0x35 || handle->protocol == PROTO_PHANTOM_0x39) {
-        configure_flash4(handle);
+        configure_flash_5v_page(handle);
         return;
     }
 
@@ -127,10 +127,10 @@ void configure_memory(firestarter_handle_t* handle) {
         configure_sram(handle);
         return;
     } else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
-        configure_flash3(handle);
+        configure_flash_nor_unlock(handle);
         return;
     } else if (handle->mem_type == TYPE_FLASH_TYPE_4) {
-        configure_flash4(handle);
+        configure_flash_5v_page(handle);
         return;
     }
     LOG_ERROR_ID_U8(MSG_ERR_MEM_TYPE_UNSUPPORTED, handle->mem_type);
