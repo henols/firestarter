@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 65
+ * Total messages: 64
  */
 
 #ifndef __MESSAGES_H__
