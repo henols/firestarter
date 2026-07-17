@@ -85,6 +85,10 @@ void rurp_set_communication_mode() {
     PORTD |= 0x01;
     DDRD &= ~(0x01);
     rurp_serial_begin(MONITOR_SPEED);
+    // The ATmega16U2 USB-serial bridge can emit stray bytes to UART RX
+    // after UART init completes.  Wait for them to settle, then drain
+    // so loop() never sees them as a COBS frame.
+    delay(100);
     while (SERIAL_PORT.available()) SERIAL_PORT.read();
     com_mode = true;
 
