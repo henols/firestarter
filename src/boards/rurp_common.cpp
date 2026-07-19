@@ -11,16 +11,7 @@
 
 #if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_ATmega328PB) || defined(ARDUINO_AVR_LEONARDO)
 
-
-/**
- * @brief Reads the raw ADC value for the internal 1.1V bandgap reference.
- * This provides a basis for calculating the actual VCC, and using the raw
- * value in other calculations preserves precision.
- * @return The raw ADC reading as a long.
- */
 long rurp_get_bandgap_adc_reading() {
-    // Set the analog reference to the internal 1.1V and select the bandgap channel.
-    // The MUX settings are different for Uno and Leonardo.
 #if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_ATmega328PB)
     ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
 #elif defined(ARDUINO_AVR_LEONARDO)
@@ -29,10 +20,10 @@ long rurp_get_bandgap_adc_reading() {
 #error "Unsupported board"
 #endif
 
-    delay(2); // Wait for voltage to stabilize
-    ADCSRA |= _BV(ADSC);              // Start conversion
-    while (bit_is_set(ADCSRA, ADSC))  // Wait for conversion to complete
-        ;
+    delay(2);
+    ADCSRA |= _BV(ADSC);
+    while (bit_is_set(ADCSRA, ADSC)) {
+    }
 
     long result = ADCL;
     result |= ADCH << 8;
@@ -40,33 +31,36 @@ long rurp_get_bandgap_adc_reading() {
 }
 
 uint16_t rurp_read_vcc_mv() {
-    long result = rurp_get_bandgap_adc_reading();
-    // Calculate Vcc (supply voltage) in millivolts
-    // VCC_mV = (V_bandgap * ADC_resolution * 1000) / ADC_reading
-    // VCC_mV = (1.1V * 1024 steps * 1000 mV/V) / ADC_reading = 1126400 / ADC_reading
-    if (result == 0) return 0;  // Avoid division by zero
-    // Add half of the divisor to the numerator to round the result
+    const long result = rurp_get_bandgap_adc_reading();
+    if (result == 0) return 0;
     return (1126400L + result / 2) / result;
 }
 
-uint16_t rurp_read_voltage_mv() {
-    rurp_configuration_t* rurp_config = rurp_get_config();
-    uint32_t r1 = rurp_config->r1;
-    uint32_t r2 = rurp_config->r2;
+uint16_t rurp_read_voltage_uncalibrated_mv() {
+    const rurp_configuration_t* config = rurp_get_config();
+    const uint32_t r1 = config->r1;
+    const uint32_t r2 = config->r2;
 
-    // Set analog reference to default (VCC) for the measurement
     analogReference(DEFAULT);
-    uint32_t voltage_adc_reading = analogRead(PIN_VPP_VOLTAGE_ADC);
 
-    long bandgap_adc_reading = rurp_get_bandgap_adc_reading();
-    if (bandgap_adc_reading == 0 || r2 == 0) return 0; // Avoid division by zero
+    // Discard the first sample after changing the ADC reference/channel, then
+    // average 16 samples to reduce boost-converter and quantization noise.
+    (void)analogRead(PIN_VPP_VOLTAGE_ADC);
+    uint32_t sum = 0;
+    for (uint8_t i = 0; i < 16; ++i) {
+        sum += analogRead(PIN_VPP_VOLTAGE_ADC);
+    }
+    const uint32_t voltage_adc_reading = (sum + 8) / 16;
 
-    // For higher precision, we use the raw bandgap ADC reading directly.
-    // Vin_mV = (voltage_adc_reading * 1100 * (R1 + R2)) / (bandgap_adc_reading * R2)
-    uint64_t numerator = (uint64_t)voltage_adc_reading * 1100UL * (r1 + r2);
-    uint64_t denominator = (uint64_t)bandgap_adc_reading * r2;
+    const long bandgap_adc_reading = rurp_get_bandgap_adc_reading();
+    if (bandgap_adc_reading == 0 || r2 == 0) return 0;
 
-    // Add half of the divisor to the numerator to round the result
-    return (numerator + (denominator / 2)) / denominator;
+    const uint64_t numerator =
+        static_cast<uint64_t>(voltage_adc_reading) * 1100UL * (r1 + r2);
+    const uint64_t denominator =
+        static_cast<uint64_t>(bandgap_adc_reading) * r2;
+
+    return static_cast<uint16_t>((numerator + denominator / 2) / denominator);
 }
+
 #endif
