@@ -14,7 +14,6 @@ namespace {
 constexpr int32_t CALIBRATION_SCALE = 1000000L;
 constexpr int32_t MIN_GAIN_PPM = 500000L;
 constexpr int32_t MAX_GAIN_PPM = 1500000L;
-constexpr uint16_t DAC_SETTLE_MS = 5;
 constexpr uint16_t MAX_VPP_MV = 30000;
 
 uint16_t clamp_u16(int64_t value) {
@@ -23,10 +22,16 @@ uint16_t clamp_u16(int64_t value) {
     return static_cast<uint16_t>(value);
 }
 
+#if RURP_HAS_VPP_DAC
+constexpr uint16_t DAC_SETTLE_MS = 5;
+constexpr uint16_t DAC_MAX_CODE =
+    static_cast<uint16_t>((1UL << RURP_VPP_DAC_BITS) - 1UL);
+
 uint16_t elapsed_ms(uint16_t elapsed, uint16_t increment) {
     const uint32_t next = static_cast<uint32_t>(elapsed) + increment;
     return next > UINT16_MAX ? UINT16_MAX : static_cast<uint16_t>(next);
 }
+#endif
 }
 
 uint16_t rurp_apply_vpp_calibration(uint16_t uncalibrated_mv) {
@@ -103,29 +108,28 @@ bool rurp_vpp_calibration_valid(void) {
 }
 
 rurp_vpp_control_mode_t rurp_vpp_control_mode(void) {
-    return rurp_vpp_dac_available()
-        ? RURP_VPP_CONTROL_DAC
-        : RURP_VPP_CONTROL_MANUAL;
+#if RURP_HAS_VPP_DAC
+    return RURP_VPP_CONTROL_DAC;
+#else
+    return RURP_VPP_CONTROL_MANUAL;
+#endif
 }
 
 rurp_vpp_result_t rurp_set_vpp_target_mv(uint16_t target_mv,
-                                          uint16_t tolerance_mv,
-                                          uint16_t timeout_ms) {
+                                         uint16_t tolerance_mv,
+                                         uint16_t timeout_ms) {
+#if !RURP_HAS_VPP_DAC
+    (void)target_mv;
+    (void)tolerance_mv;
+    (void)timeout_ms;
+    return RURP_VPP_MANUAL_ADJUSTMENT_REQUIRED;
+#else
     if (target_mv == 0 || target_mv > MAX_VPP_MV || tolerance_mv == 0) {
         return RURP_VPP_INVALID_ARGUMENT;
     }
 
-    if (!rurp_vpp_dac_available()) {
-        return RURP_VPP_MANUAL_ADJUSTMENT_REQUIRED;
-    }
-
-    const uint16_t max_code = rurp_vpp_dac_max_code();
-    if (max_code == 0) {
-        return RURP_VPP_OUT_OF_RANGE;
-    }
-
     uint32_t code =
-        (static_cast<uint32_t>(target_mv) * max_code) / MAX_VPP_MV;
+        (static_cast<uint32_t>(target_mv) * DAC_MAX_CODE) / MAX_VPP_MV;
     uint16_t elapsed = 0;
     rurp_vpp_control_enable(true);
 
@@ -148,11 +152,11 @@ rurp_vpp_result_t rurp_set_vpp_target_mv(uint16_t target_mv,
         }
 
         int32_t step = static_cast<int32_t>(
-            (static_cast<int64_t>(error_mv) * max_code) / MAX_VPP_MV);
+            (static_cast<int64_t>(error_mv) * DAC_MAX_CODE) / MAX_VPP_MV);
         if (step == 0) step = error_mv > 0 ? 1 : -1;
 
         const int32_t next_code = static_cast<int32_t>(code) + step;
-        if (next_code < 0 || next_code > max_code) {
+        if (next_code < 0 || next_code > DAC_MAX_CODE) {
             rurp_disable_vpp_control();
             return RURP_VPP_OUT_OF_RANGE;
         }
@@ -161,31 +165,12 @@ rurp_vpp_result_t rurp_set_vpp_target_mv(uint16_t target_mv,
 
     rurp_disable_vpp_control();
     return RURP_VPP_TIMEOUT;
+#endif
 }
 
 void rurp_disable_vpp_control(void) {
-    if (rurp_vpp_dac_available()) {
-        rurp_vpp_dac_write(0);
-    }
+#if RURP_HAS_VPP_DAC
+    rurp_vpp_dac_write(0);
     rurp_vpp_control_enable(false);
-}
-
-__attribute__((weak)) bool rurp_vpp_dac_available(void) {
-    return false;
-}
-
-__attribute__((weak)) uint16_t rurp_vpp_dac_max_code(void) {
-    return 0;
-}
-
-__attribute__((weak)) void rurp_vpp_dac_write(uint16_t code) {
-    (void)code;
-}
-
-__attribute__((weak)) void rurp_vpp_control_enable(bool enable) {
-    (void)enable;
-}
-
-__attribute__((weak)) void rurp_vpp_delay_ms(uint16_t milliseconds) {
-    (void)milliseconds;
+#endif
 }
