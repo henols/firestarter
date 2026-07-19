@@ -151,7 +151,7 @@ rurp_vpp_result_t rurp_set_vpp_target_mv(uint16_t target_mv,
             (static_cast<int64_t>(error_mv) * max_code) / MAX_VPP_MV);
         if (step == 0) step = error_mv > 0 ? 1 : -1;
 
-        int32_t next_code = static_cast<int32_t>(code) + step;
+        const int32_t next_code = static_cast<int32_t>(code) + step;
         if (next_code < 0 || next_code > max_code) {
             rurp_disable_vpp_control();
             return RURP_VPP_OUT_OF_RANGE;
@@ -187,5 +187,5 @@ __attribute__((weak)) void rurp_vpp_control_enable(bool enable) {
 }
 
 __attribute__((weak)) void rurp_vpp_delay_ms(uint16_t milliseconds) {
-    delay(milliseconds);
+    (void)milliseconds;
 }
