@@ -25,16 +25,4 @@ static inline int analogRead(uint32_t pin) { (void)pin; return 0; }
 #define DEFAULT 0u
 #endif
 
-static inline char *itoa(int value, char *buffer, int radix)
-{
-    if (radix == 10) {
-        (void)sprintf(buffer, "%d", value);
-    } else if (radix == 16) {
-        (void)sprintf(buffer, "%x", (unsigned int)value);
-    } else {
-        buffer[0] = '\0';
-    }
-    return buffer;
-}
-
 #endif
