@@ -9,11 +9,22 @@ set(LINKER_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/linker/PY32F071xB_FLASH.ld")
 add_executable(${TARGET}.elf
     startup/startup_py32f071.s
     src/main.c
+    src/board.c
+    src/gpio.c
+    src/timing.c
+    src/analog.c
+    src/usb.c
+    src/storage.c
+)
+
+target_include_directories(${TARGET}.elf PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/include
 )
 
 target_compile_definitions(${TARGET}.elf PRIVATE
     PY32F071xB
     RURP_PLATFORM_PY32F071=1
+    RURP_HAS_VPP_DAC=1
 )
 
 target_compile_options(${TARGET}.elf PRIVATE
