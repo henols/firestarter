@@ -3,27 +3,30 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "rurp_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifndef RURP_PLATFORM_PY32F071
 #define RURP_PLATFORM_PY32F071 1
+#endif
+#ifndef RURP_HAS_VPP_DAC
 #define RURP_HAS_VPP_DAC 1
+#endif
 #define RURP_VPP_DAC_BITS 12u
 #define RURP_VPP_DAC_MAX_CODE 4095u
 
-/* Temporary pin assignment. Change only this section when the PCB pinout is fixed. */
-#define PY32_DATA_GPIO_PORT_INDEX 1u /* GPIOB */
-#define PY32_DATA_PIN_SHIFT 0u       /* PB0..PB7 */
-#define PY32_CTRL_GPIO_PORT_INDEX 2u /* GPIOC */
-#define PY32_CTRL_PIN_SHIFT 0u       /* PC0..PC7 */
-#define PY32_USER_BUTTON_PIN 13u     /* PC13, active low */
-#define PY32_VPP_ADC_CHANNEL 0u      /* PA0 / ADC_IN0 */
-#define PY32_VPP_DAC_PIN 4u          /* PA4 / DAC_OUT1 */
-#define PY32_VPP_ENABLE_PIN 8u       /* PA8 */
+#define PY32_DATA_GPIO_PORT_INDEX 1u
+#define PY32_DATA_PIN_SHIFT 0u
+#define PY32_CTRL_GPIO_PORT_INDEX 2u
+#define PY32_CTRL_PIN_SHIFT 0u
+#define PY32_USER_BUTTON_PIN 13u
+#define PY32_VPP_ADC_CHANNEL 0u
+#define PY32_VPP_DAC_PIN 4u
+#define PY32_VPP_ENABLE_PIN 8u
 
-/* 270k/27k keeps 33 V below a nominal 3.3 V ADC full scale. */
 #define PY32_VPP_DIVIDER_TOP_OHM 270000u
 #define PY32_VPP_DIVIDER_BOTTOM_OHM 27000u
 #define PY32_VREFINT_MV 1200u
@@ -31,12 +34,11 @@ extern "C" {
 #define PY32_MAX_VPP_TARGET_MV 30000u
 #define PY32_VPP_OVERVOLTAGE_MV 33000u
 
-/* Logical register select/control identifiers retained from Firestarter. */
 #define PY32_REG_LSB 0x01u
 #define PY32_REG_MSB 0x02u
-#define PY32_REG_OE  0x04u
+#define PY32_REG_OE 0x04u
 #define PY32_REG_CTRL 0x08u
-#define PY32_REG_CE  0x20u
+#define PY32_REG_CE 0x20u
 
 typedef enum {
     PY32_VPP_OK = 0,
@@ -60,13 +62,16 @@ typedef struct {
     uint32_t magic;
     uint16_t version;
     uint16_t length;
-    uint32_t sequence;
+    rurp_configuration_t configuration;
     py32_vpp_calibration_t vpp;
+    uint32_t sequence;
     uint32_t crc32;
 } py32_stored_configuration_t;
 
 void py32_board_init(void);
 void py32_board_task(void);
+void py32_gpio_init(void);
+void py32_timing_init(uint32_t core_clock_hz);
 
 uint32_t rurp_millis(void);
 void rurp_delay_ms(uint32_t milliseconds);
@@ -92,17 +97,19 @@ bool rurp_calibrate_vpp_two_point(uint16_t measured_low_mv, uint16_t actual_low_
 void rurp_reset_vpp_calibration(void);
 const py32_vpp_calibration_t *rurp_get_vpp_calibration(void);
 void py32_set_vpp_calibration(const py32_vpp_calibration_t *calibration);
+void py32_set_requested_vpp_mv(uint16_t target_mv);
+uint16_t py32_get_requested_vpp_mv(void);
 
 void py32_usb_init(void);
 void py32_usb_task(void);
 void py32_usb_rx_bytes(const uint8_t *data, size_t length);
 size_t py32_usb_tx_read(uint8_t *data, size_t capacity);
-int rurp_communication_available(void);
-int rurp_communication_read(void);
-int rurp_communication_peak(void);
-size_t rurp_communication_read_bytes(char *buffer, size_t length);
-size_t rurp_communication_write(const char *buffer, size_t length);
-int rurp_communication_read_data(char *buffer, size_t capacity);
+int py32_usb_available(void);
+int py32_usb_read(void);
+int py32_usb_peek(void);
+size_t py32_usb_read_bytes(char *buffer, size_t length);
+size_t py32_usb_write(const uint8_t *buffer, size_t length);
+void py32_usb_flush(void);
 
 bool py32_storage_load(py32_stored_configuration_t *configuration);
 bool py32_storage_save(const py32_stored_configuration_t *configuration);
