@@ -10,6 +10,8 @@ static volatile uint16_t tx_tail;
 static uint8_t rx_buffer[USB_RX_CAPACITY];
 static uint8_t tx_buffer[USB_TX_CAPACITY];
 
+#define COMPILER_MEMORY_BARRIER() __asm volatile("" ::: "memory")
+
 /* CherryUSB glue overrides these hooks. The default keeps the backend linkable. */
 __attribute__((weak)) void py32_usb_ll_init(void) {}
 __attribute__((weak)) void py32_usb_ll_task(void) {}
@@ -42,6 +44,7 @@ void py32_usb_rx_bytes(const uint8_t *data, size_t length)
             break;
         }
         rx_buffer[rx_head] = data[i];
+        COMPILER_MEMORY_BARRIER();
         rx_head = next;
     }
 }
@@ -51,6 +54,7 @@ size_t py32_usb_tx_read(uint8_t *data, size_t capacity)
     size_t count = 0u;
     while (count < capacity && tx_tail != tx_head) {
         data[count++] = tx_buffer[tx_tail];
+        COMPILER_MEMORY_BARRIER();
         tx_tail = ring_next(tx_tail, USB_TX_CAPACITY);
     }
     return count;
@@ -69,16 +73,19 @@ void py32_usb_task(void)
                 tx_tail = tx_tail == 0u ? USB_TX_CAPACITY - 1u : tx_tail - 1u;
                 tx_buffer[tx_tail] = packet[i - 1u];
             }
+            COMPILER_MEMORY_BARRIER();
         }
     }
 }
 
 int rurp_communication_available(void)
 {
-    if (rx_head >= rx_tail) {
-        return (int)(rx_head - rx_tail);
+    uint16_t head = rx_head;
+    uint16_t tail = rx_tail;
+    if (head >= tail) {
+        return (int)(head - tail);
     }
-    return (int)(USB_RX_CAPACITY - rx_tail + rx_head);
+    return (int)(USB_RX_CAPACITY - tail + head);
 }
 
 int rurp_communication_peak(void)
@@ -95,6 +102,7 @@ int rurp_communication_read(void)
         return -1;
     }
     uint8_t value = rx_buffer[rx_tail];
+    COMPILER_MEMORY_BARRIER();
     rx_tail = ring_next(rx_tail, USB_RX_CAPACITY);
     return value;
 }
@@ -125,6 +133,7 @@ size_t rurp_communication_write(const char *buffer, size_t length)
             }
         }
         tx_buffer[tx_head] = (uint8_t)buffer[count++];
+        COMPILER_MEMORY_BARRIER();
         tx_head = next;
     }
     py32_usb_task();
@@ -141,12 +150,12 @@ int rurp_communication_read_data(char *buffer, size_t capacity)
     while (count < capacity) {
         int value = rurp_communication_read();
         if (value < 0) {
-            break;
+            return -3;
         }
         if (value == 0) {
             return (int)count;
         }
         buffer[count++] = (char)value;
     }
-    return count == capacity ? -2 : 0;
+    return -2;
 }
