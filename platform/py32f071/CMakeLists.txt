@@ -7,6 +7,13 @@ set(TARGET firestarter-py32f071)
 set(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
 set(LINKER_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/linker/PY32F071xB_FLASH.ld")
 
+# The vendored JSMN header is configured declaration-only. Generate one private
+# implementation unit for this native target without altering the shared vendor file.
+file(READ "${REPO_ROOT}/lib/jsmn/src/jsmn.h" JSMN_IMPLEMENTATION_TEXT)
+string(REPLACE "#define JSMN_HEADER" "/* JSMN implementation enabled */"
+       JSMN_IMPLEMENTATION_TEXT "${JSMN_IMPLEMENTATION_TEXT}")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/jsmn_impl.c" "${JSMN_IMPLEMENTATION_TEXT}")
+
 set(PY32_BACKEND_SOURCES
     startup/startup_py32f071.s
     src/main.c
@@ -21,6 +28,7 @@ set(PY32_BACKEND_SOURCES
     src/firestarter_entry.cpp
     src/config.cpp
     src/registers.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/jsmn_impl.c
 )
 
 set(FIRESTARTER_COMMON_SOURCES
