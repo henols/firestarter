@@ -12,7 +12,7 @@ static uint8_t tx_buffer[USB_TX_CAPACITY];
 
 #define COMPILER_MEMORY_BARRIER() __asm volatile("" ::: "memory")
 
-/* CherryUSB glue overrides these hooks. The default keeps the backend linkable. */
+/* Official Puya CherryUSB glue overrides these low-level hooks. */
 __attribute__((weak)) void py32_usb_ll_init(void) {}
 __attribute__((weak)) void py32_usb_ll_task(void) {}
 __attribute__((weak)) bool py32_usb_ll_can_transmit(void) { return false; }
@@ -68,7 +68,6 @@ void py32_usb_task(void)
         size_t count = py32_usb_tx_read(packet, sizeof(packet));
         size_t sent = py32_usb_ll_transmit(packet, count);
         if (sent < count) {
-            /* Put unsent bytes back at the front in order. */
             for (size_t i = count; i > sent; --i) {
                 tx_tail = tx_tail == 0u ? USB_TX_CAPACITY - 1u : tx_tail - 1u;
                 tx_buffer[tx_tail] = packet[i - 1u];
@@ -78,25 +77,19 @@ void py32_usb_task(void)
     }
 }
 
-int rurp_communication_available(void)
+int py32_usb_available(void)
 {
     uint16_t head = rx_head;
     uint16_t tail = rx_tail;
-    if (head >= tail) {
-        return (int)(head - tail);
-    }
-    return (int)(USB_RX_CAPACITY - tail + head);
+    return head >= tail ? (int)(head - tail) : (int)(USB_RX_CAPACITY - tail + head);
 }
 
-int rurp_communication_peak(void)
+int py32_usb_peek(void)
 {
-    if (rx_tail == rx_head) {
-        return -1;
-    }
-    return rx_buffer[rx_tail];
+    return rx_tail == rx_head ? -1 : rx_buffer[rx_tail];
 }
 
-int rurp_communication_read(void)
+int py32_usb_read(void)
 {
     if (rx_tail == rx_head) {
         return -1;
@@ -107,11 +100,11 @@ int rurp_communication_read(void)
     return value;
 }
 
-size_t rurp_communication_read_bytes(char *buffer, size_t length)
+size_t py32_usb_read_bytes(char *buffer, size_t length)
 {
     size_t count = 0u;
     while (count < length) {
-        int value = rurp_communication_read();
+        int value = py32_usb_read();
         if (value < 0) {
             break;
         }
@@ -120,7 +113,7 @@ size_t rurp_communication_read_bytes(char *buffer, size_t length)
     return count;
 }
 
-size_t rurp_communication_write(const char *buffer, size_t length)
+size_t py32_usb_write(const uint8_t *buffer, size_t length)
 {
     size_t count = 0u;
     while (count < length) {
@@ -132,7 +125,7 @@ size_t rurp_communication_write(const char *buffer, size_t length)
                 break;
             }
         }
-        tx_buffer[tx_head] = (uint8_t)buffer[count++];
+        tx_buffer[tx_head] = buffer[count++];
         COMPILER_MEMORY_BARRIER();
         tx_head = next;
     }
@@ -140,22 +133,9 @@ size_t rurp_communication_write(const char *buffer, size_t length)
     return count;
 }
 
-int rurp_communication_read_data(char *buffer, size_t capacity)
+void py32_usb_flush(void)
 {
-    if (capacity == 0u) {
-        return -1;
+    while (tx_tail != tx_head) {
+        py32_usb_task();
     }
-
-    size_t count = 0u;
-    while (count < capacity) {
-        int value = rurp_communication_read();
-        if (value < 0) {
-            return -3;
-        }
-        if (value == 0) {
-            return (int)count;
-        }
-        buffer[count++] = (char)value;
-    }
-    return -2;
 }
