@@ -5,12 +5,14 @@ on:
     branches:
       - beta
       - feature/py32f071-toolchain
+      - feature/py32f071-full-support
     paths:
       - 'platform/py32f071/**'
       - '.github/workflows/py32f071.yml'
   pull_request:
     branches:
       - beta
+      - feature/py32f071-toolchain
     paths:
       - 'platform/py32f071/**'
       - '.github/workflows/py32f071.yml'
@@ -49,6 +51,7 @@ jobs:
           cp build/py32f071/firestarter-py32f071.elf artifacts/py32f071/
           cp build/py32f071/firestarter-py32f071.bin artifacts/py32f071/
           cp build/py32f071/firestarter-py32f071.hex artifacts/py32f071/
+          cp build/py32f071/firestarter-py32f071.map artifacts/py32f071/
           arm-none-eabi-size build/py32f071/firestarter-py32f071.elf > artifacts/py32f071/size.txt
           sha256sum artifacts/py32f071/* > artifacts/py32f071/SHA256SUMS
 
