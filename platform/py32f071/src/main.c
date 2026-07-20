@@ -1,10 +1,12 @@
-#include <stdint.h>
-
-volatile uint32_t py32f071_toolchain_smoke = 0xF071B001u;
+#include "py32f071_board.h"
+#include "py32f071_regs.h"
 
 int main(void)
 {
+    py32_board_init();
+
     for (;;) {
-        __asm volatile ("nop");
+        py32_board_task();
+        py32_wait_for_interrupt();
     }
 }
