@@ -8,6 +8,8 @@ on:
       - feature/py32f071-full-support
     paths:
       - 'platform/py32f071/**'
+      - 'include/**'
+      - 'src/**'
       - '.github/workflows/py32f071.yml'
   pull_request:
     branches:
@@ -15,6 +17,8 @@ on:
       - feature/py32f071-toolchain
     paths:
       - 'platform/py32f071/**'
+      - 'include/**'
+      - 'src/**'
       - '.github/workflows/py32f071.yml'
   workflow_dispatch:
 
@@ -36,29 +40,33 @@ jobs:
 
       - name: Configure
         run: |
+          mkdir -p artifacts/py32f071
           cmake -S platform/py32f071 -B build/py32f071 -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release 2>&1 | tee artifacts/py32f071/configure.log
 
       - name: Build
-        run: cmake --build build/py32f071
+        run: |
+          set -o pipefail
+          cmake --build build/py32f071 2>&1 | tee artifacts/py32f071/build.log
 
       - name: Show firmware size
         run: arm-none-eabi-size build/py32f071/firestarter-py32f071.elf
 
       - name: Stage binaries
         run: |
-          mkdir -p artifacts/py32f071
           cp build/py32f071/firestarter-py32f071.elf artifacts/py32f071/
           cp build/py32f071/firestarter-py32f071.bin artifacts/py32f071/
           cp build/py32f071/firestarter-py32f071.hex artifacts/py32f071/
           cp build/py32f071/firestarter-py32f071.map artifacts/py32f071/
+          cp build/py32f071/firestarter-py32f071.sha256 artifacts/py32f071/ || true
           arm-none-eabi-size build/py32f071/firestarter-py32f071.elf > artifacts/py32f071/size.txt
           sha256sum artifacts/py32f071/* > artifacts/py32f071/SHA256SUMS
 
-      - name: Upload firmware artifact
+      - name: Upload build diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: firestarter-py32f071-${{ github.sha }}
           path: artifacts/py32f071/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
