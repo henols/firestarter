@@ -1,12 +1,14 @@
 #include "py32f071_board.h"
-#include "py32f071_regs.h"
+
+void firestarter_platform_setup(void);
+void firestarter_platform_loop(void);
 
 int main(void)
 {
     py32_board_init();
+    firestarter_platform_setup();
 
     for (;;) {
-        py32_board_task();
-        py32_wait_for_interrupt();
+        firestarter_platform_loop();
     }
 }
