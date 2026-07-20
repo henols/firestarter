@@ -18,6 +18,13 @@
 #define FLASH_CR_STRT PY32_BIT(6)
 #define FLASH_CR_LOCK PY32_BIT(7)
 
+_Static_assert((sizeof(py32_stored_configuration_t) % sizeof(uint32_t)) == 0u,
+               "stored configuration must be word aligned");
+_Static_assert((STORAGE_SLOT0_ADDRESS % FLASH_PAGE_SIZE) == 0u,
+               "slot 0 must start on a flash page");
+_Static_assert((STORAGE_SLOT1_ADDRESS % FLASH_PAGE_SIZE) == 0u,
+               "slot 1 must start on a flash page");
+
 uint32_t py32_crc32(const void *data, size_t length)
 {
     const uint8_t *bytes = (const uint8_t *)data;
@@ -66,33 +73,37 @@ static bool flash_erase_page(uint32_t address)
 {
     flash_wait();
     PY32_FLASH->SR = FLASH_SR_EOP;
-    PY32_FLASH->CR = (PY32_FLASH->CR & ~(FLASH_CR_PG)) | FLASH_CR_PER;
-    *(volatile uint32_t *)(uintptr_t)(address) = 0xFFFFFFFFu;
+    PY32_FLASH->CR = (PY32_FLASH->CR & ~FLASH_CR_PG) | FLASH_CR_PER;
+    *(volatile uint32_t *)(uintptr_t)address = 0xFFFFFFFFu;
     PY32_FLASH->CR |= FLASH_CR_STRT;
     flash_wait();
     PY32_FLASH->CR &= ~FLASH_CR_PER;
-    return (*(volatile const uint32_t *)(uintptr_t)address) == 0xFFFFFFFFu;
+    return *(volatile const uint32_t *)(uintptr_t)address == 0xFFFFFFFFu;
 }
 
-static bool flash_program_halfword(uint32_t address, uint16_t value)
+static bool flash_program_word(uint32_t address, uint32_t value)
 {
+    if ((address & 3u) != 0u) {
+        return false;
+    }
+
     flash_wait();
     PY32_FLASH->CR |= FLASH_CR_PG;
-    *(volatile uint16_t *)(uintptr_t)address = value;
+    *(volatile uint32_t *)(uintptr_t)address = value;
     flash_wait();
     PY32_FLASH->CR &= ~FLASH_CR_PG;
-    return *(volatile const uint16_t *)(uintptr_t)address == value;
+    return *(volatile const uint32_t *)(uintptr_t)address == value;
 }
 
 static bool flash_write_record(uint32_t address, const py32_stored_configuration_t *record)
 {
-    const uint16_t *words = (const uint16_t *)record;
-    size_t word_count = (sizeof(*record) + 1u) / 2u;
+    const uint32_t *words = (const uint32_t *)(const void *)record;
+    const size_t word_count = sizeof(*record) / sizeof(uint32_t);
 
     flash_unlock();
     bool ok = flash_erase_page(address);
     for (size_t i = 0; ok && i < word_count; ++i) {
-        ok = flash_program_halfword(address + (uint32_t)(i * 2u), words[i]);
+        ok = flash_program_word(address + (uint32_t)(i * sizeof(uint32_t)), words[i]);
     }
     flash_lock();
     return ok && record_valid((const py32_stored_configuration_t *)(uintptr_t)address);
