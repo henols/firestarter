@@ -1,0 +1,61 @@
+name: PY32F071 firmware
+
+on:
+  push:
+    branches:
+      - beta
+      - feature/py32f071-toolchain
+    paths:
+      - 'platform/py32f071/**'
+      - '.github/workflows/py32f071.yml'
+  pull_request:
+    branches:
+      - beta
+    paths:
+      - 'platform/py32f071/**'
+      - '.github/workflows/py32f071.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ARM GCC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build gcc-arm-none-eabi binutils-arm-none-eabi
+
+      - name: Configure
+        run: |
+          cmake -S platform/py32f071 -B build/py32f071 -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build/py32f071
+
+      - name: Show firmware size
+        run: arm-none-eabi-size build/py32f071/firestarter-py32f071.elf
+
+      - name: Stage binaries
+        run: |
+          mkdir -p artifacts/py32f071
+          cp build/py32f071/firestarter-py32f071.elf artifacts/py32f071/
+          cp build/py32f071/firestarter-py32f071.bin artifacts/py32f071/
+          cp build/py32f071/firestarter-py32f071.hex artifacts/py32f071/
+          arm-none-eabi-size build/py32f071/firestarter-py32f071.elf > artifacts/py32f071/size.txt
+          sha256sum artifacts/py32f071/* > artifacts/py32f071/SHA256SUMS
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestarter-py32f071-${{ github.sha }}
+          path: artifacts/py32f071/
+          if-no-files-found: error
+          retention-days: 30
