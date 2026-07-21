@@ -14,6 +14,11 @@ extern "C" rurp_configuration_t *rurp_get_config(void)
 
 extern "C" void rurp_validate_config(rurp_configuration_t *value)
 {
+    if (value == nullptr)
+    {
+        return;
+    }
+
     if (strcmp(value->version, CONFIG_VERSION) != 0 || value->r2 == 0)
     {
         memset(value, 0, sizeof(*value));
@@ -32,6 +37,11 @@ extern "C" void rurp_load_config(void)
 
 extern "C" void rurp_save_config(rurp_configuration_t *value)
 {
+    if (value == nullptr)
+    {
+        return;
+    }
+
     rurp_validate_config(value);
     configuration = *value;
 }
