@@ -1,15 +1,22 @@
-name: PY32F071 toolchain
+name: PY32F071 firmware
 
 on:
   push:
     branches:
       - agent/py32f071-toolchain
-      - feature/py32f071-full-support
+    paths:
+      - "platform/py32f071/**"
+      - "include/**"
+      - "src/**"
+      - "lib/jsmn/**"
+      - ".github/workflows/py32f071.yml"
   pull_request:
     paths:
       - "platform/py32f071/**"
+      - "include/**"
+      - "src/**"
+      - "lib/jsmn/**"
       - ".github/workflows/py32f071.yml"
-      - "include/rurp_platform_compat.h"
   workflow_dispatch:
 
 jobs:
