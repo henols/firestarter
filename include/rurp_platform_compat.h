@@ -61,7 +61,8 @@
 #define strcmp_P(left, right) strcmp((left), (right))
 #endif
 
-#ifndef F
+/* Arduino cores provide their own F() definition. Native builds do not. */
+#if !defined(ARDUINO) && !defined(F)
 #define F(value) (value)
 #endif
 
