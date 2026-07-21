@@ -23,4 +23,12 @@
 #define USBD_IRQn USB_IRQn
 #define USBD_IRQHandler USBD_IRQHandler
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+void USBD_IRQHandler(void);
+#ifdef __cplusplus
+}
+#endif
+
 #endif
