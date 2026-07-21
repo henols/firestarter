@@ -2,10 +2,11 @@ if(NOT DEFINED OUTPUT_FILE)
     message(FATAL_ERROR "OUTPUT_FILE is required")
 endif()
 
-if(NOT DEFINED INPUT_FILES)
-    message(FATAL_ERROR "INPUT_FILES is required")
+if(NOT DEFINED INPUT_FILES_ENCODED)
+    message(FATAL_ERROR "INPUT_FILES_ENCODED is required")
 endif()
 
+string(REPLACE "|" ";" INPUT_FILES "${INPUT_FILES_ENCODED}")
 file(WRITE "${OUTPUT_FILE}" "")
 
 foreach(input_file IN LISTS INPUT_FILES)
