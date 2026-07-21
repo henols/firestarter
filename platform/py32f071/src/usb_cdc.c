@@ -106,6 +106,17 @@ static void usb_start_next_transmit(void)
     usbd_ep_start_write(FIRESTARTER_CDC_IN_EP, cdc_in_packet, count);
 }
 
+static void usb_start_next_transmit_safe(void)
+{
+    const uint32_t interrupt_state = __get_PRIMASK();
+    __disable_irq();
+    usb_start_next_transmit();
+    if (interrupt_state == 0U)
+    {
+        __enable_irq();
+    }
+}
+
 void usbd_configure_done_callback(void)
 {
     usbd_ep_start_read(
@@ -261,7 +272,7 @@ size_t py32_usb_write(const uint8_t *buffer, size_t length)
         const uint16_t next = ring_next(tx_head, FIRESTARTER_USB_TX_CAPACITY);
         if (next == tx_tail)
         {
-            usb_start_next_transmit();
+            usb_start_next_transmit_safe();
             if ((int32_t)(RURP_MILLIS() - deadline) >= 0)
             {
                 break;
@@ -274,7 +285,7 @@ size_t py32_usb_write(const uint8_t *buffer, size_t length)
         deadline = RURP_MILLIS() + FIRESTARTER_USB_TIMEOUT_MS;
     }
 
-    usb_start_next_transmit();
+    usb_start_next_transmit_safe();
     return count;
 }
 
@@ -282,7 +293,7 @@ void py32_usb_flush(void)
 {
     const uint32_t deadline = RURP_MILLIS() + FIRESTARTER_USB_TIMEOUT_MS;
 
-    usb_start_next_transmit();
+    usb_start_next_transmit_safe();
     while ((tx_head != tx_tail || tx_busy) &&
            (int32_t)(RURP_MILLIS() - deadline) < 0)
     {
