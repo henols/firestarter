@@ -2,13 +2,13 @@
 #define __RURP_SERIAL_UTILS_H__
 
 #include "firestarter.h"
-#include <avr/pgmspace.h>
+#include "rurp_platform_compat.h"
 
-#include "firestarter.h"
 #ifndef SERIAL_PORT
 #include <Arduino.h>
 #define SERIAL_PORT Serial
 #endif
+
 // Phase 9: deleted the two legacy text-prefix log helper declarations
 // (RAM body + PROGMEM body). See 09-CONTEXT.md D-02.
 
