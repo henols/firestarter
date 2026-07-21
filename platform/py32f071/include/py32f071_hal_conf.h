@@ -10,6 +10,7 @@ extern "C" {
 #define HAL_GPIO_MODULE_ENABLED
 #define HAL_PWR_MODULE_ENABLED
 #define HAL_CORTEX_MODULE_ENABLED
+#define HAL_DMA_MODULE_ENABLED
 #define HAL_ADC_MODULE_ENABLED
 #define HAL_TIM_MODULE_ENABLED
 
@@ -51,6 +52,7 @@ extern "C" {
 #include "py32f071_hal_gpio.h"
 #include "py32f071_hal_pwr.h"
 #include "py32f071_hal_cortex.h"
+#include "py32f071_hal_dma.h"
 #include "py32f071_hal_adc.h"
 #include "py32f071_hal_tim.h"
 
