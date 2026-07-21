@@ -134,6 +134,11 @@ uint16_t read_adc_channel(uint32_t channel)
 
 uint16_t read_adc_average(uint32_t channel, uint8_t sample_count)
 {
+    if (sample_count == 0U)
+    {
+        return 0U;
+    }
+
     uint32_t sum = 0U;
 
     for (uint8_t sample = 0U; sample < sample_count; ++sample)
