@@ -146,7 +146,6 @@ set_target_properties(
 
 set(BIN_FILE "${CMAKE_CURRENT_BINARY_DIR}/firestarter-py32f071.bin")
 set(HEX_FILE "${CMAKE_CURRENT_BINARY_DIR}/firestarter-py32f071.hex")
-set(SHA_FILE "${CMAKE_CURRENT_BINARY_DIR}/firestarter-py32f071.sha256")
 
 add_custom_command(
     TARGET ${TARGET_NAME}
@@ -154,14 +153,8 @@ add_custom_command(
     COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${TARGET_NAME}> "${BIN_FILE}"
     COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${TARGET_NAME}> "${HEX_FILE}"
     COMMAND ${CMAKE_SIZE} $<TARGET_FILE:${TARGET_NAME}>
-    COMMAND
-        ${CMAKE_COMMAND}
-        "-DOUTPUT_FILE=${SHA_FILE}"
-        "-DINPUT_FILES_ENCODED=$<TARGET_FILE:${TARGET_NAME}>|${BIN_FILE}|${HEX_FILE}"
-        -P "${CMAKE_CURRENT_LIST_DIR}/cmake/write_checksums.cmake"
     BYPRODUCTS
         "${BIN_FILE}"
         "${HEX_FILE}"
-        "${SHA_FILE}"
     VERBATIM
 )
