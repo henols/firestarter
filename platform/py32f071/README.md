@@ -21,35 +21,36 @@ This target builds the existing Firestarter PROM algorithms and command protocol
 - optional active-low user button support
 - unchanged shared PROM algorithms and packet framing
 
-## Required board wiring
+## Provisional example pin map
 
-The implementation guide marks its GPIO values as examples. No actual PY32F071 Firestarter schematic or pin assignment is present in the repository or supplied documents, so this target deliberately does not substitute guessed pins.
+The implementation guide marks its GPIO values as examples, and no final PY32F071 Firestarter schematic or pin assignment is present in the repository or supplied documents. To allow the target to compile and evolve before the PCB mapping is finalized, the board header now contains this explicitly provisional example:
 
-Set the actual mapping in:
+| Signal | Example PY32F071 pin |
+|---|---|
+| PROM D0-D7 | PB0-PB7 |
+| LSB address-latch strobe | PA0 |
+| MSB address-latch strobe | PA1 |
+| `/OE` | PA2 |
+| Control-register latch strobe | PA3 |
+| VPP measurement | PA4 / ADC channel 4 |
+| `/CE` | PA5 |
+| User button | Not fitted |
+
+PA4 / ADC channel 4 follows the official Puya PY32F071 ADC example. All other assignments are placeholders selected for a simple contiguous bus and must not be treated as verified PCB wiring.
+
+The single physical mapping point is:
 
 ```text
 include/boards/py32f071_rurp_shield.h
 ```
 
-The header lists every required definition and keeps the build disabled until:
+The header defines:
 
 ```cpp
-#define RURP_PY32F071_PINMAP_CONFIGURED 1
+#define RURP_PY32F071_PINMAP_PROVISIONAL 1
 ```
 
-is set with the real values.
-
-Required wiring information:
-
-- one contiguous GPIO region for PROM D0-D7
-- LSB address-latch strobe GPIO
-- MSB address-latch strobe GPIO
-- output-enable GPIO
-- control-register latch strobe GPIO
-- chip-enable GPIO
-- VPP measurement ADC GPIO and channel
-- optional user-button GPIO
-- GPIO peripheral clocks used by those pins
+Replace the mapping and remove or clear that marker when the final schematic is available.
 
 ## Build
 
@@ -63,4 +64,4 @@ Generated outputs are ELF, BIN, HEX, linker map, size report, and SHA-256 checks
 
 ## Hardware validation still required
 
-After the real pin map is entered, validate the startup levels, complete `0x00`-`0xFF` data mapping, bus direction changes, every logical control signal, USB framing, voltage readings, and all PROM timing with appropriate test equipment before applying programming voltage to a device.
+Before connecting a PROM or applying programming voltage, validate the startup levels, complete `0x00`-`0xFF` data mapping, bus direction changes, every logical control signal, USB framing, voltage readings, and all PROM timing with appropriate test equipment. The provisional pin map is for compilation and early bring-up only.
