@@ -63,20 +63,24 @@ jobs:
 
       - name: Report size
         run: |
+          set -o pipefail
           arm-none-eabi-size \
             build/py32f071/firestarter-py32f071.elf \
             | tee size.txt
 
-      - name: Verify generated checksums
+      - name: Create and verify firmware checksums
         working-directory: build/py32f071
         run: |
           set -euxo pipefail
-          ls -l firestarter-py32f071.*
-          cat firestarter-py32f071.sha256
+          test -s firestarter-py32f071.elf
+          test -s firestarter-py32f071.bin
+          test -s firestarter-py32f071.hex
           sha256sum \
             firestarter-py32f071.elf \
             firestarter-py32f071.bin \
-            firestarter-py32f071.hex
+            firestarter-py32f071.hex \
+            > firestarter-py32f071.sha256
+          cat firestarter-py32f071.sha256
           sha256sum --check firestarter-py32f071.sha256
 
       - name: Create artifact checksum manifest
