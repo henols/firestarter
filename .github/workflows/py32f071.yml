@@ -38,6 +38,7 @@ jobs:
 
       - name: Record tool versions
         run: |
+          set -o pipefail
           {
             arm-none-eabi-gcc --version
             arm-none-eabi-ld --version
@@ -47,6 +48,7 @@ jobs:
 
       - name: Configure
         run: |
+          set -o pipefail
           cmake \
             -S platform/py32f071 \
             -B build/py32f071 \
@@ -56,6 +58,7 @@ jobs:
 
       - name: Build
         run: |
+          set -o pipefail
           cmake --build build/py32f071 2>&1 | tee build.log
 
       - name: Report size
@@ -66,7 +69,15 @@ jobs:
 
       - name: Verify generated checksums
         working-directory: build/py32f071
-        run: sha256sum --check firestarter-py32f071.sha256
+        run: |
+          set -euxo pipefail
+          ls -l firestarter-py32f071.*
+          cat firestarter-py32f071.sha256
+          sha256sum \
+            firestarter-py32f071.elf \
+            firestarter-py32f071.bin \
+            firestarter-py32f071.hex
+          sha256sum --check firestarter-py32f071.sha256
 
       - name: Create artifact checksum manifest
         run: |
