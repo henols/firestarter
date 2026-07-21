@@ -9,8 +9,16 @@ extern "C" void rurp_timing_init(void)
 {
     __HAL_RCC_TIM3_CLK_ENABLE();
 
+    const uint32_t pclk = HAL_RCC_GetPCLK1Freq();
+    if (pclk < 1000000U || (pclk % 1000000U) != 0U)
+    {
+        for (;;)
+        {
+        }
+    }
+
     microsecond_timer.Instance = TIM3;
-    microsecond_timer.Init.Prescaler = (HAL_RCC_GetPCLK1Freq() / 1000000U) - 1U;
+    microsecond_timer.Init.Prescaler = (pclk / 1000000U) - 1U;
     microsecond_timer.Init.CounterMode = TIM_COUNTERMODE_UP;
     microsecond_timer.Init.Period = 0xFFFFU;
     microsecond_timer.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -39,24 +47,43 @@ extern "C" uint32_t rurp_millis(void)
 
 extern "C" uint32_t rurp_micros(void)
 {
-    uint32_t milliseconds_before;
-    uint32_t milliseconds_after;
-    uint32_t counter;
-    uint32_t reload;
+    const uint32_t interrupt_state = __get_PRIMASK();
+    __disable_irq();
 
-    do
+    uint32_t milliseconds = HAL_GetTick();
+    const uint32_t pending_before =
+        SCB->ICSR & SCB_ICSR_PENDSTSET_Msk;
+    uint32_t counter = SysTick->VAL;
+    const uint32_t pending_after =
+        SCB->ICSR & SCB_ICSR_PENDSTSET_Msk;
+    const uint32_t reload = SysTick->LOAD + 1U;
+
+    if (pending_after != 0U)
     {
-        milliseconds_before = HAL_GetTick();
-        counter = SysTick->VAL;
-        reload = SysTick->LOAD + 1U;
-        milliseconds_after = HAL_GetTick();
-    } while (milliseconds_before != milliseconds_after);
+        ++milliseconds;
+
+        /* If SysTick wrapped during this sample, use a post-wrap counter. */
+        if (pending_before == 0U)
+        {
+            counter = SysTick->VAL;
+        }
+    }
+
+    if (interrupt_state == 0U)
+    {
+        __enable_irq();
+    }
+
+    if (reload == 0U)
+    {
+        return milliseconds * 1000U;
+    }
 
     const uint32_t elapsed_ticks = reload - counter;
     const uint32_t elapsed_microseconds =
         (elapsed_ticks * 1000U) / reload;
 
-    return (milliseconds_before * 1000U) + elapsed_microseconds;
+    return (milliseconds * 1000U) + elapsed_microseconds;
 }
 
 extern "C" void rurp_delay_us(uint32_t microseconds)
