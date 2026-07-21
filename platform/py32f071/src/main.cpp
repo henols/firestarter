@@ -45,7 +45,7 @@ void configure_system_clock()
     clocks.AHBCLKDivider = RCC_SYSCLK_DIV1;
     clocks.APB1CLKDivider = RCC_HCLK_DIV1;
 
-    if (HAL_RCC_ClockConfig(&clocks, FLASH_LATENCY_1) != HAL_OK)
+    if (HAL_RCC_ClockConfig(&clocks, FLASH_ACR_LATENCY_1) != HAL_OK)
     {
         error_handler();
     }
