@@ -54,7 +54,6 @@ void configure_system_clock()
 
 extern "C" int main(void)
 {
-    SystemInit();
     HAL_Init();
     configure_system_clock();
     rurp_timing_init();
