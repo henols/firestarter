@@ -4,6 +4,10 @@
 
 Py32SerialPort Serial;
 
+extern "C" void _init(void)
+{
+}
+
 void Py32SerialPort::begin(unsigned long baud)
 {
     (void)baud;
