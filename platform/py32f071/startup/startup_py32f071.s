@@ -35,6 +35,8 @@ Reset_Handler:
     b 3b
 
 4:
+    bl SystemInit
+    bl __libc_init_array
     bl main
 
 5:
