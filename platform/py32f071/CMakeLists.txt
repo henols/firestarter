@@ -157,7 +157,7 @@ add_custom_command(
     COMMAND
         ${CMAKE_COMMAND}
         "-DOUTPUT_FILE=${SHA_FILE}"
-        "-DINPUT_FILES=$<TARGET_FILE:${TARGET_NAME}>;${BIN_FILE};${HEX_FILE}"
+        "-DINPUT_FILES_ENCODED=$<TARGET_FILE:${TARGET_NAME}>|${BIN_FILE}|${HEX_FILE}"
         -P "${CMAKE_CURRENT_LIST_DIR}/cmake/write_checksums.cmake"
     BYPRODUCTS
         "${BIN_FILE}"
