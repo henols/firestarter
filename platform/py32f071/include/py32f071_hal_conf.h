@@ -7,6 +7,7 @@ extern "C" {
 
 #define HAL_MODULE_ENABLED
 #define HAL_RCC_MODULE_ENABLED
+#define HAL_FLASH_MODULE_ENABLED
 #define HAL_GPIO_MODULE_ENABLED
 #define HAL_PWR_MODULE_ENABLED
 #define HAL_CORTEX_MODULE_ENABLED
@@ -49,12 +50,21 @@ extern "C" {
 
 #include "py32f0xx_hal.h"
 #include "py32f071_hal_rcc.h"
+#include "py32f071_hal_flash.h"
 #include "py32f071_hal_gpio.h"
 #include "py32f071_hal_pwr.h"
 #include "py32f071_hal_cortex.h"
 #include "py32f071_hal_dma.h"
 #include "py32f071_hal_adc.h"
 #include "py32f071_hal_tim.h"
+
+#ifndef USE_FULL_ASSERT
+#define assert_param(expression) ((void)0U)
+#else
+#define assert_param(expression) \
+    ((expression) ? (void)0U : assert_failed((uint8_t *)__FILE__, __LINE__))
+void assert_failed(uint8_t *file, uint32_t line);
+#endif
 
 #ifdef __cplusplus
 }
