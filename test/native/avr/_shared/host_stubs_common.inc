@@ -51,7 +51,84 @@
  * behavior is preserved byte-exactly. This is an opt-IN guard (inverse of
  * the opt-OUT HOST_STUBS_CUSTOM_VOLTAGE_MV / HOST_STUBS_CUSTOM_HW_REVISION
  * guards above). */
-#ifdef HOST_STUBS_RECORD_BUS
+
+/* Ordered strobe recorder (flag: HOST_STUBS_REAL_REGISTER_UTILS) — Phase 116 TRACE-01 / D-05 / D-07.
+ * Define HOST_STUBS_REAL_REGISTER_UTILS before including this file to
+ * activate this SECOND, independent opt-in layer (it composes with, does
+ * not replace, HOST_STUBS_RECORD_BUS above). This is an opt-IN guard: no
+ * existing suite may define it — flag off must stay byte-exact for all 14
+ * pre-existing suites.
+ *
+ * (a) Opt-IN: the defining suite's host_stubs.cpp must `#define
+ *     HOST_STUBS_REAL_REGISTER_UTILS` BEFORE `#include`-ing this file.
+ * (b) Why: it exists so a suite can additionally `#include
+ *     "rurp_register_utils.h"` (AFTER this file) and drive production's
+ *     real cache-compare elision + latch-strobe sequencing directly,
+ *     instead of a hand-maintained replica that can silently drift from
+ *     `rurp_write_to_register` / `rurp_internal_write_to_register`.
+ * (c) It therefore suppresses exactly the six symbols the real
+ *     `rurp_register_utils.h` / `rurp_hw_rev_utils.h` header pair supplies,
+ *     so the suite TU does not fail to compile with a redefinition error:
+ *     `rurp_write_to_register`, `rurp_read_from_register`,
+ *     `rurp_map_ctrl_reg_for_hardware_revision`,
+ *     `rurp_get_physical_hardware_revision`,
+ *     `rurp_detect_hardware_revision`, `rurp_get_hardware_revision`.
+ * (d) The `HARDWARE_REVISION` collision only exists because `[env:native]`
+ *     inherits `-D HARDWARE_REVISION` from `[env]`'s `build_flags` — every
+ *     native suite TU sees that macro whether or not it cares about
+ *     hardware-revision behavior.
+ * (e) No existing suite may define this flag — flag off is byte-exact. */
+#ifdef HOST_STUBS_REAL_REGISTER_UTILS
+/* rurp_write_to_register and rurp_read_from_register come from the REAL
+ * include/rurp_register_utils.h, which the suite's host_stubs.cpp includes
+ * AFTER this file — so neither may be defined here, and neither may the
+ * four HARDWARE_REVISION stubs that rurp_hw_rev_utils.h (pulled in by that
+ * header under the inherited -D HARDWARE_REVISION) already defines. */
+#define HOST_STUBS_MAX_STROBES 512
+#define HOST_STUBS_CUSTOM_CONTROL_PIN
+#define HOST_STUBS_CUSTOM_DATA_BUFFER
+#define HOST_STUBS_CUSTOM_HW_REVISION_BLOCK
+
+enum { STROBE_KIND_DATA = 1, STROBE_KIND_PIN = 2 };
+struct strobe_entry_t {
+    uint8_t kind;
+    uint8_t pin;
+    uint8_t value;
+};
+static strobe_entry_t s_strobes[HOST_STUBS_MAX_STROBES];
+static int s_strobe_count = 0;
+static int s_strobe_overflow = 0;
+
+extern "C" void clear_strobes()     { s_strobe_count = 0; s_strobe_overflow = 0; }
+extern "C" int  strobe_count()      { return s_strobe_count; }
+extern "C" int  strobe_overflowed() { return s_strobe_overflow; }
+extern "C" uint8_t strobe_kind(int i)  { return s_strobes[i].kind; }
+extern "C" uint8_t strobe_pin(int i)   { return s_strobes[i].pin; }
+extern "C" uint8_t strobe_value(int i) { return s_strobes[i].value; }
+
+static void strobe_push(uint8_t kind, uint8_t pin, uint8_t value) {
+    if (s_strobe_count < HOST_STUBS_MAX_STROBES) {
+        s_strobes[s_strobe_count].kind  = kind;
+        s_strobes[s_strobe_count].pin   = pin;
+        s_strobes[s_strobe_count].value = value;
+        s_strobe_count++;
+    } else {
+        s_strobe_overflow = 1;  /* tail dropped; prefix stays valid — Pitfall 2 */
+    }
+}
+
+/* The two hooks (D-07's scope — nothing wider). rurp_set_control_pin carries
+ * LSB/MSB/CTRL latch strobes AND chip /CE and /OE in one distinguishable pin
+ * namespace (rurp_shield.h: LEAST_SIGNIFICANT_BYTE/MOST_SIGNIFICANT_BYTE/
+ * CONTROL_REGISTER/OUTPUT_ENABLE/CHIP_ENABLE), so no third hook and no wider
+ * kind taxonomy is needed. */
+extern "C" void rurp_write_data_buffer(uint8_t data) {
+    strobe_push(STROBE_KIND_DATA, 0, data);
+}
+extern "C" void rurp_set_control_pin(uint8_t pin, uint8_t state) {
+    strobe_push(STROBE_KIND_PIN, pin, state);
+}
+#elif defined(HOST_STUBS_RECORD_BUS)
 #define HOST_STUBS_MAX_RECORDING 256
 
 struct bus_record_entry_t {
@@ -79,25 +156,31 @@ extern "C" void rurp_write_to_register(uint8_t reg, rurp_register_t data) {
 }
 #endif
 
+#ifndef HOST_STUBS_REAL_REGISTER_UTILS
 extern "C" rurp_register_t rurp_read_from_register(uint8_t reg) {
     (void)reg;
     return 0;
 }
+#endif
 
 /* Chip / data bus helpers — referenced (transitively) by the proms TUs that
  * the [env:native] build links in. None are invoked by the dispatch test's
  * call path, but they must resolve at link time. */
+#ifndef HOST_STUBS_CUSTOM_CONTROL_PIN
 extern "C" void rurp_set_control_pin(uint8_t pin, uint8_t state) {
     (void)pin;
     (void)state;
 }
+#endif
 
 extern "C" void rurp_set_data_output() {}
 extern "C" void rurp_set_data_input() {}
 
+#ifndef HOST_STUBS_CUSTOM_DATA_BUFFER
 extern "C" void rurp_write_data_buffer(uint8_t data) {
     (void)data;
 }
+#endif
 
 extern "C" uint8_t rurp_read_data_buffer() {
     return 0;
@@ -122,7 +205,7 @@ extern "C" uint8_t rurp_user_button_pressed() {
 }
 
 /* Hardware revision / config — referenced by some proms; return safe defaults. */
-#ifdef HARDWARE_REVISION
+#if defined(HARDWARE_REVISION) && !defined(HOST_STUBS_CUSTOM_HW_REVISION_BLOCK)
 extern "C" void rurp_detect_hardware_revision() {}
 
 #ifndef HOST_STUBS_CUSTOM_HW_REVISION
