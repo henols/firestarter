@@ -321,6 +321,83 @@ void test_fixed_guard_at28c040(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * Task 3 — TRACE-04: address-keyed mock, migrated identity-gate assertions
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Pattern 3: dispatch on ADDRESS, not call order. Virgin 0xFF everywhere
+ * except the two planted manufacturer/device identity bytes. Two per-address
+ * read counters (mfr / SDP-completion-poll @ 0x5555) let any previously
+ * call-ordinal assertion be re-expressed positionally. */
+static void mock_set_data_keyed(firestarter_handle_t*, uint32_t, uint8_t) {}
+static uint8_t mock_get_data_keyed(firestarter_handle_t*, uint32_t addr) {
+    if (addr == s_mfr_addr_keyed) {
+        s_reads_at_mfr_addr++;
+        return s_mfr_hi_keyed;
+    }
+    if (addr == s_mfr_addr_keyed + 1) {
+        s_reads_at_mfr_addr++;
+        return s_mfr_lo_keyed;
+    }
+    if (addr == 0x5555) {
+        s_reads_at_poll_addr++;
+        return 0xFF; /* virgin default -- never satisfies the 0x20 SDP-disable poll */
+    }
+    return 0xFF;
+}
+
+static firestarter_handle_t make_identity_handle(uint16_t expected_chip_id, uint32_t ctrl_flags) {
+    firestarter_handle_t h = {};
+    h.protocol = 0x0D;
+    h.cmd = CMD_WRITE;
+    h.mem_size = 32768; /* AT28C256 -- mfr_addr = mem_size - 64 = 0x7FC0 */
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id = expected_chip_id;
+    h.ctrl_flags = ctrl_flags | FLAG_SKIP_BLANK_CHECK;
+    return h;
+}
+
+/* Mismatching identity: early-returns before the SDP sequence at all
+ * (eeprom28c_write_init's `if (response_code == ERROR) return;` right after
+ * eeprom28c_check_chip_id), so this is outcome-independent of the Phase 117
+ * SDP-sequence fix and safe to run always-green. */
+void test_migrated_mismatching_chip_id_errors(void) {
+    s_mfr_addr_keyed = 32768 - 64; /* 0x7FC0 */
+    s_mfr_hi_keyed = 0xDE;
+    s_mfr_lo_keyed = 0xAD;
+    firestarter_handle_t h = make_identity_handle(0x1F08, 0);
+    configure_memory(&h);
+    /* configure_memory() overwrites BOTH firestarter_get_data AND
+     * firestarter_set_data (Pattern 3) -- the retired suite's own comment
+     * covered only get_data. Re-assign both. */
+    h.firestarter_get_data = mock_get_data_keyed;
+    h.firestarter_set_data = mock_set_data_keyed;
+    h.firestarter_operation_init(&h);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "migrated: mismatching identity must ERROR -- early-return before the SDP sequence, "
+        "outcome-independent of the Phase 117 fix");
+}
+
+/* Zero chip_id: the identity gate evaluates false, eeprom28c_check_chip_id is
+ * never called. Re-expressed (D-12/Pattern 3) as a per-address read counter
+ * since the retired suite's call-ordinal byte-index vehicle no longer exists under an
+ * address-keyed mock -- the intent ("the helper was not called") is preserved
+ * and is now independent of the SDP outcome (measured 116-RESEARCH.md §F8:
+ * mfr=0, poll=2000, total=2000). */
+void test_migrated_zero_chip_id_skips_check(void) {
+    s_mfr_addr_keyed = 32768 - 64;
+    s_mfr_hi_keyed = 0xFF;
+    s_mfr_lo_keyed = 0xFF;
+    firestarter_handle_t h = make_identity_handle(0, 0);
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_keyed;
+    h.firestarter_set_data = mock_set_data_keyed;
+    h.firestarter_operation_init(&h);
+    TEST_ASSERT_EQUAL_MESSAGE(0, s_reads_at_mfr_addr,
+        "migrated: zero chip_id must skip eeprom28c_check_chip_id entirely -- re-expressed as a "
+        "per-address read counter (Pattern 3), independent of the SDP outcome");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
  * main
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -342,6 +419,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_fixed_guard_at28c16);
     RUN_TEST(test_fixed_guard_at28c010);
     RUN_TEST(test_fixed_guard_at28c040);
+
+    /* Task 3 */
+    RUN_TEST(test_migrated_mismatching_chip_id_errors);
+    RUN_TEST(test_migrated_zero_chip_id_skips_check);
 
     return UNITY_END();
 }
