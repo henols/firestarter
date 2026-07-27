@@ -4,8 +4,8 @@ milestone: v1.21
 milestone_name: — Community Chip-Validation Command
 current_phase: 21
 status: Awaiting next milestone
-stopped_at: Phase 115 context gathered
-last_updated: "2026-07-27T09:08:39.130Z"
+stopped_at: Phase 116 context gathered
+last_updated: "2026-07-27T17:37:54.257Z"
 last_activity: 2026-07-27
 last_activity_desc: Milestone v1.21 completed and archived
 progress:
@@ -353,6 +353,6 @@ Transport provably byte-exact (COBS `0x00` + CRC8-CCITT) — settled variable. G
 
 ## Session
 
-**Last session:** 2026-07-10T20:06:19.159Z
-**Stopped at:** Phase 115 context gathered
-**Resume file:** .planning/phases/115-beta-channel-install-and-firmware-flash-bench-validation-for/115-CONTEXT.md
+**Last session:** 2026-07-27T17:37:54.240Z
+**Stopped at:** Phase 116 context gathered
+**Resume file:** .planning/phases/116-ground-truth-trace-harness/116-CONTEXT.md
