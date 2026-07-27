@@ -106,6 +106,21 @@ static void sdp_assert_stream_equals(const sdp_strobe_t* expected, int expected_
     }
 }
 
+/* Snapshot the LIVE recorded stream into caller-provided storage (used when a
+ * test must drive a SECOND table and compare its stream against the FIRST
+ * one, since clear_strobes() wipes the recorder between drives). Returns the
+ * number of entries copied (capped at max_len). */
+static int sdp_snapshot(sdp_strobe_t* out, int max_len) {
+    int n = strobe_count();
+    if (n > max_len) n = max_len;
+    for (int i = 0; i < n; i++) {
+        out[i].kind = strobe_kind(i);
+        out[i].pin = strobe_pin(i);
+        out[i].value = strobe_value(i);
+    }
+    return n;
+}
+
 /* ─── SHIPPED stream ────────────────────────────────────────────────────────
  * flash_execute_command(EEPROM_SDP_DISABLE) / FLASH_DISABLE_WRITE_PROTECTION
  * driven directly through flash_util_byte_flipping (fu_flash_fast_address).
@@ -152,5 +167,146 @@ static const sdp_strobe_t SDP_SHIPPED_DIP28_28C256[] = {
 };
 #define SDP_SHIPPED_DIP28_28C256_LEN (int)(sizeof(SDP_SHIPPED_DIP28_28C256) / sizeof(SDP_SHIPPED_DIP28_28C256[0]))
 
+/* ─── FIXED (post-Phase-117 target) streams ─────────────────────────────────
+ * These are the streams a remap-aware emitter built on
+ * handle->firestarter_set_data (i.e. memory_set_data, routed through
+ * mem_util_remap_address_bus -- exactly what FIX-01 specifies the fixed
+ * emitter will be built on) produces for the same six {address, byte} pairs.
+ * Authored the same empirical way: drive the reference emitter, dump, then
+ * hand-check against 116-RESEARCH.md §F5's independently-derived (LSB, MSB)
+ * latch table. Unlike SDP_SHIPPED, these DO depend on bus_config (the remap
+ * is pinout-specific), so there is one array per distinct DIP28/DIP24/DIP32
+ * pinout (AT28C010 and AT28C040 share the DIP32_28C512_EEPROM bus_config, so
+ * they share this array too -- 116-02's D-09 finding).
+ *
+ * Structural note (RESEARCH §F5, true for every pinout): memory_set_data
+ * calls rurp_chip_input() (OUTPUT_ENABLE->1) BEFORE the address write, while
+ * fu_flash_flip_data calls it AFTER -- so the fixed per-write shape is
+ * OE->1, DATA(lsb), LSB^, LSBv, DATA(msb), MSB^, MSBv, DATA(payload), CE->0,
+ * CE->1, versus the shipped shape's DATA(lsb) LSB^ LSBv DATA(msb) MSB^ MSBv
+ * DATA(payload) OE->1 CE->0 CE->1. Both are 10 entries per un-elided write
+ * and 4 for the elided one -- length is identical (54=54) in every case, so
+ * this reordering plus the differing MSB values (except DIP32) is the ONLY
+ * thing that can discriminate shipped-vs-fixed. A CONTROL_REGISTER write is
+ * never observed here either: with a zero-seeded cache the top-address bits
+ * this handle computes are always zero for these five rows, so the CONTROL
+ * write is cache-elided the same way LSB/MSB elide on a repeated address.
+ */
+static const sdp_strobe_t SDP_FIXED_DIP28_28C256[] = {
+    /* write #1  remap(0x5555)=0x9555  (LSB,MSB)=(0x55,0x95)  payload 0xAA */
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x95}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    /* write #2  remap(0x2AAA)=0x2AAA  (LSB,MSB)=(0xAA,0x2A)  payload 0x55 */
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x2A}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    /* write #3  remap(0x5555)=0x9555  (LSB,MSB)=(0x55,0x95)  payload 0x80 */
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x95}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x80}, {2, 0x20, 0}, {2, 0x20, 1},
+    /* write #4  remap(0x5555)=0x9555 -- ELIDED: same address as write #3 */
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    /* write #5  remap(0x2AAA)=0x2AAA  (LSB,MSB)=(0xAA,0x2A)  payload 0x55 */
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x2A}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    /* write #6  remap(0x5555)=0x9555  (LSB,MSB)=(0x55,0x95)  payload 0x20 */
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x95}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x20}, {2, 0x20, 0}, {2, 0x20, 1},
+};
+#define SDP_FIXED_DIP28_28C256_LEN (int)(sizeof(SDP_FIXED_DIP28_28C256) / sizeof(SDP_FIXED_DIP28_28C256[0]))
+
+static const sdp_strobe_t SDP_FIXED_DIP28_28C64[] = {
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x15}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x0A}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x15}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x80}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x0A}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x15}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x20}, {2, 0x20, 0}, {2, 0x20, 1},
+};
+#define SDP_FIXED_DIP28_28C64_LEN (int)(sizeof(SDP_FIXED_DIP28_28C64) / sizeof(SDP_FIXED_DIP28_28C64[0]))
+
+static const sdp_strobe_t SDP_FIXED_DIP24_2816[] = {
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x05}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x02}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x05}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x80}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x02}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x05}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x20}, {2, 0x20, 0}, {2, 0x20, 1},
+};
+#define SDP_FIXED_DIP24_2816_LEN (int)(sizeof(SDP_FIXED_DIP24_2816) / sizeof(SDP_FIXED_DIP24_2816[0]))
+
+/* DIP32_28C512_EEPROM: remap is the IDENTITY function for this pinout under a
+ * zero CONTROL seed (address_mask 0xFFFF, rw_line 20 folds into a bit this
+ * handle never surfaces below bit 16) -- Pitfall 5 / CORRECTION 3. The
+ * (LSB, MSB) address bytes are therefore IDENTICAL to the shipped stream;
+ * only the OE-edge reordering distinguishes shipped from fixed here. This is
+ * exactly why plan 116-06's DIP32 RED cases must use a deliberately stale
+ * upper-address seed rather than a plain trace -- see 116-05-SUMMARY.md. */
+static const sdp_strobe_t SDP_FIXED_DIP32_28C512_EEPROM[] = {
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x55}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x2A}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x55}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x80}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x2A}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x55}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x20}, {2, 0x20, 0}, {2, 0x20, 1},
+};
+#define SDP_FIXED_DIP32_28C512_EEPROM_LEN (int)(sizeof(SDP_FIXED_DIP32_28C512_EEPROM) / sizeof(SDP_FIXED_DIP32_28C512_EEPROM[0]))
 
 #endif /* __SDP_EXPECTED_H__ */

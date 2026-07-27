@@ -193,6 +193,134 @@ void test_case3_ce_oe_edges_distinguishable(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * Task 2 — TRACE-03a/b in-suite negatives + LOCK-05 + fixed-stream guards
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* TRACE-03a: the six-write unlock table with the terminal byte mutated from
+ * the SDP-disable value (0x20) to the chip-erase value (0x10) -- a one-nibble
+ * slip that turns SDP-disable into chip erase (see FLASH_ERASE vs
+ * FLASH_DISABLE_WRITE_PROTECTION in flash_utils.h -- they differ ONLY in
+ * this terminal byte). Test-local copy: EEPROM_SDP_DISABLE has internal
+ * linkage (116-RESEARCH.md §F6) and flash_utils.h's tables are transcribed
+ * here deliberately as the ONE test-local table this suite needs. */
+static const byte_flip_t TEST_UNLOCK_MUTATED_TERMINAL[] = {
+    {0x5555, 0xAA},
+    {0x2AAA, 0x55},
+    {0x5555, 0x80},
+    {0x5555, 0xAA},
+    {0x2AAA, 0x55},
+    {0x5555, 0x10}, /* mutated: 0x20 (SDP-disable) -> 0x10 (chip-erase) */
+};
+
+void test_negativeA_unlock_mutated_diverges_and_matches_erase(void) {
+    firestarter_handle_t h1 = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive(&h1, TEST_UNLOCK_MUTATED_TERMINAL, 6, 0x00);
+
+    int div = sdp_first_divergence(SDP_SHIPPED_DIP28_28C256, SDP_SHIPPED_DIP28_28C256_LEN);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(-1, div,
+        "Negative A (i): mutated-terminal-byte stream must diverge from the shipped SDP-disable stream");
+    TEST_ASSERT_EQUAL_MESSAGE(50, div,
+        "Negative A (i): divergence must be at index 50 -- write #6's payload byte (0x10 vs 0x20)");
+
+    /* Clause (ii), the stronger claim: the mutated stream must be IDENTICAL
+     * to driving the real FLASH_ERASE table -- a one-nibble terminal-byte
+     * slip turns SDP-disable into chip erase, machine-visibly, one phase
+     * before FIX-04 formalises the guard. Snapshot first: drive() clears the
+     * recorder before the second drive. */
+    sdp_strobe_t mutated_snapshot[64];
+    int mutated_len = sdp_snapshot(mutated_snapshot, 64);
+
+    firestarter_handle_t h2 = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive(&h2, FLASH_ERASE, sizeof(FLASH_ERASE) / sizeof(FLASH_ERASE[0]), 0x00);
+
+    TEST_ASSERT_EQUAL_MESSAGE(-1, sdp_first_divergence(mutated_snapshot, mutated_len),
+        "Negative A (ii): mutated-unlock stream must be element-wise IDENTICAL to the real FLASH_ERASE stream");
+    sdp_assert_stream_equals(mutated_snapshot, mutated_len,
+        "Negative A (ii): mutated-unlock == real FLASH_ERASE (one-nibble hazard, machine-visible)");
+}
+
+/* TRACE-03b: drive the three-write FLASH_ENABLE_WRITE_PROTECTION (lock /
+ * write-prefix) table where the six-write unlock stream is expected. */
+void test_negativeB_lock_table_swapped_for_write_prefix(void) {
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive(&h, FLASH_ENABLE_WRITE_PROTECTION,
+        sizeof(FLASH_ENABLE_WRITE_PROTECTION) / sizeof(FLASH_ENABLE_WRITE_PROTECTION[0]), 0x00);
+
+    int div = sdp_first_divergence(SDP_SHIPPED_DIP28_28C256, SDP_SHIPPED_DIP28_28C256_LEN);
+    TEST_ASSERT_EQUAL_MESSAGE(26, div,
+        "Negative B: three-write lock/write-prefix table must diverge from the six-write unlock "
+        "stream at index 26 -- write #3's payload byte (0xA0 vs 0x80)");
+}
+
+/* LOCK-05 finding, recorded as a case (not prose): FLASH_ENABLE_WRITE_PROTECTION
+ * and FLASH_ENABLE_WRITE are byte-identical tables in flash_utils.h (Atmel
+ * doc0270 section 19 note 2 -- this duplication is datasheet-correct).
+ * Phase 119 LOCK-05 requires the duplication be PRESERVED, not deduplicated.
+ * A trace-based negative between THESE TWO SPECIFIC tables is therefore
+ * impossible by construction -- a later editor must not try to add one. */
+void test_lock05_enable_write_and_write_protection_identical(void) {
+    firestarter_handle_t h1 = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive(&h1, FLASH_ENABLE_WRITE_PROTECTION,
+        sizeof(FLASH_ENABLE_WRITE_PROTECTION) / sizeof(FLASH_ENABLE_WRITE_PROTECTION[0]), 0x00);
+    sdp_strobe_t snap[32];
+    int len = sdp_snapshot(snap, 32);
+
+    firestarter_handle_t h2 = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive(&h2, FLASH_ENABLE_WRITE, sizeof(FLASH_ENABLE_WRITE) / sizeof(FLASH_ENABLE_WRITE[0]), 0x00);
+
+    TEST_ASSERT_EQUAL_MESSAGE(-1, sdp_first_divergence(snap, len),
+        "LOCK-05: FLASH_ENABLE_WRITE_PROTECTION and FLASH_ENABLE_WRITE are byte-identical tables and "
+        "must therefore produce element-wise identical streams");
+    sdp_assert_stream_equals(snap, len, "LOCK-05: identity between the two 3-write tables");
+}
+
+/* Fixed-stream reference-emitter guards -- one per SDP_BUS_CONFIGS row (5).
+ * Green today AND after Phase 117 (memory_set_data is untouched by that fix),
+ * so this pins the SDP_FIXED_* literals to real production behaviour
+ * permanently, while leaving the parked suite (116-06) as the sole
+ * RED-to-GREEN signal. */
+void test_fixed_guard_at28c256(void) {
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 */
+    drive_reference_emitter(&h, FLASH_DISABLE_WRITE_PROTECTION, 6, 0x00);
+    sdp_assert_stream_equals(SDP_FIXED_DIP28_28C256, SDP_FIXED_DIP28_28C256_LEN,
+        "reference-emitter guard: AT28C256 / DIP28_28C256");
+}
+
+void test_fixed_guard_at28c64(void) {
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[1]); /* AT28C64 */
+    drive_reference_emitter(&h, FLASH_DISABLE_WRITE_PROTECTION, 6, 0x00);
+    sdp_assert_stream_equals(SDP_FIXED_DIP28_28C64, SDP_FIXED_DIP28_28C64_LEN,
+        "reference-emitter guard: AT28C64 / DIP28_28C64");
+}
+
+void test_fixed_guard_at28c16(void) {
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[2]); /* AT28C16 */
+    drive_reference_emitter(&h, FLASH_DISABLE_WRITE_PROTECTION, 6, 0x00);
+    sdp_assert_stream_equals(SDP_FIXED_DIP24_2816, SDP_FIXED_DIP24_2816_LEN,
+        "reference-emitter guard: AT28C16 / DIP24_2816");
+}
+
+void test_fixed_guard_at28c010(void) {
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[3]); /* AT28C010 */
+    drive_reference_emitter(&h, FLASH_DISABLE_WRITE_PROTECTION, 6, 0x00);
+    sdp_assert_stream_equals(SDP_FIXED_DIP32_28C512_EEPROM, SDP_FIXED_DIP32_28C512_EEPROM_LEN,
+        "reference-emitter guard: AT28C010 / DIP32_28C512_EEPROM");
+}
+
+void test_fixed_guard_at28c040(void) {
+    /* AT28C040 shares AT28C010's bus_config byte-for-byte (116-02 D-09) --
+     * Pitfall 5 / CORRECTION 3: on this pinout, under a zero CONTROL seed,
+     * shipped and fixed address bytes are IDENTICAL (only the /OE-edge
+     * reorder distinguishes them), which is why plan 116-06's DIP32 RED
+     * cases must use a deliberately stale upper-address seed rather than a
+     * plain trace -- see 116-05-SUMMARY.md. */
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[4]); /* AT28C040 */
+    drive_reference_emitter(&h, FLASH_DISABLE_WRITE_PROTECTION, 6, 0x00);
+    sdp_assert_stream_equals(SDP_FIXED_DIP32_28C512_EEPROM, SDP_FIXED_DIP32_28C512_EEPROM_LEN,
+        "reference-emitter guard: AT28C040 / DIP32_28C512_EEPROM");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
  * main
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -204,6 +332,16 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case1_ordered_capture_dip28_28c256);
     RUN_TEST(test_case2_elision_is_real);
     RUN_TEST(test_case3_ce_oe_edges_distinguishable);
+
+    /* Task 2 */
+    RUN_TEST(test_negativeA_unlock_mutated_diverges_and_matches_erase);
+    RUN_TEST(test_negativeB_lock_table_swapped_for_write_prefix);
+    RUN_TEST(test_lock05_enable_write_and_write_protection_identical);
+    RUN_TEST(test_fixed_guard_at28c256);
+    RUN_TEST(test_fixed_guard_at28c64);
+    RUN_TEST(test_fixed_guard_at28c16);
+    RUN_TEST(test_fixed_guard_at28c010);
+    RUN_TEST(test_fixed_guard_at28c040);
 
     return UNITY_END();
 }
