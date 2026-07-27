@@ -107,6 +107,31 @@ void test_protocol_zero_fail_closes_not_implemented(void) {
     TEST_ASSERT_NULL(h.firestarter_operation_end);
 }
 
+/* --- TRACE-03d / D-04 item 4 (Phase 116) --- */
+/* Contract: only protocol == 0x0D may reach configure_eeprom28c(); every
+ * other value — including these two nearest unassigned neighbours —
+ * fail-closes with zero hardware side effects. CMD_WRITE (not CMD_READ) is
+ * used because CMD_WRITE is precisely the command that *would* install
+ * eeprom28c_write_init if dispatch leaked. */
+
+void test_protocol_0x0C_adjacent_not_implemented(void) {
+    firestarter_handle_t h = make_handle(0x0C, 0, CMD_WRITE);
+    configure_memory(&h);
+    TEST_ASSERT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
+    TEST_ASSERT_NULL(h.firestarter_operation_init);
+    TEST_ASSERT_NULL(h.firestarter_operation_main);
+    TEST_ASSERT_NULL(h.firestarter_operation_end);
+}
+
+void test_protocol_0x0F_adjacent_not_implemented(void) {
+    firestarter_handle_t h = make_handle(0x0F, 0, CMD_WRITE);
+    configure_memory(&h);
+    TEST_ASSERT_EQUAL(RESPONSE_CODE_ERROR, h.response_code);
+    TEST_ASSERT_NULL(h.firestarter_operation_init);
+    TEST_ASSERT_NULL(h.firestarter_operation_main);
+    TEST_ASSERT_NULL(h.firestarter_operation_end);
+}
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
@@ -123,6 +148,10 @@ int main(int argc, char** argv) {
 
     /* SC#1: protocol == 0 fail-closed (no mem_type fallback) */
     RUN_TEST(test_protocol_zero_fail_closes_not_implemented);
+
+    /* TRACE-03d / D-04 item 4: protocols adjacent to 0x0D fail-closed */
+    RUN_TEST(test_protocol_0x0C_adjacent_not_implemented);
+    RUN_TEST(test_protocol_0x0F_adjacent_not_implemented);
 
     return UNITY_END();
 }
