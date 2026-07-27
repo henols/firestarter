@@ -4,25 +4,25 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 71 Plan 04 — Tier-1 validation suite for the Flash Type 3 family.
+ * Phase 71 Plan 04 — Tier-1 validation suite for the Flash NOR-Unlock family.
  * HARN-01 / D-07 / T-71-WIRED-WRONG.
  *
- * Proves configure_flash3 is a 5V-only handler (no VPP regulator use).
+ * Proves configure_flash_nor_unlock is a 5V-only handler (no VPP regulator use).
  * BY SIDE-EFFECT via the recording bus stub:
  *
  *   For CMD_READ and CMD_WRITE (configure-only phase): configure_memory() writes
  *   only address bits to LSB/MSB/CONTROL registers via mem_util_set_address.
- *   configure_flash3 sets function pointers but writes no VPP-enable CTL bits.
+ *   configure_flash_nor_unlock sets function pointers but writes no VPP-enable CTL bits.
  *   CTRL_VPP_REGULATOR_ENABLE, CTRL_VPP_P1_ENABLE, and CTRL_VPP_VPE_DROP_ENABLE
  *   must NEVER appear set in any recorded CONTROL_REGISTER write.
  *
- *   This test can go RED if configure_flash3 is accidentally wired to a
+ *   This test can go RED if configure_flash_nor_unlock is accidentally wired to a
  *   VPP-enabling configure path (T-71-WIRED-WRONG).
  *
  * Protocol covered: 0x06 (FLASH_AMD_ALT / AMD unlock, sector erase).
  *
- * VPP: NONE — configure_flash3 is a 5V AMD-style handler. The flash3 erase path
- * uses flash_execute_command which writes data bytes only, not VPP CTL bits.
+ * VPP: NONE — configure_flash_nor_unlock is a 5V AMD-style handler. The nor_unlock
+ * erase path uses flash_execute_command which writes data bytes only, not VPP CTL bits.
  */
 
 #include <Arduino.h>
@@ -81,43 +81,43 @@ static void assert_no_vpp_in_recording(const char* ctx) {
 }
 
 /* configure-only: CMD_READ must record zero VPP-enable bits */
-void test_flash3_read_configure_no_vpp(void) {
+void test_nor_unlock_read_configure_no_vpp(void) {
     firestarter_handle_t h = make_handle(CMD_READ);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
         "configure_memory must not error on 0x06 CMD_READ");
     assert_no_vpp_in_recording(
-        "configure_flash3 CMD_READ must NOT set any VPP-enable CTL bit");
+        "configure_flash_nor_unlock CMD_READ must NOT set any VPP-enable CTL bit");
 }
 
 /* configure-only: CMD_WRITE must record zero VPP-enable bits */
-void test_flash3_write_configure_no_vpp(void) {
+void test_nor_unlock_write_configure_no_vpp(void) {
     firestarter_handle_t h = make_handle(CMD_WRITE);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
         "configure_memory must not error on 0x06 CMD_WRITE");
     assert_no_vpp_in_recording(
-        "configure_flash3 CMD_WRITE must NOT set any VPP-enable CTL bit");
+        "configure_flash_nor_unlock CMD_WRITE must NOT set any VPP-enable CTL bit");
 }
 
 /* configure-only: CMD_ERASE must record zero VPP-enable bits */
-void test_flash3_erase_configure_no_vpp(void) {
+void test_nor_unlock_erase_configure_no_vpp(void) {
     firestarter_handle_t h = make_handle(CMD_ERASE);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
         "configure_memory must not error on 0x06 CMD_ERASE");
     assert_no_vpp_in_recording(
-        "configure_flash3 CMD_ERASE must NOT set any VPP-enable CTL bit");
+        "configure_flash_nor_unlock CMD_ERASE must NOT set any VPP-enable CTL bit");
 }
 
 /* configure-only: CMD_BLANK_CHECK must record zero VPP-enable bits */
-void test_flash3_blank_check_configure_no_vpp(void) {
+void test_nor_unlock_blank_check_configure_no_vpp(void) {
     firestarter_handle_t h = make_handle(CMD_BLANK_CHECK);
     configure_memory(&h);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
         "configure_memory must not error on 0x06 CMD_BLANK_CHECK");
     assert_no_vpp_in_recording(
-        "configure_flash3 CMD_BLANK_CHECK must NOT set any VPP-enable CTL bit");
+        "configure_flash_nor_unlock CMD_BLANK_CHECK must NOT set any VPP-enable CTL bit");
 }
 
 int main(int argc, char** argv) {
@@ -125,10 +125,10 @@ int main(int argc, char** argv) {
     UNITY_BEGIN();
 
     /* 5V-only proof: no VPP-enable CTL bit for any command in the configure phase */
-    RUN_TEST(test_flash3_read_configure_no_vpp);
-    RUN_TEST(test_flash3_write_configure_no_vpp);
-    RUN_TEST(test_flash3_erase_configure_no_vpp);
-    RUN_TEST(test_flash3_blank_check_configure_no_vpp);
+    RUN_TEST(test_nor_unlock_read_configure_no_vpp);
+    RUN_TEST(test_nor_unlock_write_configure_no_vpp);
+    RUN_TEST(test_nor_unlock_erase_configure_no_vpp);
+    RUN_TEST(test_nor_unlock_blank_check_configure_no_vpp);
 
     return UNITY_END();
 }

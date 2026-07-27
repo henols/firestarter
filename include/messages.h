@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 65
+ * Total messages: 66
  */
 
 #ifndef __MESSAGES_H__
@@ -66,6 +66,7 @@ extern "C" {
 #define MSG_WARN_VPP_HIGH                 0x82
 #define MSG_WARN_CHIP_ID_MISMATCH         0x83
 #define MSG_WARN_MEM_SIZE_TOO_SMALL       0x84
+#define MSG_WARN_FL4_BOOT_BLOCK_LOCKED    0x85
 #define MSG_ERR_BAD_JSON                  0xA0
 #define MSG_ERR_NO_CMD                    0xA1
 #define MSG_ERR_SETUP                     0xA2
@@ -80,7 +81,6 @@ extern "C" {
 #define MSG_ERR_UNKNOWN_CMD               0xAB
 #define MSG_ERR_REV0_VPP_RD               0xAC
 #define MSG_ERR_CMD                       0xAD
-#define MSG_ERR_MEM_TYPE_UNSUPPORTED      0xAE
 #define MSG_ERR_VERIFY                    0xAF
 #define MSG_ERR_NOT_BLANK                 0xB0
 #define MSG_ERR_WRITE_FAILED              0xB1
@@ -94,6 +94,7 @@ extern "C" {
 #define MSG_ERR_CHIP_ID_MISMATCH          0xB9
 #define MSG_ERR_MEM_SIZE_TOO_SMALL        0xBA
 #define MSG_ERR_PROTOCOL_NOT_IMPLEMENTED  0xBB
+#define MSG_ERR_FL4_BOOT_BLOCK_LOCKED     0xBC
 #define MSG_DATA_PROGRESS                 0xE0
 #define MSG_DATA_SENDING                  0xE2
 #define MSG_DATA_VPP_VOLTAGE              0xE4

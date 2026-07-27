@@ -14,6 +14,30 @@ The Firestarter Firmaware is intedend to be used with the [Firestarter applicati
 
 For more information, see the [Firestarter README](https://github.com/henols/firestarter_app/blob/main/README.md).
 
+## Breaking Changes (v1.20)
+
+### Legacy `type` wire field removed — `algorithm` is the sole dispatch key (breaking change)
+
+The host→firmware JSON command no longer carries a `type` field (the old `mem_type`
+integer). `algorithm` (the upstream minipro `protocol_id`) is now the **only** value
+the firmware uses to decide how to program a chip — the backward-compatibility
+`mem_type` fallback dispatch chain has been removed entirely.
+
+A chip database entry — built-in or user override — now **must** carry a usable,
+non-zero `algorithm`. A chip lacking one is refused by the host before any serial
+byte is sent (no more silent fallback to a `mem_type`-derived handler).
+
+**Pre-v1.20 hosts stay safe.** A stale host CLI that still emits a `type` field is
+not harmful: the firmware silently skips unknown JSON fields, so `type` simply no
+longer does anything. The only functional loss is the fallback path itself, which
+was already dead code for every real chip in the database.
+
+**Upgrade:** upgrade both the firmware and the Firestarter CLI together
+(`pip install --pre firestarter && firestarter fw -i --pre`) — the same lockstep
+discipline as every prior breaking wire-protocol change.
+
+This change is beta-only (v1.20). Nothing is promoted to stable without operator authorization.
+
 ## Breaking Changes (v1.10)
 
 ### Command-channel wire protocol — COBS framing + CRC8 (breaking change)

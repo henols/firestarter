@@ -11,22 +11,18 @@
 #include <stdint.h>
 
 #include "eprom.h"
-#include "flash_type_3.h"
-#include "flash_type_4.h"
+#include "flash_nor_unlock.h"
+#include "flash_5v_page.h"
 #include "flash_intel.h"
 #include "eeprom_28c.h"
 #include "logging_id.h"
 #include "memory_utils.h"
 #include "not_implemented.h"
 #include "operation_utils.h"
+#include "proto_constants.h"
 #include "rurp_shield.h"
 #include "rurp_pinout.h"
 #include "sram.h"
-
-#define TYPE_EPROM 1
-#define TYPE_FLASH_TYPE_3 3
-#define TYPE_SRAM 4
-#define TYPE_FLASH_TYPE_4 5
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -71,33 +67,33 @@ void configure_memory(firestarter_handle_t* handle) {
 
     mem_util_set_address(handle, 0);
 
-    if (handle->protocol == 0x10) {
+    if (handle->protocol == PROTO_FLASH_INTEL) {
         configure_flash_intel(handle);
         return;
     }
 
-    if (handle->protocol == 0x0D) {
+    if (handle->protocol == PROTO_EEPROM_PARALLEL) {
         configure_eeprom28c(handle);
         return;
     }
 
-    if (handle->protocol == 0x06) {
-        configure_flash3(handle);
+    if (handle->protocol == PROTO_FLASH_NOR_UNLOCK) {
+        configure_flash_nor_unlock(handle);
         return;
     }
 
-    if (handle->protocol == 0x05 || handle->protocol == 0x35 || handle->protocol == 0x39) {
-        configure_flash4(handle);
+    if (handle->protocol == PROTO_FLASH_5V_PAGE || handle->protocol == PROTO_PHANTOM_0x35 || handle->protocol == PROTO_PHANTOM_0x39) {
+        configure_flash_5v_page(handle);
         return;
     }
 
-    if (handle->protocol == 0x07 || handle->protocol == 0x08 || handle->protocol == 0x0B) {
+    if (handle->protocol == PROTO_EPROM_28PIN || handle->protocol == PROTO_EPROM_32PIN || handle->protocol == PROTO_EPROM_24PIN) {
         configure_eprom(handle);
         return;
     }
 
-    if (handle->protocol == 0x0E || handle->protocol == 0x27 ||
-        handle->protocol == 0x28 || handle->protocol == 0x29) {
+    if (handle->protocol == PROTO_SRAM_32PIN || handle->protocol == PROTO_SRAM_24PIN ||
+        handle->protocol == PROTO_SRAM_28PIN || handle->protocol == PROTO_SRAM_32PIN_NVRAM) {
         configure_sram(handle);
         return;
     }
@@ -110,30 +106,11 @@ void configure_memory(firestarter_handle_t* handle) {
         return;
     }
 
-    // Generic fail-closed guard: any non-zero unrecognized protocol → not-implemented.
-    // Must sit AFTER all implemented protocol cases and BEFORE the protocol==0 mem_type fallback.
-    // Eliminates the 12V VPP-hazard mem_type fallback for unimplemented protocols (T-64-01).
-    if (handle->protocol != 0) {
-        configure_not_implemented(handle);
-        return;
-    }
-
-    // Legacy mem_type fallback: reachable ONLY when protocol == 0 (DISP-02).
-    if (handle->mem_type == TYPE_EPROM) {
-        configure_eprom(handle);
-        return;
-    } else if (handle->mem_type == TYPE_SRAM) {
-        configure_sram(handle);
-        return;
-    } else if (handle->mem_type == TYPE_FLASH_TYPE_3) {
-        configure_flash3(handle);
-        return;
-    } else if (handle->mem_type == TYPE_FLASH_TYPE_4) {
-        configure_flash4(handle);
-        return;
-    }
-    LOG_ERROR_ID_U8(MSG_ERR_MEM_TYPE_UNSUPPORTED, handle->mem_type);
-    handle->response_code = RESPONSE_CODE_ERROR;
+    // Generic fail-closed guard: every remaining protocol value — including
+    // protocol == 0 — is unrecognized and reaches not-implemented. Trusts
+    // only handle->protocol end to end; no backward-compat fallback axis
+    // remains (T-64-01, Phase 105 protocol-only dispatch).
+    configure_not_implemented(handle);
 }
 
 void memory_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {

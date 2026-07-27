@@ -48,9 +48,18 @@ bool hw_read_voltage(firestarter_handle_t* handle) {
     }
 
     // State 1+: Continuous reading loop.
-    // We expect an "OK" (ACK) from the client to trigger a reading.
-    if (op_get_message(handle) != OP_MSG_ACK) {
-        // If we haven't received an ACK, we just wait.
+    // We expect an "OK" (ACK) from the client to trigger a reading, or a
+    // "DONE" to end the command cleanly. Capture the message once (a second
+    // op_get_message call would consume further incoming bytes).
+    op_message_type msg_type = op_get_message(handle);
+    if (msg_type == OP_MSG_DONE) {
+        // The host has signaled it is done sampling. Finish the command
+        // cleanly instead of leaving it dangling for the 1s watchdog to
+        // reap (mirrors eprom_write's OP_MSG_DONE handling, eprom_operations.cpp).
+        return true;
+    }
+    if (msg_type != OP_MSG_ACK) {
+        // Neither ACK nor DONE yet. Keep waiting.
         // Returning false keeps the command active without doing anything.
         return false;
     }

@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 71 Plan 04 — host stub TU for the test_val_flash4 Tier-1 suite.
+ * Phase 71 Plan 04 — host stub TU for the test_val_5v_page Tier-1 suite.
  * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * Suite-specific extensions:
