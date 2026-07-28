@@ -41,6 +41,22 @@
 // *internal write cycle* that follows the sequence's last byte.
 #define AT28C_TWC_MAX_MS 10
 
+// AT28C datasheet-max byte-load cycle time (t_BLC), in microseconds -- the
+// upper bound on the interval between consecutive byte loads within the
+// SDP-disable command sequence (and, per the page-load citation at
+// eeprom28c_write_execute below, the physically identical constraint on that
+// loop too) [CITED: Microchip DS20006432B section 6.6.2 p.10 / DS20006386B
+// p.10, via .planning/research/SUMMARY.md]. This is a datasheet MAXIMUM, not
+// a delay to insert: post-Phase-117 eeprom28c_emit_command_sequence is a bare
+// set_data loop with handle->pulse_delay = 0 and no inter-byte wait, so the
+// six SDP-disable writes already run far under this budget on a 16 MHz AVR.
+// Plan 118-04 turns this number into a runtime budget check (compared against
+// the emit duration measured around eeprom28c_emit_command_sequence) so the
+// constant is load-bearing rather than decorative -- a comment-only
+// "citation" satisfying OBS-03's letter while leaving nothing to enforce it
+// is exactly the v1.12 hollow-GATE-03 shape this project keeps paying down.
+#define AT28C_TBLC_MAX_US 100
+
 // DQ6 toggle bit sampled during an internal write cycle by the completion
 // poll below.
 #define AT28C_DQ6_TOGGLE_MASK 0x40

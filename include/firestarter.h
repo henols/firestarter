@@ -67,6 +67,14 @@
 
 #define FLAG_VERBOSE 0x80
 
+// Declines the SDP (Software Data Protection) auto-unlock command sequence
+// on protocol 0x0D (eeprom_28c.cpp), so a write against an SDP-protected
+// AT28C part will not land -- an honest tradeoff reported via
+// MSG_WARN_SDP_UNLOCK_SKIPPED rather than a silent no-op. Firmware-only in
+// this milestone phase (v1.22 Phase 118 OBS-02): the host CLI surface
+// (--skip-sdp-unlock / constants.py) arrives in Phase 120 HOST-03.
+#define FLAG_SKIP_SDP_UNLOCK 0x100
+
 #define is_flag_set(flag) \
     ((handle->ctrl_flags & flag) == flag)
 
