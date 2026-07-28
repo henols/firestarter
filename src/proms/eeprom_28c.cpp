@@ -61,11 +61,33 @@
 // (0x5555, 0x20) check.
 #define EEPROM28C_TOGGLE_POLL_ADDRESS 0x5555
 
+// FIX-06 (D-07): the data-polling bit for eeprom28c_wait_for_page_write
+// below. During an internal page-write cycle, a read of the LAST BYTE
+// WRITTEN returns the COMPLEMENT of that byte's DQ7; when the cycle
+// completes, DQ7 reads true (matches the byte actually written). This is
+// the canonical AT28C completion protocol, and it is the ONLY job
+// eeprom28c_wait_for_page_write has -- it compares ONLY this one bit, never
+// the whole byte. A whole-byte equality compare is the conflation FIX-06
+// removes: the old conflated completion-plus-verify poll's (address, data)
+// compare passed spuriously whenever the OLD byte already equalled the NEW one
+// (blank 0xFF regions, unchanged bytes) -- precisely gh#11's shape.
+#define AT28C_DQ7_MASK 0x80
+
+// Bound on the page-completion poll's iteration count -- an ITERATION
+// COUNT, not a millis() deadline, for the same reason as
+// AT28C_TOGGLE_POLL_MAX_READS above: both native SDP suites mock millis()
+// to AlwaysReturn(0), so a wall-clock deadline could never terminate under
+// a deliberately non-settling mock. Preserves today's effective ceiling —
+// 2000 iterations of delayMicroseconds(10), unchanged from the old
+// conflated poll this replaces.
+#define AT28C_PAGE_POLL_MAX_READS 2000
+
 void eeprom28c_write_init(firestarter_handle_t* handle);
 void eeprom28c_write_execute(firestarter_handle_t* handle);
-static bool eeprom28c_wait_for_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected);
 static void eeprom28c_emit_command_sequence(firestarter_handle_t* handle, const byte_flip_t* sequence, size_t length);
 static void eeprom28c_wait_for_sdp_completion(firestarter_handle_t* handle);
+static bool eeprom28c_wait_for_page_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected);
+static bool eeprom28c_verify_page_readback(firestarter_handle_t* handle, uint32_t first_index, uint32_t last_index);
 
 // AT28C SDP disable: 6-write sequence to magic addresses.
 // D-10: kept 0x0D-local (not driving the byte-identical
@@ -279,6 +301,19 @@ void eeprom28c_write_init(firestarter_handle_t* handle) {
 }
 
 void eeprom28c_write_execute(firestarter_handle_t* handle) {
+    // Window-start index into handle->data_buffer for
+    // eeprom28c_verify_page_readback below. D-08 (Claude's Discretion,
+    // decision 2): the read-back covers ONLY the bytes of the CURRENT flush
+    // window, not the whole physical page -- bytes a prior chunk wrote are
+    // no longer in handle->data_buffer (re-reading them would either
+    // fabricate an expected value or require re-deriving data the handle
+    // does not hold). Each chunk's own flush already read-back-verified its
+    // own bytes, so coverage of every byte THIS operation wrote is complete
+    // without it. Invariant: window_start <= i < handle->data_size by
+    // construction -- i is the for-loop variable below, never derived from
+    // a wire field directly, so no index here can exceed data_size or
+    // DATA_BUFFER_SIZE.
+    uint32_t window_start = 0;
     for (uint32_t i = 0; i < handle->data_size; i++) {
         uint32_t address = handle->address + i;
         uint8_t data = handle->data_buffer[i];
@@ -287,20 +322,52 @@ void eeprom28c_write_execute(firestarter_handle_t* handle) {
         bool page_end = ((address + 1) % PAGE_SIZE) == 0;
         bool last_byte = (i == handle->data_size - 1);
         if (page_end || last_byte) {
-            if (!eeprom28c_wait_for_write(handle, address, data)) {
+            // D-07: completion and data-landed proof are two functions with
+            // one job each. eeprom28c_wait_for_page_write answers ONLY "is
+            // the internal write cycle done" (DQ7-complement poll);
+            // eeprom28c_verify_page_readback answers ONLY "did the data
+            // land" (per-byte read-back). The old, now-deleted, poll
+            // conflated both into one whole-byte equality compare --
+            // FIX-06's actual defect.
+            if (!eeprom28c_wait_for_page_write(handle, address, data)) {
                 return;
             }
+            if (!eeprom28c_verify_page_readback(handle, window_start, i)) {
+                return;
+            }
+            window_start = i + 1;
         }
     }
 }
 
-static bool eeprom28c_wait_for_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected) {
+// FIX-06 / D-07: completion detection ONLY -- a DQ7-COMPLEMENT poll, the
+// canonical AT28C completion protocol (see AT28C_DQ7_MASK above). This
+// function draws NO conclusion about whether the byte's VALUE landed
+// correctly -- that is eeprom28c_verify_page_readback's job, below. It
+// compares only the DQ7 bit, never the whole byte: a whole-byte equality
+// compare is the conflation FIX-06 removes (see AT28C_DQ7_MASK's comment
+// for why that is exactly gh#11's shape).
+//
+// Double-read idiom (flash_util_verify_operation, flash_utils.cpp:37-39,
+// READ-ONLY ANALOG, FIX-04 frozen): the DQ7 match must hold on TWO
+// CONSECUTIVE reads before the poll returns done, so a single transient
+// sample (a read landing mid-toggle) cannot end the poll early.
+//
+// Every read goes through handle->firestarter_get_data (memory_get_data) --
+// never a direct rurp_* read, never fu_flash_data_poll() (flash_utils.cpp,
+// FIX-04 frozen): that helper emits four recorded strobes per read, which
+// would inject entries into the SDP-suite stream comparisons.
+static bool eeprom28c_wait_for_page_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected) {
     uint8_t observed = 0;
-    for (uint16_t j = 0; j < 2000; j++) {
+    for (uint16_t j = 0; j < AT28C_PAGE_POLL_MAX_READS; j++) {
         delayMicroseconds(10);
         observed = handle->firestarter_get_data(handle, address);
-        if (observed == expected) {
-            return true;
+        if ((observed & AT28C_DQ7_MASK) == (expected & AT28C_DQ7_MASK)) {
+            uint8_t confirm = handle->firestarter_get_data(handle, address);
+            if ((confirm & AT28C_DQ7_MASK) == (expected & AT28C_DQ7_MASK)) {
+                return true;
+            }
+            observed = confirm;
         }
     }
     {
@@ -314,4 +381,46 @@ static bool eeprom28c_wait_for_write(firestarter_handle_t* handle, uint32_t addr
     }
     handle->response_code = RESPONSE_CODE_ERROR;
     return false;
+}
+
+// FIX-06 / D-07/D-08: data-landed proof ONLY -- a per-byte read-back over
+// the CURRENT flush window (handle->data_buffer[first_index..last_index],
+// inclusive), reusing memory_verify_execute's verify-mismatch payload order
+// (memory.cpp:236-256): {expected, observed, addr>>16, addr>>8, addr},
+// where addr is the FAILING address -- unlike the old, now-deleted, poll,
+// which bare-returned mid-buffer with only the poll address and no
+// per-byte attribution.
+//
+// D-08: this read-back is ALWAYS ON, with NO opt-out. Firmware owns the
+// truth about whether its own page write landed; reporting success it
+// cannot substantiate is the defect FIX-06 corrects. An opt-out would need
+// a new FLAG_* value landing in lockstep across firestarter.h and the
+// host's constants.py -- Phase 120 HOST-03 scope, and firmware-before-host
+// forbids emitting it early. Redundancy with the host's own verify pass is
+// ACCEPTED: the host's pass proves the image landed; this one proves THIS
+// PAGE'S write cycle landed, and only the second can attribute a failure to
+// a page.
+//
+// Every read goes through handle->firestarter_get_data -- the single seam
+// a test's planted mock substitutes; never a direct rurp_* read.
+static bool eeprom28c_verify_page_readback(firestarter_handle_t* handle, uint32_t first_index, uint32_t last_index) {
+    for (uint32_t k = first_index; k <= last_index; k++) {
+        uint8_t expected = (uint8_t)handle->data_buffer[k];
+        uint32_t addr = handle->address + k;
+        uint8_t observed = handle->firestarter_get_data(handle, addr);
+        if (observed != expected) {
+            {
+                uint8_t _b[5];
+                _b[0] = expected;
+                _b[1] = observed;
+                _b[2] = (uint8_t)((addr >> 16) & 0xFF);
+                _b[3] = (uint8_t)((addr >> 8) & 0xFF);
+                _b[4] = (uint8_t)(addr & 0xFF);
+                LOG_ERROR_ID_BYTES(MSG_ERR_VERIFY, _b, 5);
+            }
+            handle->response_code = RESPONSE_CODE_ERROR;
+            return false;
+        }
+    }
+    return true;
 }
