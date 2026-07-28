@@ -386,3 +386,119 @@ Validation ceiling (restated, per §"Validation ceiling" above): every
 sentence in this section has code as its subject — an emitted stream, a
 recorded strobe, an assertion's pass/fail state. No AT28C part is on the
 bench; nothing here is evidence about silicon state.
+
+## GREEN after the Phase 117 fix (commit 2 — D-03)
+
+**What changed between commit 1 and commit 2.** Plan 117-02 landed the
+production fix in `firestarter/src/proms/eeprom_28c.cpp` only:
+`eeprom28c_write_init`'s SDP-disable sequence is now emitted through a new
+file-static `eeprom28c_emit_command_sequence`, which drives it via
+`handle->firestarter_set_data` (i.e. `memory_set_data`) instead of the
+shared `flash_execute_command(EEPROM_SDP_DISABLE)`; the guarded
+`eeprom28c_wait_for_write(handle, 0x5555, 0x20)` read-back is deleted
+outright and replaced by a new file-static `eeprom28c_wait_for_sdp_completion`
+(an unconditional `AT28C_TWC_MAX_MS` wait plus a bounded, silent
+`AT28C_DQ6_TOGGLE_MASK` toggle-bit poll at `EEPROM28C_TOGGLE_POLL_ADDRESS`
+that never writes `handle->response_code`); `EEPROM_SDP_DISABLE` gained
+external linkage; `PAGE_SIZE 64` gained the D-13 comment. **The suite itself
+— `test_eeprom28c_sdp.cpp` — was not touched between the two commits.**
+Verified mechanically:
+
+```
+$ cd /workspaces/firestarter && git diff --stat e5b9e87 HEAD -- test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp
+(no output — zero lines changed)
+```
+
+So every case's assertions below are byte-identical to commit 1's; only the
+production tree they exercise changed.
+
+**Command sequence used**, mirroring plan 117-01's procedure exactly so the
+two captures are comparable. `pio test`'s own summary is trustworthy here
+because a fully-passing binary exits zero (the non-zero-exit
+summary-reporting quirk documented above only affects suites that fail);
+the direct-binary run is still taken in addition, for exact parity with
+commit 1's capture method:
+
+```
+cd /workspaces/firestarter
+pio test -e native -f "*test_eeprom28c_sdp*"
+```
+
+**Verbatim output** (`pio test`, unedited, unreflowed):
+
+```
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:505: test_case1_at28c256_stream_matches_fixed	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:506: test_case2_at28c64_stream_matches_fixed	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:507: test_case3_at28c16_stream_matches_fixed	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:508: test_case4_at28c010_stale_direct_seed	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:509: test_case5_at28c040_stale_via_real_read	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:510: test_case6_matching_chip_id_proceeds	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:511: test_case7_mismatching_chip_id_with_force_warns	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:512: test_case8_completion_poll_preserves_prior_severity	[PASSED]
+------- native:native/avr/test_eeprom28c_sdp [PASSED] Took 0.56 seconds -------
+
+=================================== SUMMARY ===================================
+Environment    Test                           Status    Duration
+-------------  -----------------------------  --------  ------------
+native         native/avr/test_eeprom28c_sdp  PASSED    00:00:00.556
+================== 8 test cases: 8 succeeded in 00:00:00.556 ==================
+```
+
+**Verbatim output** (direct-binary run, unedited, unreflowed):
+
+```
+cd /workspaces/firestarter
+.pio/build/native/firestarter_native
+```
+
+```
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:505:test_case1_at28c256_stream_matches_fixed:PASS
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:506:test_case2_at28c64_stream_matches_fixed:PASS
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:507:test_case3_at28c16_stream_matches_fixed:PASS
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:508:test_case4_at28c010_stale_direct_seed:PASS
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:509:test_case5_at28c040_stale_via_real_read:PASS
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:510:test_case6_matching_chip_id_proceeds:PASS
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:511:test_case7_mismatching_chip_id_with_force_warns:PASS
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:512:test_case8_completion_poll_preserves_prior_severity:PASS
+
+-----------------------
+8 Tests 0 Failures 0 Ignored 
+OK
+```
+
+Exit code of the direct binary run: `0`.
+
+**Per-case note, code as the subject:**
+
+| Case (Phase 117 name) | What GREEN now establishes |
+|---|---|
+| `test_case1_at28c256_stream_matches_fixed` | The stream `eeprom28c_write_init` emits for `DIP28_28C256`/AT28C256 is element-wise identical to the remap-aware target `SDP_FIXED_DIP28_28C256`. |
+| `test_case2_at28c64_stream_matches_fixed` | Same, for `DIP28_28C64`/AT28C64 against `SDP_FIXED_DIP28_28C64`. |
+| `test_case3_at28c16_stream_matches_fixed` | Same, for `DIP24_2816`/AT28C16 against `SDP_FIXED_DIP24_2816`. |
+| `test_case4_at28c010_stale_direct_seed` | With `CTRL_ADDRESS_LINE_17\|18` directly seeded stale on `DIP32_28C512_EEPROM`, the emitted stream now matches the stale-seeded reference emitter's snapshot — the emitter clears the stale upper-address CONTROL bits as a by-product of routing through `handle->firestarter_set_data` (FIX-03), not via a separate change. |
+| `test_case5_at28c040_stale_via_real_read` | Same mechanism, with the stale `CTRL_ADDRESS_LINE_17` bit reached via a real preceding `memory_get_data` read rather than a directly-seeded cache. |
+| `test_case6_matching_chip_id_proceeds` | A matching identity proceeds past the SDP-disable sequence and the new completion path without `handle->response_code` becoming `RESPONSE_CODE_ERROR`. |
+| `test_case7_mismatching_chip_id_with_force_warns` | A `FLAG_FORCE` chip-id mismatch's `RESPONSE_CODE_WARNING` survives the entire write-init path, including the new completion poll — the poll never overwrites a prior severity (D-05). |
+| `test_case8_completion_poll_preserves_prior_severity` | A seeded `RESPONSE_CODE_WARNING` survives even when the completion poll's mock is set to never settle (`s_poll_addr_toggles`) — the poll structurally cannot conclude anything about the seeded severity, by construction, not merely in this one scenario. |
+
+**Validation ceiling (restated for this section).** No AT28C part is on the
+bench for this phase either. Every claim above is software-layer: an
+emitted stream matches a recorded target, a `response_code` value survives
+a code path. The bridge to silicon behaviour remains a datasheet
+**citation** — `[CITED: Microchip DS20006432B §6.6.2 p.10; DS20006386B
+p.10]` — for the fact that a recognised command-sequence byte is not
+written to the device, never an observation made by this suite. No sentence
+in this section has the chip as its subject.
+
+**CORRECTION 4 framing, restated exactly (66 of 84, never "all 84").**
+`DIP24_2816`'s 19 chips are inhibited on the `0x2AAA` loads, not the
+`0x5555` loads (`0x2A` has bit 3 set while `0x55` does not);
+`DIP32_28C512_EEPROM`'s 18 chips are inhibited 0-of-6 from a fresh boot and
+only hazardous under a stale upper-address bit, which is exactly why Cases
+4-5 above construct that stale precondition deliberately rather than
+tracing a fresh-boot state. **66 of the 84** `0x0D` chips are affected in
+total — the routing fix in `eeprom28c_emit_command_sequence` closes the
+`/WE`-inhibit path for all of them by construction (every write now goes
+through `mem_util_remap_address_bus`), proven here for the four represented
+pinouts (`DIP28_28C256`, `DIP28_28C64`, `DIP24_2816`, `DIP32_28C512_EEPROM`)
+that between them cover all 84 chips (see the CORRECTION 4 table above).
