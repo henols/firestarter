@@ -1082,6 +1082,214 @@ void test_case19_lock_diverges_from_chip_erase_at_exact_index(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * Case 20 — D-12's report shape: both lock ids, ordered, response_code
+ * untouched, FLAG_VERBOSE unset, unlock's ids and the skip-WARN absent
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Firmware-side proof of HOST-05: response_code is deliberately never
+ * written on the SDP path (117 D-05 / 118 D-02, permanently enforced by
+ * Case 8 above), so an untouched path reports OK -- the honesty therefore
+ * cannot live in the status code and lives in MSG_INFO_SDP_LOCK_DONE_US's
+ * message text instead, which states both that the sequence was emitted
+ * and that the protection state is not readable.
+ *
+ * Rejected alternatives (D-12), recorded here because this case is their
+ * disproof: (1) an unconditional unverifiable-state WARN on every lock --
+ * rejected because it warns on a correctly completed operation and trains
+ * users to ignore the WARN band; (2) reporting the DQ6 toggle poll's
+ * outcome as lock evidence -- rejected because a settled toggle bit proves
+ * a write cycle finished, not that protection latched, which is FIX-02's
+ * deleted mistake in a new costume (eeprom28c_sdp_lock_execute deliberately
+ * never calls eeprom28c_wait_for_sdp_completion at all, per D-11).
+ *
+ * make_lock_handle sets ctrl_flags = 0, so this case drives with
+ * FLAG_VERBOSE NOT set by construction -- pinning the unconditional bare
+ * LOG_ID / LOG_ID_U32 spelling (118 D-01) rather than the
+ * FLAG_VERBOSE-gated LOG_INFO_ID* family: with the gated family a default
+ * `dev sdp enable` would go silent, which is the defect this spelling
+ * exists to avoid. */
+void test_case20_lock_report_shape_and_response_code(void) {
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[0]); /* AT28C256, ctrl_flags = 0 */
+    drive_lock_op(&h, 0x00);
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+
+    int lock_idx = -1, done_idx = -1;
+    for (size_t i = 0; i < ids.size(); i++) {
+        if (ids[i] == (uint8_t)MSG_INFO_SDP_LOCK) {
+            lock_idx = (int)i;
+        }
+        if (ids[i] == (uint8_t)MSG_INFO_SDP_LOCK_DONE_US) {
+            done_idx = (int)i;
+        }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(lock_idx != -1,
+        "Case 20 (D-12): MSG_INFO_SDP_LOCK must appear in the captured frame ids, with FLAG_VERBOSE "
+        "NOT set -- pinning the unconditional bare LOG_ID spelling (118 D-01)");
+    TEST_ASSERT_TRUE_MESSAGE(done_idx != -1,
+        "Case 20 (D-12): MSG_INFO_SDP_LOCK_DONE_US must also appear, also with FLAG_VERBOSE NOT set");
+    TEST_ASSERT_TRUE_MESSAGE(lock_idx != -1 && done_idx != -1 && lock_idx < done_idx,
+        "Case 20 (D-12): MSG_INFO_SDP_LOCK must appear BEFORE MSG_INFO_SDP_LOCK_DONE_US -- the "
+        "ordered positions, not just membership, so the 'starting' line cannot follow the "
+        "'emitted' line");
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "Case 20 (D-12): handle->response_code must still be RESPONSE_CODE_OK after the lock op -- "
+        "see this case's header comment for the full reasoning and the two rejected alternatives");
+
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_INFO_SDP_UNLOCK),
+        "Case 20: the lock path must never emit MSG_INFO_SDP_UNLOCK -- the lock and unlock report "
+        "surfaces must not be conflated");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_INFO_SDP_UNLOCK_DONE_US),
+        "Case 20: the lock path must never emit MSG_INFO_SDP_UNLOCK_DONE_US");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_WARN_SDP_UNLOCK_SKIPPED),
+        "Case 20: the lock path must never emit MSG_WARN_SDP_UNLOCK_SKIPPED -- that id belongs "
+        "only to the unlock's skip path");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Cases 21-22 — D-14's t_BLC budget WARN: fires over budget, does NOT fire
+ * at a normal elapsed time (the anti-hollow pair)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Case 21: the budget WARN fires. Mirrors Case 11's shape for the six-write
+ * unlock budget, but for the three-write lock. AT28C_TBLC_MAX_US (100) is
+ * #define'd inside eeprom_28c.cpp's own translation unit (eeprom_28c.cpp:58)
+ * and is NOT exported via eeprom_28c.h, so it is mirrored here as a named
+ * local constant with an explicit citation -- the budget is computed as
+ * three times that value from the sequence length, never as a literal 300. */
+void test_case21_lock_tblc_budget_warn_fires(void) {
+    const uint32_t TEST_MIRROR_AT28C_TBLC_MAX_US = 100; /* mirrors eeprom_28c.cpp:58 */
+    const uint32_t lock_seq_len = 3;                    /* EEPROM_SDP_ENABLE's length */
+    uint32_t lock_budget_us = lock_seq_len * TEST_MIRROR_AT28C_TBLC_MAX_US; /* 300 us */
+    uint32_t over_budget_elapsed = lock_budget_us + 1;
+
+    /* eeprom28c_sdp_lock_execute (via eeprom28c_emit_sdp_sequence_timed) calls
+     * micros() exactly twice per drive: once immediately before
+     * eeprom28c_emit_command_sequence, once immediately after. Script exactly
+     * those two ticks so the difference exceeds the budget. */
+    sdp_script_micros({0, over_budget_elapsed});
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[0]);
+    drive_lock_op(&h, 0x00);
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_WARN_SDP_TBLC_EXCEEDED),
+        "Case 21 (D-14): an over-budget elapsed value must make MSG_WARN_SDP_TBLC_EXCEEDED appear "
+        "in the captured frame ids -- F-118-01 measured 572 us against the unlock's 600 us budget "
+        "(only 4.7% headroom) on real hardware, so the lock's 300 us budget is genuinely "
+        "load-bearing at n=3, not a latent invariant that never fires");
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "Case 21 (117 D-05 / 118 D-02): the budget WARN must never write handle->response_code -- "
+        "severity lives in the message id's band alone");
+}
+
+/* Case 22: the anti-hollow control. A check that always fires and a check
+ * that never fires are BOTH hollow, so D-14 needs the pair: this case
+ * scripts ticks comfortably inside the 300 us budget and asserts the WARN
+ * id is absent WHILE both lock INFO ids are present -- the presence half is
+ * load-bearing, since without it this case would pass vacuously if nothing
+ * were captured at all. F-118-01 measured the real unlock timing at ~95 us
+ * per byte against a 100 us per-byte datasheet maximum, so the lock's
+ * 300 us budget lands near ~286 us on real hardware -- a synthetic in-budget
+ * value is used here since native host timing is not representative of AVR
+ * cycles, but the real-hardware margin is why this check is genuinely
+ * load-bearing rather than a latent invariant. */
+void test_case22_lock_tblc_budget_warn_does_not_fire_at_normal_elapsed(void) {
+    sdp_script_micros({0, 50}); /* comfortably inside the 300 us budget */
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[0]);
+    drive_lock_op(&h, 0x00);
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_WARN_SDP_TBLC_EXCEEDED),
+        "Case 22 (D-14 anti-hollow control): with a normal (in-budget) elapsed value, "
+        "MSG_WARN_SDP_TBLC_EXCEEDED must NOT appear");
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_INFO_SDP_LOCK),
+        "Case 22: MSG_INFO_SDP_LOCK must still be present -- proves frames WERE captured, so the "
+        "WARN's absence is meaningful rather than vacuous");
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_INFO_SDP_LOCK_DONE_US),
+        "Case 22: MSG_INFO_SDP_LOCK_DONE_US must also be present, for the same reason");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Case 23 — the standalone unlock's stream is byte-identical to the
+ * auto-unlock's (D-13's "reads identically however it was triggered")
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Drives the standalone CMD_SDP_UNLOCK op directly (h.firestarter_operation_main,
+ * since init/end are NULL for this cmd per LOCK-02), snapshotting its stream
+ * (mandatory: the next drive's clear_strobes() would otherwise erase it),
+ * then drives eeprom28c_write_init on a fresh handle with FLAG_SKIP_SDP_UNLOCK
+ * clear (the auto-unlock path) and asserts exact-index (-1) divergence
+ * against the snapshot. This holds because both paths call the SAME shared
+ * eeprom28c_emit_sdp_sequence_timed helper with the SAME table
+ * (EEPROM_SDP_DISABLE) and the SAME completion wait
+ * (eeprom28c_wait_for_sdp_completion) -- D-13's reused-ids decision made
+ * assertable, not merely asserted.
+ *
+ * firestarter_get_data is reassigned to mock_get_data_keyed for the
+ * standalone drive, mirroring drive_write_init's own override above: the
+ * standalone op does NOT go through drive_write_init (it drives `main`
+ * directly, since init/end are NULL), so without this override the
+ * completion poll's reads would hit the real memory_get_data and inject
+ * extra recorded strobes that the auto-unlock path (which DOES override
+ * get_data via drive_write_init) never contributes -- breaking the
+ * byte-identity this case exists to prove. */
+void test_case23_standalone_unlock_matches_auto_unlock_stream(void) {
+    firestarter_handle_t h_unlock = {};
+    h_unlock.protocol = 0x0D;
+    h_unlock.cmd = CMD_SDP_UNLOCK;
+    h_unlock.response_code = RESPONSE_CODE_OK;
+    h_unlock.chip_id = 0;
+    h_unlock.mem_size = SDP_BUS_CONFIGS[0].mem_size;
+    h_unlock.bus_config = SDP_BUS_CONFIGS[0].bus_config;
+    h_unlock.ctrl_flags = 0;
+    configure_memory(&h_unlock);
+    h_unlock.firestarter_get_data = mock_get_data_keyed;
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    h_unlock.firestarter_operation_main(&h_unlock);
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 23: standalone-unlock drive must not overflow");
+
+    sdp_strobe_t unlock_snapshot[64];
+    int unlock_len = sdp_snapshot(unlock_snapshot, 64);
+
+    /* Secondary assertion (D-13's reused-ids decision made explicit) --
+     * captured BEFORE the second drive/clear below, since captured_frames is
+     * cleared per-case in setUp() only, not between the two drives here. */
+    std::vector<uint8_t> unlock_ids;
+    sdp_captured_frame_ids(&unlock_ids);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(unlock_ids, (uint8_t)MSG_INFO_SDP_UNLOCK),
+        "Case 23: the standalone unlock's captured frame ids must contain MSG_INFO_SDP_UNLOCK");
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(unlock_ids, (uint8_t)MSG_INFO_SDP_UNLOCK_DONE_US),
+        "Case 23: the standalone unlock's captured frame ids must contain MSG_INFO_SDP_UNLOCK_DONE_US");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(unlock_ids, (uint8_t)MSG_INFO_SDP_LOCK),
+        "Case 23: the standalone unlock must never emit MSG_INFO_SDP_LOCK");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(unlock_ids, (uint8_t)MSG_INFO_SDP_LOCK_DONE_US),
+        "Case 23: the standalone unlock must never emit MSG_INFO_SDP_LOCK_DONE_US");
+
+    /* Clear captured_frames before the second drive so nothing from the
+     * standalone drive leaks into a future extension of this case. */
+    captured_frames.clear();
+
+    /* The auto-unlock path: SAME row, flag absent (default extra_flags == 0
+     * means FLAG_SKIP_SDP_UNLOCK is clear), via drive_write_init -- this is
+     * the identical handle factory + drive helper Case 10 uses. */
+    firestarter_handle_t h_auto = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive_write_init(&h_auto, 0x00);
+
+    /* The stream comparison is the PRIMARY assertion for this case. */
+    TEST_ASSERT_EQUAL_MESSAGE(-1, sdp_first_divergence(unlock_snapshot, unlock_len),
+        "Case 23 (D-13): the standalone unlock's stream must be element-wise IDENTICAL to the "
+        "auto-unlock's stream -- both call the same shared helper with the same table and the "
+        "same completion wait");
+    sdp_assert_stream_equals(unlock_snapshot, unlock_len,
+        "Case 23 (D-13): standalone unlock == auto-unlock (byte-identical streams)");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
  * main
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -1108,6 +1316,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case17_lock_terminates_after_three_writes_no_trailing_data);
     RUN_TEST(test_case18_lock_diverges_from_unlock_at_exact_index);
     RUN_TEST(test_case19_lock_diverges_from_chip_erase_at_exact_index);
+    RUN_TEST(test_case20_lock_report_shape_and_response_code);
+    RUN_TEST(test_case21_lock_tblc_budget_warn_fires);
+    RUN_TEST(test_case22_lock_tblc_budget_warn_does_not_fire_at_normal_elapsed);
+    RUN_TEST(test_case23_standalone_unlock_matches_auto_unlock_stream);
 
 #ifdef SDP_TRACE_DUMP
     RUN_TEST(test_dump_lock_goldens);
