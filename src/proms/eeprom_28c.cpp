@@ -345,6 +345,27 @@ void eeprom28c_write_init(firestarter_handle_t* handle) {
 
     LOG_ID_U32(MSG_INFO_SDP_UNLOCK_DONE_US, sdp_emit_us);
 
+    // D-09: AT28C_TBLC_MAX_US (defined above) is a datasheet MAXIMUM, not a
+    // delay to insert -- this runtime comparison is what turns the citation
+    // into a load-bearing check rather than a decorative one. Budget is
+    // derived from sdp_seq_len (never a literal 6) so it tracks the
+    // sequence length automatically if EEPROM_SDP_DISABLE ever changes
+    // (Phase 119 drives this same emitter with a different table). On a
+    // 16 MHz AVR, with handle->pulse_delay == 0 and no inter-byte wait
+    // inside eeprom28c_emit_command_sequence's loop, this branch should
+    // never fire -- that is exactly what a latent invariant looks like: it
+    // speaks up only if a future edit puts real work inside that loop. A
+    // documentation-only constant with no enforcing check was explicitly
+    // rejected -- prose-only satisfaction of OBS-03 is the hollow-gate debt
+    // shape this project keeps paying down (see the v1.12 GATE-03 history).
+    // No handle->response_code write on this path (D-02/D-05, permanently
+    // enforced by test_case8_completion_poll_preserves_prior_severity):
+    // WARN severity is carried by the message id's band alone.
+    uint32_t sdp_tblc_budget_us = (uint32_t)sdp_seq_len * AT28C_TBLC_MAX_US;
+    if (sdp_emit_us > sdp_tblc_budget_us) {
+        LOG_WARN_ID_U32(MSG_WARN_SDP_TBLC_EXCEEDED, sdp_emit_us);
+    }
+
     // Wait for the SDP-disable internal write cycle to complete. FIX-02: the
     // old guarded read-back call at address 0x5555 comparing against terminal
     // byte 0x20 is deleted outright, not salvaged -- there is no valid form
