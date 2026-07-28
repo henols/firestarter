@@ -44,11 +44,83 @@
 #define CMD_DEV_REGISTER 8
 #endif
 
+// Standalone SDP (Software Data Protection) enable/disable commands on
+// protocol 0x0D (eeprom_28c.cpp). Unlike CMD_READ/CMD_WRITE/etc these carry
+// no payload and no MAIN/END round-trip -- see Plan 119-04. Slots 9 and 10
+// were the only two free command values, and BOTH sit above
+// CMD_DEV_ADDRESS (7): that is exactly why the #ifdef DEV_TOOLS-conditional
+// ordinal admission guard had to be replaced by is_memory_cmd() (below)
+// BEFORE these could be defined (D-03, LOCK-03 is a hard prerequisite for
+// LOCK-02) -- with the old guard in place, a DEV_TOOLS build would have
+// routed 9/10 into the dev-tools branch and never called configure_memory,
+// leaving the new commands with no bus configuration at all.
+// Both defines are UNCONDITIONAL (never DEV_TOOLS-gated): they are real
+// user-facing operations in every build. The host CLI surface
+// (`firestarter dev sdp <chip> enable|disable`, constants.py CMD_SDP_* /
+// COMMAND_NAMES) arrives in Phase 120 HOST-01/HOST-03 -- firmware-before-host.
+#define CMD_SDP_UNLOCK 9
+#define CMD_SDP_LOCK 10
+
 #define CMD_READ_VPP 11
 #define CMD_READ_VPE 12
 #define CMD_FW_VERSION 13
 #define CMD_CONFIG 14
 #define CMD_HW_VERSION 15
+
+// Replaces the #ifdef DEV_TOOLS-conditional ordinal admission guard that
+// used to live at firestarter.cpp's parse_json (the old
+// `if (handle->cmd < CMD_DEV_ADDRESS)` test, itself wrapped in
+// `#ifdef DEV_TOOLS`). That conditional was STRUCTURALLY FORCED, not lazy:
+// CMD_DEV_ADDRESS/CMD_DEV_REGISTER only exist under -D DEV_TOOLS, so any
+// guard naming them had no choice but to be preprocessor-conditional too.
+// is_memory_cmd() removes the need for a conditional entirely by not
+// naming those two symbols at all -- it enumerates the eight commands that
+// legitimately configure a memory bus, by name, unconditionally.
+//
+// This is a DELIBERATE SAFETY TIGHTENING (D-01), not a preserved behaviour:
+// today, a RELEASE build (no -D DEV_TOOLS) still runs json_parse AND
+// configure_memory for CMD_DEV_ADDRESS (7) / CMD_DEV_REGISTER (8) before
+// loop()'s `default:` refuses them with MSG_ERR_UNKNOWN_CMD -- i.e. it
+// configures a memory handler for a command it is about to refuse. An
+// honest enumeration excludes 7 and 8, so after this change a release
+// build no longer does that; cmd 7 and 8 keep their MSG_ERR_UNKNOWN_CMD
+// refusal in a release build, unchanged.
+//
+// This predicate is an ACCESS-CONTROL GATE, not hygiene: it decides which
+// commands may call configure_memory() and therefore configure the
+// hardware bus. configure_eprom() (reached only through this gate) enables
+// the 12V VPP boost regulator -- a hazard on a 5V part -- so admitting an
+// extra command here is a hardware-safety decision, not a style one.
+//
+// Hard constraints (Plan 119-03's source-scan gate makes the first
+// machine-checked):
+//  - NO preprocessor conditional of any kind inside this function's body.
+//    All eight named macros below are unconditionally defined, so none is
+//    needed (D-02).
+//  - static inline, IN THIS HEADER (not a .cpp / new translation unit):
+//    [env:native]'s build_src_filter compiles only src/proms/,
+//    src/boards/rurp_serial_utils.cpp and src/json_parser.c, so a
+//    definition anywhere else would not link into the native test binary
+//    and Plan 119-02's two-env truth-table suite could not exist.
+//  - MUST NOT name CMD_DEV_ADDRESS or CMD_DEV_REGISTER -- those macros do
+//    not exist in a no-DEV_TOOLS build (see #ifdef above), and naming them
+//    here would recreate exactly the divergence this predicate exists to
+//    remove.
+static inline bool is_memory_cmd(uint8_t cmd) {
+    switch (cmd) {
+        case CMD_READ:
+        case CMD_WRITE:
+        case CMD_ERASE:
+        case CMD_BLANK_CHECK:
+        case CMD_CHECK_CHIP_ID:
+        case CMD_VERIFY:
+        case CMD_SDP_UNLOCK:
+        case CMD_SDP_LOCK:
+            return true;
+        default:
+            return false;
+    }
+}
 
 #define RESPONSE_CODE_OK 1
 #define RESPONSE_CODE_DATA 3

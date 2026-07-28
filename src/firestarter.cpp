@@ -75,9 +75,15 @@ bool parse_json(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB_U8(DBG_CMD, (uint8_t)handle->cmd);
     if (handle->cmd < CMD_READ_VPP) {
         json_parse(handle->data_buffer, tokens, token_count, handle);
-#ifdef DEV_TOOLS
-        if (handle->cmd < CMD_DEV_ADDRESS) {
-#endif
+        // v1.22 Phase 119 (LOCK-03, D-02): is_memory_cmd() replaces the old
+        // `#ifdef DEV_TOOLS` / `handle->cmd < CMD_DEV_ADDRESS` ordinal
+        // guard. Neither this `if` nor its `else` carries a build-
+        // configuration conditional any more -- only the two debug log
+        // lines inside the `else` body below do, because DBG_FLAG_OUTPUT_EN
+        // / DBG_FLAG_CHIP_EN describe dev-tools-only flags that have no
+        // meaning outside a DEV_TOOLS build. In a release build this `else`
+        // body compiles empty, which is correct and intended.
+        if (is_memory_cmd(handle->cmd)) {
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_FORCE, is_flag_set(FLAG_FORCE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CAN_ERASE, is_flag_set(FLAG_CAN_ERASE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_SKIP_ERASE, is_flag_set(FLAG_SKIP_ERASE));
@@ -87,12 +93,12 @@ bool parse_json(firestarter_handle_t* handle) {
                 LOG_ERROR_ID(MSG_ERR_SETUP);
                 return false;
             }
-#ifdef DEV_TOOLS
         } else {
+#ifdef DEV_TOOLS
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_OUTPUT_EN, is_flag_set(FLAG_OUTPUT_ENABLE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CHIP_EN, is_flag_set(FLAG_CHIP_ENABLE));
-        }
 #endif
+        }
     } else if (handle->cmd == CMD_CONFIG) {
         rurp_configuration_t* config = rurp_get_config();
         int res = json_parse_config(handle->data_buffer, tokens, token_count, config, handle);
@@ -125,6 +131,15 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
         return false;
     };
 
+    // v1.22 Phase 119 (119-02): this is a SECOND, independent ordinal-range
+    // guard, deliberately NOT converted to is_memory_cmd(). It gates
+    // diagnostic output only (three DBG_* debug log lines), never hardware
+    // configuration, so it is not an admission gate and D-03's safety
+    // argument does not apply here. Converting it would silently DROP these
+    // three debug lines for cmd 7/8 in a DEV_TOOLS build (a diagnostic
+    // regression) for zero safety gain and non-zero flash cost. The two new
+    // commands (CMD_SDP_UNLOCK 9, CMD_SDP_LOCK 10) already satisfy this
+    // range test unchanged, so there is no coverage gap for them either.
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
         LOG_DEBUG_ID_SUB_U32(DBG_MEM_SIZE, (uint32_t)handle->mem_size);
         LOG_DEBUG_ID_SUB_U32(DBG_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
