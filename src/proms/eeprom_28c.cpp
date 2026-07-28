@@ -293,85 +293,122 @@ void eeprom28c_write_init(firestarter_handle_t* handle) {
             return;
         }
     }
-    // Sequence length hoisted to ONE expression (Plan 118-04 Task 1): Task
-    // 2's t_BLC runtime budget check derives from this exact local, so there
-    // is exactly one length expression in this function -- a second copy
-    // would be a silent second source of truth.
-    size_t sdp_seq_len = sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]);
+    if (!is_flag_set(FLAG_SKIP_SDP_UNLOCK)) {
+        // Sequence length hoisted to ONE expression (Plan 118-04 Task 1):
+        // Task 2's t_BLC runtime budget check derives from this exact
+        // local, so there is exactly one length expression in this
+        // function -- a second copy would be a silent second source of
+        // truth.
+        size_t sdp_seq_len = sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]);
 
-    // OBS-01/OBS-04 (D-01, load-bearing): both report lines below are
-    // UNCONDITIONAL -- emitted through the bare LOG_ID / LOG_ID_U32 macros
-    // with an INFO-band id, NOT through the FLAG_VERBOSE-gated LOG_INFO_ID*
-    // family. Every one of this tree's 19 existing MSG_INFO_* emissions
-    // goes through LOG_INFO_ID*, and there are currently ZERO bare
-    // LOG_ID*-on-an-INFO-band-id call sites anywhere in firestarter/src --
-    // these two are the first. That break with house style is deliberate,
-    // not an oversight: gating these lines behind FLAG_VERBOSE would leave a
-    // default `firestarter write at28c256` silent, which is the exact
-    // defect this phase exists to remove. Unconditional emission is also
-    // what makes OBS-05's "byte-identical apart from the two report lines"
-    // a real claim rather than a vacuous one -- under verbose-gating the
-    // default path would emit zero new frames and OBS-05 would be trivially
-    // true. A released 3.0.0b11 host that has never seen these ids degrades
-    // gracefully: codec.py logs "Unknown message ID 0x.. -- catalog out of
-    // date?" and drops the frame -- no crash, no garbled render.
-    LOG_ID(MSG_INFO_SDP_UNLOCK);
+        // OBS-01/OBS-04 (D-01, load-bearing): both report lines below are
+        // UNCONDITIONAL -- emitted through the bare LOG_ID / LOG_ID_U32
+        // macros with an INFO-band id, NOT through the FLAG_VERBOSE-gated
+        // LOG_INFO_ID* family. Every one of this tree's 19 existing
+        // MSG_INFO_* emissions goes through LOG_INFO_ID*, and there are
+        // currently ZERO bare LOG_ID*-on-an-INFO-band-id call sites
+        // anywhere in firestarter/src -- these two are the first. That
+        // break with house style is deliberate, not an oversight: gating
+        // these lines behind FLAG_VERBOSE would leave a default
+        // `firestarter write at28c256` silent, which is the exact defect
+        // this phase exists to remove. Unconditional emission is also what
+        // makes OBS-05's "byte-identical apart from the two report lines"
+        // a real claim rather than a vacuous one -- under verbose-gating
+        // the default path would emit zero new frames and OBS-05 would be
+        // trivially true. A released 3.0.0b11 host that has never seen
+        // these ids degrades gracefully: codec.py logs "Unknown message ID
+        // 0x.. -- catalog out of date?" and drops the frame -- no crash,
+        // no garbled render.
+        LOG_ID(MSG_INFO_SDP_UNLOCK);
 
-    // Disable SDP (Software Data Protection) before writing. The sequence is
-    // emitted through handle->firestarter_set_data (i.e. memory_set_data),
-    // which applies the full remap via mem_util_remap_address_bus and
-    // rewrites CONTROL_REGISTER on every address change -- closing both the
-    // /WE-inhibit defect measured for 66 of the 84 0x0D chips
-    // (flash_util_byte_flipping's fu_flash_fast_address bypasses
-    // handle->bus_config entirely) and, for the 18 chips at 64 KB and above
-    // on DIP32_28C512_EEPROM, the A16-A18 upper-address staleness gap
-    // (FIX-03) -- both close as one by-product of this single routing
-    // change, not as two separate fixes. handle->pulse_delay is already 0
-    // for this protocol (see configure_eeprom28c above).
-    //
-    // D-05: the two microsecond-clock reads below bracket this call ONLY
-    // and sit OUTSIDE eeprom28c_emit_command_sequence's body, so they
-    // perturb inter-byte timing not at all -- the measured interval covers
-    // the six command writes and nothing else. eeprom28c_wait_for_sdp_completion
-    // (below) is deliberately excluded from the bracket: it is a fixed
-    // delay(AT28C_TWC_MAX_MS) plus an iteration-bounded poll, so including
-    // it would add a constant plus mock-dependent noise to the one number
-    // that has engineering meaning. Elapsed is an unsigned 32-bit
-    // subtraction so a wraparound of the underlying clock during the
-    // window still yields a correct interval.
-    uint32_t sdp_emit_start_us = micros();
-    eeprom28c_emit_command_sequence(handle, EEPROM_SDP_DISABLE, sdp_seq_len);
-    uint32_t sdp_emit_us = (uint32_t)(micros() - sdp_emit_start_us);
+        // Disable SDP (Software Data Protection) before writing. The
+        // sequence is emitted through handle->firestarter_set_data (i.e.
+        // memory_set_data), which applies the full remap via
+        // mem_util_remap_address_bus and rewrites CONTROL_REGISTER on
+        // every address change -- closing both the /WE-inhibit defect
+        // measured for 66 of the 84 0x0D chips (flash_util_byte_flipping's
+        // fu_flash_fast_address bypasses handle->bus_config entirely) and,
+        // for the 18 chips at 64 KB and above on DIP32_28C512_EEPROM, the
+        // A16-A18 upper-address staleness gap (FIX-03) -- both close as
+        // one by-product of this single routing change, not as two
+        // separate fixes. handle->pulse_delay is already 0 for this
+        // protocol (see configure_eeprom28c above).
+        //
+        // D-05: the two microsecond-clock reads below bracket this call
+        // ONLY and sit OUTSIDE eeprom28c_emit_command_sequence's body, so
+        // they perturb inter-byte timing not at all -- the measured
+        // interval covers the six command writes and nothing else.
+        // eeprom28c_wait_for_sdp_completion (below) is deliberately
+        // excluded from the bracket: it is a fixed delay(AT28C_TWC_MAX_MS)
+        // plus an iteration-bounded poll, so including it would add a
+        // constant plus mock-dependent noise to the one number that has
+        // engineering meaning. Elapsed is an unsigned 32-bit subtraction
+        // so a wraparound of the underlying clock during the window still
+        // yields a correct interval.
+        uint32_t sdp_emit_start_us = micros();
+        eeprom28c_emit_command_sequence(handle, EEPROM_SDP_DISABLE, sdp_seq_len);
+        uint32_t sdp_emit_us = (uint32_t)(micros() - sdp_emit_start_us);
 
-    LOG_ID_U32(MSG_INFO_SDP_UNLOCK_DONE_US, sdp_emit_us);
+        LOG_ID_U32(MSG_INFO_SDP_UNLOCK_DONE_US, sdp_emit_us);
 
-    // D-09: AT28C_TBLC_MAX_US (defined above) is a datasheet MAXIMUM, not a
-    // delay to insert -- this runtime comparison is what turns the citation
-    // into a load-bearing check rather than a decorative one. Budget is
-    // derived from sdp_seq_len (never a literal 6) so it tracks the
-    // sequence length automatically if EEPROM_SDP_DISABLE ever changes
-    // (Phase 119 drives this same emitter with a different table). On a
-    // 16 MHz AVR, with handle->pulse_delay == 0 and no inter-byte wait
-    // inside eeprom28c_emit_command_sequence's loop, this branch should
-    // never fire -- that is exactly what a latent invariant looks like: it
-    // speaks up only if a future edit puts real work inside that loop. A
-    // documentation-only constant with no enforcing check was explicitly
-    // rejected -- prose-only satisfaction of OBS-03 is the hollow-gate debt
-    // shape this project keeps paying down (see the v1.12 GATE-03 history).
-    // No handle->response_code write on this path (D-02/D-05, permanently
-    // enforced by test_case8_completion_poll_preserves_prior_severity):
-    // WARN severity is carried by the message id's band alone.
-    uint32_t sdp_tblc_budget_us = (uint32_t)sdp_seq_len * AT28C_TBLC_MAX_US;
-    if (sdp_emit_us > sdp_tblc_budget_us) {
-        LOG_WARN_ID_U32(MSG_WARN_SDP_TBLC_EXCEEDED, sdp_emit_us);
+        // D-09: AT28C_TBLC_MAX_US (defined above) is a datasheet MAXIMUM,
+        // not a delay to insert -- this runtime comparison is what turns
+        // the citation into a load-bearing check rather than a decorative
+        // one. Budget is derived from sdp_seq_len (never a literal 6) so
+        // it tracks the sequence length automatically if
+        // EEPROM_SDP_DISABLE ever changes (Phase 119 drives this same
+        // emitter with a different table). On a 16 MHz AVR, with
+        // handle->pulse_delay == 0 and no inter-byte wait inside
+        // eeprom28c_emit_command_sequence's loop, this branch should never
+        // fire -- that is exactly what a latent invariant looks like: it
+        // speaks up only if a future edit puts real work inside that
+        // loop. A documentation-only constant with no enforcing check was
+        // explicitly rejected -- prose-only satisfaction of OBS-03 is the
+        // hollow-gate debt shape this project keeps paying down (see the
+        // v1.12 GATE-03 history). No handle->response_code write on this
+        // path (D-02/D-05, permanently enforced by
+        // test_case8_completion_poll_preserves_prior_severity): WARN
+        // severity is carried by the message id's band alone.
+        uint32_t sdp_tblc_budget_us = (uint32_t)sdp_seq_len * AT28C_TBLC_MAX_US;
+        if (sdp_emit_us > sdp_tblc_budget_us) {
+            LOG_WARN_ID_U32(MSG_WARN_SDP_TBLC_EXCEEDED, sdp_emit_us);
+        }
+
+        // Wait for the SDP-disable internal write cycle to complete.
+        // FIX-02: the old guarded read-back call at address 0x5555
+        // comparing against terminal byte 0x20 is deleted outright, not
+        // salvaged -- there is no valid form of that check (see
+        // eeprom28c_wait_for_sdp_completion's comment above). The
+        // replacement never aborts write-init and never touches
+        // response_code.
+        eeprom28c_wait_for_sdp_completion(handle);
+    } else {
+        // D-02: the skip path replaces the ENTIRE unlock block above --
+        // report pair, micros() bracket, budget check, AND the completion
+        // wait -- with exactly one unconditional WARN. There is no
+        // internal write cycle to wait for when no command sequence was
+        // emitted, so waiting AT28C_TWC_MAX_MS and polling would be pure
+        // latency plus two recorded read strobes Plan 118-05's absence
+        // assertion would then have to explain away. WARN, not INFO: on an
+        // SDP-protected part a skipped unlock means the write will not
+        // land, so the user must be told loudly -- but on an unprotected
+        // part the skip is harmless, so the severity lives in the log
+        // line's band alone, never fabricated into an operation-level
+        // response_code (no write here, preserving Phase 117's D-05 and
+        // enforced permanently by
+        // test_case8_completion_poll_preserves_prior_severity). The
+        // MSG_INFO_SKIPPING_ERASE INFO shape at flash_5v_page.cpp:71 was
+        // considered and rejected: `write -b` silently skipping erase is
+        // the footgun v1.16 Phase 92 had to fix, and this project's own
+        // history records that write -b skips erase entirely and still
+        // reports success -- an INFO-severity skip of a write-protection
+        // removal would repeat that exact mistake. The host CLI flag that
+        // sets FLAG_SKIP_SDP_UNLOCK (0x100) arrives in Phase 120
+        // (HOST-01/HOST-03) -- until then this bit is reachable only by a
+        // hand-built wire `flags` value, and get_flags's extract_long
+        // (json_parser.c) already parses it unchanged.
+        LOG_WARN_ID(MSG_WARN_SDP_UNLOCK_SKIPPED);
     }
-
-    // Wait for the SDP-disable internal write cycle to complete. FIX-02: the
-    // old guarded read-back call at address 0x5555 comparing against terminal
-    // byte 0x20 is deleted outright, not salvaged -- there is no valid form
-    // of that check (see eeprom28c_wait_for_sdp_completion's comment above).
-    // The replacement never aborts write-init and never touches response_code.
-    eeprom28c_wait_for_sdp_completion(handle);
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
         mem_util_blank_check(handle);
     }
