@@ -293,6 +293,30 @@ void eeprom28c_write_init(firestarter_handle_t* handle) {
             return;
         }
     }
+    // Sequence length hoisted to ONE expression (Plan 118-04 Task 1): Task
+    // 2's t_BLC runtime budget check derives from this exact local, so there
+    // is exactly one length expression in this function -- a second copy
+    // would be a silent second source of truth.
+    size_t sdp_seq_len = sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]);
+
+    // OBS-01/OBS-04 (D-01, load-bearing): both report lines below are
+    // UNCONDITIONAL -- emitted through the bare LOG_ID / LOG_ID_U32 macros
+    // with an INFO-band id, NOT through the FLAG_VERBOSE-gated LOG_INFO_ID*
+    // family. Every one of this tree's 19 existing MSG_INFO_* emissions
+    // goes through LOG_INFO_ID*, and there are currently ZERO bare
+    // LOG_ID*-on-an-INFO-band-id call sites anywhere in firestarter/src --
+    // these two are the first. That break with house style is deliberate,
+    // not an oversight: gating these lines behind FLAG_VERBOSE would leave a
+    // default `firestarter write at28c256` silent, which is the exact
+    // defect this phase exists to remove. Unconditional emission is also
+    // what makes OBS-05's "byte-identical apart from the two report lines"
+    // a real claim rather than a vacuous one -- under verbose-gating the
+    // default path would emit zero new frames and OBS-05 would be trivially
+    // true. A released 3.0.0b11 host that has never seen these ids degrades
+    // gracefully: codec.py logs "Unknown message ID 0x.. -- catalog out of
+    // date?" and drops the frame -- no crash, no garbled render.
+    LOG_ID(MSG_INFO_SDP_UNLOCK);
+
     // Disable SDP (Software Data Protection) before writing. The sequence is
     // emitted through handle->firestarter_set_data (i.e. memory_set_data),
     // which applies the full remap via mem_util_remap_address_bus and
@@ -304,7 +328,23 @@ void eeprom28c_write_init(firestarter_handle_t* handle) {
     // (FIX-03) -- both close as one by-product of this single routing
     // change, not as two separate fixes. handle->pulse_delay is already 0
     // for this protocol (see configure_eeprom28c above).
-    eeprom28c_emit_command_sequence(handle, EEPROM_SDP_DISABLE, sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]));
+    //
+    // D-05: the two microsecond-clock reads below bracket this call ONLY
+    // and sit OUTSIDE eeprom28c_emit_command_sequence's body, so they
+    // perturb inter-byte timing not at all -- the measured interval covers
+    // the six command writes and nothing else. eeprom28c_wait_for_sdp_completion
+    // (below) is deliberately excluded from the bracket: it is a fixed
+    // delay(AT28C_TWC_MAX_MS) plus an iteration-bounded poll, so including
+    // it would add a constant plus mock-dependent noise to the one number
+    // that has engineering meaning. Elapsed is an unsigned 32-bit
+    // subtraction so a wraparound of the underlying clock during the
+    // window still yields a correct interval.
+    uint32_t sdp_emit_start_us = micros();
+    eeprom28c_emit_command_sequence(handle, EEPROM_SDP_DISABLE, sdp_seq_len);
+    uint32_t sdp_emit_us = (uint32_t)(micros() - sdp_emit_start_us);
+
+    LOG_ID_U32(MSG_INFO_SDP_UNLOCK_DONE_US, sdp_emit_us);
+
     // Wait for the SDP-disable internal write cycle to complete. FIX-02: the
     // old guarded read-back call at address 0x5555 comparing against terminal
     // byte 0x20 is deleted outright, not salvaged -- there is no valid form
