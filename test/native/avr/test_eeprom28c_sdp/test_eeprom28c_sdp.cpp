@@ -121,21 +121,47 @@ static int      s_reads_at_poll_addr;
  * completion poll can never conclude. Reset false in setUp(). */
 static bool     s_poll_addr_toggles;
 
-/* Controllable micros() tick source (Plan 118-04's OBS-04 duration bracket:
- * eeprom28c_write_init reads micros() once immediately before
- * eeprom28c_emit_command_sequence's call and once immediately after, so
- * EXACTLY TWO reads occur per write_init drive). Indexed by call count
- * modulo 2 rather than an absolute count, so this stays correct even for a
- * drive helper that happens to call write_init more than once (none do
- * today). Default BOTH entries to 0 so elapsed == (ticks[1] - ticks[0]) ==
- * 0 -- the budget can never appear exceeded, which is what keeps all eight
- * existing cases in this file behaviourally identical to their pre-118-03
- * values. Plan 118-05's budget-exceeded case sets s_micros_ticks[1] to a
- * value that makes the elapsed exceed 6 * AT28C_TBLC_MAX_US before driving;
- * this array is that seam. Reset to {0, 0} (and the call counter to 0)
- * alongside the other file-static resets in setUp() below. */
-static uint32_t s_micros_ticks[2];
-static int      s_micros_call_count;
+/* Plan 119-05 Task 1: the tick source is now a SCRIPTED QUEUE, replacing the
+ * two-slot parity alternator (indexed by call count modulo 2) that served
+ * through Plan 118-05. RETIREMENT REASON: D-16's per-byte page-load tracker
+ * (Plan 119-08) adds micros() calls INSIDE eeprom28c_write_execute, so any
+ * case that drives both write_init and write_execute would call micros()
+ * more than twice -- under the old modulo-2 model, every interval past the
+ * second call would alternate between 0 and a constant, which is
+ * meaningless (and silently so: the numbers still "look like" ticks). A
+ * monotonic cursor into an explicit script has no such failure mode: it
+ * returns exactly what was scripted, in order, for as many calls as the
+ * script has entries.
+ *
+ * s_micros_script holds the scripted tick sequence; s_micros_cursor is the
+ * monotonic read position (never wraps, never resets except via
+ * sdp_script_micros() or setUp()'s file-static reset block below).
+ * s_micros_tail is the TAIL VALUE: once the cursor reaches the end of the
+ * script, every subsequent micros() call returns s_micros_tail UNCHANGED
+ * and the cursor stops advancing. This is exactly the part that can
+ * silently corrupt a measurement -- a case that scripts fewer ticks than
+ * the code path actually calls micros() will get the tail value for every
+ * read past the script's end, which reads as "a real measurement" but is
+ * actually just the tail repeated. A case that needs a BOUNDED number of
+ * reads (e.g. asserting an exact elapsed value) must therefore script
+ * enough entries to cover every micros() call the driven path makes, and
+ * must never assume the script was exhausted -- assert on the REPORTED
+ * value instead. All three reset to {} / 0 / 0 in setUp() below. */
+static std::vector<uint32_t> s_micros_script;
+static size_t   s_micros_cursor;
+static uint32_t s_micros_tail;
+
+/* Installs `ticks` as the scripted sequence and resets the cursor to 0, so a
+ * case reads as "script these ticks, then drive". `tail` defaults to 0 --
+ * once the script is exhausted, subsequent micros() calls return 0 (the
+ * same "elapsed always looks like 0 past the scripted ticks" default the
+ * old alternator provided for every case that never opted into a non-zero
+ * second tick). */
+static void sdp_script_micros(const std::vector<uint32_t>& ticks, uint32_t tail = 0) {
+    s_micros_script = ticks;
+    s_micros_cursor = 0;
+    s_micros_tail = tail;
+}
 
 /* Plan 118-05 Task 2 (D-07 scope discipline): a PER-CASE Serial-frame
  * capture, reusing test_rurp_log_id.cpp:59-63's existing AlwaysDo idiom
@@ -210,8 +236,13 @@ void setUp(void) {
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
     When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
     When(Method(ArduinoFake(), micros)).AlwaysDo([]() -> unsigned long {
-        unsigned long v = s_micros_ticks[s_micros_call_count % 2];
-        s_micros_call_count++;
+        unsigned long v;
+        if (s_micros_cursor < s_micros_script.size()) {
+            v = s_micros_script[s_micros_cursor];
+            s_micros_cursor++;
+        } else {
+            v = s_micros_tail; /* script exhausted -- see the tail-value comment above */
+        }
         return v;
     });
 
@@ -224,9 +255,9 @@ void setUp(void) {
     s_reads_at_mfr_addr = 0;
     s_reads_at_poll_addr = 0;
     s_poll_addr_toggles = false;
-    s_micros_ticks[0] = 0;
-    s_micros_ticks[1] = 0;
-    s_micros_call_count = 0;
+    s_micros_script.clear();
+    s_micros_cursor = 0;
+    s_micros_tail = 0;
     captured_frames.clear();
 }
 
@@ -724,8 +755,11 @@ void test_case11_tblc_budget_exceeded_warns(void) {
     uint32_t sdp_seq_len = (uint32_t)(sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]));
     uint32_t over_budget_elapsed = sdp_seq_len * TEST_MIRROR_AT28C_TBLC_MAX_US + 1;
 
-    s_micros_ticks[0] = 0;
-    s_micros_ticks[1] = over_budget_elapsed;
+    /* eeprom28c_write_init's unlock branch (via eeprom28c_emit_sdp_sequence_timed)
+     * calls micros() exactly twice per drive: once immediately before
+     * eeprom28c_emit_command_sequence, once immediately after. Script exactly
+     * those two ticks so the difference exceeds the budget. */
+    sdp_script_micros({0, over_budget_elapsed});
     firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0]); /* flag absent -- unlock runs */
     drive_write_init(&h, 0x00);
 
@@ -756,9 +790,7 @@ void test_case11_tblc_budget_exceeded_warns(void) {
      * default tick behaviour (elapsed 0) restored, the WARN id must NOT
      * appear -- an appearing-only assertion could pass against a branch that
      * always fires regardless of the measured duration. */
-    s_micros_ticks[0] = 0;
-    s_micros_ticks[1] = 0;
-    s_micros_call_count = 0;
+    sdp_script_micros({0, 0});
     captured_frames.clear();
     firestarter_handle_t h2 = make_sdp_handle(SDP_BUS_CONFIGS[0]);
     drive_write_init(&h2, 0x00);
@@ -781,6 +813,17 @@ void test_case11_tblc_budget_exceeded_warns(void) {
  * OBS-05's serial-channel exception machine-checked instead of prose-only,
  * using the per-case capture declared above -- it does not build the
  * general-purpose recorder D-07 explicitly declined. */
+/* Plan 119-05 Task 1 (re-verified under the scripted micros() queue, no
+ * assertion changed): this case drives drive_write_init ONLY -- it never
+ * calls eeprom28c_write_execute. That was incidental before the scripted
+ * queue existed (the old modulo-2 alternator did not care how many
+ * functions were driven); it is now LOAD-BEARING, because D-16's page-load
+ * tracker (Plan 119-08) will add its own micros() calls inside
+ * write_execute, and the frame counts asserted below (2 frames flag-absent,
+ * 1 frame flag-set) describe write_init's report pair only. If this case is
+ * ever widened to also drive write_execute, its frame-count expectations
+ * MUST be re-scoped to account for write_execute's own report line -- do
+ * not assume they stay 2 and 1. */
 void test_case12_flag_absent_emits_exactly_two_report_frames(void) {
     firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0]); /* flag absent, default ticks */
     drive_write_init(&h, 0x00);
