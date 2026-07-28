@@ -934,6 +934,154 @@ void test_case12_flag_absent_emits_exactly_two_report_frames(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * Cases 13-16 — the production lock op's stream, per pinout (LOCK-01)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Every one of cases 13-19 below drives the PRODUCTION lock op --
+ * h.cmd = CMD_SDP_LOCK, then h.firestarter_operation_main(&h) via
+ * drive_lock_op -- never a transcribed table loop. The load-bearing drive
+ * order (configure_memory, THEN reset_register_cache, THEN clear_strobes,
+ * THEN the op call) lives in drive_lock_op itself, above. */
+
+void test_case13_lock_dip28_28c256_stream_matches_fixed(void) {
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 */
+    drive_lock_op(&h, 0x00);
+    sdp_assert_stream_equals(SDP_FIXED_LOCK_DIP28_28C256, SDP_FIXED_LOCK_DIP28_28C256_LEN,
+        "Case 13 (LOCK-01): AT28C256/DIP28_28C256 -- the production CMD_SDP_LOCK op's stream must "
+        "match the dump-authored FIXED lock golden");
+}
+
+void test_case14_lock_dip28_28c64_stream_matches_fixed(void) {
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[1]); /* AT28C64 */
+    drive_lock_op(&h, 0x00);
+    sdp_assert_stream_equals(SDP_FIXED_LOCK_DIP28_28C64, SDP_FIXED_LOCK_DIP28_28C64_LEN,
+        "Case 14 (LOCK-01): AT28C64/DIP28_28C64 -- the production CMD_SDP_LOCK op's stream must "
+        "match the dump-authored FIXED lock golden");
+}
+
+void test_case15_lock_dip24_2816_stream_matches_fixed(void) {
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[2]); /* AT28C16 */
+    drive_lock_op(&h, 0x00);
+    sdp_assert_stream_equals(SDP_FIXED_LOCK_DIP24_2816, SDP_FIXED_LOCK_DIP24_2816_LEN,
+        "Case 15 (LOCK-01): AT28C16/DIP24_2816 -- the production CMD_SDP_LOCK op's stream must "
+        "match the dump-authored FIXED lock golden");
+}
+
+/* Case 16 uses the SAME deliberately stale upper-address CONTROL seed
+ * (CTRL_ADDRESS_LINE_17 | CTRL_ADDRESS_LINE_18) the DIP32 golden was recorded
+ * under (see sdp_expected.h's SDP_FIXED_LOCK_DIP32_28C512_EEPROM comment) --
+ * a zero seed would leave this pinout's remap the identity function and
+ * prove almost nothing beyond the OE-edge reordering. */
+void test_case16_lock_dip32_28c512_eeprom_stream_matches_fixed_stale_seed(void) {
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[3]); /* AT28C010 */
+    drive_lock_op(&h, CTRL_ADDRESS_LINE_17 | CTRL_ADDRESS_LINE_18);
+    sdp_assert_stream_equals(SDP_FIXED_LOCK_DIP32_28C512_EEPROM, SDP_FIXED_LOCK_DIP32_28C512_EEPROM_LEN,
+        "Case 16 (LOCK-01): AT28C010/DIP32_28C512_EEPROM, driven under the SAME deliberately stale "
+        "upper-address CONTROL seed (CTRL_ADDRESS_LINE_17|18) its golden was recorded under");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Case 17 — the no-payload termination, D-10's load-bearing absence (LOCK-05)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* EEPROM_SDP_ENABLE is byte-identical to FLASH_ENABLE_WRITE (the
+ * protected-write prefix) and to FLASH_ENABLE_WRITE_PROTECTION -- the ONLY
+ * thing that makes this sequence a LOCK rather than the first three writes
+ * of a byte write is that NO DATA WRITE FOLLOWS it. A table comparison
+ * cannot show an absence (Pitfall 4): this case asserts it POSITIONALLY, on
+ * the live stream, three ways -- length equality against the golden, the
+ * final entry being a PIN edge (not DATA), and no DATA entry anywhere after
+ * the third write's payload index. */
+void test_case17_lock_terminates_after_three_writes_no_trailing_data(void) {
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 */
+    drive_lock_op(&h, 0x00);
+
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 17: lock stream must not overflow");
+    TEST_ASSERT_EQUAL_MESSAGE(SDP_FIXED_LOCK_DIP28_28C256_LEN, strobe_count(),
+        "Case 17 (LOCK-05): the lock stream's length must equal the golden's length -- "
+        "EEPROM_SDP_ENABLE is byte-identical to FLASH_ENABLE_WRITE (the protected-write prefix), so "
+        "the only discriminator between a lock and a byte write is that no data write follows");
+
+    int last = strobe_count() - 1;
+    TEST_ASSERT_EQUAL_MESSAGE(STROBE_KIND_PIN, strobe_kind(last),
+        "Case 17 (LOCK-05): the final recorded entry must be a PIN edge (CE deassert), never a DATA "
+        "entry -- the absence of a trailing data write is the whole safety claim, and a table "
+        "comparison structurally cannot observe it");
+    TEST_ASSERT_EQUAL_MESSAGE(CHIP_ENABLE, strobe_pin(last), "Case 17: final entry's pin must be CHIP_ENABLE");
+    TEST_ASSERT_EQUAL_MESSAGE(1, strobe_value(last), "Case 17: final entry must be CE deassert (value 1)");
+
+    /* write #3's payload sits at LEN-3 (payload, CE-low, CE-high are the last
+     * three entries of any un-elided write) -- derived from the golden's own
+     * length rather than a second magic number. No DATA entry may appear at
+     * or after this index+1: if a future edit appended a dummy byte write,
+     * this loop fails loudly rather than staying silently green. */
+    int payload_index = SDP_FIXED_LOCK_DIP28_28C256_LEN - 3;
+    for (int i = payload_index + 1; i < strobe_count(); i++) {
+        char msg[176];
+        snprintf(msg, sizeof(msg),
+            "Case 17 (LOCK-05): index %d must not be a DATA entry -- no data write may follow the "
+            "third command write's payload (index %d)", i, payload_index);
+        TEST_ASSERT_NOT_EQUAL_MESSAGE(STROBE_KIND_DATA, strobe_kind(i), msg);
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Cases 18-19 — exact divergence from the unlock and chip-erase streams
+ * (LOCK-05 stream half)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* The lock stream must diverge from the SIX-WRITE UNLOCK stream at an EXACT
+ * index -- never `!= -1` (Pitfall 4: a golden pinned to the wrong
+ * expectation stays green under a bare not-equal check). Drives the
+ * production lock op, snapshots it (mandatory: drive_reference_emitter below
+ * calls clear_strobes(), which would erase the lock stream first), then
+ * drives the six-write unlock table through the SAME FIXED (remap-aware)
+ * emitter the lock op itself uses, for an apples-to-apples index. */
+void test_case18_lock_diverges_from_unlock_at_exact_index(void) {
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 */
+    drive_lock_op(&h, 0x00);
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 18: lock-stream snapshot must not overflow");
+    sdp_strobe_t lock_snapshot[64];
+    int lock_len = sdp_snapshot(lock_snapshot, 64);
+
+    firestarter_handle_t h_unlock = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive_reference_emitter(&h_unlock, FLASH_DISABLE_WRITE_PROTECTION,
+        sizeof(FLASH_DISABLE_WRITE_PROTECTION) / sizeof(FLASH_DISABLE_WRITE_PROTECTION[0]), 0x00);
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 18: unlock-reference drive must not overflow");
+
+    int div = sdp_first_divergence(lock_snapshot, lock_len);
+    TEST_ASSERT_EQUAL_MESSAGE(27, div,
+        "Case 18 (LOCK-05 stream half): the lock stream diverges from the SDP-disable unlock stream "
+        "at EXACTLY index 27 -- write #3's payload byte (0xA0 in the lock vs 0x80 in the unlock)");
+}
+
+/* Same shape as Case 18, comparing against the stream FLASH_ERASE produces
+ * through the SAME FIXED emitter. Chip-erase's third payload is ALSO 0x80
+ * (identical to the unlock's), so this diverges from the lock at the
+ * IDENTICAL index 27 -- FIX-05's one-nibble hazard class (EEPROM_SDP_DISABLE
+ * vs FLASH_ERASE differing by one nibble in one byte), now checked for the
+ * lock table too. Reads FLASH_ERASE from flash_utils.h (read-only; that file
+ * stays FIX-04 frozen). */
+void test_case19_lock_diverges_from_chip_erase_at_exact_index(void) {
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 */
+    drive_lock_op(&h, 0x00);
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 19: lock-stream snapshot must not overflow");
+    sdp_strobe_t lock_snapshot[64];
+    int lock_len = sdp_snapshot(lock_snapshot, 64);
+
+    firestarter_handle_t h_erase = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive_reference_emitter(&h_erase, FLASH_ERASE, sizeof(FLASH_ERASE) / sizeof(FLASH_ERASE[0]), 0x00);
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 19: erase-reference drive must not overflow");
+
+    int div = sdp_first_divergence(lock_snapshot, lock_len);
+    TEST_ASSERT_EQUAL_MESSAGE(27, div,
+        "Case 19 (LOCK-05 stream half, FIX-05's one-nibble hazard class applied to the lock table): "
+        "the lock stream diverges from the chip-erase stream at EXACTLY index 27 -- the SAME index as "
+        "Case 18's unlock divergence, because chip-erase's third payload (0x80) equals the unlock's, "
+        "so the lock's 0xA0 payload diverges from both at the identical position");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
  * main
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -953,6 +1101,13 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case10_flag_absent_emits_full_unlock_stream);
     RUN_TEST(test_case11_tblc_budget_exceeded_warns);
     RUN_TEST(test_case12_flag_absent_emits_exactly_two_report_frames);
+    RUN_TEST(test_case13_lock_dip28_28c256_stream_matches_fixed);
+    RUN_TEST(test_case14_lock_dip28_28c64_stream_matches_fixed);
+    RUN_TEST(test_case15_lock_dip24_2816_stream_matches_fixed);
+    RUN_TEST(test_case16_lock_dip32_28c512_eeprom_stream_matches_fixed_stale_seed);
+    RUN_TEST(test_case17_lock_terminates_after_three_writes_no_trailing_data);
+    RUN_TEST(test_case18_lock_diverges_from_unlock_at_exact_index);
+    RUN_TEST(test_case19_lock_diverges_from_chip_erase_at_exact_index);
 
 #ifdef SDP_TRACE_DUMP
     RUN_TEST(test_dump_lock_goldens);
