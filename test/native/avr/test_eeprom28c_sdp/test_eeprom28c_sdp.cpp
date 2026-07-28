@@ -212,6 +212,42 @@ static bool sdp_ids_contains(const std::vector<uint8_t>& ids, uint8_t id) {
     return false;
 }
 
+/* Plan 119-08 Task 2: decodes the u32 parameter of the FIRST captured frame
+ * whose id byte matches `target_id`, walking captured_frames with the SAME
+ * documented wire layout sdp_captured_frame_ids uses above (4-byte magic,
+ * 2-byte big-endian length, 1 id byte, params, 1 crc byte, 1 anchor byte).
+ * len_value = 1 (id) + param_count + 1 (crc) (test_rurp_log_id.cpp's own
+ * comment), so a *_U32 id -- exactly 4 param bytes, big-endian
+ * (rurp_log_id_u32, rurp_serial_utils.cpp) -- always carries len_value == 6.
+ * Returns true and writes *out_value on a match; false if the id never
+ * appears. Membership alone (sdp_ids_contains) is NOT enough to prove a
+ * tracker reports the right number -- a tracker that always reported zero,
+ * or the LAST interval instead of the worst, would still pass a
+ * membership-only check. */
+static bool sdp_decode_u32_param_for_id(uint8_t target_id, uint32_t* out_value) {
+    size_t offset = 0;
+    while (offset + 7 <= captured_frames.size()) {
+        uint16_t len_value = (uint16_t)(((uint16_t)captured_frames[offset + 4] << 8) | captured_frames[offset + 5]);
+        size_t frame_size = 4 + 2 + (size_t)len_value + 1;
+        if (offset + frame_size > captured_frames.size()) {
+            break; /* incomplete trailing frame -- not expected in these cases */
+        }
+        uint8_t id = captured_frames[offset + 6];
+        if (id == target_id) {
+            TEST_ASSERT_EQUAL_MESSAGE(6, (int)len_value,
+                "sdp_decode_u32_param_for_id: matched id's length field is not exactly "
+                "1(id)+4(u32 params)+1(crc) -- this helper only decodes a single u32 parameter");
+            *out_value = ((uint32_t)captured_frames[offset + 7] << 24) |
+                         ((uint32_t)captured_frames[offset + 8] << 16) |
+                         ((uint32_t)captured_frames[offset + 9] << 8) |
+                         (uint32_t)captured_frames[offset + 10];
+            return true;
+        }
+        offset += frame_size;
+    }
+    return false;
+}
+
 void setUp(void) {
     ArduinoFakeReset();
     /* Plan 118-05 Task 2: was AlwaysReturn(1) through Plan 118-04. Switched to
@@ -1380,6 +1416,225 @@ void test_case25_cmd_erase_on_0x0d_refused_end_to_end_devtest01(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * Cases 26-29 (Plan 119-08, D-16) — the page-load worst-per-byte-interval
+ * report: fires with the correct decoded value on a completing multi-page
+ * write, fires on the aborting exit the bench actually takes, adds no
+ * budget WARN, and leaves response_code untouched.
+ *
+ * These cases drive PRODUCTION eeprom28c_write_execute directly via
+ * h.firestarter_operation_main(&h) after configure_memory (CMD_WRITE's main
+ * on 0x0D), never a hand-rolled copy of the loop.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Handle factory for driving eeprom28c_write_execute. Mirrors
+ * test_val_eeprom28c.cpp's make_write_handle shape (same suite family,
+ * separate TU, no shared linkage -- that file's helper is static). Every
+ * data_buffer byte is (0x10 + k) mod 0x40, so every byte value stays under
+ * 0x80 (DQ7 clear) -- this is what makes mock_get_data_page_load_always_wrong's
+ * fixed 0xFF (DQ7 set) reliably mismatch every intended byte, below. */
+static firestarter_handle_t make_page_load_handle(uint32_t address, uint32_t data_size) {
+    firestarter_handle_t h = {};
+    h.protocol = 0x0D;
+    h.cmd = CMD_WRITE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id = 0;
+    h.mem_size = SDP_BUS_CONFIGS[0].mem_size;
+    h.bus_config = SDP_BUS_CONFIGS[0].bus_config;
+    h.ctrl_flags = FLAG_SKIP_BLANK_CHECK;
+    h.address = address;
+    h.data_size = data_size;
+    for (uint32_t k = 0; k < data_size; k++) {
+        h.data_buffer[k] = (char)(0x10 + (k % 0x40));
+    }
+    return h;
+}
+
+/* Always-succeeds mock: returns exactly the byte the write intended for that
+ * address (derived from h->address and h->data_buffer), so both
+ * eeprom28c_wait_for_page_write's DQ7-complement poll and
+ * eeprom28c_verify_page_readback's whole-byte compare see the expected value
+ * on the FIRST read at every flush window -- the driven write completes
+ * normally, all the way to the loop's normal exit. */
+static uint8_t mock_get_data_page_load_ok(firestarter_handle_t* h, uint32_t address) {
+    uint32_t k = address - h->address;
+    return (uint8_t)h->data_buffer[k];
+}
+
+/* Always-fails mock: a fixed 0xFF (DQ7 set) never matches any byte this
+ * suite's data pattern produces (all < 0x80, DQ7 clear -- see
+ * make_page_load_handle above), so eeprom28c_wait_for_page_write times out
+ * on the FIRST flush window it polls. This IS Plan 119-11's bench
+ * condition: an EMPTY SOCKET reads back a fixed idle level that never
+ * matches an intended write, so the first page's write poll always fails
+ * -- exactly the condition under which gh#11's symptom appears. */
+static uint8_t mock_get_data_page_load_always_wrong(firestarter_handle_t*, uint32_t) {
+    return 0xFF;
+}
+
+/* Case 26 -- the report line fires on a completing write, with the correct
+ * worst value. Two pages (data_size 72, PAGE_SIZE 64: one flush at the
+ * page-64 boundary, one at the last byte), so the flush path runs more than
+ * once. The scripted tick queue is deliberately NON-MONOTONIC with its
+ * largest gap at byte index 40 -- neither the first byte (0) nor the last
+ * (71) -- so this case proves the tracker keeps a RUNNING MAXIMUM rather
+ * than reporting the first or the last interval. Every micros() read the
+ * driven path makes is scripted (1 seed + 72 in-loop = 73 entries): an
+ * under-scripted case would silently measure the documented TAIL value for
+ * every read past the script's end, which reads as "a real measurement" but
+ * is actually just the tail repeated. */
+void test_case26_write_execute_reports_worst_interval_on_completing_write(void) {
+    const size_t   data_size = 72; /* > PAGE_SIZE (64): two flush windows */
+    const size_t   spike_after_byte = 40; /* the (spike_after_byte+1)-th byte's load -- deliberately mid-write */
+    const uint32_t spike_us = 77;
+
+    std::vector<uint32_t> ticks;
+    ticks.reserve(data_size + 1);
+    uint32_t running = 0;
+    ticks.push_back(running); /* seed, read immediately before the loop */
+    for (size_t i = 0; i < data_size; i++) {
+        running += (i == spike_after_byte) ? spike_us : 1;
+        ticks.push_back(running); /* one entry per firestarter_set_data call */
+    }
+    sdp_script_micros(ticks);
+
+    firestarter_handle_t h = make_page_load_handle(0, (uint32_t)data_size);
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_page_load_ok;
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    h.firestarter_operation_main(&h);
+
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 26: a clean two-page write with every read matching its intended byte must not "
+        "report ERROR");
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_INFO_PAGE_LOAD_WORST_US),
+        "Case 26 (D-16): MSG_INFO_PAGE_LOAD_WORST_US must appear in the captured frame ids after a "
+        "completing write");
+
+    uint32_t decoded = 0;
+    bool found = sdp_decode_u32_param_for_id((uint8_t)MSG_INFO_PAGE_LOAD_WORST_US, &decoded);
+    TEST_ASSERT_TRUE_MESSAGE(found, "Case 26: MSG_INFO_PAGE_LOAD_WORST_US frame must be decodable");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(spike_us, decoded,
+        "Case 26 (T-119-08-VACUOUSVALUE): the DECODED worst-interval parameter must equal the "
+        "scripted maximum (77 us, at byte index 40 -- neither the first nor the last byte) -- "
+        "membership alone would pass a tracker that reported zero or the first/last interval "
+        "instead of the running maximum");
+}
+
+/* Case 27 -- the report line fires on the ABORTING exit. Same two-page
+ * geometry as Case 26, but mock_get_data_page_load_always_wrong makes the
+ * FIRST page's write poll fail, so the loop takes the early exit (via the
+ * flagged break -- D-16's single-exit restructure) after loading only the
+ * first page's 64 bytes; the second page (bytes 64-71) is never reached.
+ * This is the case that makes Plan 119-11's bench run meaningful: with an
+ * EMPTY SOCKET the first page always fails, and it is also the condition
+ * under which gh#11's symptom appears -- so a report unreachable on the
+ * abort path would have measured nothing where it matters most. Only the
+ * first 64 bytes' ticks are scripted (1 seed + 64 in-loop = 65 entries); a
+ * huge tail value is installed and must NEVER be observed in the decoded
+ * result, since the loop must abort before it is ever read. */
+void test_case27_write_execute_reports_worst_interval_on_aborting_write(void) {
+    const size_t   loaded_before_abort = 64; /* PAGE_SIZE -- the first page, in full */
+    const size_t   spike_after_byte = 30;    /* mid-first-page, not first/last of the loaded range */
+    const uint32_t spike_us = 55;
+    const uint32_t never_reached_tail = 999999999u;
+
+    std::vector<uint32_t> ticks;
+    ticks.reserve(loaded_before_abort + 1);
+    uint32_t running = 0;
+    ticks.push_back(running);
+    for (size_t i = 0; i < loaded_before_abort; i++) {
+        running += (i == spike_after_byte) ? spike_us : 1;
+        ticks.push_back(running);
+    }
+    sdp_script_micros(ticks, never_reached_tail);
+
+    firestarter_handle_t h = make_page_load_handle(0, 72); /* two pages -- second must never be reached */
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_page_load_always_wrong;
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    h.firestarter_operation_main(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 27: the first page's write poll must fail against the always-wrong mock, aborting "
+        "the write");
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_INFO_PAGE_LOAD_WORST_US),
+        "Case 27 (T-119-08-UNREACHABLE): MSG_INFO_PAGE_LOAD_WORST_US must still appear even though "
+        "the write aborted on its first page -- the single-exit restructure is what makes this "
+        "reachable");
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_ERR_EEPROM_TIMEOUT),
+        "Case 27: the page-write failure's own error id (MSG_ERR_EEPROM_TIMEOUT) must also appear");
+
+    uint32_t decoded = 0;
+    bool found = sdp_decode_u32_param_for_id((uint8_t)MSG_INFO_PAGE_LOAD_WORST_US, &decoded);
+    TEST_ASSERT_TRUE_MESSAGE(found, "Case 27: MSG_INFO_PAGE_LOAD_WORST_US frame must be decodable");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(spike_us, decoded,
+        "Case 27: the reported worst value must correspond to the 64 bytes actually loaded before "
+        "the abort (scripted max 55 us) -- never the installed 999999999 tail, which the loop must "
+        "never reach because it aborts first");
+}
+
+/* Case 28 -- no budget WARN on this path, even at an interval far above
+ * AT28C_TBLC_MAX_US (100). D-16 deliberately declines a runtime compare in
+ * the hot per-byte path, preserving 118's D-10; this case pins that
+ * declination so a future editor who adds one sees it fail here and has to
+ * make the decision deliberately. The presence half (MSG_INFO_PAGE_LOAD_WORST_US)
+ * is load-bearing so this case cannot pass vacuously against a driven path
+ * that captured no frames at all. */
+void test_case28_write_execute_no_tblc_budget_warn(void) {
+    const uint32_t over_budget_interval_us = 1000; /* >> AT28C_TBLC_MAX_US (100) */
+    sdp_script_micros({0, over_budget_interval_us});
+
+    firestarter_handle_t h = make_page_load_handle(0, 1); /* single byte -- one flush at last_byte */
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_page_load_ok;
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    h.firestarter_operation_main(&h);
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_WARN_SDP_TBLC_EXCEEDED),
+        "Case 28 (T-119-08-DECLINEDWARN): MSG_WARN_SDP_TBLC_EXCEEDED must NOT appear on the "
+        "page-load path, even at a scripted interval (1000 us) far above AT28C_TBLC_MAX_US (100) "
+        "-- D-16 declines a runtime budget compare in this hot path");
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_INFO_PAGE_LOAD_WORST_US),
+        "Case 28: MSG_INFO_PAGE_LOAD_WORST_US must still be present -- proves frames WERE captured, "
+        "so the WARN's absence is meaningful rather than vacuous");
+}
+
+/* Case 29 -- response_code is untouched by the report line. Mirrors
+ * test_case8_completion_poll_preserves_prior_severity's invariant onto this
+ * new emission: a prior severity must survive a completing write's report
+ * line exactly as it survives the completion poll. */
+void test_case29_write_execute_report_preserves_response_code(void) {
+    firestarter_handle_t h = make_page_load_handle(0, 4); /* single flush window, well inside one page */
+    h.response_code = RESPONSE_CODE_WARNING;
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_page_load_ok;
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    h.firestarter_operation_main(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
+        "Case 29: the page-load worst-interval report must never overwrite a prior response_code, "
+        "even on a cleanly completing write");
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_INFO_PAGE_LOAD_WORST_US),
+        "Case 29: MSG_INFO_PAGE_LOAD_WORST_US must still be present -- proves the report ran, so "
+        "the response_code check above is meaningful rather than vacuous");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
  * main
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -1412,6 +1667,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case23_standalone_unlock_matches_auto_unlock_stream);
     RUN_TEST(test_case24_null_main_refusal_emits_not_supported_and_error_response);
     RUN_TEST(test_case25_cmd_erase_on_0x0d_refused_end_to_end_devtest01);
+    RUN_TEST(test_case26_write_execute_reports_worst_interval_on_completing_write);
+    RUN_TEST(test_case27_write_execute_reports_worst_interval_on_aborting_write);
+    RUN_TEST(test_case28_write_execute_no_tblc_budget_warn);
+    RUN_TEST(test_case29_write_execute_report_preserves_response_code);
 
 #ifdef SDP_TRACE_DUMP
     RUN_TEST(test_dump_lock_goldens);
