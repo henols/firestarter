@@ -1,5 +1,21 @@
 name: PY32F071 firmware
 
+# Validation build for the native PY32F071 target. It publishes ONE thing: the
+# firmware image needed to install onto a board. ELF, linker map, size report,
+# checksums and build logs are deliberately not uploaded anywhere — they are
+# reproducible in a dev environment with the same two cmake commands used below,
+# and nothing downstream consumes them.
+#
+# This workflow does NOT cut releases. Release assets come from beta-build.yml,
+# alongside the AVR targets, because the version bump
+# (.github/scripts/update_version.py rewrites include/version.h and
+# auto-commits) happens inside that job. An image built in any other job would
+# carry a stale VERSION string — and the host's entire update decision is a
+# comparison of that string against the release tag.
+#
+# Integration into beta-build.yml is three steps plus one release line; see
+# platform/py32f071/README.md § "Release integration".
+
 on:
   pull_request:
     paths:
@@ -27,92 +43,38 @@ jobs:
             gcc-arm-none-eabi \
             binutils-arm-none-eabi
 
-      - name: Record tool versions
-        run: |
-          set -o pipefail
-          {
-            arm-none-eabi-gcc --version
-            arm-none-eabi-ld --version
-            cmake --version
-            ninja --version
-          } | tee tool-versions.txt
-
       - name: Configure
         run: |
-          set -o pipefail
           cmake \
             -S platform/py32f071 \
             -B build/py32f071 \
             -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            2>&1 | tee configure.log
+            -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: |
-          set -o pipefail
-          cmake --build build/py32f071 2>&1 | tee build.log
+        run: cmake --build build/py32f071
 
-      - name: Upload failed build diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: firestarter-py32f071-build-diagnostics
-          if-no-files-found: warn
-          path: |
-            configure.log
-            build.log
-            tool-versions.txt
-            build/py32f071/CMakeCache.txt
-            build/py32f071/build.ninja
+      # Size goes to the job log, not to a file: worth seeing on every run,
+      # worth nothing as an artifact.
+      - name: Report firmware size
+        run: arm-none-eabi-size build/py32f071/firestarter_py32f071.elf
 
-      - name: Report size
-        run: |
-          set -o pipefail
-          arm-none-eabi-size \
-            build/py32f071/firestarter-py32f071.elf \
-            | tee size.txt
-
-      - name: Create and verify firmware checksums
+      - name: Verify the install image exists and is non-empty
         working-directory: build/py32f071
         run: |
           set -euxo pipefail
-          test -s firestarter-py32f071.elf
-          test -s firestarter-py32f071.bin
-          test -s firestarter-py32f071.hex
-          sha256sum \
-            firestarter-py32f071.elf \
-            firestarter-py32f071.bin \
-            firestarter-py32f071.hex \
-            > firestarter-py32f071.sha256
-          cat firestarter-py32f071.sha256
-          sha256sum --check firestarter-py32f071.sha256
+          test -s firestarter_py32f071.hex
 
-      - name: Create artifact checksum manifest
-        run: |
-          sha256sum \
-            build/py32f071/firestarter-py32f071.elf \
-            build/py32f071/firestarter-py32f071.bin \
-            build/py32f071/firestarter-py32f071.hex \
-            build/py32f071/firestarter-py32f071.map \
-            configure.log \
-            build.log \
-            size.txt \
-            tool-versions.txt \
-            > SHA256SUMS
-
-      - name: Upload firmware artifacts
+      # The only publishable output. Named firestarter_py32f071.hex to match the
+      # asset name the host installer resolves (`firestarter_<board>.hex`, board
+      # = the RURP_BOARD_NAME the firmware reports), so a PR build can be
+      # downloaded and flashed directly with:
+      #     firestarter fw --install --board py32f071
+      # Actions always zips an artifact; a single-file artifact unzips to exactly
+      # the image and nothing else.
+      - name: Upload firmware install image
         uses: actions/upload-artifact@v4
         with:
-          name: firestarter-py32f071
+          name: firestarter_py32f071
           if-no-files-found: error
-          path: |
-            build/py32f071/firestarter-py32f071.elf
-            build/py32f071/firestarter-py32f071.bin
-            build/py32f071/firestarter-py32f071.hex
-            build/py32f071/firestarter-py32f071.map
-            build/py32f071/firestarter-py32f071.sha256
-            configure.log
-            build.log
-            size.txt
-            tool-versions.txt
-            SHA256SUMS
+          path: build/py32f071/firestarter_py32f071.hex
