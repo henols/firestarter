@@ -78,10 +78,16 @@ void setUp(void) {
      * delayMicroseconds() too. ArduinoFake ABORTS (SIGABRT) on any unmocked
      * virtual — this reads exactly like the D-13 Unity-teardown flake, but a
      * SIGABRT in a NEW suite is this (Pitfall 3), not that. Do not remove
-     * these as "unused" — they are load-bearing. */
+     * these as "unused" — they are load-bearing. Plan 118-04's OBS-04
+     * duration bracket adds two micros() reads around
+     * eeprom28c_emit_command_sequence's call inside eeprom28c_write_init, so
+     * micros() joins this load-bearing set too: a fixed value (elapsed 0)
+     * keeps this always-green harness suite's behaviour unchanged, since
+     * none of its cases exercise the AT28C_TBLC_MAX_US budget path. */
     When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
     When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+    When(Method(ArduinoFake(), micros)).AlwaysReturn(0);
 
     clear_strobes();
     reset_register_cache(0x00, 0x00, 0x00);

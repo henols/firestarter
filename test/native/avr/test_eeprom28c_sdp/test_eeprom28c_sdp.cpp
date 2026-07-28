@@ -87,6 +87,22 @@ static int      s_reads_at_poll_addr;
  * completion poll can never conclude. Reset false in setUp(). */
 static bool     s_poll_addr_toggles;
 
+/* Controllable micros() tick source (Plan 118-04's OBS-04 duration bracket:
+ * eeprom28c_write_init reads micros() once immediately before
+ * eeprom28c_emit_command_sequence's call and once immediately after, so
+ * EXACTLY TWO reads occur per write_init drive). Indexed by call count
+ * modulo 2 rather than an absolute count, so this stays correct even for a
+ * drive helper that happens to call write_init more than once (none do
+ * today). Default BOTH entries to 0 so elapsed == (ticks[1] - ticks[0]) ==
+ * 0 -- the budget can never appear exceeded, which is what keeps all eight
+ * existing cases in this file behaviourally identical to their pre-118-03
+ * values. Plan 118-05's budget-exceeded case sets s_micros_ticks[1] to a
+ * value that makes the elapsed exceed 6 * AT28C_TBLC_MAX_US before driving;
+ * this array is that seam. Reset to {0, 0} (and the call counter to 0)
+ * alongside the other file-static resets in setUp() below. */
+static uint32_t s_micros_ticks[2];
+static int      s_micros_call_count;
+
 void setUp(void) {
     ArduinoFakeReset();
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t))).AlwaysReturn(1);
@@ -96,10 +112,21 @@ void setUp(void) {
      * rurp_register_utils.h calls delayMicroseconds, and
      * eeprom28c_check_chip_id / eeprom28c_wait_for_write call delay() /
      * delayMicroseconds() too. ArduinoFake ABORTS (SIGABRT) on any unmocked
-     * virtual. Do not remove these as "unused" — they are load-bearing. */
+     * virtual. Do not remove these as "unused" — they are load-bearing. Plan
+     * 118-04's OBS-04 duration bracket calls micros() twice per write_init
+     * drive (immediately before and after
+     * eeprom28c_emit_command_sequence's call); removing this mock produces
+     * a SIGABRT indistinguishable from the deferred Unity-teardown flake
+     * (D-13), not a compile error, so it is exactly as load-bearing as the
+     * three mocks above it. */
     When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
     When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+    When(Method(ArduinoFake(), micros)).AlwaysDo([]() -> unsigned long {
+        unsigned long v = s_micros_ticks[s_micros_call_count % 2];
+        s_micros_call_count++;
+        return v;
+    });
 
     clear_strobes();
     reset_register_cache(0x00, 0x00, 0x00);
@@ -110,6 +137,9 @@ void setUp(void) {
     s_reads_at_mfr_addr = 0;
     s_reads_at_poll_addr = 0;
     s_poll_addr_toggles = false;
+    s_micros_ticks[0] = 0;
+    s_micros_ticks[1] = 0;
+    s_micros_call_count = 0;
 }
 
 void tearDown(void) {}
