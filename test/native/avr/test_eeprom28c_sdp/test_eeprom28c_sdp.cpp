@@ -38,6 +38,30 @@
  * Phase 117 commit 1: a permanent regression case proving the completion
  * poll can never destroy a prior WARNING, even when it never settles.
  *
+ * Cases 9-12 are new at Phase 118 Plan 05 (D-08, OBS-02/OBS-03/OBS-05),
+ * driving PRODUCTION eeprom28c_write_init via configure_memory dispatch
+ * (never the harness's drive_reference_emitter):
+ *  - Case 9: FLAG_SKIP_SDP_UNLOCK set -- the unlock sequence is provably
+ *    absent from the recorded BUS stream, asserted on content and position
+ *    (exact divergence index 0, plus an explicit walk over recorded
+ *    STROBE_KIND_DATA values for EEPROM_SDP_DISABLE's own payload bytes),
+ *    never on a bare strobe count.
+ *  - Case 10: the flag-absent counterpart, from the SAME handle factory as
+ *    Case 9, asserting the full SDP_FIXED_DIP28_28C256 stream -- the pair
+ *    ships together so the contrast is one executable comparison.
+ *  - Case 11: the t_BLC runtime budget WARN is observed to actually FIRE
+ *    (an over-budget synthesised elapsed value via Plan 118-03's
+ *    s_micros_ticks seam) and observed to NOT fire under the default
+ *    elapsed value -- the anti-hollow pair for a check that would otherwise
+ *    be indistinguishable from a dead branch.
+ *  - Case 12: the exactly-two-new-serial-frames enumeration (and its
+ *    exactly-one-WARN skip-path mirror), via a per-case Serial-frame
+ *    capture reusing test_rurp_log_id.cpp's existing AlwaysDo idiom -- NOT
+ *    a new general-purpose recorder (D-07 explicitly declined building
+ *    one). This strengthens, but never replaces, D-07's PRIMARY assertion:
+ *    the recorded BUS stream's byte-identity (Cases 1-3/10 here, and the
+ *    _shared/ blob-SHA check in RED-BASELINE.md).
+ *
  * Validation ceiling (RED-BASELINE.md carries this in full): every claim
  * this suite embodies is software-layer — code emits a sequence, code
  * asserts on it. No AT28C part was ever on the bench, and nothing here is
@@ -49,10 +73,12 @@
 #include <unity.h>
 #include <string.h>
 #include <stdio.h>
+#include <vector>
 
 extern "C" {
 #include "memory.h"
 #include "eeprom_28c.h"
+#include "messages.h"
 }
 #include "firestarter.h"
 #include "flash_utils.h"
@@ -64,6 +90,14 @@ using namespace fakeit;
 /* host_stubs.cpp's reset seam (D-05) — must run after configure_memory, which
  * itself writes address 0 (mem_util_set_address(handle, 0), memory.cpp:68). */
 extern "C" void reset_register_cache(uint8_t lsb, uint8_t msb, rurp_register_t ctrl);
+
+/* Plan 118-05 (D-08 constraint 1): EEPROM_SDP_DISABLE is the PRODUCTION
+ * command table (external linkage granted at eeprom_28c.cpp:122, FIX-05
+ * precedent -- test_sdp_harness.cpp:48 declares the identical extern).
+ * Case 9's payload-byte-absence walk reads this exact array, never a
+ * transcribed copy, so it stays byte-locked to whatever
+ * eeprom28c_emit_command_sequence actually drives. */
+extern const byte_flip_t EEPROM_SDP_DISABLE[6];
 
 /* ─────────────────────────────────────────────────────────────────────────
  * setUp / tearDown
@@ -103,9 +137,62 @@ static bool     s_poll_addr_toggles;
 static uint32_t s_micros_ticks[2];
 static int      s_micros_call_count;
 
+/* Plan 118-05 Task 2 (D-07 scope discipline): a PER-CASE Serial-frame
+ * capture, reusing test_rurp_log_id.cpp:59-63's existing AlwaysDo idiom
+ * verbatim (accumulate every Serial.write(uint8_t) byte into a host
+ * std::vector). This is NOT the general-purpose serial-frame baseline
+ * recorder D-07 explicitly declined building -- it lives local to THIS
+ * suite, is cleared per-case in setUp() below alongside the other
+ * file-static resets, and nothing here is added to test/native/avr/_shared/.
+ * D-07's PRIMARY assertion stays the recorded BUS stream's byte-identity
+ * (sdp_assert_stream_equals / the RED-BASELINE.md blob-SHA record); this
+ * capture only strengthens the serial-channel half of OBS-05's claim. */
+static std::vector<uint8_t> captured_frames;
+
+/* Walks captured_frames using rurp_log_id()'s fixed, documented wire layout
+ * (test_rurp_log_id.cpp's own comment: 4-byte magic, 2-byte big-endian
+ * length, 1 id byte, params, 1 crc byte, 1 anchor byte) and appends each
+ * frame's id byte, IN ORDER, to *out_ids. Never reads param count from a
+ * message-id lookup table -- the length field alone is sufficient to find
+ * the next frame's start, so this stays correct regardless of how many
+ * params any given id carries. */
+static void sdp_captured_frame_ids(std::vector<uint8_t>* out_ids) {
+    size_t offset = 0;
+    while (offset + 7 <= captured_frames.size()) {
+        uint16_t len_value = (uint16_t)(((uint16_t)captured_frames[offset + 4] << 8) | captured_frames[offset + 5]);
+        size_t frame_size = 4 + 2 + (size_t)len_value + 1;
+        if (offset + frame_size > captured_frames.size()) {
+            break; /* incomplete trailing frame -- not expected in these cases */
+        }
+        out_ids->push_back(captured_frames[offset + 6]);
+        offset += frame_size;
+    }
+}
+
+/* Content-order membership check over an already-enumerated id list --
+ * never a count. */
+static bool sdp_ids_contains(const std::vector<uint8_t>& ids, uint8_t id) {
+    for (size_t i = 0; i < ids.size(); i++) {
+        if (ids[i] == id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void setUp(void) {
     ArduinoFakeReset();
-    When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t))).AlwaysReturn(1);
+    /* Plan 118-05 Task 2: was AlwaysReturn(1) through Plan 118-04. Switched to
+     * AlwaysDo so every byte is ALSO captured into captured_frames -- this is
+     * additive/behaviourally-transparent to every existing case (none of
+     * cases 1-8 ever inspects captured_frames), confirmed by re-running all
+     * ten cases (1-8 plus the two Task-1 cases) at 10/10 before Task 2's new
+     * cases were added (see 118-05-SUMMARY.md). */
+    When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t)))
+        .AlwaysDo([](uint8_t b) -> size_t {
+            captured_frames.push_back(b);
+            return (size_t)1;
+        });
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(const uint8_t*, size_t))).AlwaysReturn(1);
     When(Method(ArduinoFake(Serial), flush)).AlwaysReturn();
     /* REQUIRED (mirrors test_sdp_harness.cpp / D-05): the real
@@ -140,6 +227,7 @@ void setUp(void) {
     s_micros_ticks[0] = 0;
     s_micros_ticks[1] = 0;
     s_micros_call_count = 0;
+    captured_frames.clear();
 }
 
 void tearDown(void) {}
@@ -148,7 +236,16 @@ void tearDown(void) {}
  * Handle + drive helpers
  * ───────────────────────────────────────────────────────────────────────── */
 
-static firestarter_handle_t make_sdp_handle(const sdp_bus_config_row_t& row) {
+/* Plan 118-05 (D-08): extra_flags defaults to 0, so every one of cases 1-8's
+ * existing make_sdp_handle(row) call sites is byte-for-byte unaffected --
+ * no signature churn at those eight sites. Cases 9 and 10 pass
+ * FLAG_SKIP_SDP_UNLOCK or 0 respectively, from this SAME factory and the
+ * SAME row, so the only difference between the two cases is the flag bit
+ * (mirrors make_identity_handle's existing ctrl_flags-parameter shape at
+ * lines 163-178 below). FLAG_SKIP_BLANK_CHECK stays unconditionally set in
+ * both, exactly as every other case here, so the blank-check axis
+ * contributes no strobes to either stream. */
+static firestarter_handle_t make_sdp_handle(const sdp_bus_config_row_t& row, uint32_t extra_flags = 0) {
     firestarter_handle_t h = {};
     h.protocol = 0x0D;
     h.cmd = CMD_WRITE;
@@ -156,7 +253,7 @@ static firestarter_handle_t make_sdp_handle(const sdp_bus_config_row_t& row) {
     h.chip_id = 0; /* skip chip-id branch for cases 1-5 */
     h.mem_size = row.mem_size;
     h.bus_config = row.bus_config;
-    h.ctrl_flags = FLAG_SKIP_BLANK_CHECK;
+    h.ctrl_flags = FLAG_SKIP_BLANK_CHECK | extra_flags;
     return h;
 }
 
@@ -525,6 +622,201 @@ void test_case8_completion_poll_preserves_prior_severity(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * Cases 9-10 — the skip/no-skip stream pair, content-positional, from ONE
+ * handle factory (D-08, Plan 118-05 Task 1, OBS-02)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* D-08 constraint 1: drives PRODUCTION eeprom28c_write_init via
+ * drive_write_init (configure_memory dispatch), never
+ * drive_reference_emitter (which drives FLASH_DISABLE_WRITE_PROTECTION, a
+ * DIFFERENT table -- proving nothing about the shipped FLAG_SKIP_SDP_UNLOCK
+ * gate).
+ *
+ * D-08 constraint 2: every assertion below is on the ordered stream's
+ * CONTENT, never a call count. Register-write elision (Phase 116 research
+ * finding 10) is invisible to a counting test -- a bare
+ * strobe_count() == 0 would pass even if the emitter ran and every write
+ * happened to elide, so that check appears ONLY as secondary corroboration
+ * at the end, never as the load-bearing proof. */
+void test_case9_skip_flag_suppresses_unlock_stream(void) {
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0], FLAG_SKIP_SDP_UNLOCK); /* AT28C256 */
+    drive_write_init(&h, 0x00);
+
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(),
+        "Case 9 (OBS-02): recorded stream must not overflow");
+
+    /* Content-positional divergence (D-08 constraint 2): the recorded stream
+     * must diverge from the full unlock stream at EXACTLY index 0 -- the
+     * unlock sequence's own first strobe is absent from the very start, not
+     * merely "somewhere". Asserting the exact index, rather than != -1, is
+     * itself an assertion about content and position, never a count. */
+    TEST_ASSERT_EQUAL_MESSAGE(0, sdp_first_divergence(SDP_FIXED_DIP28_28C256, SDP_FIXED_DIP28_28C256_LEN),
+        "Case 9 (OBS-02): FLAG_SKIP_SDP_UNLOCK set -- the recorded stream must diverge from the "
+        "full unlock stream (SDP_FIXED_DIP28_28C256) starting at index 0");
+
+    /* Content walk over every recorded DATA entry: none of EEPROM_SDP_DISABLE's
+     * own payload bytes -- the PRODUCTION command sequence's own command
+     * table, not a transcribed copy -- may appear as a DATA value anywhere in
+     * the recorded stream. This is the assertion that survives register-write
+     * elision (D-08 constraint 2): it inspects every recorded element's
+     * {kind, value}, never a length or a count. */
+    for (int i = 0; i < strobe_count(); i++) {
+        if (strobe_kind(i) != STROBE_KIND_DATA) {
+            continue;
+        }
+        for (size_t j = 0; j < sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]); j++) {
+            char msg[224];
+            snprintf(msg, sizeof(msg),
+                "Case 9 (OBS-02): recorded DATA entry at index %d (value 0x%02X) matches "
+                "EEPROM_SDP_DISABLE[%u]'s payload byte 0x%02X -- the unlock sequence must be "
+                "TOTALLY ABSENT from the stream when FLAG_SKIP_SDP_UNLOCK is set",
+                i, (unsigned)strobe_value(i), (unsigned)j, (unsigned)EEPROM_SDP_DISABLE[j].byte);
+            TEST_ASSERT_NOT_EQUAL_MESSAGE(EEPROM_SDP_DISABLE[j].byte, strobe_value(i), msg);
+        }
+    }
+
+    /* Secondary corroboration ONLY (D-08 explicitly forbids a bare
+     * strobe_count() from being the load-bearing proof) -- the two content
+     * assertions above are what this case actually rests on. With the whole
+     * unlock block skipped and FLAG_SKIP_BLANK_CHECK also set,
+     * eeprom28c_write_init emits nothing else, so the count happens to be 0. */
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_count(),
+        "Case 9 (OBS-02, secondary corroboration ONLY -- see the index-0 divergence and the "
+        "payload-byte-absence walk above for the load-bearing proof)");
+}
+
+/* D-08 constraint 3: the flag-absent counterpart, from the SAME handle
+ * factory and the SAME row as Case 9 above, asserting the FULL
+ * SDP_FIXED_DIP28_28C256 stream, ships in the SAME commit as Case 9. Case 1
+ * already makes a similar full-stream assertion, but from the OLD
+ * (pre-118-05) factory shape that always passed extra_flags == 0 implicitly
+ * -- this counterpart exists so the skip/no-skip pair is self-contained at
+ * one call site each, and so a future edit to make_sdp_handle's default
+ * ctrl_flags cannot silently drift the flag-absent baseline Case 9 is
+ * contrasted against. Cross-reference: Case 9 immediately above. */
+void test_case10_flag_absent_emits_full_unlock_stream(void) {
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0], 0); /* AT28C256, flag NOT set */
+    drive_write_init(&h, 0x00);
+    sdp_assert_stream_equals(SDP_FIXED_DIP28_28C256, SDP_FIXED_DIP28_28C256_LEN,
+        "Case 10 (OBS-02, D-08 constraint 3): FLAG_SKIP_SDP_UNLOCK absent -- eeprom28c_write_init's "
+        "stream must match the full FIX-01 remap-aware target, from the SAME handle factory Case 9 "
+        "used, differing only by the flag bit");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 10: the completion poll is advisory only (D-05) and must never report ERROR for a "
+        "write-init that emitted the correct sequence");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Case 11 — the t_BLC runtime budget WARN is observed to actually fire
+ * (D-09, Plan 118-05 Task 2, OBS-03)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+void test_case11_tblc_budget_exceeded_warns(void) {
+    /* AT28C_TBLC_MAX_US (100) is #define'd inside eeprom_28c.cpp's own
+     * translation unit (eeprom_28c.cpp:58) and is NOT exported via
+     * eeprom_28c.h, so it cannot be included directly here. Mirrored as a
+     * named local constant with an explicit citation, rather than left as
+     * an unexplained magic number -- the sequence-length half of the
+     * production budget formula (sdp_seq_len * AT28C_TBLC_MAX_US) IS derived
+     * from the real EEPROM_SDP_DISABLE array below, so only the per-byte
+     * microsecond ceiling itself needs mirroring. */
+    const uint32_t TEST_MIRROR_AT28C_TBLC_MAX_US = 100; /* mirrors eeprom_28c.cpp:58 */
+    uint32_t sdp_seq_len = (uint32_t)(sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]));
+    uint32_t over_budget_elapsed = sdp_seq_len * TEST_MIRROR_AT28C_TBLC_MAX_US + 1;
+
+    s_micros_ticks[0] = 0;
+    s_micros_ticks[1] = over_budget_elapsed;
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0]); /* flag absent -- unlock runs */
+    drive_write_init(&h, 0x00);
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+
+    int done_idx = -1, warn_idx = -1;
+    for (size_t i = 0; i < ids.size(); i++) {
+        if (ids[i] == (uint8_t)MSG_INFO_SDP_UNLOCK_DONE_US) {
+            done_idx = (int)i;
+        }
+        if (ids[i] == (uint8_t)MSG_WARN_SDP_TBLC_EXCEEDED) {
+            warn_idx = (int)i;
+        }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(warn_idx != -1,
+        "Case 11 (OBS-03, D-09): an over-budget elapsed value must make MSG_WARN_SDP_TBLC_EXCEEDED "
+        "appear in the captured serial frames -- a runtime check never observed to fire is "
+        "indistinguishable from a dead branch");
+    TEST_ASSERT_TRUE_MESSAGE(done_idx != -1 && warn_idx > done_idx,
+        "Case 11 (OBS-03): MSG_WARN_SDP_TBLC_EXCEEDED must appear AFTER MSG_INFO_SDP_UNLOCK_DONE_US "
+        "in the captured frame order -- the budget check runs after the after-line");
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "Case 11 (D-02/D-05): the budget WARN must never write handle->response_code -- severity "
+        "lives in the message id's band alone");
+
+    /* Anti-hollow control, same case (D-09's own requirement): with the
+     * default tick behaviour (elapsed 0) restored, the WARN id must NOT
+     * appear -- an appearing-only assertion could pass against a branch that
+     * always fires regardless of the measured duration. */
+    s_micros_ticks[0] = 0;
+    s_micros_ticks[1] = 0;
+    s_micros_call_count = 0;
+    captured_frames.clear();
+    firestarter_handle_t h2 = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive_write_init(&h2, 0x00);
+    std::vector<uint8_t> ids_default;
+    sdp_captured_frame_ids(&ids_default);
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids_default, (uint8_t)MSG_WARN_SDP_TBLC_EXCEEDED),
+        "Case 11 (anti-hollow control): with the default elapsed value (0), MSG_WARN_SDP_TBLC_EXCEEDED "
+        "must NOT appear -- proves the check is conditional on the measured duration, not a branch "
+        "that always fires");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Case 12 — exactly the two new report frames (flag absent) / exactly one
+ * WARN frame (flag set), enumerated (D-07 strengthening, OBS-05)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Strengthens, but never replaces, D-07's PRIMARY assertion: the recorded
+ * BUS stream's byte-identity (Cases 1-3/10 above, and the _shared/ blob-SHA
+ * record in RED-BASELINE.md, Plan 118-05 Task 3). This case only makes
+ * OBS-05's serial-channel exception machine-checked instead of prose-only,
+ * using the per-case capture declared above -- it does not build the
+ * general-purpose recorder D-07 explicitly declined. */
+void test_case12_flag_absent_emits_exactly_two_report_frames(void) {
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0]); /* flag absent, default ticks */
+    drive_write_init(&h, 0x00);
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_EQUAL_MESSAGE(2, (int)ids.size(),
+        "Case 12 (OBS-05): the flag-absent default path must emit EXACTLY two report frames");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE((uint8_t)MSG_INFO_SDP_UNLOCK, ids.size() > 0 ? ids[0] : (uint8_t)0xFF,
+        "Case 12: frame 0 must be MSG_INFO_SDP_UNLOCK");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE((uint8_t)MSG_INFO_SDP_UNLOCK_DONE_US, ids.size() > 1 ? ids[1] : (uint8_t)0xFF,
+        "Case 12: frame 1 must be MSG_INFO_SDP_UNLOCK_DONE_US");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_WARN_SDP_UNLOCK_SKIPPED),
+        "Case 12: the flag-absent path must never emit MSG_WARN_SDP_UNLOCK_SKIPPED");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_WARN_SDP_TBLC_EXCEEDED),
+        "Case 12: the flag-absent default (elapsed 0) path must never emit MSG_WARN_SDP_TBLC_EXCEEDED");
+
+    /* Skip-path mirror, same case -- the executable form of D-02's "in place
+     * of, never in addition to": with FLAG_SKIP_SDP_UNLOCK set, EXACTLY
+     * MSG_WARN_SDP_UNLOCK_SKIPPED and neither INFO id. */
+    captured_frames.clear();
+    firestarter_handle_t h_skip = make_sdp_handle(SDP_BUS_CONFIGS[0], FLAG_SKIP_SDP_UNLOCK);
+    drive_write_init(&h_skip, 0x00);
+    std::vector<uint8_t> ids_skip;
+    sdp_captured_frame_ids(&ids_skip);
+    TEST_ASSERT_EQUAL_MESSAGE(1, (int)ids_skip.size(),
+        "Case 12 (skip mirror, D-02): the skip path must emit EXACTLY one frame");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE((uint8_t)MSG_WARN_SDP_UNLOCK_SKIPPED, ids_skip.size() > 0 ? ids_skip[0] : (uint8_t)0xFF,
+        "Case 12 (skip mirror): the one frame must be MSG_WARN_SDP_UNLOCK_SKIPPED");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids_skip, (uint8_t)MSG_INFO_SDP_UNLOCK),
+        "Case 12 (skip mirror): the skip path must never emit MSG_INFO_SDP_UNLOCK");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids_skip, (uint8_t)MSG_INFO_SDP_UNLOCK_DONE_US),
+        "Case 12 (skip mirror): the skip path must never emit MSG_INFO_SDP_UNLOCK_DONE_US");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
  * main
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -540,6 +832,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case6_matching_chip_id_proceeds);
     RUN_TEST(test_case7_mismatching_chip_id_with_force_warns);
     RUN_TEST(test_case8_completion_poll_preserves_prior_severity);
+    RUN_TEST(test_case9_skip_flag_suppresses_unlock_stream);
+    RUN_TEST(test_case10_flag_absent_emits_full_unlock_stream);
+    RUN_TEST(test_case11_tblc_budget_exceeded_warns);
+    RUN_TEST(test_case12_flag_absent_emits_exactly_two_report_frames);
 
     return UNITY_END();
 }
