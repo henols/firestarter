@@ -4,34 +4,44 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 116 Plan 06 — the PARKED, RED-by-design `0x0D` SDP trace suite (D-01).
+ * Phase 116 Plan 06 authored this suite PARKED and RED-by-design
+ * (v1.22 Phase 116 Plan 06, TRACE-02/TRACE-04/TRACE-06). As of v1.22 Phase
+ * 117 commit 1 (D-03), the suite is ENABLED in platformio.ini's
+ * [env:native] test_filter and runs under `pio test -e native`.
  *
  * This suite pins the exact ordered (LSB, MSB, data, CE) stream
- * eeprom28c_write_init emits today, for each of the four 0x0D pinouts plus a
+ * eeprom28c_write_init emits, for each of the four 0x0D pinouts plus a
  * second DIP32 size band, and asserts it against the FIXED (post-Phase-117)
- * target — TRACE-02. It is authored RED ON PURPOSE: `eeprom28c_write_init`
- * drives the SDP-disable sequence through flash_execute_command (the SHIPPED
- * emitter, fu_flash_fast_address), which writes raw LSB/MSB directly and
- * NEVER goes through handle->firestarter_set_data — the remap-aware,
- * bus_config-consulting emitter FIX-01 targets. Phase 117's one-line addition
- * of this suite's directory to platformio.ini's test_filter allowlist is the
- * RED-to-GREEN proof.
+ * target — TRACE-02. At Phase 117 commit 1 it is RED against the
+ * still-unfixed production tree; the verbatim capture is committed at
+ * RED-BASELINE.md under "## Post-suite-edit RED baseline (Phase 117 commit
+ * 1 — D-03)". It is GREEN from commit 2 onward, once plan 117-02 lands the
+ * production fix.
+ *
+ * Phase 116's D-01 claimed that this suite's one-line test_filter addition
+ * would itself BE the whole RED-to-GREEN proof. That did not hold
+ * (117-CONTEXT.md D-01/D-02/D-03 supersede it): two structural conflicts
+ * would have kept the suite RED post-fix for reasons unrelated to the fix —
+ * the suite's own no-op `set_data` mock (the exact pointer FIX-01's emitter
+ * is built on) and five assertions that encoded today's INIT-abort as the
+ * expected outcome. The real flip required four edits: this test_filter
+ * line, un-mocking `set_data` (D-01), flipping five response-code
+ * assertions plus adding one new permanent severity-preservation regression
+ * case (D-02), and this file's own suite-header rewrite.
  *
  * Cases 6-7 additionally carry TRACE-06's re-runnable evidence: with
  * CORRECTION 2's fix applied (D-12 originally mis-routed one of these two
- * into the always-green harness), both migrated identity-gate cases are RED
- * today because eeprom28c_wait_for_write's completion-poll timeout
- * unconditionally overwrites handle->response_code — even when
- * eeprom28c_check_chip_id already set a WARNING under FLAG_FORCE. That
- * overwrite is second-order evidence the completion check is inverted: it
- * does not merely fail, it destroys severity information.
+ * into the always-green harness), both migrated identity-gate cases assert
+ * the post-fix expectation — a matching identity must proceed, and a
+ * FLAG_FORCE mismatch's WARNING severity must survive the completion path
+ * (D-05: the completion poll never writes response_code). Case 8 is new at
+ * Phase 117 commit 1: a permanent regression case proving the completion
+ * poll can never destroy a prior WARNING, even when it never settles.
  *
- * This suite is deliberately NOT in platformio.ini's test_filter allowlist —
- * see the parking note directly above that list. `pio test -e native` must
- * stay green throughout Phase 116.
- *
- * Validation ceiling (RED-BASELINE.md carries this in full): every claim this
- * suite embodies is software-layer. No AT28C part was on the bench.
+ * Validation ceiling (RED-BASELINE.md carries this in full): every claim
+ * this suite embodies is software-layer — code emits a sequence, code
+ * asserts on it. No AT28C part was ever on the bench, and nothing here is
+ * evidence about silicon state.
  */
 
 #include <Arduino.h>
@@ -72,6 +82,10 @@ static uint8_t  s_mfr_hi_keyed;
 static uint8_t  s_mfr_lo_keyed;
 static int      s_reads_at_mfr_addr;
 static int      s_reads_at_poll_addr;
+/* Case 8 (D-02, Phase 117 commit 1): when set, the 0x5555 poll address
+ * toggles bit 0x40 on every read instead of returning a constant, so the
+ * completion poll can never conclude. Reset false in setUp(). */
+static bool     s_poll_addr_toggles;
 
 void setUp(void) {
     ArduinoFakeReset();
@@ -95,6 +109,7 @@ void setUp(void) {
     s_mfr_lo_keyed = 0xFF;
     s_reads_at_mfr_addr = 0;
     s_reads_at_poll_addr = 0;
+    s_poll_addr_toggles = false;
 }
 
 void tearDown(void) {}
@@ -122,6 +137,12 @@ static firestarter_handle_t make_identity_handle(uint16_t expected_chip_id, uint
     h.mem_size = 32768; /* AT28C256 -- mfr_addr = mem_size - 64 = 0x7FC0 */
     h.response_code = RESPONSE_CODE_OK;
     h.chip_id = expected_chip_id;
+    /* D-01 (Phase 117): dropping the set_data no-op routes cases 6-7 through
+     * the real memory_set_data / mem_util_remap_address_bus for the first
+     * time, so this factory now needs a real bus_config -- row 0 is
+     * AT28C256 / DIP28_28C256, whose mem_size 32768 already matches this
+     * factory's own h.mem_size above (and its derived mfr_addr 0x7FC0). */
+    h.bus_config = SDP_BUS_CONFIGS[0].bus_config;
     h.ctrl_flags = ctrl_flags | FLAG_SKIP_BLANK_CHECK;
     return h;
 }
@@ -129,8 +150,14 @@ static firestarter_handle_t make_identity_handle(uint16_t expected_chip_id, uint
 /* Pattern 3: dispatch on ADDRESS, not call order. Virgin 0xFF everywhere
  * except the two planted manufacturer/device identity bytes; the SDP
  * completion-poll address (0x5555) is deliberately never satisfied. Migrated
- * from test_sdp_harness.cpp (116-05). */
-static void mock_set_data_keyed(firestarter_handle_t*, uint32_t, uint8_t) {}
+ * from test_sdp_harness.cpp (116-05).
+ *
+ * D-01 (Phase 117 commit 1): only get_data is mocked here. The suite no
+ * longer reassigns firestarter_set_data -- FIX-01 builds the emitter on
+ * exactly that pointer, so a no-op there would make the post-fix recorded
+ * stream empty. get_data stays mocked because it is what collapses the
+ * completion poll's 2000-iteration loop to zero strobes, which is the sole
+ * reason full-stream equality is possible at all. */
 static uint8_t mock_get_data_keyed(firestarter_handle_t*, uint32_t addr) {
     if (addr == s_mfr_addr_keyed) {
         s_reads_at_mfr_addr++;
@@ -142,6 +169,18 @@ static uint8_t mock_get_data_keyed(firestarter_handle_t*, uint32_t addr) {
     }
     if (addr == 0x5555) {
         s_reads_at_poll_addr++;
+        /* D-02 (Phase 117 commit 1, Case 8): post-fix the completion poll is
+         * a bounded DQ6 toggle-bit poll, not an equality compare against a
+         * value that is never written. A constant return means "settled
+         * immediately"; s_poll_addr_toggles flips bit 0x40 on every read at
+         * THIS address so it means "never settles" -- dispatch stays keyed
+         * on ADDRESS, never on call order, per the rule above. The fixed
+         * code draws NO conclusion from either outcome (D-05): the
+         * conclusion is deferred to the page write's own poll, which has a
+         * real written byte to compare against (FIX-06). */
+        if (s_poll_addr_toggles) {
+            return (s_reads_at_poll_addr % 2 == 0) ? (uint8_t)0x00 : (uint8_t)0x40;
+        }
         return 0xFF; /* virgin default -- never satisfies the 0x20 SDP-disable poll */
     }
     return 0xFF;
@@ -162,14 +201,16 @@ static void drive_reference_emitter(firestarter_handle_t* h, const byte_flip_t* 
 }
 
 /* Drives the REAL eeprom28c_write_init (via configure_memory dispatch) after
- * reassigning the data function pointers to the address-keyed mock, so the
+ * reassigning firestarter_get_data to the address-keyed mock, so the
  * 2000-iteration completion-poll timeout contributes zero strobes to the
  * recorded stream (Task 1 / Open Question 2 resolution: full-stream equality
- * is possible only because the mock satisfies no bus traffic). */
+ * is possible only because the mock satisfies no bus traffic). D-01 (Phase
+ * 117): unlike Phase 116, firestarter_set_data is left as configure_memory's
+ * real memory_set_data -- FIX-01 routes the emitter through that exact
+ * pointer, so a no-op there would make the recorded stream empty post-fix. */
 static void drive_write_init(firestarter_handle_t* h, rurp_register_t ctrl_seed) {
     configure_memory(h);
     h->firestarter_get_data = mock_get_data_keyed;
-    h->firestarter_set_data = mock_set_data_keyed;
     reset_register_cache(0x00, 0x00, ctrl_seed);
     clear_strobes();
     h->firestarter_operation_init(h);
@@ -189,7 +230,9 @@ static rurp_register_t drive_write_init_after_real_read(firestarter_handle_t* h,
     h->firestarter_get_data(h, probe_addr); /* REAL preceding read -- production memory_get_data */
     rurp_register_t stale_ctrl = rurp_read_from_register(CONTROL_REGISTER);
     h->firestarter_get_data = mock_get_data_keyed;
-    h->firestarter_set_data = mock_set_data_keyed;
+    /* D-01 (Phase 117): firestarter_set_data stays the real memory_set_data
+     * (see drive_write_init's comment above) -- FIX-01's emitter is built on
+     * it. */
     clear_strobes();
     h->firestarter_operation_init(h);
     return stale_ctrl;
@@ -208,41 +251,43 @@ static rurp_register_t drive_write_init_after_real_read(firestarter_handle_t* h,
  * this pinout's real bus wiring, so the ordered-stream comparison against the
  * FIX-01 target (SDP_FIXED_DIP28_28C256, built on the remap-aware
  * memory_set_data) diverges from the very first MSB write. */
-void test_case1_at28c256_shipped_stream_diverges_from_fixed(void) {
+void test_case1_at28c256_stream_matches_fixed(void) {
     firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 */
     drive_write_init(&h, 0x00);
-    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
-        "Case 1: eeprom28c_write_init must abort at INIT (TRACE-06) -- the completion "
-        "poll at 0x5555 never sees 0x20 against the address-keyed mock's virgin 0xFF");
     sdp_assert_stream_equals(SDP_FIXED_DIP28_28C256, SDP_FIXED_DIP28_28C256_LEN,
         "Case 1: AT28C256/DIP28_28C256 -- eeprom28c_write_init's raw-address shipped "
         "stream must match the FIX-01 remap-aware target");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 1: the completion poll is advisory only (D-05) and must never report ERROR "
+        "for a write-init that emitted the correct sequence");
 }
 
 /* RED today, same mechanism as Case 1: on AT28C64/DIP28_28C64, remap(0x5555)
  * == 0x1555 (MSB 0x15, not 0x55) and remap(0x2AAA) == 0x0AAA (MSB 0x0A, not
  * 0x2A) -- again wrong for this pinout's real 13-address-line wiring. */
-void test_case2_at28c64_shipped_stream_diverges_from_fixed(void) {
+void test_case2_at28c64_stream_matches_fixed(void) {
     firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[1]); /* AT28C64 */
     drive_write_init(&h, 0x00);
-    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
-        "Case 2: eeprom28c_write_init must abort at INIT (TRACE-06)");
     sdp_assert_stream_equals(SDP_FIXED_DIP28_28C64, SDP_FIXED_DIP28_28C64_LEN,
         "Case 2: AT28C64/DIP28_28C64 -- eeprom28c_write_init's raw-address shipped "
         "stream must match the FIX-01 remap-aware target");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 2: the completion poll is advisory only (D-05) and must never report ERROR "
+        "for a write-init that emitted the correct sequence");
 }
 
 /* RED today, same mechanism as Case 1: on AT28C16/DIP24_2816 (11 address
  * lines), remap(0x5555) == 0x0555 (MSB 0x05) and remap(0x2AAA) == 0x02AA
  * (MSB 0x02). */
-void test_case3_at28c16_shipped_stream_diverges_from_fixed(void) {
+void test_case3_at28c16_stream_matches_fixed(void) {
     firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[2]); /* AT28C16 */
     drive_write_init(&h, 0x00);
-    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
-        "Case 3: eeprom28c_write_init must abort at INIT (TRACE-06)");
     sdp_assert_stream_equals(SDP_FIXED_DIP24_2816, SDP_FIXED_DIP24_2816_LEN,
         "Case 3: AT28C16/DIP24_2816 -- eeprom28c_write_init's raw-address shipped "
         "stream must match the FIX-01 remap-aware target");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 3: the completion poll is advisory only (D-05) and must never report ERROR "
+        "for a write-init that emitted the correct sequence");
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -291,8 +336,6 @@ void test_case3_at28c16_shipped_stream_diverges_from_fixed(void) {
 void test_case4_at28c010_stale_direct_seed(void) {
     firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[3]); /* AT28C010 */
     drive_write_init(&h, CTRL_ADDRESS_LINE_17 | CTRL_ADDRESS_LINE_18);
-    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
-        "Case 4: eeprom28c_write_init must abort at INIT (TRACE-06)");
 
     sdp_strobe_t shipped_snapshot[64];
     int shipped_len = sdp_snapshot(shipped_snapshot, 64);
@@ -310,6 +353,11 @@ void test_case4_at28c010_stale_direct_seed(void) {
         "Case 4: AT28C010/DIP32_28C512_EEPROM, directly-seeded stale CTRL_ADDRESS_LINE_17|18 -- "
         "shipped path (no CONTROL_REGISTER write, ever) must clear the stale write-inhibit bits "
         "like the fixed reference emitter (memory_set_data) does");
+
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 4: the completion poll is advisory only (D-05) and must never report ERROR "
+        "for a write-init that cleared the stale write-inhibit bits and emitted the correct "
+        "sequence");
 }
 
 /* Case 5 (STALE STATE MECHANISM: a real preceding read through
@@ -330,8 +378,6 @@ void test_case5_at28c040_stale_via_real_read(void) {
         "Case 5: a real preceding read (at an arbitrary address, 0x0000) must leave "
         "CTRL_ADDRESS_LINE_17 stuck HIGH on DIP32_28C512_EEPROM -- rw_line 20 folds "
         "READ_FLAG into this CONTROL bit regardless of which address is read");
-    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
-        "Case 5: eeprom28c_write_init must abort at INIT (TRACE-06)");
 
     sdp_strobe_t shipped_snapshot[64];
     int shipped_len = sdp_snapshot(shipped_snapshot, 64);
@@ -348,6 +394,11 @@ void test_case5_at28c040_stale_via_real_read(void) {
         "Case 5: AT28C040/DIP32_28C512_EEPROM, stale CTRL_ADDRESS_LINE_17 reached via a REAL "
         "preceding read (memory_get_data, not a directly-seeded cache) -- shipped path must clear "
         "the write-inhibit bit like the fixed reference emitter does");
+
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 5: the completion poll is advisory only (D-05) and must never report ERROR "
+        "for a write-init that cleared the stale write-inhibit bit and emitted the correct "
+        "sequence");
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -373,10 +424,12 @@ void test_case6_matching_chip_id_proceeds(void) {
     s_mfr_lo_keyed = 0x08;
     firestarter_handle_t h = make_identity_handle(0x1F08, 0);
     configure_memory(&h);
-    /* configure_memory() overwrites BOTH firestarter_get_data AND
-     * firestarter_set_data (Pattern 3) -- re-assign both. */
+    /* configure_memory() overwrites firestarter_get_data (Pattern 3) --
+     * re-assign it. D-01 (Phase 117): firestarter_set_data is left as
+     * configure_memory's real memory_set_data -- FIX-01's emitter is built
+     * on that exact pointer, so a no-op here would make the post-fix
+     * recorded stream empty. */
     h.firestarter_get_data = mock_get_data_keyed;
-    h.firestarter_set_data = mock_set_data_keyed;
     reset_register_cache(0x00, 0x00, 0x00);
     clear_strobes();
     h.firestarter_operation_init(&h);
@@ -403,14 +456,42 @@ void test_case7_mismatching_chip_id_with_force_warns(void) {
     s_mfr_lo_keyed = 0xAD;
     firestarter_handle_t h = make_identity_handle(0x1F08, FLAG_FORCE);
     configure_memory(&h);
+    /* D-01 (Phase 117): see test_case6's comment above -- firestarter_set_data
+     * is left as the real memory_set_data. */
     h.firestarter_get_data = mock_get_data_keyed;
-    h.firestarter_set_data = mock_set_data_keyed;
     reset_register_cache(0x00, 0x00, 0x00);
     clear_strobes();
     h.firestarter_operation_init(&h);
     TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
         "migrated (RED, CORRECTION 2): mismatching identity + FLAG_FORCE must WARN, not have its "
         "severity destroyed by the unconditional SDP-disable completion wait");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Case 8 — completion poll must never destroy a prior severity (D-02, D-05)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* New at Phase 117 commit 1, a PERMANENT regression guard (not migrated,
+ * not RED-only-by-construction). chip_id is 0 in make_sdp_handle, so no
+ * identity path runs and the WARNING's provenance is unambiguous -- it can
+ * only have been altered by the completion poll itself. s_poll_addr_toggles
+ * makes the poll never conclude, so this also exercises the "never settles"
+ * arm of the mock (the constant-return arm is already exercised by cases
+ * 1-7). RED at this commit for a named reason: today's shipped
+ * eeprom28c_write_init times out on its (0x5555, 0x20) read-back and
+ * unconditionally overwrites handle->response_code with
+ * RESPONSE_CODE_ERROR (eeprom_28c.cpp:153), destroying the WARNING -- the
+ * same severity-destruction fork the v1.16 Phase-89 CR-01 regression
+ * slipped through (.planning memory
+ * reference_golden_trace_misses_severity_fork.md). */
+void test_case8_completion_poll_preserves_prior_severity(void) {
+    firestarter_handle_t h = make_sdp_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 */
+    h.response_code = RESPONSE_CODE_WARNING;
+    s_poll_addr_toggles = true; /* the completion poll can never conclude */
+    drive_write_init(&h, 0x00);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
+        "Case 8: the completion poll is advisory only (D-05) and must never overwrite "
+        "a prior response_code, even when it never settles");
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -421,13 +502,14 @@ int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
 
-    RUN_TEST(test_case1_at28c256_shipped_stream_diverges_from_fixed);
-    RUN_TEST(test_case2_at28c64_shipped_stream_diverges_from_fixed);
-    RUN_TEST(test_case3_at28c16_shipped_stream_diverges_from_fixed);
+    RUN_TEST(test_case1_at28c256_stream_matches_fixed);
+    RUN_TEST(test_case2_at28c64_stream_matches_fixed);
+    RUN_TEST(test_case3_at28c16_stream_matches_fixed);
     RUN_TEST(test_case4_at28c010_stale_direct_seed);
     RUN_TEST(test_case5_at28c040_stale_via_real_read);
     RUN_TEST(test_case6_matching_chip_id_proceeds);
     RUN_TEST(test_case7_mismatching_chip_id_with_force_warns);
+    RUN_TEST(test_case8_completion_poll_preserves_prior_severity);
 
     return UNITY_END();
 }

@@ -11,18 +11,30 @@ context: >
 
 # What Phase 117 must do
 
-`firestarter/test/native/avr/test_eeprom28c_sdp/` is compiled (via its
-`platformio.ini` `-I` entry) but deliberately **not** in the `test_filter`
-allowlist. The RED-to-GREEN proof for Phase 117's fix is the single line
-that adds `native/avr/test_eeprom28c_sdp` to that allowlist. This file is
-the diff target: a reviewer can compare Phase 117's post-fix
-`pio test -e native -f "*test_eeprom28c_sdp*"` output against the verbatim
-RED output captured below without checking out an old tree.
+`firestarter/test/native/avr/test_eeprom28c_sdp/` was compiled (via its
+`platformio.ini` `-I` entry) but deliberately not in the `test_filter`
+allowlist through the end of Phase 116. Phase 116's D-01 claimed that the
+RED-to-GREEN proof for Phase 117's fix would be the single line that adds
+`native/avr/test_eeprom28c_sdp` to that allowlist. **That did not hold**
+(117-CONTEXT.md D-01/D-02/D-03 supersede it): two structural conflicts in
+the suite would have kept it RED post-fix for reasons unrelated to the fix
+— the suite's own no-op `set_data` mock (the exact pointer FIX-01's emitter
+is built on) and five assertions that encoded today's INIT-abort as the
+expected outcome. The real flip required **four edits**: the `test_filter`
+line, un-mocking `set_data` (D-01), flipping five response-code assertions
+plus adding one new permanent severity-preservation regression case (D-02),
+and this file's own record of both halves (D-03).
 
-Do not add the allowlist line before the fix lands, and do not weaken any of
-the seven assertions below to make them pass early — in particular Case 7
-(§Cases 6-7) is deliberately strict about severity (`WARNING`, not `ERROR`)
-for a reason recorded in its own section.
+Plan 117-01 landed **commit 1**: the suite is now enabled and RED against
+the still-unfixed production tree, captured verbatim in
+§"Post-suite-edit RED baseline (Phase 117 commit 1 — D-03)" below. Plan
+117-02 appends **commit 2**, the production fix that flips this suite
+GREEN.
+
+Do not weaken any of the eight assertions below to make them pass early —
+in particular Case 7 (§Cases 6-7) and Case 8 (§Post-suite-edit RED baseline)
+are deliberately strict about severity (`WARNING`, not `ERROR`) for a reason
+recorded in their own sections.
 
 # Validation ceiling (read this before citing anything below)
 
@@ -220,11 +232,16 @@ not a silicon-state claim."*
 
 | Case | Pinout | First divergence |
 |---|---|---|
-| 1 | `DIP28_28C256` (AT28C256) | index 0 — `/OE`-ordering (expected `{PIN,OUTPUT_ENABLE,1}`, recorded `{DATA,-,0x55}`) |
-| 2 | `DIP28_28C64` (AT28C64) | index 0 — same ordering divergence (remap also changes address values later in the stream) |
-| 3 | `DIP24_2816` (AT28C16) | index 0 — same ordering divergence |
+| 1 (`test_case1_at28c256_stream_matches_fixed`) | `DIP28_28C256` (AT28C256) | index 0 — `/OE`-ordering (expected `{PIN,OUTPUT_ENABLE,1}`, recorded `{DATA,-,0x55}`) |
+| 2 (`test_case2_at28c64_stream_matches_fixed`) | `DIP28_28C64` (AT28C64) | index 0 — same ordering divergence (remap also changes address values later in the stream) |
+| 3 (`test_case3_at28c16_stream_matches_fixed`) | `DIP24_2816` (AT28C16) | index 0 — same ordering divergence |
 | 4 | `DIP32_28C512_EEPROM` (AT28C010, direct seed) | length mismatch — expected (shipped) 54, recorded (stale-seeded fixed reference) 57 |
 | 5 | `DIP32_28C512_EEPROM` (AT28C040, real-read seed) | length mismatch — expected (shipped) 54, recorded (stale-seeded fixed reference) 57 |
+
+Case names 1-3 were renamed at Phase 117 commit 1 (`_shipped_stream_diverges_from_fixed` →
+`_stream_matches_fixed`) — see §"Post-suite-edit RED baseline (Phase 117 commit 1 — D-03)" below
+for the renamed suite's own capture. Cases 4-5 keep their original names (they describe mechanism,
+not verdict).
 
 ## Design decisions this suite embodies
 
@@ -291,3 +308,81 @@ scoped this phase's strobe recording to exactly what the `0x0D` SDP path
 touches (`rurp_write_data_buffer` + `rurp_set_control_pin`), not the whole
 bus-direction surface. This is stated here as an **open, named hook** for
 Phase 117/118 to revisit deliberately — not silently dropped.
+
+## Post-suite-edit RED baseline (Phase 117 commit 1 — D-03)
+
+**Why this capture exists, separately from §"The seven cases and their
+observed RED reasons" above:** that section's baseline predates plan
+117-01's suite edits (D-01/D-02) — it was captured against the
+*unedited* suite (seven cases, the `set_data` no-op still mocked, five
+`EQUAL(RESPONSE_CODE_ERROR)` assertions). It therefore cannot prove the
+*edited* suite (eight cases, `set_data` un-mocked, five assertions flipped
+to `NOT_EQUAL`, one new case) was ever RED. A single Phase 117 commit
+citing only that older baseline would not be recoverable after the fact —
+D-03's two-commit discipline exists precisely so a reviewer can see both
+the edited-and-RED state (this section) and the edited-and-GREEN state
+(plan 117-02's append to this same file) from the committed record, without
+checking out an old tree.
+
+**Command sequence used.** `pio test -e native -f "*test_eeprom28c_sdp*"`
+was run first; it reported `[ERRORED]` after a `SIGFPE` following all eight
+cases' `FAIL` lines but before printing its own Unity summary — the same
+non-zero-exit summary-reporting quirk this file's §"The seven cases..."
+procedure note already documents for `[ERRORED]`/`SIGBUS` (`pio test`'s own
+harness, not the test binary, mis-reports a suite that exits non-zero due to
+*expected* test failures). Per that note, the authoritative capture is the
+built Unity binary run directly, with no wrapper:
+
+```
+cd /workspaces/firestarter
+.pio/build/native/firestarter_native
+```
+
+**Verbatim output** (direct binary run, unedited, unreflowed):
+
+```
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:105:test_case1_at28c256_stream_matches_fixed:FAIL: Case 1: AT28C256/DIP28_28C256 -- eeprom28c_write_init's raw-address shipped stream must match the FIX-01 remap-aware target: diverges at index 0 -- expected {kind=2 pin=4 value=0x01}, recorded {kind=1 pin=0 value=0x55}
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:105:test_case2_at28c64_stream_matches_fixed:FAIL: Case 2: AT28C64/DIP28_28C64 -- eeprom28c_write_init's raw-address shipped stream must match the FIX-01 remap-aware target: diverges at index 0 -- expected {kind=2 pin=4 value=0x01}, recorded {kind=1 pin=0 value=0x55}
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:105:test_case3_at28c16_stream_matches_fixed:FAIL: Case 3: AT28C16/DIP24_2816 -- eeprom28c_write_init's raw-address shipped stream must match the FIX-01 remap-aware target: diverges at index 0 -- expected {kind=2 pin=4 value=0x01}, recorded {kind=1 pin=0 value=0x55}
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:88:test_case4_at28c010_stale_direct_seed:FAIL: Expected 54 Was 57. Case 4: AT28C010/DIP32_28C512_EEPROM, directly-seeded stale CTRL_ADDRESS_LINE_17|18 -- shipped path (no CONTROL_REGISTER write, ever) must clear the stale write-inhibit bits like the fixed reference emitter (memory_set_data) does
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:88:test_case5_at28c040_stale_via_real_read:FAIL: Expected 54 Was 57. Case 5: AT28C040/DIP32_28C512_EEPROM, stale CTRL_ADDRESS_LINE_17 reached via a REAL preceding read (memory_get_data, not a directly-seeded cache) -- shipped path must clear the write-inhibit bit like the fixed reference emitter does
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:436:test_case6_matching_chip_id_proceeds:FAIL: migrated (RED, CORRECTION 2): matching identity must proceed past SDP-disable, not time out and overwrite response_code with ERROR
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:465:test_case7_mismatching_chip_id_with_force_warns:FAIL: Expected 2 Was 0. migrated (RED, CORRECTION 2): mismatching identity + FLAG_FORCE must WARN, not have its severity destroyed by the unconditional SDP-disable completion wait
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:492:test_case8_completion_poll_preserves_prior_severity:FAIL: Expected 2 Was 0. Case 8: the completion poll is advisory only (D-05) and must never overwrite a prior response_code, even when it never settles
+
+-----------------------
+8 Tests 8 Failures 0 Ignored 
+FAIL
+```
+
+Exit code of the direct binary run: `8` (Unity's convention: exit code equals
+the failure count).
+
+**Expected count: 8, and it matches.** All eight registered cases fail at
+this commit. Cases 1-5 fail on the stream/snapshot assertion — unchanged in
+text from Phase 116's baseline above, because plan 117-01's Task 2(c)
+reordered each case to keep the stream assertion first (Unity aborts a case
+at its first failure, so this ordering is what keeps the stream-divergence
+evidence visible in this capture instead of being masked by a
+response-code failure). Cases 6, 7, and 8 fail on their response-code
+assertions. The observed count is 8, matching the expected 8 — this
+capture proceeds; plan 117-01 was written to STOP here and record a
+discrepancy instead of adjusting any assertion had the count differed.
+
+**Per-case observed RED reason, keyed by the new (Phase 117) case names:**
+
+| Case (Phase 117 name) | Assertion that fails | Observed RED reason |
+|---|---|---|
+| `test_case1_at28c256_stream_matches_fixed` | `sdp_assert_stream_equals` | Same mechanism as Phase 116's capture (§"Cases 1-3" above): stream diverges at index 0 — expected `{kind=2 pin=4 value=0x01}` (PIN OUTPUT_ENABLE), recorded `{kind=1 pin=0 value=0x55}` (DATA). The assertion text is byte-identical to Phase 116's baseline; only the response-code assertion after it changed. |
+| `test_case2_at28c64_stream_matches_fixed` | `sdp_assert_stream_equals` | Same mechanism, AT28C64/DIP28_28C64. |
+| `test_case3_at28c16_stream_matches_fixed` | `sdp_assert_stream_equals` | Same mechanism, AT28C16/DIP24_2816. |
+| `test_case4_at28c010_stale_direct_seed` | `sdp_assert_stream_equals` (length mismatch) | Unchanged mechanism from Phase 116's capture (§"Cases 4-5" above): expected (shipped) 54, recorded (stale-seeded fixed reference) 57. |
+| `test_case5_at28c040_stale_via_real_read` | `sdp_assert_stream_equals` (length mismatch) | Same mechanism, AT28C040. |
+| `test_case6_matching_chip_id_proceeds` | `TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, ...)` | D-02's flip: a matching identity proceeds into the SDP-disable sequence; `eeprom28c_wait_for_write`'s completion poll (`0x5555 == 0x20`) never succeeds against the mock's virgin `0xFF`, times out after 2000 iterations, and unconditionally sets `RESPONSE_CODE_ERROR` (`eeprom_28c.cpp:153`) — so the post-fix "must not be ERROR" expectation fails today. |
+| `test_case7_mismatching_chip_id_with_force_warns` | `TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, ...)` | Unchanged from Phase 116's finding: the completion poll's timeout unconditionally overwrites a prior WARNING with ERROR (`Expected 2 Was 0`), destroying severity. |
+| `test_case8_completion_poll_preserves_prior_severity` | `TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, ...)` | New at Phase 117 commit 1 (D-02). A WARNING seeded directly on the handle (`chip_id == 0`, so no identity path runs — the WARNING's provenance is unambiguous) is destroyed the same way (`Expected 2 Was 0`) by the same unconditional overwrite at `eeprom_28c.cpp:153`, this time under a completion poll that can never settle (`s_poll_addr_toggles`). |
+
+Validation ceiling (restated, per §"Validation ceiling" above): every
+sentence in this section has code as its subject — an emitted stream, a
+recorded strobe, an assertion's pass/fail state. No AT28C part is on the
+bench; nothing here is evidence about silicon state.
