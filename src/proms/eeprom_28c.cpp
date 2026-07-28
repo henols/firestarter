@@ -548,25 +548,88 @@ void eeprom28c_write_execute(firestarter_handle_t* handle) {
     // a wire field directly, so no index here can exceed data_size or
     // DATA_BUFFER_SIZE.
     uint32_t window_start = 0;
-    // D-10: this per-byte set_data loop runs with handle->pulse_delay = 0 and
-    // no inter-byte wait, under the IDENTICAL AT28C_TBLC_MAX_US constraint as
-    // the SDP-disable command sequence (eeprom28c_emit_command_sequence,
-    // above) -- both are byte-load sequences bounded by the same datasheet
-    // t_BLC maximum, and this is the shared physical exposure named there.
-    // The runtime budget check deliberately stays scoped to the unlock only
-    // (D-09/D-10): a per-byte compare in this hot path would cost flash and
-    // cycles for a surface no OBS requirement covers, and the flash delta
-    // matters here -- Phase 119's LOCK-06 headroom judgement must be made
-    // against Phase 117's measured +204 B, not against the research's
-    // predicted saving. This comment is a breadcrumb, not a fix: gh#11 is a
-    // completion/data-landed CONFLATION bug (Phase 117's finding), not a
-    // sampling-rate or timing-budget bug, so whichever future phase revisits
-    // gh#11 on real silicon should look at that conflation, not at this
-    // constraint.
+    // D-10 / D-16 (Plan 119-08): this per-byte set_data loop runs with
+    // handle->pulse_delay = 0 and no inter-byte wait, under the IDENTICAL
+    // AT28C_TBLC_MAX_US constraint as the SDP-disable command sequence
+    // (eeprom28c_emit_command_sequence, above) -- both are byte-load
+    // sequences bounded by the same datasheet t_BLC maximum, and this is the
+    // shared physical exposure named there.
+    //
+    // THE CONFLATION, NAMED (D-16): PROJECT.md's FIFTH CORRECTION item 3
+    // directs "measure the page-load loop" at LOCK-06, but LOCK-06 is a
+    // FLASH budget (bytes of program memory) and F-118-01 is a TIMING budget
+    // (microseconds per byte load). Those are different things and the
+    // directive conflates them. The timing question is answered here anyway,
+    // because this loop runs under the identical AT28C_TBLC_MAX_US
+    // constraint and is where gh#11's symptom actually lives.
+    //
+    // gh#11's REAL SHAPE (Phase 117's finding, restated in this function's
+    // own words, not reframed): a completion-and-data-landed CONFLATION bug
+    // -- a whole-byte equality compare that passed spuriously whenever the
+    // old byte already equalled the new one. NOT a sampling-rate or
+    // polling-frequency bug. FIX-06 split it into eeprom28c_wait_for_page_write
+    // (completion only) and eeprom28c_verify_page_readback (data-landed
+    // only), below. Any future phase revisiting gh#11 on real silicon should
+    // look at that conflation, not at this loop's sampling rate.
+    //
+    // WHAT THE TRACKED NUMBER IS AND IS NOT: page_load_worst_us (below) is
+    // the host-side interval between consecutive firestarter_set_data calls,
+    // as measured by the MCU's OWN micros(). It is a measurement of the MCU
+    // driving its own latches. It says NOTHING about whether an AT28C die
+    // accepted any given byte, and NOTHING about whether t_BLC is met AS
+    // ACCEPTED BY THE DIE -- REQUIREMENTS.md's validation ceiling lists that
+    // last item explicitly as not provable without an AT28C part on the
+    // bench.
+    //
+    // WHY THERE IS NO CHECK HERE: D-16 explicitly declines a runtime budget
+    // comparison in this hot per-byte path, preserving 118's D-10. The
+    // `if (page_load_interval_us > page_load_worst_us)` compare just below is
+    // a MAX-TRACKING compare, not a budget check -- there is no
+    // AT28C_TBLC_MAX_US comparison and no LOG_WARN_* call anywhere in this
+    // function. A per-byte compare against the budget would cost flash and
+    // cycles for a surface no OBS/LOCK requirement covers, and the flash
+    // delta matters here -- Phase 119's LOCK-06 headroom judgement is made
+    // against the live 2992 B figure (D-15), not against a hypothetical
+    // saving.
+    //
+    // F-118-01's NUMBERS, why this loop is measured at all: the unlock
+    // emitter measured 572 us against a 600 us budget on a real Leonardo --
+    // about 95 us per byte against a 100 us per-byte datasheet maximum, only
+    // 4.7% headroom -- when the decision's premise (118 D-09) had been that
+    // the check would never fire. This loop runs under the identical
+    // per-byte constraint and had received a citation comment only until
+    // this plan.
+    uint32_t page_load_worst_us = 0;
+    uint32_t page_load_previous_us = micros();
+    // D-16: single-exit restructure. Nothing followed this loop before this
+    // plan (the loop's closing brace was immediately followed by the
+    // function's closing brace, verified against live source), so converting
+    // the two early `return;` statements below into "set this flag, then
+    // break;" is behaviour-preserving by inspection: the write still stops
+    // at the same byte, and eeprom28c_wait_for_page_write /
+    // eeprom28c_verify_page_readback still emit their own errors and set
+    // their own response_code before returning false -- this restructure
+    // adds no error and suppresses none. It exists so the worst-interval
+    // report below is reachable on BOTH exits: with an EMPTY SOCKET the very
+    // first page's write poll fails, so a report placed only at the loop's
+    // normal exit would emit nothing at all -- and an empty socket is
+    // exactly the bench condition Plan 119-11 runs under, and exactly the
+    // condition in which gh#11's symptom appears. On an aborting write the
+    // reported value covers only the bytes loaded before the abort, which is
+    // a real and useful number, described as such (not as a full-write
+    // figure) in 119-MEASUREMENT.md.
+    bool page_load_aborted = false;
     for (uint32_t i = 0; i < handle->data_size; i++) {
         uint32_t address = handle->address + i;
         uint8_t data = handle->data_buffer[i];
         handle->firestarter_set_data(handle, address, data);
+
+        uint32_t page_load_now_us = micros();
+        uint32_t page_load_interval_us = (uint32_t)(page_load_now_us - page_load_previous_us);
+        if (page_load_interval_us > page_load_worst_us) {
+            page_load_worst_us = page_load_interval_us;
+        }
+        page_load_previous_us = page_load_now_us;
 
         bool page_end = ((address + 1) % PAGE_SIZE) == 0;
         bool last_byte = (i == handle->data_size - 1);
@@ -579,14 +642,18 @@ void eeprom28c_write_execute(firestarter_handle_t* handle) {
             // conflated both into one whole-byte equality compare --
             // FIX-06's actual defect.
             if (!eeprom28c_wait_for_page_write(handle, address, data)) {
-                return;
+                page_load_aborted = true;
+                break;
             }
             if (!eeprom28c_verify_page_readback(handle, window_start, i)) {
-                return;
+                page_load_aborted = true;
+                break;
             }
             window_start = i + 1;
         }
     }
+    (void)page_load_aborted;  // recorded for reader clarity only; both exits report identically (D-16)
+    LOG_ID_U32(MSG_INFO_PAGE_LOAD_WORST_US, page_load_worst_us);
 }
 
 // FIX-06 / D-07: completion detection ONLY -- a DQ7-COMPLEMENT poll, the
