@@ -69,6 +69,14 @@ void setUp(void) {
     When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
     When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+    /* Plan 119-08 (D-16): eeprom28c_write_execute now calls micros() twice
+     * per byte for the worst-per-byte-interval tracker, and every case in
+     * this suite drives write_execute via h.firestarter_operation_main(&h)
+     * for CMD_WRITE. Without this mock ArduinoFake aborts (SIGABRT) on the
+     * newly-reached unmocked virtual -- this suite never asserts on timing,
+     * so a fixed 0 is sufficient (every interval reads as 0, which no case
+     * here inspects). */
+    When(Method(ArduinoFake(), micros)).AlwaysReturn(0);
     clear_bus_recording();
 
     s_planted_base_address = 0;
