@@ -17,11 +17,14 @@
  *      test_eeprom28c_chip_id now execute in CI, on an address-keyed mock
  *      (TRACE-04).
  *
- * This suite drives flash_util_byte_flipping / memory_set_data DIRECTLY —
- * never eeprom28c_write_init — so it stays green by construction across the
- * Phase 117 fix (which touches only eeprom_28c.cpp, not flash_utils.cpp or
- * memory.cpp). The parked RED suite (plan 116-06) is the one that flips
- * RED->GREEN when that fix lands.
+ * This suite drives flash_util_byte_flipping / memory_set_data DIRECTLY for
+ * its stream cases (Tasks 1-2), and drives eeprom28c_write_init in its two
+ * migrated identity cases (Task 3) -- both of which are outcome-INDEPENDENT
+ * of the Phase 117 fix (test_migrated_mismatching_chip_id_errors early-
+ * returns before the SDP sequence; test_migrated_zero_chip_id_skips_check
+ * asserts a per-address read counter, never the SDP outcome), which is why
+ * the suite stays green by construction across that fix. The parked RED
+ * suite (plan 116-06) is the one that flips RED->GREEN when that fix lands.
  */
 
 #include <Arduino.h>
@@ -36,6 +39,14 @@ extern "C" {
 }
 #include "firestarter.h"
 #include "flash_utils.h"
+
+/* FIX-05 (D-11, plan 117-04): EEPROM_SDP_DISABLE is DEFINED in
+ * src/proms/eeprom_28c.cpp, which [env:native] links into every test binary
+ * (build_src_filter = +<proms/>, test_build_src = yes). Plan 117-02 granted
+ * this array external linkage (a prior extern declaration in that TU) so
+ * this guard can pin the PRODUCTION table directly, not a transcription. */
+extern const byte_flip_t EEPROM_SDP_DISABLE[6];
+
 #include "../_shared/sdp_bus_config.h"
 #include "../_shared/sdp_expected.h"
 
@@ -127,6 +138,20 @@ static void drive_reference_emitter(firestarter_handle_t* h, const byte_flip_t* 
     }
 }
 
+/* FIX-05 (D-11) table-comparison helper: positional element-by-element
+ * comparison ONLY -- no counting, no containment scan, following the
+ * assertion discipline recorded at _shared/sdp_expected.h:63 and :83-85
+ * ("Never counts anything ... every comparison is positional"). Two arrays
+ * are "identical" here only if EVERY element's address AND byte match. */
+static bool sdp_tables_identical(const byte_flip_t* a, const byte_flip_t* b, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if (a[i].address != b[i].address || a[i].byte != b[i].byte) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* The single most valuable diagnostic in this phase (116-RESEARCH.md
  * §"Confirming the elision empirically"): pio test swallows printf from test
  * bodies, so run the built binary directly
@@ -200,9 +225,14 @@ void test_case3_ce_oe_edges_distinguishable(void) {
  * the SDP-disable value (0x20) to the chip-erase value (0x10) -- a one-nibble
  * slip that turns SDP-disable into chip erase (see FLASH_ERASE vs
  * FLASH_DISABLE_WRITE_PROTECTION in flash_utils.h -- they differ ONLY in
- * this terminal byte). Test-local copy: EEPROM_SDP_DISABLE has internal
- * linkage (116-RESEARCH.md §F6) and flash_utils.h's tables are transcribed
- * here deliberately as the ONE test-local table this suite needs. */
+ * this terminal byte). This planted table is retained as the MUTATION
+ * FIXTURE for two consumers: the stream-level negative below
+ * (test_negativeA_...) and FIX-05's anti-hollow planted-violation case
+ * further below (D-11, plan 117-04), which reuses it rather than adding a
+ * second copy. The production EEPROM_SDP_DISABLE array is now referenced
+ * DIRECTLY by FIX-05's constant-level guard (plan 117-02 granted it external
+ * linkage for exactly this purpose) -- this table stays a deliberate,
+ * self-contained fixture, not a stand-in for it. */
 static const byte_flip_t TEST_UNLOCK_MUTATED_TERMINAL[] = {
     {0x5555, 0xAA},
     {0x2AAA, 0x55},
@@ -274,6 +304,105 @@ void test_lock05_enable_write_and_write_protection_identical(void) {
     sdp_assert_stream_equals(snap, len, "LOCK-05: identity between the two 3-write tables");
 }
 
+/* FIX-05 (D-10/D-11, plan 117-04): the constant-level formalisation of the
+ * one-nibble chip-erase hazard test_negativeA_... already proves at the
+ * STREAM level -- here it is proven directly on the two SOURCE TABLES, no
+ * bus drive required. FLASH_ERASE is AA-55-80-AA-55-10; EEPROM_SDP_DISABLE
+ * is AA-55-80-AA-55-20 -- they differ by ONE NIBBLE in ONE BYTE, and one of
+ * them erases the whole chip (research SUMMARY.md Critical Pitfalls #3).
+ *
+ * Validation ceiling (D-10/D-11 caveat, must NOT be leaned on): AT28C
+ * chip-erase requires OE = V_H = 12V, a rail 0x0D never routes on this
+ * hardware -- but that fact is Atmel-specific and is recorded here only as a
+ * MITIGATING comment, never as the guard's safety argument, because the
+ * 0x0D bucket spans 20+ manufacturers whose erase gating may differ. */
+void test_fix05_terminal_byte_and_table_identity_guards(void) {
+    /* (1) Length sanity -- every table this guard reasons about is 6
+     * elements; a length surprise would silently invalidate every index
+     * below. */
+    TEST_ASSERT_EQUAL_MESSAGE(6, sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]),
+        "FIX-05: EEPROM_SDP_DISABLE must be a 6-element table");
+    TEST_ASSERT_EQUAL_MESSAGE(6, sizeof(FLASH_ERASE) / sizeof(FLASH_ERASE[0]),
+        "FIX-05: FLASH_ERASE must be a 6-element table");
+    TEST_ASSERT_EQUAL_MESSAGE(6, sizeof(FLASH_DISABLE_WRITE_PROTECTION) / sizeof(FLASH_DISABLE_WRITE_PROTECTION[0]),
+        "FIX-05: FLASH_DISABLE_WRITE_PROTECTION must be a 6-element table");
+
+    /* (2) EEPROM_SDP_DISABLE's terminal byte, pinned on the PRODUCTION array
+     * (external linkage, plan 117-02) -- not a transcription. */
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x20, EEPROM_SDP_DISABLE[5].byte,
+        "FIX-05: EEPROM_SDP_DISABLE's terminal byte must be 0x20 (SDP-disable) -- if this fails, "
+        "the production 0x0D write path may now emit a chip-erase command");
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(0x5555, EEPROM_SDP_DISABLE[5].address,
+        "FIX-05: EEPROM_SDP_DISABLE's terminal address must be 0x5555");
+
+    /* (3) FLASH_ERASE's terminal byte, the chip-erase value this guard
+     * exists to distinguish EEPROM_SDP_DISABLE from. */
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x10, FLASH_ERASE[5].byte,
+        "FIX-05: FLASH_ERASE's terminal byte must be 0x10 (chip-erase)");
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(0x5555, FLASH_ERASE[5].address,
+        "FIX-05: FLASH_ERASE's terminal address must be 0x5555");
+
+    /* (4) Distinctness: the two terminal bytes must differ, AND the two
+     * arrays must be distinct OBJECTS -- a future refactor that made
+     * EEPROM_SDP_DISABLE an alias of FLASH_ERASE (or vice versa) would pass
+     * every value-level assertion above while erasing every chip on write. */
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(FLASH_ERASE[5].byte, EEPROM_SDP_DISABLE[5].byte,
+        "FIX-05: FLASH_ERASE and EEPROM_SDP_DISABLE terminal bytes must differ");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE((const void*)EEPROM_SDP_DISABLE, (const void*)FLASH_ERASE,
+        "FIX-05: EEPROM_SDP_DISABLE and FLASH_ERASE must be distinct array objects, not aliases");
+
+    /* (5) The one-nibble claim, made literal: elements 0-4 match on BOTH
+     * address and byte; element 5's address matches while its byte differs.
+     * So the two tables differ at exactly one field of exactly one element. */
+    for (size_t i = 0; i < 5; i++) {
+        TEST_ASSERT_EQUAL_HEX32_MESSAGE(FLASH_ERASE[i].address, EEPROM_SDP_DISABLE[i].address,
+            "FIX-05: elements 0-4 must match address between FLASH_ERASE and EEPROM_SDP_DISABLE");
+        TEST_ASSERT_EQUAL_HEX8_MESSAGE(FLASH_ERASE[i].byte, EEPROM_SDP_DISABLE[i].byte,
+            "FIX-05: elements 0-4 must match byte between FLASH_ERASE and EEPROM_SDP_DISABLE");
+    }
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(FLASH_ERASE[5].address, EEPROM_SDP_DISABLE[5].address,
+        "FIX-05: element 5's address must still match -- only the byte differs");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(FLASH_ERASE[5].byte, EEPROM_SDP_DISABLE[5].byte,
+        "FIX-05: element 5's byte must differ -- the one-nibble hazard, machine-checked");
+
+    /* (6) D-11's cross-guard: EEPROM_SDP_DISABLE must stay byte-identical to
+     * FLASH_DISABLE_WRITE_PROTECTION. D-10 deliberately keeps EEPROM_SDP_DISABLE
+     * as a 0x0D-local duplicate rather than driving the FIX-04-frozen
+     * flash_utils.h directly, and Phase 119's LOCK-05 deliberately preserves
+     * an analogous duplicate rather than deduping -- so this assertion is the
+     * ONLY thing standing between that deliberate duplication and a silent
+     * divergence. FLASH_DISABLE_WRITE_PROTECTION is the table every
+     * SDP_FIXED_* golden and every reference-emitter guard in this suite is
+     * driven from (drive_reference_emitter, above); if EEPROM_SDP_DISABLE
+     * ever diverges from it, production and the oracle this harness compares
+     * against have silently split. */
+    TEST_ASSERT_TRUE_MESSAGE(sdp_tables_identical(EEPROM_SDP_DISABLE, FLASH_DISABLE_WRITE_PROTECTION, 6),
+        "FIX-05/D-11: EEPROM_SDP_DISABLE must stay byte-identical to FLASH_DISABLE_WRITE_PROTECTION -- "
+        "the production 0x0D-local table has diverged from the table this harness's goldens are driven "
+        "from, and D-10's deliberate duplication is no longer safe");
+}
+
+/* FIX-05 anti-hollow counterpart (this project's standing rule: every gate
+ * ships a planted-violation fixture proving the gate can actually fail).
+ * Reuses TEST_UNLOCK_MUTATED_TERMINAL (above) rather than adding a second
+ * planted table -- one planted table, two consumers. Proves clause (6) of
+ * the guard above is not vacuous: sdp_tables_identical() CAN return false,
+ * and it does so specifically because a one-nibble slip turns the
+ * SDP-disable table into the chip-erase table, at the constant level,
+ * matching what test_negativeA_... already proves at the stream level. */
+void test_fix05_guard_rejects_planted_terminal_mutation(void) {
+    TEST_ASSERT_FALSE_MESSAGE(sdp_tables_identical(TEST_UNLOCK_MUTATED_TERMINAL, EEPROM_SDP_DISABLE, 6),
+        "FIX-05 anti-hollow: sdp_tables_identical must REJECT the planted terminal-byte mutation -- "
+        "if this passes, the constant-level guard's D-11 cross-check clause is hollow");
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(TEST_UNLOCK_MUTATED_TERMINAL[5].address, EEPROM_SDP_DISABLE[5].address,
+        "FIX-05 anti-hollow: the planted mutation must match address at element 5 -- only the byte differs");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(TEST_UNLOCK_MUTATED_TERMINAL[5].byte, EEPROM_SDP_DISABLE[5].byte,
+        "FIX-05 anti-hollow: the planted mutation's element-5 byte must differ from EEPROM_SDP_DISABLE's");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(FLASH_ERASE[5].byte, TEST_UNLOCK_MUTATED_TERMINAL[5].byte,
+        "FIX-05 anti-hollow: the planted one-nibble slip must turn the SDP-disable table into exactly "
+        "the FLASH_ERASE terminal byte -- the constant-level twin of test_negativeA_...'s stream-level proof");
+}
+
 /* Fixed-stream reference-emitter guards -- one per SDP_BUS_CONFIGS row (5).
  * Green today AND after Phase 117 (memory_set_data is untouched by that fix),
  * so this pins the SDP_FIXED_* literals to real production behaviour
@@ -340,7 +469,13 @@ static uint8_t mock_get_data_keyed(firestarter_handle_t*, uint32_t addr) {
     }
     if (addr == 0x5555) {
         s_reads_at_poll_addr++;
-        return 0xFF; /* virgin default -- never satisfies the 0x20 SDP-disable poll */
+        /* Post-FIX-02: eeprom28c_wait_for_sdp_completion polls this address
+         * for a bounded DQ6 toggle-bit settle, never an expected-byte
+         * equality. A constant 0xFF return reads as "settled immediately"
+         * (two consecutive samples agree) -- the fixed code deliberately
+         * draws NO conclusion from that (D-05): it never writes
+         * response_code from this poll, on any path. */
+        return 0xFF;
     }
     return 0xFF;
 }
@@ -414,6 +549,8 @@ int main(int argc, char** argv) {
     RUN_TEST(test_negativeA_unlock_mutated_diverges_and_matches_erase);
     RUN_TEST(test_negativeB_lock_table_swapped_for_write_prefix);
     RUN_TEST(test_lock05_enable_write_and_write_protection_identical);
+    RUN_TEST(test_fix05_terminal_byte_and_table_identity_guards);
+    RUN_TEST(test_fix05_guard_rejects_planted_terminal_mutation);
     RUN_TEST(test_fixed_guard_at28c256);
     RUN_TEST(test_fixed_guard_at28c64);
     RUN_TEST(test_fixed_guard_at28c16);
