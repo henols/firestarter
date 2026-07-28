@@ -397,6 +397,80 @@ static rurp_register_t drive_write_init_after_real_read(firestarter_handle_t* h,
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * Plan 119-05 Task 2/3 — driving the PRODUCTION lock op (CMD_SDP_LOCK)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Builds a handle for the lock op: CMD_SDP_LOCK, chip_id 0 (no identity
+ * gate -- eeprom28c_sdp_lock_execute has none anyway, since init/end are
+ * NULL for this cmd and configure_eeprom28c only ever sets `main`). */
+static firestarter_handle_t make_lock_handle(const sdp_bus_config_row_t& row) {
+    firestarter_handle_t h = {};
+    h.protocol = 0x0D;
+    h.cmd = CMD_SDP_LOCK;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id = 0;
+    h.mem_size = row.mem_size;
+    h.bus_config = row.bus_config;
+    h.ctrl_flags = 0;
+    return h;
+}
+
+/* Load-bearing order (Task 2's key_link, mirrored from drive_reference_emitter
+ * / drive_write_init above): configure_memory (itself writes mem_util_set_address(handle, 0)),
+ * THEN reset_register_cache, THEN clear_strobes, THEN the op call --
+ * h.firestarter_operation_main(&h), since init/end are NULL by design for
+ * CMD_SDP_LOCK (LOCK-02) so calling `main` directly IS the whole operation. */
+static void drive_lock_op(firestarter_handle_t* h, rurp_register_t ctrl_seed) {
+    configure_memory(h);
+    reset_register_cache(0x00, 0x00, ctrl_seed);
+    clear_strobes();
+    h->firestarter_operation_main(h);
+}
+
+#ifdef SDP_TRACE_DUMP
+/* TEMPORARY (Plan 119-05 Task 2): dumps the production lock op's recorded
+ * stream for each SDP_BUS_CONFIGS row, mirroring test_sdp_harness.cpp's
+ * dump_strobes helper. `pio test` swallows printf from test bodies, so this
+ * is run via the built suite binary directly
+ * (.pio/build/native/test_eeprom28c_sdp/program or the equivalent path under
+ * .pio/build/native/), never via `pio test`. Kept behind this #ifdef,
+ * matching test_sdp_harness.cpp's style -- never compiled by default. */
+static void dump_strobes_ready_to_paste(const char* tag) {
+    printf("##### %s total=%d overflow=%d\n", tag, strobe_count(), strobe_overflowed());
+    for (int i = 0; i < strobe_count(); i++) {
+        if (strobe_kind(i) == STROBE_KIND_DATA) {
+            printf("    {1, 0, 0x%02X},\n", strobe_value(i));
+        } else {
+            printf("    {2, 0x%02X, %d},\n", strobe_pin(i), strobe_value(i));
+        }
+    }
+}
+
+void test_dump_lock_goldens(void) {
+    firestarter_handle_t h0 = make_lock_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 / DIP28_28C256 */
+    drive_lock_op(&h0, 0x00);
+    dump_strobes_ready_to_paste("LOCK_DIP28_28C256");
+
+    firestarter_handle_t h1 = make_lock_handle(SDP_BUS_CONFIGS[1]); /* AT28C64 / DIP28_28C64 */
+    drive_lock_op(&h1, 0x00);
+    dump_strobes_ready_to_paste("LOCK_DIP28_28C64");
+
+    firestarter_handle_t h2 = make_lock_handle(SDP_BUS_CONFIGS[2]); /* AT28C16 / DIP24_2816 */
+    drive_lock_op(&h2, 0x00);
+    dump_strobes_ready_to_paste("LOCK_DIP24_2816");
+
+    /* DIP32_28C512_EEPROM (row 3, AT28C010): deliberately stale upper-address
+     * CONTROL seed (CTRL_ADDRESS_LINE_17|18), mirroring case 4's mechanism --
+     * this pinout's remap is the identity function under a zero seed, so a
+     * zero-seeded dump would prove almost nothing (only the OE-edge
+     * reordering, which is already covered by the FIXED golden itself). */
+    firestarter_handle_t h3 = make_lock_handle(SDP_BUS_CONFIGS[3]); /* AT28C010 */
+    drive_lock_op(&h3, CTRL_ADDRESS_LINE_17 | CTRL_ADDRESS_LINE_18);
+    dump_strobes_ready_to_paste("LOCK_DIP32_28C512_EEPROM");
+}
+#endif
+
+/* ─────────────────────────────────────────────────────────────────────────
  * Cases 1-3 — ordered capture per DIP28/DIP24 pinout (TRACE-02, D-06)
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -879,6 +953,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case10_flag_absent_emits_full_unlock_stream);
     RUN_TEST(test_case11_tblc_budget_exceeded_warns);
     RUN_TEST(test_case12_flag_absent_emits_exactly_two_report_frames);
+
+#ifdef SDP_TRACE_DUMP
+    RUN_TEST(test_dump_lock_goldens);
+#endif
 
     return UNITY_END();
 }

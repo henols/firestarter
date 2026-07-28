@@ -309,4 +309,118 @@ static const sdp_strobe_t SDP_FIXED_DIP32_28C512_EEPROM[] = {
 };
 #define SDP_FIXED_DIP32_28C512_EEPROM_LEN (int)(sizeof(SDP_FIXED_DIP32_28C512_EEPROM) / sizeof(SDP_FIXED_DIP32_28C512_EEPROM[0]))
 
+/* ─── LOCK streams (Plan 119-05, LOCK-01) ────────────────────────────────────
+ * Four goldens, one per distinct 0x0D pinout, pinning the PRODUCTION lock op
+ * (eeprom28c_sdp_lock_execute, driven via CMD_SDP_LOCK / h.firestarter_operation_main)
+ * -- i.e. the 3-write EEPROM_SDP_ENABLE table (AA-55-A0) emitted through the
+ * SAME remap-aware handle->firestarter_set_data (memory_set_data) path the
+ * SDP_FIXED_* unlock goldens above were recorded from. Each was authored
+ * EMPIRICALLY (never hand-derived): a temporary #ifdef SDP_TRACE_DUMP block
+ * in test_eeprom28c_sdp.cpp drove the lock op for each SDP_BUS_CONFIGS row
+ * in the load-bearing order (configure_memory, THEN reset_register_cache,
+ * THEN clear_strobes, THEN h.firestarter_operation_main(&h)), and the built
+ * suite binary (.pio/build/native/firestarter_native, run directly --
+ * `pio test` swallows printf) printed the ready-to-paste triples below.
+ * Hand-checked element-by-element against the pre-existing SDP_FIXED_* unlock
+ * arrays above (the LOCK stream shares write #1 and write #2 byte-for-byte
+ * with the corresponding unlock array; write #3's LSB/MSB latches are also
+ * shared, only its payload byte differs: 0xA0 here vs 0x80 there) before
+ * pasting, at commit 4fcee1c (Plan 119-05 Task 1, this branch).
+ *
+ * RESEARCH A1 (119-RESEARCH.md) predicted, arithmetically, a 30-entry stream
+ * with write #3's payload at index 27 (10 entries per un-elided write x 3
+ * writes, none elided because each write's address differs from the write
+ * immediately before it: 0x5555 -> 0x2AAA -> 0x5555). THE DUMP CONFIRMS THE
+ * PREDICTION EXACTLY for all three non-DIP32 pinouts: length 30, payload
+ * index 27, byte 0xA0. No discrepancy to record for those three.
+ */
+static const sdp_strobe_t SDP_FIXED_LOCK_DIP28_28C256[] = {
+    /* write #1  remap(0x5555)=0x9555  (LSB,MSB)=(0x55,0x95)  payload 0xAA */
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x95}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    /* write #2  remap(0x2AAA)=0x2AAA  (LSB,MSB)=(0xAA,0x2A)  payload 0x55 */
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x2A}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    /* write #3  remap(0x5555)=0x9555  (LSB,MSB)=(0x55,0x95)  payload 0xA0 -- SDP-ENABLE terminal byte, index 27 */
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x95}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xA0}, {2, 0x20, 0}, {2, 0x20, 1},
+};
+#define SDP_FIXED_LOCK_DIP28_28C256_LEN (int)(sizeof(SDP_FIXED_LOCK_DIP28_28C256) / sizeof(SDP_FIXED_LOCK_DIP28_28C256[0]))
+
+static const sdp_strobe_t SDP_FIXED_LOCK_DIP28_28C64[] = {
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x15}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x0A}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x15}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xA0}, {2, 0x20, 0}, {2, 0x20, 1},
+};
+#define SDP_FIXED_LOCK_DIP28_28C64_LEN (int)(sizeof(SDP_FIXED_LOCK_DIP28_28C64) / sizeof(SDP_FIXED_LOCK_DIP28_28C64[0]))
+
+static const sdp_strobe_t SDP_FIXED_LOCK_DIP24_2816[] = {
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x05}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x02}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x05}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xA0}, {2, 0x20, 0}, {2, 0x20, 1},
+};
+#define SDP_FIXED_LOCK_DIP24_2816_LEN (int)(sizeof(SDP_FIXED_LOCK_DIP24_2816) / sizeof(SDP_FIXED_LOCK_DIP24_2816[0]))
+
+/* DIP32_28C512_EEPROM: recorded under a DELIBERATELY STALE upper-address
+ * CONTROL seed (CTRL_ADDRESS_LINE_17 | CTRL_ADDRESS_LINE_18, the same seed
+ * cases 4/5 use for the unlock table) -- NOT the canonical zero seed the
+ * other three lock goldens (and SDP_FIXED_DIP32_28C512_EEPROM above) use.
+ * Reason (per this pinout's Pitfall 5 / CORRECTION 3, restated for the lock
+ * op): mem_util_remap_address_bus returns 0x5555 unchanged for this pinout
+ * under a zero seed, so a zero-seeded lock trace would prove almost nothing
+ * beyond the OE-edge reordering. Under this stale seed, write #1 (the first
+ * address change) emits an EXTRA CONTROL_REGISTER write (DATA 0x00, pin 0x08
+ * strobe) clearing the stale bits -- confirmed empirically: total length 33
+ * (30 + 3), not 30, with the extra triple appearing between the MSB latch
+ * and the payload write on write #1 ONLY (writes #2/#3 need no further
+ * CONTROL correction, matching case 4/5's finding for the unlock table).
+ * This is therefore NOT a simple 30-entry/index-27 case like the other three
+ * -- callers must know this golden was recorded under the stale seed and
+ * drive the production op under the SAME seed for the comparison to be
+ * meaningful (Case 16, test_eeprom28c_sdp.cpp). */
+static const sdp_strobe_t SDP_FIXED_LOCK_DIP32_28C512_EEPROM[] = {
+    /* write #1  remap(0x5555)=0x5555 (identity)  (LSB,MSB)=(0x55,0x55)  payload 0xAA --
+     * PLUS the stale-bit-clearing CONTROL_REGISTER write (DATA 0x00, pin 0x08) */
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x55}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x00}, {2, 8, 1}, {2, 8, 0},
+    {1, 0, 0xAA}, {2, 0x20, 0}, {2, 0x20, 1},
+    /* write #2  remap(0x2AAA)=0x2AAA  (LSB,MSB)=(0xAA,0x2A)  payload 0x55 -- no further CONTROL write needed */
+    {2, 4, 1},
+    {1, 0, 0xAA}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x2A}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0x55}, {2, 0x20, 0}, {2, 0x20, 1},
+    /* write #3  remap(0x5555)=0x5555  (LSB,MSB)=(0x55,0x55)  payload 0xA0 -- no further CONTROL write needed */
+    {2, 4, 1},
+    {1, 0, 0x55}, {2, 1, 1}, {2, 1, 0},
+    {1, 0, 0x55}, {2, 2, 1}, {2, 2, 0},
+    {1, 0, 0xA0}, {2, 0x20, 0}, {2, 0x20, 1},
+};
+#define SDP_FIXED_LOCK_DIP32_28C512_EEPROM_LEN (int)(sizeof(SDP_FIXED_LOCK_DIP32_28C512_EEPROM) / sizeof(SDP_FIXED_LOCK_DIP32_28C512_EEPROM[0]))
+
 #endif /* __SDP_EXPECTED_H__ */
