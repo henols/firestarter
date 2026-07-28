@@ -767,3 +767,121 @@ Both board targets build; the Leonardo flash delta is measured (+204 B) with
 no threshold claim. `firestarter_app`'s committed history is unchanged, and
 no new `MSG_*`/`FLAG_*` value was introduced anywhere in the phase. **Gate:
 PASS.**
+
+## Phase 118 observability baseline (OBS-02, OBS-03, OBS-05)
+
+**Why this section exists.** Plan 118-05 adds four new cases to this suite,
+proving what Plan 118-04's production edit did: that `FLAG_SKIP_SDP_UNLOCK`
+removes the unlock sequence from the recorded **bus** stream entirely (never
+merely reordering it), that the flag-absent path still emits the identical
+full stream from the same handle factory, that the t_BLC runtime budget WARN
+(D-09) actually fires under a synthesised over-budget elapsed value and does
+NOT fire under the default, and that the flag-absent path emits exactly the
+two new report frames on the **serial** channel while the skip path emits
+exactly one WARN frame. Per this file's own §"Validation ceiling" and
+`.planning/REQUIREMENTS.md` §"Validation Ceiling": every claim below is
+software-layer -- a native register-trace assertion or a captured serial-frame
+assertion against mocked hardware. No AT28C part was on the bench for this
+plan. `0x0D` stays `UNVERIFIED`, zero chips change `support_status`, and the
+84-chip count is unchanged.
+
+### The four new cases
+
+| Case | Purpose |
+|---|---|
+| `test_case9_skip_flag_suppresses_unlock_stream` | With `FLAG_SKIP_SDP_UNLOCK` set, drives PRODUCTION `eeprom28c_write_init` (via `configure_memory` dispatch, never the harness's `drive_reference_emitter`) and asserts the recorded BUS stream diverges from the full unlock stream at EXACTLY index 0, plus an explicit walk over every recorded `STROBE_KIND_DATA` entry confirming none of `EEPROM_SDP_DISABLE`'s own payload bytes appear -- content-positional, never a bare `strobe_count()`. |
+| `test_case10_flag_absent_emits_full_unlock_stream` | Same handle factory, same row, flag NOT set -- asserts the full `SDP_FIXED_DIP28_28C256` stream. Ships in the SAME commit as case 9 so the skip/no-skip contrast is one executable comparison. |
+| `test_case11_tblc_budget_exceeded_warns` | Using Plan 118-03's `s_micros_ticks[2]` seam, synthesises an elapsed value past the production budget and asserts `MSG_WARN_SDP_TBLC_EXCEEDED` appears in the captured serial frames, in order after `MSG_INFO_SDP_UNLOCK_DONE_US`, with `handle->response_code` unchanged (`RESPONSE_CODE_OK`) -- then, in the same case, restores the default elapsed value (0) and asserts the WARN id does NOT appear. The pair is the anti-hollow proof for a check that could otherwise be a dead branch. |
+| `test_case12_flag_absent_emits_exactly_two_report_frames` | Enumerates the captured serial frame ids: the flag-absent default path emits EXACTLY `MSG_INFO_SDP_UNLOCK` then `MSG_INFO_SDP_UNLOCK_DONE_US` and neither WARN id; the skip-path mirror (same case) emits EXACTLY `MSG_WARN_SDP_UNLOCK_SKIPPED` and neither INFO id -- the executable form of D-02's "in place of, never in addition to". |
+
+### Verbatim suite output (12/12)
+
+```
+$ cd /workspaces/firestarter && pio test -e native -f "*test_eeprom28c_sdp*"
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:827: test_case1_at28c256_stream_matches_fixed	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:828: test_case2_at28c64_stream_matches_fixed	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:829: test_case3_at28c16_stream_matches_fixed	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:830: test_case4_at28c010_stale_direct_seed	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:831: test_case5_at28c040_stale_via_real_read	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:832: test_case6_matching_chip_id_proceeds	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:833: test_case7_mismatching_chip_id_with_force_warns	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:834: test_case8_completion_poll_preserves_prior_severity	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:835: test_case9_skip_flag_suppresses_unlock_stream	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:836: test_case10_flag_absent_emits_full_unlock_stream	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:837: test_case11_tblc_budget_exceeded_warns	[PASSED]
+test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp:838: test_case12_flag_absent_emits_exactly_two_report_frames	[PASSED]
+------- native:native/avr/test_eeprom28c_sdp [PASSED] Took 2.25 seconds -------
+
+=================================== SUMMARY ===================================
+Environment    Test                           Status    Duration
+-------------  -----------------------------  --------  ------------
+native         native/avr/test_eeprom28c_sdp  PASSED    00:00:02.252
+================= 12 test cases: 12 succeeded in 00:00:02.252 =================
+```
+
+Full native suite (`pio test -e native`): **112/112 test cases succeeded**
+(108 from the running baseline at Plan 118-04's close + 4 new cases here), no
+`[ERRORED]`/`SIGABRT` anywhere in the output.
+
+### `_shared/` blob-SHA identity (D-07)
+
+Phase base commit confirmed from the parent chain of the first Phase-118
+firmware commit -- `8868828` (`feat(118-02): add four SDP report-line catalog
+ids 0x5E/0x5F/0x86/0x87`) is the first Phase-118 commit in this sub-repo, and
+`git log --oneline -1 8868828^` names `f8d10a5`
+(`docs(117): correct the FIX-04 gate's host-untouched claim after the
+regression gate`) -- matching the plan-time literal exactly, not merely taken
+on faith from it.
+
+```
+$ for p in test/native/avr/_shared/sdp_expected.h test/native/avr/_shared/host_stubs_common.inc test/native/avr/_shared/sdp_bus_config.h; do echo "$p base=$(git rev-parse f8d10a5:$p) head=$(git rev-parse HEAD:$p)"; done
+test/native/avr/_shared/sdp_expected.h base=b0566b80a360261cf825df5f23ecc05c7d0f885e head=b0566b80a360261cf825df5f23ecc05c7d0f885e
+test/native/avr/_shared/host_stubs_common.inc base=675166d3e5383d9ca7afa7911afbaa41b93f52da head=675166d3e5383d9ca7afa7911afbaa41b93f52da
+test/native/avr/_shared/sdp_bus_config.h base=e0111e6452dcb1bd8f44c5d36f3f6a67b893f4ad head=e0111e6452dcb1bd8f44c5d36f3f6a67b893f4ad
+```
+
+All three blob SHAs are equal at base and `HEAD` -- **unchanged across the
+whole phase, through this plan**. `git diff --name-only f8d10a5..HEAD | sort`
+lists exactly six paths for the phase so far (`include/firestarter.h`,
+`include/messages.h`, `src/proms/eeprom_28c.cpp`,
+`test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp`,
+`test/native/avr/test_sdp_harness/test_sdp_harness.cpp`,
+`tools/catalog/messages.toml`) -- none of them a `_shared/` path. The golden
+arrays were not regenerated; no golden was silently re-blessed.
+
+### The serial-channel exception, enumerated (D-07)
+
+On the flag-absent path, `eeprom28c_write_init` now emits two additional
+unconditional INFO frames on the **serial** channel: `MSG_INFO_SDP_UNLOCK`
+(before the unlock sequence) and `MSG_INFO_SDP_UNLOCK_DONE_US` (after it,
+carrying the measured duration). On the skip path (`FLAG_SKIP_SDP_UNLOCK`
+set) it emits exactly one WARN frame, `MSG_WARN_SDP_UNLOCK_SKIPPED`, in place
+of the pair. A fourth id, `MSG_WARN_SDP_TBLC_EXCEEDED`, is reachable only when
+the measured emit duration exceeds the t_BLC budget -- proven reachable by
+`test_case11_tblc_budget_exceeded_warns` above, but never observed on the
+default (elapsed-0) path. The recorded **BUS** stream is unchanged because
+`rurp_log_id` writes to Serial, a channel the Phase-116 recorder does not
+observe: it records only `rurp_write_to_register`, `rurp_write_data_buffer`,
+and `rurp_set_control_pin`. This is a NAMED, ENUMERATED exception on the
+serial channel -- written down here, not hidden -- and it is now
+machine-checked (case 12 above) rather than prose-only, without building a
+general-purpose serial-frame baseline recorder (see next section).
+
+### Declined recorder widening -- still NOT taken
+
+`.planning/phases/117-.../RED-BASELINE.md` §"Declined widening, recorded as
+an open hook" named widening the trace recorder to a third strobe kind
+(data-bus direction: `rurp_set_data_output`/`rurp_set_data_input`) as "Phase
+118's owner". **It is NOT taken here.** No requirement in OBS-01..05 needs
+it; taking it would force regeneration of `sdp_expected.h` and
+`test_sdp_harness`'s reference-emitter guards -- exactly the golden
+regeneration this section's blob-SHA check above proves did not happen. It
+stays deferred, deliberately, for whichever future phase's owner finds a use
+for it, rather than inheriting silence a second time.
+
+### Validation ceiling (restated for this section)
+
+No AT28C part was on the bench for this plan. Every sentence above has code
+or a captured byte stream as its subject: a recorded register-trace strobe,
+a captured serial frame's id byte, a git blob SHA. Nothing here is a claim
+about AT28C silicon state, and no chip's `support_status` changed.
