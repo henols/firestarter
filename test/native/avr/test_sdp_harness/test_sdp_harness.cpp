@@ -47,6 +47,16 @@ extern "C" {
  * this guard can pin the PRODUCTION table directly, not a transcription. */
 extern const byte_flip_t EEPROM_SDP_DISABLE[6];
 
+/* LOCK-05 (D-10, plan 119-06): EEPROM_SDP_ENABLE is DEFINED in
+ * src/proms/eeprom_28c.cpp, which [env:native] links into every test binary
+ * (build_src_filter = +<proms/>, test_build_src = yes). Plan 119-04 granted
+ * this array external linkage (a prior extern declaration in that TU) so
+ * this declaration is what lets the three-way identity/distinctness guard
+ * below read the PRODUCTION table directly rather than a transcribed
+ * test-local copy -- the same load-bearing shape as EEPROM_SDP_DISABLE's
+ * extern immediately above (FIX-05 precedent). */
+extern const byte_flip_t EEPROM_SDP_ENABLE[3];
+
 #include "../_shared/sdp_bus_config.h"
 #include "../_shared/sdp_expected.h"
 
@@ -310,6 +320,99 @@ void test_lock05_enable_write_and_write_protection_identical(void) {
     sdp_assert_stream_equals(snap, len, "LOCK-05: identity between the two 3-write tables");
 }
 
+/* LOCK-05's discharge (D-10, plan 119-06) -- the THREE-WAY byte-identity
+ * guard the two-way case above stops short of. EEPROM_SDP_ENABLE (this TU's
+ * production array, external linkage above) is byte-identical to BOTH
+ * FLASH_ENABLE_WRITE_PROTECTION and FLASH_ENABLE_WRITE in flash_utils.h
+ * [CITED: Atmel doc0270 rev 0270L-PEEPR-2/09 section 19 note 2 -- the Write
+ * Protect state activates at the end of the write cycle EVEN IF NO OTHER
+ * DATA IS LOADED, which is why the SDP-enable body and the protected-write
+ * prefix are genuinely the SAME three writes].
+ *
+ * This is a SAFETY property, not a style point: AA-55-A0 is simultaneously
+ * "lock the chip" and "the first three bytes of a protected byte write" --
+ * the array NAME is the only discriminator once the bytes match, so
+ * LOCK-05 requires the duplication PRESERVED rather than deduped
+ * (abandoned commit 0052c42's dedupe stays abandoned). The load-bearing
+ * absence -- no data write following these three loads -- cannot be proven
+ * by a table comparison at all (a table has no concept of "what comes
+ * after"); that half is asserted on the emitted STREAM instead, in Plan
+ * 119-05's test_case17_lock_terminates_after_three_writes_no_trailing_data
+ * (test_eeprom28c_sdp.cpp).
+ *
+ * Two separately-messaged legs, not one transitive check, so a failure
+ * names which pair diverged. All three entries' address/byte pairs are
+ * also pinned directly, including the terminal {0x5555, 0xA0} -- three
+ * writes fully pinned, mirroring test_fix05_terminal_byte_and_table_identity_guards'
+ * six-write pinning for the unlock table above. */
+void test_lock05_three_way_enable_table_identity(void) {
+    TEST_ASSERT_TRUE_MESSAGE(
+        sdp_tables_identical(EEPROM_SDP_ENABLE, FLASH_ENABLE_WRITE_PROTECTION, 3),
+        "LOCK-05: EEPROM_SDP_ENABLE must be byte-identical to FLASH_ENABLE_WRITE_PROTECTION -- "
+        "AA-55-A0 is datasheet-dual-purpose (Atmel doc0270 section 19 note 2) and this "
+        "duplication must stay PRESERVED, not deduped");
+    TEST_ASSERT_TRUE_MESSAGE(
+        sdp_tables_identical(EEPROM_SDP_ENABLE, FLASH_ENABLE_WRITE, 3),
+        "LOCK-05: EEPROM_SDP_ENABLE must ALSO be byte-identical to FLASH_ENABLE_WRITE -- the SAME "
+        "three writes prefix any protected byte write; the name is the only discriminator");
+
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(0x5555, EEPROM_SDP_ENABLE[0].address,
+        "LOCK-05: EEPROM_SDP_ENABLE entry 0 address must be 0x5555");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0xAA, EEPROM_SDP_ENABLE[0].byte,
+        "LOCK-05: EEPROM_SDP_ENABLE entry 0 byte must be 0xAA");
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(0x2AAA, EEPROM_SDP_ENABLE[1].address,
+        "LOCK-05: EEPROM_SDP_ENABLE entry 1 address must be 0x2AAA");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x55, EEPROM_SDP_ENABLE[1].byte,
+        "LOCK-05: EEPROM_SDP_ENABLE entry 1 byte must be 0x55");
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(0x5555, EEPROM_SDP_ENABLE[2].address,
+        "LOCK-05: EEPROM_SDP_ENABLE terminal entry (2) address must be 0x5555");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0xA0, EEPROM_SDP_ENABLE[2].byte,
+        "LOCK-05: EEPROM_SDP_ENABLE terminal entry (2) byte must be 0xA0 -- if this fails, the "
+        "SDP-enable body no longer matches the write-protect prefix");
+}
+
+/* LOCK-05's alias-refactor hazard guard (D-10, plan 119-06): three pairwise
+ * (const void*) inequalities among EEPROM_SDP_ENABLE, FLASH_ENABLE_WRITE_PROTECTION
+ * and FLASH_ENABLE_WRITE -- proving three DISTINCT objects, not merely three
+ * equal-valued ones. A future "cleanup" that pointed one name at another's
+ * storage (or introduced a single deduplicated table referenced by all
+ * three names) would satisfy EVERY equality leg in the case above while
+ * destroying the semantic distinction LOCK-05 exists to preserve -- the
+ * SAME hazard test_fix05_terminal_byte_and_table_identity_guards already
+ * guards for EEPROM_SDP_DISABLE against FLASH_ERASE. These three assertions
+ * are what make a dedupe fail loudly instead of silently.
+ *
+ * Also, for completeness against the one-nibble hazard class (FIX-05):
+ * EEPROM_SDP_ENABLE must be a distinct object from EEPROM_SDP_DISABLE and
+ * their lengths must differ (3 vs 6) -- cheap, and it pins the structural
+ * lock/unlock difference at the table level to complement Plan 119-05's
+ * stream-level divergence assertions (cases 18/19).
+ *
+ * Do NOT add a trace-based negative between FLASH_ENABLE_WRITE_PROTECTION
+ * and FLASH_ENABLE_WRITE here --
+ * test_lock05_enable_write_and_write_protection_identical's comment above
+ * states this is impossible by construction; a "negative" between two
+ * tables already asserted identical would be a test that cannot fail. */
+void test_lock05_enable_table_objects_distinct(void) {
+    TEST_ASSERT_NOT_EQUAL_MESSAGE((const void*)EEPROM_SDP_ENABLE, (const void*)FLASH_ENABLE_WRITE_PROTECTION,
+        "LOCK-05 distinctness: EEPROM_SDP_ENABLE and FLASH_ENABLE_WRITE_PROTECTION must be distinct "
+        "array objects, not aliases");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE((const void*)EEPROM_SDP_ENABLE, (const void*)FLASH_ENABLE_WRITE,
+        "LOCK-05 distinctness: EEPROM_SDP_ENABLE and FLASH_ENABLE_WRITE must be distinct array "
+        "objects, not aliases");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE((const void*)FLASH_ENABLE_WRITE_PROTECTION, (const void*)FLASH_ENABLE_WRITE,
+        "LOCK-05 distinctness: FLASH_ENABLE_WRITE_PROTECTION and FLASH_ENABLE_WRITE must be distinct "
+        "array objects, not aliases");
+
+    TEST_ASSERT_NOT_EQUAL_MESSAGE((const void*)EEPROM_SDP_ENABLE, (const void*)EEPROM_SDP_DISABLE,
+        "LOCK-05 distinctness: EEPROM_SDP_ENABLE and EEPROM_SDP_DISABLE must be distinct array objects");
+    TEST_ASSERT_EQUAL_MESSAGE(3, sizeof(EEPROM_SDP_ENABLE) / sizeof(EEPROM_SDP_ENABLE[0]),
+        "LOCK-05: EEPROM_SDP_ENABLE must be a 3-element table");
+    TEST_ASSERT_EQUAL_MESSAGE(6, sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]),
+        "LOCK-05: EEPROM_SDP_DISABLE must be a 6-element table -- lock and unlock lengths differ (3 "
+        "vs 6), complementing Plan 119-05's stream-level lock-vs-unlock divergence assertions");
+}
+
 /* FIX-05 (D-10/D-11, plan 117-04): the constant-level formalisation of the
  * one-nibble chip-erase hazard test_negativeA_... already proves at the
  * STREAM level -- here it is proven directly on the two SOURCE TABLES, no
@@ -555,6 +658,8 @@ int main(int argc, char** argv) {
     RUN_TEST(test_negativeA_unlock_mutated_diverges_and_matches_erase);
     RUN_TEST(test_negativeB_lock_table_swapped_for_write_prefix);
     RUN_TEST(test_lock05_enable_write_and_write_protection_identical);
+    RUN_TEST(test_lock05_three_way_enable_table_identity);
+    RUN_TEST(test_lock05_enable_table_objects_distinct);
     RUN_TEST(test_fix05_terminal_byte_and_table_identity_guards);
     RUN_TEST(test_fix05_guard_rejects_planted_terminal_mutation);
     RUN_TEST(test_fixed_guard_at28c256);
