@@ -502,3 +502,216 @@ total — the routing fix in `eeprom28c_emit_command_sequence` closes the
 through `mem_util_remap_address_bus`), proven here for the four represented
 pinouts (`DIP28_28C256`, `DIP28_28C64`, `DIP24_2816`, `DIP32_28C512_EEPROM`)
 that between them cover all 84 chips (see the CORRECTION 4 table above).
+
+## FIX-04 non-regression gate (Phase 117 close)
+
+**Why this section exists.** FIX-04 needs a verifiable criterion, not an
+intention: "the shared code stayed untouched" is only provable by content
+hash, measured at the phase base and re-checked here, at the phase's last
+plan, against every commit the phase actually made (117-01 through 117-04).
+This section is the committed, re-runnable record a reviewer needs — every
+command below can be re-executed command-for-command.
+
+### 1. Six frozen artifacts — blob-SHA identity
+
+Command used (from `/workspaces/firestarter`, at commit `353ce8a`, this
+plan's parent HEAD before its own commit):
+
+```
+for p in src/proms/flash_utils.cpp include/flash_utils.h src/proms/flash_5v_page.cpp src/proms/flash_nor_unlock.cpp test/native/avr/_shared/sdp_expected.h test/native/avr/_shared/sdp_bus_config.h; do printf "%s  %s\n" "$(git rev-parse HEAD:$p)" "$p"; done
+```
+
+| Path | Expected blob SHA (measured at phase base `ada4bdc7`) | Observed blob SHA (this plan) | Match |
+|---|---|---|---|
+| `src/proms/flash_utils.cpp` | `8cc0d576600c454958f481f13bdd660737af7077` | `8cc0d576600c454958f481f13bdd660737af7077` | yes |
+| `include/flash_utils.h` | `75399319ff64f84317f81307126c24732e13f275` | `75399319ff64f84317f81307126c24732e13f275` | yes |
+| `src/proms/flash_5v_page.cpp` | `6507e32c4f0aa8eebf9c426c19bc1ef2a92e3914` | `6507e32c4f0aa8eebf9c426c19bc1ef2a92e3914` | yes |
+| `src/proms/flash_nor_unlock.cpp` | `e2e36ac88e75fc89f206aff5082050b004d22a27` | `e2e36ac88e75fc89f206aff5082050b004d22a27` | yes |
+| `test/native/avr/_shared/sdp_expected.h` | `b0566b80a360261cf825df5f23ecc05c7d0f885e` | `b0566b80a360261cf825df5f23ecc05c7d0f885e` | yes |
+| `test/native/avr/_shared/sdp_bus_config.h` | `e0111e6452dcb1bd8f44c5d36f3f6a67b893f4ad` | `e0111e6452dcb1bd8f44c5d36f3f6a67b893f4ad` | yes |
+
+All six blob SHAs are content-addressed identity proofs — equality here does
+not depend on correctly guessing a diff base. `git diff --exit-code HEAD --
+<the six paths>` exits `0` (no uncommitted change to any of them either).
+`git log --oneline -1 -- test/native/avr/_shared/sdp_expected.h` names
+`f1189d6` (`test(116-05): TRACE-03a/b in-suite negatives + LOCK-05 +
+fixed-stream reference-emitter guards`) — a Phase 116 commit, not one of the
+four Phase-117 commits (`e5b9e87`, `b30b91c`, `c7e55b7`, `353ce8a`). The same
+holds for the other five paths (most recent touches are Phase 116, Phase
+104, or earlier). `_shared/sdp_expected.h` in particular being untouched
+means plan 117-02's GREEN capture proves what it claims: the oracle was not
+moved to meet the fix.
+
+### 2. The other five protocol families' golden-trace suites
+
+Run individually via `pio test -e native -f "*<name>*"`, from
+`/workspaces/firestarter`:
+
+| Suite | Filter | Result | Case count |
+|---|---|---|---|
+| `0x07`/`0x08`/`0x0B` UV-EPROM | `*test_val_eprom*` | PASSED | 6/6 |
+| `0x06` AMD unlock | `*test_val_nor_unlock*` | PASSED | 4/4 |
+| `0x05` page-write flash | `*test_val_5v_page*` | PASSED | 8/8 |
+| `0x10` Intel command-register | `*test_val_flash_intel*` | PASSED | 3/3 |
+| SRAM/NVRAM | `*test_val_sram*` | PASSED | 6/6 |
+
+All five pass unchanged. `test_flash_intel_vpp` — the separate, pre-existing
+KNOWN-FLAKY suite documented at `platformio.ini:72-77` (Unity-teardown
+SIGABRT, carried debt since Phase 17 WR-01 / Phase 20) — is **not present in
+`[env:native]`'s `test_filter` allowlist at all** (confirmed: `test_filter =`
+block lists 16 suite paths, none named `test_flash_intel_vpp`), so it never
+runs under `pio test -e native` and has nothing to report here. It is
+distinct from `test_val_flash_intel`, which is in the allowlist and passed
+cleanly above.
+
+### 3. Full native suite
+
+```
+cd /workspaces/firestarter && pio test -e native
+```
+
+Result: **108/108 test cases succeeded, exit code 0**, across all 16 suites
+in the `test_filter` allowlist (`test_dispatch`, `test_not_implemented`,
+`test_messages`, `test_data_input`, `test_read_timing`, `test_cobs_data_frame`,
+`test_cobs_cmd_frame`, `test_frame_vectors`, `test_val_eprom`,
+`test_val_eeprom28c`, `test_val_nor_unlock`, `test_val_5v_page`,
+`test_val_flash_intel`, `test_val_sram`, `test_sdp_harness`,
+`test_eeprom28c_sdp`). No suite reported `FAILED` or `ERRORED`.
+
+**Arithmetic:** pre-phase baseline (Phase 116 close) = **95**. This phase
+added 8 (`test_eeprom28c_sdp`, plan 117-01) + 3 (`test_val_eeprom28c`, plan
+117-03) + 2 (`test_sdp_harness`, plan 117-04) = 13. `95 + 8 + 3 + 2 = 108`.
+Observed = **108**. Matches exactly; no discrepancy to investigate.
+
+### 4. Board builds and the Leonardo flash delta
+
+```
+cd /workspaces/firestarter && pio run -e leonardo
+cd /workspaces/firestarter && pio run -e uno
+```
+
+Both report `SUCCESS`.
+
+| Target | Flash (this plan, `353ce8a`+gate) | RAM |
+|---|---|---|
+| Leonardo | 25528/28672 bytes (89.0%) | 1998/2560 bytes (78.0%) |
+| Uno | 23390/32256 bytes (72.5%) | 1559/2048 bytes (76.1%) |
+
+**Leonardo flash delta versus the phase base.** The phase base commit
+`ada4bdc728118bd3d0f93ea444e9b60954191ddd` was checked out into a scratch
+`git worktree` (`git worktree add <path> ada4bdc728118bd3d0f93ea444e9b60954191ddd`),
+built with `pio run -e leonardo` there, and the worktree removed afterward
+(`git worktree remove`; `git worktree list` returns to a single entry). Phase
+base Leonardo figures: **25324/28672 bytes (88.3%)**, RAM 1998/2560 bytes
+(78.0%, unchanged). This plan's Leonardo figure: **25528/28672 bytes
+(89.0%)**.
+
+**Signed delta: +204 bytes flash, +0 bytes RAM.** This is measured, not
+predicted — `.planning/research/SUMMARY.md` predicted the phase would likely
+be net-negative on flash because it sheds a call site into the shared
+byte-flipping helper; the measured outcome is a net **increase** of 204
+bytes instead, because the phase's four new file-static functions
+(`eeprom28c_emit_command_sequence`, `eeprom28c_wait_for_sdp_completion`,
+`eeprom28c_wait_for_page_write`, `eeprom28c_verify_page_readback`) and the
+`window_start`-indexed read-back outweigh what the routing change saves. No
+threshold claim is made here — Phase 119's LOCK-06 owns the 3348 B headroom
+criterion, not this phase.
+
+### 5. Host sub-repo untouched; no new `MSG_*`/`FLAG_*`
+
+```
+git -C /workspaces/firestarter_app diff --stat
+git -C /workspaces/firestarter_app status --porcelain
+git -C /workspaces/firestarter_app log --oneline -1
+```
+
+`firestarter_app`'s committed history is unchanged across the whole phase:
+`git log --oneline -1` still names `36a9bb5` (`fix(quick-260728-ahy): echo
+the created issue URL on a successful gh submit`) — the same tip recorded in
+STATE.md before Phase 117 began, and the meta gitlink was not bumped by any
+of the four prior plans or this one. **Explicit exclusion, recorded
+honestly, not silently dropped:** `git status --porcelain` and `git diff
+--stat` are **not** empty — there is a pre-existing, uncommitted `.gitignore`
+change (`M .gitignore`, dated 2026-07-10, well before this phase, first
+noted in `117-02-SUMMARY.md`) plus five pre-existing untracked files
+(`.coverage`, `.planning/config.json`, `SECURITY.md`, `doc/lockable-proms.md`,
+`write_test_port.sh`). None of these was touched, committed, reverted, or
+cleaned by this phase — per this plan's explicit instruction, they are
+recorded as a known exclusion rather than claimed as a clean tree. The
+committed-history criterion (which is what FIX-04/the phase's ordering
+invariant actually depends on) holds: zero `firestarter_app` files changed
+in any commit across Phase 117.
+
+```
+cd /workspaces/firestarter && git diff --exit-code ada4bdc728118bd3d0f93ea444e9b60954191ddd HEAD -- include/messages.h include/firestarter.h
+```
+
+Exits `0` — no new `MSG_*` id, no new `FLAG_*` value, anywhere in the phase.
+`include/messages.h` is codegen-generated from the meta `messages.toml`; an
+unchanged `firestarter.h` is what keeps the firmware-before-host ordering
+invariant provable without inspecting every commit's diff by hand.
+
+`git diff --name-only ada4bdc728118bd3d0f93ea444e9b60954191ddd HEAD | sort`
+lists exactly six paths across the whole phase, none of them FIX-04-frozen:
+`platformio.ini`, `src/proms/eeprom_28c.cpp`,
+`test/native/avr/test_eeprom28c_sdp/RED-BASELINE.md`,
+`test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp`,
+`test/native/avr/test_sdp_harness/test_sdp_harness.cpp`,
+`test/native/avr/test_val_eeprom28c/test_val_eeprom28c.cpp`.
+
+### 6. Validation-ceiling statement
+
+No AT28C part was on the bench for any plan in this phase. Every claim
+recorded above — in this section and in the four preceding plans'
+SUMMARYs — has code as its subject: an emitted byte-stream matched a
+recorded target, a blob SHA matched another blob SHA, a suite exited zero,
+a binary's flash usage was measured. The bridge from that evidence to
+silicon behaviour is a **datasheet citation**
+(`[CITED: Microchip DS20006432B §6.6.2 p.10; DS20006386B p.10]` — both
+datasheets state the command-sequence data is not written to the device
+when unrecognised) and never an observation made by any suite in this
+phase. **The permitted closing claim for Phase 117**, per
+`.planning/REQUIREMENTS.md` §"Validation Ceiling": *the SDP-disable
+sequence is emitted exactly as specified, verified byte-exact by golden
+register trace across all four `0x0D` pinouts.* No sentence in this phase's
+record claims that SDP was actually disabled on a chip, makes any claim
+about AT28C silicon state, or claims gh#11's symptom is gone on hardware.
+`0x0D` stays `UNVERIFIED`.
+
+**CORRECTION 4 framing (66 of 84, never "all 84").** `DIP24_2816`'s 19
+chips are inhibited on the `0x2AAA` loads, not the `0x5555` loads;
+`DIP32_28C512_EEPROM`'s 18 chips are inhibited 0-of-6 from a fresh boot and
+hazardous only under a stale upper-address bit. **66 of the 84** `0x0D`
+chips are affected by the defect this phase's fix addresses.
+
+### 7. Anti-hollow evidence, reachable from the firmware tree
+
+Two planted-violation proofs were executed and recorded during this phase,
+each proving its guard can actually fail before being trusted to pass:
+
+- `.planning/phases/117-fix-remap-aware-0x0d-emitter-honest-completion-signal/117-03-SUMMARY.md`
+  §"Planted-violation proof (read-back removed)" — with
+  `eeprom28c_verify_page_readback`'s call temporarily removed,
+  `test_fix06_planted_partial_write_fails_fixed_path_and_passes_legacy_poll`
+  and `test_fix06_page_boundary_window_readback` went RED while
+  `test_fix06_clean_page_write_succeeds_isolation_control` stayed GREEN;
+  restoring the fix returned the suite to 6/6, confirmed byte-identical to
+  the pre-revert state.
+- `.planning/phases/117-fix-remap-aware-0x0d-emitter-honest-completion-signal/117-04-SUMMARY.md`
+  §"Planted-violation proof (production terminal byte mutated)" — with the
+  production `EEPROM_SDP_DISABLE` terminal byte temporarily mutated from
+  `0x20` to `0x10` (the chip-erase value),
+  `test_fix05_terminal_byte_and_table_identity_guards` and
+  `test_fix05_guard_rejects_planted_terminal_mutation` both went RED;
+  restoring the byte returned the suite to 15/15, confirmed via a clean
+  `git diff --exit-code -- src/` immediately before commit.
+
+### 8. Gate result
+
+All six FIX-04-frozen artifacts are byte-identical to the phase base by
+content hash. The five other protocol families' golden-trace suites pass
+unchanged. The full native suite is green at the explained case count.
+Both board targets build; the Leonardo flash delta is measured (+204 B) with
+no threshold claim. `firestarter_app`'s committed history is unchanged, and
+no new `MSG_*`/`FLAG_*` value was introduced anywhere in the phase. **Gate:
+PASS.**
