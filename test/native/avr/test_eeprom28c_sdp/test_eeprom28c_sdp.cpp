@@ -82,6 +82,12 @@ extern "C" {
 }
 #include "firestarter.h"
 #include "flash_utils.h"
+/* v1.22 Phase 119 D-06/D-07 (119-07 Task 3): op_execute_stateful_operation /
+ * op_execute_simple_operation are now natively linkable (Task 1 widened
+ * build_src_filter with operation_utils.cpp), so cases 24/25 below call
+ * them directly -- the same op-layer functions every eprom_* entry point
+ * delegates to. */
+#include "operation_utils.h"
 #include "../_shared/sdp_bus_config.h"
 #include "../_shared/sdp_expected.h"
 
@@ -1290,6 +1296,90 @@ void test_case23_standalone_unlock_matches_auto_unlock_stream(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * Cases 24-25 (v1.22 Phase 119 D-06/D-07, 119-07 Task 3, option (a)) — the
+ * refusal FRAME itself, proven at the op layer, plus DEVTEST-01's firmware
+ * half proven end to end through the CMD_ERASE dispatch path on 0x0D. Both
+ * are possible only because Task 1 widened build_src_filter with
+ * operation_utils.cpp -- under option (b) neither case would exist and the
+ * matrix would be prose.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Case 24: a handle whose firestarter_operation_main is NULL (no dispatch
+ * involved -- this proves the REFUSAL itself, not any one handler's
+ * omission), driven through the REAL op_execute_stateful_operation, exactly
+ * as every eprom_* entry point does
+ * (`return !op_execute_stateful_operation(callback, handle)`). Passing NULL
+ * for the callback parameter is safe: the NULL-main guard at
+ * operation_utils.cpp:63 short-circuits before the callback is ever
+ * touched. */
+void test_case24_null_main_refusal_emits_not_supported_and_error_response(void) {
+    firestarter_handle_t h = {};
+    h.protocol = 0x0D;
+    h.cmd = CMD_ERASE; /* any command -- the refusal cares only about main */
+    h.response_code = RESPONSE_CODE_OK;
+    h.firestarter_operation_main = NULL;
+    h.firestarter_operation_init = NULL;
+    h.firestarter_operation_end = NULL;
+
+    bool still_in_progress = op_execute_stateful_operation(NULL, &h);
+
+    TEST_ASSERT_FALSE_MESSAGE(still_in_progress,
+        "Case 24 (D-06/D-07): op_execute_stateful_operation must return false on a NULL main -- "
+        "every eprom_* caller inverts this return to report the command as finished, unchanged "
+        "semantics from before this task");
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 24 (D-06/D-07): the NULL-main fall-through must now set RESPONSE_CODE_ERROR, "
+        "replacing the pre-119-07 silent RESPONSE_CODE_OK phantom success");
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_ERR_NOT_SUPPORTED),
+        "Case 24 (D-06/D-07): MSG_ERR_NOT_SUPPORTED must appear in the captured frame ids -- the "
+        "generic refusal reuses this existing id (already eprom_erase's FLAG_CAN_ERASE refusal); no "
+        "new catalog id was added");
+}
+
+/* Case 25: the SAME guard proven end to end through the CMD_ERASE dispatch
+ * path on protocol 0x0D -- DEVTEST-01's firmware half, at the WIRING level
+ * rather than the dispatch level (test_configure_memory.cpp's case group 4
+ * only proves firestarter_operation_main stays NULL after configure_memory;
+ * this case additionally calls the real op layer and observes the
+ * refusal). eprom_erase (src/eprom_operations.cpp) is an AVR-only TU
+ * excluded from [env:native]'s build_src_filter, so this case calls
+ * op_execute_simple_operation directly -- the exact op-layer function
+ * eprom_erase's body delegates to
+ * (`return !op_execute_simple_operation(handle);`), deliberately bypassing
+ * eprom_erase's own EARLIER FLAG_CAN_ERASE precondition check (a different,
+ * unrelated refusal) so this case isolates Task 2's guard alone. */
+void test_case25_cmd_erase_on_0x0d_refused_end_to_end_devtest01(void) {
+    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[0]); /* protocol 0x0D, ctrl_flags 0 */
+    h.cmd = CMD_ERASE;
+    configure_memory(&h);
+    TEST_ASSERT_NULL_MESSAGE(h.firestarter_operation_main,
+        "Case 25 precondition: configure_eeprom28c must leave CMD_ERASE's main NULL on 0x0D -- no "
+        "case CMD_ERASE: arm exists in its switch");
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+
+    bool still_in_progress = op_execute_simple_operation(&h);
+
+    TEST_ASSERT_FALSE_MESSAGE(still_in_progress,
+        "Case 25 (DEVTEST-01 fw half): op_execute_simple_operation must return false -- eprom_erase "
+        "would report the erase as finished, exactly as before this fix, but now honestly (an error "
+        "frame is emitted instead of nothing)");
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "Case 25 (DEVTEST-01 fw half): CMD_ERASE on 0x0D must now set RESPONSE_CODE_ERROR instead "
+        "of silently completing with RESPONSE_CODE_OK -- this is the phantom-erase fix `dev test` "
+        "needs; the host-side OP_ERASE -> NA mapping stays Phase 121 scope");
+
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_ERR_NOT_SUPPORTED),
+        "Case 25 (DEVTEST-01 fw half): MSG_ERR_NOT_SUPPORTED must appear in the captured frame ids "
+        "for a CMD_ERASE attempt on protocol 0x0D");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
  * main
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -1320,6 +1410,8 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case21_lock_tblc_budget_warn_fires);
     RUN_TEST(test_case22_lock_tblc_budget_warn_does_not_fire_at_normal_elapsed);
     RUN_TEST(test_case23_standalone_unlock_matches_auto_unlock_stream);
+    RUN_TEST(test_case24_null_main_refusal_emits_not_supported_and_error_response);
+    RUN_TEST(test_case25_cmd_erase_on_0x0d_refused_end_to_end_devtest01);
 
 #ifdef SDP_TRACE_DUMP
     RUN_TEST(test_dump_lock_goldens);
