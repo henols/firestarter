@@ -170,5 +170,14 @@ that headers including `<avr/pgmspace.h>` compile on a non-Harvard host.
 
 To add a new host-side Unity suite, drop `test_*.cpp` files under
 `test/native/avr/<dirname>/`. Extend `host_stubs.cpp` only if the new test
-references additional `rurp_*` symbols. The `[env:native]` configuration in
-`platformio.ini` does not need changes for new suites.
+references additional `rurp_*` symbols.
+
+**Corrected (v1.22 Phase 119 D-04, 119-02):** the claim that `[env:native]`
+needs no changes for a new suite is FALSE and was corrected here. `[env:native]`
+uses a POSITIVE `test_filter` allowlist (`platformio.ini`) — a suite directory
+is invisible to `pio test` until its path appears in `test_filter`, and its
+headers are unreachable until a matching `-I test/native/avr/<dirname>` entry
+is added to `build_flags`. Both lists must be updated, in that same env. Since
+Phase 119 added a second native env, `[env:native_nodevtools]`, a new suite
+must be added to **both** envs' `test_filter` and `-I` lists (four new lines
+total) to run under both `-D DEV_TOOLS` and no-`DEV_TOOLS` builds.

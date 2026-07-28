@@ -90,6 +90,17 @@ jobs:
       - name: Run native unit tests
         run: pio test -e native
 
+      # v1.22 Phase 119 D-04: proves the is_memory_cmd() admission predicate
+      # behaves identically without -D DEV_TOOLS as it does with it -- a
+      # no-DEV_TOOLS build had never been compiled or tested before this
+      # milestone (-D DEV_TOOLS lives in the shared [env] block and is
+      # inherited by all three AVR envs AND [env:native]). This step will
+      # not fire on the v1.22 milestone branch (this workflow triggers on
+      # push/pull_request to main only); the in-phase proof is the local
+      # `pio test -e native_nodevtools` run recorded in 119-02-SUMMARY.md.
+      - name: Run native unit tests (no DEV_TOOLS)
+        run: pio test -e native_nodevtools
+
       - name: Install pytest for script tests
         run: pip install pytest
 
