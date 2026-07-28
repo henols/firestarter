@@ -642,6 +642,58 @@ committed-history criterion (which is what FIX-04/the phase's ordering
 invariant actually depends on) holds: zero `firestarter_app` files changed
 in any commit across Phase 117.
 
+> **CORRECTION — the claim above is superseded (Phase 117 regression gate,
+> 2026-07-28).** The `zero firestarter_app files changed` statement was true
+> when written, and is now **false**. The phase's own regression gate — run
+> after plan 117-05 committed, before phase verification — found that this
+> phase broke **four Phase-116 host-side gates** that scan this very file's
+> source text and were keyed to pre-117 identifiers and declaration syntax:
+>
+> | Host test | Break |
+> |---|---|
+> | `test_sdp_table_parity` (×3 cases) | `_extract_byte_flip_pairs`'s declaration regex requires **empty** brackets (`NAME[] =`). 117-02 changed the definition to `EEPROM_SDP_DISABLE[6] = {` — a C++ `extern` declaration cannot name an incomplete array type — so the regex matched zero times and raised `ValueError`. |
+> | `test_check_no_log_in_sdp_window::test_checker_exits_zero_on_clean_source` | `check_no_log_in_sdp_window.py`'s `_EMIT_ANCHOR_PATTERNS` matched `flash_execute_command(EEPROM_SDP_DISABLE)` (replaced by 117-02) and `_WAIT_ANCHOR_PATTERNS` matched `eeprom28c_wait_for_write(` (deleted outright by 117-03). Both tuples matched zero times, so the checker exited 1. |
+>
+> Both failures were **proven** to be Phase-117-caused, not pre-existing debt:
+> injecting the phase-base `ada4bdc` copy of `eeprom_28c.cpp` via the
+> `FIRESTARTER_SDP_SRC` env seam flips the parity cases back to green, and the
+> base source contains both anchor patterns (emit ×1, wait ×4). Host CI runs
+> these (`ci.yml` → `pytest --cov`; `beta-release.yml` → `pytest tests/ -v`),
+> so the host suite — and therefore any beta cut — was red.
+>
+> Both gates fail **closed** (`ValueError` / exit 1), never a silent pass, and
+> Phase 116 anticipated this precise situation in its own source comments and
+> in the checker's stderr: *"if the emitter was renamed or replaced, add the
+> new anchor to `_EMIT_ANCHOR_PATTERNS` … rather than deleting this gate"*.
+> Phase 117's five plans simply contained no task that did so.
+>
+> Fixed under operator authorization at the regression gate in
+> `firestarter_app@9dd11a9` (`fix(117): re-anchor Phase-116 host SDP gates
+> onto the Phase-117 emitter`): both anchor tuples extended **append-only**
+> (the superseded patterns retained, per the anti-hollow contract), and the
+> parity regex's bracket group widened to `\[\s*\d*\s*\]` so it accepts both
+> `NAME[]` and `NAME[6]` while still requiring the trailing `=` — so it
+> matches only the initializer, never the bare `extern` declaration. Array
+> bytes unchanged. All four cases green; the checker now resolves the real
+> window at `eeprom_28c.cpp` lines **291–297** and still fails on the planted
+> violation fixture.
+>
+> **The narrowed claim that IS true, and that the ordering invariant actually
+> needs:** Phase 117 introduced **no wire, protocol, or behavioral change on
+> the host** — no `MSG_*`, no `FLAG_*`, no command, no CLI surface, no
+> serialized field. The two changed host files are source-scanning **test
+> gates**, which cannot participate in a firmware/host version skew. The
+> firmware-before-host ordering invariant is intact. `firestarter_app`'s
+> pre-existing dirty working tree (recorded above) was left untouched, and the
+> meta gitlink was still not bumped.
+>
+> Verified with the full host suite after the fix: the **only** remaining
+> failure is `test_audit_coverage_matrix::test_golden_file_matches`, proven
+> pre-existing and unrelated — it fails identically with the two gate fixes
+> stashed away, and it reads the chip database, referencing no firmware path.
+> It is the same known-stale golden carried since v1.21 and needs its own
+> regeneration commit.
+
 ```
 cd /workspaces/firestarter && git diff --exit-code ada4bdc728118bd3d0f93ea444e9b60954191ddd HEAD -- include/messages.h include/firestarter.h
 ```
