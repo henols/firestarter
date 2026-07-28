@@ -233,6 +233,27 @@ void loop() {
         case CMD_CHECK_CHIP_ID:
             finished = eprom_check_chip_id(&handle);
             break;
+        // LOCK-02, corrected form (RESEARCH F-T): with init/end left NULL
+        // (configure_eeprom28c), these phases are NOT skipped --
+        // _execute_operation_house_keeping_func still calls op_wait_for_ack()
+        // and still emits the INIT and END frame pairs, so each costs a host
+        // ACK round-trip. What is genuinely absent for a payload-free command
+        // is the DONE round-trip (which lives only in
+        // eprom_operations.cpp::_process_incoming_data, the write path) and
+        // any '#' data frame. Traced shape: 4 host ACKs, 7 framed lines, zero
+        // '#' frames, zero DONE string -- CMD_ERASE (above) is the working
+        // precedent and the host's generic _run_state_machine already
+        // supplies all four ACKs today, so no host change is needed for this
+        // firmware half. Both arms sit outside any preprocessor conditional.
+        // op_wait_for_ack has a 1000 ms timeout and emits MSG_ERR_TIMEOUT on
+        // expiry, so a standalone lock issued by a host that does not ACK
+        // times out rather than hangs (relevant to Phase 120, not here).
+        case CMD_SDP_UNLOCK:
+            finished = eprom_sdp_unlock(&handle);
+            break;
+        case CMD_SDP_LOCK:
+            finished = eprom_sdp_lock(&handle);
+            break;
         case CMD_READ_VPP:
         case CMD_READ_VPE:
             finished = hw_read_voltage(&handle);
