@@ -330,6 +330,21 @@ void eeprom28c_write_execute(firestarter_handle_t* handle) {
     // a wire field directly, so no index here can exceed data_size or
     // DATA_BUFFER_SIZE.
     uint32_t window_start = 0;
+    // D-10: this per-byte set_data loop runs with handle->pulse_delay = 0 and
+    // no inter-byte wait, under the IDENTICAL AT28C_TBLC_MAX_US constraint as
+    // the SDP-disable command sequence (eeprom28c_emit_command_sequence,
+    // above) -- both are byte-load sequences bounded by the same datasheet
+    // t_BLC maximum, and this is the shared physical exposure named there.
+    // The runtime budget check deliberately stays scoped to the unlock only
+    // (D-09/D-10): a per-byte compare in this hot path would cost flash and
+    // cycles for a surface no OBS requirement covers, and the flash delta
+    // matters here -- Phase 119's LOCK-06 headroom judgement must be made
+    // against Phase 117's measured +204 B, not against the research's
+    // predicted saving. This comment is a breadcrumb, not a fix: gh#11 is a
+    // completion/data-landed CONFLATION bug (Phase 117's finding), not a
+    // sampling-rate or timing-budget bug, so whichever future phase revisits
+    // gh#11 on real silicon should look at that conflation, not at this
+    // constraint.
     for (uint32_t i = 0; i < handle->data_size; i++) {
         uint32_t address = handle->address + i;
         uint8_t data = handle->data_buffer[i];
