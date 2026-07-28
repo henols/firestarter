@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 70
+ * Total messages: 73
  */
 
 #ifndef __MESSAGES_H__
@@ -63,6 +63,9 @@ extern "C" {
 #define MSG_INFO_CMD                      0x5D
 #define MSG_INFO_SDP_UNLOCK               0x5E
 #define MSG_INFO_SDP_UNLOCK_DONE_US       0x5F
+#define MSG_INFO_SDP_LOCK                 0x60
+#define MSG_INFO_SDP_LOCK_DONE_US         0x61
+#define MSG_INFO_PAGE_LOAD_WORST_US       0x62
 #define MSG_WARN_REV0_VPP_UNSUPPORTED     0x80
 #define MSG_WARN_VPP_LOW                  0x81
 #define MSG_WARN_VPP_HIGH                 0x82
