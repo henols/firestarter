@@ -239,6 +239,20 @@ extern "C" void rurp_validate_config(rurp_configuration_t* config) {
     (void)config;
 }
 
+/* op_reset_timeout — defined in firestarter.cpp (loop()'s AVR-only command
+ * timeout watchdog: `timeout = millis() + TIMEOUT_MS`), which [env:native]
+ * and [env:native_nodevtools] deliberately exclude from build_src_filter
+ * (firestarter.cpp is the dispatcher/loop() TU, not a proms/ handler). v1.22
+ * Phase 119 D-06/D-07 (119-07 Task 1, RESEARCH Open Question 1 option a)
+ * widened both envs' build_src_filter to include operation_utils.cpp so the
+ * NULL-main refusal is natively provable; operation_utils.cpp calls
+ * op_reset_timeout() unconditionally from _execute_operation_house_keeping
+ * and _check_response, which is a new link-time requirement this stub
+ * resolves. No native suite asserts on real-time timeout behaviour (that is
+ * an AVR-only concern outside every suite's scope), so a no-op is
+ * behaviourally adequate — same contract as every other stub in this file. */
+extern "C" void op_reset_timeout() {}
+
 /* Communication API — Phase 6 widened the [env:native] src_filter to pull
  * src/boards/rurp_serial_utils.cpp into the test binary (so test_messages
  * can exercise the real frame emitter end-to-end). That TU provides the
