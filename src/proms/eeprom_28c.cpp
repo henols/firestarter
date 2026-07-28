@@ -104,6 +104,12 @@ static void eeprom28c_emit_command_sequence(firestarter_handle_t* handle, const 
 static void eeprom28c_wait_for_sdp_completion(firestarter_handle_t* handle);
 static bool eeprom28c_wait_for_page_write(firestarter_handle_t* handle, uint32_t address, uint8_t expected);
 static bool eeprom28c_verify_page_readback(firestarter_handle_t* handle, uint32_t first_index, uint32_t last_index);
+// Plan 119-04 (LOCK-01/LOCK-02/LOCK-05): the shared SDP timed-emit helper and
+// the two standalone, payload-free lock/unlock operations it drives.
+static void eeprom28c_emit_sdp_sequence_timed(firestarter_handle_t* handle, const byte_flip_t* sequence, size_t length,
+                                               uint8_t emitted_msg_id, uint8_t done_us_msg_id);
+static void eeprom28c_sdp_unlock_execute(firestarter_handle_t* handle);
+static void eeprom28c_sdp_lock_execute(firestarter_handle_t* handle);
 
 // AT28C SDP disable: 6-write sequence to magic addresses.
 // D-10: kept 0x0D-local (not driving the byte-identical
@@ -129,10 +135,74 @@ const byte_flip_t EEPROM_SDP_DISABLE[6] = {
     {0x5555, 0x20},
 };
 
+// AT28C SDP enable: 3-write sequence to the same magic addresses, terminal
+// byte 0xA0. [CITED: Atmel doc0270 rev 0270L-PEEPR-2/09 section 19 note 2 --
+// the citation of record, corroborated by Microchip DS20006432B section 6.18
+// note 2, whose sentence is that the Write Protect state activates at the
+// end of the write cycle EVEN IF NO OTHER DATA IS LOADED.] That sentence is
+// why this table carries no payload byte after the sequence and D-11's
+// standalone lock op (below) issues no data write and no read after it.
+//
+// The `extern` declaration immediately below is LOAD-BEARING, not
+// decorative: in C++ a namespace-scope `const` array has INTERNAL linkage
+// unless a prior declaration with external linkage is visible, and Plan
+// 119-06's three-way identity/distinctness cross-guard must be able to pin
+// this PRODUCTION array directly rather than a transcribed test-local copy
+// (same load-bearing shape as EEPROM_SDP_DISABLE's extern above, FIX-05
+// precedent).
+//
+// D-09: this table is kept 0x0D-LOCAL, exactly like EEPROM_SDP_DISABLE
+// above, and deliberately does NOT drive the byte-identical
+// FLASH_ENABLE_WRITE_PROTECTION table from the FIX-04-frozen
+// flash_utils.h -- so FIX-01's "0x0D-local emitter" framing stays literal
+// and the shared frozen header stays untouched (mirrors Phase 117 D-10's
+// framing for EEPROM_SDP_DISABLE vs FLASH_DISABLE_WRITE_PROTECTION).
+//
+// D-10, and this is a SAFETY property, not a style point: {0x5555,0xAA},
+// {0x2AAA,0x55}, {0x5555,0xA0} is byte-identical to FLASH_ENABLE_WRITE (the
+// PROTECTED-WRITE PREFIX) and to FLASH_ENABLE_WRITE_PROTECTION. The ONLY
+// thing separating "lock the chip" from "prefix a byte write" is that NO
+// DATA WRITE FOLLOWS this sequence. That makes the absence of a payload a
+// hard safety invariant, not a convenience -- it is why LOCK-05 requires the
+// flash_utils.h duplication PRESERVED rather than deduped (the array NAME is
+// the only discriminator once the bytes match, so deduping would destroy
+// real semantics; abandoned commit 0052c42 stays abandoned), and it is why
+// that absence cannot be asserted by comparing tables -- it has to be
+// asserted on the emitted STREAM instead (Plan 119-05's no-payload +
+// exact-divergence-index cases).
+//
+// ROADMAP criterion 5 asks for this rationale as a header comment on
+// flash_utils.h; flash_utils.h is FIX-04 byte-frozen (git diff --quiet
+// confirms it untouched by this plan), so that file is deliberately NOT
+// edited. This comment, here, is the first of the two records that
+// discharge criterion 5's intent; the second is the pre-existing comment at
+// test/native/avr/test_sdp_harness/test_sdp_harness.cpp:291-296. Recorded as
+// a deliberate deviation of the same class as D-05 and D-15 (see
+// 119-04-SUMMARY.md).
+extern const byte_flip_t EEPROM_SDP_ENABLE[3];
+const byte_flip_t EEPROM_SDP_ENABLE[3] = {
+    {0x5555, 0xAA},
+    {0x2AAA, 0x55},
+    {0x5555, 0xA0},
+};
+
 void configure_eeprom28c(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_CONFIGURING_EEPROM_28C);
     // AT28C page write timing requires fast consecutive writes; no pulse delay needed
     handle->pulse_delay = 0;
+    // D-05: deliberately NO default: arm in this switch. configure_memory
+    // (memory.cpp:48-58) pre-sets the generic firestarter_operation_main for
+    // CMD_READ/CMD_WRITE/CMD_VERIFY BEFORE calling configure_eeprom28c, so a
+    // blanket default: arm here would silently overwrite that already-correct
+    // main and refuse read and verify on ALL 84 0x0D chips. Separately,
+    // configure_eeprom28c only ever runs for protocol 0x0D, so a default: arm
+    // here could not refuse any OTHER protocol anyway. The two commands this
+    // protocol genuinely cannot do -- CMD_ERASE and CMD_CHECK_CHIP_ID -- are
+    // refused generically, once, at the operation layer by D-06's NULL-main
+    // guard (Plan 119-07) -- one site instead of six, and provably total.
+    // LOCK-04's literal "default: -> MSG_ERR_NOT_SUPPORTED" mechanism is
+    // SUPERSEDED by that op-layer guard; record this as mechanism-corrected,
+    // intent-satisfied -- never as failed.
     switch (handle->cmd) {
         case CMD_WRITE:
             handle->firestarter_operation_init = eeprom28c_write_init;
@@ -140,6 +210,12 @@ void configure_eeprom28c(firestarter_handle_t* handle) {
             break;
         case CMD_BLANK_CHECK:
             handle->firestarter_operation_main = mem_util_blank_check;
+            break;
+        case CMD_SDP_UNLOCK:
+            handle->firestarter_operation_main = eeprom28c_sdp_unlock_execute;
+            break;
+        case CMD_SDP_LOCK:
+            handle->firestarter_operation_main = eeprom28c_sdp_lock_execute;
             break;
     }
 }
@@ -284,6 +360,91 @@ static void eeprom28c_wait_for_sdp_completion(firestarter_handle_t* handle) {
     // call, on this path either (D-05).
 }
 
+// D-14: shared micros()-bracket-plus-t_BLC-budget-check helper for BOTH SDP
+// command sequences -- the six-write disable (EEPROM_SDP_DISABLE) and the
+// three-write enable (EEPROM_SDP_ENABLE, above). Factored out of
+// eeprom28c_write_init's former unlock branch so the standalone
+// eeprom28c_sdp_unlock_execute / eeprom28c_sdp_lock_execute ops below get the
+// identical report-pair shape, the identical micros() bracket and the
+// identical length-derived budget check without a second, drifting copy of
+// any of the three.
+//
+// The two micros() reads bracket ONLY the call to
+// eeprom28c_emit_command_sequence -- they sit OUTSIDE that function's body,
+// so they perturb inter-byte timing not at all (D-05, carried from Phase
+// 118's eeprom28c_write_init). The completion wait that follows a sequence
+// (118's bounded DQ6 toggle poll for the unlock, D-11's plain t_WC delay for
+// the lock -- two DIFFERENT waits) is deliberately EXCLUDED from this
+// bracket and stays at each call site: check_no_log_in_sdp_window.py
+// requires a wait anchor positioned after the emit anchor inside
+// eeprom28c_write_init's own body, and folding either wait shape into this
+// helper would either break that gate's anchor search or force one wait
+// shape onto both sequences.
+//
+// The budget is derived from `length` -- NEVER a literal 3 or 6 -- so it
+// tracks whichever sequence is passed automatically: 6 writes gives 600 us
+// for the unlock, 3 gives 300 us for the lock. F-118-01 measured 572 us
+// against the unlock's 600 us budget on a real Leonardo -- a 4.7% margin --
+// so this check is load-bearing on both paths, not a latent invariant that
+// never fires.
+//
+// This function's body contains LOG_ID / LOG_ID_U32 / LOG_WARN_ID_U32 calls
+// BY DESIGN (D-12/D-14) and must NEVER be added as a third scanned window in
+// check_no_log_in_sdp_window.py -- the real inter-byte SDP timing window
+// remains eeprom28c_emit_command_sequence's body (still shared by both
+// sequences, still scanned); this helper's body is the report/measurement
+// wrapper AROUND that call, not the timing window itself.
+//
+// No handle->response_code write anywhere in this helper (D-12, permanently
+// enforced by test_case8_completion_poll_preserves_prior_severity): WARN
+// severity is carried by the message id's band alone.
+static void eeprom28c_emit_sdp_sequence_timed(firestarter_handle_t* handle, const byte_flip_t* sequence, size_t length,
+                                               uint8_t emitted_msg_id, uint8_t done_us_msg_id) {
+    LOG_ID(emitted_msg_id);
+    uint32_t sdp_emit_start_us = micros();
+    eeprom28c_emit_command_sequence(handle, sequence, length);
+    uint32_t sdp_emit_us = (uint32_t)(micros() - sdp_emit_start_us);
+    LOG_ID_U32(done_us_msg_id, sdp_emit_us);
+
+    uint32_t sdp_tblc_budget_us = (uint32_t)length * AT28C_TBLC_MAX_US;
+    if (sdp_emit_us > sdp_tblc_budget_us) {
+        LOG_WARN_ID_U32(MSG_WARN_SDP_TBLC_EXCEEDED, sdp_emit_us);
+    }
+}
+
+// D-13: the standalone unlock reuses 118's existing ids (MSG_INFO_SDP_UNLOCK
+// / MSG_INFO_SDP_UNLOCK_DONE_US) so an SDP unlock reads identically on the
+// wire however it was triggered -- from eeprom28c_write_init's auto-unlock or
+// from this standalone CMD_SDP_UNLOCK op. Reusing the SAME completion wait
+// (eeprom28c_wait_for_sdp_completion) is what makes the standalone unlock's
+// emitted stream byte-identical to the auto-unlock's -- an equality Plan
+// 119-06 asserts. This op writes no handle->response_code.
+static void eeprom28c_sdp_unlock_execute(firestarter_handle_t* handle) {
+    size_t sdp_seq_len = sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]);
+    eeprom28c_emit_sdp_sequence_timed(handle, EEPROM_SDP_DISABLE, sdp_seq_len, MSG_INFO_SDP_UNLOCK,
+                                       MSG_INFO_SDP_UNLOCK_DONE_US);
+    eeprom28c_wait_for_sdp_completion(handle);
+}
+
+// D-11: the lock is exactly three writes plus the t_WC delay, and NOTHING
+// else. It deliberately does NOT call eeprom28c_wait_for_sdp_completion:
+// that function is the t_WC delay PLUS up to AT28C_TOGGLE_POLL_MAX_READS
+// reads through handle->firestarter_get_data, and a memory_get_data read
+// folds READ_FLAG into DIP32_28C512_EEPROM's CONTROL bit 0x10 -- so reusing
+// it would inject read-induced CONTROL churn into all four lock goldens
+// (Plan 119-05), for an outcome (D-13) that is never reported. D-12: the
+// DQ6 toggle poll's outcome must never be reported as lock evidence even if
+// it WERE run here -- a settled toggle bit proves a write cycle finished,
+// not that protection latched, and that is FIX-02's deleted mistake in a new
+// costume. This op writes no handle->response_code and contains no read
+// call, no completion poll and no data write.
+static void eeprom28c_sdp_lock_execute(firestarter_handle_t* handle) {
+    size_t sdp_seq_len = sizeof(EEPROM_SDP_ENABLE) / sizeof(EEPROM_SDP_ENABLE[0]);
+    eeprom28c_emit_sdp_sequence_timed(handle, EEPROM_SDP_ENABLE, sdp_seq_len, MSG_INFO_SDP_LOCK,
+                                       MSG_INFO_SDP_LOCK_DONE_US);
+    delay(AT28C_TWC_MAX_MS);
+}
+
 void eeprom28c_write_init(firestarter_handle_t* handle) {
     // Check chip identity via A9-12V (SAF-05) BEFORE SDP-disable (D-08: fail-fast
     // on identity leaves the chip write-protected on mismatch).
@@ -301,78 +462,37 @@ void eeprom28c_write_init(firestarter_handle_t* handle) {
         // truth.
         size_t sdp_seq_len = sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]);
 
-        // OBS-01/OBS-04 (D-01, load-bearing): both report lines below are
-        // UNCONDITIONAL -- emitted through the bare LOG_ID / LOG_ID_U32
-        // macros with an INFO-band id, NOT through the FLAG_VERBOSE-gated
-        // LOG_INFO_ID* family. Every one of this tree's 19 existing
-        // MSG_INFO_* emissions goes through LOG_INFO_ID*, and there are
-        // currently ZERO bare LOG_ID*-on-an-INFO-band-id call sites
-        // anywhere in firestarter/src -- these two are the first. That
-        // break with house style is deliberate, not an oversight: gating
-        // these lines behind FLAG_VERBOSE would leave a default
-        // `firestarter write at28c256` silent, which is the exact defect
-        // this phase exists to remove. Unconditional emission is also what
-        // makes OBS-05's "byte-identical apart from the two report lines"
-        // a real claim rather than a vacuous one -- under verbose-gating
-        // the default path would emit zero new frames and OBS-05 would be
-        // trivially true. A released 3.0.0b11 host that has never seen
-        // these ids degrades gracefully: codec.py logs "Unknown message ID
-        // 0x.. -- catalog out of date?" and drops the frame -- no crash,
-        // no garbled render.
-        LOG_ID(MSG_INFO_SDP_UNLOCK);
-
-        // Disable SDP (Software Data Protection) before writing. The
-        // sequence is emitted through handle->firestarter_set_data (i.e.
-        // memory_set_data), which applies the full remap via
-        // mem_util_remap_address_bus and rewrites CONTROL_REGISTER on
-        // every address change -- closing both the /WE-inhibit defect
-        // measured for 66 of the 84 0x0D chips (flash_util_byte_flipping's
-        // fu_flash_fast_address bypasses handle->bus_config entirely) and,
-        // for the 18 chips at 64 KB and above on DIP32_28C512_EEPROM, the
-        // A16-A18 upper-address staleness gap (FIX-03) -- both close as
-        // one by-product of this single routing change, not as two
-        // separate fixes. handle->pulse_delay is already 0 for this
-        // protocol (see configure_eeprom28c above).
+        // OBS-01/OBS-04 (D-01, load-bearing): the report pair emitted below
+        // is UNCONDITIONAL -- via the bare LOG_ID / LOG_ID_U32 macros on an
+        // INFO-band id, NOT the FLAG_VERBOSE-gated LOG_INFO_ID* family (the
+        // tree's first such call sites). Gating behind FLAG_VERBOSE would
+        // leave a default `firestarter write at28c256` silent, which is the
+        // exact defect this phase exists to remove, and would make OBS-05's
+        // "byte-identical apart from the two report lines" claim vacuous. A
+        // released 3.0.0b11 host that has never seen these ids degrades
+        // gracefully: codec.py logs "Unknown message ID 0x.. -- catalog out
+        // of date?" and drops the frame -- no crash, no garbled render.
         //
-        // D-05: the two microsecond-clock reads below bracket this call
-        // ONLY and sit OUTSIDE eeprom28c_emit_command_sequence's body, so
-        // they perturb inter-byte timing not at all -- the measured
-        // interval covers the six command writes and nothing else.
-        // eeprom28c_wait_for_sdp_completion (below) is deliberately
-        // excluded from the bracket: it is a fixed delay(AT28C_TWC_MAX_MS)
-        // plus an iteration-bounded poll, so including it would add a
-        // constant plus mock-dependent noise to the one number that has
-        // engineering meaning. Elapsed is an unsigned 32-bit subtraction
-        // so a wraparound of the underlying clock during the window still
-        // yields a correct interval.
-        uint32_t sdp_emit_start_us = micros();
-        eeprom28c_emit_command_sequence(handle, EEPROM_SDP_DISABLE, sdp_seq_len);
-        uint32_t sdp_emit_us = (uint32_t)(micros() - sdp_emit_start_us);
-
-        LOG_ID_U32(MSG_INFO_SDP_UNLOCK_DONE_US, sdp_emit_us);
-
-        // D-09: AT28C_TBLC_MAX_US (defined above) is a datasheet MAXIMUM,
-        // not a delay to insert -- this runtime comparison is what turns
-        // the citation into a load-bearing check rather than a decorative
-        // one. Budget is derived from sdp_seq_len (never a literal 6) so
-        // it tracks the sequence length automatically if
-        // EEPROM_SDP_DISABLE ever changes (Phase 119 drives this same
-        // emitter with a different table). On a 16 MHz AVR, with
-        // handle->pulse_delay == 0 and no inter-byte wait inside
-        // eeprom28c_emit_command_sequence's loop, this branch should never
-        // fire -- that is exactly what a latent invariant looks like: it
-        // speaks up only if a future edit puts real work inside that
-        // loop. A documentation-only constant with no enforcing check was
-        // explicitly rejected -- prose-only satisfaction of OBS-03 is the
-        // hollow-gate debt shape this project keeps paying down (see the
-        // v1.12 GATE-03 history). No handle->response_code write on this
-        // path (D-02/D-05, permanently enforced by
-        // test_case8_completion_poll_preserves_prior_severity): WARN
-        // severity is carried by the message id's band alone.
-        uint32_t sdp_tblc_budget_us = (uint32_t)sdp_seq_len * AT28C_TBLC_MAX_US;
-        if (sdp_emit_us > sdp_tblc_budget_us) {
-            LOG_WARN_ID_U32(MSG_WARN_SDP_TBLC_EXCEEDED, sdp_emit_us);
-        }
+        // Disable SDP (Software Data Protection) before writing, through
+        // handle->firestarter_set_data (i.e. memory_set_data), which applies
+        // the full remap via mem_util_remap_address_bus and rewrites
+        // CONTROL_REGISTER on every address change -- closing both the
+        // /WE-inhibit defect measured for 66 of the 84 0x0D chips
+        // (flash_util_byte_flipping's fu_flash_fast_address bypasses
+        // handle->bus_config entirely) and, for the 18 chips at 64 KB and
+        // above on DIP32_28C512_EEPROM, the A16-A18 upper-address staleness
+        // gap (FIX-03) -- both close as one by-product of this single
+        // routing change, not as two separate fixes. handle->pulse_delay is
+        // already 0 for this protocol (see configure_eeprom28c above).
+        //
+        // D-14: the report pair, the micros() bracket and the t_BLC budget
+        // check (D-09) all now live in the shared
+        // eeprom28c_emit_sdp_sequence_timed helper (factored out above) so
+        // the standalone eeprom28c_sdp_unlock_execute / _lock_execute ops
+        // share this exact shape rather than duplicating it -- see that
+        // helper's comment for the full bracket/budget rationale.
+        eeprom28c_emit_sdp_sequence_timed(handle, EEPROM_SDP_DISABLE, sdp_seq_len, MSG_INFO_SDP_UNLOCK,
+                                           MSG_INFO_SDP_UNLOCK_DONE_US);
 
         // Wait for the SDP-disable internal write cycle to complete.
         // FIX-02: the old guarded read-back call at address 0x5555
