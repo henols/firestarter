@@ -9,12 +9,13 @@ comparing two numbers by eye. Reads the recorded truth from
 against a `pio run`/`pio test` build log — either supplied via `--avr-log` /
 `--native-log`, or produced live via `--rebuild`.
 
-This script supersedes `scripts/check_uno_ram.sh` (deleted by this same plan):
-that script asserted only Uno free RAM against a single hardcoded floor
-(`RAM_FLOOR=545`, itself stale — measured free RAM today is 475 B). This
-comparator is strictly stronger: it covers flash as well as RAM, all three AVR
-envs rather than `uno` alone, both native envs' case/suite/status facts, and it
-reads a recorded measurement from a committed JSON rather than a hand-maintained
+This script supersedes the retired Uno-only RAM-ceiling shell gate (Plan 123-02;
+see `scripts/baseline/size_baseline.json`'s `meta.supersedes` field for the full
+provenance): that gate asserted only Uno free RAM against a single hardcoded
+floor, itself stale — measured free RAM today is 475 B. This comparator is
+strictly stronger: it covers flash as well as RAM, all three AVR envs rather
+than `uno` alone, both native envs' case/suite/status facts, and it reads a
+recorded measurement from a committed JSON rather than a hand-maintained
 constant.
 
 Exit codes:
@@ -105,7 +106,7 @@ def parse_sizes(text):
     """Parse RAM:/Flash: report lines. Returns {"RAM": (used, total), "Flash": (used, total)}.
 
     Raises ParseError if the set of found kinds is not exactly {RAM, Flash} --
-    this is the exit-2 arm check_uno_ram.sh's exit code 2 carries forward.
+    this is the exit-2 arm the retired shell gate's exit code 2 carries forward.
     """
     found = {
         m.group("kind"): (int(m.group("used")), int(m.group("total")))
