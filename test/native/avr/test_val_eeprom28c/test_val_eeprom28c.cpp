@@ -37,6 +37,7 @@ extern "C" {
 }
 #include "firestarter.h"
 #include "rurp_pinout.h"
+#include "../_shared/sdp_bus_config.h"
 
 using namespace fakeit;
 
@@ -46,15 +47,99 @@ extern "C" int  bus_recording_count();
 extern "C" uint8_t recorded_reg(int i);
 extern "C" uint8_t recorded_data(int i);
 
+/* FIX-06 (plan 117-03) planted-mock state — address-keyed, per
+ * test_eeprom28c_sdp.cpp:129-148's own rule: "dispatch on ADDRESS, not call
+ * order". Reset in setUp() below; each case that needs a different base
+ * address or a planted mismatch overwrites these before driving. */
+#define EEPROM28C_PLANTED_SENTINEL 0xFFFFFFFFUL
+static uint32_t s_planted_base_address;
+static uint32_t s_planted_stale_address;
+static uint8_t  s_planted_stale_value;
+
 void setUp(void) {
     ArduinoFakeReset();
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t))).AlwaysReturn(1);
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(const uint8_t*, size_t))).AlwaysReturn(1);
     When(Method(ArduinoFake(Serial), flush)).AlwaysReturn();
+    /* REQUIRED for FIX-06's write-path cases (plan 117-03): the real
+     * memory_set_data / mem_util_set_address call chain and the new page
+     * poll both reach delayMicroseconds(); ArduinoFake ABORTS (SIGABRT) on
+     * any unmocked virtual (test_sdp_harness.cpp:64-70's documented
+     * hazard). Do not remove these as "unused" — they are load-bearing. */
+    When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
+    When(Method(ArduinoFake(), delay)).AlwaysReturn();
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+    /* Plan 119-08 (D-16): eeprom28c_write_execute now calls micros() twice
+     * per byte for the worst-per-byte-interval tracker, and every case in
+     * this suite drives write_execute via h.firestarter_operation_main(&h)
+     * for CMD_WRITE. Without this mock ArduinoFake aborts (SIGABRT) on the
+     * newly-reached unmocked virtual -- this suite never asserts on timing,
+     * so a fixed 0 is sufficient (every interval reads as 0, which no case
+     * here inspects). */
+    When(Method(ArduinoFake(), micros)).AlwaysReturn(0);
     clear_bus_recording();
+
+    s_planted_base_address = 0;
+    s_planted_stale_address = EEPROM28C_PLANTED_SENTINEL;
+    s_planted_stale_value = 0;
 }
 
 void tearDown(void) {}
+
+/* ─── FIX-06 write-path test support (plan 117-03) ─────────────────────── */
+
+/* Address-keyed planted get_data mock. Returns the planted stale value when
+ * the queried address equals s_planted_stale_address (unless that field
+ * still holds the sentinel, meaning "nothing planted" -- the isolation
+ * control's clean-source case); otherwise returns the byte the write
+ * intended for that address, derived from s_planted_base_address and the
+ * same 0x10 + k pattern make_write_handle() below fills data_buffer with.
+ * Dispatch is on ADDRESS only, never on call order. */
+static uint8_t mock_get_data_planted(firestarter_handle_t*, uint32_t address) {
+    if (s_planted_stale_address != EEPROM28C_PLANTED_SENTINEL && address == s_planted_stale_address) {
+        return s_planted_stale_value;
+    }
+    return (uint8_t)(0x10 + (address - s_planted_base_address));
+}
+
+/* Write-path handle factory. Row 0 of SDP_BUS_CONFIGS is AT28C256 /
+ * DIP28_28C256, whose mem_size (32768) matches the existing make_handle()
+ * above; its address_mask (0x0000BFFF) does not disturb any address used by
+ * the cases below. data_buffer[k] is filled with 0x10 + k so no written
+ * byte is 0xFF -- the planted stale value (0xFF) is unambiguously
+ * distinguishable from a correctly-written one. */
+static firestarter_handle_t make_write_handle(uint32_t address, uint32_t data_size) {
+    firestarter_handle_t h = {};
+    h.protocol = 0x0D;
+    h.cmd = CMD_WRITE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id = 0;
+    h.mem_size = SDP_BUS_CONFIGS[0].mem_size;
+    h.bus_config = SDP_BUS_CONFIGS[0].bus_config;
+    h.address = address;
+    h.data_size = data_size;
+    for (uint32_t k = 0; k < data_size; k++) {
+        h.data_buffer[k] = (char)(0x10 + k);
+    }
+    return h;
+}
+
+/* Deliberate, test-local replica of the whole-byte equality poll plan
+ * 117-03 deleted from eeprom_28c.cpp (the old conflated completion+verify
+ * check). Retained ONLY so D-09's old-versus-new contrast executes in CI
+ * forever, rather than living as a claim in a markdown file. MUST NEVER be
+ * called by production code — its presence here is not a licence to
+ * reintroduce the idiom in src/. */
+static bool legacy_last_byte_equality_poll(firestarter_handle_t* h, uint32_t address, uint8_t expected) {
+    for (uint16_t j = 0; j < 2000; j++) {
+        delayMicroseconds(10);
+        uint8_t observed = h->firestarter_get_data(h, address);
+        if (observed == expected) {
+            return true;
+        }
+    }
+    return false;
+}
 
 static firestarter_handle_t make_handle(uint8_t cmd) {
     firestarter_handle_t h = {};
@@ -113,6 +198,109 @@ void test_eeprom28c_blank_check_configure_no_vpp(void) {
         "configure_eeprom28c CMD_BLANK_CHECK must NOT set any VPP-enable CTL bit");
 }
 
+/* ─── FIX-06: planted partial write, old-versus-new contrast (D-09) ────── */
+
+/* The side-by-side contrast, both halves in one test function. Geometry:
+ * base address 0, data_size 8 (PAGE_SIZE 64, so this is one flush on
+ * last_byte). Plant a stale 0xFF at address 0x0002 -- an EARLIER byte, not
+ * the last -- so the page's last byte always reads back correctly, the
+ * DQ7-complement completion arm reports done, and only the read-back can
+ * catch the earlier stale byte. HOST_STUBS_RECORD_BUS caps recording at 256
+ * entries; an 8-byte write stays far below it. */
+void test_fix06_planted_partial_write_fails_fixed_path_and_passes_legacy_poll(void) {
+    s_planted_base_address = 0;
+    s_planted_stale_address = 0x0002;
+    s_planted_stale_value = 0xFF;
+
+    firestarter_handle_t h = make_write_handle(0, 8);
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_planted;
+    h.firestarter_operation_main(&h);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "FIX-06 fixed path must report ERROR: the planted stale byte at "
+        "address 0x0002 never landed, even though the page's last byte did");
+
+    /* Same planted mock, same page's last byte (address 7). The deleted
+     * whole-byte equality poll only ever looked at THIS address, so it
+     * reports success for the very same partial write the fixed path
+     * above correctly rejects. */
+    bool legacy_would_have_reported_success =
+        legacy_last_byte_equality_poll(&h, 7, (uint8_t)(0x10 + 7));
+    TEST_ASSERT_TRUE_MESSAGE(legacy_would_have_reported_success,
+        "the deleted last-byte-equality poll would have reported SUCCESS "
+        "for the exact same partial write the fixed path above rejects "
+        "(FIX-06's conflation, gh#11's shape)");
+}
+
+/* Isolation control (mirrors the v1.21 SAFE-03 discipline): identical
+ * geometry and drive to the case above, but with NOTHING planted (the
+ * sentinel stale address). This exists to prove the ERROR above came from
+ * the planted mismatch and not from the mock seam, the setUp() mocks added
+ * for this plan, or the new read-back loop itself. Deleting this case
+ * makes the pair hollow. */
+void test_fix06_clean_page_write_succeeds_isolation_control(void) {
+    s_planted_base_address = 0;
+    s_planted_stale_address = EEPROM28C_PLANTED_SENTINEL;
+    s_planted_stale_value = 0;
+
+    firestarter_handle_t h = make_write_handle(0, 8);
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_planted;
+    h.firestarter_operation_main(&h);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "a clean page write with nothing planted must not report ERROR -- "
+        "proves the planted case's ERROR is caused by the plant, not the seam");
+}
+
+/* Page-boundary window reset. Geometry: base address 56, data_size 16, so
+ * with PAGE_SIZE 64 the write flushes twice -- once at address 63 on
+ * page_end (buffer window 0..7, addresses 56..63) and once at the last
+ * byte (window 8..15, addresses 64..71). Driven three times with a fresh
+ * handle and freshly reset mock state each time. */
+void test_fix06_page_boundary_window_readback(void) {
+    /* Drive 1: plant a stale byte inside the FIRST window (address 59). */
+    s_planted_base_address = 56;
+    s_planted_stale_address = 59;
+    s_planted_stale_value = 0xFF;
+    {
+        firestarter_handle_t h = make_write_handle(56, 16);
+        configure_memory(&h);
+        h.firestarter_get_data = mock_get_data_planted;
+        h.firestarter_operation_main(&h);
+        TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+            "a stale byte inside the first flush window (address 59) must be caught");
+    }
+
+    /* Drive 2: plant a stale byte inside the SECOND window (address 65) --
+     * this is the assertion that fails if the window-start index does not
+     * advance with the flush. */
+    s_planted_base_address = 56;
+    s_planted_stale_address = 65;
+    s_planted_stale_value = 0xFF;
+    {
+        firestarter_handle_t h = make_write_handle(56, 16);
+        configure_memory(&h);
+        h.firestarter_get_data = mock_get_data_planted;
+        h.firestarter_operation_main(&h);
+        TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+            "a stale byte inside the second flush window (address 65) must be caught");
+    }
+
+    /* Drive 3: plant nothing, so the two-window geometry itself is shown
+     * not to be the cause of the ERROR asserted above. */
+    s_planted_base_address = 56;
+    s_planted_stale_address = EEPROM28C_PLANTED_SENTINEL;
+    s_planted_stale_value = 0;
+    {
+        firestarter_handle_t h = make_write_handle(56, 16);
+        configure_memory(&h);
+        h.firestarter_get_data = mock_get_data_planted;
+        h.firestarter_operation_main(&h);
+        TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+            "a clean two-window write must not report ERROR");
+    }
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -121,6 +309,11 @@ int main(int argc, char** argv) {
     RUN_TEST(test_eeprom28c_read_configure_no_vpp);
     RUN_TEST(test_eeprom28c_write_configure_no_vpp);
     RUN_TEST(test_eeprom28c_blank_check_configure_no_vpp);
+
+    /* FIX-06: partial writes cannot report success (D-07/D-08/D-09) */
+    RUN_TEST(test_fix06_planted_partial_write_fails_fixed_path_and_passes_legacy_poll);
+    RUN_TEST(test_fix06_clean_page_write_succeeds_isolation_control);
+    RUN_TEST(test_fix06_page_boundary_window_readback);
 
     return UNITY_END();
 }

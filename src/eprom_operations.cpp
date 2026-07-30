@@ -54,6 +54,25 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
     return !op_execute_simple_operation(handle);
 }
 
+// LOCK-01/LOCK-02: standalone entry points for CMD_SDP_UNLOCK / CMD_SDP_LOCK
+// (0x0D-only ops; configure_eeprom28c sets firestarter_operation_main to
+// eeprom28c_sdp_unlock_execute / eeprom28c_sdp_lock_execute). Deliberately no
+// LOG_DEBUG_ID_SUB line here -- eprom_read has none either, and adding one
+// would require a new DBG_* catalog id this phase does not need.
+// Deliberately no precondition check -- eprom_erase's FLAG_CAN_ERASE test has
+// no SDP analogue; D-06's op-layer NULL-main guard (Plan 119-07) is what
+// refuses these commands on a protocol whose handler set no main. Each body
+// is exactly op_execute_simple_operation's single-step shape; op_execute_
+// simple_operation returns true when FINISHED, so the `!` inversion here is
+// load-bearing (mirrors eprom_erase/eprom_blank_check above).
+bool eprom_sdp_unlock(firestarter_handle_t* handle) {
+    return !op_execute_simple_operation(handle);
+}
+
+bool eprom_sdp_lock(firestarter_handle_t* handle) {
+    return !op_execute_simple_operation(handle);
+}
+
 // Returns true on success/continue, false on error.
 static inline bool _process_incoming_data(firestarter_handle_t* handle) {
     // The operation is "pull" based. The firmware requests a data chunk when it's ready.

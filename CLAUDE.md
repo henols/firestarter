@@ -64,7 +64,7 @@ source of truth `firestarter/doc/PROTOCOLS.md`) — the label IS the number; no 
 | 0x07                   | `PROTO_EPROM_28PIN`    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 1ms pulse, DQ7 verify                                        |
 | 0x08                   | `PROTO_EPROM_32PIN`    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 100µs pulse                                                  |
 | 0x0B                   | `PROTO_EPROM_24PIN`    | eprom.cpp         | 12–18V direct   | 500µs pulse, 24-pin                                          |
-| 0x0D                   | `PROTO_EEPROM_PARALLEL` | eeprom_28c.cpp   | None (5V)       | SDP disable + DQ7 page poll                                  |
+| 0x0D                   | `PROTO_EEPROM_PARALLEL` | eeprom_28c.cpp   | None (5V)       | SDP disable + DQ7 page poll; **no erase operation at all** (each page write auto-erases internally) |
 | 0x0E / 0x27 / 0x28 / 0x29 | `PROTO_SRAM_32PIN` / `PROTO_SRAM_24PIN` / `PROTO_SRAM_28PIN` / `PROTO_SRAM_32PIN_NVRAM` | sram.cpp | None (5V) | Generic read/write; no VPP regulator (BLOCKER-2 mitigation)  |
 | 0x06                   | `PROTO_FLASH_NOR_UNLOCK` | flash_nor_unlock.cpp | None (5V)       | AMD unlock, sector erase                                     |
 | 0x05                   | `PROTO_FLASH_5V_PAGE`  | flash_5v_page.cpp  | None (5V)       | Page write + DQ7                                             |
@@ -72,6 +72,17 @@ source of truth `firestarter/doc/PROTOCOLS.md`) — the label IS the number; no 
 | 0x39                   | `PROTO_PHANTOM_0x39`   | flash_5v_page.cpp  | None (5V)       | 0 DB chips (phantom — no IC2_ALG constant exists); firmware dispatch preserved for forward-compat; host routes to not_implemented (excluded from KNOWN_PROTOCOLS, DEC-05) |
 | 0x10                   | `PROTO_FLASH_INTEL`    | flash_intel.cpp   | 12V via CTRL_VPP_P1_ENABLE | Command register, SR polling                                 |
 | 0x34                   | `PROTO_EEPROM_8051BUS` | not_implemented.cpp (PCB-blocked, FUT-01) | None (5V) | No dedicated dispatch arm — falls through the generic `protocol != 0` fail-closed guard |
+
+### Protocol 0x0D notes (AT28C / 28C-family EEPROM)
+
+`configure_eeprom28c()` (`eeprom_28c.cpp`) has no erase operation at all — no
+chip-erase, no sector-erase, nothing. The only erase-like behavior is the
+implicit per-page auto-erase baked into every page write. The auto SDP-disable
+sequence emitted before each write reports its own emission (and measured
+duration) but the SDP protection state itself is not readable — a successful
+emission proves only that the sequence was sent, never the part's actual
+protection state before or after. See `doc/PROTOCOLS.md` §1.6 for the full
+model.
 
 ### JSON Wire Protocol
 
@@ -170,5 +181,14 @@ that headers including `<avr/pgmspace.h>` compile on a non-Harvard host.
 
 To add a new host-side Unity suite, drop `test_*.cpp` files under
 `test/native/avr/<dirname>/`. Extend `host_stubs.cpp` only if the new test
-references additional `rurp_*` symbols. The `[env:native]` configuration in
-`platformio.ini` does not need changes for new suites.
+references additional `rurp_*` symbols.
+
+**Corrected (v1.22 Phase 119 D-04, 119-02):** the claim that `[env:native]`
+needs no changes for a new suite is FALSE and was corrected here. `[env:native]`
+uses a POSITIVE `test_filter` allowlist (`platformio.ini`) — a suite directory
+is invisible to `pio test` until its path appears in `test_filter`, and its
+headers are unreachable until a matching `-I test/native/avr/<dirname>` entry
+is added to `build_flags`. Both lists must be updated, in that same env. Since
+Phase 119 added a second native env, `[env:native_nodevtools]`, a new suite
+must be added to **both** envs' `test_filter` and `-I` lists (four new lines
+total) to run under both `-D DEV_TOOLS` and no-`DEV_TOOLS` builds.

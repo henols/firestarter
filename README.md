@@ -108,6 +108,13 @@ When reporting a bug against a beta firmware build, please include:
 
 Report firmware issues at: https://github.com/henols/firestarter/issues
 
+## Protocol Notes
+
+Protocol `0x0D` (5V parallel EEPROM, AT28C/28C-family) has no erase operation
+in firmware at all — each page write auto-erases internally, and the SDP
+protection state is not readable. See [`doc/PROTOCOLS.md`](./doc/PROTOCOLS.md)
+§1.6 for the full write/erase model.
+
 ## Shield Revision Support
 
 The firmware detects the connected RURP shield's silkscreen revision at boot via an ADC voltage-band lookup on pin A3. Rev 2.0+ shields carry the R41 detect divider; pre-detect-resistor boards (Rev 0 / Rev 1) and any board landing in the guard gap fall through to `rev_unknown` and honor the EEPROM `hw_revision` byte override. The detected silkscreen string surfaces on the firmware handshake (`MSG_OK_REV`).

@@ -12,6 +12,7 @@
 
 #include "firestarter.h"
 #include "logging_id.h"
+#include "messages.h"
 #include "rurp_shield.h"
 
 #define ERROR -1
@@ -80,6 +81,86 @@ bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle
         }
         return true;
     }
+    // v1.22 Phase 119 D-06/D-07 (119-07 Task 2) -- the generic NULL-main
+    // refusal. This is the ONE site that closes the whole phantom-success
+    // class, not just SDP's corner of it. Five things this comment must
+    // record (per the plan's task instructions):
+    //
+    // 1. THE MECHANISM IT FIXES. Before this change, a NULL
+    //    firestarter_operation_main fell through to a bare `return false`
+    //    here. Every eprom_* caller inverts that return
+    //    (`return !op_execute_stateful_operation(...)`), so the command
+    //    reported "finished". loop() (firestarter.cpp:216) had already set
+    //    handle.response_code = RESPONSE_CODE_OK before the dispatch switch
+    //    ran, and nothing on this path ever wrote it. So the operation
+    //    reported OK, emitted no error frame, and emitted no MSG_MAIN_DONE
+    //    either -- it emitted nothing at all. That silence is DEVTEST-01's
+    //    "dev test reports OK having done nothing" phantom erase.
+    //
+    // 2. WHY THE GUARD LIVES HERE AND NOWHERE ELSE (D-06). Single site,
+    //    smallest flash cost, and provably TOTAL: any protocol whose
+    //    handler has no arm for a command is refused here, present and
+    //    future, with no per-handler maintenance. Two alternatives were
+    //    rejected: (a) a pre-dispatch `protocol != 0x0D` check in
+    //    configure_memory -- that would put 0x0D-specific capability
+    //    knowledge into the generic dispatcher that v1.20's protocol-only
+    //    rebuild deliberately kept clean; (b) a `default:` arm in every one
+    //    of the six configure_* handlers -- roughly 90-130 B against a
+    //    Leonardo headroom of ~2718 B for zero additional coverage over this
+    //    one guard, and each of the six arms would have to be hand-written
+    //    not to swallow the pre-set generic mains (see item 3).
+    //
+    // 3. WHY THIS CANNOT BREAK read/write/verify (D-05's other half).
+    //    configure_memory pre-sets the generic main for CMD_READ, CMD_WRITE
+    //    and CMD_VERIFY (proms/memory.cpp:48-58) BEFORE the protocol chain
+    //    runs, so those three commands are never NULL-main for any protocol
+    //    that reaches a configure_* handler -- a source-level invariant, not
+    //    a hope, and test_dispatch/test_configure_memory.cpp pins it as a
+    //    positive case. This is also why LOCK-04's ROADMAP-stated mechanism
+    //    (a `default:` arm inside configure_eeprom28c) was disproven and
+    //    corrected rather than implemented: that literal arm would fire for
+    //    CMD_READ and CMD_VERIFY too, on all 84 protocol-0x0D chips, because
+    //    configure_eeprom28c's own switch only overrides CMD_WRITE and adds
+    //    CMD_BLANK_CHECK, leaving the pre-set generic mains for read/verify
+    //    to fall through into that arm. LOCK-04 is mechanism-corrected,
+    //    intent-satisfied by this single guard -- never read as failed.
+    //
+    // 4. THE BLAST RADIUS, AND WHAT IT DOES NOT REACH. This guard is
+    //    generic, so it changes observable behaviour for every previously
+    //    silent-OK (cmd, protocol) cell -- intentionally, per D-07/D-08.
+    //    But op_execute_stateful_operation is reached ONLY from the six
+    //    eprom_* entry points in eprom_operations.cpp; hw_read_voltage,
+    //    fw_get_version, hw_get_version, hw_get_config, dt_set_registers and
+    //    dt_set_address never touch the op layer at all, so `vpp`, `vpe`,
+    //    `fw`, `config`, `hw`, `dev reg` and `dev address` are structurally
+    //    outside this guard's reach. Also: configure_not_implemented
+    //    protocols are UNCHANGED by this guard -- that handler sets
+    //    response_code = RESPONSE_CODE_ERROR itself, so
+    //    op_execute_function(configure_memory, ...) already returns false
+    //    and parse_json already emits MSG_ERR_SETUP before the op layer is
+    //    ever reached. No double error, no new frame there.
+    //
+    // 5. THE HOST-SIDE NOTE. firestarter_app/firestarter/eprom_operations.py's
+    //    _SRAM_PROTO_IDS workaround short-circuits SRAM/FRAM blank-check
+    //    BEFORE issuing any firmware command, so this guard is not reachable
+    //    from check_eprom_blank. It does NOT become dead code: it fires
+    //    earlier and produces a materially better user-facing message than
+    //    a bare MSG_ERR_NOT_SUPPORTED would. Its comment's claim that the
+    //    firmware emits 0xA4 MSG_ERR_EMPTY_INPUT is a follow-on artifact of
+    //    the old silent completion (the firmware returns to CMD_IDLE, then
+    //    misreads the host's next byte as a fresh frame), not a firmware
+    //    refusal. Correct Phase 120 disposition: KEEP that workaround.
+    //
+    // The `return false` semantics are UNCHANGED -- every eprom_* caller
+    // still inverts it, so the command still reports finished and
+    // command_done() still runs (chip disabled, registers zeroed). What
+    // changes is that an error frame is now emitted and response_code is
+    // RESPONSE_CODE_ERROR instead of the RESPONSE_CODE_OK loop() set: the
+    // command still terminates cleanly, it just stops lying about what it
+    // did. MSG_ERR_NOT_SUPPORTED (0xA5) already exists and is already
+    // eprom_erase's FLAG_CAN_ERASE refusal id -- no new catalog id needed.
+    LOG_ERROR_ID(MSG_ERR_NOT_SUPPORTED);
+    handle->response_code = RESPONSE_CODE_ERROR;
     return false;
 }
 

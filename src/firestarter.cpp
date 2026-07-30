@@ -75,9 +75,15 @@ bool parse_json(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB_U8(DBG_CMD, (uint8_t)handle->cmd);
     if (handle->cmd < CMD_READ_VPP) {
         json_parse(handle->data_buffer, tokens, token_count, handle);
-#ifdef DEV_TOOLS
-        if (handle->cmd < CMD_DEV_ADDRESS) {
-#endif
+        // v1.22 Phase 119 (LOCK-03, D-02): is_memory_cmd() replaces the old
+        // `#ifdef DEV_TOOLS` / `handle->cmd < CMD_DEV_ADDRESS` ordinal
+        // guard. Neither this `if` nor its `else` carries a build-
+        // configuration conditional any more -- only the two debug log
+        // lines inside the `else` body below do, because DBG_FLAG_OUTPUT_EN
+        // / DBG_FLAG_CHIP_EN describe dev-tools-only flags that have no
+        // meaning outside a DEV_TOOLS build. In a release build this `else`
+        // body compiles empty, which is correct and intended.
+        if (is_memory_cmd(handle->cmd)) {
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_FORCE, is_flag_set(FLAG_FORCE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CAN_ERASE, is_flag_set(FLAG_CAN_ERASE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_SKIP_ERASE, is_flag_set(FLAG_SKIP_ERASE));
@@ -87,12 +93,12 @@ bool parse_json(firestarter_handle_t* handle) {
                 LOG_ERROR_ID(MSG_ERR_SETUP);
                 return false;
             }
-#ifdef DEV_TOOLS
         } else {
+#ifdef DEV_TOOLS
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_OUTPUT_EN, is_flag_set(FLAG_OUTPUT_ENABLE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CHIP_EN, is_flag_set(FLAG_CHIP_ENABLE));
-        }
 #endif
+        }
     } else if (handle->cmd == CMD_CONFIG) {
         rurp_configuration_t* config = rurp_get_config();
         int res = json_parse_config(handle->data_buffer, tokens, token_count, config, handle);
@@ -125,6 +131,15 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
         return false;
     };
 
+    // v1.22 Phase 119 (119-02): this is a SECOND, independent ordinal-range
+    // guard, deliberately NOT converted to is_memory_cmd(). It gates
+    // diagnostic output only (three DBG_* debug log lines), never hardware
+    // configuration, so it is not an admission gate and D-03's safety
+    // argument does not apply here. Converting it would silently DROP these
+    // three debug lines for cmd 7/8 in a DEV_TOOLS build (a diagnostic
+    // regression) for zero safety gain and non-zero flash cost. The two new
+    // commands (CMD_SDP_UNLOCK 9, CMD_SDP_LOCK 10) already satisfy this
+    // range test unchanged, so there is no coverage gap for them either.
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
         LOG_DEBUG_ID_SUB_U32(DBG_MEM_SIZE, (uint32_t)handle->mem_size);
         LOG_DEBUG_ID_SUB_U32(DBG_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
@@ -217,6 +232,27 @@ void loop() {
             break;
         case CMD_CHECK_CHIP_ID:
             finished = eprom_check_chip_id(&handle);
+            break;
+        // LOCK-02, corrected form (RESEARCH F-T): with init/end left NULL
+        // (configure_eeprom28c), these phases are NOT skipped --
+        // _execute_operation_house_keeping_func still calls op_wait_for_ack()
+        // and still emits the INIT and END frame pairs, so each costs a host
+        // ACK round-trip. What is genuinely absent for a payload-free command
+        // is the DONE round-trip (which lives only in
+        // eprom_operations.cpp::_process_incoming_data, the write path) and
+        // any '#' data frame. Traced shape: 4 host ACKs, 7 framed lines, zero
+        // '#' frames, zero DONE string -- CMD_ERASE (above) is the working
+        // precedent and the host's generic _run_state_machine already
+        // supplies all four ACKs today, so no host change is needed for this
+        // firmware half. Both arms sit outside any preprocessor conditional.
+        // op_wait_for_ack has a 1000 ms timeout and emits MSG_ERR_TIMEOUT on
+        // expiry, so a standalone lock issued by a host that does not ACK
+        // times out rather than hangs (relevant to Phase 120, not here).
+        case CMD_SDP_UNLOCK:
+            finished = eprom_sdp_unlock(&handle);
+            break;
+        case CMD_SDP_LOCK:
+            finished = eprom_sdp_lock(&handle);
             break;
         case CMD_READ_VPP:
         case CMD_READ_VPE:
