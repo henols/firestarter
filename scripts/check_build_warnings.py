@@ -138,8 +138,11 @@ def check_env(env, text, baseline):
     if env in avr_block:
         rule = avr_block[env]["macro_redefinition"]
         if macro_count != rule:
+            names = sorted({m.group("macro") for m in MACRO_REDEF_RE.finditer(text)})
+            names_str = ", ".join(names[:20]) if names else "(none)"
             return "FAIL", (
                 f"{env}: macro_redefinition observed={macro_count} rule==({rule}) "
+                f"names={names_str} "
                 "(AVR envs are measured genuinely clean; the rule is exact equality, "
                 "not an inequality)"
             )
