@@ -1,0 +1,21 @@
+=================================== SUMMARY ===================================
+Environment        Test                             Status    Duration
+-----------------  -------------------------------  --------  ------------
+native_nodevtools  native/avr/test_val_5v_page      PASSED    00:00:03.014
+native_nodevtools  native/avr/test_not_implemented  PASSED    00:00:01.007
+native_nodevtools  native/avr/test_dispatch         PASSED    00:00:00.814
+native_nodevtools  native/avr/test_read_timing      PASSED    00:00:04.028
+native_nodevtools  native/avr/test_val_nor_unlock   PASSED    00:00:04.077
+native_nodevtools  native/avr/test_cobs_cmd_frame   PASSED    00:00:00.872
+native_nodevtools  native/avr/test_sdp_harness      PASSED    00:00:00.957
+native_nodevtools  native/avr/test_val_eprom        PASSED    00:00:00.795
+native_nodevtools  native/avr/test_cmd_admission    PASSED    00:00:00.805
+native_nodevtools  native/avr/test_val_sram         PASSED    00:00:00.865
+native_nodevtools  native/avr/test_eeprom28c_sdp    PASSED    00:00:00.884
+native_nodevtools  native/avr/test_cobs_data_frame  PASSED    00:00:00.931
+native_nodevtools  native/avr/test_val_flash_intel  PASSED    00:00:00.862
+native_nodevtools  native/avr/test_frame_vectors    PASSED    00:00:00.828
+native_nodevtools  native/avr/test_val_eeprom28c    PASSED    00:00:00.727
+native_nodevtools  native/avr/test_data_input       PASSED    00:00:03.843
+native_nodevtools  native/avr/test_messages         PASSED    00:00:03.850
+================ 141 test cases: 141 succeeded in 00:00:29.159 ================
