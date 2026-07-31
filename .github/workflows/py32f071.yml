@@ -1,6 +1,13 @@
 name: PY32F071 firmware
 
 on:
+  # MERGE-03/D-10: implemented literally as specified -- push: branches: [beta]
+  # with no paths filter, so any change anywhere that breaks the ARM configure
+  # is caught on beta. Phase 128 will later fold the ARM build into
+  # beta-build.yml, creating a double-ARM-build question on a beta push; that
+  # is recorded for Phase 128 to resolve, not pre-solved here.
+  push:
+    branches: [beta]
   pull_request:
     paths:
       - "platform/py32f071/**"
