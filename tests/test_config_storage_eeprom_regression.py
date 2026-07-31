@@ -62,7 +62,7 @@ Coverage:
      defaults back and triggers exactly one put, at index 48.
   5. test_non_vacuity_source_resolved_and_access_recorded -- the two-way
      Discretion-default check: at least one candidate source path resolved
-     AND at least one access was recorded across the three phases above.
+     AND rurp_load_config() recorded at least one access.
   6. test_module_references_no_pio_build_artifact_path -- C-12: this module's
      own text contains no reference to the gitignored PlatformIO
      build-artifacts path.
@@ -225,12 +225,19 @@ def _write_driver_tu(tmp_path):
         "int main(void) {\n"
         "    rurp_configuration_t *config = rurp_get_config();\n"
         "\n"
-        "    // Seed the fake's backing storage directly (never through\n"
-        "    // EEPROM.put, so this setup step is not itself a recorded\n"
-        "    // access) with a config whose version already matches\n"
-        "    // CONFIG_VERSION -- isolating Phase 1's get access from the\n"
-        "    // internal validate-triggered write-back Phase 3 exercises\n"
-        "    // deliberately.\n"
+        "    // Seed BOTH the fake's backing storage AND the live global\n"
+        "    // config directly (never through EEPROM.get/put, so this\n"
+        "    // setup step is not itself a recorded access) with a config\n"
+        "    // whose version already matches CONFIG_VERSION. Seeding both\n"
+        "    // copies means an unmutated rurp_load_config() overwrites the\n"
+        "    // live global with an identical value read via EEPROM.get\n"
+        "    // (one G access, no cascade), while a mutation that removes\n"
+        "    // the get call leaves the live global's already-matching seed\n"
+        "    // untouched -- so the internal validate call still does not\n"
+        "    // cascade into a write-back, and the load phase's access list\n"
+        "    // is genuinely EMPTY rather than masked by an indirect put.\n"
+        "    // This is what makes the non-vacuity leg meaningful against\n"
+        "    // the no-access mutation.\n"
         "    rurp_configuration_t seed;\n"
         "    memset(&seed, 0, sizeof(seed));\n"
         "    strcpy(seed.version, CONFIG_VERSION);\n"
@@ -238,6 +245,7 @@ def _write_driver_tu(tmp_path):
         "    seed.r2 = VALUE_R2;\n"
         "    seed.hardware_revision = 0;\n"
         "    memcpy(g_eeprom_storage + 48, &seed, sizeof(seed));\n"
+        "    memcpy(config, &seed, sizeof(seed));\n"
         "\n"
         "    // Phase 1: rurp_load_config() -- exactly one get, no put\n"
         "    // (the seed's version matches, so the internal validate call\n"
@@ -423,10 +431,19 @@ def test_validate_config_write_back_produces_put_on_version_mismatch(tmp_path):
 
 def test_non_vacuity_source_resolved_and_access_recorded(tmp_path):
     """Coverage 5 -- the two-way Discretion-default check: at least one
-    candidate source path resolved AND at least one access was recorded
-    across the three phases above. This is the leg that catches a
-    silently-absent access -- an exit-code-only test would report a
-    no-op harness as green."""
+    candidate source path resolved AND rurp_load_config() recorded at
+    least one access. Deliberately scoped to the load phase alone rather
+    than a sum across all three phases: the driver seeds BOTH the fake's
+    backing storage and the live global config with matching data, so an
+    unmutated rurp_load_config() records exactly one get and a mutation
+    that removes the get call leaves the load phase's list genuinely
+    EMPTY (the seeded global already matches, so the internal validate
+    call has nothing to write back) -- rather than being masked by an
+    indirect write-back put, which is what would happen were this scoped
+    to a sum across all phases (the save and validate phases run their
+    own, unrelated calls regardless of what this phase's mutation does).
+    This is the leg that catches a silently-absent access -- an
+    exit-code-only test would report a no-op harness as green."""
     assert len(_RESOLVED_SOURCES) >= 1, (
         f"expected at least one of {_CANDIDATE_SOURCES!r} to resolve at "
         f"collection time; resolved none."
@@ -436,12 +453,11 @@ def test_non_vacuity_source_resolved_and_access_recorded(tmp_path):
         f"expected a clean, warning-free compile.\n"
         f"stdout:\n{compile_result.stdout}\nstderr:\n{compile_result.stderr}"
     )
-    total_accesses = len(parsed["load"]) + len(parsed["save"]) + len(parsed["validate"])
-    assert total_accesses > 0, (
-        "expected at least one EEPROM access recorded by the fake across "
-        "the load/save/validate phases; recorded none -- a test that "
-        "passed here would be exactly the silently-absent-access shape "
-        "this leg exists to catch.\n"
+    assert len(parsed["load"]) > 0, (
+        "expected rurp_load_config() to record at least one EEPROM "
+        "access; recorded none -- a test that passed here would be "
+        "exactly the silently-absent-access shape this leg exists to "
+        "catch.\n"
         f"stdout:\n{run_result.stdout}\nstderr:\n{run_result.stderr}"
     )
 
