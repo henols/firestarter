@@ -63,7 +63,7 @@
 #define CMD_CHECK_CHIP_ID 5
 #define CMD_VERIFY 6
 
-#ifdef DEV_TOOLS
+#if DEV_TOOLS
 #define CMD_DEV_ADDRESS 7
 #define CMD_DEV_REGISTER 8
 #endif

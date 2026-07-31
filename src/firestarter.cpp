@@ -18,7 +18,7 @@
 #include "operation_utils.h"
 #include "rurp_shield.h"
 #include "version.h"
-#ifdef DEV_TOOLS
+#if DEV_TOOLS
 #include "dev_tools.h"
 #endif
 
@@ -94,7 +94,7 @@ bool parse_json(firestarter_handle_t* handle) {
                 return false;
             }
         } else {
-#ifdef DEV_TOOLS
+#if DEV_TOOLS
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_OUTPUT_EN, is_flag_set(FLAG_OUTPUT_ENABLE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CHIP_EN, is_flag_set(FLAG_CHIP_ENABLE));
 #endif
@@ -268,7 +268,7 @@ void loop() {
             finished = hw_get_version(&handle);
             break;
 #endif
-#ifdef DEV_TOOLS
+#if DEV_TOOLS
         case CMD_DEV_REGISTER:
             finished = dt_set_registers(&handle);
             break;
