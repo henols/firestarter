@@ -194,12 +194,22 @@ SCAN_SUFFIXES = (".h", ".hpp", ".c", ".cpp")
 # match object) the line is recovered by splitting the source text by line
 # number in find_definitions() below. Mirrors the exact spelling used by
 # py32f071_rurp_shield.h ("#define RURP_PY32F071_PINMAP_PROVISIONAL 1").
-DEFINE_RE = re.compile(r"^\s*#\s*define\s+(?P<macro>RURP_[A-Z0-9_]*_PROVISIONAL)\b", re.MULTILINE)
+#
+# Deliberately [ \t]* (horizontal whitespace only), NOT \s* -- \s matches
+# a literal newline too, so with re.MULTILINE a leading "^\s*" can walk
+# BACKWARDS across a preceding blank line and anchor the match's start()
+# one or more lines earlier than the '#define' text itself, corrupting the
+# reported definition line number (and, worse, silently defeating the
+# same-line exclusion in find_consumers(), which compares by (path, line)
+# tuple). Restricting to [ \t]* keeps the match anchored to the actual
+# '#define' line.
+DEFINE_RE = re.compile(r"^[ \t]*#[ \t]*define[ \t]+(?P<macro>RURP_[A-Z0-9_]*_PROVISIONAL)\b", re.MULTILINE)
 
 # Matches an #undef of the same identifier shape -- an #undef is NOT a
 # consumer (it removes the flag, it does not gate behaviour on it), so
-# every #undef line is excluded from the consumer search explicitly.
-UNDEF_RE = re.compile(r"^\s*#\s*undef\s+(?P<macro>RURP_[A-Z0-9_]*_PROVISIONAL)\b", re.MULTILINE)
+# every #undef line is excluded from the consumer search explicitly. Same
+# [ \t]*-only rationale as DEFINE_RE above.
+UNDEF_RE = re.compile(r"^[ \t]*#[ \t]*undef[ \t]+(?P<macro>RURP_[A-Z0-9_]*_PROVISIONAL)\b", re.MULTILINE)
 
 
 class ScanError(Exception):
