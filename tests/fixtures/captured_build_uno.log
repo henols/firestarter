@@ -1,17 +1,6 @@
 Processing uno (platform: atmelavr; board: uno; framework: arduino)
 --------------------------------------------------------------------------------
 Verbose mode can be enabled via `-v, --verbose` option
-Removing .pio/build/uno
-Done cleaning
-========================= [SUCCESS] Took 0.33 seconds =========================
-
-Environment    Status    Duration
--------------  --------  ------------
-uno            SUCCESS   00:00:00.328
-========================= 1 succeeded in 00:00:00.328 =========================
-Processing uno (platform: atmelavr; board: uno; framework: arduino)
---------------------------------------------------------------------------------
-Verbose mode can be enabled via `-v, --verbose` option
 CONFIGURATION: https://docs.platformio.org/page/boards/atmelavr/uno.html
 PLATFORM: Atmel AVR (5.2.0) > Arduino Uno
 HARDWARE: ATMEGA328P 16MHz, 2KB RAM, 31.50KB Flash
@@ -49,13 +38,13 @@ Compiling .pio/build/uno/src/proms/sram.cpp.o
 Compiling .pio/build/uno/src/rurp_config_utils.cpp.o
 Compiling .pio/build/uno/lib5fe/jsmn/jsmn.c.o
 Archiving .pio/build/uno/libFrameworkArduinoVariant.a
-Compiling .pio/build/uno/FrameworkArduino/CDC.cpp.o
 Indexing .pio/build/uno/libFrameworkArduinoVariant.a
+Compiling .pio/build/uno/FrameworkArduino/CDC.cpp.o
 Compiling .pio/build/uno/FrameworkArduino/HardwareSerial.cpp.o
 Compiling .pio/build/uno/FrameworkArduino/HardwareSerial0.cpp.o
-Compiling .pio/build/uno/FrameworkArduino/HardwareSerial1.cpp.o
 Archiving .pio/build/uno/lib5fe/libjsmn.a
 Indexing .pio/build/uno/lib5fe/libjsmn.a
+Compiling .pio/build/uno/FrameworkArduino/HardwareSerial1.cpp.o
 Compiling .pio/build/uno/FrameworkArduino/HardwareSerial2.cpp.o
 Compiling .pio/build/uno/FrameworkArduino/HardwareSerial3.cpp.o
 Compiling .pio/build/uno/FrameworkArduino/IPAddress.cpp.o
@@ -83,11 +72,11 @@ Linking .pio/build/uno/firestarter_uno.elf
 Checking size .pio/build/uno/firestarter_uno.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [========  ]  76.8% (used 1573 bytes from 2048 bytes)
-Flash: [=======   ]  74.2% (used 23932 bytes from 32256 bytes)
+Flash: [=======   ]  74.3% (used 23954 bytes from 32256 bytes)
 Building .pio/build/uno/firestarter_uno.hex
-========================= [SUCCESS] Took 1.19 seconds =========================
+========================= [SUCCESS] Took 1.56 seconds =========================
 
 Environment    Status    Duration
 -------------  --------  ------------
-uno            SUCCESS   00:00:01.192
-========================= 1 succeeded in 00:00:01.192 =========================
+uno            SUCCESS   00:00:01.559
+========================= 1 succeeded in 00:00:01.559 =========================
