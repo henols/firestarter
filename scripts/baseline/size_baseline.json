@@ -1,42 +1,60 @@
 {
   "meta": {
-    "generated": "2026-07-30",
-    "phase": "123",
-    "generated_by": "123-01-PLAN.md Task 2 measurement",
-    "firmware_tree_sha": "5c9160a34b665878b05403ab014b959926feb6bf",
-    "host_app_tree_sha": "e7d3ee8c8a41cd20e9159ab43b5cd969603d773e",
+    "generated": "2026-07-31",
+    "phase": "124",
+    "generated_by": "124-10-PLAN.md Task 1/2 measurement (Phase 124 Plan 10, W-1 half (b) + W-2)",
+    "firmware_tree_sha": "2bd7187d8682005f061554a01fc4736878267f04",
+    "host_app_tree_sha": "ccbc401e16e2d2298f7376c3086164700bba0278",
     "platformio_core": "6.1.19",
     "platform_atmelavr": "5.2.0",
     "toolchain_atmelavr": "1.70300.191015",
     "avr_gcc": "7.3.0",
     "framework_arduino_avr": "5.3.0",
     "framework_arduino_avr_minicore": "3.1.2",
-    "roadmap_cross_check": "5 of 6 ROADMAP-recorded figures reproduced byte-exact on a clean rebuild this phase: Leonardo 26072/2014, Uno 23932/1573, uno328pb flash 23976. The sixth figure, uno328pb RAM (1579 B used / 469 B free), had never been recorded anywhere before this phase — it is supplied here for the first time. No discrepancy was found between any measured figure and the ROADMAP cross-check.",
-    "supersedes": "firestarter/scripts/check_uno_ram.sh, whose hardcoded RAM_FLOOR=545 (minimum acceptable free RAM in bytes) is ABOVE the measured 475 B free on uno recorded in this baseline — that script is red today and is referenced by neither CI workflow. This baseline replaces a stale, already-failing gate, not a green one. Plan 123-02 removes the script.",
-    "consumed_by": "firestarter/scripts/check_size_baseline.py (BASE-01 comparator, Plan 123-02) and firestarter/scripts/check_build_warnings.py (BASE-06 warning gate, Plan 123-03). Unlike firestarter_app/tools/baseline/dispatch_baseline.json (explicitly provenance-only, consumed by nothing), this file IS load-bearing: both scripts read it as their recorded truth via the FIRESTARTER_SIZE_BASELINE env seam.",
-    "note": "Every figure below was re-measured in this session (D-03) via `pio run -t clean -e <env> && pio run -e <env>` for the three AVR targets and `pio test -e <env>` for the two native environments, on the firmware tree at firmware_tree_sha above (byte-identical to origin/beta at the same SHA — the v1.23 milestone branch had zero commits at measurement time). Nothing here is recalled from ROADMAP.md or PROJECT.md prose."
+    "roadmap_cross_check": "This baseline's three AVR flash deltas against BASE-01 (Leonardo -56, Uno +22, uno328pb +28, RAM unchanged on all three) reproduce PROJECT.md's 'Current Milestone: v1.23' correction 3 byte-for-byte and 124-RESEARCH.md's independently-measured post-landing figures byte-for-byte, on a clean rebuild of the real landed tree (2bd7187, not a scratch clone). No discrepancy was found between any measured figure here and either cross-check source. This supersedes BASE-01's own roadmap_cross_check entry, which described Phase-123-era (pre-v1.23) figures only.",
+    "supersedes": "firestarter/scripts/baseline/size_baseline_base01.json (blob SHA b940c91655600a57ad7ef67cba723943af929daf, frozen byte-identically by Phase 124 Plan 02). BASE-01 is immutable and remains MERGE-05's judged comparison reference -- the canonical `--policy merge05` invocation always names it explicitly via `--baseline scripts/baseline/size_baseline_base01.json`. This file (size_baseline.json) is the LIVE, ongoing default baseline that both check_size_baseline.py's default mode and check_build_warnings.py read via the FIRESTARTER_SIZE_BASELINE seam; Phase 124 Plan 10 rewrote it in place to the post-landing tree so a bare run of either gate is correct on the tree as it now stands, per MERGE-05/MERGE-06's exit-code requirement.",
+    "consumed_by": "firestarter/scripts/check_size_baseline.py (default-mode byte-identity gate; MERGE-06's native case/suite exit code) and firestarter/scripts/check_build_warnings.py (the native warning watermark gate). Unlike firestarter_app/tools/baseline/dispatch_baseline.json (provenance-only, consumed by nothing), this file IS load-bearing: both scripts read it as their recorded truth via the FIRESTARTER_SIZE_BASELINE env seam.",
+    "note": "Every AVR figure below was re-measured on 2026-07-31 via `pio run -t clean -e <env>` then `pio run -e <env>` (one uninterrupted invocation per env, capturing the full build log), on the firmware tree at firmware_tree_sha above (v1.23-py32f071-integration @ 2bd7187, i.e. after Plans 124-01..09's landing + DEV_TOOLS conversion + provisional-pinmap refusal + guard restructure -- 22 commits ahead of origin/beta at measurement time). The three native envs (native, native_nodevtools, native_pinmap_provisional) were each measured in BOTH build states, in this exact sequence per env: `rm -rf .pio/build/<env>` then a single `pio test -e <env>` invocation with an extended 540000ms timeout (the COLD figure -- a default 2-minute Bash timeout truncates the toolchain build mid-compile and silently contaminates the measurement, see 124-04-SUMMARY.md's recorded trap), immediately followed by a second `pio test -e <env>` invocation with no intervening clean (the WARM figure, reusing the just-built .pio/build/<env> cache). The recorded `total_watermark`/`macro_redefinition` figures below are the COLD figures -- see `warm_vs_cold_correction` for why, and for both envs' warm figures. Nothing here is recalled from ROADMAP.md or PROJECT.md prose; every figure was re-derived this session, including the AVR figures, which were compared line-by-line against Plans 124-04/06/08/09's recorded figures and found byte-identical (0 delta on all six AVR flash/RAM figures across five intervening code-bearing plans, as expected: none of those plans touch AVR-compiled surface).",
+    "warm_vs_cold_correction": "BASE-01's recorded native watermark of 360 (both native and native_nodevtools) was a WARM-CACHE figure, not a clean-build figure, despite BASE-01's own meta.note asserting every figure came from a clean build. 124-RESEARCH.md independently discovered and this plan independently re-confirmed: a cold build of the IDENTICAL unmerged tree (Phase 123's tip, byte-identical compiled surface to BASE-01's measurement) measures 456, not 360 -- Phase 123 touched zero firmware source or test/ files, so the discrepancy is a measurement-procedure artifact (pio's build-directory reuse across invocations), never a code change. On the now-landed, post-v1.23 tree measured by this plan: native COLD=1166 / WARM=998; native_nodevtools COLD=1166 / WARM=998 (both envs agree, as they did pre-landing). The new third env, native_pinmap_provisional (added by Plan 124-08), measures COLD=138 / WARM=0 -- a different cold/warm ratio than the two pinned envs because it compiles only 1 suite (vs 17), so its warm re-run's auto-regenerated Unity test-runner recompile touches none of the redefinition-prone shim files that the two pinned envs' warm re-runs still touch. Mechanism behind the +638 (warm) / +710 (cold) increase from pre-landing to post-landing on the two pinned envs: the landed include/rurp_platform_compat.h now defines the program-memory macros (pgm_read_ptr, strncpy_P, strncmp_P, sprintf_P, strcmp_P, sprintf_P, strncmp_P, PGM_P, F -- six new names beyond BASE-01's original eight, contributed by 780a3fb), and ArduinoFake's own pgmspace.h then redefines every one of them across roughly 27 more translation units than before. This is benign, identical-purpose redefinition -- not damage -- but it is not zero, and check_build_warnings.py cannot tell the difference between a benign redefinition and a real new warning class; it can only count. All three total_watermark/macro_redefinition figures recorded in warnings.native below are therefore the COLD figure for that env, per the mechanical reason stated in warnings.note. A future reader who wants to LOWER any of these three watermarks must re-measure cold first, in this exact rm -rf + single-invocation sequence, and never guess a new figure down from prose.",
+    "deltas_vs_base01": {
+      "leonardo": {
+        "flash_used_delta": -56,
+        "ram_used_delta": 0,
+        "merge05_clause": "Leonardo flash must not grow (<=0 delta permitted, may shrink) -- -56 satisfies the band with margin to spare; RAM must be exactly unchanged -- 0 satisfies it exactly."
+      },
+      "uno": {
+        "flash_used_delta": 22,
+        "ram_used_delta": 0,
+        "merge05_clause": "Uno-class flash growth <= 64 B permitted -- +22 is inside the MERGE05_UNO_CLASS_FLASH_BAND=64 band; RAM must be exactly unchanged -- 0 satisfies it exactly."
+      },
+      "uno328pb": {
+        "flash_used_delta": 28,
+        "ram_used_delta": 0,
+        "merge05_clause": "Uno-class flash growth <= 64 B permitted -- +28 is inside the MERGE05_UNO_CLASS_FLASH_BAND=64 band; RAM must be exactly unchanged -- 0 satisfies it exactly."
+      }
+    }
   },
   "avr_targets": {
     "uno": {
-      "flash_used": 23932,
+      "flash_used": 23954,
       "flash_total": 32256,
-      "flash_free": 8324,
+      "flash_free": 8302,
       "ram_used": 1573,
       "ram_total": 2048,
       "ram_free": 475
     },
     "uno328pb": {
-      "flash_used": 23976,
+      "flash_used": 24004,
       "flash_total": 32384,
-      "flash_free": 8408,
+      "flash_free": 8380,
       "ram_used": 1579,
       "ram_total": 2048,
       "ram_free": 469
     },
     "leonardo": {
-      "flash_used": 26072,
+      "flash_used": 26016,
       "flash_total": 28672,
-      "flash_free": 2600,
+      "flash_free": 2656,
       "ram_used": 2014,
       "ram_total": 2560,
       "ram_free": 546
@@ -54,10 +72,16 @@
       "succeeded": 141,
       "suites": 17,
       "all_passed": true
+    },
+    "native_pinmap_provisional": {
+      "cases": 10,
+      "succeeded": 10,
+      "suites": 1,
+      "all_passed": true
     }
   },
   "envs_agree": true,
-  "envs_agree_note": "native and native_nodevtools report byte-identical {cases: 141, suites: 17, all_passed: true} pairs. Measured reason: no test file under test/native/avr/ references DEV_TOOLS or CMD_DEV_* anywhere, so no suite compiles a conditional RUN_TEST case under -D DEV_TOOLS; both environments' test_filter blocks in platformio.ini carry the same 17 entries. Consequence for Phase 124: MERGE-06's wording ('pio test -e native and -e native_nodevtools report the BASE-01 case and suite counts') is satisfiable exactly as worded against this baseline. No amendment to MERGE-06 should be requested — D-04's feared live risk (the two envs legitimately diverging) did not materialise.",
+  "envs_agree_note": "native and native_nodevtools still report byte-identical {cases: 141, suites: 17, all_passed: true} pairs post-landing, unchanged from BASE-01: no test file under test/native/avr/ (excluding the new test_pinmap_provisional suite, which neither pinned env's test_filter names) references DEV_TOOLS or CMD_DEV_* anywhere, so no suite compiles a conditional RUN_TEST case under -D DEV_TOOLS. native_pinmap_provisional is deliberately EXCLUDED from this agreement claim -- by Plan 124-08's D-11/Pitfall-5 hard constraint it is a dedicated third environment naming only its own 1 new suite (10 cases), never folded into either pinned env's test_filter, so MERGE-06's 'both native envs report the baseline case/suite counts' wording is satisfied exactly as worded by the two pinned envs alone; the third env is recorded here (native_envs + warnings.native) only so check_size_baseline.py's compare_native and check_build_warnings.py's check_env do not raise on that env name, never to widen MERGE-06's own two-env scope.",
   "warnings": {
     "avr": {
       "uno": {
@@ -75,19 +99,23 @@
     },
     "native": {
       "native": {
-        "macro_redefinition": 360,
-        "total_watermark": 360
+        "macro_redefinition": 1166,
+        "total_watermark": 1166
       },
       "native_nodevtools": {
-        "macro_redefinition": 360,
-        "total_watermark": 360
+        "macro_redefinition": 1166,
+        "total_watermark": 1166
+      },
+      "native_pinmap_provisional": {
+        "macro_redefinition": 138,
+        "total_watermark": 138
       }
     },
     "policy": {
       "avr_rule": "== 0",
       "native_rule": "<= total_watermark"
     },
-    "counting_command": "pio test -e <env> 2>&1 | grep -cE 'warning: *\"[^\"]+\" +redefined'  # macro-redefinition count; grep -cE 'warning:' for the total (identical on both native envs: 360 == 360, i.e. every warning on native is a macro redefinition, none is any other kind)",
-    "note": "The 360 macro-redefinition warnings on each native env are a characterised pre-existing count, present on beta at 5c9160a before any v1.23 work, caused by each suite's own test/native/avr/<suite>/avr/pgmspace.h host shim defining 8 macros (PSTR, memcpy_P, pgm_read_byte, pgm_read_dword, pgm_read_ptr, pgm_read_word, strcpy_P, strlen_P) which ArduinoFake's own .pio/libdeps/native/ArduinoFake/src/arduino/pgmspace.h then redefines across 45 translation units -- 8 x 45 = 360, verified by per-macro breakdown (45 occurrences each). It is not a regression and not damage. Deduplicating those 17 suite-local shims would touch 17 suite directories, breaching this phase's 'no firmware code moves' boundary; that remediation (RESEARCH Option B) was considered and rejected by the operator in favor of Option A: an exact-zero rule on the three AVR envs (already true) plus this watermark on the two native envs."
+    "counting_command": "pio test -e <env> 2>&1 | grep -cE 'warning: *\"[^\"]+\" +redefined'  # macro-redefinition count; grep -cE 'warning:' for the total (identical on all three native envs: every warning observed is a macro redefinition, none is any other kind) -- re-verified against this session's actual invocations, unchanged from BASE-01's recorded command.",
+    "note": "The three total_watermark/macro_redefinition figures above are each that env's COLD measurement (see meta.warm_vs_cold_correction for the full derivation and both build states' figures for all three envs, plus BASE-01's own 360-was-warm correction). check_build_warnings.py's below-watermark arm returns INFO, not FAIL, so a watermark set to the COLD figure stays green (OK, not INFO) on a cold CI run and stays green (INFO, not FAIL) on a warm local re-run; a watermark set to the WARM figure would instead go RED on the next cold CI run, which is exactly the failure mode this asymmetry exists to prevent -- CI always builds cold. Warm figures, for the record: native=998, native_nodevtools=998, native_pinmap_provisional=0. Mechanism: include/rurp_platform_compat.h (landed by Plan 124-04) now defines program-memory macros that ArduinoFake's own pgmspace.h redefines, across six more macro names and roughly 27 more translation units than BASE-01 characterised -- benign, identical-purpose redefinition, not damage, but not zero, and this gate counts, it does not classify. A reader who wants to lower any of these three watermarks must re-measure COLD first, in the rm -rf + single-invocation sequence meta.note records, and never guess a new figure down from prose or from a warm re-run."
   }
 }
