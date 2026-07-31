@@ -283,7 +283,7 @@ def _compile(compiler, sources, include_dirs, output_path):
     -std=gnu++17 -Wall -Wextra and an -I entry for every directory in
     include_dirs (the repo include/ directory AND tmp_path, so the fake
     EEPROM.h shadows nothing real)."""
-    argv = [compiler, "-std=gnu++17", "-Wall", "-Wextra"]
+    argv = [compiler, "-std=gnu++17", "-Wall", "-Wextra", "-DARDUINO_AVR_UNO"]  # Phase 126-03 fallback (D-04): opens src/boards/rurp_config_storage_eeprom.cpp's post-split three-board #if guard for this host compile; behaviourally inert for every OTHER resolved source because rurp_platform_compat.h gates its only AVR-only include on __AVR__ (compiler-supplied), never on ARDUINO_AVR_UNO
     for include_dir in include_dirs:
         argv += ["-I", str(include_dir)]
     argv += [str(source) for source in sources]
