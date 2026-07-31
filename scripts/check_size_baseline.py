@@ -1,13 +1,29 @@
 #!/usr/bin/env python3
-"""scripts/check_size_baseline.py — BASE-01 non-regression gate (Phase 123 Plan 02, D-01).
+"""scripts/check_size_baseline.py — BASE-01 non-regression gate (Phase 123 Plan 02, D-01)
+and MERGE-05's one-shot band comparator (Phase 124 Plan 02).
 
-Turns MERGE-05's rule ("Leonardo flash must not grow, Uno-class <= 64 B") and
-MERGE-06's rule ("both native envs report the recorded case and suite counts")
-into an exit code, so Phase 124 cites a number by reading a file rather than
-comparing two numbers by eye. Reads the recorded truth from
-`scripts/baseline/size_baseline.json` (written by Plan 123-01) and compares it
-against a `pio run`/`pio test` build log — either supplied via `--avr-log` /
-`--native-log`, or produced live via `--rebuild`.
+Two modes, selected by the presence/absence of `--policy merge05`:
+
+  - **Default (no `--policy`):** strict byte-identity. Every AVR figure
+    (flash_used, flash_total, ram_used, ram_total) and every native fact
+    (cases, suites, all_passed) must match the baseline EXACTLY. This mode
+    reads `scripts/baseline/size_baseline.json` by default (the LIVE
+    baseline, which Phase 124 Plan 10 rewrites to the post-landing figures)
+    and turns MERGE-06's rule ("both native envs report the recorded case
+    and suite counts") into an exit code, so a later phase cites a number by
+    reading a file rather than comparing two numbers by eye. This mode's
+    behaviour and output text are UNCHANGED by the addition of `--policy`.
+
+  - **`--policy merge05`:** the band mode. Turns MERGE-05's rule ("Leonardo
+    flash must not grow; Uno-class flash growth <= 64 B; RAM unchanged")
+    into an exit code for the first time. This is a one-shot assertion meant
+    to be run against the FROZEN `scripts/baseline/size_baseline_base01.json`
+    record (Phase 124 Plan 02) — the pre-landing figures — never against
+    whatever `scripts/baseline/size_baseline.json` says after Plan 124-10
+    re-baselines it to the post-landing figures. Always pass `--baseline
+    scripts/baseline/size_baseline_base01.json` explicitly with this policy;
+    relying on the default baseline path here would silently compare against
+    a moving target.
 
 This script supersedes the retired Uno-only RAM-ceiling shell gate (Plan 123-02;
 see `scripts/baseline/size_baseline.json`'s `meta.supersedes` field for the full
@@ -18,15 +34,17 @@ than `uno` alone, both native envs' case/suite/status facts, and it reads a
 recorded measurement from a committed JSON rather than a hand-maintained
 constant.
 
-Exit codes:
-  0 — every env supplied compared clean against the baseline (gate passes)
-  1 — an env's observed figures diverge from the baseline (regression detected),
-      OR zero envs were compared (the never-vacuous guard: a comparator that
-      compares nothing must not report success)
+Exit codes (identical taxonomy in both modes):
+  0 — every env supplied compared clean against the baseline/policy (gate passes)
+  1 — an env's observed figures diverge from the baseline (default mode) or
+      fall outside MERGE-05's band (`--policy merge05`), OR zero envs were
+      compared (the never-vacuous guard: a comparator that compares nothing
+      must not report success — not bypassed by `--policy`)
   2 — a supplied log could not be parsed (no `RAM:`/`Flash:` report found, or no
-      `N test cases:` summary line, or no per-suite SUMMARY rows) — a tool/format
-      failure, categorically distinct from a size regression, and never silently
-      reported as a pass
+      `N test cases:` summary line, or no per-suite SUMMARY rows), or the CLI
+      invocation itself is malformed (e.g. an unrecognised `--policy` value) —
+      a tool/format failure, categorically distinct from a size regression,
+      and never silently reported as a pass
 
 Anti-hollow contract: this checker's mandatory paired pytest is
 `tests/test_check_size_baseline.py`, which invokes this script as a real
@@ -43,11 +61,21 @@ Non-claim: a green run proves the recorded numbers still hold for the log it
 was given. It does NOT prove that log came from a clean build — only
 `--rebuild` guarantees that, by invoking `pio` itself.
 
+Non-claim: a green `--policy merge05` run proves the deltas are inside the
+band the requirement licenses; it proves nothing about whether the deltas
+are desirable, and nothing about the log having come from a clean build
+(only `--rebuild` guarantees that).
+
 Usage:
     python3 scripts/check_size_baseline.py --avr-log leonardo=path/to/build.log
     python3 scripts/check_size_baseline.py --native-log native=path/to/test.log
     python3 scripts/check_size_baseline.py --rebuild
     python3 scripts/check_size_baseline.py --baseline path/to/other.json --avr-log uno=...
+    # Canonical MERGE-05 invocation (the frozen BASE-01 record, not the live default):
+    python3 scripts/check_size_baseline.py --policy merge05 \\
+        --baseline scripts/baseline/size_baseline_base01.json \\
+        --avr-log leonardo=path/to/build.log --avr-log uno=path/to/build.log \\
+        --avr-log uno328pb=path/to/build.log
 """
 import json
 import os
@@ -70,6 +98,13 @@ FIRESTARTER_SIZE_BASELINE = os.environ.get(
 
 AVR_ENVS = ("uno", "uno328pb", "leonardo")
 NATIVE_ENVS = ("native", "native_nodevtools")
+
+# MERGE-05's uno-class flash-growth band, in bytes. See .planning/REQUIREMENTS.md:47
+# (MERGE-05's exact wording) and .planning/REQUIREMENTS.md's "Operator Decisions
+# Locked at Definition" item 4 (why the band is 64 B rather than zero growth).
+# The single place this literal lives -- compare_avr_policy_merge05 is the only
+# consumer.
+MERGE05_UNO_CLASS_FLASH_BAND = 64
 
 # Matches both the RAM: and Flash: report lines in one pattern. Anchored at
 # column 0, multiline. Does NOT capture the percentage or the bar-graph
@@ -176,6 +211,61 @@ def compare_avr(env, parsed, baseline):
     return failures
 
 
+def compare_avr_policy_merge05(env, parsed, baseline):
+    """Compare a parsed AVR size report against MERGE-05's BAND policy for `env`
+    (not strict equality -- see compare_avr for the default mode).
+
+    Rules:
+      - leonardo: flash_used must not grow at all (`<=` the recorded value;
+        it may shrink).
+      - uno / uno328pb: flash_used may grow by at most
+        MERGE05_UNO_CLASS_FLASH_BAND bytes over the recorded value.
+      - all three: ram_used must be exactly unchanged. MERGE-05's text binds
+        RAM equality on Uno/Leonardo only; equality is enforced on uno328pb
+        too because it is measured equal -- deliberately stronger than the
+        requirement text, never weaker.
+      - all three: flash_total and ram_total must be unchanged (a changed
+        total means the board or framework moved -- a finding, not a pass),
+        reusing compare_avr's existing message text verbatim.
+
+    Returns a list of failure message strings; empty list means clean --
+    same shape as compare_avr. Every failure names the env, the baseline
+    figure, the observed figure and the computed delta.
+    """
+    rec = baseline["avr_targets"][env]
+    ram_used, ram_total = parsed["RAM"]
+    flash_used, flash_total = parsed["Flash"]
+    failures = []
+
+    band = 0 if env == "leonardo" else MERGE05_UNO_CLASS_FLASH_BAND
+    band_label = "leonardo" if env == "leonardo" else "uno-class"
+    flash_delta = flash_used - rec["flash_used"]
+    if flash_delta > band:
+        failures.append(
+            f"{env}: flash_used baseline={rec['flash_used']} observed={flash_used} "
+            f"delta={flash_delta:+d} exceeds MERGE-05 {band_label} band of {band} B"
+        )
+
+    if ram_used != rec["ram_used"]:
+        ram_delta = ram_used - rec["ram_used"]
+        failures.append(
+            f"{env}: ram_used baseline={rec['ram_used']} observed={ram_used} "
+            f"delta={ram_delta:+d} (MERGE-05 requires ram_used unchanged)"
+        )
+
+    if flash_total != rec["flash_total"]:
+        failures.append(
+            f"{env}: flash_total baseline={rec['flash_total']} observed={flash_total} "
+            "(board or framework moved)"
+        )
+    if ram_total != rec["ram_total"]:
+        failures.append(
+            f"{env}: ram_total baseline={rec['ram_total']} observed={ram_total} "
+            "(board or framework moved)"
+        )
+    return failures
+
+
 def compare_native(env, parsed, baseline):
     """Compare a parsed native test log against the recorded baseline for `env`.
 
@@ -241,14 +331,17 @@ def _parse_argv(argv):
     mirrors check_permitted_claims.py's resolve_targets(argv) style).
 
     Recognises --baseline PATH, repeated --avr-log ENV=PATH, repeated
-    --native-log ENV=PATH, and the --rebuild flag. Raises SystemExit(2) on a
-    malformed invocation (unknown flag or a flag missing its value) -- a CLI
-    usage error is itself a tool/format failure, not a size regression.
+    --native-log ENV=PATH, the --rebuild flag, and --policy VALUE (the only
+    recognised VALUE is "merge05"). Raises SystemExit(2) on a malformed
+    invocation (unknown flag, a flag missing its value, or an unrecognised
+    --policy value) -- a CLI usage error is itself a tool/format failure, not
+    a size regression.
     """
     baseline = None
     avr_logs = []
     native_logs = []
     rebuild = False
+    policy = None
     i = 0
     while i < len(argv):
         arg = argv[i]
@@ -272,15 +365,29 @@ def _parse_argv(argv):
             native_logs.append(argv[i])
         elif arg == "--rebuild":
             rebuild = True
+        elif arg == "--policy":
+            i += 1
+            if i >= len(argv):
+                print("ERROR: --policy requires a VALUE argument", file=sys.stderr)
+                raise SystemExit(2)
+            value = argv[i]
+            if value != "merge05":
+                print(
+                    f"ERROR: unrecognized --policy value: {value!r} "
+                    "(only 'merge05' is recognised)",
+                    file=sys.stderr,
+                )
+                raise SystemExit(2)
+            policy = value
         else:
             print(f"ERROR: unrecognized argument: {arg}", file=sys.stderr)
             raise SystemExit(2)
         i += 1
-    return baseline, avr_logs, native_logs, rebuild
+    return baseline, avr_logs, native_logs, rebuild, policy
 
 
 def main(argv):
-    baseline_arg, avr_log_specs, native_log_specs, rebuild = _parse_argv(argv)
+    baseline_arg, avr_log_specs, native_log_specs, rebuild, policy = _parse_argv(argv)
 
     baseline_path = baseline_arg or FIRESTARTER_SIZE_BASELINE
     baseline = load_baseline(baseline_path)
@@ -321,13 +428,24 @@ def main(argv):
             print(f"ERROR: {env}: {e}", file=sys.stderr)
             parse_errors.append(env)
             continue
-        failures = compare_avr(env, parsed, baseline)
+        if policy == "merge05":
+            failures = compare_avr_policy_merge05(env, parsed, baseline)
+        else:
+            failures = compare_avr(env, parsed, baseline)
         if failures:
             all_failures.extend(failures)
         else:
             u, t = parsed["Flash"]
             ru, rt = parsed["RAM"]
-            compared.append(f"{env}(flash={u}/{t},ram={ru}/{rt})")
+            if policy == "merge05":
+                rec = baseline["avr_targets"][env]
+                band = 0 if env == "leonardo" else MERGE05_UNO_CLASS_FLASH_BAND
+                flash_delta = u - rec["flash_used"]
+                compared.append(
+                    f"{env}(flash={u}/{t}[{flash_delta:+d}<={band}],ram={ru}/{rt}[=])"
+                )
+            else:
+                compared.append(f"{env}(flash={u}/{t},ram={ru}/{rt})")
 
     for env, text in native_sources.items():
         try:
