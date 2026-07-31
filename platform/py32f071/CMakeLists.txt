@@ -105,6 +105,15 @@ target_include_directories(
 # the shared value-semantics default (#ifndef DEV_TOOLS / #define DEV_TOOLS 0
 # / #endif) resolves it to 0 here, the same as native_nodevtools. This is an
 # explicit commented decision, not an accident of the defines below.
+#
+# The pin-map "configured for a real build" macro (MERGE-04, D-14) is
+# supplied HERE, not by the board header:
+# include/boards/py32f071_rurp_shield.h now only TESTS it via the
+# dependency-free include/boards/py32f071_pinmap_guard.h fragment, so a
+# build that forgets to supply it now fails at the preprocessor with a
+# named error instead of silently compiling an unconfigured, provisional
+# pin map. This target is the only one that compiles the py32 board
+# header, so this is the only place it is supplied.
 target_compile_definitions(
     ${TARGET_NAME}
     PRIVATE
@@ -114,6 +123,7 @@ target_compile_definitions(
         RURP_BOARD_NAME="py32f071"
         MONITOR_SPEED=250000
         DATA_BUFFER_SIZE=512
+        RURP_PY32F071_PINMAP_CONFIGURED=1
 )
 
 target_compile_features(${TARGET_NAME} PRIVATE c_std_11 cxx_std_17)
