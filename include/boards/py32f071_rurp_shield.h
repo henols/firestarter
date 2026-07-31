@@ -34,7 +34,6 @@
  * remaining assignments are provisional and describe no existing PCB.
  */
 
-#define RURP_PY32F071_PINMAP_CONFIGURED 1
 #define RURP_PY32F071_PINMAP_PROVISIONAL 1
 
 /*
@@ -69,6 +68,20 @@
 #endif
 #endif
 
+/*
+ * Phase 124 Plan 09 (MERGE-04, D-14): the "is this pin map configured for a
+ * real build" guard is hoisted into a dependency-free fragment header so a
+ * host preprocessor can evaluate it standalone (this file cannot be
+ * preprocessed locally -- it includes py32f0xx_hal.h a few lines above).
+ * RURP_PY32F071_PINMAP_CONFIGURED is no longer #define'd in this file at
+ * all; it is supplied ONLY by platform/py32f071/CMakeLists.txt's
+ * target_compile_definitions. This header now only TESTS what the build
+ * supplies, evaluated here, before the pin definitions it protects. See
+ * the fragment header included directly below, and
+ * tests/test_pinmap_guard_fires.py for the fire-proof.
+ */
+#include "py32f071_pinmap_guard.h"
+
 #define RURP_PY32F071_ENABLE_GPIO_CLOCKS() \
     do                                             \
     {                                              \
@@ -99,10 +112,6 @@
 #define RURP_PY32F071_CE_PIN GPIO_PIN_5
 
 #define RURP_PY32F071_HAS_USER_BUTTON 0
-
-#if !RURP_PY32F071_PINMAP_CONFIGURED
-#error "Configure the PY32F071 Firestarter wiring in include/boards/py32f071_rurp_shield.h"
-#endif
 
 #if RURP_PY32F071_DATA_SHIFT > 8
 #error "The contiguous PY32F071 D0-D7 bus must fit within one 16-pin GPIO port"
