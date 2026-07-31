@@ -61,6 +61,7 @@ set(PY32_PLATFORM_SOURCES
     src/usb_cdc.c
     src/py32f071_rurp_shield.cpp
     src/config.cpp
+    src/config_storage_dualslot.cpp
 )
 
 set(PY32_SDK_SOURCES
