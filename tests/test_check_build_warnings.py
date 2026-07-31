@@ -34,22 +34,24 @@ Coverage:
      env, the observed count (1) and the rule (0).
   6. AVR clean control passes — each of the three captured_build_*.log files
      exits 0 with a PASS: line.
-  7. Native watermark fires — planted_build_warnings_native_excess.log (363
-     `warning:` lines against a 360 watermark) exits non-zero naming both the
-     observed count and the watermark.
+  7. Native watermark fires — planted_build_warnings_native_excess.log (1206
+     `warning:` lines against the Phase-124-re-baselined 1166 watermark)
+     exits non-zero naming both the observed count and the watermark.
   8. Native clean control passes at the watermark — captured_test_native_summary.log
-     is 123-01's truncated SUMMARY-tail capture, which carries 0 warning lines,
-     not 360 (the 360 real warnings occur earlier in a `pio test` run, during
-     compilation, and were never captured in that file — see 123-01-SUMMARY.md's
-     "Native capture truncation point"). Asserting this file against the real
-     360 watermark would therefore report the (correct, but here misleading)
-     "352 below watermark" INFO arm rather than exercising the OK-at-watermark
-     branch. This test instead points the gate at a temp baseline (via
-     `--baseline`) whose native watermark is set to 0 — the actual count this
-     truncated tail contains — proving the OK-at-exact-watermark arm fires.
-     This adjustment is the one place 123-01 Task 2's truncation has a visible
-     consequence in this plan; stating it here rather than silently working
-     around it is deliberate (the whole point of this phase).
+     is a truncated SUMMARY-tail capture (123-01 originally, re-captured from the
+     post-landing tree by Phase 124 Plan 10), which carries 0 warning lines, not the
+     real recorded watermark (1166, re-baselined by Plan 124-10 from BASE-01's 360 --
+     see size_baseline.json's meta.warm_vs_cold_correction; the real warnings occur
+     earlier in a `pio test` run, during compilation, and are never captured in this
+     truncated tail — see 123-01-SUMMARY.md's "Native capture truncation point").
+     Asserting this file against the real watermark would therefore report the
+     (correct, but here misleading) "N below watermark" INFO arm rather than
+     exercising the OK-at-watermark branch. This test instead points the gate at a
+     temp baseline (via `--baseline`) whose native watermark is set to 0 — the actual
+     count this truncated tail contains — proving the OK-at-exact-watermark arm
+     fires. This adjustment is the one place 123-01 Task 2's truncation has a visible
+     consequence in this plan; stating it here rather than silently working around it
+     is deliberate (the whole point of this phase).
   9. Never-vacuous — no --log and no --rebuild exits non-zero with the
      never-vacuous message and prints no PASS:.
   10. Unknown env is a configuration error — a log supplied for an env absent
@@ -59,26 +61,40 @@ Fixture derivation record (single stated edit per planted fixture, diffable
 against its named source):
 
   planted_build_warnings_avr_redef.log
-    = captured_build_uno.log with ONE line inserted immediately after the
-      "Compiling .pio/build/uno/src/proms/memory.cpp.o" line: the verbatim
+    = captured_build_uno.log (re-captured Phase 124 Plan 10 from the
+      post-landing tree: uno flash 23954/RAM 1573, unchanged from the
+      landing) with ONE line inserted immediately after the "Compiling
+      .pio/build/uno/src/proms/memory.cpp.o" line: the verbatim
       `.pio/libdeps/native/ArduinoFake/src/arduino/pgmspace.h:34:9: warning:
       "PSTR" redefined` diagnostic, copied character-for-character from
       captured_native_warnings_excerpt.log (a genuine compiler line, not
-      invented text).
+      invented text). Re-derived in the same commit as the re-capture so the
+      insertion point (unaffected by the re-baseline -- macro_redefinition's
+      AVR rule stays exact-zero) and the surrounding build log stay in sync.
 
   planted_build_warnings_native_excess.log
-    = captured_test_native_summary.log with 361 synthetic `warning:` lines
-      prepended before the untouched 21-line SUMMARY tail (355 macro-
-      redefinition-shaped, using distinctive `SYNTHETIC_MACRO_NNNN` names
-      that cannot collide with any real project or ArduinoFake macro; 6
-      non-macro-shaped, an unused-variable diagnostic form). None of these
-      361 lines were emitted by a real compiler. Because
-      captured_test_native_summary.log itself carries 0 warning lines (see
-      coverage 8 above), reaching the required >360 total meant appending
-      the full excess rather than "a small number" of lines on top of an
-      already-near-360 base, as this plan's task text assumed — recorded
-      here as the deviation, per the same house convention 123-01-SUMMARY.md
-      used for its own truncation-framing correction.
+    = captured_test_native_summary.log (re-captured Phase 124 Plan 10 from a
+      warm `pio test -e native` run's SUMMARY tail; still 141 cases/17
+      suites) with 1206 synthetic `warning:` lines prepended before the
+      untouched 21-line SUMMARY tail (1200 macro-redefinition-shaped, using
+      distinctive `SYNTHETIC_MACRO_NNNN` names that cannot collide with any
+      real project or ArduinoFake macro; 6 non-macro-shaped, an
+      unused-variable diagnostic form). None of these 1206 lines were
+      emitted by a real compiler. Re-derived from 363 (Phase 123's synthetic
+      count, against the then-recorded 360 watermark -- itself later
+      discovered to be a warm-cache artifact, see size_baseline.json's
+      meta.warm_vs_cold_correction) to 1206 (Phase 124 Plan 10, against the
+      re-baselined 1166 COLD watermark), because the re-baseline raised the
+      watermark by roughly 3x: at the old 363 count this fixture would fall
+      BELOW the new 1166 watermark and its planted-violation test
+      (test_native_watermark_fires_on_planted_excess) would silently stop
+      firing while continuing to report green -- exactly the hollow-gate
+      class this milestone exists to remove (T-124-42). Because
+      captured_test_native_summary.log itself carries 0 warning lines (it
+      is a SUMMARY-tail-only capture, see coverage 8 above), reaching the
+      required >1166 total again meant prepending the full excess rather
+      than a small increment, the same shape as Phase 123's original
+      derivation.
 
 This module never imports check_build_warnings for its exit-code-level
 assertions (coverage 3, 5, 6, 7, 8, 9, 10): every one of those invokes the
@@ -291,8 +307,11 @@ def test_avr_clean_controls_pass_all_three_envs():
 
 
 def test_native_watermark_fires_on_planted_excess():
-    """Coverage 7 — 363 warning: lines against a 360 watermark exits
-    non-zero, naming both the observed count and the watermark."""
+    """Coverage 7 — 1206 warning: lines against the Phase-124-re-baselined
+    1166 watermark exits non-zero, naming both the observed count and the
+    watermark. (Pre Plan 124-10: 363 against 360 -- both numbers were raised
+    together so this planted violation keeps discriminating after the
+    re-baseline; see the module docstring's fixture-derivation record.)"""
     result = _run_checker(
         ["--log", f"native={_FIXTURES / 'planted_build_warnings_native_excess.log'}"]
     )
@@ -300,13 +319,14 @@ def test_native_watermark_fires_on_planted_excess():
         f"expected non-zero exit when total warnings exceed the watermark.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
-    assert "363" in result.stdout, f"Expected observed count 363. Got:\n{result.stdout}"
-    assert "360" in result.stdout, f"Expected watermark 360. Got:\n{result.stdout}"
+    assert "1206" in result.stdout, f"Expected observed count 1206. Got:\n{result.stdout}"
+    assert "1166" in result.stdout, f"Expected watermark 1166. Got:\n{result.stdout}"
 
 
 def test_native_clean_control_passes_at_its_actual_watermark(tmp_path):
-    """Coverage 8 — captured_test_native_summary.log is 123-01's truncated
-    SUMMARY-tail capture and carries 0 warning: lines, not the real 360 (see
+    """Coverage 8 — captured_test_native_summary.log is a truncated
+    SUMMARY-tail capture (re-captured post-landing by Phase 124 Plan 10) and
+    carries 0 warning: lines, not the real recorded watermark (1166, see
     this module's docstring). A temp baseline pins native.native's
     total_watermark to 0 -- what this truncated tail actually contains --
     proving the OK-at-exact-watermark arm fires rather than exercising the

@@ -28,7 +28,7 @@ Coverage:
   2. Clean native control — both captured_test_native*.log files exit 0 with 141 and 17
      in the PASS: line.
   3. Planted flash regression exits non-zero, prints FAIL:, and the output names both
-     the baseline figure (26072) and the observed figure (26584).
+     the baseline figure (26016, post-landing) and the observed figure (26528).
   4. Planted unparseable log exits exactly 2 (the literal return code, not just
      non-zero) and does NOT print PASS:.
   5. Planted errored-suites log exits non-zero naming ERRORED — proving the gate
@@ -38,9 +38,10 @@ Coverage:
   7. Baseline-seam precedence: pointing FIRESTARTER_SIZE_BASELINE at a temp JSON whose
      Leonardo flash figure differs makes the previously-clean captured_build_leonardo.log
      FAIL — proving the checker genuinely reads the seam rather than embedding numbers.
-  8. --policy merge05 permits the RESEARCH-measured post-landing deltas (Leonardo -56,
-     Uno +22, uno328pb +28, RAM unchanged) against the frozen BASE-01 record — the
-     pre-landing proof that the band mode will pass once the real landing happens.
+  8. --policy merge05 permits the ACTUAL post-landing figures (Leonardo -56, Uno +22,
+     uno328pb +28, RAM unchanged, read straight from the re-captured captured_build_*.log
+     fixtures) against the frozen BASE-01 record — no longer a pre-landing prediction,
+     since Plan 124-10 re-captured the fixtures from the real landed tree.
   9. --policy merge05 fires on a planted +65 B Uno-class flash growth (one byte outside
      the 64 B band), naming both the computed delta and the band.
   10. --policy merge05 fires on a planted +1 B Leonardo flash growth (Leonardo must not
@@ -55,9 +56,24 @@ diffable against the source so a reviewer can see exactly what was planted):
 
   planted_size_baseline_flash_regression.log
     = captured_build_leonardo.log with the Flash: line's `used` figure raised from
-      26072 to 26584 (+512 B). The percentage/bar-graph columns are left exactly as
-      captured (now inconsistent with the new `used` figure) -- a free proof that the
-      parser anchors on the `(used N bytes from M bytes)` tail and never reads the bar.
+      26016 to 26528 (+512 B, the same offset the original Phase-123 fixture used, now
+      applied to the post-landing figure re-captured by Phase 124 Plan 10 -- see below).
+      The percentage/bar-graph columns are left exactly as captured (now inconsistent
+      with the new `used` figure) -- a free proof that the parser anchors on the
+      `(used N bytes from M bytes)` tail and never reads the bar.
+
+  Phase 124 Plan 10 (W-1 half (b)) re-captured captured_build_{uno,uno328pb,leonardo}.log
+  and captured_test_native{,_nodevtools}_summary.log from the post-landing tree (all five
+  code-bearing plans 124-01..09 applied): uno 23954/1573, uno328pb 24004/1579, leonardo
+  26016/2014, both native envs still 141 cases/17 suites. planted_size_baseline_flash_
+  regression.log above was re-derived from the new leonardo capture in the same commit,
+  keeping the same +512 B offset. The three `policy_*` planted fixtures below were NOT
+  re-derived -- they are asserted exclusively against the FROZEN
+  scripts/baseline/size_baseline_base01.json (pre-landing figures), which Plan 124-10
+  never modifies, so their pre-landing numbers (23932/23997, 26072/26073) remain correct
+  and unchanged. The pre-landing `captured_*` fixtures this plan superseded are preserved
+  in git history; their numbers are also preserved permanently in
+  scripts/baseline/size_baseline_base01.json.
 
   planted_size_baseline_unparseable.log
     = captured_build_uno.log with BOTH the `RAM:` and `Flash:` report lines deleted
@@ -90,7 +106,6 @@ test_update_version.py's own comment, not an omission). Stdlib and pytest only.
 
 import json
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -158,8 +173,9 @@ def test_clean_native_both_envs_pass():
 
 def test_planted_flash_regression_flips_checker_to_failure():
     """Coverage 3 — the planted +512 B Leonardo flash figure exits non-zero and names
-    both the baseline (26072) and observed (26584) figures -- the message must name
-    both numbers, not merely fail."""
+    both the baseline (26016, the post-landing figure Phase 124 Plan 10 re-baselined the
+    live default to) and observed (26528) figures -- the message must name both numbers,
+    not merely fail."""
     result = _run_checker(
         ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression.log'}"]
     )
@@ -168,8 +184,8 @@ def test_planted_flash_regression_flips_checker_to_failure():
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "FAIL:" in result.stdout, f"Expected FAIL: in output. Got:\n{result.stdout}"
-    assert "26072" in result.stdout, f"Expected baseline figure 26072. Got:\n{result.stdout}"
-    assert "26584" in result.stdout, f"Expected observed figure 26584. Got:\n{result.stdout}"
+    assert "26016" in result.stdout, f"Expected baseline figure 26016. Got:\n{result.stdout}"
+    assert "26528" in result.stdout, f"Expected observed figure 26528. Got:\n{result.stdout}"
 
 
 def test_planted_unparseable_log_exits_exactly_2():
@@ -248,38 +264,26 @@ def test_baseline_seam_precedence_flips_clean_log_to_fail(tmp_path):
     assert "FAIL:" in result.stdout, f"Expected FAIL: in output. Got:\n{result.stdout}"
 
 
-def _rewrite_flash_used(text, old_used, new_used, total):
-    """Rewrite a captured log's `Flash: ... (used OLD bytes from TOTAL bytes)` tail
-    to NEW, leaving the percentage/bar-graph columns exactly as captured (the parser
-    anchors on the `(used N bytes from M bytes)` tail and never reads the bar)."""
-    pattern = re.compile(
-        rf"\(used {old_used} bytes from {total} bytes\)"
-    )
-    new_text, count = pattern.subn(f"(used {new_used} bytes from {total} bytes)", text)
-    assert count == 1, (
-        f"expected exactly one Flash 'used {old_used} bytes from {total} bytes' "
-        f"occurrence to rewrite, found {count}"
-    )
-    return new_text
+def test_policy_merge05_permits_the_measured_landing_deltas():
+    """Coverage 8 — --policy merge05 PASSES on the ACTUAL post-landing figures, read
+    against the frozen BASE-01 record (scripts/baseline/size_baseline_base01.json),
+    never the live default baseline.
 
-
-def test_policy_merge05_permits_the_measured_landing_deltas(tmp_path):
-    """Coverage 8 — the pre-landing proof that --policy merge05 will PASS on the exact
-    post-landing figures RESEARCH measured on the merged tree (Leonardo -56, Uno +22,
-    uno328pb +28, RAM unchanged in all three), read against the frozen BASE-01 record
-    (scripts/baseline/size_baseline_base01.json), never the live default baseline."""
-    synthesized = {
-        "leonardo": ("captured_build_leonardo.log", 26072, 26016, 28672),
-        "uno": ("captured_build_uno.log", 23932, 23954, 32256),
-        "uno328pb": ("captured_build_uno328pb.log", 23976, 24004, 32384),
-    }
+    Before Phase 124 Plan 10, this test synthesized RESEARCH's *predicted* post-landing
+    deltas (Leonardo -56, Uno +22, uno328pb +28, RAM unchanged) onto tmp_path copies of
+    the then-still-pre-landing captured_build_*.log fixtures, because the real landing
+    had not happened yet. Plan 124-10 re-captured captured_build_{uno,uno328pb,leonardo}
+    .log directly from the real, now-landed tree (uno 23954/1573, uno328pb 24004/1579,
+    leonardo 26016/2014) -- so this test now feeds those committed fixtures straight to
+    the checker with no synthesis step, and the assertion is no longer a *prediction*
+    but a direct measurement of the real MERGE-05 outcome."""
     argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
-    for env, (fixture, old_used, new_used, total) in synthesized.items():
-        text = (_FIXTURES / fixture).read_text()
-        rewritten = _rewrite_flash_used(text, old_used, new_used, total)
-        dest = tmp_path / f"post_landing_{env}.log"
-        dest.write_text(rewritten)
-        argv += ["--avr-log", f"{env}={dest}"]
+    for env, fixture in (
+        ("leonardo", "captured_build_leonardo.log"),
+        ("uno", "captured_build_uno.log"),
+        ("uno328pb", "captured_build_uno328pb.log"),
+    ):
+        argv += ["--avr-log", f"{env}={_FIXTURES / fixture}"]
 
     result = _run_checker(argv)
     assert result.returncode == 0, (

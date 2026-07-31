@@ -1,17 +1,6 @@
 Processing leonardo (platform: atmelavr; board: leonardo; framework: arduino)
 --------------------------------------------------------------------------------
 Verbose mode can be enabled via `-v, --verbose` option
-Removing .pio/build/leonardo
-Done cleaning
-========================= [SUCCESS] Took 0.33 seconds =========================
-
-Environment    Status    Duration
--------------  --------  ------------
-leonardo       SUCCESS   00:00:00.334
-========================= 1 succeeded in 00:00:00.334 =========================
-Processing leonardo (platform: atmelavr; board: leonardo; framework: arduino)
---------------------------------------------------------------------------------
-Verbose mode can be enabled via `-v, --verbose` option
 CONFIGURATION: https://docs.platformio.org/page/boards/atmelavr/leonardo.html
 PLATFORM: Atmel AVR (5.2.0) > Arduino Leonardo
 HARDWARE: ATMEGA32U4 16MHz, 2.50KB RAM, 28KB Flash
@@ -54,8 +43,8 @@ Compiling .pio/build/leonardo/FrameworkArduino/CDC.cpp.o
 Compiling .pio/build/leonardo/FrameworkArduino/HardwareSerial.cpp.o
 Compiling .pio/build/leonardo/FrameworkArduino/HardwareSerial0.cpp.o
 Archiving .pio/build/leonardo/lib5fe/libjsmn.a
-Compiling .pio/build/leonardo/FrameworkArduino/HardwareSerial1.cpp.o
 Indexing .pio/build/leonardo/lib5fe/libjsmn.a
+Compiling .pio/build/leonardo/FrameworkArduino/HardwareSerial1.cpp.o
 Compiling .pio/build/leonardo/FrameworkArduino/HardwareSerial2.cpp.o
 Compiling .pio/build/leonardo/FrameworkArduino/HardwareSerial3.cpp.o
 Compiling .pio/build/leonardo/FrameworkArduino/IPAddress.cpp.o
@@ -83,11 +72,11 @@ Linking .pio/build/leonardo/firestarter_leonardo.elf
 Checking size .pio/build/leonardo/firestarter_leonardo.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [========  ]  78.7% (used 2014 bytes from 2560 bytes)
-Flash: [========= ]  90.9% (used 26584 bytes from 28672 bytes)
+Flash: [========= ]  90.7% (used 26528 bytes from 28672 bytes)
 Building .pio/build/leonardo/firestarter_leonardo.hex
-========================= [SUCCESS] Took 1.20 seconds =========================
+========================= [SUCCESS] Took 1.60 seconds =========================
 
 Environment    Status    Duration
 -------------  --------  ------------
-leonardo       SUCCESS   00:00:01.198
-========================= 1 succeeded in 00:00:01.198 =========================
+leonardo       SUCCESS   00:00:01.601
+========================= 1 succeeded in 00:00:01.601 =========================
