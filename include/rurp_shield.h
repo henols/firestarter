@@ -15,7 +15,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-#include <avr/pgmspace.h>
+#include "rurp_platform_compat.h"
 #include "rurp_types.h"
 #include "rurp_pinout.h"
 
@@ -65,8 +65,14 @@ extern "C" {
     void rurp_set_programmer_mode();
     void rurp_set_communication_mode();
 #else
-#define rurp_set_programmer_mode() ((void)0)
-#define rurp_set_communication_mode() ((void)0)
+    /* Dedicated USB/UART targets do not need to disconnect communication
+     * from the PROM data bus. Keep typed no-op functions instead of macros so
+     * call sites are checked consistently on AVR, RP2040 and native builds. */
+    static inline void rurp_set_programmer_mode(void) {
+    }
+
+    static inline void rurp_set_communication_mode(void) {
+    }
 #endif
 
     int rurp_communication_available();
@@ -75,7 +81,7 @@ extern "C" {
     size_t rurp_communication_write(const char* buffer, size_t size);
     size_t rurp_communication_read_bytes(char* buffer, size_t length);
     int rurp_communication_read_data(char* buffer, size_t cap);
-    
+
 
     // Phase 9: deleted the two legacy text-prefix log declarations
     // (RAM body + PROGMEM body). See 09-CONTEXT.md D-02.
@@ -100,17 +106,34 @@ extern "C" {
 
     void rurp_set_data_output();
     void rurp_set_data_input();
-
-#define rurp_chip_enable() rurp_set_chip_enable(0)  // CE (chip enable) on, enable chip
-#define rurp_chip_disable() rurp_set_chip_enable(1) // CE (chip enable) off, disable chip
-#define rurp_chip_output() rurp_set_chip_output(0)  // OE (output enable) on, enable output
-#define rurp_chip_input() rurp_set_chip_output(1)   // OE (output enable) off, enable input
-
-
-#define rurp_set_chip_enable(state) rurp_set_control_pin(CHIP_ENABLE, state)
-#define rurp_set_chip_output(state) rurp_set_control_pin(OUTPUT_ENABLE, state)
-
     void rurp_set_control_pin(uint8_t pin, uint8_t state);
+
+    /* Logical control helpers are typed inline functions rather than
+     * function-like macros. This preserves zero-overhead call sites while
+     * avoiding repeated argument evaluation and improving portability. */
+    static inline void rurp_set_chip_enable(uint8_t state) {
+        rurp_set_control_pin(CHIP_ENABLE, state);
+    }
+
+    static inline void rurp_set_chip_output(uint8_t state) {
+        rurp_set_control_pin(OUTPUT_ENABLE, state);
+    }
+
+    static inline void rurp_chip_enable(void) {
+        rurp_set_chip_enable(0);  // CE active low: enable chip
+    }
+
+    static inline void rurp_chip_disable(void) {
+        rurp_set_chip_enable(1);  // CE active low: disable chip
+    }
+
+    static inline void rurp_chip_output(void) {
+        rurp_set_chip_output(0);  // OE active low: enable chip output
+    }
+
+    static inline void rurp_chip_input(void) {
+        rurp_set_chip_output(1);  // OE active low: disable chip output
+    }
 
     void rurp_write_to_register(uint8_t reg, rurp_register_t data);
     rurp_register_t rurp_read_from_register(uint8_t reg);
