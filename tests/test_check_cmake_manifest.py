@@ -24,8 +24,11 @@ be silently ineffective (123-RESEARCH.md Correction C-15). This module
 never imports check_cmake_manifest.
 
 Coverage:
-  1. UNARMED on the real tree (no seam override) -- the state of `beta`
-     today, must stay true until Phase 124 lands platform/py32f071/.
+  1. test_armed_and_passing_on_the_real_tree -- no seam override: Phase 124
+     landed platform/py32f071/ and repaired the flash_type_3/4.cpp rename
+     damage (124-05), so this pins the ARMED, PASSING state going forward.
+     A regression to the UNARMED line here would mean platform/py32f071/
+     had disappeared and must fail this test.
   2. UNARMED on clean_unarmed_tree/ through the seam -- proves the arming
      decision follows the supplied root, not the process cwd.
   3. Mismatched path fails with exactly one violation -- the SDK-exempt
@@ -84,21 +87,24 @@ def _run_checker(manifest_root=None):
     )
 
 
-def test_unarmed_on_the_real_tree_with_no_seam_override():
-    """Coverage 1 -- no FIRESTARTER_MANIFEST_ROOT override: the real
-    firmware tree has no platform/py32f071/ yet, so the gate must exit 0
-    and print UNARMED:, naming platform/py32f071. This must stay true
-    until Phase 124 lands the port."""
+def test_armed_and_passing_on_the_real_tree():
+    """Coverage 1 -- no FIRESTARTER_MANIFEST_ROOT override: Phase 124 landed
+    platform/py32f071/ and repaired the flash_type_3/4.cpp rename damage
+    (124-05), so the gate is now ARMED and must exit 0 with a PASS: line
+    naming platform/py32f071. A fixed, armed gate never reprints the
+    UNARMED line on its own -- a regression back to UNARMED here would mean
+    platform/py32f071/ had disappeared from the tree entirely, and this
+    test must fail that."""
     result = _run_checker(manifest_root=None)
     assert result.returncode == 0, (
-        f"expected exit 0 on the real, still-unarmed tree.\n"
+        f"expected exit 0 on the real, now-armed-and-passing tree.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
-    assert result.stdout.startswith("UNARMED:"), (
-        f"expected output to start with 'UNARMED:'. Got:\n{result.stdout}"
+    assert "PASS:" in result.stdout, (
+        f"expected output to contain 'PASS:'. Got:\n{result.stdout}"
     )
     assert "platform/py32f071" in result.stdout, (
-        f"expected 'platform/py32f071' named in the UNARMED message. "
+        f"expected 'platform/py32f071' named on the PASS line. "
         f"Got:\n{result.stdout}"
     )
 
