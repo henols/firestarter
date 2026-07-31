@@ -20,6 +20,7 @@
 #include "not_implemented.h"
 #include "operation_utils.h"
 #include "proto_constants.h"
+#include "rurp_pinmap_guard.h"
 #include "rurp_shield.h"
 #include "rurp_pinout.h"
 #include "sram.h"
@@ -44,6 +45,30 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_operation_init = NULL;
     handle->firestarter_operation_main = NULL;
     handle->firestarter_operation_end = NULL;
+
+    // MERGE-04 (D-11/D-12/D-13): while the board's pin map is provisional
+    // (RURP_PINMAP_PROVISIONAL, defined by a board header such as
+    // include/boards/py32f071_rurp_shield.h), refuse every command that
+    // can energise the PROM bus BEFORE any handler configuration below.
+    // The three operation pointers are already NULL at this point (above),
+    // so this early return leaves the handle in exactly the same shape
+    // configure_not_implemented() produces (src/proms/not_implemented.cpp)
+    // -- no operation pointer is ever installed for a refused command.
+    // The payload is the COMMAND ordinal (handle->cmd), not the protocol
+    // ordinal not_implemented.cpp logs -- this is a command-admission
+    // refusal, not a protocol-dispatch refusal. Reusing the existing
+    // MSG_ERR_NOT_SUPPORTED id is deliberate (D-13): a dedicated id would
+    // cost a meta-repo messages.toml edit, a codegen regen, and host
+    // constants-parity churn -- cross-repo surface this phase's premise is
+    // to prove nothing else moved. The dedicated-id option is recorded as
+    // a deferred idea in 124-CONTEXT.md. On every AVR target
+    // RURP_PINMAP_PROVISIONAL is never defined (default 0 in
+    // rurp_pinmap_guard.h), so this guard compiles to nothing there.
+    if (rurp_pinmap_refuses(handle->cmd)) {
+        LOG_ERROR_ID_U8(MSG_ERR_NOT_SUPPORTED, (uint8_t)handle->cmd);
+        handle->response_code = RESPONSE_CODE_ERROR;
+        return;
+    }
 
     switch (handle->cmd) {
         case CMD_READ:

@@ -25,8 +25,13 @@ would be silently ineffective (123-RESEARCH.md Correction C-15). This
 module never imports check_orphan_provisional.
 
 Coverage:
-  1. UNARMED on the real tree (no seam override) -- the state of `beta`
-     today, must stay true until Phase 124 lands platform/py32f071/.
+  1. ARMED and PASSING on the real tree (no seam override) -- Phase 124
+     landed platform/py32f071/ and wired both provisional macros'
+     consumers (py32f071_rurp_shield.h's bridging block, and
+     rurp_pinmap_guard.h's refusal predicate consumed by
+     configure_memory()), so this test now pins the armed, passing state.
+     A regression to the UNARMED: line would mean platform/py32f071/ had
+     disappeared from the tree.
   2. UNARMED on the shared clean_unarmed_tree/ through the seam -- proves
      the arming decision follows the supplied root, not the process cwd.
   3. The planted orphan fails with exactly one violation, naming the
@@ -89,25 +94,43 @@ def _run_checker(provisional_root=None):
     )
 
 
-def test_unarmed_on_the_real_tree_with_no_seam_override():
-    """Coverage 1 -- no FIRESTARTER_PROVISIONAL_ROOT override: the real
-    firmware tree has no platform/py32f071/ yet, so the gate must exit 0
-    and print UNARMED:, naming platform/py32f071. This must stay true
-    until Phase 124 lands the port."""
+def test_armed_and_passing_on_the_real_tree():
+    """Coverage 1 -- no FIRESTARTER_PROVISIONAL_ROOT override: Phase 124
+    landed platform/py32f071/ on this tree AND wired both consumers (the
+    py32 board header's bridging block, and rurp_pinmap_guard.h's refusal
+    predicate consumed by configure_memory()), so the gate is now ARMED
+    and PASSING -- not UNARMED. This test pins that armed, passing state:
+    a regression back to the UNARMED: line would mean platform/py32f071/
+    had disappeared from the real tree.
+
+    Superseded assertion, deliberately NOT restored: the prior UNARMED-era
+    version asserted 'platform/py32f071' was named in the message. The
+    armed PASS: line does not name a directory at all (it names macros and
+    consumer counts) -- re-verified against the real output below, this
+    assertion is correctly dropped rather than weakened to keep it.
+
+    Also deliberately NOT restored: the prior version asserted '124' (the
+    phase number) appeared in the UNARMED message. The armed PASS: line
+    never names a phase number either -- weakening the assertion just to
+    preserve a '124' substring match would be backwards, so it is dropped,
+    not kept."""
     result = _run_checker(provisional_root=None)
     assert result.returncode == 0, (
-        f"expected exit 0 on the real, still-unarmed tree.\n"
+        f"expected exit 0 on the real, now-armed-and-passing tree.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
-    assert result.stdout.startswith("UNARMED:"), (
-        f"expected output to start with 'UNARMED:'. Got:\n{result.stdout}"
+    assert "PASS:" in result.stdout, (
+        f"expected 'PASS:' in output. Got:\n{result.stdout}"
     )
-    assert "platform/py32f071" in result.stdout, (
-        f"expected 'platform/py32f071' named in the UNARMED message. "
-        f"Got:\n{result.stdout}"
+    assert "RURP_PY32F071_PINMAP_PROVISIONAL" in result.stdout, (
+        f"expected the py32-specific provisional macro named on the PASS: "
+        f"line -- this is the substantive new thing the armed state "
+        f"proves. Got:\n{result.stdout}"
     )
-    assert "124" in result.stdout, (
-        f"expected Phase 124 named in the UNARMED message. Got:\n{result.stdout}"
+    assert "RURP_PINMAP_PROVISIONAL" in result.stdout, (
+        f"expected the platform-neutral provisional macro named on the "
+        f"PASS: line -- this is the substantive new thing the armed state "
+        f"proves. Got:\n{result.stdout}"
     )
 
 
