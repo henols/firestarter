@@ -50,12 +50,14 @@ glob exactly the "introduced in this milestone" set BASE-08 names, with no
 registry file (forbidden by D-08) and no grandfather allow-list (which
 would silently bless the 3 violators above rather than naming them).
 
-FLOOR = 4 -- the number of `check_*.py` files actually shipped into
-`firestarter/scripts/` by this phase: `check_size_baseline.py`,
-`check_build_warnings.py`, `check_cmake_manifest.py` and
-`check_orphan_provisional.py`. FIXTURE_FLOOR = 9 -- the number of
+FLOOR = 5 -- the number of `check_*.py` files actually shipped into
+`firestarter/scripts/` across Phases 123-124: `check_size_baseline.py`,
+`check_build_warnings.py`, `check_cmake_manifest.py`,
+`check_orphan_provisional.py` (Phase 123) and `check_landing_range.py`
+(Phase 124 Plan 01, MERGE-01). FIXTURE_FLOOR = 10 -- the number of
 `planted_*` entries actually present in `firestarter/tests/fixtures/` at
-authoring time. Both floors are hardcoded integer literals asserted with
+authoring time, including Phase 124's `planted_landing_range_replayed_history/`
+recipe stub. Both floors are hardcoded integer literals asserted with
 `>=` before any per-checker assertion runs, so a zero-match glob, an
 accidental deletion, or a shrunken fixture set all FAIL instead of passing
 silently. A later phase that adds a firmware checker under
@@ -118,8 +120,8 @@ CHECKER_GLOB = "check_*.py"
 
 # Hardcoded floors -- see module docstring for what each counts and why a
 # future checker addition must raise these in the same commit.
-FLOOR = 4
-FIXTURE_FLOOR = 9
+FLOOR = 5
+FIXTURE_FLOOR = 10
 
 # The three pre-existing, out-of-scope host-repo violators named for the
 # record (module docstring). Not used in any assertion below -- this

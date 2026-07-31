@@ -201,21 +201,25 @@ def stack_present_in_commit(commit, key=PY32_KEY):
 
 def scan_range(fork, ref="HEAD"):
     """Walk every commit in fork..ref and return (scanned, carrying,
-    violations) where violations is a list of human-readable strings."""
+    violations) where violations is a list of human-readable strings.
+
+    One violation is recorded per VIOLATING COMMIT, not per marker: a
+    commit carrying both PORTABILITY_MARKERS without the py32 stack is one
+    landing-shape violation, not two, so the stack check runs once per
+    commit against the FIRST marker found present (deterministic, per
+    PORTABILITY_MARKERS' declared order), not once per present marker.
+    """
     commits = list_range_commits(fork, ref)
     scanned = len(commits)
     carrying = 0
     violations = []
     for commit in commits:
-        commit_carries = False
-        for marker in PORTABILITY_MARKERS:
-            if not path_exists_in_commit(commit, marker):
-                continue
-            commit_carries = True
-            if not stack_present_in_commit(commit):
-                violations.append(f"{commit} carries {marker} without {PY32_KEY}/")
-        if commit_carries:
-            carrying += 1
+        present_markers = [m for m in PORTABILITY_MARKERS if path_exists_in_commit(commit, m)]
+        if not present_markers:
+            continue
+        carrying += 1
+        if not stack_present_in_commit(commit):
+            violations.append(f"{commit} carries {present_markers[0]} without {PY32_KEY}/")
     return scanned, carrying, violations
 
 
