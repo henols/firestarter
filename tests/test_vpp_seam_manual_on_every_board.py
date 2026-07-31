@@ -52,6 +52,27 @@ Coverage:
   3. test_unset_and_non_avr_fails_closed_in_the_header -- D-08: compiling
      with neither __AVR__ nor an explicit RURP_HAS_VPP_DAC defined produces
      a non-zero compile exit carrying include/rurp_vpp.h's own #error text.
+  4. test_board_macro_sets_match_the_real_build_config -- D-04 via
+     RESEARCH C-6: the four hardcoded board macro-sets above are kept
+     honest by asserting their real anchors are still literally present in
+     platformio.ini (the three AVR env headers + board lines) and
+     platform/py32f071/CMakeLists.txt (the two ARM defines). Deliberately
+     NOT anchored on the framework-supplied ARDUINO_AVR_* macros, which
+     appear nowhere in platformio.ini and would fail this leg on arrival.
+  5. test_build_supplies_the_capability_macro_the_header_only_tests --
+     D-07: platform/py32f071/CMakeLists.txt's target_compile_definitions
+     declares RURP_HAS_VPP_DAC=0, and separately,
+     include/boards/py32f071_rurp_shield.h contains no top-level #define of
+     that macro -- the regression guard against Phase 124's hollow-guard
+     shape (a macro defined by the very file that tests it) returning here.
+  6. test_seam_source_is_dependency_free -- D-02: src/rurp_vpp.cpp's only
+     #include directive names the seam header itself. Turns D-02's
+     standing constraint into something a future edit cannot quietly
+     break.
+  7. test_compiler_is_required_not_optional -- this module's own source
+     contains no skip decorator and no skip call, so the fail-closed
+     contract in _resolve_compiler is self-enforcing and cannot be
+     silently bypassed by a future edit.
 """
 
 import os
@@ -67,6 +88,9 @@ _REPO_ROOT = _HERE.parent
 _INCLUDE = _REPO_ROOT / "include"
 _SEAM_HEADER = _INCLUDE / "rurp_vpp.h"
 _SEAM_SRC = _REPO_ROOT / "src" / "rurp_vpp.cpp"
+_PLATFORMIO_INI = _REPO_ROOT / "platformio.ini"
+_PY32_CMAKE = _REPO_ROOT / "platform" / "py32f071" / "CMakeLists.txt"
+_PY32_BOARD_HEADER = _INCLUDE / "boards" / "py32f071_rurp_shield.h"
 
 _EXPECTED_MODE_MANUAL = 0
 _EXPECTED_RESULT_MANUAL_REQUIRED = 1
@@ -303,4 +327,142 @@ def test_unset_and_non_avr_fails_closed_in_the_header(tmp_path):
     assert expected_text in result.stderr, (
         f"expected include/rurp_vpp.h's own #error text in stderr.\n"
         f"Expected substring: {expected_text!r}\nGot stderr:\n{result.stderr}"
+    )
+
+
+def test_board_macro_sets_match_the_real_build_config():
+    """Coverage 4 -- D-04 via RESEARCH C-6: the four board macro-sets
+    hardcoded into _BOARD_MACRO_SETS above are kept honest by this drift
+    leg, which asserts their real anchors are still literally present in
+    the real build config. Substring presence against a plain file read is
+    the whole mechanism -- neither platformio.ini nor CMakeLists.txt is
+    parsed into a structure (tests/scan_paths.py's own stated principle:
+    "deliberately explicit, never derived"; the two build systems also have
+    incompatible #define syntaxes, so a derived version would be two
+    parsers).
+
+    Deliberately NOT anchored on ARDUINO_AVR_UNO / ARDUINO_AVR_LEONARDO /
+    ARDUINO_AVR_ATmega328PB: RESEARCH measured those come from the Arduino
+    framework and board JSON and appear NOWHERE in platformio.ini, so a leg
+    keyed on them fails the moment it is written, and the tempting "fix" is
+    to weaken it into something vacuous. The honest anchors, all literal
+    and all present, are the `[env:<name>]` section header plus its
+    `board = <value>` line for each AVR env, and the two ARM
+    target_compile_definitions entries for py32f071.
+
+    Note the four board legs' own macro-sets (Coverage 1) deliberately
+    include the framework board macros (ARDUINO_AVR_UNO and friends) as
+    part of each board's compile-time identity -- that is correct and
+    required there. This leg is about what the BUILD FILES contain, not
+    about what the compile legs pass to the compiler; a file-wide search of
+    this module for those framework macro names will and should find them
+    in _BOARD_MACRO_SETS above."""
+    platformio_text = _PLATFORMIO_INI.read_text()
+    cmake_text = _PY32_CMAKE.read_text()
+
+    avr_anchors = (
+        ("[env:uno]", "board = uno"),
+        ("[env:uno328pb]", "board = ATmega328PB"),
+        ("[env:leonardo]", "board = leonardo"),
+    )
+    for env_header, board_line in avr_anchors:
+        assert env_header in platformio_text, (
+            f"drift detected: expected {env_header!r} in {_PLATFORMIO_INI} -- "
+            f"the hardcoded board macro-set in this module's "
+            f"_BOARD_MACRO_SETS has drifted from the real build config."
+        )
+        assert board_line in platformio_text, (
+            f"drift detected: expected {board_line!r} in {_PLATFORMIO_INI} -- "
+            f"the hardcoded board macro-set in this module's "
+            f"_BOARD_MACRO_SETS has drifted from the real build config."
+        )
+
+    arm_anchors = ("RURP_PLATFORM_PY32F071=1", 'RURP_BOARD_NAME="py32f071"')
+    for anchor in arm_anchors:
+        assert anchor in cmake_text, (
+            f"drift detected: expected {anchor!r} in {_PY32_CMAKE} -- the "
+            f"hardcoded py32f071 macro-set in this module's "
+            f"_BOARD_MACRO_SETS has drifted from the real build config."
+        )
+
+
+def test_build_supplies_the_capability_macro_the_header_only_tests():
+    """Coverage 5 -- D-07: the ARM build supplies what the header only
+    tests, in both directions. First, platform/py32f071/CMakeLists.txt's
+    target_compile_definitions genuinely declares RURP_HAS_VPP_DAC=0 (the
+    value is 0, not 1, because no PY32F071 PCB exists -- there is no
+    hardware to validate a DAC against; the closed branch
+    origin/feature/py32f071-full-support, PR #47, chose 1 and is out of
+    scope; AVR manual control is permanent (D-05), never provisional).
+    Second, include/boards/py32f071_rurp_shield.h contains NO top-level
+    #define of RURP_HAS_VPP_DAC -- the direct regression guard against
+    Phase 124's hollow-guard shape returning: a definition in the board
+    header would make include/rurp_vpp.h's own guard permanently unfirable,
+    exactly the defect Phase 124 Plan 09 had to repair for a different
+    macro."""
+    cmake_text = _PY32_CMAKE.read_text()
+    board_header_text = _PY32_BOARD_HEADER.read_text()
+
+    assert "RURP_HAS_VPP_DAC=0" in cmake_text, (
+        f"expected target_compile_definitions in {_PY32_CMAKE} to declare "
+        f"RURP_HAS_VPP_DAC=0 -- the build must supply this macro for the "
+        f"py32f071 target; the header itself never defines it for a "
+        f"non-AVR platform.\nGot:\n{cmake_text}"
+    )
+    assert not re.search(r"^\s*#\s*define\s+RURP_HAS_VPP_DAC\b", board_header_text, re.MULTILINE), (
+        f"expected {_PY32_BOARD_HEADER} to contain NO #define of "
+        f"RURP_HAS_VPP_DAC -- the board header must only ever consume this "
+        f"macro (indirectly, via include/rurp_vpp.h), never define it "
+        f"itself. Finding a #define here means the hollow-guard defect has "
+        f"returned: the macro would once again be defined by a file "
+        f"upstream of the guard that tests it, so include/rurp_vpp.h's "
+        f"#if !defined(...) guard could never fire again for this "
+        f"platform.\nGot:\n{board_header_text}"
+    )
+
+
+def test_seam_source_is_dependency_free():
+    """Coverage 6 -- D-02: src/rurp_vpp.cpp's only #include directive names
+    the seam header itself. D-02 is a standing constraint, not a local
+    convenience -- it is what lets this harness need zero stub scaffolding,
+    and a later phase wanting configuration or hardware access must add
+    the dependency deliberately rather than by drift. Inverted from the
+    pinmap precedent's coverage-4 shape (which asserts NO #include exists
+    in a dependency-free fragment header): here exactly ONE #include is
+    expected, and any second one is the violation."""
+    text = _SEAM_SRC.read_text()
+    includes = re.findall(r'^\s*#\s*include\s+"([^"]+)"', text, re.MULTILINE)
+    assert len(includes) == 1, (
+        f"expected exactly one #include directive in {_SEAM_SRC} (D-02: "
+        f"the seam's implementation is dependency-free by construction, "
+        f"never gaining a second dependency by drift), got {len(includes)}: "
+        f"{includes!r}.\nGot:\n{text}"
+    )
+    assert includes[0] == "rurp_vpp.h", (
+        f"expected {_SEAM_SRC}'s one #include to name the seam header "
+        f"'rurp_vpp.h', got {includes[0]!r}.\nGot:\n{text}"
+    )
+
+
+def test_compiler_is_required_not_optional():
+    """Coverage 7 -- this module's own source contains no skip decorator
+    and no skip call anywhere, so the fail-closed contract in
+    _resolve_compiler is self-enforcing and cannot be silently bypassed by
+    a future edit. An absence-proxy skip reporting success at exit 0 is
+    precisely the failure class this milestone's Phase 123 removed.
+
+    The two needle strings below are built via concatenation (not written
+    verbatim) so this test's own assertion text does not trip its own
+    check -- the literal substrings must appear NOWHERE in this file,
+    including inside this test's failure messages."""
+    own_text = Path(__file__).read_text()
+    skip_call = "pytest" + ".skip"
+    skipif_marker = "mark" + ".skipif"
+    assert skip_call not in own_text, (
+        "expected no " + skip_call + " call anywhere in this module -- the "
+        "compiler-absence case must FAIL, never SKIP."
+    )
+    assert skipif_marker not in own_text, (
+        "expected no @pytest." + skipif_marker + " decorator anywhere in "
+        "this module -- the compiler-absence case must FAIL, never SKIP."
     )
