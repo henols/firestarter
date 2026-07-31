@@ -27,6 +27,11 @@ set(REPOSITORY_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
 set(PY32_SDK_ROOT "${py32f071_sdk_SOURCE_DIR}")
 set(LINKER_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/linker/PY32F071xB_FLASH.ld")
 
+# PY32_EXCLUDED: src/boards/uno_rurp_shield.cpp -- AVR board impl, no ARM analogue
+# PY32_EXCLUDED: src/boards/leonardo_rurp_shield.cpp -- AVR board impl, no ARM analogue
+# PY32_EXCLUDED: src/boards/rurp_common.cpp -- AVR-specific common
+# PY32_EXCLUDED: src/dev_tools.cpp -- no ARM dev-tools TU; DEV_TOOLS resolves to 0 by the shared default (MERGE-08, D-02)
+# PY32_EXCLUDED: src/rurp_config_utils.cpp -- Phase 126 per-platform config backend split; THIS EXCLUSION WILL NEED REVISITING in Phase 126, it is not a permanent exclusion.
 set(FIRESTARTER_COMMON_SOURCES
     "${REPOSITORY_ROOT}/src/firestarter.cpp"
     "${REPOSITORY_ROOT}/src/eprom_operations.cpp"
@@ -37,8 +42,8 @@ set(FIRESTARTER_COMMON_SOURCES
     "${REPOSITORY_ROOT}/src/proms/memory.cpp"
     "${REPOSITORY_ROOT}/src/proms/eprom.cpp"
     "${REPOSITORY_ROOT}/src/proms/eeprom_28c.cpp"
-    "${REPOSITORY_ROOT}/src/proms/flash_type_3.cpp"
-    "${REPOSITORY_ROOT}/src/proms/flash_type_4.cpp"
+    "${REPOSITORY_ROOT}/src/proms/flash_nor_unlock.cpp"
+    "${REPOSITORY_ROOT}/src/proms/flash_5v_page.cpp"
     "${REPOSITORY_ROOT}/src/proms/flash_intel.cpp"
     "${REPOSITORY_ROOT}/src/proms/flash_utils.cpp"
     "${REPOSITORY_ROOT}/src/proms/sram.cpp"
@@ -96,6 +101,10 @@ target_include_directories(
         "${PY32_SDK_ROOT}/Middlewares/Third_Party/CherryUSB/class/cdc"
 )
 
+# DEV_TOOLS is deliberately NOT defined for the ARM target (MERGE-08, D-02):
+# the shared value-semantics default (#ifndef DEV_TOOLS / #define DEV_TOOLS 0
+# / #endif) resolves it to 0 here, the same as native_nodevtools. This is an
+# explicit commented decision, not an accident of the defines below.
 target_compile_definitions(
     ${TARGET_NAME}
     PRIVATE
