@@ -38,6 +38,17 @@ Coverage:
   7. Baseline-seam precedence: pointing FIRESTARTER_SIZE_BASELINE at a temp JSON whose
      Leonardo flash figure differs makes the previously-clean captured_build_leonardo.log
      FAIL — proving the checker genuinely reads the seam rather than embedding numbers.
+  8. --policy merge05 permits the RESEARCH-measured post-landing deltas (Leonardo -56,
+     Uno +22, uno328pb +28, RAM unchanged) against the frozen BASE-01 record — the
+     pre-landing proof that the band mode will pass once the real landing happens.
+  9. --policy merge05 fires on a planted +65 B Uno-class flash growth (one byte outside
+     the 64 B band), naming both the computed delta and the band.
+  10. --policy merge05 fires on a planted +1 B Leonardo flash growth (Leonardo must not
+      grow at all), naming the env and the computed delta.
+  11. --policy merge05 fires on a planted +1 B RAM move (RAM equality holds under the
+      band mode too), naming ram_used.
+  12. The default (no --policy) mode is unchanged by the new flag: all three captured
+      logs still exit 0 and the output never contains the band-mode `<=64` substring.
 
 Derivation of each planted fixture from its named captured_ source (single stated edit,
 diffable against the source so a reviewer can see exactly what was planted):
@@ -59,6 +70,19 @@ diffable against the source so a reviewer can see exactly what was planted):
       total (141) and all 17 rows present -- A-4's exact failure mode: the suite count
       still reads 17, so a gate asserting only the count would incorrectly pass.
 
+  planted_size_baseline_policy_uno_over_band.log
+    = captured_build_uno.log with the Flash: line's `used` figure raised from 23932 to
+      23997 (+65 B — one byte outside MERGE-05's 64 B uno-class band). Everything else,
+      including the now-stale percentage/bar columns, is left exactly as captured.
+
+  planted_size_baseline_policy_leonardo_growth.log
+    = captured_build_leonardo.log with the Flash: line's `used` figure raised from
+      26072 to 26073 (+1 B — Leonardo must not grow at all under MERGE-05).
+
+  planted_size_baseline_policy_ram_moved.log
+    = captured_build_uno.log with the RAM: line's `used` figure raised from 1573 to
+      1574 (+1 B — RAM equality is enforced under the band mode too, on all three envs).
+
 Self-contained path resolution below — NOT in conftest.py (firestarter/tests/ has no
 conftest.py anywhere in the repo; this is a recorded house-rule pattern decision, per
 test_update_version.py's own comment, not an omission). Stdlib and pytest only.
@@ -66,6 +90,7 @@ test_update_version.py's own comment, not an omission). Stdlib and pytest only.
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -75,6 +100,7 @@ _REPO_ROOT = _HERE.parent
 _CHECKER = _REPO_ROOT / "scripts" / "check_size_baseline.py"
 _FIXTURES = _HERE / "fixtures"
 _BASELINE = _REPO_ROOT / "scripts" / "baseline" / "size_baseline.json"
+_BASE01_BASELINE = _REPO_ROOT / "scripts" / "baseline" / "size_baseline_base01.json"
 
 
 def _run_checker(argv=None, env_overrides=None):
@@ -220,3 +246,128 @@ def test_baseline_seam_precedence_flips_clean_log_to_fail(tmp_path):
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "FAIL:" in result.stdout, f"Expected FAIL: in output. Got:\n{result.stdout}"
+
+
+def _rewrite_flash_used(text, old_used, new_used, total):
+    """Rewrite a captured log's `Flash: ... (used OLD bytes from TOTAL bytes)` tail
+    to NEW, leaving the percentage/bar-graph columns exactly as captured (the parser
+    anchors on the `(used N bytes from M bytes)` tail and never reads the bar)."""
+    pattern = re.compile(
+        rf"\(used {old_used} bytes from {total} bytes\)"
+    )
+    new_text, count = pattern.subn(f"(used {new_used} bytes from {total} bytes)", text)
+    assert count == 1, (
+        f"expected exactly one Flash 'used {old_used} bytes from {total} bytes' "
+        f"occurrence to rewrite, found {count}"
+    )
+    return new_text
+
+
+def test_policy_merge05_permits_the_measured_landing_deltas(tmp_path):
+    """Coverage 8 — the pre-landing proof that --policy merge05 will PASS on the exact
+    post-landing figures RESEARCH measured on the merged tree (Leonardo -56, Uno +22,
+    uno328pb +28, RAM unchanged in all three), read against the frozen BASE-01 record
+    (scripts/baseline/size_baseline_base01.json), never the live default baseline."""
+    synthesized = {
+        "leonardo": ("captured_build_leonardo.log", 26072, 26016, 28672),
+        "uno": ("captured_build_uno.log", 23932, 23954, 32256),
+        "uno328pb": ("captured_build_uno328pb.log", 23976, 24004, 32384),
+    }
+    argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
+    for env, (fixture, old_used, new_used, total) in synthesized.items():
+        text = (_FIXTURES / fixture).read_text()
+        rewritten = _rewrite_flash_used(text, old_used, new_used, total)
+        dest = tmp_path / f"post_landing_{env}.log"
+        dest.write_text(rewritten)
+        argv += ["--avr-log", f"{env}={dest}"]
+
+    result = _run_checker(argv)
+    assert result.returncode == 0, (
+        f"expected --policy merge05 to permit the measured post-landing deltas "
+        f"against the frozen BASE-01 record.\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    assert "PASS:" in result.stdout, f"Expected PASS: in stdout. Got:\n{result.stdout}"
+
+
+def test_policy_merge05_fires_on_uno_class_over_band():
+    """Coverage 9 — the planted +65 B Uno-class flash growth (one byte outside the
+    64 B band) must fail --policy merge05, naming both the computed delta and the
+    band it exceeds."""
+    result = _run_checker(
+        [
+            "--policy",
+            "merge05",
+            "--baseline",
+            str(_BASE01_BASELINE),
+            "--avr-log",
+            f"uno={_FIXTURES / 'planted_size_baseline_policy_uno_over_band.log'}",
+        ]
+    )
+    assert result.returncode != 0, (
+        f"expected non-zero exit on a planted +65 B uno-class flash growth.\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    assert "delta=+65" in result.stdout, f"Expected 'delta=+65'. Got:\n{result.stdout}"
+    assert "band of 64" in result.stdout, f"Expected 'band of 64'. Got:\n{result.stdout}"
+
+
+def test_policy_merge05_fires_on_leonardo_growth():
+    """Coverage 10 — the planted +1 B Leonardo flash growth must fail --policy
+    merge05 (Leonardo must not grow at all), naming the env and the delta."""
+    result = _run_checker(
+        [
+            "--policy",
+            "merge05",
+            "--baseline",
+            str(_BASE01_BASELINE),
+            "--avr-log",
+            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth.log'}",
+        ]
+    )
+    assert result.returncode != 0, (
+        f"expected non-zero exit on a planted +1 B Leonardo flash growth.\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    assert "leonardo" in result.stdout, f"Expected 'leonardo'. Got:\n{result.stdout}"
+    assert "delta=+1" in result.stdout, f"Expected 'delta=+1'. Got:\n{result.stdout}"
+
+
+def test_policy_merge05_fires_on_ram_move():
+    """Coverage 11 — the planted +1 B RAM move must fail --policy merge05 (RAM
+    equality holds under the band mode too), naming ram_used."""
+    result = _run_checker(
+        [
+            "--policy",
+            "merge05",
+            "--baseline",
+            str(_BASE01_BASELINE),
+            "--avr-log",
+            f"uno={_FIXTURES / 'planted_size_baseline_policy_ram_moved.log'}",
+        ]
+    )
+    assert result.returncode != 0, (
+        f"expected non-zero exit on a planted +1 B RAM move.\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    assert "ram_used" in result.stdout, f"Expected 'ram_used'. Got:\n{result.stdout}"
+
+
+def test_default_mode_is_unchanged_by_the_new_flag():
+    """Coverage 12 — T-124-08: the default (no --policy) mode must be textually
+    unchanged by the new flag's addition. All three captured logs still exit 0 and
+    the output never contains the band-mode `<=64` substring."""
+    for env_name, fixture in (
+        ("uno", "captured_build_uno.log"),
+        ("uno328pb", "captured_build_uno328pb.log"),
+        ("leonardo", "captured_build_leonardo.log"),
+    ):
+        result = _run_checker(["--avr-log", f"{env_name}={_FIXTURES / fixture}"])
+        assert result.returncode == 0, (
+            f"{env_name}: expected exit 0 on a clean captured log in default mode.\n"
+            f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+        )
+        assert "<=64" not in result.stdout, (
+            f"{env_name}: default mode must never emit the band-mode '<=64' "
+            f"substring. Got:\n{result.stdout}"
+        )
