@@ -37,6 +37,38 @@
 #define RURP_PY32F071_PINMAP_CONFIGURED 1
 #define RURP_PY32F071_PINMAP_PROVISIONAL 1
 
+/*
+ * Phase 124 Plan 08 (MERGE-04, D-11/D-12): bridge this board-specific
+ * provisional flag to the platform-neutral RURP_PINMAP_PROVISIONAL flag
+ * that include/rurp_pinmap_guard.h's shared refusal predicate tests. This
+ * single block does two jobs at once:
+ *
+ *   1. The `#if RURP_PY32F071_PINMAP_PROVISIONAL` test below is itself a
+ *      real CONSUMER of RURP_PY32F071_PINMAP_PROVISIONAL, discharging
+ *      scripts/check_orphan_provisional.py for THIS macro -- before this
+ *      block, the flag had zero consumers repo-wide (the exact violation
+ *      that gate reported on arrival).
+ *   2. It DEFINES the neutral flag, wrapped in its own inner #ifndef so a
+ *      command-line definition of RURP_PINMAP_PROVISIONAL still wins
+ *      without triggering a macro-redefinition warning
+ *      (check_build_warnings.py counts those).
+ *
+ * Per correction C-12, firestarter/tests/ is NOT scanned by
+ * check_orphan_provisional.py, so a pytest cannot serve as either macro's
+ * consumer -- both consumers must live in include/, src/, platform/ or
+ * test/, which is exactly where this block and rurp_pinmap_guard.h sit.
+ *
+ * REMOVING this block would make RURP_PY32F071_PINMAP_PROVISIONAL orphaned
+ * again (zero consumers) AND would silently stop defining
+ * RURP_PINMAP_PROVISIONAL, which would make configure_memory()'s refusal
+ * compile away on this board -- do not remove without replacing both jobs.
+ */
+#if RURP_PY32F071_PINMAP_PROVISIONAL
+#ifndef RURP_PINMAP_PROVISIONAL
+#define RURP_PINMAP_PROVISIONAL 1
+#endif
+#endif
+
 #define RURP_PY32F071_ENABLE_GPIO_CLOCKS() \
     do                                             \
     {                                              \
