@@ -39,6 +39,7 @@ set(FIRESTARTER_COMMON_SOURCES
     "${REPOSITORY_ROOT}/src/operation_utils.cpp"
     "${REPOSITORY_ROOT}/src/json_parser.c"
     "${REPOSITORY_ROOT}/src/boards/rurp_serial_utils.cpp"
+    "${REPOSITORY_ROOT}/src/rurp_vpp.cpp"
     "${REPOSITORY_ROOT}/src/proms/memory.cpp"
     "${REPOSITORY_ROOT}/src/proms/eprom.cpp"
     "${REPOSITORY_ROOT}/src/proms/eeprom_28c.cpp"
@@ -114,6 +115,18 @@ target_include_directories(
 # named error instead of silently compiling an unconfigured, provisional
 # pin map. This target is the only one that compiles the py32 board
 # header, so this is the only place it is supplied.
+#
+# RURP_HAS_VPP_DAC (Phase 125, VPP-01/VPP-02, D-05/D-07/D-12) is the same
+# pattern applied to the VPP control capability seam (include/rurp_vpp.h):
+# that header never defines the macro for a non-AVR target, it only tests
+# what the build supplies, so this is also the only place it is supplied
+# for py32f071. It is set to 0, not 1, because no PY32F071 PCB exists --
+# there is no hardware to validate a DAC against, so 0 (manual/unregulated,
+# same as every AVR-class board) is the only defensible value. This is a
+# deliberate divergence from the closed branch
+# origin/feature/py32f071-full-support (PR #47, closed, Out of Scope), which
+# sets RURP_HAS_VPP_DAC=1 and implements a feedback-loop DAC driver; PR #47's
+# 1 must not be treated as prior art to restore here absent real hardware.
 target_compile_definitions(
     ${TARGET_NAME}
     PRIVATE
@@ -124,6 +137,7 @@ target_compile_definitions(
         MONITOR_SPEED=250000
         DATA_BUFFER_SIZE=512
         RURP_PY32F071_PINMAP_CONFIGURED=1
+        RURP_HAS_VPP_DAC=0
 )
 
 target_compile_features(${TARGET_NAME} PRIVATE c_std_11 cxx_std_17)
