@@ -1,10 +1,59 @@
 ENTRY(Reset_Handler)
 
+/* Flash map. Geometry is NOT guessed here -- see platform/py32f071/CONFIG-STORAGE.md
+ * §"Flash geometry": Puya PY32F07X Reference Manual V0.2 §4.1/§4.2.1/Table 4-1,
+ * page = 256 B, sector = 8192 B, main flash 0x08000000..0x0801FFFF (128 KiB).
+ * That record landed in a commit PRECEDING this file's first edit (CFG-02).
+ */
 MEMORY
 {
-    FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 128K
+    /* D-13 -- NAMED SEAM ONLY, ZERO LENGTH, for Phase 129 (PCB-03/FUT-N05) to cite.
+     *
+     * READ THIS BEFORE GIVING IT A SIZE. Unlike the CONFIG region below -- which
+     * sits at the TOP of flash and can grow downward without moving anything --
+     * giving BOOTLOADER a non-zero length MOVES the application's ORIGIN. That is
+     * a flash-map MIGRATION, not a resize: every previously flashed unit's vector
+     * table address changes, on a part with no VTOR. Phase 129 must record the
+     * bootloader budget as an INTENT WITH THAT COST ATTACHED, never as a number
+     * that looks already paid for.
+     */
+    BOOTLOADER (rx) : ORIGIN = 0x08000000, LENGTH = 0
+
+    /* Shrunk from 128K so .text/.rodata physically CANNOT reach CONFIG (D-10).
+     * 0x1E000 = 120K -> app occupies 0x08000000..0x0801DFFF (sectors 0..14). */
+    FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 120K
+
+    /* Sector 15 (RM Table 4-1: pages 480-511) -- D-18 amends D-10's shrink
+     * quantum to one whole 8 KiB sector. The two slots below are different
+     * PAGE erase units, which is what CFG-06 requires; aligning the region to
+     * a whole sector additionally means no sector-granular erase of the app
+     * region can ever clip it. 7680 B of this 8192 B reservation is deliberate
+     * slack, reclaimable later by FUT-N05 or by additional config slots
+     * without moving any address. */
+    CONFIG (r)  : ORIGIN = 0x0801E000, LENGTH = 8K
+
     RAM   (xrw) : ORIGIN = 0x20000000, LENGTH = 16K
 }
+
+/* Consumed by platform/py32f071/src/config_storage_flash.cpp (Plan 126-08). Two
+ * slots, one page each, in DIFFERENT page erase units (CFG-06) -- so erasing
+ * one cannot disturb the other, which is the whole atomicity property. */
+PROVIDE(__config_page_size    = 256);
+PROVIDE(__config_slot_a_start = ORIGIN(CONFIG));                   /* 0x0801E000, page 480 */
+PROVIDE(__config_slot_b_start = ORIGIN(CONFIG) + 256);             /* 0x0801E100, page 481 -- a different page erase unit */
+PROVIDE(__config_region_end   = ORIGIN(CONFIG) + LENGTH(CONFIG));  /* 0x08020000 */
+
+/* Structural guards -- a violation here is a LINK failure, not a runtime
+ * surprise. Deliberately only these two: no ASSERT below uses the modulo
+ * operator on a region origin (that construct is rated the likeliest to need
+ * adjustment on real arm-none-eabi-ld, and no ARM linker exists in this
+ * environment to try it against). The sector-alignment and inside-the-
+ * physical-part arithmetic lives instead in tests/test_py32_flash_map.py, a
+ * venue that can actually run it. */
+ASSERT(ORIGIN(FLASH) + LENGTH(FLASH) <= ORIGIN(CONFIG),
+       "app region overlaps the reserved config region")
+ASSERT(__config_slot_b_start - __config_slot_a_start == __config_page_size,
+       "config slots must be exactly one page apart (different erase units)")
 
 _estack = ORIGIN(RAM) + LENGTH(RAM);
 _Min_Heap_Size = 0x000;
