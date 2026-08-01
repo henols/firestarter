@@ -60,7 +60,84 @@ cmake -S platform/py32f071 -B build/py32f071 -G Ninja \
 cmake --build build/py32f071
 ```
 
-Generated outputs are ELF, BIN, HEX, linker map, size report, and SHA-256 checksums.
+Generated outputs are ELF, BIN, HEX, linker map and size report, all under
+`build/py32f071/`. Only `firestarter_py32f071.hex` is ever published — the rest
+are dev-environment artefacts, reproducible with the two commands above, and CI
+does not upload them.
+
+The underscore in `firestarter_py32f071.*` is load-bearing. The host installer
+resolves release assets by the name `firestarter_<board>.hex`, where `<board>` is
+the `RURP_BOARD_NAME` the firmware reports over the wire (`py32f071`), so the
+CMake `TARGET_NAME` matches the convention `name_firmware.py` applies to the AVR
+targets.
+
+## Release integration
+
+`py32f071.yml` builds and validates this target on pull requests and on every
+`beta` push, but it does **not** cut releases, for one hard reason:
+`beta-build.yml` runs `.github/scripts/update_version.py`, which rewrites
+`include/version.h` and auto-commits it, *before* building. An image built in
+any other job compiles a stale `VERSION` string, and the host's whole update
+decision is a comparison of that string against the release tag. So the
+PY32F071 image has to be built in the same job as the AVR images, after the
+version bump — and it is reached through a **composite action** at
+`.github/actions/build-py32f071/`, called by both workflows, precisely because
+a composite action's steps run *in* the calling job. A reusable `workflow_call`
+workflow would instead run as a separate job with its own checkout, and would
+break that same-job ordering outright.
+
+The `Release` step's `files:` block, as shipped, has two entries:
+
+```yaml
+          files: |
+            .pio/build/**/firestarter_*.hex
+            build/py32f071/firestarter_*.hex
+```
+
+Two entries because PlatformIO writes its AVR `.hex` outputs under
+`.pio/build/`, while this CMake build writes its image under `build/py32f071/`
+— one glob cannot cover both trees. The second entry is a glob, not a literal
+filename.
+
+Why an absent py32 image does not fail the release: `softprops/action-gh-release`
+globs every `files:` entry — literal or glob alike — via `glob.sync()`, and
+decides severity purely from its `fail_on_unmatched_files` input, whose
+documented default is `false`. This step deliberately never sets that input, so
+an unmatched glob only warns; it never fails the run. The glob form above is
+still preferred over a literal path, but that preference is about
+rename-resilience and reading consistently with the AVR entry — a style
+argument, not a failure-mode argument.
+
+The ARM build itself has two roles, by design. `py32f071.yml` is the **LOUD**
+gate: it carries no `continue-on-error` and stays red when the ARM build
+breaks. `beta-build.yml`'s call site to the same composite action carries
+`continue-on-error: true` and exists only to produce the release asset —
+it can never block the three AVR assets. That containment is defensible only
+because `py32f071.yml` exists alongside it and does not hide the same failure.
+**Removal trigger:** the `continue-on-error` flag comes off once this target
+has been validated on real silicon. No PY32F071 PCB exists, so that trigger is
+unreachable this milestone and the flag stays, deliberately.
+
+Immediately before the `Release` step, `scripts/check_release_assets.py` runs
+unconditionally and fails the build if any AVR `.hex` named by
+`scripts/baseline/size_baseline.json`'s `avr_targets` keys is missing or empty.
+It never requires the py32f071 image.
+
+`beta-build.yml` also carries a permanent `rehearsal` boolean dispatch input.
+When set, it publishes a **draft** release under a `rehearsal-<run_id>` tag
+instead of a real pre-release, so a rehearsal run leaves no public footprint. A
+rehearsal dispatch must always supply `beta_version` explicitly — leaving it
+blank makes `update_version.py` take the stable-release path instead of the
+beta path.
+
+`build.yml` (the stable / `main` release workflow) is deliberately untouched.
+`py32f071` is in the host's `BETA_ONLY_BOARDS`, so a stable release carrying a
+py32f071 asset would advertise an image the stable CLI exits 2 on. **Graduation
+trigger:** fold the ARM build into `build.yml` when `py32f071` leaves
+`BETA_ONLY_BOARDS`.
+
+Everything above describes **publication**: nothing here says the published
+image runs, boots or installs, because no PY32F071 PCB exists.
 
 ## Hardware validation still required
 
