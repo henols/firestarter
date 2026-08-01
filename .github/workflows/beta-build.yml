@@ -107,6 +107,31 @@ jobs:
       - name: Build PlatformIO Project
         run: pio run
 
+      # REL-01/D-06: everything ARM must sit strictly below the
+      # `stefanzweifel/git-auto-commit-action@v5` step above, because that is
+      # where `include/version.h` becomes the release version -- an image
+      # built anywhere else would carry a stale VERSION string. A composite
+      # action runs its steps in the calling job, on the same runner and
+      # workspace as this job's own checkout, which is what makes this
+      # genuinely the same job as the version bump; a `workflow_call`
+      # reusable workflow would instead run as a separate job with its own
+      # checkout and would break REL-01 outright.
+      - name: Build PY32F071 firmware
+        id: arm
+        # D-05: SOFT half of the loud/soft split (T-128-11). This flag exists
+        # only to produce the py32f071 asset and must never be able to block
+        # the three AVR assets (REL-03) -- it belongs HERE, at this call
+        # site, and never inside
+        # .github/actions/build-py32f071/action.yml, where the LOUD
+        # `py32f071.yml` gate would silently inherit the containment and
+        # D-05's whole split would collapse. It is defensible only because
+        # `py32f071.yml` stays uncontained and red when ARM breaks on `beta`.
+        # Removal trigger: comes off once the target is validated on real
+        # silicon; no PY32F071 PCB exists this milestone, so that is
+        # unreachable and the flag stays.
+        continue-on-error: true
+        uses: ./.github/actions/build-py32f071
+
       - name: Resolve release target SHA
         id: release_target
         run: |
