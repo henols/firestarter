@@ -132,6 +132,29 @@ jobs:
         continue-on-error: true
         uses: ./.github/actions/build-py32f071
 
+      # D-07: this step surfaces a soft ARM failure without swallowing it.
+      # `py32f071.yml`'s red run says WHAT BROKE; this says WHAT THE RELEASE
+      # LACKS -- and the release run page is the artifact anyone actually
+      # looks at. The condition below reads the step's `outcome`, never its
+      # `conclusion`: for a `continue-on-error` step GitHub sets
+      # `outcome: failure` but `conclusion: success`, so a condition keyed on
+      # the latter could never fire -- the exact hollow-gate shape Phases 118
+      # and 124 both had to unwind. There is no `if: always()` here:
+      # `continue-on-error` already keeps the job on the success path, so
+      # this plain conditional step already runs regardless; `always()`
+      # would only add a cancelled-job case that `== 'failure'` does not
+      # match anyway -- one more thing for a reader to reason about, for
+      # nothing.
+      - name: Report a missing PY32F071 image
+        if: steps.arm.outcome == 'failure'
+        run: |
+          MSG="PY32F071 image not produced — this release carries no py32f071 asset."
+          echo "::warning::${MSG}"
+          {
+            echo "### PY32F071"
+            echo "${MSG}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Resolve release target SHA
         id: release_target
         run: |
