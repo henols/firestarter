@@ -182,6 +182,39 @@ jobs:
           fi
           echo "PASS: emitted asset basename is $ACTUAL" | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # D-10/REL-04, corrected rationale (F-15): this is NOT a new pin -- the
+      # SDK is already pinned via GIT_TAG in platform/py32f071/CMakeLists.txt.
+      # This step is a per-release proof that the pin was honoured. Nothing
+      # caches build/py32f071/_deps: the actions/cache@v4 block above covers
+      # only ~/.cache/pip and ~/.platformio/.cache, so the SDK source tree is
+      # cloned fresh by FetchContent on every run -- the cache-substitution
+      # scenario cannot occur, and this comment does not claim it can. What
+      # this DOES catch: a GIT_TAG edit that does not match what was actually
+      # fetched, an upstream force-push behind a moved ref, and a future
+      # contributor adding an SDK cache without re-checking the pin.
+      # Provenance: the FetchContent source path was MEASURED (not guessed)
+      # off CI run 30676982030.
+      - name: Assert and log the resolved SDK commit SHA (REL-04)
+        if: steps.arm.outcome == 'success'
+        env:
+          SDK_SHA: ${{ steps.arm.outputs.sdk_sha }}
+        run: |
+          set -euo pipefail
+          PINNED=$(sed -nE 's/^\s*GIT_TAG\s+([0-9a-f]{40})\s*$/\1/p' platform/py32f071/CMakeLists.txt | head -n1)
+          if [ -z "$PINNED" ]; then
+            echo "::error::no 40-hex GIT_TAG parsed from platform/py32f071/CMakeLists.txt"
+            exit 2
+          fi
+          if [ -z "$SDK_SHA" ]; then
+            echo "::error::the build resolved no SDK SHA -- build-py32f071's sdk_sha output was empty"
+            exit 2
+          fi
+          if [ "$SDK_SHA" != "$PINNED" ]; then
+            echo "::error::resolved SDK SHA '$SDK_SHA' does not match the declared GIT_TAG '$PINNED'"
+            exit 1
+          fi
+          echo "Resolved SDK commit SHA: $SDK_SHA (matches declared GIT_TAG -- pin honoured)" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Resolve release target SHA
         id: release_target
         run: |
