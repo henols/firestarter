@@ -55,8 +55,9 @@ Coverage:
      under test.
   2. test_blank_slots_report_no_valid_record -- both slots all-0xFF:
      rurp_dualslot_load returns false, plus a companion "magic trap" fixture
-     (magic still invalid, but a self-consistent CRC planted over the
-     otherwise-blank content) proving the rejection is on `magic`, not a CRC
+     (magic still invalid, but `length` set to an otherwise-valid value and
+     crc32 self-consistent, so length and crc32 both pass by construction)
+     proving the rejection is on `magic` alone, not a length or CRC
      accident.
   3. test_newest_sequence_wins_when_both_slots_valid -- two valid records
      with different `sequence`, tested in both slot orders.
@@ -275,15 +276,22 @@ int main()
     printf("blank_loaded=%d\\n", (int)loaded);
 
     // Sub-case 2 (the companion assertion): magic stays invalid (still
-    // 0xFFFFFFFF -- genuinely blank), but the crc32 field is deliberately
-    // set to a SELF-CONSISTENT correct CRC over the rest of the record. If
-    // the implementation checked crc32 before magic (or not at all), this
-    // "trap" fixture would be accepted. Because magic gates first, it is
-    // still rejected -- proving the blank case is caught on magic, not by a
-    // CRC accident.
+    // 0xFFFFFFFF -- genuinely blank), but `length` is set to an
+    // otherwise-valid value and the crc32 field is deliberately set to a
+    // SELF-CONSISTENT correct CRC over the rest of the record. Both other
+    // gates -- length and crc32 -- are made to pass by construction, so
+    // ONLY the magic check can be what rejects this fixture. If the
+    // implementation checked crc32 (or length) before magic, or not at
+    // all, this "trap" fixture would be accepted. Because magic gates
+    // first, it is still rejected -- proving the blank case is caught on
+    // magic, not by a CRC or length accident. (A first draft of this trap
+    // left `length` at its blank 0xFFFF value, which the length check
+    // alone already rejects regardless of magic -- masking exactly the
+    // property this companion assertion exists to isolate; corrected here.)
     reset_fake();
     StoredConfiguration trap;
     memset(&trap, 0xFF, sizeof(trap));
+    trap.length = static_cast<uint16_t>(sizeof(rurp_configuration_t));
     trap.crc32 = rurp_config_crc32(&trap, offsetof(StoredConfiguration, crc32));
     write_record_to_slot(0, trap);
     write_record_to_slot(1, trap);
