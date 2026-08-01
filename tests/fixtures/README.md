@@ -51,6 +51,17 @@ is added; the convention test cannot.
 | `captured_test_native_nodevtools_summary.log` | `captured_` | same, `native_nodevtools` env |
 | `captured_native_warnings_excerpt.log` | `captured_` | BASE-06 warning gate — proves the parser survives real `pio test` framing around a genuine macro-redefinition diagnostic, not just a bare compiler invocation |
 
+## Release-asset fixture trees (Phase 128 Plan 01)
+
+Three new `pio_build/`-rooted directory-tree fixtures back
+`check_release_assets.py` (REL-03/REL-02, D-11/D-12): `clean_release_assets_all_three/`
+(`clean_`, the control), `planted_release_assets_missing_uno328pb/` and
+`planted_release_assets_zero_byte_leonardo/` (`planted_`). Their build root is
+named `pio_build/`, not `.pio/`, because `.gitignore` line 1 is the bare
+pattern `.pio`, which matches at any depth and would make `git add` silently
+stage nothing for a dotted directory name — the checker reaches these trees
+through the `FIRESTARTER_PIO_BUILD_ROOT` seam instead.
+
 **Known, recorded gap (D-14):** `pio test` output never contains a literal `Compiling .pio/build/...`
 progress line — that framing is specific to `pio run` (see `captured_build_uno.log` for an example).
 `captured_native_warnings_excerpt.log` instead carries `pio test`'s own real framing for that command
