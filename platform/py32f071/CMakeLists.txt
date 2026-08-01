@@ -22,7 +22,22 @@ if(NOT py32f071_sdk_POPULATED)
     FetchContent_Populate(py32f071_sdk)
 endif()
 
-set(TARGET_NAME firestarter-py32f071.elf)
+# Underscore, not hyphen: the host installer resolves release assets by the
+# name `firestarter_<board>.hex`, where <board> is the RURP_BOARD_NAME the
+# firmware reports over the wire ("py32f071"). The AVR targets get that name
+# from name_firmware.py; a CMake build has to spell it out.
+#
+# Re-applied by hand from commit ad47c3b -- never cherry-picked, because that
+# commit's tree predates Phase 124's `push: branches: [beta]` trigger on
+# py32f071.yml, and its own workflow rewrite is superseded by Phase 128's
+# composite action.
+#
+# Correction (Phase 128 Plan 03): ad47c3b's own comment claimed this rename
+# alone let beta-build.yml's release glob keep working, unmodified. That
+# claim is false -- the shipped glob is rooted at `.pio/build/` while this
+# CMake build writes to `build/py32f071/`, so one glob cannot span both
+# trees and a second `files:` entry is required (Plan 128-07 adds it).
+set(TARGET_NAME firestarter_py32f071.elf)
 set(REPOSITORY_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
 set(PY32_SDK_ROOT "${py32f071_sdk_SOURCE_DIR}")
 set(LINKER_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/linker/PY32F071xB_FLASH.ld")
@@ -170,7 +185,7 @@ target_link_options(
         --specs=nano.specs
         --specs=nosys.specs
         -Wl,--gc-sections
-        "-Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/firestarter-py32f071.map,--cref"
+        "-Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/firestarter_py32f071.map,--cref"
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE m)
@@ -181,8 +196,8 @@ set_target_properties(
         LINK_DEPENDS "${LINKER_SCRIPT}"
 )
 
-set(BIN_FILE "${CMAKE_CURRENT_BINARY_DIR}/firestarter-py32f071.bin")
-set(HEX_FILE "${CMAKE_CURRENT_BINARY_DIR}/firestarter-py32f071.hex")
+set(BIN_FILE "${CMAKE_CURRENT_BINARY_DIR}/firestarter_py32f071.bin")
+set(HEX_FILE "${CMAKE_CURRENT_BINARY_DIR}/firestarter_py32f071.hex")
 
 add_custom_command(
     TARGET ${TARGET_NAME}
