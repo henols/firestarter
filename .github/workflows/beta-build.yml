@@ -292,7 +292,35 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: .pio/build/**/firestarter_*.hex
+          # D-15/REL-02: two files: entries are required because PlatformIO
+          # writes the AVR .hex output under .pio/build/ while the py32f071
+          # CMake build writes its image under build/py32f071/ -- one glob
+          # cannot cover both trees. The second entry is a glob
+          # (build/py32f071/firestarter_*.hex), not a literal, matching
+          # D-15's correction of ad47c3b's README, which argued for a glob
+          # and then supplied a literal instead.
+          #
+          # REL-03: the release action's fail_on_unmatched_files input is
+          # deliberately UNSET on this step. Its documented default is
+          # false, and REL-03 requires a broken/contained ARM build to
+          # leave the py32 asset simply ABSENT from this release rather
+          # than failing it -- setting fail_on_unmatched_files true would
+          # violate REL-03 directly.
+          # Corrected mechanism (research F-1, primary-source read of
+          # softprops/action-gh-release's src/util.ts and src/run.ts): the
+          # action's unmatchedPatterns() runs glob.sync() over every
+          # files: entry -- literal or glob alike -- and run.ts decides
+          # severity purely from the fail_on_unmatched_files input. There
+          # is no code path in this action that makes any distinction
+          # between a literal path and a glob pattern. Do not repeat the
+          # superseded folklore in this comment or anywhere else in this
+          # file.
+          # The glob above is chosen for rename-resilience and to read
+          # consistently with the AVR entry, not for any failure-semantics
+          # reason.
+          files: |
+            .pio/build/**/firestarter_*.hex
+            build/py32f071/firestarter_*.hex
           tag_name: ${{ steps.version.outputs.version }}
           target_commitish: ${{ steps.release_target.outputs.sha }}
           prerelease: true
