@@ -155,6 +155,33 @@ jobs:
             echo "${MSG}"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # D-08(a)/REL-04: this is deliberately a TRANSCRIPTION, not the binding.
+      # The firmware repo cannot import the host `firestarter_app` package, so
+      # this step can only check the emitted basename against a literal that
+      # was hand-copied from asset_candidates("py32f071")[0] in
+      # firestarter_app/firestarter/firmware.py:116-132. The actual binding --
+      # proving that literal still matches the real function -- lives in the
+      # host repo's own test (D-08(b), Plan 128-09). Do not read this step as
+      # importing or evaluating asset_candidates(); it does not, and D-08
+      # explicitly forbids blurring the transcription with the binding.
+      - name: Assert the emitted asset filename (REL-04)
+        if: steps.arm.outcome == 'success'
+        env:
+          HEX_PATH: ${{ steps.arm.outputs.hex_path }}
+        run: |
+          set -euo pipefail
+          EXPECTED=firestarter_py32f071.hex
+          if [ -z "$HEX_PATH" ]; then
+            echo "::error::HEX_PATH is empty -- the build-py32f071 composite action's glob guard did not produce a value (A-7 shape: comparing against an empty basename would be vacuous)"
+            exit 1
+          fi
+          ACTUAL=$(basename "$HEX_PATH")
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::emitted asset basename '$ACTUAL' does not match the transcribed literal '$EXPECTED'"
+            exit 1
+          fi
+          echo "PASS: emitted asset basename is $ACTUAL" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Resolve release target SHA
         id: release_target
         run: |
