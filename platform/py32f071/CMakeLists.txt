@@ -31,7 +31,6 @@ set(LINKER_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/linker/PY32F071xB_FLASH.ld")
 # PY32_EXCLUDED: src/boards/leonardo_rurp_shield.cpp -- AVR board impl, no ARM analogue
 # PY32_EXCLUDED: src/boards/rurp_common.cpp -- AVR-specific common
 # PY32_EXCLUDED: src/dev_tools.cpp -- no ARM dev-tools TU; DEV_TOOLS resolves to 0 by the shared default (MERGE-08, D-02)
-# PY32_EXCLUDED: src/rurp_config_utils.cpp -- Phase 126 per-platform config backend split; THIS EXCLUSION WILL NEED REVISITING in Phase 126, it is not a permanent exclusion.
 # PY32_EXCLUDED: src/boards/rurp_config_storage_eeprom.cpp -- AVR EEPROM backend, no ARM analogue
 set(FIRESTARTER_COMMON_SOURCES
     "${REPOSITORY_ROOT}/src/firestarter.cpp"
@@ -41,6 +40,7 @@ set(FIRESTARTER_COMMON_SOURCES
     "${REPOSITORY_ROOT}/src/json_parser.c"
     "${REPOSITORY_ROOT}/src/boards/rurp_serial_utils.cpp"
     "${REPOSITORY_ROOT}/src/rurp_vpp.cpp"
+    "${REPOSITORY_ROOT}/src/rurp_config_utils.cpp"
     "${REPOSITORY_ROOT}/src/proms/memory.cpp"
     "${REPOSITORY_ROOT}/src/proms/eprom.cpp"
     "${REPOSITORY_ROOT}/src/proms/eeprom_28c.cpp"
@@ -60,7 +60,7 @@ set(PY32_PLATFORM_SOURCES
     src/timing.cpp
     src/usb_cdc.c
     src/py32f071_rurp_shield.cpp
-    src/config.cpp
+    src/config_storage_flash.cpp
     src/config_storage_dualslot.cpp
 )
 
@@ -76,6 +76,7 @@ set(PY32_SDK_SOURCES
     "${PY32_SDK_ROOT}/Drivers/PY32F071_HAL_Driver/Src/py32f071_hal_adc.c"
     "${PY32_SDK_ROOT}/Drivers/PY32F071_HAL_Driver/Src/py32f071_hal_adc_ex.c"
     "${PY32_SDK_ROOT}/Drivers/PY32F071_HAL_Driver/Src/py32f071_hal_tim.c"
+    "${PY32_SDK_ROOT}/Drivers/PY32F071_HAL_Driver/Src/py32f071_hal_flash.c"
     "${PY32_SDK_ROOT}/Middlewares/Third_Party/CherryUSB/core/usbd_core.c"
     "${PY32_SDK_ROOT}/Middlewares/Third_Party/CherryUSB/class/cdc/usbd_cdc.c"
     "${PY32_SDK_ROOT}/Middlewares/Third_Party/CherryUSB/port/usb_dc_py32.c"

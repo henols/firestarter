@@ -50,31 +50,28 @@ deliberately NOT named in FIRESTARTER_COMMON_SOURCES. The reason segment is
 MANDATORY -- an entry with a path but no stated reason is itself a
 violation, because an allow-list without required reasons degrades into a
 silencer. 123-RESEARCH.md's measured deliberate-omission set against `beta`
-(Phase 124 wrote the first five lines verbatim; Plan 126-03 added the
-sixth, for the new AVR config-storage backend TU split out of
-src/rurp_config_utils.cpp):
+(Phase 124 wrote the first five lines verbatim; Plan 126-03 added a sixth,
+for the AVR config-storage backend TU split out of src/rurp_config_utils.cpp;
+Plan 126-08 retired that sixth line again once src/rurp_config_utils.cpp was
+promoted into FIRESTARTER_COMMON_SOURCES in the same commit that deleted
+platform/py32f071/src/config.cpp -- see the note below):
 
     src/boards/uno_rurp_shield.cpp        -- AVR board impl, no ARM analogue
     src/boards/leonardo_rurp_shield.cpp   -- AVR board impl, no ARM analogue
     src/boards/rurp_common.cpp            -- AVR-specific common
     src/dev_tools.cpp                     -- DEV_TOOLS deliberately off on ARM (MERGE-08)
-    src/rurp_config_utils.cpp             -- Phase 126 per-platform config backend
-                                              split; THIS EXCLUSION WILL NEED
-                                              REVISITING in Phase 126, it is not
-                                              a permanent exclusion.
     src/boards/rurp_config_storage_eeprom.cpp -- AVR EEPROM backend, no ARM analogue
 
-    NOTE on src/rurp_config_utils.cpp's entry above: its retirement (moving
-    it INTO FIRESTARTER_COMMON_SOURCES) is deliberately DEFERRED to Plan
-    126-08, in the same commit that deletes
-    platform/py32f071/src/config.cpp. Promoting it while config.cpp still
-    defines all four public config functions would give the ARM link two
-    definitions of each of those four functions -- undetectable in this
-    devcontainer (arm-none-eabi-gcc/cmake/ninja are absent, and
+    NOTE: src/rurp_config_utils.cpp is no longer in this allow-list. Plan
+    126-08 promoted it into FIRESTARTER_COMMON_SOURCES -- it is now an
+    ARM-compiled common source, in the SAME commit that deleted
+    platform/py32f071/src/config.cpp. The two were atomic in the same
+    direction Plan 126-03's deferral note used to warn about: promoting the
+    policy TU before the deletion would have given the ARM link two
+    definitions of each of the four public config functions -- undetectable
+    in this devcontainer (arm-none-eabi-gcc/cmake/ninja are absent, and
     py32f071.yml does not fire on a push to this branch), surfacing only in
-    a later gated CI run. Plan 126-03 therefore lands ONLY the sixth
-    exclusion line above; the first five lines, including this one, are
-    untouched by that plan.
+    a later gated CI run. That window was never opened.
 
 Exit codes:
   0 -- UNARMED (platform/py32f071/ absent), OR armed and every enforced
