@@ -11,8 +11,8 @@ one page apart, cannot be reached by the app region, exposes all four
 required symbols, and carries D-13's zero-length bootloader seam with its
 migration-cost comment intact.
 
-Requirements: CFG-06
-Decisions covered: D-10, D-11, D-12, D-13, D-18
+Requirements: CFG-05, CFG-06, CFG-07
+Decisions covered: D-10, D-11, D-12, D-13, D-18, C-3, C-4, D-02
 
 This module invokes no compiler -- every assertion below is a textual gate
 over committed source, following tests/test_vpp_seam_manual_on_every_board.py
@@ -33,11 +33,25 @@ neither fires on this firmware milestone branch, and py32f071.yml has no
 pytest step at all. The local run recorded in this phase's SUMMARY is the
 only evidence this module's assertions were ever exercised.
 
-Plan 126-08 EXTENDS this module with `test_manifest_names_the_flash_driver`
-(C-3's edit-4 assertion) and five sibling functions -- do NOT add that
-function here: nothing in the tree calls the flash HAL yet, and an
-implication-shaped assertion with no antecedent would be vacuous. A future
-executor reading this docstring should create no second module for it.
+Plan 126-08 EXTENDED this module with `test_manifest_names_the_flash_driver`
+(C-3's edit-4 assertion) and five sibling functions, once
+platform/py32f071/src/config_storage_flash.cpp existed and the tree genuinely
+contained `HAL_FLASH_` calls -- an implication-shaped assertion with no
+antecedent would have been vacuous before that plan landed. No second module
+was created for this extension; it lives here.
+
+**Why `test_manifest_names_the_flash_driver` must prove its own antecedent
+(C-3, Pitfall 3):** `platform/py32f071/include/py32f071_hal_conf.h:10` already
+sets `HAL_FLASH_MODULE_ENABLED` and `:53` already includes
+`py32f071_hal_flash.h`, so every `HAL_FLASH_` call **compiles** -- the failure
+this assertion guards against is at **link**, not compile. `scripts/check_cmake_manifest.py`'s
+own docstring declares `PY32_SDK_SOURCES` structurally exempt from resolution,
+because `PY32_SDK_ROOT` resolves only after a networked `cmake` configure, and
+`cmake`, `ninja` and `arm-none-eabi-gcc` are all absent from this environment
+-- nothing else here would ever catch a missing flash driver. Without this
+assertion proving a real, non-zero count of `HAL_FLASH_` call sites before
+checking the manifest, the first sign of the defect would be a gated CI run,
+hours after the code was written.
 
 Self-contained path resolution below -- NOT in conftest.py (firestarter/
 tests/ has no conftest.py anywhere in the repo, and none of pytest.ini,
@@ -92,6 +106,33 @@ Coverage:
       The real linker script's blob SHA is unchanged before and after.
   14. test_compiler_is_required_not_optional -- the self-enforcing no-skip
       leg.
+  15. test_manifest_names_the_flash_driver -- C-3's edit-4 assertion: an
+      implication with a PROVEN antecedent. Scans platform/py32f071/src/ for
+      any `HAL_FLASH_` call, fails if the scan finds none (the antecedent
+      must be real, not assumed), then asserts the manifest names
+      py32f071_hal_flash.c. Records the scanned-file count and the
+      call-site count in the assertion message.
+  16. test_the_flash_glue_uses_only_hal_entry_points -- C-4: the HAL glue TU
+      (config_storage_flash.cpp) calls only HAL_FLASH_Unlock, HAL_FLASH_Erase,
+      HAL_FLASH_Program and HAL_FLASH_Lock, and contains no direct
+      flash-register access (no `FLASH->...`).
+  17. test_the_dualslot_core_stays_hal_free -- config_storage_dualslot.cpp's
+      include set is exactly its local header plus C standard headers, with
+      no HAL call and no platform #error guard, so the host harness can
+      compile it directly.
+  18. test_pr48_config_cpp_is_absent_from_the_tree -- CFG-07's deletion,
+      verified by absence.
+  19. test_slot_addresses_come_from_linker_symbols -- the glue TU declares
+      the three linker symbols extern and does not duplicate any config
+      address as a literal constant.
+  20. test_manifest_helper_reports_violations_on_planted_copies -- the RED
+      demonstration: a manifest with the flash-driver entry removed (while a
+      HAL_FLASH_ call exists), a glue TU with a direct register access, and a
+      core TU with a HAL include, each fed to the same module-level helpers
+      the positive tests above call, each producing a non-empty violation
+      list. No committed file is mutated; the three watched blob SHAs
+      (CMakeLists.txt, config_storage_flash.cpp, config_storage_dualslot.cpp)
+      are confirmed unchanged before and after.
 """
 
 import re
@@ -103,6 +144,23 @@ _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent
 _LINKER_PATH = _REPO_ROOT / "platform" / "py32f071" / "linker" / "PY32F071xB_FLASH.ld"
 _CONFIG_STORAGE_MD = _REPO_ROOT / "platform" / "py32f071" / "CONFIG-STORAGE.md"
+
+# Plan 126-08 additions (C-3, C-4, D-02, CFG-05, CFG-07).
+_PY32_SRC_DIR = _REPO_ROOT / "platform" / "py32f071" / "src"
+_MANIFEST_PATH = _REPO_ROOT / "platform" / "py32f071" / "CMakeLists.txt"
+_GLUE_PATH = _PY32_SRC_DIR / "config_storage_flash.cpp"
+_CORE_PATH = _PY32_SRC_DIR / "config_storage_dualslot.cpp"
+_CONFIG_CPP_PATH = _PY32_SRC_DIR / "config.cpp"
+_FLASH_DRIVER_NAME = "py32f071_hal_flash.c"
+
+_ALLOWED_HAL_FLASH_CALLS = {"HAL_FLASH_Unlock", "HAL_FLASH_Erase", "HAL_FLASH_Program", "HAL_FLASH_Lock"}
+_HAL_FLASH_CALL_RE = re.compile(r"\b(HAL_FLASH_\w+)\s*\(")
+_DIRECT_REGISTER_RE = re.compile(r"\bFLASH\s*->\s*\w+")
+_COMMENT_RE = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
+_CORE_LOCAL_INCLUDE_RE = re.compile(r'#\s*include\s*([<"][^">]+[">])')
+_SANCTIONED_CORE_LOCAL_INCLUDES = {"config_storage_dualslot.h"}
+_REQUIRED_EXTERN_SLOT_SYMBOLS = ("__config_slot_a_start", "__config_slot_b_start", "__config_page_size")
+_LITERAL_SLOT_ADDRESS_RE = re.compile(r"0x0801[Ee]000|0x0801[Ee]100")
 
 _REQUIRED_SYMBOLS = (
     "__config_page_size",
@@ -579,4 +637,250 @@ def test_compiler_is_required_not_optional():
     assert skipif_marker not in own_text, (
         "expected no @pytest." + skipif_marker + " decorator anywhere in "
         "this module -- a tool-absence case must FAIL, never SKIP."
+    )
+
+
+# --- Plan 126-08 additions: C-3's proven-antecedent flash-driver assertion,
+# --- C-4's HAL-only-entry-points assertion, the HAL-free-core assertion,
+# --- CFG-07's absence check, the linker-symbol assertion, and their shared
+# --- RED demonstration. Every check below is factored into a module-level
+# --- helper, exactly like the linker-script checks above, so the
+# --- planted-copy test exercises the identical code path the positive
+# --- tests call.
+
+
+def _scan_hal_flash_calls(src_dir, repo_root):
+    """Scan every .c/.cpp/.h file under src_dir for a HAL_FLASH_* call.
+
+    Returns (files_scanned, call_sites) where call_sites is a list of
+    (repo-relative-path, matched-symbol-name) tuples. This is the proven
+    antecedent for test_manifest_names_the_flash_driver -- the caller MUST
+    assert call_sites is non-empty before trusting the implication below,
+    or the assertion would be vacuously true (exactly the shape this
+    project's history has had to unwind twice)."""
+    files_scanned = 0
+    call_sites = []
+    for path in sorted(src_dir.rglob("*")):
+        if path.is_file() and path.suffix in (".c", ".cpp", ".h"):
+            files_scanned += 1
+            stripped = _COMMENT_RE.sub("", path.read_text())
+            for m in _HAL_FLASH_CALL_RE.finditer(stripped):
+                call_sites.append((str(path.relative_to(repo_root)), m.group(1)))
+    return files_scanned, call_sites
+
+
+def _violations_manifest_names_flash_driver(manifest_text, call_site_count, driver_name=_FLASH_DRIVER_NAME):
+    """C-3's edit-4 assertion, as a violations helper: the manifest must
+    name driver_name whenever call_site_count is nonzero. call_site_count is
+    passed in (not recomputed) so the RED demonstration can plant a
+    manifest missing the entry while still asserting against a real,
+    nonzero count."""
+    if call_site_count == 0:
+        return [
+            "antecedent unproven: 0 HAL_FLASH_ call sites found -- refusing "
+            "to evaluate a vacuous implication (an implication with an "
+            "unproven antecedent is exactly the vacuous shape this project "
+            "has had to unwind twice)"
+        ]
+    if driver_name not in manifest_text:
+        return [
+            f"{driver_name!r} not named anywhere in the manifest, despite "
+            f"{call_site_count} HAL_FLASH_ call site(s) found in the tree"
+        ]
+    return []
+
+
+def _hal_flash_calls_in_text(text):
+    return sorted(set(_HAL_FLASH_CALL_RE.findall(_COMMENT_RE.sub("", text))))
+
+
+def _violations_hal_entry_points_only(text):
+    """C-4: only the four sanctioned HAL_FLASH_* entry points may be called,
+    and no direct flash-register access (FLASH->...) may appear. Comments
+    are stripped first so a prose mention (e.g. explaining why FLASH->CR is
+    NOT poked directly) is never mistaken for actual register access."""
+    violations = []
+    stripped = _COMMENT_RE.sub("", text)
+    calls = _hal_flash_calls_in_text(text)
+    unexpected = [c for c in calls if c not in _ALLOWED_HAL_FLASH_CALLS]
+    if unexpected:
+        violations.append(
+            f"unexpected HAL_FLASH_* call(s): {unexpected!r} -- only "
+            f"{sorted(_ALLOWED_HAL_FLASH_CALLS)!r} are permitted (C-4)"
+        )
+    if _DIRECT_REGISTER_RE.search(stripped):
+        violations.append(
+            "found direct flash-register access ('FLASH->...') -- C-4 "
+            "requires routing exclusively through the four HAL_FLASH_* "
+            "entry points; RM V0.2 §4.2.3.6 configures the timing registers "
+            "INSIDE those entry points, so a hand-rolled register sequence "
+            "compiles, reviews cleanly, and fails only on silicon"
+        )
+    return violations
+
+
+def _violations_core_hal_free(text):
+    """The dual-slot core's include set must be exactly its local header
+    plus C standard headers (angle-bracket includes), with no HAL call and
+    no platform #error guard -- so the host test harness can compile this
+    TU directly against a RAM fake (D-02). Comments are stripped first."""
+    violations = []
+    stripped = _COMMENT_RE.sub("", text)
+    for raw in _CORE_LOCAL_INCLUDE_RE.findall(stripped):
+        if raw.startswith('"'):
+            name = raw.strip('"')
+            if name not in _SANCTIONED_CORE_LOCAL_INCLUDES:
+                violations.append(
+                    f"unexpected local include {raw!r} in the dual-slot "
+                    f"core -- expected only "
+                    f"{sorted(_SANCTIONED_CORE_LOCAL_INCLUDES)!r}"
+                )
+    if re.search(r"\bHAL_\w+\s*\(", stripped):
+        violations.append(
+            "found a HAL_* call in the dual-slot core -- this TU must stay "
+            "HAL-free so the host harness can compile it directly (D-02)"
+        )
+    if "#error" in stripped:
+        violations.append(
+            "found a platform #error guard in the dual-slot core -- the "
+            "guard belongs only in the HAL glue TU (config_storage_flash.cpp), "
+            "never here, because the host harness compiles this file directly"
+        )
+    return violations
+
+
+def _violations_slot_addresses_from_linker(text):
+    """D-11: the glue TU must declare the three linker symbols extern and
+    must never duplicate a config-slot address as a literal constant."""
+    violations = []
+    for sym in _REQUIRED_EXTERN_SLOT_SYMBOLS:
+        if not re.search(rf"extern\s+uint32_t\s+{re.escape(sym)}\s*;", text):
+            violations.append(
+                f"expected 'extern uint32_t {sym};' declared in the glue "
+                f"TU, not found"
+            )
+    if _LITERAL_SLOT_ADDRESS_RE.search(text):
+        violations.append(
+            "found a literal config-slot address (e.g. 0x0801E000 / "
+            "0x0801E100) in the glue TU -- slot addresses must come only "
+            "from the linker symbols (D-11), never a duplicated constant"
+        )
+    return violations
+
+
+def test_manifest_names_the_flash_driver():
+    """Coverage 15 -- C-3's edit-4 assertion: an implication with a PROVEN
+    antecedent. Fails if the scan finds zero HAL_FLASH_ call sites; records
+    the scanned-file count and the call-site count either way."""
+    files_scanned, call_sites = _scan_hal_flash_calls(_PY32_SRC_DIR, _REPO_ROOT)
+    assert call_sites, (
+        f"antecedent unproven: scanned {files_scanned} file(s) under "
+        f"{_PY32_SRC_DIR}, found 0 HAL_FLASH_ call sites -- the implication "
+        f"this test checks would be vacuously true"
+    )
+    manifest_text = _MANIFEST_PATH.read_text()
+    violations = _violations_manifest_names_flash_driver(manifest_text, len(call_sites))
+    assert violations == [], (
+        f"scanned {files_scanned} file(s) under {_PY32_SRC_DIR}, found "
+        f"{len(call_sites)} HAL_FLASH_ call site(s): {call_sites!r}.\n"
+        f"Violations:\n" + "\n".join(violations)
+    )
+
+
+def test_the_flash_glue_uses_only_hal_entry_points():
+    """Coverage 16 -- C-4: the glue TU calls only the four sanctioned
+    HAL_FLASH_* entry points and contains no direct flash-register access."""
+    text = _GLUE_PATH.read_text()
+    violations = _violations_hal_entry_points_only(text)
+    assert violations == [], violations
+    calls = _hal_flash_calls_in_text(text)
+    for expected in sorted(_ALLOWED_HAL_FLASH_CALLS):
+        assert expected in calls, f"expected {expected} to be called in {_GLUE_PATH}, not found"
+
+
+def test_the_dualslot_core_stays_hal_free():
+    """Coverage 17 -- the dual-slot core's include set is exactly its local
+    header plus C standard headers, with no HAL call and no platform #error
+    guard."""
+    text = _CORE_PATH.read_text()
+    violations = _violations_core_hal_free(text)
+    assert violations == [], violations
+
+
+def test_pr48_config_cpp_is_absent_from_the_tree():
+    """Coverage 18 -- CFG-07's deletion, verified by absence, not by diff."""
+    assert not _CONFIG_CPP_PATH.exists(), (
+        f"expected {_CONFIG_CPP_PATH} to be absent from the tree (CFG-07) -- "
+        f"PR #48's rurp_save_config() persisted nothing and must be deleted, "
+        f"not reconciled"
+    )
+
+
+def test_slot_addresses_come_from_linker_symbols():
+    """Coverage 19 -- D-11: the glue TU declares the three linker symbols
+    extern and does not duplicate any config address as a literal constant."""
+    text = _GLUE_PATH.read_text()
+    violations = _violations_slot_addresses_from_linker(text)
+    assert violations == [], violations
+
+
+def test_manifest_helper_reports_violations_on_planted_copies():
+    """Coverage 20 -- the RED demonstration. Three independently planted
+    copies -- a manifest with the flash-driver entry removed (antecedent
+    forced nonzero), a glue TU with a direct register access, and a core TU
+    with a HAL include -- each fed to the same module-level helpers the
+    positive tests above call, each producing a non-empty violation list.
+    No committed file is mutated; the three watched blob SHAs are confirmed
+    unchanged before and after."""
+    watched_paths = (_MANIFEST_PATH, _GLUE_PATH, _CORE_PATH)
+    shas_before = {p: _git("hash-object", str(p)).stdout.strip() for p in watched_paths}
+
+    manifest_text = _MANIFEST_PATH.read_text()
+    assert _FLASH_DRIVER_NAME in manifest_text, (
+        "fixture assumption failed: the real manifest no longer names "
+        f"{_FLASH_DRIVER_NAME!r} -- this mutation expects to find and "
+        "remove it"
+    )
+    mutated_manifest = manifest_text.replace(
+        f'"${{PY32_SDK_ROOT}}/Drivers/PY32F071_HAL_Driver/Src/{_FLASH_DRIVER_NAME}"\n', ""
+    )
+    assert mutated_manifest != manifest_text, (
+        "planted copy 'manifest missing the flash driver entry' did not "
+        "actually differ from the real text"
+    )
+    violations_1 = _violations_manifest_names_flash_driver(mutated_manifest, call_site_count=1)
+    assert violations_1, (
+        "expected a non-empty violation list for a manifest missing the "
+        "flash-driver entry while a HAL_FLASH_ call exists, got none"
+    )
+
+    glue_text = _GLUE_PATH.read_text()
+    mutated_glue = glue_text + "\nstatic void _planted_direct_register_access() { FLASH->CR = 0; }\n"
+    assert mutated_glue != glue_text, (
+        "planted copy 'glue TU with direct register access' did not "
+        "actually differ from the real text"
+    )
+    violations_2 = _violations_hal_entry_points_only(mutated_glue)
+    assert violations_2, (
+        "expected a non-empty violation list for a glue TU carrying a "
+        "direct register access, got none"
+    )
+
+    core_text = _CORE_PATH.read_text()
+    mutated_core = '#include "py32f071_hal.h"\n' + core_text
+    assert mutated_core != core_text, (
+        "planted copy 'core TU with a HAL include' did not actually differ "
+        "from the real text"
+    )
+    violations_3 = _violations_core_hal_free(mutated_core)
+    assert violations_3, (
+        "expected a non-empty violation list for a core TU carrying a HAL "
+        "include, got none"
+    )
+
+    shas_after = {p: _git("hash-object", str(p)).stdout.strip() for p in watched_paths}
+    assert shas_after == shas_before, (
+        f"expected no committed file to be mutated by this planted-copy "
+        f"demonstration; blob SHAs before: {shas_before!r}, after: "
+        f"{shas_after!r}"
     )
