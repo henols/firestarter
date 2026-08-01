@@ -215,6 +215,45 @@ jobs:
           fi
           echo "Resolved SDK commit SHA: $SDK_SHA (matches declared GIT_TAG -- pin honoured)" | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # F-9/REL-01: FW_VERSION (include/firestarter.h:54) is `VERSION ":"
+      # RURP_BOARD_NAME`; on ARM, include/rurp_platform_compat.h makes PSTR()
+      # a no-op and PROGMEM empty, so the concatenated literal
+      # "<version>:py32f071" is plain ASCII in .rodata of the shipped image --
+      # not a PROGMEM-indirected string. Asserting it in the published bytes
+      # proves the image was built AFTER the update_version.py auto-commit, a
+      # property that survives a future step reorder in a way a YAML-order
+      # read (Criterion 1's stated method) cannot. This assertion runs
+      # ALONGSIDE that YAML-order read, not instead of it (Plan 128-05 landed
+      # the ordering; Plan 128-10 records the step-index reading as evidence
+      # too). A2: compare against steps.version.outputs.version, NEVER
+      # tag_name -- in rehearsal mode D-03 deliberately overrides tag_name, so
+      # a tag-equality assertion would be red on purpose (F-2).
+      - name: Assert the py32 image carries the bumped VERSION (REL-01)
+        if: steps.arm.outcome == 'success'
+        env:
+          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
+          HEX_PATH: ${{ steps.arm.outputs.hex_path }}
+        run: |
+          set -euo pipefail
+          if [ -z "$EXPECTED_VERSION" ]; then
+            echo "::error::EXPECTED_VERSION is empty -- comparing against a bare ':py32f071' would be nearly vacuous"
+            exit 2
+          fi
+          EXPECTED="${EXPECTED_VERSION}:py32f071"
+          arm-none-eabi-objcopy -I ihex -O binary "$HEX_PATH" "$RUNNER_TEMP/py32.bin"
+          # A2: grep -Fq, deliberately NOT -Fqx (whole-line equality). .rodata
+          # packing on this target is unobserved -- a too-strict whole-line
+          # match would fail rehearsal run A for a reason that has nothing to
+          # do with the property being asserted. Do not "tighten" this to -x
+          # without first observing real .rodata layout on a real run.
+          # A6: no --gap-fill/--pad-to needed -- the sparse binary still
+          # contains the literal bytes.
+          if ! strings "$RUNNER_TEMP/py32.bin" | grep -Fq -- "$EXPECTED"; then
+            echo "::error::published image does not contain expected version string '$EXPECTED'"
+            exit 1
+          fi
+          echo "PASS: image contains version string $EXPECTED" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Resolve release target SHA
         id: release_target
         run: |
