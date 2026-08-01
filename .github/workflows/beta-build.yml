@@ -18,6 +18,16 @@ on:
         description: 'Explicit PEP 440 pre-release version (e.g. 3.1.0b1). Leave blank for auto-increment via git-tag scan.'
         required: false
         type: string
+      # D-01/D-03: permanent rehearsal input (not scaffolding). Deleting it at
+      # milestone close would leave the next person to change this job with
+      # no way to rehearse, and they would test on `beta` instead (128-CONTEXT
+      # D-03). Typed `boolean` (Security V5): a string-typed input could carry
+      # an arbitrary value into `draft:` and `tag_name:` in Plan 128-07.
+      rehearsal:
+        description: 'Rehearsal mode: publish a DRAFT release under a rehearsal-<run_id> tag instead of a real pre-release. Leave false for a real beta cut.'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -29,6 +39,27 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # D-01 (permanent, not scaffolding) / A1: `workflow_dispatch` inputs are
+      # absent on a `push` event, so `inputs.rehearsal` resolves to an empty
+      # string on every real `beta` push -- a `draft: true` leaking onto that
+      # push would silently stop publishing real betas. This step resolves
+      # the value exactly once and echoes it to $GITHUB_STEP_SUMMARY on every
+      # run so a `beta` push visibly shows it resolve to `false`, rather than
+      # leaving a reader to reason about the expression at each use site.
+      # Confirmed by observation on rehearsal run A (Plan 128-10).
+      - name: Resolve rehearsal mode
+        id: mode
+        env:
+          REHEARSAL_INPUT: ${{ inputs.rehearsal }}
+        run: |
+          if [ "$REHEARSAL_INPUT" = "true" ]; then
+            REHEARSAL=true
+          else
+            REHEARSAL=false
+          fi
+          echo "rehearsal=${REHEARSAL}" >> "$GITHUB_OUTPUT"
+          echo "Resolved rehearsal mode: ${REHEARSAL}" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/cache@v4
         with:
