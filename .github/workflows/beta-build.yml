@@ -47,7 +47,8 @@ jobs:
       # the value exactly once and echoes it to $GITHUB_STEP_SUMMARY on every
       # run so a `beta` push visibly shows it resolve to `false`, rather than
       # leaving a reader to reason about the expression at each use site.
-      # Confirmed by observation on rehearsal run A (Plan 128-10).
+      # The resolved value is therefore self-evidencing: read it off the step
+      # summary of the run in front of you rather than trusting this comment.
       - name: Resolve rehearsal mode
         id: mode
         env:
