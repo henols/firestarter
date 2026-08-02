@@ -8,14 +8,26 @@ ENTRY(Reset_Handler)
 MEMORY
 {
     /* D-13 -- NAMED SEAM ONLY, ZERO LENGTH, for Phase 129 (PCB-03/FUT-N05) to cite.
+     * See platform/py32f071/FLASH-PATH-AND-PCB.md §"Flash budget, as actually
+     * reserved" and, in the Firestarter meta-repo, .planning/v1.23-FLASH-PATH-DECISION.md.
      *
      * READ THIS BEFORE GIVING IT A SIZE. Unlike the CONFIG region below -- which
      * sits at the TOP of flash and can grow downward without moving anything --
      * giving BOOTLOADER a non-zero length MOVES the application's ORIGIN. That is
      * a flash-map MIGRATION, not a resize: every previously flashed unit's vector
-     * table address changes, on a part with no VTOR. Phase 129 must record the
-     * bootloader budget as an INTENT WITH THAT COST ATTACHED, never as a number
-     * that looks already paid for.
+     * table address changes. The corrected cost: every already-flashed unit needs
+     * a full re-flash over DFU or SWD instead of an in-place update -- precisely
+     * the recovery paths a self-flash bootloader exists to avoid.
+     *
+     * (Correction, Phase 129 / 129-RESEARCH.md C-1: this comment previously
+     * attributed the cost to the absence of a vector-table offset register; that
+     * attribution was wrong. This part's CMSIS device header declares
+     * __VTOR_PRESENT, and the compiled SystemInit writes SCB->VTOR at every
+     * boot, so the vector table moving is the cheap half -- the one-time fleet
+     * re-flash above is the expensive half.)
+     *
+     * Phase 129 must record the bootloader budget as an INTENT WITH THAT COST
+     * ATTACHED, never as a number that looks already paid for.
      */
     BOOTLOADER (rx) : ORIGIN = 0x08000000, LENGTH = 0
 
