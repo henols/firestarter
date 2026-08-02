@@ -68,6 +68,49 @@ content class, `TestFlashPathRecordSync`, to this same module):
      1.
   9. test_dirty_tree_is_detected -- F-14 mode 5.
   10. test_git_binary_is_required_not_optional.
+
+Plan 02's parity and content class, `TestFlashPathRecordSync` (12 test
+functions, 31 collected legs -- RED by construction on arrival, since
+neither record exists yet):
+  11. test_meta_extract_is_non_vacuous -- parametrized over _SHARED_KEYS (5
+      legs).
+  12. test_fw_extract_is_non_vacuous -- parametrized over _SHARED_KEYS (5
+      legs).
+  13. test_shared_sections_match -- parametrized over _SHARED_KEYS (5 legs).
+  14. test_three_tiers_and_non_retirement -- parametrized over
+      ("meta", "fw") (2 legs). PCB-01.
+  15. test_pcb_checklist_rows_are_wellformed -- parametrized over
+      ("meta", "fw") (2 legs). PCB-02.
+  16. test_flash_budget_cites_reserved_map -- parametrized over
+      ("meta", "fw") (2 legs). PCB-03.
+  17. test_bootloader_figure_carries_its_cost -- parametrized over
+      ("meta", "fw") (2 legs). D-10's proximity gate.
+  18. test_vid_pid_decision_and_ship_gate -- parametrized over
+      ("meta", "fw") (2 legs). PCB-04.
+  19. test_socket_empty_instruction_present -- parametrized over
+      ("meta", "fw", "readme") (3 legs). PCB-05.
+  20. test_linker_comment_cross_references_record (1 leg). D-11 / C-1.
+  21. test_seed_status_is_no_longer_dormant (1 leg). D-17 / D-18.
+  22. test_planted_mutation_of_the_real_subset_is_detected (1 leg). F-14
+      mode 1 against the real artifact.
+
+Expected-RED ledger on arrival. All 31 legs added by Plan 02 are RED when
+this module is committed -- neither `.planning/v1.23-FLASH-PATH-DECISION.md`
+nor `platform/py32f071/FLASH-PATH-AND-PCB.md` exists yet. The RED for every
+`meta`-side leg is `MissingScanTargetError` (never a skip): `_meta_doc()`
+routes through `meta_presence.meta_path()`, which raises under a present
+meta repo with a missing target. The RED for every `fw`-side and `readme`
+leg is a plain `AssertionError` from the `.exists()` guard in
+`_fw_doc_text()` / `_readme_text()`, or (once the firmware subset exists) a
+content `AssertionError` from a needle/literal miss. Discharging plan per
+group: `129-03` discharges S1 (test 14); `129-04` discharges S2 and S3
+(tests 15, 16, 17); `129-05` discharges S4 and S5 (tests 18, 19); `129-06`
+discharges every `fw` and `readme` parametrization not already covered, all
+five `test_shared_sections_match` legs (test 13) and the planted-mutation
+leg (test 22); `129-07` discharges the linker leg (test 20); `129-08`
+discharges the seed leg (test 21). Tests 11 and 12 (the per-copy
+non-vacuity legs) are discharged incrementally as each record's content
+lands.
 """
 
 from __future__ import annotations
@@ -126,8 +169,9 @@ def _extract_shared_section(text, key):
     `[SHARED:<key>]` marker and the next '## ' heading line (exclusive),
     with the heading line itself excluded and trailing blank lines
     stripped. Adapted from
-    tests/test_config_storage_design_vendored.py's `_extract_section`:
-    span-scoping matters because a document that merely mentions a marker
+    tests/test_config_storage_design_vendored.py's analogous
+    section-extraction helper: span-scoping matters because a document
+    that merely mentions a marker
     somewhere while silently following it must fail, which a file-wide
     substring search alone would not catch.
 
@@ -272,6 +316,304 @@ def _synthetic_record(bodies):
         lines.append(bodies[key])
         lines.append("")
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Plan 02 additions: the gated literals, needle sets and accessors the
+# parity/content class (TestFlashPathRecordSync, below) is built on. Every
+# leg still goes through the single _extract_shared_section /
+# _shared_sections / _assert_non_vacuous trio above -- no second extractor
+# is introduced here (the single-helper rule, PATTERNS S3a).
+# ---------------------------------------------------------------------------
+
+_README = _FW_REPO_ROOT / "platform" / "py32f071" / "README.md"
+
+# Three exact literals. Every character matters -- these are what plans
+# 129-03/05/06 must reproduce verbatim in the two records. U+2014 EM DASH is
+# used wherever an em dash appears, never a double hyphen. Each assertion
+# against these constants is a plain substring test, so the records may wrap
+# the sentence in `**` bold markers without breaking it.
+
+# PCB-01: the three-tier flash path does not retire the self-flash seed.
+_L1_NON_RETIREMENT = (
+    "Landing the factory USB DFU path in v1.23 does not retire the "
+    "self-flash bootloader seed."
+)
+
+# PCB-04: the hard ship gate -- no board ships, no release advertises a USB
+# identity, until a real PID is allocated under VID 0x1209 (pid.codes).
+_L2_SHIP_GATE = (
+    "Ship gate: no PY32F071 board ships, and no release advertises a USB "
+    "identity, until a PID allocated under VID 0x1209 exists."
+)
+
+# PCB-05: the socket-empty-before-install instruction.
+_L3_SOCKET_EMPTY = (
+    "Before any PY32F071 firmware install — DFU, SWD or otherwise — "
+    "the PROM socket must be empty."
+)
+
+# Needle tuples, one module constant per shared section. Each comment names
+# its source finding in 129-RESEARCH.md.
+
+# PCB-01, RESEARCH S"Three-Tier Flash Path".
+_S1_NEEDLES = (
+    "self-flash bootloader",
+    "CDC",
+    "COBS",
+    "factory USB DFU",
+    "SWD",
+    "intended primary",
+    "maintainer/manufacturing recovery",
+    "last resort",
+)
+
+# PCB-02, F-5/F-8/F-9/F-10/F-11.
+_S2_NEEDLES = (
+    "PF8",
+    "nBOOT1",
+    "PA13",
+    "PA14",
+    "nRST",
+    "PB0",
+    "PB7",
+    "LQFP64",
+    "CSP64",
+    "QFN64",
+    "LQFP48",
+    "QFN48",
+    "QFN56",
+    "QFN32",
+    "HSE",
+    "PA4",
+    "ADC",
+    "PA11",
+    "PA12",
+    "1.5 kΩ",
+)
+
+# CONTEXT S"Specifics" -- "the record should state its own edges".
+_S2_UNDECIDED_NEEDLES = ("socket", "ZIF", "connector", "power budget")
+
+# PCB-03, F-1/F-3/C-1/C-4.
+_S3_NEEDLES = (
+    "0x08000000",
+    "0x0801DFFF",
+    "0x0801E000",
+    "0x0801E100",
+    "0x08020000",
+    "120K",
+    "8K",
+    "256",
+    "8192",
+    "Sector 15",
+    "__config_page_size",
+    "__config_slot_a_start",
+    "__config_slot_b_start",
+    "__config_region_end",
+    "24 KiB",
+    "3 sectors",
+    "14.6 KiB",
+    "27,372",
+    "192 B",
+    "__VTOR_PRESENT",
+    "SCB->VTOR",
+)
+
+# The bootloader reservation figure, in either of its two written forms:
+# "24" + optional whitespace + "KiB", or "3" + whitespace + optional "whole"
+# + whitespace + "sectors". Case-insensitive.
+_S3_FIGURE_RE = re.compile(r"24\s*KiB|3\s+(?:whole\s+)?sectors", re.IGNORECASE)
+
+# D-10: at least one of these must appear within a two-line window either
+# side of every _S3_FIGURE_RE match, so the figure never appears without its
+# migration cost attached.
+_S3_COST_TOKENS = ("ORIGIN", "migration", "re-flash")
+
+# PCB-04, C-2/F-6/F-7/F-12/F-17.
+_S4_NEEDLES = (
+    "0x1209",
+    "1209:0001",
+    "pid.codes",
+    "0x36B7",
+    "0xFFFF",
+    "Puya Semiconductor",
+    "usbd_cdc_if.c",
+    "pycdc.inf",
+    "0ed2f4b4d3391eccfd4491006a30295fd78e32c2",
+    "0x0448",
+    "py32_dfu.py",
+    "0xFE/0x01",
+)
+
+# PCB-05, F-13.
+_S5_NEEDLES = (
+    "provisional",
+    "RURP_PY32F071_PINMAP_PROVISIONAL",
+    "direction",
+    "BOOT0",
+    "three board revisions",
+)
+
+# D-11, C-1.
+_LINKER_NEEDLES = (
+    "FLASH-PATH-AND-PCB.md",
+    "v1.23-FLASH-PATH-DECISION.md",
+    "__VTOR_PRESENT",
+    "SCB->VTOR",
+    "BOOTLOADER (rx) : ORIGIN = 0x08000000, LENGTH = 0",
+)
+
+# The two-word clause C-1 requires the linker script's BOOTLOADER comment to
+# no longer carry: this part declares __VTOR_PRESENT 1 and the compiled
+# SystemInit writes SCB->VTOR at every boot (RESEARCH C-1), so "on a part
+# with no VTOR" is factually false. The record -- not this repo's
+# REQUIREMENTS.md or ROADMAP.md -- is where the correction is stated;
+# Phase 130's CLOSE-01 sweep owns that prose.
+_LINKER_FORBIDDEN_RE = re.compile(r"no\s+VTOR", re.IGNORECASE)
+
+
+def _meta_doc() -> Path:
+    """Resolve the meta repo's authoritative flash-path record through
+    meta_presence.meta_path() -- never a string concatenation onto
+    META_ROOT -- so a missing target under a present meta repo raises
+    MissingScanTargetError instead of silently skipping."""
+    return meta_path(".planning", _META_DOC_REL)
+
+
+def _fw_doc_text() -> str:
+    """Assert the firmware subset record exists (naming the resolved
+    absolute path), then return its text. A missing subset must fail the
+    suite, never be skipped."""
+    assert _FW_DOC.exists(), (
+        f"{_FW_DOC} does not exist. This must FAIL the suite, never be "
+        "silently skipped."
+    )
+    return _FW_DOC.read_text()
+
+
+def _readme_text() -> str:
+    """Assert platform/py32f071/README.md exists (naming the resolved
+    absolute path), then return its text. A missing README must fail the
+    suite, never be skipped."""
+    assert _README.exists(), (
+        f"{_README} does not exist. This must FAIL the suite, never be "
+        "silently skipped."
+    )
+    return _README.read_text()
+
+
+def _linker_text() -> str:
+    """Assert the PY32F071 linker script exists (naming the resolved
+    absolute path), then return its text. A missing linker script must fail
+    the suite, never be skipped."""
+    assert _LINKER.exists(), (
+        f"{_LINKER} does not exist. This must FAIL the suite, never be "
+        "silently skipped."
+    )
+    return _LINKER.read_text()
+
+
+def _seed_text() -> str:
+    """Read the py32f071 no-external-tool-fw-install seed through
+    meta_presence.meta_path(), so a missing seed under a present meta repo
+    raises MissingScanTargetError instead of silently skipping."""
+    return meta_path(".planning", _SEED_REL).read_text()
+
+
+def _copy_text(copy_id: str) -> str:
+    """Dispatch to the text of the named copy: 'meta' -> the authoritative
+    record, 'fw' -> the firmware subset, 'readme' -> platform/py32f071's
+    README. Any other id is a programmer error, not a test outcome."""
+    if copy_id == "meta":
+        return _meta_doc().read_text()
+    if copy_id == "fw":
+        return _fw_doc_text()
+    if copy_id == "readme":
+        return _readme_text()
+    raise AssertionError(
+        f"unknown copy_id {copy_id!r} -- expected 'meta', 'fw' or 'readme'"
+    )
+
+
+def _frontmatter(text):
+    """Return an ordered dict of the top-level `key: value` pairs in the
+    YAML block delimited by the first two lines equal to '---', requiring
+    the opening delimiter on line 1. Raises AssertionError containing
+    'refusing to guess' when the opening '---' is not line 1 or the closing
+    '---' is absent -- D-17's seed format is a fixed four-field schema and
+    this parser must not silently guess its shape."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        raise AssertionError(
+            "expected the opening '---' frontmatter delimiter on line 1 -- "
+            "refusing to guess where the frontmatter starts."
+        )
+    end_idx = None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            end_idx = i
+            break
+    if end_idx is None:
+        raise AssertionError(
+            "no closing '---' frontmatter delimiter found -- refusing to "
+            "guess where the frontmatter ends."
+        )
+    result = {}
+    for line in lines[1:end_idx]:
+        if not line.strip() or ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        result[key.strip()] = value.strip()
+    return result
+
+
+# A checklist row header: "- [ ] **R<digit> -- <title>". The Why and
+# Breaks-if-omitted lines must begin after EXACTLY two leading spaces.
+_ROW_HEADER_RE = re.compile(r"^- \[ \] \*\*R(\d+) — (.+)$")
+_ROW_WHY_RE = re.compile(r"^  - \*Why:\*(.{20,})")
+_ROW_BREAKS_RE = re.compile(r"^  - \*Breaks if omitted:\*(.{20,})")
+
+
+def _checklist_rows(body):
+    """Return a list of (row_id, title, why_line, breaks_line) tuples
+    parsed from `body`'s '- [ ] **R<digit> -- <title>' row headers, each
+    required to be followed by its two-space-indented '- *Why:*' and
+    '- *Breaks if omitted:*' lines (each carrying at least twenty
+    characters of text). Raises AssertionError naming the offending row id
+    when the shape is violated.
+
+    D-16: checkbox + one line of rationale + one line of what breaks. The
+    shape exists so Phase 130's CLOSE-02 honesty ledger can cite specific
+    rows."""
+    lines = body.splitlines()
+    rows = []
+    for i, line in enumerate(lines):
+        m = _ROW_HEADER_RE.match(line)
+        if not m:
+            continue
+        row_id = f"R{m.group(1)}"
+        title = m.group(2)
+        following = [ln for ln in lines[i + 1 :] if ln.strip() != ""]
+        if len(following) < 2:
+            raise AssertionError(
+                f"row {row_id} ({title!r}) is not followed by both its "
+                "Why and Breaks-if-omitted lines."
+            )
+        why_line, breaks_line = following[0], following[1]
+        if not _ROW_WHY_RE.match(why_line):
+            raise AssertionError(
+                f"row {row_id} ({title!r})'s Why line does not match the "
+                f"required '  - *Why:*<20+ chars>' shape. Got: {why_line!r}"
+            )
+        if not _ROW_BREAKS_RE.match(breaks_line):
+            raise AssertionError(
+                f"row {row_id} ({title!r})'s Breaks-if-omitted line does "
+                "not match the required '  - *Breaks if omitted:*<20+ "
+                f"chars>' shape. Got: {breaks_line!r}"
+            )
+        rows.append((row_id, title, why_line, breaks_line))
+    return rows
 
 
 class TestFlashPathRecordSyncFailsClosed:
