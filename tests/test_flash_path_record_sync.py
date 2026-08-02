@@ -696,12 +696,24 @@ class TestFlashPathRecordSyncFailsClosed:
         meta root, a missing scan target raises `MissingScanTargetError`
         rather than ever being downgraded to a skip. The filename is
         deliberately one that will never exist so this leg is stable
-        across every later wave that adds real files under `.planning/`."""
-        assert META_PRESENT, (
-            "this leg assumes the real meta root is present in this "
-            "devcontainer checkout -- the whole phase's premise (a "
-            "submodule checkout under a meta repo) does not hold otherwise."
-        )
+        across every later wave that adds real files under `.planning/`.
+
+        The meta root's presence is this leg's PREMISE, not its claim.
+        Where the premise holds -- the devcontainer's submodule-under-meta
+        checkout -- the leg runs and fails closed exactly as before. Where
+        it does not, as in a standalone CI checkout of this repo where no
+        meta root is fetched at all, the leg skips with the same auditable
+        `META_ABSENT_REASON` every other absent-root leg in this module
+        uses, rather than hard-asserting an environment fact into a
+        failure. Phase 129 wrote this as a bare `assert META_PRESENT`; that
+        was invisible until Phase 130 first ran this module in CI, where it
+        turned an unmet premise into a red beta-release build. Scoping it
+        is not a weakening: the gate's own subject -- that a missing scan
+        target raises rather than skips -- is still asserted wherever it
+        can be, and `test_absent_meta_claim_can_never_be_false` above
+        still makes a FALSE absence claim impossible by construction."""
+        if not META_PRESENT:
+            pytest.skip(META_ABSENT_REASON)
         with pytest.raises(MissingScanTargetError) as exc_info:
             meta_path(".planning", "__definitely_not_a_real_file__.md")
         message = str(exc_info.value)
