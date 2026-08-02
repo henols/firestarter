@@ -892,3 +892,336 @@ class TestFlashPathRecordSyncFailsClosed:
             "missing binary fails the suite rather than silently "
             "degrading."
         )
+
+
+# Built at runtime from the characters of the seed's own historical status
+# value, rather than embedded as a literal string in the assertion below.
+_SEED_FORBIDDEN_STATUS = "".join(
+    chr(c) for c in (100, 111, 114, 109, 97, 110, 116)
+)
+
+
+class TestFlashPathRecordSync:
+    """Plan 02's live legs: D-03's parity and content half over the two
+    copies of the v1.23 flash-path and PCB requirements record. Every
+    method carries `@requires_meta`. Every method re-reads and re-parses
+    (no caching across tests) and calls the `_assert_non_vacuous` guard
+    before comparing anything.
+
+    This class gates PCB-01...PCB-05 mechanically but does **NOT** close
+    any of them, and no requirement is marked complete in
+    `REQUIREMENTS.md` from this plan (the Phase 116 4x premature-tick
+    guard, in its most copyable form, PATTERNS S4).
+
+    All 31 legs collected here are RED on arrival -- see the module
+    docstring's 'Expected-RED ledger on arrival' paragraph for the exact
+    failure shape and the discharging plan for each group.
+    """
+
+    @requires_meta
+    @pytest.mark.parametrize("key", _SHARED_KEYS)
+    def test_meta_extract_is_non_vacuous(self, key):
+        """Coverage 11 -- parses the meta copy only, key `key`; no
+        comparison in this test. RED-by-construction while the meta
+        record does not exist: `_meta_doc()` raises
+        `MissingScanTargetError` before any section is parsed."""
+        text = _meta_doc().read_text()
+        section = _extract_shared_section(text, key)
+        _assert_non_vacuous(section, f"meta copy, key {key}")
+
+    @requires_meta
+    @pytest.mark.parametrize("key", _SHARED_KEYS)
+    def test_fw_extract_is_non_vacuous(self, key):
+        """Coverage 12 -- the same, for the firmware subset. A separate
+        test from Coverage 11 (not merged into one loop), per F-14 mode 2's
+        requirement of one non-vacuity assertion per parse in its own
+        test."""
+        text = _fw_doc_text()
+        section = _extract_shared_section(text, key)
+        _assert_non_vacuous(section, f"firmware subset copy, key {key}")
+
+    @requires_meta
+    @pytest.mark.parametrize("key", _SHARED_KEYS)
+    def test_shared_sections_match(self, key):
+        """Coverage 13 -- assert non-vacuity of BOTH parses first, then
+        assert the two bodies are equal. On failure the message names the
+        key, the first differing line number, and both differing lines."""
+        meta_text = _meta_doc().read_text()
+        fw_text = _fw_doc_text()
+        meta_section = _extract_shared_section(meta_text, key)
+        fw_section = _extract_shared_section(fw_text, key)
+        _assert_non_vacuous(meta_section, f"meta copy, key {key}")
+        _assert_non_vacuous(fw_section, f"firmware subset copy, key {key}")
+        if meta_section == fw_section:
+            return
+        meta_lines = meta_section.splitlines()
+        fw_lines = fw_section.splitlines()
+        first_diff = None
+        for i, (a, b) in enumerate(zip(meta_lines, fw_lines)):
+            if a != b:
+                first_diff = i
+                break
+        if first_diff is None:
+            first_diff = min(len(meta_lines), len(fw_lines))
+        meta_line_text = (
+            meta_lines[first_diff] if first_diff < len(meta_lines) else "<missing>"
+        )
+        fw_line_text = (
+            fw_lines[first_diff] if first_diff < len(fw_lines) else "<missing>"
+        )
+        raise AssertionError(
+            f"key {key}: meta and firmware subset bodies differ at line "
+            f"{first_diff}: meta={meta_line_text!r} fw={fw_line_text!r}"
+        )
+
+    @requires_meta
+    @pytest.mark.parametrize("copy_id", ("meta", "fw"))
+    def test_three_tiers_and_non_retirement(self, copy_id):
+        """Coverage 14 -- PCB-01. Extract S1; assert non-vacuity; assert
+        every _S1_NEEDLES entry is present; assert _L1_NON_RETIREMENT is a
+        substring."""
+        text = _copy_text(copy_id)
+        section = _extract_shared_section(text, "S1")
+        _assert_non_vacuous(section, f"{copy_id} copy, key S1")
+        missing = [n for n in _S1_NEEDLES if n not in section]
+        assert not missing, f"{copy_id} copy S1 missing needles: {missing!r}"
+        assert _L1_NON_RETIREMENT in section, (
+            f"{copy_id} copy S1 does not contain the exact non-retirement "
+            f"sentence: {_L1_NON_RETIREMENT!r}"
+        )
+
+    @requires_meta
+    @pytest.mark.parametrize("copy_id", ("meta", "fw"))
+    def test_pcb_checklist_rows_are_wellformed(self, copy_id):
+        """Coverage 15 -- PCB-02 / D-14 / D-16 / F-10. Extract S2; assert
+        non-vacuity; call _checklist_rows and assert exactly seven rows
+        R1...R7 in ascending order; assert every _S2_NEEDLES entry is
+        present; assert a '### Deliberately undecided' subsection exists
+        and carries all four _S2_UNDECIDED_NEEDLES within its own span."""
+        text = _copy_text(copy_id)
+        section = _extract_shared_section(text, "S2")
+        _assert_non_vacuous(section, f"{copy_id} copy, key S2")
+        rows = _checklist_rows(section)
+        row_ids = [r[0] for r in rows]
+        expected_ids = [f"R{n}" for n in range(1, 8)]
+        assert row_ids == expected_ids, (
+            f"{copy_id} copy S2: expected rows {expected_ids!r} in order, "
+            f"got {row_ids!r}"
+        )
+        missing = [n for n in _S2_NEEDLES if n not in section]
+        assert not missing, f"{copy_id} copy S2 missing needles: {missing!r}"
+        undecided_marker = "### Deliberately undecided"
+        assert undecided_marker in section, (
+            f"{copy_id} copy S2 has no {undecided_marker!r} subsection"
+        )
+        undecided_span = section[section.index(undecided_marker) :]
+        missing_undecided = [
+            n for n in _S2_UNDECIDED_NEEDLES if n not in undecided_span
+        ]
+        assert not missing_undecided, (
+            f"{copy_id} copy S2's {undecided_marker!r} subsection is "
+            f"missing needles: {missing_undecided!r}"
+        )
+
+    @requires_meta
+    @pytest.mark.parametrize("copy_id", ("meta", "fw"))
+    def test_flash_budget_cites_reserved_map(self, copy_id):
+        """Coverage 16 -- PCB-03 / F-1 / F-3 / C-1 / C-4. Extract S3;
+        assert non-vacuity; assert every _S3_NEEDLES entry is present,
+        reporting the full list of missing needles rather than the
+        first."""
+        text = _copy_text(copy_id)
+        section = _extract_shared_section(text, "S3")
+        _assert_non_vacuous(section, f"{copy_id} copy, key S3")
+        missing = [n for n in _S3_NEEDLES if n not in section]
+        assert not missing, f"{copy_id} copy S3 missing needles: {missing!r}"
+
+    @requires_meta
+    @pytest.mark.parametrize("copy_id", ("meta", "fw"))
+    def test_bootloader_figure_carries_its_cost(self, copy_id):
+        """Coverage 17 -- D-10's proximity gate. Split S3 into lines; for
+        every line matching _S3_FIGURE_RE, require at least one
+        _S3_COST_TOKENS entry within the window of two lines either side.
+        Assert at least one match exists first, so the gate can never pass
+        because the figure is absent (the vacuous shape A-7 measured)."""
+        text = _copy_text(copy_id)
+        section = _extract_shared_section(text, "S3")
+        _assert_non_vacuous(section, f"{copy_id} copy, key S3")
+        lines = section.splitlines()
+        figure_line_idxs = [
+            i for i, line in enumerate(lines) if _S3_FIGURE_RE.search(line)
+        ]
+        assert figure_line_idxs, (
+            f"{copy_id} copy S3 contains no line matching the bootloader "
+            "figure regex -- the proximity gate cannot pass vacuously "
+            "because the figure is absent (research finding A-7's shape)."
+        )
+        for idx in figure_line_idxs:
+            window = lines[max(0, idx - 2) : idx + 3]
+            if not any(
+                any(tok in w for tok in _S3_COST_TOKENS) for w in window
+            ):
+                raise AssertionError(
+                    f"{copy_id} copy S3 line {idx} ({lines[idx]!r}) carries "
+                    "the bootloader figure with no cost token "
+                    f"({_S3_COST_TOKENS!r}) within two lines either side."
+                )
+
+    @requires_meta
+    @pytest.mark.parametrize("copy_id", ("meta", "fw"))
+    def test_vid_pid_decision_and_ship_gate(self, copy_id):
+        """Coverage 18 -- PCB-04 / C-2 / F-6 / F-7. Extract S4; assert
+        non-vacuity; assert every _S4_NEEDLES entry is present; assert
+        _L2_SHIP_GATE is a substring."""
+        text = _copy_text(copy_id)
+        section = _extract_shared_section(text, "S4")
+        _assert_non_vacuous(section, f"{copy_id} copy, key S4")
+        missing = [n for n in _S4_NEEDLES if n not in section]
+        assert not missing, f"{copy_id} copy S4 missing needles: {missing!r}"
+        assert _L2_SHIP_GATE in section, (
+            f"{copy_id} copy S4 does not contain the exact ship-gate "
+            f"sentence: {_L2_SHIP_GATE!r}"
+        )
+
+    @requires_meta
+    @pytest.mark.parametrize("copy_id", ("meta", "fw", "readme"))
+    def test_socket_empty_instruction_present(self, copy_id):
+        """Coverage 19 -- PCB-05. For meta/fw, extract S5, assert
+        non-vacuity, assert _L3_SOCKET_EMPTY is a substring and every
+        _S5_NEEDLES entry is present. For readme, assert _L3_SOCKET_EMPTY
+        is a substring of the whole README text and that the README also
+        contains 'FLASH-PATH-AND-PCB.md' -- the README carries the
+        instruction and a pointer, not a fourth copy of the reasoning."""
+        if copy_id == "readme":
+            text = _readme_text()
+            assert _L3_SOCKET_EMPTY in text, (
+                "README.md does not contain the exact socket-empty "
+                f"sentence: {_L3_SOCKET_EMPTY!r}"
+            )
+            assert "FLASH-PATH-AND-PCB.md" in text, (
+                "README.md does not point to FLASH-PATH-AND-PCB.md -- the "
+                "README carries the instruction and a pointer, not a "
+                "fourth copy of the reasoning."
+            )
+            return
+        text = _copy_text(copy_id)
+        section = _extract_shared_section(text, "S5")
+        _assert_non_vacuous(section, f"{copy_id} copy, key S5")
+        assert _L3_SOCKET_EMPTY in section, (
+            f"{copy_id} copy S5 does not contain the exact socket-empty "
+            f"sentence: {_L3_SOCKET_EMPTY!r}"
+        )
+        missing = [n for n in _S5_NEEDLES if n not in section]
+        assert not missing, f"{copy_id} copy S5 missing needles: {missing!r}"
+
+    @requires_meta
+    def test_linker_comment_cross_references_record(self):
+        """Coverage 20 -- D-11 / C-1. Read _linker_text(); assert every
+        _LINKER_NEEDLES entry is present; assert _LINKER_FORBIDDEN_RE finds
+        no match; assert the BOOTLOADER comment block itself (from the
+        MEMORY opening brace to the BOOTLOADER (rx) line) is non-empty via
+        _assert_non_vacuous -- a file-wide substring search that silently
+        matched nothing would be the vacuous shape."""
+        text = _linker_text()
+        missing = [n for n in _LINKER_NEEDLES if n not in text]
+        assert not missing, f"linker script missing needles: {missing!r}"
+        forbidden_match = _LINKER_FORBIDDEN_RE.search(text)
+        assert forbidden_match is None, (
+            f"linker script still contains the false "
+            f"{forbidden_match.group(0)!r} clause -- RESEARCH C-1: the "
+            "part declares __VTOR_PRESENT 1 and the compiled SystemInit "
+            "writes SCB->VTOR at every boot."
+        )
+        lines = text.splitlines()
+        brace_idx = None
+        bootloader_idx = None
+        for i, line in enumerate(lines):
+            if brace_idx is None and "MEMORY" in line and "{" in line:
+                brace_idx = i
+            if line.strip().startswith("BOOTLOADER (rx)"):
+                bootloader_idx = i
+                break
+        assert brace_idx is not None and bootloader_idx is not None, (
+            "could not locate the MEMORY block opening brace or the "
+            "BOOTLOADER (rx) line in the linker script"
+        )
+        block = "\n".join(lines[brace_idx : bootloader_idx + 1])
+        _assert_non_vacuous(block, "linker script MEMORY-to-BOOTLOADER span")
+
+    @requires_meta
+    def test_seed_status_is_no_longer_dormant(self):
+        """Coverage 21 -- D-17 / D-18. Read _seed_text(); call
+        _frontmatter; assert its key set is exactly title,
+        trigger_condition, planted_date, status in that order; assert the
+        status value, lowercased and stripped, is not
+        _SEED_FORBIDDEN_STATUS; assert the body contains the relative
+        markdown link target '../v1.23-FLASH-PATH-DECISION.md'; assert the
+        body contains 'FUT-N05'."""
+        text = _seed_text()
+        fm = _frontmatter(text)
+        expected_keys = ["title", "trigger_condition", "planted_date", "status"]
+        assert list(fm.keys()) == expected_keys, (
+            f"seed frontmatter key order changed: {list(fm.keys())!r} -- "
+            "the seed format is a fixed four-field schema (D-17 must work "
+            "within it, not extend it)."
+        )
+        status = fm["status"].strip().lower()
+        assert status != _SEED_FORBIDDEN_STATUS, (
+            f"seed status is still {status!r} -- D-17 requires it be "
+            "updated to reflect that the trigger fired."
+        )
+        assert "../v1.23-FLASH-PATH-DECISION.md" in text, (
+            "seed body does not link the new record via the relative "
+            "markdown link target '../v1.23-FLASH-PATH-DECISION.md'"
+        )
+        assert "FUT-N05" in text, "seed body does not name FUT-N05"
+
+    @requires_meta
+    def test_planted_mutation_of_the_real_subset_is_detected(
+        self, tmp_path, monkeypatch
+    ):
+        """Coverage 22 -- F-14 mode 1 against the real artifact. The full
+        PATTERNS S3b ceremony: capture _FW_DOC into a local BEFORE any
+        monkeypatch; hash it with _git_hash_object; read its real text;
+        produce a mutated copy by replacing the first occurrence of
+        '24 KiB' inside its S3 body with '8 KiB'; assert the mutated text
+        differs from the real text; write the mutated text under
+        tmp_path; monkeypatch the module's own _FW_DOC constant; assert
+        _extract_shared_section of S3 from the planted copy differs from
+        the meta copy's S3; then assert _git_hash_object of the captured
+        real path is unchanged, and _git_porcelain(_FW_REPO_ROOT) is
+        empty."""
+        real_path = _FW_DOC  # captured BEFORE any monkeypatch
+        before_blob = _git_hash_object(real_path)
+        real_text = real_path.read_text()
+
+        replacement_target = "24 KiB"
+        mutated_text = real_text.replace(replacement_target, "8 KiB", 1)
+        assert mutated_text != real_text, (
+            "planted mutation did not actually differ from the real text "
+            f"-- the replacement target {replacement_target!r} was not "
+            "found (the record's wording may have changed)."
+        )
+
+        meta_text = _meta_doc().read_text()
+        meta_s3 = _extract_shared_section(meta_text, "S3")
+
+        planted_path = tmp_path / "planted-FLASH-PATH-AND-PCB.md"
+        planted_path.write_text(mutated_text)
+        monkeypatch.setattr(sys.modules[__name__], "_FW_DOC", planted_path)
+
+        planted_s3 = _extract_shared_section(_FW_DOC.read_text(), "S3")
+        assert planted_s3 != meta_s3, (
+            "expected the planted mutation to break parity, but the "
+            "planted S3 body still equals the meta copy's S3 body."
+        )
+
+        after_blob = _git_hash_object(real_path)
+        assert after_blob == before_blob, (
+            "the planted mutation touched the REAL FLASH-PATH-AND-PCB.md "
+            "-- it must only ever be written under tmp_path"
+        )
+        assert _git_porcelain(_FW_REPO_ROOT) == "", (
+            "the firmware repo's working tree is no longer clean after "
+            "the planted-copy test"
+        )
