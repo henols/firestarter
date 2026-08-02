@@ -17,6 +17,30 @@
 #define DATA_BUFFER_SIZE 512
 #endif
 
+// D-02: the single shared value-semantics default for the DEV_TOOLS switch,
+// so the same directive means the same thing on every target (AVR, native,
+// native_nodevtools and ARM/py32f071) instead of one presence-semantics
+// mechanism on AVR/native and a different by-omission mechanism on ARM,
+// where DEV_TOOLS=0 would perversely ENABLE dev tools under the old
+// #ifdef-based test. Placed INSIDE the __FIRESTARTER_H__ guard, beside
+// DATA_BUFFER_SIZE above (the in-tree precedent for exactly this idiom) --
+// placing it above the guard instead causes the host-repo parity test's
+// _find_header_guard_line_indices to misidentify the real guard, and the
+// test then passes only by an arithmetic cancellation between a spurious
+// #endif decrement and an un-skipped #ifndef increment (correction C-18),
+// never for the right reason. Honest scope caveat (correction C-7): two of
+// the six conversion sites -- include/dev_tools.h and src/dev_tools.cpp --
+// test DEV_TOOLS before including anything, so this default is not
+// syntactically in scope there. Behaviour is still correct at those two
+// sites without it: ISO C/C++ evaluates an undefined identifier inside a
+// preprocessor #if expression as 0, which is exactly this default's value,
+// so the block below is documentary (not load-bearing) at those two sites.
+// If -Wundef is ever enabled, those two sites will need this default pulled
+// into a dependency-free header included unconditionally at their top.
+#ifndef DEV_TOOLS
+#define DEV_TOOLS 0
+#endif
+
 /* CMD_FRAME_MAX: largest legitimate JSON command frame payload (bytes).
  * Worst-case JSON command is ~422 B; 512 B gives headroom.
  * Equals DATA_BUFFER_SIZE — the decoder's internal overflow cap.
@@ -39,7 +63,7 @@
 #define CMD_CHECK_CHIP_ID 5
 #define CMD_VERIFY 6
 
-#ifdef DEV_TOOLS
+#if DEV_TOOLS
 #define CMD_DEV_ADDRESS 7
 #define CMD_DEV_REGISTER 8
 #endif

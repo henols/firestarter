@@ -5,7 +5,7 @@
  * Permission is hereby granted under MIT license.
  */
 
-#ifdef DEV_TOOLS
+#if DEV_TOOLS
 #include "dev_tools.h"
 
 #include <Arduino.h>
