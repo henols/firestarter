@@ -142,3 +142,7 @@ image runs, boots or installs, because no PY32F071 PCB exists.
 ## Hardware validation still required
 
 Before connecting a PROM or applying programming voltage, validate the startup levels, complete `0x00`-`0xFF` data mapping, bus direction changes, every logical control signal, USB framing, voltage readings, and all PROM timing with appropriate test equipment. The provisional pin map is for compilation and early bring-up only.
+
+### Socket empty before any firmware install
+
+**Before any PY32F071 firmware install — DFU, SWD or otherwise — the PROM socket must be empty.** The pin map above is provisional, so a signal may be assigned the wrong direction, and a DFU install runs the factory bootloader, during which no Firestarter GPIO initialisation executes at all. See `FLASH-PATH-AND-PCB.md` §"Socket empty before any PY32F071 firmware install", in the same directory, for the full reasoning.

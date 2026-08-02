@@ -131,6 +131,26 @@ The `rurp_pinout.h` `ADC_BAND_R41_*` `#define` values are the firmware-side sour
 
 Post-Phase-35 semantic note: Plan 01 switched `pinMode(PIN_HW_REVISION_DETECT_ADC)` from `INPUT_PULLUP` to `INPUT` (high-Z), disabling the MCU internal pull-up. The R41 detect divider's R_top is therefore no longer active; the existing ADC band thresholds (`200/220/600`) characterize *A3-net composition* (R41-only-to-GND = low; external-pull-up-active = mid; floating = high), not R41 value. Future v1.8 Rev 2.4 PCB could add an external R_top to restore the original schematic-divider semantics.
 
+### PY32F071 Flash-Path and PCB Documentation
+
+`platform/py32f071/FLASH-PATH-AND-PCB.md` is a subset clone of the Firestarter meta-repo decision
+record at `.planning/v1.23-FLASH-PATH-DECISION.md`. It carries five shared sections, named by
+marker so a reader can find the contract from the sub-repo, from the meta record, or from this
+file — the third of the three places the same five keys are named, matching the v1.7 precedent:
+`[SHARED:S1]` the three-tier flash path, `[SHARED:S2]` the PCB checklist, `[SHARED:S3]` the flash
+budget, `[SHARED:S4]` the USB vendor and product identity, `[SHARED:S5]` the socket-empty
+instruction. If any of those sections changes in the meta-repo, update the sub-repo doc in the
+**same change** — and unlike the v1.7 precedent above, this one is enforced mechanically by
+`tests/test_flash_path_record_sync.py`, not by lockstep discipline alone, so a divergence is a
+test failure rather than a latent inconsistency. Stated honestly: that test module runs in no CI leg on this branch,
+so the enforcement is a local-run obligation for anyone editing either copy — do not imply CI
+coverage. The seam `FIRESTARTER_META_ROOT`, alongside the existing
+`FIRESTARTER_FW_ROOT` and `FIRESTARTER_SIZE_BASELINE`, overrides the resolved meta-repo **root
+only**, never the marker name, and it binds at import so it must be set in a child process rather
+than monkeypatched; this repository has no central environment-variable inventory, so this
+sentence is the one place a reader who is not already inside `tests/meta_presence.py` can
+discover it. Origin: Phase 129 / v1.23 (the analog above cites Phase 35 / v1.7).
+
 ## Native (Host) Test Environment
 
 The dispatch logic in `configure_memory` is exercised by Unity tests that run
