@@ -17,12 +17,35 @@
 #define FIRESTARTER_USB_TIMEOUT_MS 100U
 
 #ifndef FIRESTARTER_USB_VID
-#define FIRESTARTER_USB_VID 0x36B7U
+#define FIRESTARTER_USB_VID 0x1209U
 #endif
 
 #ifndef FIRESTARTER_USB_PID
-#define FIRESTARTER_USB_PID 0xFFFFU
+#define FIRESTARTER_USB_PID 0x0001U
 #endif
+
+/*
+ * FIRESTARTER_USB_VID/FIRESTARTER_USB_PID present pid.codes' documented
+ * private-testing pair 1209:0001 under pid.codes' community VID 0x1209.
+ * This is NOT an allocated PID.
+ *
+ * pid.codes' terms ask that any source referencing this id carry a warning
+ * that the PID is not universally unique and must not be relied on outside
+ * a test environment -- this firmware carries that warning here.
+ *
+ * This replaces the previous pair 0x36B7/0xFFFF, which is registered to
+ * Puya Semiconductor and was copied verbatim from the pinned SDK's own USB
+ * CDC example. Before this change, this board presented another company's
+ * registered vendor identity on a product they did not make.
+ *
+ * The decision this pair implements lives in
+ * platform/py32f071/FLASH-PATH-AND-PCB.md section 5 (and its meta twin
+ * .planning/v1.23-FLASH-PATH-DECISION.md section 5). Section 5(c)'s ship
+ * gate stands unchanged: no board ships and no release advertises a USB
+ * identity until a PID allocated under VID 0x1209 exists. Phase 130 D-11
+ * reverses Phase 129 D-06, which declined this edit only because that
+ * phase was docs-only with no cut planned.
+ */
 
 #define FIRESTARTER_USB_CONFIG_SIZE (9U + CDC_ACM_DESCRIPTOR_LEN)
 
