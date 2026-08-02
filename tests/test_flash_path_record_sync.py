@@ -1133,12 +1133,23 @@ class TestFlashPathRecordSync:
             "writes SCB->VTOR at every boot."
         )
         lines = text.splitlines()
+        memory_idx = None
         brace_idx = None
         bootloader_idx = None
         for i, line in enumerate(lines):
-            if brace_idx is None and "MEMORY" in line and "{" in line:
+            stripped = line.strip()
+            # Exact-match "MEMORY" so a comment merely mentioning the word
+            # (e.g. prose referencing "the MEMORY block") cannot satisfy this
+            # -- only the real, structural `MEMORY` keyword line qualifies.
+            if memory_idx is None and stripped == "MEMORY":
+                memory_idx = i
+                continue
+            # The brace is the first bare "{" line found AFTER the MEMORY
+            # keyword line -- GNU ld's own two-line "MEMORY\n{" convention,
+            # not a same-line "MEMORY {" this file has never used.
+            if memory_idx is not None and brace_idx is None and stripped == "{":
                 brace_idx = i
-            if line.strip().startswith("BOOTLOADER (rx)"):
+            if stripped.startswith("BOOTLOADER (rx)"):
                 bootloader_idx = i
                 break
         assert brace_idx is not None and bootloader_idx is not None, (
