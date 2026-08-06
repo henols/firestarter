@@ -1,24 +1,31 @@
 name: PY32F071 firmware
 
 on:
-  # MERGE-03/D-05: push: branches: [beta] was implemented literally, with no
-  # paths filter, so any change anywhere that breaks the ARM configure is
-  # caught on beta. The double-ARM-build question this comment used to record
-  # for Phase 128 to resolve is RESOLVED by D-05: both builds stay, with
-  # distinct roles -- this workflow is the LOUD gate (no continue-on-error,
-  # red and staying red when ARM breaks on beta) and beta-build.yml's ARM
-  # steps are the SOFT copy (continue-on-error: true, existing only to
-  # produce the release asset, never able to block AVR). This pairing is what
-  # makes beta-build.yml's containment defensible; neither half is sound
-  # alone. continue-on-error comes off beta-build.yml's call site when the
-  # target is validated on real silicon; no PCB exists, so it is unreachable
-  # this milestone and the flag stays there. The push/pull_request/
-  # workflow_dispatch trigger blocks themselves change in no way --
-  # MERGE-03's trigger is preserved verbatim, which is
-  # precisely why ad47c3b was re-applied by hand rather than cherry-picked
-  # (128-03-SUMMARY.md).
+  # MERGE-03/D-05: this workflow is the LOUD ARM gate -- no continue-on-error,
+  # red and staying red when ARM breaks -- while beta-build.yml's ARM steps are
+  # the SOFT copy (continue-on-error: true, existing only to produce the
+  # release asset, never able to block AVR). That pairing is what makes
+  # beta-build.yml's containment defensible; neither half is sound alone.
+  # continue-on-error comes off beta-build.yml's call site when the target is
+  # validated on real silicon; no PCB exists, so it is unreachable and the flag
+  # stays there.
+  #
+  # SUPERSEDES the MERGE-03 note that used to live here recording the trigger
+  # as "preserved verbatim" (128-03-SUMMARY.md). `push: branches: [beta]`
+  # meant ARM was only proven once work reached beta -- a push to a milestone
+  # or fix branch built nothing, so an ARM break was found at merge time
+  # rather than when it was written. The push filter is removed; the loud gate
+  # now runs wherever the code is.
+  #
+  # This workflow publishes nothing. Its two upload-artifact steps attach
+  # ephemeral build output to the run itself -- they are not releases, and
+  # keeping them on every branch is the point: the .hex is most useful to
+  # download exactly when the work is still on a branch. The release ASSET is
+  # produced by beta-build.yml, which remains beta-only.
+  # '**' matches every BRANCH but no tags -- milestone-close tag pushes must
+  # still fire zero CI.
   push:
-    branches: [beta]
+    branches: ['**']
   pull_request:
     paths:
       - "platform/py32f071/**"
@@ -27,6 +34,13 @@ on:
       - "lib/jsmn/**"
       - ".github/workflows/py32f071.yml"
   workflow_dispatch:
+
+# A same-repo PR branch now matches both `push` and the path-filtered
+# `pull_request`, so supersede stale runs per ref rather than queueing both to
+# completion. Never cancel on a publishing branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/beta' }}
 
 jobs:
   build:
