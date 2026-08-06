@@ -154,7 +154,43 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     LOG_INFO_ID_U8(MSG_INFO_HW, (uint8_t)rurp_get_hardware_revision());
 #endif
     LOG_INFO_ID_U8(MSG_INFO_CMD, (uint8_t)handle->cmd);
-    LOG_OK_ID_U16(MSG_OK_READY, (uint16_t)DATA_BUFFER_SIZE);
+    // CAP-02: the operation-setup ack carries every identity value the host
+    // needs to gate compatibility BEFORE any hardware moves. configure_memory
+    // has already run at this point, but every configure_* handler is pure
+    // (function-pointer assignment only) and the VPP regulator is not engaged
+    // until firestarter_operation_init, which sits behind op_wait_for_ack() —
+    // so a host that refuses here stops the sequence with the rail still down.
+    //
+    // Wire layout, extending the CAP-01 2-byte buffer-size region:
+    //   [buffer_size u16 BE][effective_hw_revision u8][ver_len u8][ver bytes]
+    //
+    // MSG_OK_READY is declared `params = [{ type = "bytes" }]` in the message
+    // catalog, so this needs no catalog edit and no codegen regen. Hosts
+    // predating CAP-02 test `len(params) == 2`, miss, and fall back to their
+    // 512-byte floor — degraded throughput, never a misparse.
+    //
+    // The revision byte is ALWAYS emitted: on builds without HARDWARE_REVISION
+    // it is 0xFE (the REVISION_UNKNOWN value — the symbol itself is inside that
+    // same #ifdef, so it cannot be named here). Keeping the byte unconditional
+    // means the ack's shape never varies by build configuration, only by the
+    // length of the version string, and "no detection compiled in" reaches the
+    // host as a value it can reject rather than as a missing field.
+    {
+        const char* _ver = FW_VERSION;
+        uint8_t _vlen = (uint8_t)strlen(_ver);
+        if (_vlen > 32) _vlen = 32;
+        uint8_t _ready[4 + 32];
+        _ready[0] = (uint8_t)(((uint16_t)DATA_BUFFER_SIZE >> 8) & 0xFF);
+        _ready[1] = (uint8_t)((uint16_t)DATA_BUFFER_SIZE & 0xFF);
+#ifdef HARDWARE_REVISION
+        _ready[2] = (uint8_t)rurp_get_hardware_revision();
+#else
+        _ready[2] = 0xFE;
+#endif
+        _ready[3] = _vlen;
+        memcpy(_ready + 4, _ver, _vlen);
+        LOG_OK_ID_BYTES(MSG_OK_READY, _ready, (uint8_t)(4 + _vlen));
+    }
     op_reset_timeout();
     return true;
 }
