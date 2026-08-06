@@ -54,7 +54,23 @@ jobs:
       contents: write
 
     steps:
+      # fetch-depth: 0 is REQUIRED, not hygiene. `pytest tests/ -v` below runs
+      # the Phase-123/129 history gates (check_landing_range, the flash-geometry
+      # ordering pair, the PR-45 ancestry pair). Every one of them walks git
+      # history: they resolve a fork SHA, and they assert that a commit touching
+      # a given path exists strictly after another commit. Under checkout's
+      # default shallow depth-1 clone those SHAs are not in the repository at
+      # all, and the gates fail with "does not resolve to a commit" rather than
+      # with anything about the code.
+      #
+      # This was invisible while the workflow ran on main only: main lags beta
+      # by a long way and does not carry those test files, so the step passed
+      # there for want of anything to run. Opening the trigger to every branch
+      # is what surfaced it. beta-build.yml already sets fetch-depth: 0 for the
+      # same reason -- this brings build.yml in line with it.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/cache@v4
         with:
