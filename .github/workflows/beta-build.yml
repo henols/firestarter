@@ -1,17 +1,30 @@
 name: Firestarter beta pre-release build
 on:
+  # EVERY merge to beta cuts a pre-release. The paths-ignore list that used to
+  # sit here ('**.md', '**.sh', '.gitignore', 'docs/**', 'documents/**',
+  # 'images/**', '.vscode/**', '.editorconfig/**') meant a merge touching only
+  # those paths bumped no version and published nothing, leaving the published
+  # beta not corresponding to the beta branch.
+  #
+  # That matters more here than in the host repo, because the version is
+  # COMPILED IN: FW_VERSION comes from include/version.h, which only changes
+  # when the bump below runs. A beta commit that skipped the bump would build
+  # firmware reporting the PREVIOUS release's version -- a binary that
+  # misreports which version it is, and a host-side version gate reading a
+  # number that does not identify the code it is talking to.
+  #
+  # Matches beta-release.yml in firestarter_app, which dropped the same filter
+  # for the same reason. Constant version bumping on beta is explicitly
+  # acceptable: beta is a moving pre-release channel, not a curated one.
+  #
+  # No publish loop, and this is settled by evidence rather than by reasoning
+  # about GITHUB_TOKEN semantics: the "Apply automatic changes" auto-commit
+  # below writes include/version.h, which was NEVER in the removed list. If a
+  # GITHUB_TOKEN push could trigger this workflow, commit 66c3101 on beta
+  # would have started a second run. It started none.
   push:
     branches:
     - beta
-    paths-ignore:
-    - '**.md'
-    - '**.sh'
-    - '.gitignore'
-    - 'docs/**'
-    - 'documents/**'
-    - 'images/**'
-    - '.vscode/**'
-    - '.editorconfig/**'
   workflow_dispatch:
     inputs:
       beta_version:
