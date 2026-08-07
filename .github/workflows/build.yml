@@ -18,7 +18,20 @@ on:
     # '**' matches every BRANCH but no tags. A bare `push:` would also fire
     # on tag pushes, and this project pushes tags across all three repos at
     # milestone close expecting zero CI from them.
-    branches: ['**']
+    #
+    # '!beta' keeps THIS workflow -- the STABLE publisher, the one holding the
+    # make_latest release -- off the beta branch entirely. beta has its own
+    # publisher in beta-build.yml, which builds the same targets and cuts the
+    # pre-release. Letting both fire on a beta push rebuilt everything twice
+    # and, worse, put the stable-release workflow on a branch that must never
+    # produce a stable release: the make_latest step is guarded by an `if:`,
+    # but a workflow that cannot run there cannot be one guard-edit away from
+    # publishing there either. Structural exclusion beats a conditional.
+    #
+    # This does NOT weaken PR coverage: `pull_request` below carries no branch
+    # filter, so a PR targeting beta still runs this workflow in full. Only the
+    # direct push to beta is excluded, and beta-build.yml covers that.
+    branches: ['**', '!beta']
     paths-ignore:
     - '**.md'
     - '**.sh'
