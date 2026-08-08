@@ -92,12 +92,58 @@ extern "C" void reset_register_cache(uint8_t lsb, uint8_t msb, rurp_register_t c
     control_register = ctrl;
 }
 
-/* Task 2 placeholder ONLY -- always-virgin read-back, just enough for the TU
- * to link and for the two smoke cases (which never drive the real write
- * loop) to pass. Task 3 replaces this with a stateful, address-keyed model
- * (trace_readback_reset / trace_readback_seed) that makes the real
- * eprom_write_execute retry loop converge instead of overflowing the
- * recorder. */
+/* Task 3: stateful, index-keyed read-back model. Without this, the default
+ * stub returns 0 for every read, so any non-zero target byte in the
+ * synthetic block never verifies -- eprom_write_execute runs all
+ * NUMBER_OF_RETRIES=20 passes and the strobe recorder overflows on an 8-byte
+ * block (138-RESEARCH.md "Pitfall 4" / the blocker this plan exists to
+ * solve). This is R2 from RESEARCH's two remedies: it keeps the REAL
+ * memory_get_data (and therefore the real memory_set_data) in the trace,
+ * unlike R1's pointer-swap, so the verify read's own bus activity is
+ * captured too.
+ *
+ * Byte-index derivation: the byte index is the LATCHED LSB register,
+ * masked to the 4-byte block size. This is valid for a block based at
+ * address 0 ONLY because all three derived bus_configs (AM27C512/AM27C020/
+ * AM2716) leave address bits 0-7 IDENTITY-mapped -- verified from source,
+ * not assumed: mem_util_remap_address_bus's only two ways to perturb a bit
+ * below the LSB byte are (a) the per-line remap loop, which starts at
+ * config.matching_lines and is >= 11 for all three chips (so it never
+ * touches bits 0-7), and (b) config.static_high_mask / config.vpp_line,
+ * whose set bits (AM2716: bit 13; AM27C020's vpp_line 21 is skipped
+ * entirely because using_p1_as_vpp() is true for that chip -- see
+ * memory_utils.h) are themselves all >= bit 8. So for our four addresses
+ * (0-3), the physical (remapped) address's low byte always equals the
+ * logical address's low byte exactly, and reading the cached LSB register
+ * (via the real rurp_read_from_register -- the same PUBLIC API production
+ * code writes through, not the raw global) recovers the byte index
+ * unambiguously.
+ */
+struct trace_readback_state_t {
+    uint8_t target;
+    uint8_t converge_after;
+    uint8_t read_count;
+};
+static trace_readback_state_t s_trace_readback[4];
+
+extern "C" void trace_readback_reset() {
+    for (int i = 0; i < 4; i++) {
+        s_trace_readback[i].target = 0xFF;
+        s_trace_readback[i].converge_after = 0;
+        s_trace_readback[i].read_count = 0;
+    }
+}
+
+extern "C" void trace_readback_seed(uint8_t idx, uint8_t target, uint8_t converge_after) {
+    s_trace_readback[idx].target = target;
+    s_trace_readback[idx].converge_after = converge_after;
+    s_trace_readback[idx].read_count = 0;
+}
+
 extern "C" uint8_t rurp_read_data_buffer() {
-    return 0xFF;
+    uint8_t idx = (uint8_t)(rurp_read_from_register(LEAST_SIGNIFICANT_BYTE) & 0x03);
+    trace_readback_state_t* st = &s_trace_readback[idx];
+    uint8_t result = (st->read_count < st->converge_after) ? 0xFF : st->target;
+    st->read_count++;
+    return result;
 }
