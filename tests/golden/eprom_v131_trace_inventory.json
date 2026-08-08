@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "source": "test/native/avr/_shared/eprom_v131_expected.h",
+    "recorded_by": "Phase 138 Plan 05",
+    "requirement": "PREP-03",
+    "blob_sha": "ca3e09f164e6e1c541ecb63d15bbebf5bce41d70",
+    "recorded_at_head": "3dad6450e277692eb4374de1512d69eaa17709de",
+    "why_two_checks": "A whole-file blob match alone cannot distinguish 'unchanged' from 'an array deleted together with the assertions that consumed it' -- both leave the remaining bytes identical to some other prior state's remaining bytes, so the per-array name+entry-count inventory is what makes a deletion visible.",
+    "how_to_update": "If this file legitimately changes, re-derive this inventory from the file with an independent parse (never hand-edit the numbers) AND state in the commit message which array changed and why -- never edit this JSON merely to make a surprise disappear.",
+    "frozen_for": "Phase 144 / TEST-06 -- the new (post-v1.31) cadence is diffed against these three arrays; a divergence from them is expected work, not a regression",
+    "measured_entry_counts": {
+      "0x07": { "strobes": 142, "timings": 56, "merged": 198 },
+      "0x08": { "strobes": 157, "timings": 64, "merged": 221 },
+      "0x0B": { "strobes": 142, "timings": 59, "merged": 201 }
+    },
+    "overflow_observed": "false for both recorders on every one of the three captures -- strobe_overflowed()==0 and timing_overflowed()==0 in all cases, per 138-03-TRACE-CAPTURE.md section 2"
+  },
+  "arrays": [
+    { "name": "EPROM_V131_TRACE_PROTO_07", "entries": 198 },
+    { "name": "EPROM_V131_TRACE_PROTO_08", "entries": 221 },
+    { "name": "EPROM_V131_TRACE_PROTO_0B", "entries": 201 }
+  ]
+}

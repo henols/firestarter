@@ -276,12 +276,18 @@ static void drive_v131_write(firestarter_handle_t* h) {
 #define V131_TIMING_CAP 512
 
 /* One case per protocol: drives the real write loop twice on the SAME
- * synthetic block, asserting soundness (no overflow, converged success) on
- * BOTH drives, then proves DETERMINISM by comparing the two merged-stream
- * snapshots positionally — a capture that is not reproducible must never be
- * frozen (T-138-13). */
+ * synthetic block. The PRIMARY assertion (Phase 138 Plan 05 Task 1) is now
+ * v131_assert_stream_equals against the frozen array — full ordered
+ * positional equality, not mere soundness — because a frozen fixture now
+ * exists to compare against. The soundness checks (overflow, response code,
+ * non-vacuous/under-cap length) and the determinism comparison (second
+ * drive, positional snapshot diff) are KEPT alongside it: they are cheap and
+ * they guard different failure modes than a full-stream compare does
+ * (T-138-13 — a capture that is not reproducible must never be trusted,
+ * frozen or not). */
 static void assert_v131_protocol_case(uint32_t protocol, uint8_t pins, uint32_t mem_size,
                                        uint32_t pulse_delay_us, const bus_config_t& bus_config,
+                                       const v131_trace_entry_t* expected, int expected_len,
                                        const char* ctx) {
     firestarter_handle_t h = make_v131_handle(protocol, pins, mem_size, pulse_delay_us, bus_config);
 
@@ -294,6 +300,10 @@ static void assert_v131_protocol_case(uint32_t protocol, uint8_t pins, uint32_t 
     TEST_ASSERT_TRUE_MESSAGE(len1 > 0, ctx);
     TEST_ASSERT_TRUE_MESSAGE(len1 <= (int)(0.60 * V131_STROBE_CAP), ctx);
     TEST_ASSERT_TRUE_MESSAGE(len1 <= (int)(0.60 * V131_TIMING_CAP), ctx);
+
+    /* PRIMARY assertion: full ordered positional equality against the frozen
+     * pre-change cadence. */
+    v131_assert_stream_equals(expected, expected_len, ctx);
 
     v131_trace_entry_t snap1[600];
     int n1 = v131_snapshot(snap1, 600);
@@ -312,16 +322,19 @@ static void assert_v131_protocol_case(uint32_t protocol, uint8_t pins, uint32_t 
 
 void test_protocol_0x07_am27c512_capture_is_sound_and_deterministic(void) {
     assert_v131_protocol_case(0x07, 28, 65536UL, 100UL, V131_BUS_CONFIG_0x07,
+                               EPROM_V131_TRACE_PROTO_07, EPROM_V131_TRACE_PROTO_07_LEN,
                                "0x07 AM27C512 DIP28_27512");
 }
 
 void test_protocol_0x08_am27c020_capture_is_sound_and_deterministic(void) {
     assert_v131_protocol_case(0x08, 32, 262144UL, 100UL, V131_BUS_CONFIG_0x08,
+                               EPROM_V131_TRACE_PROTO_08, EPROM_V131_TRACE_PROTO_08_LEN,
                                "0x08 AM27C020 DIP32_27C020");
 }
 
 void test_protocol_0x0B_am2716_capture_is_sound_and_deterministic(void) {
     assert_v131_protocol_case(0x0B, 24, 2048UL, 500UL, V131_BUS_CONFIG_0x0B,
+                               EPROM_V131_TRACE_PROTO_0B, EPROM_V131_TRACE_PROTO_0B_LEN,
                                "0x0B AM2716 DIP24_2716");
 }
 
