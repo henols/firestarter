@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 73
+ * Total messages: 76
  */
 
 #ifndef __MESSAGES_H__
@@ -88,6 +88,7 @@ extern "C" {
 #define MSG_ERR_UNKNOWN_CMD               0xAB
 #define MSG_ERR_REV0_VPP_RD               0xAC
 #define MSG_ERR_CMD                       0xAD
+#define MSG_ERR_PULSE_TOO_WIDE            0xAE
 #define MSG_ERR_VERIFY                    0xAF
 #define MSG_ERR_NOT_BLANK                 0xB0
 #define MSG_ERR_WRITE_FAILED              0xB1
@@ -102,6 +103,8 @@ extern "C" {
 #define MSG_ERR_MEM_SIZE_TOO_SMALL        0xBA
 #define MSG_ERR_PROTOCOL_NOT_IMPLEMENTED  0xBB
 #define MSG_ERR_FL4_BOOT_BLOCK_LOCKED     0xBC
+#define MSG_ERR_MAX_PULSES                0xBD
+#define MSG_ERR_ENERGY_CAP                0xBE
 #define MSG_DATA_PROGRESS                 0xE0
 #define MSG_DATA_SENDING                  0xE2
 #define MSG_DATA_VPP_VOLTAGE              0xE4
