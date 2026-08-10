@@ -41,6 +41,9 @@ extern "C" {
 #include "eprom.h"
 #include "eprom_params.h"
 #include "memory_utils.h"
+#include "messages.h"  /* Plan 141-07: MSG_ERR_MAX_PULSES / MSG_ERR_ENERGY_CAP --
+                         * neither firestarter.h nor eprom.h/eprom_params.h/
+                         * memory_utils.h pulls this in transitively. */
 
 using namespace fakeit;
 
@@ -386,6 +389,229 @@ void test_logged_id_capture_records_the_id_and_its_packed_params(void) {
     TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x45, logged_id_param(0, 2), "param byte 2 (LSB)");
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+ * Plan 141-07 (LOOP-01, LOOP-06, LOOP-04) -- behaviour cases proving the
+ * per-byte program loop's cadence, its skip rules and its energy cap,
+ * driven through drive_loop_write / make_loop_handle / LOOP_BUS_CONFIG_*
+ * (plan 141-03's fixed contract) against the REAL eprom_write_execute
+ * (plan 141-04, src/proms/eprom.cpp). This plan supplies the WHOLE proof
+ * for LOOP-01, LOOP-04 and LOOP-06 and flips NO requirement checkbox --
+ * that is plan 141-09's, after every piece of evidence exists (frontmatter
+ * requirements: [] is deliberate, per this plan's own <objective>).
+ *
+ * Plan 141-08 extends this SAME file with LOOP-03, LOOP-05, LOOP-07 and
+ * LOOP-08 cases -- nothing below pre-empts those.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/* Small local helpers, shared by every case below -- neither plan 141-03's
+ * harness nor host_stubs.cpp provides them; they belong to THIS plan's own
+ * cases, not to the fixed drive-helper contract. */
+static int count_logged_id(uint8_t id) {
+    int n = logged_id_count();
+    int c = 0;
+    for (int i = 0; i < n; i++) {
+        if (logged_id_at(i) == id) c++;
+    }
+    return c;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * LOOP-01 (task 1) -- fixed-width pulses, verify after each pulse, an
+ * exact per-byte pulse count, and success at the max_pulses boundary.
+ * Every case here drives protocol 0x07 (28-pin, mem_size 65536,
+ * max_pulses 25, energy_cap_us 0 == uncapped -- eprom_params.cpp:50),
+ * LOOP_BUS_CONFIG_0x07 (static_high_mask 0, so no key-remap adjustment is
+ * needed for this protocol).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Case 1: each byte gets exactly the seeded number of fixed-width pulses.
+ *
+ * Read-count-to-pulse-count mapping (stated explicitly, per plan): the
+ * loop reads FIRST (LOOP-06's skip check) and only then pulses, so seeding
+ * converge_after = N means the byte matches on read N+1, i.e. after
+ * exactly N pulses -- loop_readback_reads(addr) == 1 + pulses. */
+/* FINDING (this plan's own, made during execution -- documented here and
+ * in the SUMMARY, not silently absorbed): rurp_internal_write_to_register
+ * (include/rurp_register_utils.h:63-89, production code, real via
+ * HOST_STUBS_REAL_REGISTER_UTILS) shifts EVERY non-elided register write
+ * (LSB, MSB, or CONTROL) through rurp_write_data_buffer() -- the EXACT same
+ * function memory_set_data calls for the actual chip-data pulse. Both
+ * therefore push an indistinguishable-BY-KIND STROBE_KIND_DATA entry (same
+ * kind, same pin (0)). A bare "count of STROBE_KIND_DATA == total pulse
+ * count" claim is consequently unsound: register-write noise varies by
+ * pin count and even by call direction (0x08's bus_config.rw_line makes
+ * every read<->write transition force a non-elided CONTROL rewrite, so its
+ * noise SCALES with pulse count, not just a fixed per-drive floor --
+ * measured directly: a 0-pulse baseline for 0x08 undercounts a genuine
+ * 2-pulse run by 6, not 2).
+ *
+ * The robust oracle is the entry's VALUE, not a raw count: a genuine
+ * chip-data pulse's rurp_write_data_buffer(data) call always carries
+ * data == the byte actually being programmed (memory_set_data's own
+ * `data` parameter); a register-shift's call carries a REGISTER value
+ * (an LSB/MSB address byte, or a CONTROL bitmask like 0x80/0x81/0x91/etc).
+ * Every seeded byte value in this file's cases (0x3C, 0x55, 0xAA, 0x0F)
+ * is chosen so it can never collide with a register value these specific
+ * scenarios ever produce (addresses stay under 256, so LSB/MSB never
+ * exceed the low bus lines' range, and every observed CONTROL value stays
+ * in the VPP/route-bit low range) -- filtering STROBE_KIND_DATA entries by
+ * strobe_value() == the expected byte therefore counts pulses of THAT byte
+ * exactly, independent of any register-write noise or its scaling. */
+static int count_data_pulses_with_value(uint8_t value) {
+    int n = strobe_count();
+    int c = 0;
+    for (int i = 0; i < n; i++) {
+        if (strobe_kind(i) == STROBE_KIND_DATA && strobe_value(i) == value) c++;
+    }
+    return c;
+}
+
+void test_loop01_each_byte_gets_exactly_the_seeded_number_of_fixed_width_pulses(void) {
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed((uint16_t)i, block[i], converge_after[i]);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+
+    /* Read-count-to-pulse-count mapping: the loop reads FIRST (LOOP-06's
+     * skip check), pulses, and then -- because 0x07 ships
+     * VERIFY_PER_PULSE_PLUS_FINAL -- reads EVERY byte ONE MORE time in the
+     * unconditional final full-block pass that runs after the per-byte
+     * loop (src/proms/eprom.cpp:296-314), regardless of whether that byte
+     * converged, was skipped, or already matched. So
+     * loop_readback_reads(addr) == 1 (skip-check) + pulses (one verify per
+     * pulse) + 1 (the final pass's own read) == 2 + pulses. */
+    const int expected_reads[4] = {3, 4, 5, 6}; /* 2 + converge_after[i] */
+    for (int i = 0; i < 4; i++) {
+        char msg[80];
+        snprintf(msg, sizeof(msg), "loop_readback_reads(addr %d) == 2 + pulses (skip-check + N verify + 1 final-pass read)", i);
+        TEST_ASSERT_EQUAL_MESSAGE(expected_reads[i], loop_readback_reads((uint16_t)i), msg);
+    }
+
+    /* Per-byte pulse count, cross-checked directly against the strobe
+     * stream by VALUE (see count_data_pulses_with_value's own comment) --
+     * independent corroboration of the reads-based counts above, from a
+     * completely different signal. */
+    const int expected_pulses[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        char msg[80];
+        snprintf(msg, sizeof(msg), "count_data_pulses_with_value(block[%d]) matches converge_after[%d]", i, i);
+        TEST_ASSERT_EQUAL_MESSAGE(expected_pulses[i], count_data_pulses_with_value(block[i]), msg);
+    }
+    TEST_ASSERT_EQUAL_MESSAGE(10,
+        count_data_pulses_with_value(0x3C) + count_data_pulses_with_value(0x55) + count_data_pulses_with_value(0xAA) + count_data_pulses_with_value(0x0F),
+        "total pulses across the block == 1+2+3+4");
+}
+
+/* Case 2: pulse width never grows between attempts. With
+ * read_settling_us == 0 and read_strobe_us == 0 (handle defaults), the
+ * TIMING_KIND_DELAY_US values genuinely tied to the pulse/verify cadence
+ * are {3, 100}: 3 us is memory_set_data's pre-pulse settle (memory.cpp
+ * ~:300) PLUS memory_get_data's default verify-read strobe (:278-280) --
+ * neither is counted toward the per-byte accumulated program time (D-02).
+ * 100 us is the pulse itself (org_delay, never grown). Any FOURTH distinct
+ * value would be exactly the adaptive-growth formula LOOP-02 removed.
+ *
+ * A third value, 1 us, IS expected and is NOT growth: it is
+ * rurp_internal_write_to_register's own fixed post-latch delay
+ * (include/rurp_register_utils.h:86, `delayMicroseconds(1);` -- literally
+ * commented "Probably useless - verify later" in production), emitted
+ * once per NON-ELIDED register write (LSB/MSB/CONTROL), entirely unrelated
+ * to any pulse. This drive also emits exactly one TIMING_KIND_DELAY_MS(500)
+ * entry (the once-per-block VPE-assert settle) -- excluded from this
+ * case's scan by filtering on TIMING_KIND_DELAY_US, exactly as the plan's
+ * own instruction says ("walk every TIMING_KIND_DELAY_US entry"). */
+void test_loop01_pulse_width_never_grows_between_attempts(void) {
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed((uint16_t)i, block[i], converge_after[i]);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+    TEST_ASSERT_EQUAL_MESSAGE(0, timing_overflowed(), "timing_overflowed -- small block, must be sound");
+
+    int count_100 = 0;
+    int n = timing_count();
+    for (int i = 0; i < n; i++) {
+        if (timing_kind(i) != TIMING_KIND_DELAY_US) continue;
+        uint32_t us = timing_us(i);
+        char msg[112];
+        snprintf(msg, sizeof(msg), "timing entry %d (delayMicroseconds) has value %lu -- expected 1 (register-shift overhead), 3 or 100; any FOURTH distinct value is LOOP-02's growth", i, (unsigned long)us);
+        TEST_ASSERT_TRUE_MESSAGE(us == 1UL || us == 3UL || us == 100UL, msg);
+        if (us == 100UL) count_100++;
+    }
+    TEST_ASSERT_EQUAL_MESSAGE(10, count_100, "exactly one 100us pulse-width entry per pulse -- 10 total across the block (1+2+3+4)");
+}
+
+/* Case 3: a verify read follows every pulse. Deliberately does NOT assert
+ * "exactly one CONTROL strobe per byte" or "no CONTROL strobe during a
+ * verify read": mem_util_set_address writes CONTROL_REGISTER
+ * unconditionally on every byte, for both the pulse and the verify
+ * (memory.cpp:230-231), and a chip whose bus_config.rw_line is set
+ * re-strobes CONTROL on the pulse-to-verify direction flip too. Both are
+ * expected and neither is a LOOP-08 violation. */
+void test_loop01_verify_read_follows_every_pulse(void) {
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed((uint16_t)i, block[i], converge_after[i]);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+    TEST_ASSERT_EQUAL_MESSAGE(0, timing_overflowed(), "timing_overflowed -- small block, must be sound");
+
+    int n = strobe_count();
+    for (int i = 0; i < n; i++) {
+        if (strobe_kind(i) != STROBE_KIND_DATA) continue;
+        bool saw_pin_before_next_data = false;
+        for (int j = i + 1; j < n && strobe_kind(j) != STROBE_KIND_DATA; j++) {
+            if (strobe_kind(j) == STROBE_KIND_PIN) { saw_pin_before_next_data = true; break; }
+        }
+        char msg[96];
+        snprintf(msg, sizeof(msg), "DATA strobe at index %d has no PIN strobe before the next DATA strobe (or end of stream)", i);
+        TEST_ASSERT_TRUE_MESSAGE(saw_pin_before_next_data, msg);
+    }
+    /* This interleaving property holds for EVERY STROBE_KIND_DATA entry
+     * regardless of whether it is register-shift noise or a genuine
+     * chip-data pulse: every non-elided register write is ALSO
+     * immediately followed by its own latch's PIN strobes
+     * (rurp_internal_write_to_register), so scanning ALL of them (not
+     * just the pulse-valued ones) is the stronger, more general check.
+     * The total PULSE count (as opposed to the interleaving property) is
+     * cross-checked precisely via the by-value filter, matching case 1. */
+    TEST_ASSERT_EQUAL_MESSAGE(10,
+        count_data_pulses_with_value(0x3C) + count_data_pulses_with_value(0x55) + count_data_pulses_with_value(0xAA) + count_data_pulses_with_value(0x0F),
+        "total STROBE_KIND_DATA pulses (by value) matches case 1's pulse count");
+}
+
+/* Case 4: a byte that converges on its last permitted pulse succeeds --
+ * the boundary proving the budget check happens AFTER the failed verify,
+ * not before it. */
+void test_loop01_a_byte_that_converges_on_its_last_permitted_pulse_succeeds(void) {
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[1] = {0x3C};
+    loop_readback_seed(0, block[0], 25);
+    drive_loop_write(&h, 0, block, 1);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "response_code -- must succeed exactly at the max_pulses (25) boundary, not fail at it");
+    /* 1 skip-check read + 25 verify reads (one per pulse) + 1 final-pass
+     * read (0x07 ships VERIFY_PER_PULSE_PLUS_FINAL, which reads every byte
+     * once more after the per-byte loop, regardless of convergence). */
+    TEST_ASSERT_EQUAL_MESSAGE(27, loop_readback_reads(0), "1 skip-check + 25 verify + 1 final-pass read");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_MAX_PULSES),
+        "no MSG_ERR_MAX_PULSES frame -- the budget check runs AFTER the failed verify, so a byte converging on pulse 25 never reaches it");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -396,6 +622,12 @@ int main(int argc, char** argv) {
     RUN_TEST(test_readback_model_returns_ff_and_stays_unseeded_for_an_unknown_address);
     RUN_TEST(test_readback_model_distinguishes_two_addresses_across_an_a16_crossing);
     RUN_TEST(test_logged_id_capture_records_the_id_and_its_packed_params);
+
+    /* LOOP-01 (plan 141-07, task 1) */
+    RUN_TEST(test_loop01_each_byte_gets_exactly_the_seeded_number_of_fixed_width_pulses);
+    RUN_TEST(test_loop01_pulse_width_never_grows_between_attempts);
+    RUN_TEST(test_loop01_verify_read_follows_every_pulse);
+    RUN_TEST(test_loop01_a_byte_that_converges_on_its_last_permitted_pulse_succeeds);
 
     return UNITY_END();
 }
