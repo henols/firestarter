@@ -443,9 +443,9 @@ def test_branch_sites_match_the_recorded_inventory():
 def test_exactly_three_protocol_keyed_sites_at_the_pinned_lines():
     live = _extract_predicates(_SCAN_EPROM.read_text())
     protocol_lines = sorted(s["line"] for s in live if s["tier"] == "protocol")
-    assert protocol_lines == [71, 145, 218], (
-        "expected exactly three tier-protocol sites at lines [71, 145, "
-        f"218], found {protocol_lines}. A fourth protocol-keyed branch "
+    assert protocol_lines == [70, 190, 340], (
+        "expected exactly three tier-protocol sites at lines [70, 190, "
+        f"340], found {protocol_lines}. A fourth protocol-keyed branch "
         "site is a second algorithm selector and a TABLE-05 violation -- "
         "fewer than three means one of the pinned sites was removed "
         "without updating this inventory."
