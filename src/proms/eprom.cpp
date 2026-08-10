@@ -75,6 +75,41 @@ void configure_eprom(firestarter_handle_t* handle) {
             default:   handle->pulse_delay = 1000; break;  // EPROM_STD: 1ms
         }
     }
+
+    // Phase 141 Plan 04 -- both refusals below run AFTER the fallback
+    // switch above resolves pulse_delay: a pulse_delay of 0 would otherwise
+    // compare as "not greater than the cap" vacuously, letting an
+    // unresolved default slip past the D-03 check.
+
+    // Refusal 1 (Phase 140 D-05): an unrecognised protocol fails closed
+    // here rather than falling back to &EPROM_PARAMS[0], which would route
+    // 13V through the drop resistor for an unknown part.
+    const eprom_params_t* row = eprom_params_for(handle->protocol);
+    if (row == NULL) {
+        LOG_ERROR_ID_U8(MSG_ERR_PROTOCOL_NOT_IMPLEMENTED, (uint8_t)handle->protocol);
+        handle->response_code = RESPONSE_CODE_ERROR;
+        return;
+    }
+
+    // Refusal 2 (D-03): a pulse wider than this row's per-byte
+    // program-energy budget is refused pre-flight, before any high
+    // voltage is enabled, and is never silently clamped -- clamping would
+    // emit a pulse whose width no longer matches what the caller asked for
+    // or what the trace claims. Without this, D-01's emit-then-stop rule
+    // would apply a single up-to-cap VPE pulse to real silicon and then
+    // report a *verify* failure -- a misconfiguration wearing a
+    // silicon-failure costume. This is also the firmware-side backstop for
+    // Phase 143's --pulse-us bounds, independent of host validation.
+    //
+    // energy_cap_us > 0 is mandatory: eprom_params.h defines 0 as
+    // UNCAPPED, not "cap at zero" -- an unguarded compare would refuse
+    // every 0x07/0x08 pulse (both ship energy_cap_us == 0).
+    uint32_t energy_cap_us = pgm_read_dword(&row->energy_cap_us);
+    if (energy_cap_us > 0 && handle->pulse_delay > energy_cap_us) {
+        LOG_ERROR_ID_U32(MSG_ERR_PULSE_TOO_WIDE, handle->pulse_delay);
+        handle->response_code = RESPONSE_CODE_ERROR;
+        return;
+    }
 }
 
 void eprom_check_chip_id_init(firestarter_handle_t* handle) {
