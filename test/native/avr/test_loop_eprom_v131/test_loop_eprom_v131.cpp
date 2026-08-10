@@ -424,6 +424,14 @@ static int count_logged_id(uint8_t id) {
     return c;
 }
 
+static int find_logged_id(uint8_t id) {
+    int n = logged_id_count();
+    for (int i = 0; i < n; i++) {
+        if (logged_id_at(i) == id) return i;
+    }
+    return -1;
+}
+
 /* LOOP_BUS_CONFIG_0x0B is the only one of the three bus_config literals
  * with a nonzero static_high_mask (0x00002000UL, bit 13):
  * mem_util_remap_address_bus (src/proms/memory.cpp:350) does
@@ -777,6 +785,180 @@ void test_loop06_the_ff_rule_does_not_suppress_the_final_verify_pass(void) {
     }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * LOOP-04 (task 3) -- the 0x0B energy cap at all three shipped widths, and
+ * no overprogram pulse on any live row.
+ *
+ * eprom_params_for(0x0B) ships energy_cap_us 50000, max_pulses 255,
+ * overprogram_factor 0, verify_mode VERIFY_PER_PULSE, vpp_path
+ * VPP_PATH_DIRECT_VPE (src/proms/eprom_params.cpp:52). Cases 1-4 seed
+ * converge_after = 65535 so the byte can never converge and the energy
+ * cap -- not a successful verify -- is what stops the loop.
+ *
+ * T-141-CAP (this plan's own threat register): a 100-pulse block emits far
+ * more strobe/timing entries than the recorders' 512-entry caps, so these
+ * LONG cases assert ONLY on loop_readback_reads (a uint16_t, uncapped),
+ * response_code and the logged id -- deliberately NEVER on
+ * strobe_overflowed() or timing_overflowed(), which WILL be nonzero here,
+ * legitimately (the tail is dropped, the prefix stays valid, and none of
+ * these cases reads the prefix).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+void test_loop04_energy_cap_stops_at_exactly_100_pulses_at_500us(void) {
+    firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, 500, LOOP_BUS_CONFIG_0x0B);
+    const uint8_t block[1] = {0x00};
+    loop_readback_seed(k0b(0), 0x00, 65535);
+    drive_loop_write(&h, 0, block, 1);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code");
+    TEST_ASSERT_EQUAL_MESSAGE(101, loop_readback_reads(k0b(0)),
+        "1 skip-check read + 100 verify reads (one per pulse) for a CORRECT 100-pulse cap at 500us; "
+        "a byte that instead took 101 pulses (the off-by-one signature named below) would show 102");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_ERR_ENERGY_CAP), "exactly one MSG_ERR_ENERGY_CAP frame");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_MAX_PULSES), "MSG_ERR_MAX_PULSES must NOT be logged -- the energy cap binds first");
+
+    int idx = find_logged_id(MSG_ERR_ENERGY_CAP);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_ERR_ENERGY_CAP frame must exist");
+    TEST_ASSERT_EQUAL_MESSAGE(4, logged_id_param_count(idx), "payload is u24 address + u8 pulse count");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x00, logged_id_param(idx, 0), "address byte 0 (MSB)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x00, logged_id_param(idx, 1), "address byte 1");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x00, logged_id_param(idx, 2), "address byte 2 (LSB)");
+    TEST_ASSERT_EQUAL_MESSAGE(100, logged_id_param(idx, 3),
+        "D-01's own worked example: 500us pulses against a 50000us cap must give EXACTLY 100 pulses "
+        "(accumulated == i*500, tripping the >= energy_cap_us check at i == 100, accumulated == 50000 "
+        "exactly, checked AFTER the pulse fires). 101 is the signature of implementing D-01's prose "
+        "literally as \"if (accumulated + pulse > cap) { emit; break; }\" -- a look-ahead check BEFORE "
+        "firing -- instead of the correct accumulate-then-check-after-firing shape this loop actually uses.");
+}
+
+void test_loop04_energy_cap_stops_at_exactly_50_pulses_at_1000us(void) {
+    firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, 1000, LOOP_BUS_CONFIG_0x0B);
+    const uint8_t block[1] = {0x00};
+    loop_readback_seed(k0b(0), 0x00, 65535);
+    drive_loop_write(&h, 0, block, 1);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code");
+    TEST_ASSERT_EQUAL_MESSAGE(51, loop_readback_reads(k0b(0)), "1 skip-check read + 50 verify reads (one per pulse)");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_ERR_ENERGY_CAP), "exactly one MSG_ERR_ENERGY_CAP frame");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_MAX_PULSES), "MSG_ERR_MAX_PULSES must NOT be logged -- the energy cap binds first");
+
+    int idx = find_logged_id(MSG_ERR_ENERGY_CAP);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_ERR_ENERGY_CAP frame must exist");
+    TEST_ASSERT_EQUAL_MESSAGE(50, logged_id_param(idx, 3), "1000us pulses against a 50000us cap must give exactly 50 pulses");
+}
+
+void test_loop04_energy_cap_stops_at_exactly_250_pulses_at_200us(void) {
+    firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, 200, LOOP_BUS_CONFIG_0x0B);
+    const uint8_t block[1] = {0x00};
+    loop_readback_seed(k0b(0), 0x00, 65535);
+    drive_loop_write(&h, 0, block, 1);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code");
+    /* Also the case that proves the uint16_t read counter was necessary:
+     * a uint8_t counter would have wrapped at 256 (251 fits a uint8_t, but
+     * a slightly wider block or an even smaller pulse width would not). */
+    TEST_ASSERT_EQUAL_MESSAGE(251, loop_readback_reads(k0b(0)), "1 skip-check read + 250 verify reads (one per pulse)");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_ERR_ENERGY_CAP), "exactly one MSG_ERR_ENERGY_CAP frame");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_MAX_PULSES), "MSG_ERR_MAX_PULSES must NOT be logged -- the energy cap binds first");
+
+    int idx = find_logged_id(MSG_ERR_ENERGY_CAP);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_ERR_ENERGY_CAP frame must exist");
+    TEST_ASSERT_EQUAL_MESSAGE(250, logged_id_param(idx, 3), "200us pulses against a 50000us cap must give exactly 250 pulses");
+}
+
+void test_loop04_the_energy_cap_binds_before_max_pulses_on_every_shipped_width(void) {
+    const uint32_t pulse_delays[3] = {500, 1000, 200};
+    const uint8_t expected_pulses[3] = {100, 50, 250};
+    for (int w = 0; w < 3; w++) {
+        firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, pulse_delays[w], LOOP_BUS_CONFIG_0x0B);
+        const uint8_t block[1] = {0x00};
+        loop_readback_seed(k0b(0), 0x00, 65535);  /* re-seeds addr 0 in place, per host_stubs.cpp's own contract */
+        drive_loop_write(&h, 0, block, 1);
+
+        char rmsg[64];
+        snprintf(rmsg, sizeof(rmsg), "response_code at width index %d", w);
+        TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, rmsg);
+        TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_ERR_ENERGY_CAP), "MSG_ERR_ENERGY_CAP must be logged exactly once");
+        /* max_pulses ships 255 on 0x0B; 250, 100 and 50 are all below it,
+         * so if the energy cap did NOT bind first, this would be
+         * MSG_ERR_MAX_PULSES instead -- the discriminating check D-04's
+         * two distinct message ids exist to make possible. */
+        TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_MAX_PULSES), "MSG_ERR_MAX_PULSES must NEVER be logged on this row at this width");
+
+        int idx = find_logged_id(MSG_ERR_ENERGY_CAP);
+        TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_ERR_ENERGY_CAP frame must exist");
+        char pmsg[64];
+        snprintf(pmsg, sizeof(pmsg), "pulse count payload at width index %d", w);
+        TEST_ASSERT_EQUAL_MESSAGE(expected_pulses[w], logged_id_param(idx, 3), pmsg);
+    }
+}
+
+void test_loop04_no_live_row_emits_an_overprogram_pulse(void) {
+    /* All three shipped rows have overprogram_factor == 0
+     * (eprom_params.cpp:50-52), so the overprogram path is structurally
+     * unreachable through the table on any of them; the arithmetic itself
+     * (eprom_overprogram_us) is proven separately by plan 141-08's
+     * pure-function cases. This case proves the LOOP never emits a third,
+     * extra pulse on any live row -- exactly the 2 pulses each seeded byte
+     * needs, no more.
+     *
+     * loop_readback_reads() alone CANNOT prove this: an overprogram pulse
+     * is a bare handle->firestarter_set_data() call with no verify read
+     * after it (D-07's org_delay save/restore idiom, eprom.cpp:284-289),
+     * so it would leave the read count completely unchanged whether it
+     * fired or not. A raw STROBE_KIND_DATA COUNT is not a safe substitute
+     * either: register-shift writes share the identical strobe shape as a
+     * genuine chip-data pulse, and (measured directly, during this plan's
+     * own execution) that noise does not even stay constant -- 0x08's
+     * bus_config.rw_line makes every read<->write direction change force
+     * a non-elided CONTROL rewrite, so a naive count SCALES with pulse
+     * count rather than adding a fixed floor. count_data_pulses_with_value
+     * (this file's own helper, see its comment above test 1) sidesteps
+     * this entirely by filtering on the byte VALUE written, which a
+     * register-shift can never coincidentally match for the addresses
+     * used here. */
+    {
+        firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+        const uint8_t byte0[1] = {0x3C};
+        loop_readback_seed(0, 0x3C, 2);
+        drive_loop_write(&h, 0, byte0, 1);
+        TEST_ASSERT_EQUAL_MESSAGE(2, count_data_pulses_with_value(0x3C), "0x07: exactly the 2 pulses the byte needed, no 3rd overprogram pulse");
+    }
+    {
+        firestarter_handle_t h = make_loop_handle(0x08, 32, 262144, 100, LOOP_BUS_CONFIG_0x08);
+        const uint8_t byte0[1] = {0x3C};
+        loop_readback_seed(0, 0x3C, 2);
+        drive_loop_write(&h, 0, byte0, 1);
+        TEST_ASSERT_EQUAL_MESSAGE(2, count_data_pulses_with_value(0x3C), "0x08: exactly the 2 pulses the byte needed, no 3rd overprogram pulse");
+    }
+    {
+        firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, 500, LOOP_BUS_CONFIG_0x0B);
+        const uint8_t byte0[1] = {0x3C};
+        loop_readback_seed(k0b(0), 0x3C, 2);
+        drive_loop_write(&h, 0, byte0, 1);
+        TEST_ASSERT_EQUAL_MESSAGE(2, count_data_pulses_with_value(0x3C), "0x0B: exactly the 2 pulses the byte needed, no 3rd overprogram pulse");
+    }
+}
+
+void test_loop04_0x0B_runs_no_final_full_block_verify_pass(void) {
+    /* 0x0B ships VERIFY_PER_PULSE (not VERIFY_PER_PULSE_PLUS_FINAL) -- no
+     * final full-block pass runs. This is the negative counterpart to
+     * LOOP-06's test_loop06_the_ff_rule_does_not_suppress_the_final_verify_pass
+     * (0x07, WHICH does run one); together they prove verify_mode is read
+     * from the table rather than hardcoded. */
+    firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, 500, LOOP_BUS_CONFIG_0x0B);
+    const uint8_t block[2] = {0x3C, 0x55};
+    loop_readback_seed(k0b(0), 0x3C, 1);
+    loop_readback_seed(k0b(1), 0x55, 1);
+    drive_loop_write(&h, 0, block, 2);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    /* 2 reads per byte (1 skip-check + 1 verify after the single pulse) --
+     * NOT 3, which is what a final full-block verify pass would add. */
+    TEST_ASSERT_EQUAL_MESSAGE(2, loop_readback_reads(k0b(0)), "byte 0: skip-check + 1 verify, no final pass");
+    TEST_ASSERT_EQUAL_MESSAGE(2, loop_readback_reads(k0b(1)), "byte 1: skip-check + 1 verify, no final pass");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -799,6 +981,14 @@ int main(int argc, char** argv) {
     RUN_TEST(test_loop06_an_already_matching_byte_is_read_once_and_never_pulsed);
     RUN_TEST(test_loop06_a_block_of_only_skipped_bytes_emits_no_pulse_at_all);
     RUN_TEST(test_loop06_the_ff_rule_does_not_suppress_the_final_verify_pass);
+
+    /* LOOP-04 (plan 141-07, task 3) */
+    RUN_TEST(test_loop04_energy_cap_stops_at_exactly_100_pulses_at_500us);
+    RUN_TEST(test_loop04_energy_cap_stops_at_exactly_50_pulses_at_1000us);
+    RUN_TEST(test_loop04_energy_cap_stops_at_exactly_250_pulses_at_200us);
+    RUN_TEST(test_loop04_the_energy_cap_binds_before_max_pulses_on_every_shipped_width);
+    RUN_TEST(test_loop04_no_live_row_emits_an_overprogram_pulse);
+    RUN_TEST(test_loop04_0x0B_runs_no_final_full_block_verify_pass);
 
     return UNITY_END();
 }
