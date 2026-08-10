@@ -18,8 +18,6 @@
 #include "operation_utils.h"
 
 
-#define NUMBER_OF_RETRIES 20
-
 void eprom_erase_execute(firestarter_handle_t* handle);
 
 void eprom_write_init(firestarter_handle_t* handle);
@@ -146,36 +144,6 @@ void eprom_write_init(firestarter_handle_t* handle) {
     }
 }
 
-// New helper to program only the bytes that have failed so far
-static void program_mismatched_bytes(firestarter_handle_t* handle, const uint8_t* mismatch_bitmask) {
-     rurp_register_t programming_bits = CTRL_VPE_ENABLE;
-
-    handle->firestarter_set_control_register(handle, programming_bits, 1);
-    delay(10); // Consider making this a named constant
-    for (uint32_t i = 0; i < handle->data_size; i++) {
-        // Use the corrected bitwise-AND operator here
-        if (mismatch_bitmask[i / 8] & (1 << (i % 8))) {
-            handle->firestarter_set_data(handle, handle->address + i, handle->data_buffer[i]);
-        }
-    }
-    handle->firestarter_set_control_register(handle, programming_bits, 0);
-}
-
-// New helper to verify bytes and update the mismatch mask
-static int verify_and_update_mask(firestarter_handle_t* handle, uint8_t* mismatch_bitmask) {
-    int mismatch_count = 0;
-    for (uint32_t i = 0; i < handle->data_size; i++) {
-        if (handle->firestarter_get_data(handle, (handle->address + i)) != (uint8_t)handle->data_buffer[i]) {
-            mismatch_count++;
-            mismatch_bitmask[i / 8] |= (1 << (i % 8)); // Set bit for mismatch
-        } else {
-            mismatch_bitmask[i / 8] &= ~(1 << (i % 8)); // Clear bit for match
-        }
-    }
-    
-    return mismatch_count;
-}
-
 /*
  * Phase 141 Plan 04 (LOOP-03, D-08) -- see include/eprom.h for the full
  * rationale. factor == 0 (every shipped row) always yields 0, so the
@@ -214,6 +182,10 @@ static void eprom_internal_report_budget_failure(firestarter_handle_t* handle, u
 }
 
 void eprom_write_execute(firestarter_handle_t* handle) {
+    // --- once per block (LOOP-08) --- KEPT VERBATIM; only the line number
+    // moves. Replacing this tier-1 predicate with the table's vpp_path
+    // column is Phase 142 / VPP-01 -- removing it here would drop tier-1
+    // to two sites.
     if (handle->firestarter_get_control_register(handle, CTRL_VPP_REGULATOR_ENABLE) == 0) {
         if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP)) {
             // EPROM_LEGACY: direct VPE path — no CTRL_VPP_VPE_DROP_ENABLE dropping resistor
@@ -222,47 +194,124 @@ void eprom_write_execute(firestarter_handle_t* handle) {
             // EPROM_STD / EPROM_QUICK: CTRL_VPP_VPE_DROP_ENABLE dropping path for precise VPP
             handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE, 1);
         }
-        delay(500);
+        delay(500);  // settle stays amortised once per block -- the whole of LOOP-08
     }
 
-    uint8_t mismatch_bitmask[DATA_BUFFER_SIZE / 8];
-    // Use memset for cleaner initialization
-    memset(mismatch_bitmask, 0xFF, sizeof(mismatch_bitmask));
+    // D-09: on a 32-pin part, mem_util_calculate_top_address_register's
+    // preserve mask (memory.cpp) excludes CTRL_VPP_VPE_DROP_ENABLE whenever
+    // handle->pins >= 32, so the drop route just asserted above does NOT
+    // survive the first set_address() of the block -- revision-
+    // independently, and not because of a bit collision (on every build
+    // this project ships, CTRL_ADDRESS_LINE_16 is 0x01 and
+    // CTRL_VPP_VPE_DROP_ENABLE is 0x100, two distinct bits). Clearing it
+    // explicitly here changes no route selection -- the first
+    // set_address() below would clear it anyway, before any pulse is
+    // emitted -- but it makes the control-register state the loop runs
+    // under the state that will actually hold, and makes it observable in
+    // the strobe stream. Keyed on handle->pins (host-supplied, the
+    // pin-count JSON field), NEVER on protocol -- a protocol == 0x08
+    // predicate would be a fourth tier-1 site. Choosing the final DIP32
+    // route (P1 vs drop resistor) and consolidating the mask sets is
+    // Phase 142 / VPP-01 and VPP-03 -- this branch deliberately does not
+    // pre-empt that choice.
+    if (handle->pins >= 32) {
+        handle->firestarter_set_control_register(handle, CTRL_VPP_VPE_DROP_ENABLE, 0);
+    }
 
-    int mismatch = 0;
-    int retries = 0;
+    const eprom_params_t* row = eprom_params_for(handle->protocol);
+    if (row == NULL) {
+        // Already refused in configure_eprom (task 2) -- unreachable in
+        // practice. Re-checked here so this function never dereferences a
+        // NULL row on its own; returns without touching hardware further.
+        return;
+    }
+    uint32_t overprogram_cap_us = pgm_read_dword(&row->overprogram_cap_us);
+    uint32_t energy_cap_us      = pgm_read_dword(&row->energy_cap_us);
+    uint8_t  max_pulses         = pgm_read_byte(&row->max_pulses);
+    uint8_t  overprogram_factor = pgm_read_byte(&row->overprogram_factor);
+    uint8_t  verify_mode        = pgm_read_byte(&row->verify_mode);
+    uint8_t  vpp_path           = pgm_read_byte(&row->vpp_path);
+    (void)vpp_path;  // hoisted for completeness; Phase 142 / VPP-01 is its consumer
     uint32_t org_delay = handle->pulse_delay;
 
-    for (int w = 0; w < NUMBER_OF_RETRIES; w++) {
-        program_mismatched_bytes(handle, mismatch_bitmask);
-        
-        mismatch = verify_and_update_mask(handle, mismatch_bitmask);
+    for (uint32_t i = 0; i < handle->data_size; i++) {
+        uint8_t expected = (uint8_t)handle->data_buffer[i];
+        uint32_t addr = handle->address + i;
 
-        if (!mismatch) {
-            if (retries > 0) {
-                LOG_INFO_ID_U8(MSG_INFO_RETRIES, (uint8_t)retries);
-            }
-            handle->pulse_delay = org_delay;
-            return;
+        // LOOP-06 skips, before any pulse. 0xFF checked first, without a
+        // read: an already-erased target never needs a pulse on a UV
+        // EPROM (erased state is all-ones; programming only clears bits).
+        if (expected == 0xFF) {
+            continue;
+        }
+        if (handle->firestarter_get_data(handle, addr) == expected) {
+            continue;
         }
 
-        retries = w + 1;
-        handle->pulse_delay = org_delay + (org_delay * retries / NUMBER_OF_RETRIES);
-        LOG_DEBUG_ID_SUB_U16_U16(DBG_PULSE_DELAY_MISMATCH, (uint16_t)org_delay, (uint16_t)handle->pulse_delay);
+        // LOOP-01: fixed-width pulse -> verify. The width is always
+        // org_delay -- it is NEVER grown, unlike the retry-escalation loop
+        // this replaces.
+        uint8_t pulses = 0;
+        uint32_t accumulated = 0;
+        for (;;) {
+            handle->firestarter_set_data(handle, addr, expected);
+            pulses++;
+            accumulated += org_delay;  // D-02: pulse widths only
+            if (handle->firestarter_get_data(handle, addr) == expected) {
+                break;  // converged
+            }
+            // Budgets are checked only AFTER a failed verify, so a byte
+            // that converges on its last permitted pulse succeeds instead
+            // of failing at the boundary.
+            if (pulses >= max_pulses) {
+                eprom_internal_report_budget_failure(handle, addr, pulses, MSG_ERR_MAX_PULSES);
+                return;
+            }
+            // energy_cap_us == 0 means UNCAPPED (eprom_params.h) -- without
+            // this guard, 0x07/0x08 (both ship energy_cap_us == 0) would
+            // abort after their very first pulse.
+            if (energy_cap_us && accumulated >= energy_cap_us) {
+                eprom_internal_report_budget_failure(handle, addr, pulses, MSG_ERR_ENERGY_CAP);
+                return;
+            }
+        }
+
+        // LOOP-03: unreachable with any shipped row (overprogram_factor is
+        // 0 on all three) -- D-07's org_delay save/restore idiom. Exactly
+        // one extra firestarter_set_data call at the computed width,
+        // restored immediately so no failure exit between save and
+        // restore can leak a modified pulse_delay into the handle.
+        uint32_t op_us = eprom_overprogram_us(pulses, org_delay, overprogram_factor, overprogram_cap_us);
+        if (op_us) {
+            handle->pulse_delay = op_us;
+            handle->firestarter_set_data(handle, addr, expected);
+            handle->pulse_delay = org_delay;
+        }
     }
 
-    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 0);
-    {
-        uint8_t _b[6];
-        _b[0] = (uint8_t)((handle->address >> 16) & 0xFF);
-        _b[1] = (uint8_t)((handle->address >> 8)  & 0xFF);
-        _b[2] = (uint8_t)( handle->address        & 0xFF);
-        _b[3] = (uint8_t)retries;
-        _b[4] = (uint8_t)(((uint16_t)mismatch >> 8) & 0xFF);
-        _b[5] = (uint8_t)( (uint16_t)mismatch       & 0xFF);
-        LOG_ERROR_ID_BYTES(MSG_ERR_WRITE_FAILED, _b, 6);
+    // verify_mode: 0x07/0x08 ship VERIFY_PER_PULSE_PLUS_FINAL -- one more
+    // full-block read-and-compare pass, mirroring memory_verify_execute
+    // (memory.cpp) exactly: same MSG_ERR_VERIFY id, same 5-byte payload,
+    // same early return. 0x0B ships VERIFY_PER_PULSE -- no final pass.
+    if (verify_mode == VERIFY_PER_PULSE_PLUS_FINAL) {
+        for (uint32_t i = 0; i < handle->data_size; i++) {
+            uint8_t byte = handle->firestarter_get_data(handle, handle->address + i);
+            uint8_t expected = (uint8_t)handle->data_buffer[i];
+            if (byte != expected) {
+                uint32_t addr = handle->address + i;
+                uint8_t _b[5] = {
+                    expected,
+                    byte,
+                    (uint8_t)((addr >> 16) & 0xFF),
+                    (uint8_t)((addr >> 8) & 0xFF),
+                    (uint8_t)(addr & 0xFF),
+                };
+                LOG_ERROR_ID_BYTES(MSG_ERR_VERIFY, _b, 5);
+                handle->response_code = RESPONSE_CODE_ERROR;
+                return;
+            }
+        }
     }
-    handle->response_code = RESPONSE_CODE_ERROR;
 }
 
 
