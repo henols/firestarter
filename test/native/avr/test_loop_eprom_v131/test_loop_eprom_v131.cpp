@@ -140,7 +140,15 @@ void setUp(void) {
     reset_register_cache(0x00, 0x00, 0x00);
 }
 
-void tearDown(void) {}
+void tearDown(void) {
+    /* Plan 141-08 (LOOP-08's DIP32 cases): reset any hardware-revision
+     * override back to the file's default (REVISION_0, via
+     * host_stubs_common.inc's zero-initialised s_host_config) so it can
+     * never leak into a case that runs after one of the DIP32 cases below
+     * -- Unity calls tearDown() even when a case fails via TEST_ASSERT's
+     * longjmp, so this reset is unconditional and always runs. */
+    rurp_get_config()->hardware_revision = 0;
+}
 
 /* ─────────────────────────────────────────────────────────────────────────
  * make_loop_handle -- fresh, zero-initialised handle per case. json_parse()
@@ -1380,6 +1388,281 @@ void test_loop07_an_over_cap_pulse_is_refused_before_any_high_voltage_on_a_cappe
     TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_PULSE_TOO_WIDE), "no MSG_ERR_PULSE_TOO_WIDE at a legal pulse width");
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * Task 3 (LOOP-08) -- VPE once per block, surviving every verify read,
+ * across an A16 crossing on a 32-pin part. All six cases assert
+ * strobe_overflowed() == 0 as a soundness precondition (small blocks only).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+void test_loop08_the_route_is_asserted_once_before_the_first_data_strobe(void) {
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed((uint16_t)i, block[i], converge_after[i]);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+    TEST_ASSERT_EQUAL_MESSAGE(0, timing_overflowed(), "timing_overflowed -- small block, must be sound");
+
+    int first_pulse_idx = first_genuine_pulse_strobe_index(block, 4);
+    TEST_ASSERT_TRUE_MESSAGE(first_pulse_idx >= 0, "non-vacuity: a genuine chip-data pulse must have been recorded");
+
+    /* Exactly one clear-to-set transition of CTRL_VPP_REGULATOR_ENABLE --
+     * the once-per-block assert, never re-asserted per byte. */
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n > 0, "non-vacuity: at least the top-of-block assert must have written CONTROL");
+    bool prev_set = false;
+    int transitions = 0;
+    int transition_idx = -1;
+    for (int i = 0; i < n; i++) {
+        int v = control_write_value(i);
+        bool now_set = (v >= 0) && (v & CTRL_VPP_REGULATOR_ENABLE);
+        if (now_set && !prev_set) { transitions++; transition_idx = i; }
+        prev_set = now_set;
+    }
+    TEST_ASSERT_EQUAL_MESSAGE(1, transitions, "exactly one clear-to-set transition of CTRL_VPP_REGULATOR_ENABLE across the whole block");
+
+    int assert_strobe_idx = control_write_strobe_index(transition_idx);
+    char ordmsg[112];
+    snprintf(ordmsg, sizeof(ordmsg), "the route assert (stream index %d) must precede the first genuine data pulse (stream index %d)", assert_strobe_idx, first_pulse_idx);
+    TEST_ASSERT_TRUE_MESSAGE(assert_strobe_idx < first_pulse_idx, ordmsg);
+
+    /* Exactly one delay(500) settle, and it too precedes the first pulse --
+     * the settle stays amortised once per block, which is the whole point
+     * of this requirement. timing_after_strobe(i) records how many
+     * strobes existed at push time, so <= first_pulse_idx means the delay
+     * happened no later than immediately before that strobe. */
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_timing_ms(500), "exactly one delay(500) settle across the whole block");
+    int m = timing_count();
+    bool found_settle_before = false;
+    for (int i = 0; i < m; i++) {
+        if (timing_kind(i) == TIMING_KIND_DELAY_MS && timing_us(i) == 500UL && timing_after_strobe(i) <= first_pulse_idx) {
+            found_settle_before = true;
+        }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(found_settle_before, "the delay(500) settle must precede the first genuine data pulse");
+}
+
+void test_loop08_the_route_bit_is_present_in_every_control_value_across_the_block(void) {
+    /* Deliberately never claims the CONTROL register is written only once
+     * across the whole block: mem_util_set_address writes CONTROL
+     * unconditionally on every byte, for both the pulse and the verify
+     * (memory.cpp:230-231), and this holds because the route bit is in
+     * mem_util_calculate_top_address_register's UNCONDITIONAL preserve
+     * mask (memory.cpp:161) -- NOT because a verify read leaves the
+     * control register alone. */
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed((uint16_t)i, block[i], converge_after[i]);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n > 1, "non-vacuity: multiple CONTROL writes must have occurred across the block (the assert plus at least one per-byte address-set)");
+    for (int i = 0; i < n; i++) {
+        int v = control_write_value(i);
+        char msg[80];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must carry CTRL_VPP_REGULATOR_ENABLE", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE) != 0, msg);
+    }
+}
+
+void test_loop08_route_presence_is_not_vacuous(void) {
+    /* Negative control for the case above: drive through
+     * mem_util_blank_check (CMD_BLANK_CHECK's own operation_main, installed
+     * by configure_eprom's own cmd-keyed switch when handle->cmd is set
+     * BEFORE configure_memory runs) instead of eprom_write_execute.
+     * blank_check reads via memory_get_data -> mem_util_set_address,
+     * producing a genuine, non-elided CONTROL write (pins==28
+     * unconditionally ORs CTRL_ADDRESS_LINE_17 into the very first address
+     * write, so even address 0 differs from the reset baseline), but NEVER
+     * asserts CTRL_VPP_REGULATOR_ENABLE -- that assert belongs to
+     * eprom_write_execute alone, entered only via CMD_WRITE. Without this
+     * case, the case above's 'for every control value, the bit is set'
+     * could pass vacuously on an empty or mis-keyed stream; this shows the
+     * identical filter, applied to a stream that genuinely contains
+     * CONTROL writes, correctly reports the bit ABSENT throughout. */
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    h.cmd = CMD_BLANK_CHECK;
+    const uint8_t block[1] = {0x3C};
+    loop_readback_seed(0, block[0], 0);  /* mismatch on the very first (only) read -- stops the scan immediately */
+    drive_loop_write(&h, 0, block, 1);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code -- blank_check reports non-blank at address 0");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- tiny drive, must be sound");
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n > 0, "non-vacuity: mem_util_blank_check's own set_address call must have produced a genuine CONTROL write");
+    for (int i = 0; i < n; i++) {
+        int v = control_write_value(i);
+        char msg[80];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must NOT carry CTRL_VPP_REGULATOR_ENABLE -- no route was ever asserted", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE) == 0, msg);
+    }
+}
+
+void test_loop08_dip32_block_crossing_an_a16_boundary_keeps_the_route_and_toggles_a16(void) {
+    /* The highest-risk case in this plan. Override the hardware-revision
+     * mapping to REVISION_2_2 for the duration of this case (reset
+     * unconditionally in tearDown()) so the recorded PHYSICAL control byte
+     * does not conflate CTRL_ADDRESS_LINE_16 and CTRL_VPP_VPE_DROP_ENABLE
+     * -- on the default REVISION_0/1 mapping both remap onto the SAME
+     * physical bit (0x01; 141-RESEARCH.md's Axis 2 table), which would make
+     * an A16-toggle check indistinguishable from a drop-bit-toggle check.
+     * On REVISION_2_x they map to distinct physical bits:
+     * CTRL_ADDRESS_LINE_16_REV2 (0x20) vs CTRL_VPP_VPE_DROP_ENABLE_REV2
+     * (0x01). This changes nothing about the LOGICAL behaviour under test
+     * (every eprom.cpp/memory.cpp bit check operates on the pre-remap
+     * logical value; only the recorded strobe BYTE differs) -- it only
+     * disambiguates what THIS test can prove from the strobe stream. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+
+    firestarter_handle_t h = make_loop_handle(0x08, 32, 262144, 100, LOOP_BUS_CONFIG_0x08);
+    /* LOOP_BUS_CONFIG_0x08 has matching_lines 17 and static_high_mask 0, so
+     * bits 0-16 of the address are identity-mapped by
+     * mem_util_remap_address_bus and A16 rides in the CONTROL top-address
+     * register (mem_util_calculate_top_address_register), never in the
+     * LSB/MSB latches -- exactly why host_stubs.cpp's read-back model keys
+     * on the full 16-bit (LSB | MSB<<8) pair rather than the trace suite's
+     * '& 0x03' index, which would collapse all four of this block's
+     * addresses onto two counters. */
+    const uint32_t base = 0x00FFFEUL;
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};  /* none is 0xFF -- every byte is genuinely programmed */
+    const uint16_t keys[4] = {0xFFFE, 0xFFFF, 0x0000, 0x0001};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed(keys[i], block[i], 1);
+    }
+    drive_loop_write(&h, base, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+
+    /* 0x08 ships VERIFY_PER_PULSE_PLUS_FINAL (eprom_params.cpp:50): 1
+     * skip-check + 1 verify (converge_after=1) + 1 final-pass read = 3,
+     * matching LOOP-01's established 2+pulses mapping. */
+    for (int i = 0; i < 4; i++) {
+        char msg[80];
+        snprintf(msg, sizeof(msg), "loop_readback_reads(key[%d]=0x%04X) == 3 (skip-check + 1 verify + 1 final pass)", i, keys[i]);
+        TEST_ASSERT_EQUAL_MESSAGE(3, loop_readback_reads(keys[i]), msg);
+    }
+
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n > 0, "non-vacuity: the block must have produced at least one CONTROL write");
+
+    bool saw_a16_clear = false, saw_a16_set = false;
+    for (int i = 0; i < n; i++) {
+        int v = control_write_value(i);
+        char vmsg[64];
+        snprintf(vmsg, sizeof(vmsg), "control write %d must be a genuine, decodable value", i);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0, vmsg);
+        if (v & CTRL_ADDRESS_LINE_16_REV2) saw_a16_set = true; else saw_a16_clear = true;
+        char rmsg[80];
+        snprintf(rmsg, sizeof(rmsg), "control write %d (0x%02X) must carry CTRL_VPP_REGULATOR_ENABLE", i, v);
+        TEST_ASSERT_TRUE_MESSAGE((v & CTRL_VPP_REGULATOR_ENABLE) != 0, rmsg);
+    }
+    TEST_ASSERT_TRUE_MESSAGE(saw_a16_clear, "at least one control value must have A16 CLEAR (the 0x00FFFE/0x00FFFF half of the block)");
+    TEST_ASSERT_TRUE_MESSAGE(saw_a16_set, "at least one control value must have A16 SET (the 0x010000/0x010001 half) -- proves the block really crossed the boundary");
+}
+
+void test_loop08_dip32_drop_bit_is_cleared_deliberately_before_the_first_pulse(void) {
+    /* Same handle shape as the case above -- same override reasoning. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+
+    firestarter_handle_t h = make_loop_handle(0x08, 32, 262144, 100, LOOP_BUS_CONFIG_0x08);
+    const uint32_t base = 0x00FFFEUL;
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t keys[4] = {0xFFFE, 0xFFFF, 0x0000, 0x0001};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed(keys[i], block[i], 1);
+    }
+    drive_loop_write(&h, base, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2, "non-vacuity: at least the top-of-block assert (drop SET) and the explicit pins>=32 clear must both have written CONTROL");
+
+    int first_pulse_idx = first_genuine_pulse_strobe_index(block, 4);
+    TEST_ASSERT_TRUE_MESSAGE(first_pulse_idx >= 0, "non-vacuity: a genuine chip-data pulse must have been recorded");
+
+    /* [D-09 finding, in full] the drop bit is excluded from
+     * mem_util_calculate_top_address_register's preserve mask whenever
+     * handle->pins >= 32 (memory.cpp:161-162), so it would be cleared by
+     * the very first set_address() of the block ANYWAY -- the explicit
+     * `handle->pins >= 32` branch in eprom_write_execute
+     * (src/proms/eprom.cpp:217-219) makes that deliberate and OBSERVABLE
+     * rather than incidental. CTRL_ADDRESS_LINE_16 (0x01 logical) and
+     * CTRL_VPP_VPE_DROP_ENABLE (0x100 logical) are DISTINCT bits on every
+     * build this project ships (-D HARDWARE_REVISION is in the shared
+     * [env] build_flags, so no macro-level collision exists) -- the
+     * mechanism is the preserve mask, never a bit clash. Consolidating the
+     * mask sets and choosing the final DIP32 route (P1 vs drop resistor)
+     * is Phase 142 / VPP-01 and VPP-03 -- this case does not pre-empt that
+     * choice, it only makes the existing clear observable. */
+    int v0 = control_write_value(0);
+    TEST_ASSERT_TRUE_MESSAGE(v0 >= 0 && (v0 & CTRL_VPP_VPE_DROP_ENABLE_REV2) != 0,
+        "control write 0 (the top-of-block assert) must have the drop bit SET -- the 0x08 row's ELSE branch asserts regulator|drop together");
+
+    int v1 = control_write_value(1);
+    TEST_ASSERT_TRUE_MESSAGE(v1 >= 0 && (v1 & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0,
+        "control write 1 (the explicit pins>=32 clear) must have the drop bit CLEAR");
+    int clear_strobe_idx = control_write_strobe_index(1);
+    char ordmsg[112];
+    snprintf(ordmsg, sizeof(ordmsg), "the clearing write (stream index %d) must precede the first genuine data pulse (stream index %d)", clear_strobe_idx, first_pulse_idx);
+    TEST_ASSERT_TRUE_MESSAGE(clear_strobe_idx < first_pulse_idx, ordmsg);
+
+    /* From that clearing write onward (which itself precedes the first
+     * data strobe, per the assertion above) -- and therefore across the
+     * whole per-byte loop, including the A16 crossing -- the drop bit
+     * never reappears: it is excluded from the preserve mask forever
+     * after, on pins>=32. */
+    for (int i = 1; i < n; i++) {
+        int v = control_write_value(i);
+        char msg[96];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must not carry CTRL_VPP_VPE_DROP_ENABLE_REV2 -- pins>=32 excludes it from the preserve mask", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0, msg);
+    }
+}
+
+void test_loop08_the_28_pin_row_keeps_its_drop_bit(void) {
+    /* Paired control for the case above: on a 28-pin row (pins < 32), the
+     * drop bit IS in the preserve mask (memory.cpp:172), so it must
+     * survive every set_address() of the block. Stays on the DEFAULT
+     * hardware revision (REVISION_0) -- this block is 4 bytes at base 0,
+     * so address never reaches 0x010000 and A16 never becomes 1, meaning
+     * physical bit 0x01 (CTRL_VPP_VPE_DROP_ENABLE_REV1, which collides with
+     * CTRL_ADDRESS_LINE_16 on REVISION_0/1 per 141-RESEARCH.md's Axis 2
+     * table) can ONLY ever mean the drop bit here -- no REV2 override
+     * needed for this case's own claim. Without this case, the case above
+     * would pass on an implementation that never sets the drop bit for ANY
+     * protocol, DIP32 or not. */
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed((uint16_t)i, block[i], converge_after[i]);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n > 0, "non-vacuity: the block must have produced at least one CONTROL write");
+    for (int i = 0; i < n; i++) {
+        int v = control_write_value(i);
+        char msg[80];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must carry CTRL_VPP_VPE_DROP_ENABLE_REV1 -- pins<32 keeps it in the preserve mask", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_VPE_DROP_ENABLE_REV1) != 0, msg);
+    }
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -1427,6 +1710,14 @@ int main(int argc, char** argv) {
     RUN_TEST(test_loop05_a_successful_block_does_not_disable_the_route);
     RUN_TEST(test_loop07_no_recorded_us_delay_exceeds_the_avr_ceiling_under_a_real_drive);
     RUN_TEST(test_loop07_an_over_cap_pulse_is_refused_before_any_high_voltage_on_a_capped_row);
+
+    /* LOOP-08 (plan 141-08, task 3) */
+    RUN_TEST(test_loop08_the_route_is_asserted_once_before_the_first_data_strobe);
+    RUN_TEST(test_loop08_the_route_bit_is_present_in_every_control_value_across_the_block);
+    RUN_TEST(test_loop08_route_presence_is_not_vacuous);
+    RUN_TEST(test_loop08_dip32_block_crossing_an_a16_boundary_keeps_the_route_and_toggles_a16);
+    RUN_TEST(test_loop08_dip32_drop_bit_is_cleared_deliberately_before_the_first_pulse);
+    RUN_TEST(test_loop08_the_28_pin_row_keeps_its_drop_bit);
 
     return UNITY_END();
 }
