@@ -406,6 +406,15 @@ void test_logged_id_capture_records_the_id_and_its_packed_params(void) {
 /* Small local helpers, shared by every case below -- neither plan 141-03's
  * harness nor host_stubs.cpp provides them; they belong to THIS plan's own
  * cases, not to the fixed drive-helper contract. */
+static int count_strobe_kind(uint8_t kind) {
+    int n = strobe_count();
+    int c = 0;
+    for (int i = 0; i < n; i++) {
+        if (strobe_kind(i) == kind) c++;
+    }
+    return c;
+}
+
 static int count_logged_id(uint8_t id) {
     int n = logged_id_count();
     int c = 0;
@@ -413,6 +422,28 @@ static int count_logged_id(uint8_t id) {
         if (logged_id_at(i) == id) c++;
     }
     return c;
+}
+
+/* LOOP_BUS_CONFIG_0x0B is the only one of the three bus_config literals
+ * with a nonzero static_high_mask (0x00002000UL, bit 13):
+ * mem_util_remap_address_bus (src/proms/memory.cpp:350) does
+ * `reorg_address |= config.static_high_mask` UNCONDITIONALLY, on every
+ * address, for both the read and the write path. So the read-back model's
+ * key for a byte at real (handle-level, unmapped) address A on this
+ * bus_config is A + 0x2000, not A -- source-verified, not assumed: A's low
+ * 11 bits pass through address_mask (0x000007FF) unchanged, matching_lines
+ * (11) already points at the config's 0xFF terminator so no per-line
+ * remap runs, rw_line is 0xFF (skipped) and vpp_line's OR is skipped
+ * because using_p1_as_vpp(handle) is true for this pins==24/vpp_line==0x0B
+ * combination (memory_utils.h:43-47) -- static_high_mask is the ONLY term
+ * left standing. LOOP_BUS_CONFIG_0x07 and _0x08 both carry
+ * static_high_mask == 0x00000000UL, so neither needs this adjustment; only
+ * 0x0B-driven cases below call this helper. The LOGGED payload address
+ * bytes (eprom_internal_report_budget_failure's u24) are unaffected -- they
+ * carry handle->address + i, the real unmapped address, never the
+ * remapped register-level key. */
+static uint16_t k0b(uint32_t real_addr) {
+    return (uint16_t)(real_addr + 0x2000UL);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -612,6 +643,140 @@ void test_loop01_a_byte_that_converges_on_its_last_permitted_pulse_succeeds(void
         "no MSG_ERR_MAX_PULSES frame -- the budget check runs AFTER the failed verify, so a byte converging on pulse 25 never reaches it");
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * LOOP-06 (task 2) -- skip rules for 0xFF and already-matching bytes, with
+ * negative controls.
+ *
+ * DEVIATION FROM THE PLAN'S <action> PROSE, recorded here and in this
+ * plan's own SUMMARY: cases 1-3 below drive protocol 0x0B, not 0x07 as the
+ * plan's prose said, so their literal loop_readback_reads() values (the
+ * plan's own <acceptance_criteria> numbers: 0, and 1/3) are actually true.
+ * 0x07 ships VERIFY_PER_PULSE_PLUS_FINAL (eprom_params.cpp:50):
+ * eprom_write_execute's final full-block pass (:296-314) reads EVERY byte
+ * once more, unconditionally, after the per-byte loop -- including
+ * 0xFF-skipped and already-matching bytes. Driving cases 1-3 on 0x07 would
+ * add +1 to every loop_readback_reads() value from that pass (0 -> 1 for
+ * the 0xFF byte, 1 -> 2 for the already-matching byte), CONTRADICTING the
+ * plan's own stated acceptance numbers. 0x0B ships plain VERIFY_PER_PULSE
+ * (no final pass), so it is the only protocol on which the per-byte loop's
+ * OWN skip behaviour is directly observable, uncontaminated by a later
+ * pass. Case 4 below is deliberately still 0x07 -- it is the case that
+ * specifically proves the final pass DOES still run on a fully-skipped
+ * block, which needs the PLUS_FINAL protocol to be meaningful at all; this
+ * pairs exactly with LOOP-04 case 6 below (0x0B, the negative
+ * counterpart: NO final pass runs).
+ *
+ * LOOP_BUS_CONFIG_0x0B's nonzero static_high_mask means every seed/read
+ * key below goes through k0b() -- see that helper's own comment.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+void test_loop06_an_ff_target_byte_is_never_read_and_never_pulsed(void) {
+    firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, 100, LOOP_BUS_CONFIG_0x0B);
+    const uint8_t block[4] = {0x3C, 0xFF, 0x55, 0xAA};
+    const uint16_t converge_after[4] = {1, 0, 1, 1};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed(k0b((uint32_t)i), block[i], converge_after[i]);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    /* The discriminating assertion: the 0xFF check runs BEFORE any read of
+     * the byte, so byte 1 gets exactly ZERO reads -- not the single
+     * skip-check read an already-matching byte gets (case 2 below). This
+     * is what distinguishes the two skip rules from each other, and on its
+     * own already proves zero pulses for that byte too: every pulse this
+     * loop ever emits is followed by a verify read (LOOP-01), so zero
+     * reads implies zero pulses without needing a separate strobe count
+     * (which, per the noise-floor finding in LOOP-01 case 1's own comment,
+     * cannot cleanly isolate "pulses" from register-shift writes anyway). */
+    TEST_ASSERT_EQUAL_MESSAGE(0, loop_readback_reads(k0b(1)), "0xFF byte must get ZERO reads -- proves the 0xFF check precedes the read");
+}
+
+void test_loop06_an_already_matching_byte_is_read_once_and_never_pulsed(void) {
+    firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, 100, LOOP_BUS_CONFIG_0x0B);
+    const uint8_t block[2] = {0x3C, 0x55};
+    loop_readback_seed(k0b(0), 0x3C, 0);  /* matches on the very first (skip-check) read */
+    loop_readback_seed(k0b(1), 0x55, 2);
+    drive_loop_write(&h, 0, block, 2);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    /* 1 read implies 0 pulses (the skip-check read itself already
+     * matched); 3 reads implies exactly 3-1=2 pulses (skip-check + one
+     * verify read per pulse) -- both by the same reads-imply-pulses
+     * reasoning as case 1 above. */
+    TEST_ASSERT_EQUAL_MESSAGE(1, loop_readback_reads(k0b(0)), "already-matching byte: exactly the skip-check read, no pulse");
+    TEST_ASSERT_EQUAL_MESSAGE(3, loop_readback_reads(k0b(1)), "converging byte: skip-check read + 2 verify reads after 2 pulses");
+}
+
+void test_loop06_a_block_of_only_skipped_bytes_emits_no_pulse_at_all(void) {
+    firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, 100, LOOP_BUS_CONFIG_0x0B);
+    const uint8_t block[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed(k0b((uint32_t)i), 0xFF, 0);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    /* The ONE unavoidable DATA strobe here is the once-per-block VPE-assert
+     * control-register write at the very top of eprom_write_execute -- it
+     * fires unconditionally whenever CTRL_VPP_REGULATOR_ENABLE starts
+     * clear (always true here: drive_loop_write's own reset_register_cache
+     * always clears it before the drive), and it is NOT caused by, or
+     * related to, any byte in the block. Every one of the four 0xFF bytes
+     * itself contributes ZERO strobes of any kind: the `expected == 0xFF`
+     * check short-circuits BEFORE any read or address-set call is ever
+     * made for that byte -- confirmed independently below by all four
+     * loop_readback_reads() being 0. */
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_strobe_kind(STROBE_KIND_DATA),
+        "the ONLY DATA strobe in this drive is the structural once-per-block VPE-assert control write; no byte contributes one");
+    for (int i = 0; i < 4; i++) {
+        char msg[64];
+        snprintf(msg, sizeof(msg), "loop_readback_reads(k0b(%d)) must be 0 -- never read at all (0x0B has no final pass)", i);
+        TEST_ASSERT_EQUAL_MESSAGE(0, loop_readback_reads(k0b((uint32_t)i)), msg);
+    }
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    TEST_ASSERT_EQUAL_MESSAGE(0, logged_id_count(), "no error id logged for an all-0xFF block");
+
+    /* Paired negative control (T-141-VACUOUS, this plan's own threat
+     * register): without this, the zero-pulse assertion above could pass
+     * on a loop that never ran at all (a broken drive helper, or a handle
+     * that silently failed configure). A block with one byte that
+     * genuinely needs programming, driven immediately afterward on a
+     * disjoint address range, must push the count strictly ABOVE the
+     * 1-strobe structural floor measured above -- ">0" alone would be
+     * vacuously true even if that byte never pulsed, since the floor
+     * itself is always >= 1. */
+    firestarter_handle_t h2 = make_loop_handle(0x0B, 24, 2048, 100, LOOP_BUS_CONFIG_0x0B);
+    const uint8_t block2[1] = {0x3C};
+    loop_readback_seed(k0b(0x0100UL), 0x3C, 1);
+    drive_loop_write(&h2, 0x0100UL, block2, 1);
+    TEST_ASSERT_TRUE_MESSAGE(count_strobe_kind(STROBE_KIND_DATA) > 1,
+        "negative control: a byte that needs programming must push the count above the 1-strobe structural floor -- otherwise the all-0xFF case above would be vacuous");
+}
+
+void test_loop06_the_ff_rule_does_not_suppress_the_final_verify_pass(void) {
+    /* Deliberately 0x07 here (VERIFY_PER_PULSE_PLUS_FINAL) -- the
+     * counterpart to the three cases above, which deliberately use 0x0B
+     * (VERIFY_PER_PULSE, no final pass) to keep their read counts
+     * uncontaminated. This case is what makes the verify_mode consumption
+     * observable at all on a fully-skipped block: the per-byte loop itself
+     * never reads any of these bytes (the 0xFF rule skips all four before
+     * any read), so any read at all can only have come from the final
+     * full-block pass. */
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed((uint16_t)i, 0xFF, 0);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code -- a seeded target of 0xFF matches on the final pass");
+    for (int i = 0; i < 4; i++) {
+        char msg[96];
+        snprintf(msg, sizeof(msg), "loop_readback_reads(%d) must be >= 1 -- the final pass reads every byte even though the per-byte loop skipped them all", i);
+        TEST_ASSERT_TRUE_MESSAGE(loop_readback_reads((uint16_t)i) >= 1, msg);
+    }
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -628,6 +793,12 @@ int main(int argc, char** argv) {
     RUN_TEST(test_loop01_pulse_width_never_grows_between_attempts);
     RUN_TEST(test_loop01_verify_read_follows_every_pulse);
     RUN_TEST(test_loop01_a_byte_that_converges_on_its_last_permitted_pulse_succeeds);
+
+    /* LOOP-06 (plan 141-07, task 2) */
+    RUN_TEST(test_loop06_an_ff_target_byte_is_never_read_and_never_pulsed);
+    RUN_TEST(test_loop06_an_already_matching_byte_is_read_once_and_never_pulsed);
+    RUN_TEST(test_loop06_a_block_of_only_skipped_bytes_emits_no_pulse_at_all);
+    RUN_TEST(test_loop06_the_ff_rule_does_not_suppress_the_final_verify_pass);
 
     return UNITY_END();
 }
