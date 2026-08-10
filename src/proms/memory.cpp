@@ -29,6 +29,10 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
+// AVR delayMicroseconds() accurate ceiling -- see mem_util_delay_us /
+// mem_util_split_delay below.
+#define MEM_UTIL_DELAY_US_MAX 16383UL
+
 void memory_read_execute(firestarter_handle_t* handle);
 void memory_write_execute(firestarter_handle_t* handle);
 void memory_verify_execute(firestarter_handle_t* handle);
@@ -172,6 +176,28 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
     return top_address;
 }
 
+void mem_util_split_delay(uint32_t us, uint32_t* out_ms, uint16_t* out_us) {
+    if (us <= MEM_UTIL_DELAY_US_MAX) {
+        *out_ms = 0;
+        *out_us = (uint16_t)us;  // <= 16383, fits and is accurate
+        return;
+    }
+    *out_ms = us / 1000UL;
+    *out_us = (uint16_t)(us % 1000UL);  // <= 999, always under the ceiling
+}
+
+void mem_util_delay_us(uint32_t us) {
+    uint32_t ms;
+    uint16_t rem;
+    mem_util_split_delay(us, &ms, &rem);
+    if (ms) {
+        delay(ms);  // unsigned long -- 32-bit safe
+    }
+    if (rem) {
+        delayMicroseconds(rem);
+    }
+}
+
 void mem_util_set_address(firestarter_handle_t* handle, uint32_t address) {
 #ifdef DEBUG_ADDRESS
     LOG_DEBUG_ID_SUB_U24(DBG_ADDRESS, address);
@@ -254,7 +280,7 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
     rurp_write_data_buffer(data);
     delayMicroseconds(3);  // Needed for slower address changes like slow ROMs and "Power through address lines"
     rurp_chip_enable();
-    delayMicroseconds(handle->pulse_delay);
+    mem_util_delay_us(handle->pulse_delay);
     rurp_chip_disable();
 }
 
