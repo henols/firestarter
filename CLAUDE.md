@@ -213,15 +213,19 @@ Phase 119 added a second native env, `[env:native_nodevtools]`, a new suite
 must be added to **both** envs' `test_filter` and `-I` lists (four new lines
 total) to run under both `-D DEV_TOOLS` and no-`DEV_TOOLS` builds.
 
-**Exception (Phase 140 D-11): `native_params_v131` is added to NEITHER pinned env.** The
-instruction directly above — add a new suite to **both** `[env:native]` and
-`[env:native_nodevtools]` — is **overridden** for `native_params_v131`, because both pinned envs
-are asserted at exactly **141 cases / 17 suites** by `scripts/baseline/size_baseline.json` through
-`check_size_baseline.py`'s `compare_native`, so adding a case to either turns a live gate RED.
-`native_params_v131` follows the `native_trace_v131` precedent (Phase 138) instead: its
-`test_filter` names only its own suite (not folded into either pinned env's `test_filter`), it is
-not in `default_envs`, it is never passed to `check_size_baseline.py` (an unrecognized env name
-raises an uncaught `KeyError`, exit 1 — F-138-05) nor to `check_build_warnings.py` (exit 2, no
-baseline entry for this env), and it runs in **no CI leg** of either repository (F-140-11). Its
-counts are therefore a **run-by-name obligation** recorded in the Phase 140 phase record, never
-implied to be CI-covered.
+**Exception (Phase 140 D-11): `native_params_v131` and `native_loop_v131` are added to NEITHER
+pinned env.** The instruction directly above — add a new suite to **both** `[env:native]` and
+`[env:native_nodevtools]` — is **overridden** for both `native_params_v131` and
+`native_loop_v131`, because both pinned envs are asserted at exactly **141 cases / 17 suites** by
+`scripts/baseline/size_baseline.json` through `check_size_baseline.py`'s `compare_native`, so
+adding a case to either turns a live gate RED. Both envs follow the `native_trace_v131` precedent
+(Phase 138) instead: each env's `test_filter` names only its own suite (not folded into either
+pinned env's `test_filter`), neither is in `default_envs`, neither is ever passed to
+`check_size_baseline.py` (an unrecognized env name raises an uncaught `KeyError`, exit 1 —
+F-138-05) nor to `check_build_warnings.py` (exit 2, no baseline entry for either env), and both
+run in **no CI leg** of either repository (F-140-11). `native_loop_v131` originates in Phase 141 /
+D-10 — it exists because the frozen `native_trace_v131` fixture goes RED by design in that phase
+and cannot verify the per-byte program loop rewrite, so Phase 141 authors its own oracle instead,
+carrying the identical four constraints stated above. Both envs' counts are therefore a
+**run-by-name obligation** recorded in their respective phase records, never implied to be
+CI-covered.
