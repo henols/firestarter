@@ -959,6 +959,155 @@ void test_loop04_0x0B_runs_no_final_full_block_verify_pass(void) {
     TEST_ASSERT_EQUAL_MESSAGE(2, loop_readback_reads(k0b(1)), "byte 1: skip-check + 1 verify, no final pass");
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+ * Plan 141-08 (LOOP-03, LOOP-05, LOOP-07, LOOP-08) -- the phase's remaining
+ * four requirements, whose oracles are specialist: the overprogram
+ * arithmetic (task 1, below -- a pure function, since no shipped row can
+ * reach it), the hard-fail exit and its non-vacuous route disable (task 2),
+ * the delay ceiling under a REAL drive plus the pre-flight refusal (task 2),
+ * and the DIP32 A16-crossing seam (task 3). This plan flips NO requirement
+ * checkbox -- consolidated in plan 141-09, after every piece of evidence
+ * exists (frontmatter requirements: [] is deliberate).
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Task 1 (LOOP-03, LOOP-07 arithmetic) -- the two pure functions, at their
+ * boundaries. No handle, no hardware, no PROGMEM: eprom_overprogram_us and
+ * mem_util_split_delay / mem_util_delay_us are called DIRECTLY.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+void test_loop03_overprogram_duration_is_three_times_the_pulse_count_times_the_width(void) {
+    TEST_ASSERT_EQUAL_MESSAGE(300, eprom_overprogram_us(1, 100, 3, 75000),
+        "(1,100,3,75000): 1 pulse x 100us x factor 3 = 300");
+    TEST_ASSERT_EQUAL_MESSAGE(1500, eprom_overprogram_us(5, 100, 3, 75000),
+        "(5,100,3,75000): 5 pulses x 100us x factor 3 = 1500");
+}
+
+void test_loop03_overprogram_is_zero_when_the_factor_is_zero(void) {
+    /* This is the gate every SHIPPED row takes: overprogram_factor is 0 on
+     * all three live rows (eprom_params.cpp:50-52), so the per-byte loop's
+     * own overprogram call (eprom.cpp:284) is inert on every protocol this
+     * project ships today. D-08's pure function is the only oracle that
+     * can exercise the path at a nonzero factor at all -- see the
+     * remaining cases below. */
+    TEST_ASSERT_EQUAL_MESSAGE(0, eprom_overprogram_us(5, 100, 0, 75000),
+        "(5,100,0,75000): factor 0 -> 0, regardless of pulse_count/pulse_us/cap");
+    TEST_ASSERT_EQUAL_MESSAGE(0, eprom_overprogram_us(25, 1000, 0, 75000),
+        "(25,1000,0,75000): factor 0 -> 0 even at the max_pulses boundary");
+}
+
+void test_loop03_overprogram_clamps_at_the_cap_rather_than_refusing(void) {
+    /* 25 x 1000 x 3 = 75000, exactly the cap -- the Intel-Intelligent worst
+     * case cited on gh#15. Phase 140 D-08 / this plan's own <action>: the
+     * cap CLAMPS, it does not refuse -- a request one microsecond ABOVE the
+     * cap still clamps, it never becomes an error. */
+    TEST_ASSERT_EQUAL_MESSAGE(75000, eprom_overprogram_us(25, 1000, 3, 75000),
+        "(25,1000,3,75000): 25*1000*3=75000, exactly the cap -- the clamp is a no-op here");
+    TEST_ASSERT_EQUAL_MESSAGE(75000, eprom_overprogram_us(25, 1001, 3, 75000),
+        "(25,1001,3,75000): 25*1001*3=75075, ABOVE the cap -- clamps to 75000, never refuses");
+}
+
+void test_loop03_overprogram_is_32_bit_safe_at_the_uint16_ceiling(void) {
+    /* The raw product 3 * 25 * 65535 = 4915125 fits uint32_t (max
+     * 4294967295) but OVERFLOWS any uint16_t intermediate (max 65535): a
+     * wrong intermediate type would show up here as a small or wrapped
+     * value (4915125 mod 65536 = 44529), never as the correct clamp to the
+     * cap. eprom_overprogram_us computes entirely in uint32_t
+     * ((uint32_t)factor * pulse_count * pulse_us, per include/eprom.h's own
+     * header comment). */
+    TEST_ASSERT_EQUAL_MESSAGE(75000, eprom_overprogram_us(25, 65535, 3, 75000),
+        "(25,65535,3,75000): raw product 3*25*65535=4915125, clamped to the 75000 cap");
+}
+
+void test_loop03_a_zero_cap_yields_no_overprogram_pulse(void) {
+    /* Decided semantics (D-08, this plan's own <action>): eprom_params.h:52
+     * defines the column as the clamp in min(3 x overprogram_factor x
+     * pulse, cap), and min(product, 0) is 0 -- "0 means no clamp is
+     * configured" is the fail-safe reading. The alternative reading ("0
+     * means uncapped") would let a factor != 0 row emit a multi-second VPE
+     * pulse the very first time one appeared -- this is the fail-safe
+     * reading as well as the literal one. No shipped row has
+     * overprogram_factor != 0, so this case is unreachable in production
+     * and this pure-function test is its only oracle. */
+    TEST_ASSERT_EQUAL_MESSAGE(0, eprom_overprogram_us(5, 100, 3, 0),
+        "(5,100,3,0): cap_us=0 -> 0, the fail-safe 'no clamp configured' reading");
+}
+
+void test_loop07_split_does_not_fire_at_or_below_the_ceiling(void) {
+    uint32_t ms; uint16_t us;
+
+    mem_util_split_delay(0, &ms, &us);
+    TEST_ASSERT_EQUAL_MESSAGE(0, ms, "split(0).ms");
+    TEST_ASSERT_EQUAL_MESSAGE(0, us, "split(0).us");
+
+    mem_util_split_delay(100, &ms, &us);
+    TEST_ASSERT_EQUAL_MESSAGE(0, ms, "split(100).ms");
+    TEST_ASSERT_EQUAL_MESSAGE(100, us, "split(100).us");
+
+    /* The exact ceiling (16383) must NOT split -- splitting everything
+     * would change the emitted trace for every shipped pulse width and
+     * destroy Phase 144's ability to attribute the trace diff to cadence. */
+    mem_util_split_delay(16383, &ms, &us);
+    TEST_ASSERT_EQUAL_MESSAGE(0, ms, "split(16383).ms -- the exact ceiling must not split");
+    TEST_ASSERT_EQUAL_MESSAGE(16383, us, "split(16383).us -- the exact ceiling must not split");
+}
+
+void test_loop07_split_fires_above_the_ceiling_and_stays_32_bit_safe(void) {
+    uint32_t ms; uint16_t us;
+
+    /* The first value that must split. */
+    mem_util_split_delay(16384, &ms, &us);
+    TEST_ASSERT_EQUAL_MESSAGE(16, ms, "split(16384).ms -- first value above the ceiling");
+    TEST_ASSERT_EQUAL_MESSAGE(384, us, "split(16384).us -- first value above the ceiling");
+
+    /* 0x0B's energy cap, as a single pulse. */
+    mem_util_split_delay(50000, &ms, &us);
+    TEST_ASSERT_EQUAL_MESSAGE(50, ms, "split(50000).ms");
+    TEST_ASSERT_EQUAL_MESSAGE(0, us, "split(50000).us");
+
+    /* The overprogram clamp. */
+    mem_util_split_delay(75000, &ms, &us);
+    TEST_ASSERT_EQUAL_MESSAGE(75, ms, "split(75000).ms");
+    TEST_ASSERT_EQUAL_MESSAGE(0, us, "split(75000).us");
+
+    /* minipro's own -o pulse= ceiling. */
+    mem_util_split_delay(65535, &ms, &us);
+    TEST_ASSERT_EQUAL_MESSAGE(65, ms, "split(65535).ms");
+    TEST_ASSERT_EQUAL_MESSAGE(535, us, "split(65535).us");
+
+    /* uint32_t max -- proving neither the division nor the modulo
+     * overflows. 4294967295 / 1000 = 4294967, 4294967295 % 1000 = 295. */
+    mem_util_split_delay(4294967295UL, &ms, &us);
+    TEST_ASSERT_EQUAL_MESSAGE(4294967, ms, "split(4294967295).ms -- uint32_t max, division must not overflow");
+    TEST_ASSERT_EQUAL_MESSAGE(295, us, "split(4294967295).us -- uint32_t max, modulo must not overflow");
+}
+
+void test_loop07_delay_us_emits_the_split_as_delay_then_delaymicroseconds(void) {
+    clear_timings();
+    mem_util_delay_us(75000);
+    /* 75000 splits to ms=75, us=0 -- the remainder is 0, and
+     * mem_util_delay_us guards delayMicroseconds on a NONZERO remainder, so
+     * exactly one DELAY_MS entry (75) and NO DELAY_US entry at all. */
+    TEST_ASSERT_EQUAL_MESSAGE(1, timing_count(), "mem_util_delay_us(75000): exactly one timing entry");
+    TEST_ASSERT_EQUAL_MESSAGE(TIMING_KIND_DELAY_MS, timing_kind(0), "mem_util_delay_us(75000): entry 0 kind");
+    TEST_ASSERT_EQUAL_MESSAGE(75, timing_us(0), "mem_util_delay_us(75000): entry 0 value");
+
+    clear_timings();
+    mem_util_delay_us(16384);
+    /* 16384 splits to ms=16, us=384 -- both nonzero, so exactly TWO entries
+     * in order: DELAY_MS(16) then DELAY_US(384). */
+    TEST_ASSERT_EQUAL_MESSAGE(2, timing_count(), "mem_util_delay_us(16384): exactly two timing entries");
+    TEST_ASSERT_EQUAL_MESSAGE(TIMING_KIND_DELAY_MS, timing_kind(0), "mem_util_delay_us(16384): entry 0 kind");
+    TEST_ASSERT_EQUAL_MESSAGE(16, timing_us(0), "mem_util_delay_us(16384): entry 0 value");
+    TEST_ASSERT_EQUAL_MESSAGE(TIMING_KIND_DELAY_US, timing_kind(1), "mem_util_delay_us(16384): entry 1 kind");
+    TEST_ASSERT_EQUAL_MESSAGE(384, timing_us(1), "mem_util_delay_us(16384): entry 1 value");
+
+    clear_timings();
+    mem_util_delay_us(0);
+    /* 0 splits to ms=0, us=0 -- both guards false, ZERO entries at all. */
+    TEST_ASSERT_EQUAL_MESSAGE(0, timing_count(), "mem_util_delay_us(0): zero timing entries");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -989,6 +1138,16 @@ int main(int argc, char** argv) {
     RUN_TEST(test_loop04_the_energy_cap_binds_before_max_pulses_on_every_shipped_width);
     RUN_TEST(test_loop04_no_live_row_emits_an_overprogram_pulse);
     RUN_TEST(test_loop04_0x0B_runs_no_final_full_block_verify_pass);
+
+    /* LOOP-03 / LOOP-07 arithmetic (plan 141-08, task 1) */
+    RUN_TEST(test_loop03_overprogram_duration_is_three_times_the_pulse_count_times_the_width);
+    RUN_TEST(test_loop03_overprogram_is_zero_when_the_factor_is_zero);
+    RUN_TEST(test_loop03_overprogram_clamps_at_the_cap_rather_than_refusing);
+    RUN_TEST(test_loop03_overprogram_is_32_bit_safe_at_the_uint16_ceiling);
+    RUN_TEST(test_loop03_a_zero_cap_yields_no_overprogram_pulse);
+    RUN_TEST(test_loop07_split_does_not_fire_at_or_below_the_ceiling);
+    RUN_TEST(test_loop07_split_fires_above_the_ceiling_and_stays_32_bit_safe);
+    RUN_TEST(test_loop07_delay_us_emits_the_split_as_delay_then_delaymicroseconds);
 
     return UNITY_END();
 }
