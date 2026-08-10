@@ -1108,6 +1108,278 @@ void test_loop07_delay_us_emits_the_split_as_delay_then_delaymicroseconds(void) 
     TEST_ASSERT_EQUAL_MESSAGE(0, timing_count(), "mem_util_delay_us(0): zero timing entries");
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * Shared helpers for tasks 2/3 below -- the CONTROL-register write stream.
+ *
+ * Every non-elided CONTROL write (rurp_write_to_register(CONTROL_REGISTER,
+ * ...), include/rurp_register_utils.h:24-59) shows up in the strobe
+ * recorder as THREE consecutive entries via rurp_internal_write_to_register
+ * (:63-89), in this FIXED, unconditional order, never interleaved with
+ * anything else:
+ *   [STROBE_KIND_DATA, pin=0,               value=<the physical byte>]
+ *   [STROBE_KIND_PIN,  pin=CONTROL_REGISTER, value=1]  (latch rise)
+ *   [STROBE_KIND_PIN,  pin=CONTROL_REGISTER, value=0]  (latch fall)
+ * -- plan 141-07's own finding restated: STROBE_KIND_DATA is NOT a safe raw
+ * pulse-count oracle, because a register-shift write pushes this exact same
+ * DATA-strobe shape as a genuine chip-data pulse. These helpers exploit
+ * that fixed 3-entry shape directly (locating the PIN-rise, then reading
+ * the DATA entry immediately before it) instead of fighting it.
+ * ───────────────────────────────────────────────────────────────────────── */
+static int control_write_count(void) {
+    int n = strobe_count();
+    int c = 0;
+    for (int i = 0; i < n; i++) {
+        if (strobe_kind(i) == STROBE_KIND_PIN && strobe_pin(i) == CONTROL_REGISTER && strobe_value(i) == 1) c++;
+    }
+    return c;
+}
+
+static int control_write_strobe_index(int idx) {
+    int n = strobe_count();
+    int c = 0;
+    for (int i = 0; i < n; i++) {
+        if (strobe_kind(i) == STROBE_KIND_PIN && strobe_pin(i) == CONTROL_REGISTER && strobe_value(i) == 1) {
+            if (c == idx) return i;
+            c++;
+        }
+    }
+    return -1;
+}
+
+/* The Nth (0-indexed) non-elided CONTROL_REGISTER write's PHYSICAL byte
+ * value -- i.e. AFTER rurp_map_ctrl_reg_for_hardware_revision's per-
+ * revision remap (rurp_hw_rev_utils.h), not the pre-remap LOGICAL value
+ * mem_util_calculate_top_address_register computes. CTRL_VPP_REGULATOR_ENABLE
+ * (0x80) is safe to check directly against this return value on EVERY
+ * revision branch (both the REVISION_0/1 and REVISION_2_x remaps pass bit
+ * 0x80 through unchanged). CTRL_ADDRESS_LINE_16 and CTRL_VPP_VPE_DROP_ENABLE,
+ * however, COLLIDE onto the SAME physical bit (0x01) on the default test
+ * revision (REVISION_0 -- host_stubs_common.inc's s_host_config is zero-
+ * initialised; 141-RESEARCH.md's Axis 2 table) -- task 3's DIP32 cases
+ * override the revision to REVISION_2_2, where they map to distinct
+ * physical bits (0x20 / 0x01), specifically to avoid that collision. */
+static int control_write_value(int idx) {
+    int strobe_idx = control_write_strobe_index(idx);
+    if (strobe_idx <= 0 || strobe_kind(strobe_idx - 1) != STROBE_KIND_DATA) return -1;
+    return (int)strobe_value(strobe_idx - 1);
+}
+
+/* The stream index of the first GENUINE chip-data pulse -- the first
+ * STROBE_KIND_DATA entry whose value matches one of the block's own byte
+ * values, never a register-shift write's LSB/MSB/CONTROL byte (plan
+ * 141-07's count_data_pulses_with_value finding, restated here for
+ * ORDERING rather than counting). Every byte value this suite seeds
+ * (0x0F/0x3C/0x55/0xAA and friends) is chosen so it can never collide with
+ * an LSB/MSB address byte or a CONTROL bitmask these specific scenarios
+ * ever produce. */
+static int first_genuine_pulse_strobe_index(const uint8_t* values, int n_values) {
+    int n = strobe_count();
+    for (int i = 0; i < n; i++) {
+        if (strobe_kind(i) != STROBE_KIND_DATA) continue;
+        uint8_t v = strobe_value(i);
+        for (int j = 0; j < n_values; j++) {
+            if (values[j] == v) return i;
+        }
+    }
+    return -1;
+}
+
+static int count_timing_ms(uint32_t val) {
+    int n = timing_count();
+    int c = 0;
+    for (int i = 0; i < n; i++) {
+        if (timing_kind(i) == TIMING_KIND_DELAY_MS && timing_us(i) == val) c++;
+    }
+    return c;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Task 2 (LOOP-05 hard-fail + non-vacuous route disable; LOOP-07's GLOBAL
+ * ceiling claim under a real drive, plus D-03's pre-flight refusal).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+void test_loop05_a_byte_that_misses_within_max_pulses_aborts_the_block(void) {
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    loop_readback_seed(0, block[0], 1);       /* converges after 1 pulse */
+    loop_readback_seed(1, block[1], 65535);   /* NEVER converges within max_pulses (25) */
+    loop_readback_seed(2, block[2], 1);       /* seeded, but must NEVER be reached */
+    loop_readback_seed(3, block[3], 1);       /* seeded, but must NEVER be reached */
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code");
+    /* 1 skip-check read + 25 verify reads (one per pulse, all failing) --
+     * budgets are checked only AFTER a failed verify, so byte 1 is read
+     * exactly max_pulses+1 times before the loop gives up on it. */
+    TEST_ASSERT_EQUAL_MESSAGE(26, loop_readback_reads(1), "1 skip-check + 25 verify reads (one per pulse) before MSG_ERR_MAX_PULSES");
+
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_ERR_MAX_PULSES), "exactly one MSG_ERR_MAX_PULSES frame");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_ENERGY_CAP), "MSG_ERR_ENERGY_CAP must NOT be logged -- 0x07 ships energy_cap_us=0 (uncapped)");
+
+    int idx = find_logged_id(MSG_ERR_MAX_PULSES);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_ERR_MAX_PULSES frame must exist");
+    TEST_ASSERT_EQUAL_MESSAGE(4, logged_id_param_count(idx), "payload is u24 address + u8 pulse count");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x00, logged_id_param(idx, 0), "address byte 0 (MSB) -- base+1 == 1");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x00, logged_id_param(idx, 1), "address byte 1");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x01, logged_id_param(idx, 2), "address byte 2 (LSB) -- the failing byte's own address");
+    TEST_ASSERT_EQUAL_MESSAGE(25, logged_id_param(idx, 3), "pulse count at the moment of failure -- max_pulses");
+
+    /* The abort proof: the loop RETURNS on budget failure rather than
+     * continuing to the next byte -- bytes 2 and 3 (seeded to converge
+     * trivially, so a continuing loop WOULD have read them) both report
+     * 0, meaning they were never read at all (loop_readback_reads() only
+     * returns -1 for an address that was never SEEDED in the first place;
+     * these two WERE seeded, so their untouched state reads back as their
+     * own read_count of 0, not -1 -- see host_stubs.cpp's own contract). */
+    TEST_ASSERT_EQUAL_MESSAGE(0, loop_readback_reads(2), "byte 2 (after the failing byte) must be UNTOUCHED -- the loop aborted the whole block");
+    TEST_ASSERT_EQUAL_MESSAGE(0, loop_readback_reads(3), "byte 3 (after the failing byte) must be UNTOUCHED -- the loop aborted the whole block");
+}
+
+void test_loop05_the_loops_own_strobes_disable_the_high_voltage_route(void) {
+    /* Same drive as the case above -- re-seeded fresh (setUp() clears all
+     * three recorders and the register cache between cases). */
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    loop_readback_seed(0, block[0], 1);
+    loop_readback_seed(1, block[1], 65535);
+    loop_readback_seed(2, block[2], 1);
+    loop_readback_seed(3, block[3], 1);
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code (sanity, matches the case above)");
+
+    /* VACUITY TRAP, named explicitly -- this is why this case exists rather
+     * than driving the whole command: command_done() (src/firestarter.cpp:
+     * 162-171) writes CONTROL_REGISTER = 0x00 on EVERY command exit,
+     * unconditionally. An assertion driven through the whole command would
+     * pass even if eprom_write_execute's own budget-failure path disabled
+     * nothing at all, because command_done() would zero the register
+     * anyway on the way out. drive_loop_write calls
+     * firestarter_operation_main DIRECTLY (never the whole command, never
+     * command_done()), so this assertion is scoped to eprom_write_execute's
+     * OWN CONTROL strobes and is therefore meaningful. */
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2, "non-vacuity: at least the top-of-block assert and the budget-failure disable must both have written CONTROL");
+
+    int last = control_write_value(n - 1);
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0, "the last CONTROL write must be a genuine, decodable value");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_REGULATOR_ENABLE) == 0,
+        "the LAST control value emitted by operation_main must have CTRL_VPP_REGULATOR_ENABLE CLEAR -- eprom_internal_report_budget_failure's own disable");
+
+    bool saw_earlier_set = false;
+    for (int i = 0; i < n - 1; i++) {
+        int v = control_write_value(i);
+        if (v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE)) { saw_earlier_set = true; break; }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(saw_earlier_set,
+        "an EARLIER control value must have CTRL_VPP_REGULATOR_ENABLE SET -- otherwise the 'last value clear' assertion is vacuously true of a register that was never energised at all");
+}
+
+void test_loop05_a_successful_block_does_not_disable_the_route(void) {
+    /* Paired negative control: a block that fully converges must leave the
+     * route SET. Without this, the case above would pass on an
+     * implementation that disables the route unconditionally on every
+     * exit -- generalising disable-on-every-exit to every exit in the file
+     * is Phase 142 / VPP-02's job; this phase satisfies only LOOP-05's own
+     * budget-failure exit. */
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        loop_readback_seed((uint16_t)i, block[i], converge_after[i]);
+    }
+    drive_loop_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code -- the whole block converges");
+
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1, "non-vacuity: at least the top-of-block assert must have written CONTROL");
+    int last = control_write_value(n - 1);
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0, "the last CONTROL write must be a genuine, decodable value");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_REGULATOR_ENABLE) != 0,
+        "a SUCCESSFUL block must leave CTRL_VPP_REGULATOR_ENABLE SET -- nothing in this phase's scope disables it on the success path");
+}
+
+void test_loop07_no_recorded_us_delay_exceeds_the_avr_ceiling_under_a_real_drive(void) {
+    /* protocol 0x07 ships energy_cap_us == 0 (uncapped), so D-03's
+     * pre-flight refusal does not fire even at a wildly over-ceiling
+     * pulse_delay -- exactly the scenario LOOP-07's GLOBAL claim ("no call
+     * path can reach delayMicroseconds() above 16383us") must hold under.
+     * 50000 is a value the wire can supply TODAY through json_parser.c's
+     * unclamped extract_long("pulse-delay", ...) (json_parser.c ~:305). */
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 50000, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[1] = {0x3C};
+    loop_readback_seed(0, block[0], 2);  /* small: 2 pulses, neither recorder overflows */
+    drive_loop_write(&h, 0, block, 1);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code");
+    TEST_ASSERT_EQUAL_MESSAGE(0, timing_overflowed(), "timing_overflowed -- small drive, must be sound");
+
+    TEST_ASSERT_TRUE_MESSAGE(timing_count() > 0, "non-vacuity: the drive must have recorded at least one timing entry");
+
+    int n = timing_count();
+    for (int i = 0; i < n; i++) {
+        if (timing_kind(i) != TIMING_KIND_DELAY_US) continue;
+        uint32_t us = timing_us(i);
+        char msg[112];
+        snprintf(msg, sizeof(msg), "timing entry %d (delayMicroseconds) has value %lu -- must be <= 16383 (the AVR delayMicroseconds() accurate ceiling)", i, (unsigned long)us);
+        TEST_ASSERT_TRUE_MESSAGE(us <= 16383UL, msg);
+    }
+
+    /* ArduinoFake declares delayMicroseconds(unsigned int), which is
+     * 32-BIT on this host -- an over-ceiling value would arrive INTACT and
+     * VISIBLE here rather than being silently truncated the way AVR's own
+     * 16-bit unsigned int truncates it at cores/arduino/wiring.c's
+     * `us <<= 2` step. The oracle above is therefore real, not accidental:
+     * a raw, unsplit delayMicroseconds(50000) call WOULD show up as
+     * exactly that value, 50000, failing the loop above immediately --
+     * confirmed by planting exactly that violation (see this plan's
+     * SUMMARY for the captured RED transcript). */
+    TEST_ASSERT_TRUE_MESSAGE(count_timing_ms(50) >= 2,
+        "at least two DELAY_MS(50) entries -- one per pulse, proving mem_util_delay_us's split actually fired (50000 -> ms=50, us=0) rather than the pulse being silently skipped");
+}
+
+void test_loop07_an_over_cap_pulse_is_refused_before_any_high_voltage_on_a_capped_row(void) {
+    /* D-03's pre-flight refusal, at the row where it is actually reachable
+     * (0x0B ships energy_cap_us = 50000; 0x07/0x08 ship 0 == uncapped, so
+     * this refusal is structurally unreachable on either of them). */
+    firestarter_handle_t h = make_loop_handle(0x0B, 24, 2048, 60000, LOOP_BUS_CONFIG_0x0B);
+    configure_memory(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code -- 60000 > the 50000us energy cap");
+    int idx = find_logged_id(MSG_ERR_PULSE_TOO_WIDE);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_ERR_PULSE_TOO_WIDE frame must exist -- non-vacuity");
+    TEST_ASSERT_EQUAL_MESSAGE(4, logged_id_param_count(idx), "payload is a u32 (the requested pulse_delay)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x00, logged_id_param(idx, 0), "u32 byte 0 (MSB) of 60000 (0x0000EA60)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x00, logged_id_param(idx, 1), "u32 byte 1 of 60000");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0xEA, logged_id_param(idx, 2), "u32 byte 2 of 60000");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x60, logged_id_param(idx, 3), "u32 byte 3 (LSB) of 60000");
+
+    /* The pre-flight proof: NO control-register write anywhere in the
+     * stream carries CTRL_VPP_REGULATOR_ENABLE -- the refusal happens
+     * before any high voltage is ever enabled. */
+    int n = control_write_count();
+    for (int i = 0; i < n; i++) {
+        int v = control_write_value(i);
+        char msg[80];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must not carry CTRL_VPP_REGULATOR_ENABLE -- refused pre-flight", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v < 0 || (v & CTRL_VPP_REGULATOR_ENABLE) == 0, msg);
+    }
+
+    /* Paired passing control at a legal width, same protocol. Clear the
+     * logged-id capture first: it is a single array shared for the whole
+     * test case (setUp() clears it once per CASE, not once per
+     * configure_memory call), and the refusal above legitimately logged
+     * one MSG_ERR_PULSE_TOO_WIDE frame that must not leak into this
+     * second, independent drive's own count. */
+    clear_logged_ids();
+    clear_strobes();
+    firestarter_handle_t h2 = make_loop_handle(0x0B, 24, 2048, 500, LOOP_BUS_CONFIG_0x0B);
+    configure_memory(&h2);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h2.response_code, "response_code -- 500us is well under the 50000us cap");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_PULSE_TOO_WIDE), "no MSG_ERR_PULSE_TOO_WIDE at a legal pulse width");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -1148,6 +1420,13 @@ int main(int argc, char** argv) {
     RUN_TEST(test_loop07_split_does_not_fire_at_or_below_the_ceiling);
     RUN_TEST(test_loop07_split_fires_above_the_ceiling_and_stays_32_bit_safe);
     RUN_TEST(test_loop07_delay_us_emits_the_split_as_delay_then_delaymicroseconds);
+
+    /* LOOP-05 / LOOP-07 drive cases (plan 141-08, task 2) */
+    RUN_TEST(test_loop05_a_byte_that_misses_within_max_pulses_aborts_the_block);
+    RUN_TEST(test_loop05_the_loops_own_strobes_disable_the_high_voltage_route);
+    RUN_TEST(test_loop05_a_successful_block_does_not_disable_the_route);
+    RUN_TEST(test_loop07_no_recorded_us_delay_exceeds_the_avr_ceiling_under_a_real_drive);
+    RUN_TEST(test_loop07_an_over_cap_pulse_is_refused_before_any_high_voltage_on_a_capped_row);
 
     return UNITY_END();
 }
