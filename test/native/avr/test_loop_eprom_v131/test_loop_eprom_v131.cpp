@@ -82,10 +82,11 @@ extern "C" int      timing_after_strobe(int i);
 extern "C" void     timing_push(uint8_t kind, uint32_t us);
 
 /* host_stubs.cpp's own seams (Task 1). reset_register_cache mirrors
- * test_trace_eprom_v131's seam of the same name; the rest
- * (loop_readback_*/logged_id_*) are new to this suite. rurp_read_data_buffer
- * and rurp_log_id/_u8/_u16/_u24/_u32 are already declared via firestarter.h
- * -> rurp_shield.h, so they are not re-declared here. */
+ * test_trace_eprom_v131's seam of the same name; the rest (the
+ * loop_readback_ and logged_id_ families) are new to this suite.
+ * rurp_read_data_buffer and rurp_log_id/_u8/_u16/_u24/_u32 are already
+ * declared via firestarter.h -> rurp_shield.h, so they are not re-declared
+ * here. */
 extern "C" void reset_register_cache(uint8_t lsb, uint8_t msb, rurp_register_t ctrl);
 
 extern "C" void loop_readback_reset(void);
