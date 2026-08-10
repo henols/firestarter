@@ -162,10 +162,29 @@ rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, ui
 
 rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* handle, uint32_t address) {
     rurp_register_t top_address = ((uint32_t)address >> 16) & (CTRL_ADDRESS_LINE_16 | CTRL_ADDRESS_LINE_17 | CTRL_ADDRESS_LINE_18 | CTRL_READ_WRITE);
+    // CTRL_VPE_ENABLE, CTRL_VPP_P1_ENABLE, CTRL_VPP_A9_ENABLE and CTRL_VPP_REGULATOR_ENABLE are
+    // UNCONDITIONALLY preserved below — this is why VPE survives a per-byte verify read. It is
+    // NOT because the verify read leaves the control register alone: every address write (the
+    // one caller of this function) writes CONTROL_REGISTER unconditionally on every byte, for
+    // both the pulse and the verify; the unconditional preserve mask is what carries the route
+    // bit across that write.
     rurp_register_t mask = CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE | CTRL_VPP_P1_ENABLE | CTRL_VPP_REGULATOR_ENABLE;
     if (handle->pins < 32) {
-        // CTRL_VPP_VPE_DROP_ENABLE and CTRL_ADDRESS_LINE_16 share the same CONTROL bit — preserving CTRL_VPP_VPE_DROP_ENABLE
-        // would corrupt A16 for 32-pin (512KB) chips. DIP32 chips use CTRL_VPP_P1_ENABLE instead.
+        // On every build this project ships, -D HARDWARE_REVISION (the shared [env] build_flags
+        // in platformio.ini) gives CTRL_ADDRESS_LINE_16 the value 0x01 and CTRL_VPP_VPE_DROP_ENABLE
+        // the value 0x100 — two DISTINCT logical bits, no macro-level collision here. A real
+        // collision exists only on legacy non-HARDWARE_REVISION builds (there CTRL_ADDRESS_LINE_16
+        // is a macro alias of CTRL_VPP_VPE_DROP_ENABLE) and, physically, on Rev 0 / Rev 1 boards,
+        // where rurp_map_ctrl_reg_for_hardware_revision() maps both onto physical 0x01.
+        // The reason this guard matters on every build and every revision is the PRESERVE MASK
+        // itself, not a bit collision: excluding CTRL_VPP_VPE_DROP_ENABLE from the preserved set
+        // on a 32-pin part means the recomputed top_address carries no drop bit, so
+        // control_register != data, so rurp_write_to_register() does NOT elide the write, and the
+        // drop route is cleared by the first set_address() of the block — revision-independently.
+        // For protocol 0x08 (pins == 32, ships vpp_path = VPP_PATH_DROP_RESISTOR) this is a named
+        // branch in eprom_write_execute keyed on handle->pins >= 32 (D-09); choosing the final
+        // DIP32 route and consolidating the mask sets is Phase 142's (VPP-01 / VPP-03) — this
+        // comment does not pre-empt that choice.
         mask |= CTRL_VPP_VPE_DROP_ENABLE;
     }
     top_address |= rurp_read_from_register(CONTROL_REGISTER) & mask;
