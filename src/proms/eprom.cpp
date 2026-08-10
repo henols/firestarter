@@ -10,6 +10,7 @@
 #include <Arduino.h>
 
 #include "firestarter.h"
+#include "eprom_params.h"
 #include "logging_id.h"
 #include "memory_utils.h"
 #include "rurp_shield.h"
@@ -138,6 +139,43 @@ static int verify_and_update_mask(firestarter_handle_t* handle, uint8_t* mismatc
     }
     
     return mismatch_count;
+}
+
+/*
+ * Phase 141 Plan 04 (LOOP-03, D-08) -- see include/eprom.h for the full
+ * rationale. factor == 0 (every shipped row) always yields 0, so the
+ * per-byte loop's overprogram call is inert on every live protocol; the
+ * clamp below yields 0 for cap_us == 0 without a special case, since a
+ * positive product always compares greater than a zero cap.
+ */
+uint32_t eprom_overprogram_us(uint8_t pulse_count, uint32_t pulse_us, uint8_t factor, uint32_t cap_us) {
+    if (factor == 0) {
+        return 0;
+    }
+    uint32_t product = (uint32_t)factor * pulse_count * pulse_us;
+    return product > cap_us ? cap_us : product;
+}
+
+/*
+ * Phase 141 Plan 04 (LOOP-05, D-04) -- the single place a per-byte program
+ * budget failure is reported. Disables the VPP route exactly as the old
+ * block-loop's failure path did (below, at what is today :181), packs a
+ * 4-byte {addr_hi, addr_mid, addr_lo, pulse_count} big-endian payload --
+ * matching MSG_ERR_MAX_PULSES / MSG_ERR_ENERGY_CAP's catalog shape (u24
+ * address + u8 pulse count) -- emits it, and sets response_code. This
+ * covers only LOOP-05's own two budget-failure exits; generalising the
+ * disable to every exit in the file is Phase 142 / VPP-02's job, which
+ * re-verifies every exit rather than assuming this one.
+ */
+static void eprom_internal_report_budget_failure(firestarter_handle_t* handle, uint32_t address, uint8_t pulse_count, uint8_t msg_id) {
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 0);
+    uint8_t _b[4];
+    _b[0] = (uint8_t)((address >> 16) & 0xFF);
+    _b[1] = (uint8_t)((address >> 8)  & 0xFF);
+    _b[2] = (uint8_t)( address        & 0xFF);
+    _b[3] = pulse_count;
+    LOG_ERROR_ID_BYTES(msg_id, _b, 4);
+    handle->response_code = RESPONSE_CODE_ERROR;
 }
 
 void eprom_write_execute(firestarter_handle_t* handle) {
@@ -280,7 +318,7 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE, 1);  // Erase with VPE - assumes CTRL_VPP_VPE_DROP_ENABLE isn't set and left active previously
     delay(100);
     rurp_chip_enable();
-    delayMicroseconds(handle->pulse_delay);
+    mem_util_delay_us(handle->pulse_delay);  // Phase 141 Plan 04 (LOOP-07/D-06 site 2): 32-bit-safe split delay
     // After the erase pulse, we should disable the chip to end the programming cycle.
     rurp_chip_disable();
 
