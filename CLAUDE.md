@@ -61,9 +61,9 @@ source of truth `firestarter/doc/PROTOCOLS.md`) — the label IS the number; no 
 
 | Protocol               | PROTO_ token           | File              | VPP             | Notes                                                        |
 |------------------------|------------------------|-------------------|-----------------|--------------------------------------------------------------|
-| 0x07                   | `PROTO_EPROM_28PIN`    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 1ms pulse, DQ7 verify                                        |
-| 0x08                   | `PROTO_EPROM_32PIN`    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | 100µs pulse                                                  |
-| 0x0B                   | `PROTO_EPROM_24PIN`    | eprom.cpp         | 12–18V direct   | 500µs pulse, 24-pin                                          |
+| 0x07                   | `PROTO_EPROM_28PIN`    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | Pulse width from DB `pulse-delay` (modal 100µs, 113/170 chips); 1000µs is only the `pulse_delay==0` fallback; verify per pulse + 1 final full-array pass; `max_pulses` 25; no overprogram. DQ7 polling is a flash-family mechanism and is **not** used on this row. See `tests/golden/eprom_params_citations.json`. |
+| 0x08                   | `PROTO_EPROM_32PIN`    | eprom.cpp         | 13V via CTRL_VPP_VPE_DROP_ENABLE | Pulse width from DB (modal 100µs, 104/127 chips); 100µs is only the `pulse_delay==0` fallback; verify per pulse + final full-array pass; `max_pulses` 25; no overprogram (D-06, resolved from three vendors). See `tests/golden/eprom_params_citations.json`. |
+| 0x0B                   | `PROTO_EPROM_24PIN`    | eprom.cpp         | 12–25V direct   | 24-pin; pulse width from DB (modal 500µs, 21/32 chips); 500µs is only the `pulse_delay==0` fallback; verify per pulse, no final full-array pass; per-byte accumulated-energy cap 50ms; no overprogram. See `tests/golden/eprom_params_citations.json`. |
 | 0x0D                   | `PROTO_EEPROM_PARALLEL` | eeprom_28c.cpp   | None (5V)       | SDP disable + DQ7 page poll; **no erase operation at all** (each page write auto-erases internally) |
 | 0x0E / 0x27 / 0x28 / 0x29 | `PROTO_SRAM_32PIN` / `PROTO_SRAM_24PIN` / `PROTO_SRAM_28PIN` / `PROTO_SRAM_32PIN_NVRAM` | sram.cpp | None (5V) | Generic read/write; no VPP regulator (BLOCKER-2 mitigation)  |
 | 0x06                   | `PROTO_FLASH_NOR_UNLOCK` | flash_nor_unlock.cpp | None (5V)       | AMD unlock, sector erase                                     |
@@ -212,3 +212,16 @@ is added to `build_flags`. Both lists must be updated, in that same env. Since
 Phase 119 added a second native env, `[env:native_nodevtools]`, a new suite
 must be added to **both** envs' `test_filter` and `-I` lists (four new lines
 total) to run under both `-D DEV_TOOLS` and no-`DEV_TOOLS` builds.
+
+**Exception (Phase 140 D-11): `native_params_v131` is added to NEITHER pinned env.** The
+instruction directly above — add a new suite to **both** `[env:native]` and
+`[env:native_nodevtools]` — is **overridden** for `native_params_v131`, because both pinned envs
+are asserted at exactly **141 cases / 17 suites** by `scripts/baseline/size_baseline.json` through
+`check_size_baseline.py`'s `compare_native`, so adding a case to either turns a live gate RED.
+`native_params_v131` follows the `native_trace_v131` precedent (Phase 138) instead: its
+`test_filter` names only its own suite (not folded into either pinned env's `test_filter`), it is
+not in `default_envs`, it is never passed to `check_size_baseline.py` (an unrecognized env name
+raises an uncaught `KeyError`, exit 1 — F-138-05) nor to `check_build_warnings.py` (exit 2, no
+baseline entry for this env), and it runs in **no CI leg** of either repository (F-140-11). Its
+counts are therefore a **run-by-name obligation** recorded in the Phase 140 phase record, never
+implied to be CI-covered.
