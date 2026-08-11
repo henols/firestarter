@@ -430,12 +430,192 @@ void test_setup_leaves_the_harness_clean_and_the_composites_correct(void) {
     TEST_ASSERT_EQUAL_MESSAGE(3, vpp_readback_reads(0x1234), "read_count must have advanced by exactly 3");
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * Plan 142-02 Task 1 (VPP-01): the (pins, revision) preserve-mask truth
+ * table, and the 32-pin non-EPROM no-leak / byte-identity baseline.
+ *
+ * D-01: the `handle->pins < 32` exclusion in
+ * mem_util_calculate_top_address_register (memory.cpp:172) is a VPP LEVEL
+ * bug, not a routing guard -- it will be removed for Rev 2-class hardware
+ * in task 2. D-02 (amended 2026-08-11, operator-confirmed): the removal is
+ * gated on hardware revision ALONE -- REVISION_2_x implies preserve for
+ * every pins >= 32 protocol. No handle field, no handle->protocol key.
+ *
+ * Group A calls mem_util_calculate_top_address_register directly
+ * (declared memory_utils.h:22) and reads the return value in LOGICAL bit
+ * space -- NOT through rurp_map_ctrl_reg_for_hardware_revision's physical
+ * remap -- so no REV2-vs-REV0/1 disambiguation on a recorded byte is
+ * needed here (contrast Group B below, which DOES need it, because it
+ * reads the strobe recorder's post-remap PHYSICAL byte). address = 0 so no
+ * address bit confounds the assertion.
+ *
+ * Every row is registered as its OWN Unity case in main() (never folded
+ * into one table-driven function) so pio test's per-case pass/fail report
+ * can show "exactly these three rows are RED" directly by name -- a single
+ * function combining all nine would longjmp out of TEST_ASSERT on the
+ * first failure and hide the rest (Unity has no try/continue).
+ *
+ * This task changes NO production source (git diff --exit-code -- \
+ * src/proms/memory.cpp must exit 0 after this task lands). Against the
+ * UNCHANGED tree, exactly the three pins==32 Rev-2-class rows below go RED
+ * -- captured verbatim in this plan's SUMMARY per D-15.
+ * ───────────────────────────────────────────────────────────────────────── */
+static rurp_register_t truth_table_drop_bit(uint8_t pins, uint8_t revision, rurp_register_t seeded_ctrl) {
+    rurp_get_config()->hardware_revision = revision;
+    firestarter_handle_t h = {};
+    h.pins = pins;
+    reset_register_cache(0x00, 0x00, seeded_ctrl);
+    rurp_register_t top_address = mem_util_calculate_top_address_register(&h, 0);
+    return (rurp_register_t)(top_address & CTRL_VPP_VPE_DROP_ENABLE);
+}
+
+void test_vpp01_truthtable_pins28_rev2_2_drop_bit_present(void) {
+    TEST_ASSERT_TRUE_MESSAGE(truth_table_drop_bit(28, REVISION_2_2, EPROM_HV_ROUTE_MASK) != 0,
+        "row (pins=28, REVISION_2_2): drop bit must be PRESENT -- today's behaviour, unchanged");
+}
+
+void test_vpp01_truthtable_pins28_rev1_drop_bit_present(void) {
+    TEST_ASSERT_TRUE_MESSAGE(truth_table_drop_bit(28, REVISION_1, EPROM_HV_ROUTE_MASK) != 0,
+        "row (pins=28, REVISION_1): drop bit must be PRESENT -- today's behaviour, unchanged");
+}
+
+void test_vpp01_truthtable_pins32_rev2_0_drop_bit_present(void) {
+    TEST_ASSERT_TRUE_MESSAGE(truth_table_drop_bit(32, REVISION_2_0, EPROM_HV_ROUTE_MASK) != 0,
+        "row (pins=32, REVISION_2_0): drop bit must be PRESENT -- D-01/D-02, new");
+}
+
+void test_vpp01_truthtable_pins32_rev2_2_drop_bit_present(void) {
+    TEST_ASSERT_TRUE_MESSAGE(truth_table_drop_bit(32, REVISION_2_2, EPROM_HV_ROUTE_MASK) != 0,
+        "row (pins=32, REVISION_2_2): drop bit must be PRESENT -- D-01/D-02, new");
+}
+
+void test_vpp01_truthtable_pins32_rev2_3_drop_bit_present(void) {
+    /* REVISION_2_3 must be an explicit switch case in memory.cpp's new arm,
+     * never a `>= REVISION_2_0` range test -- rurp_shield.h:25-31 numbers
+     * revisions 0..5, and a range test would silently swallow a future
+     * REVISION_2_4. This row is what makes that requirement executable. */
+    TEST_ASSERT_TRUE_MESSAGE(truth_table_drop_bit(32, REVISION_2_3, EPROM_HV_ROUTE_MASK) != 0,
+        "row (pins=32, REVISION_2_3): drop bit must be PRESENT -- D-01/D-02, new; must be an explicit case, not a range test");
+}
+
+void test_vpp01_truthtable_pins32_rev1_drop_bit_absent(void) {
+    /* The load-bearing negative: Rev 1 has no eprom_check_vpp refusal of
+     * its own (unlike Rev 0's MSG_WARN_REV0_VPP_UNSUPPORTED), so D-02's
+     * revision gate is the ONLY thing standing between a 32-pin part and a
+     * preserved drop bit that would force physical A16 permanently high on
+     * this revision (drop bit and A16 share physical 0x01 on Rev 0/Rev 1). */
+    TEST_ASSERT_TRUE_MESSAGE(truth_table_drop_bit(32, REVISION_1, EPROM_HV_ROUTE_MASK) == 0,
+        "row (pins=32, REVISION_1): drop bit must be ABSENT -- D-02's gate, the load-bearing negative");
+}
+
+void test_vpp01_truthtable_pins32_rev0_drop_bit_absent(void) {
+    TEST_ASSERT_TRUE_MESSAGE(truth_table_drop_bit(32, REVISION_0, EPROM_HV_ROUTE_MASK) == 0,
+        "row (pins=32, REVISION_0): drop bit must be ABSENT");
+}
+
+void test_vpp01_truthtable_pins32_revunknown_drop_bit_absent(void) {
+    /* Fail-safe direction: an unrecognised revision (0xFE) keeps TODAY's
+     * stripping, matching rurp_hw_rev_utils.h:33-37's `default` leaving
+     * ctrl_reg = 0. */
+    TEST_ASSERT_TRUE_MESSAGE(truth_table_drop_bit(32, REVISION_UNKNOWN, EPROM_HV_ROUTE_MASK) == 0,
+        "row (pins=32, REVISION_UNKNOWN): drop bit must be ABSENT -- fail-safe default direction");
+}
+
+void test_vpp01_truthtable_pins32_rev2_2_preserve_never_introduces(void) {
+    /* D-02's widened-reach argument, closed structurally rather than
+     * argued: with NO drop bit in the cache (seeded_ctrl = 0x00), pins==32
+     * at REVISION_2_2 -- inside the new preserve arm -- must not ACQUIRE
+     * one. This proves the new arm widens only a preserve, never a set: a
+     * 32-pin protocol that never sets the bit can never gain it.
+     * Paired non-vacuity partner: test_vpp01_truthtable_pins32_rev2_2_drop_bit_present
+     * above is the IDENTICAL handle shape and revision with the bit
+     * seeded, showing it PRESENT -- a mask that simply never preserved
+     * anything could not pass both this case and that one. */
+    TEST_ASSERT_TRUE_MESSAGE(truth_table_drop_bit(32, REVISION_2_2, 0x00) == 0,
+        "row (pins=32, REVISION_2_2, no bit seeded): preserve must never INTRODUCE the drop bit");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Group B -- the 32-pin non-EPROM no-leak / byte-identity baseline
+ * (D-02's amendment).
+ * ───────────────────────────────────────────────────────────────────────── */
+void test_vpp01_dip32_nonEprom_0x10_route_is_byte_identical_before_and_after(void) {
+    /* D-02's amendment: the new preserve arm's nominal reach widens to
+     * EVERY 32-pin protocol on Rev 2-class (0x0E, 0x29, 0x10, 32-pin
+     * flash), but none of them ever SETS the drop bit, so there is
+     * nothing for the widened preserve to leak. protocol = 0x10
+     * (PROTO_FLASH_INTEL, memory.cpp:99) is deliberately a 32-pin
+     * NON-EPROM protocol whose route is CTRL_VPP_P1_ENABLE -- a DIFFERENT
+     * bit from the EPROM family's CTRL_VPP_VPE_DROP_ENABLE.
+     *
+     * mem_util_set_address is firestarter_set_address for EVERY protocol
+     * (memory.cpp:92, installed by configure_memory for all handles) and
+     * writes CONTROL_REGISTER unconditionally (memory.cpp:231), so a plain
+     * address sweep -- never a 0x10 write/read/erase operation -- covers
+     * the whole surface at risk without depending on any 0x10 operation
+     * semantics. The four addresses cross the A16 boundary (0x00FFFE /
+     * 0x00FFFF below it, 0x010000 / 0x010001 at/above it) so the
+     * top-address computation is genuinely exercised, not just re-latching
+     * a static value.
+     *
+     * REVISION_2_2 is mandatory here for the SAME reason as every other
+     * drop-bit-adjacent assertion in this suite (L-6): it disambiguates
+     * the recorded PHYSICAL byte -- on the default REVISION_0/1 mapping
+     * the drop bit and A16 collapse onto the same physical 0x01, which
+     * would make "no drop bit leaked" undecidable from the byte alone. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x10 /* PROTO_FLASH_INTEL */, 32, 262144, 100, 1200, 0, VPP_BUS_CONFIG_0x08);
+    configure_memory(&h);
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+
+    const uint32_t addrs[4] = { 0x00FFFEUL, 0x00FFFFUL, 0x010000UL, 0x010001UL };
+    for (int i = 0; i < 4; i++) {
+        h.firestarter_set_address(&h, addrs[i]);
+    }
+
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- tiny four-address sweep, must be sound");
+
+    int n = control_write_count();
+    for (int i = 0; i < n; i++) {
+        int v = control_write_value(i);
+        char msg[128];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must NOT carry CTRL_VPP_VPE_DROP_ENABLE_REV2 -- 0x10 never sets it, no leak", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0, msg);
+    }
+
+    /* Measured pre-change baseline (D-15), NOT computed by re-implementing
+     * mem_util_calculate_top_address_register: this exact literal sequence
+     * was observed by running this case against the UNCHANGED tree in plan
+     * 142-02 task 1. It is the "before" side of D-02's byte-identity claim
+     * -- task 2 must reproduce this identical sequence after the
+     * preserve-mask change lands, proving the widened arm's nominal reach
+     * over 0x10 is a genuine no-op.
+     * PLACEHOLDER -- overwritten with the measured literal before commit. */
+    TEST_ASSERT_EQUAL_MESSAGE(1, n, "control_write_count -- measured pre-change literal");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x20, control_write_value(0), "control write 0 -- measured pre-change literal (A16 boundary crossing, REV2-physical)");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
 
     /* Plan 142-01 harness self-check (VPP-01..VPP-04 infrastructure) */
     RUN_TEST(test_setup_leaves_the_harness_clean_and_the_composites_correct);
+
+    /* Plan 142-02 task 1 (VPP-01): (pins, revision) preserve-mask truth
+     * table -- nine rows, RED-before-GREEN against unchanged memory.cpp --
+     * plus the 32-pin non-EPROM byte-identity baseline (Group B). */
+    RUN_TEST(test_vpp01_truthtable_pins28_rev2_2_drop_bit_present);
+    RUN_TEST(test_vpp01_truthtable_pins28_rev1_drop_bit_present);
+    RUN_TEST(test_vpp01_truthtable_pins32_rev2_0_drop_bit_present);
+    RUN_TEST(test_vpp01_truthtable_pins32_rev2_2_drop_bit_present);
+    RUN_TEST(test_vpp01_truthtable_pins32_rev2_3_drop_bit_present);
+    RUN_TEST(test_vpp01_truthtable_pins32_rev1_drop_bit_absent);
+    RUN_TEST(test_vpp01_truthtable_pins32_rev0_drop_bit_absent);
+    RUN_TEST(test_vpp01_truthtable_pins32_revunknown_drop_bit_absent);
+    RUN_TEST(test_vpp01_truthtable_pins32_rev2_2_preserve_never_introduces);
+    RUN_TEST(test_vpp01_dip32_nonEprom_0x10_route_is_byte_identical_before_and_after);
 
     return UNITY_END();
 }
