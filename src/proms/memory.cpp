@@ -169,24 +169,59 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
     // both the pulse and the verify; the unconditional preserve mask is what carries the route
     // bit across that write.
     rurp_register_t mask = CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE | CTRL_VPP_P1_ENABLE | CTRL_VPP_REGULATOR_ENABLE;
+    // Phase 142 / D-01: CTRL_VPP_VPE_DROP_ENABLE is a VPP LEVEL selector -- VPE dropped through
+    // the resistor to the ~13V VPP level -- and nothing else. Phase 141 hand-off H1 disproved the
+    // bit-collision theory this comment used to cite as its justification for excluding
+    // pins >= 32 below. Routing VPP to socket pin 1 on a 32-pin part is a separate, PHYSICAL
+    // decision made with a jumper -- the operator's correction, verbatim: "no exclusion at all --
+    // 32 pin IC's with vpp on pin one is controlled with a jumper" -- so the drop bit was never
+    // protecting a route; excluding it for pins >= 32 silently programmed 0x08 on the UN-DROPPED
+    // rail instead. (This file names no jumper designator and asserts no net: doc/SHIELD-
+    // REVISIONS.md and .planning/v1.7-SHIELD-REVS.md document that jumper's identity two
+    // contradictory ways, a discrepancy logged as a finding, not resolved here.)
+    //
+    // For pins < 32 the drop bit is preserved unconditionally below, on every revision -- this is
+    // unchanged. For pins >= 32 (the #ifdef HARDWARE_REVISION arm a few lines down) the preserve
+    // is gated on hardware revision ALONE (D-02, amended 2026-08-11, operator-confirmed): this
+    // function sees only `handle` and `address`, and revision alone is sufficient, so a new
+    // `handle` field (RAM cost plus a plumbing seam) and keying on the protocol value instead
+    // (a fourth tier-1 protocol-keyed site, a TABLE-05 violation) were both considered and
+    // rejected. The gate is necessary, not fastidious: on Rev 0 / Rev 1,
+    // rurp_map_ctrl_reg_for_hardware_revision() maps
+    // CTRL_VPP_VPE_DROP_ENABLE and CTRL_ADDRESS_LINE_16 onto the SAME physical bit 0x01
+    // (rurp_hw_rev_utils.h:28-32), so preserving the drop bit there would force physical A16
+    // permanently high; on Rev 2-class the two are distinct physical bits (0x01 vs 0x20,
+    // rurp_pinout.h:174 vs :179), so preserving one does not disturb the other.
     if (handle->pins < 32) {
-        // On every build this project ships, -D HARDWARE_REVISION (the shared [env] build_flags
-        // in platformio.ini) gives CTRL_ADDRESS_LINE_16 the value 0x01 and CTRL_VPP_VPE_DROP_ENABLE
-        // the value 0x100 — two DISTINCT logical bits, no macro-level collision here. A real
-        // collision exists only on legacy non-HARDWARE_REVISION builds (there CTRL_ADDRESS_LINE_16
-        // is a macro alias of CTRL_VPP_VPE_DROP_ENABLE) and, physically, on Rev 0 / Rev 1 boards,
-        // where rurp_map_ctrl_reg_for_hardware_revision() maps both onto physical 0x01.
-        // The reason this guard matters on every build and every revision is the PRESERVE MASK
-        // itself, not a bit collision: excluding CTRL_VPP_VPE_DROP_ENABLE from the preserved set
-        // on a 32-pin part means the recomputed top_address carries no drop bit, so
-        // control_register != data, so rurp_write_to_register() does NOT elide the write, and the
-        // drop route is cleared by the first set_address() of the block — revision-independently.
-        // For protocol 0x08 (pins == 32, ships vpp_path = VPP_PATH_DROP_RESISTOR) this is a named
-        // branch in eprom_write_execute keyed on handle->pins >= 32 (D-09); choosing the final
-        // DIP32 route and consolidating the mask sets is Phase 142's (VPP-01 / VPP-03) — this
-        // comment does not pre-empt that choice.
         mask |= CTRL_VPP_VPE_DROP_ENABLE;
     }
+#ifdef HARDWARE_REVISION
+    else {
+        switch (rurp_get_hardware_revision()) {
+        case REVISION_2_0:
+        case REVISION_2_1:
+        case REVISION_2_2:
+        case REVISION_2_3:
+            // The arm's nominal reach widens to every 32-pin protocol on Rev 2-class (0x0E, 0x29,
+            // 0x10, 32-pin flash), not just the EPROM family -- but none of them ever SETS the
+            // drop bit, so there is nothing for this preserve to leak. Proven, not argued:
+            // test_vpp_eprom_v131.cpp's 32-pin non-EPROM byte-identity case
+            // (test_vpp01_dip32_nonEprom_0x10_route_is_byte_identical_before_and_after) and its
+            // "preserve, never introduce" leg
+            // (test_vpp01_truthtable_pins32_rev2_2_preserve_never_introduces).
+            mask |= CTRL_VPP_VPE_DROP_ENABLE;  // D-01 / D-02
+            break;
+        default:
+            // Fail-safe direction: REVISION_0, REVISION_1, REVISION_UNKNOWN (0xFE) and any
+            // unrecognised byte keep TODAY'S stripping -- adds nothing. Matches
+            // rurp_hw_rev_utils.h:33-37's own `default` leaving ctrl_reg = 0. Deliberately an
+            // explicit four-case set above, never a `>= REVISION_2_0` range test:
+            // rurp_shield.h:25-31 numbers revisions 0..5, and a range test would silently swallow
+            // a future REVISION_2_4.
+            break;
+        }
+    }
+#endif
     top_address |= rurp_read_from_register(CONTROL_REGISTER) & mask;
 
     if (handle->pins == 28) {
