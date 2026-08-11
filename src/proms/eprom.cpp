@@ -124,13 +124,29 @@ void eprom_erase_execute(firestarter_handle_t* handle) {
     eprom_internal_erase(handle);
 }
 
-void eprom_write_init(firestarter_handle_t* handle) {
+/*
+ * Phase 142 Plan 04 (D-10 as amended, D-12) -- DEFENSIVE, not corrective.
+ * Neither of this body's two exits leaks a route today (142-RESEARCH.md's
+ * exit table, E1/E2): the early return below is taken only after
+ * eprom_generic_init already disabled via eprom_check_vpp's or
+ * eprom_get_chip_id's own clear, and the fall-through touches no HV bit
+ * that eprom_internal_erase (called a few lines below, when reached) does
+ * not already clear itself. This body is renamed static and wrapped
+ * anyway, because eprom_internal_erase's own assert is the ONLY write-path
+ * code that asserts CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE (remapped to
+ * A9 | CTRL_VPP_P1_ENABLE on a using_p1_as_vpp handle), and that assert's
+ * safety rests on there being no `return` between it and its own clear --
+ * a property a future edit to this body could otherwise break silently.
+ * See eprom_write_init below for the public entry point and the disable
+ * guarantee itself.
+ */
+static void eprom_internal_write_init_body(firestarter_handle_t* handle) {
     if(!is_operation_in_progress(handle)){
         eprom_generic_init(handle);
         if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;
         }
-        
+
         if (is_flag_set(FLAG_CAN_ERASE)) {
             if (!is_flag_set(FLAG_SKIP_ERASE)) {
                 eprom_internal_erase(handle);
@@ -141,6 +157,25 @@ void eprom_write_init(firestarter_handle_t* handle) {
     }
     if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
         mem_util_blank_check(handle);
+    }
+}
+
+/*
+ * Phase 142 Plan 04 (D-10 as amended, C-1, D-12) -- the single-exit
+ * wrapper. Whichever exit eprom_internal_write_init_body takes (or none),
+ * control comes back HERE, and this conditional is the ONLY place that
+ * decides whether to clear the shared composite -- structural, not
+ * remembered, so a `return` added inside the body later cannot silently
+ * bypass it. Conditional on RESPONSE_CODE_ERROR, not unconditional: see
+ * eprom_write_execute's own wrapper below for the named test that forced
+ * that amendment and its cost if ignored -- the same reasoning applies
+ * here even though (unlike eprom_write_execute) nothing in this body leaks
+ * today; this wrapper's own comment above already says so.
+ */
+void eprom_write_init(firestarter_handle_t* handle) {
+    eprom_internal_write_init_body(handle);
+    if (handle->response_code == RESPONSE_CODE_ERROR) {
+        handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);
     }
 }
 
@@ -162,16 +197,23 @@ uint32_t eprom_overprogram_us(uint8_t pulse_count, uint32_t pulse_us, uint8_t fa
 /*
  * Phase 141 Plan 04 (LOOP-05, D-04) -- the single place a per-byte program
  * budget failure is reported. Disables the VPP route exactly as the old
- * block-loop's failure path did (below, at what is today :181), packs a
- * 4-byte {addr_hi, addr_mid, addr_lo, pulse_count} big-endian payload --
- * matching MSG_ERR_MAX_PULSES / MSG_ERR_ENERGY_CAP's catalog shape (u24
- * address + u8 pulse count) -- emits it, and sets response_code. This
- * covers only LOOP-05's own two budget-failure exits; generalising the
- * disable to every exit in the file is Phase 142 / VPP-02's job, which
- * re-verifies every exit rather than assuming this one.
+ * block-loop's failure path did, packs a 4-byte {addr_hi, addr_mid,
+ * addr_lo, pulse_count} big-endian payload -- matching MSG_ERR_MAX_PULSES /
+ * MSG_ERR_ENERGY_CAP's catalog shape (u24 address + u8 pulse count) --
+ * emits it, and sets response_code.
+ *
+ * Phase 142 Plan 04 (VPP-02, VPP-03, resolved) -- this function's own
+ * disable is now a reference to the shared EPROM_HV_ALL_OFF_MASK composite
+ * (VPP-03's mask consolidation), and generalising the disable-on-error
+ * guarantee to every OTHER exit in the write path is now
+ * eprom_write_execute's own single-exit wrapper, below, which clears the
+ * same composite structurally on every error exit -- this function is
+ * simply the first of the exits that wrapper now also covers; it keeps
+ * emitting the two budget-failure messages themselves, which the wrapper
+ * does not.
  */
 static void eprom_internal_report_budget_failure(firestarter_handle_t* handle, uint32_t address, uint8_t pulse_count, uint8_t msg_id) {
-    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);
     uint8_t _b[4];
     _b[0] = (uint8_t)((address >> 16) & 0xFF);
     _b[1] = (uint8_t)((address >> 8)  & 0xFF);
@@ -181,42 +223,82 @@ static void eprom_internal_report_budget_failure(firestarter_handle_t* handle, u
     handle->response_code = RESPONSE_CODE_ERROR;
 }
 
-void eprom_write_execute(firestarter_handle_t* handle) {
+/*
+ * Phase 142 Plan 04 (D-05, D-06, Q4) -- the single function that resolves
+ * which EPROM high-voltage route to assert for the current handle. Called
+ * from both eprom_internal_write_execute_body (below) and eprom_check_vpp
+ * (VPP-03's mask/selection consolidation), replacing the two byte-identical
+ * hand-rolled forks this file used to carry at what were :190 and :340.
+ * Declared in eprom.h (Q4: exposed, not file-static) -- see that header
+ * for the full rationale and the include-edge note.
+ *
+ * Resolution order, exactly (D-06: FLAG_VPE_AS_VPP is a live user-facing
+ * escape hatch set by no database entry -- a pure human override for the
+ * 25V NMOS parts and the manual-pot workflow -- so it is checked FIRST and
+ * forces the direct-VPE path on top of whatever the table says, with no
+ * table read needed on that arm):
+ *   1. FLAG_VPE_AS_VPP set -> CTRL_VPP_REGULATOR_ENABLE (the direct-VPE
+ *      path).
+ *   2. row == NULL -- configure_eprom's own refusal already makes this
+ *      unreachable in practice; re-checked here anyway, matching this
+ *      file's existing row==NULL precedent inside the write-execute body
+ *      below -> EPROM_HV_ROUTE_MASK, failing closed toward the
+ *      drop-resistor path (the safer default: a regulated ~13V rather than
+ *      an unregulated direct rail).
+ *   3. row->vpp_path, read ONLY via pgm_read_byte -- eprom_params.h's
+ *      PROGMEM contract requires it; a direct read compiles and silently
+ *      returns RAM garbage on AVR: VPP_PATH_DIRECT_VPE ->
+ *      CTRL_VPP_REGULATOR_ENABLE; VPP_PATH_DROP_RESISTOR, or any
+ *      unrecognised value, -> EPROM_HV_ROUTE_MASK (also fails closed
+ *      toward the drop path).
+ */
+rurp_register_t eprom_hv_route_mask(firestarter_handle_t* handle) {
+    if (is_flag_set(FLAG_VPE_AS_VPP)) {
+        return CTRL_VPP_REGULATOR_ENABLE;
+    }
+    const eprom_params_t* row = eprom_params_for(handle->protocol);
+    if (row == NULL) {
+        return EPROM_HV_ROUTE_MASK;
+    }
+    if (pgm_read_byte(&row->vpp_path) == VPP_PATH_DIRECT_VPE) {
+        return CTRL_VPP_REGULATOR_ENABLE;
+    }
+    return EPROM_HV_ROUTE_MASK;
+}
+
+/*
+ * Phase 142 Plan 04 (D-10 as amended, C-1, D-12) -- this is everything that
+ * used to be the public eprom_write_execute, renamed static and stripped of
+ * its own disable logic: see the public wrapper below for the single-exit
+ * disable guarantee this body now relies on. A `return` added inside here
+ * in the future cannot escape that guarantee, because this body has no
+ * other way out.
+ */
+static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
     // --- once per block (LOOP-08) --- KEPT VERBATIM; only the line number
-    // moves. Replacing this tier-1 predicate with the table's vpp_path
-    // column is Phase 142 / VPP-01 -- removing it here would drop tier-1
-    // to two sites.
+    // moves. D-05 / VPP-01 (resolved): route selection now comes from
+    // eprom_hv_route_mask (include/eprom.h), driven by the eprom_params
+    // table's vpp_path column -- replacing the hand-rolled
+    // protocol==0x0B||FLAG_VPE_AS_VPP fork this guard used to wrap
+    // directly. configure_eprom's pulse-fallback switch remains this
+    // file's one surviving tier-1 protocol-keyed site.
     if (handle->firestarter_get_control_register(handle, CTRL_VPP_REGULATOR_ENABLE) == 0) {
-        if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP)) {
-            // EPROM_LEGACY: direct VPE path — no CTRL_VPP_VPE_DROP_ENABLE dropping resistor
-            handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 1);
-        } else {
-            // EPROM_STD / EPROM_QUICK: CTRL_VPP_VPE_DROP_ENABLE dropping path for precise VPP
-            handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE, 1);
-        }
+        handle->firestarter_set_control_register(handle, eprom_hv_route_mask(handle), 1);
         delay(500);  // settle stays amortised once per block -- the whole of LOOP-08
     }
 
-    // D-09: on a 32-pin part, mem_util_calculate_top_address_register's
-    // preserve mask (memory.cpp) excludes CTRL_VPP_VPE_DROP_ENABLE whenever
-    // handle->pins >= 32, so the drop route just asserted above does NOT
-    // survive the first set_address() of the block -- revision-
-    // independently, and not because of a bit collision (on every build
-    // this project ships, CTRL_ADDRESS_LINE_16 is 0x01 and
-    // CTRL_VPP_VPE_DROP_ENABLE is 0x100, two distinct bits). Clearing it
-    // explicitly here changes no route selection -- the first
-    // set_address() below would clear it anyway, before any pulse is
-    // emitted -- but it makes the control-register state the loop runs
-    // under the state that will actually hold, and makes it observable in
-    // the strobe stream. Keyed on handle->pins (host-supplied, the
-    // pin-count JSON field), NEVER on protocol -- a protocol == 0x08
-    // predicate would be a fourth tier-1 site. Choosing the final DIP32
-    // route (P1 vs drop resistor) and consolidating the mask sets is
-    // Phase 142 / VPP-01 and VPP-03 -- this branch deliberately does not
-    // pre-empt that choice.
-    if (handle->pins >= 32) {
-        handle->firestarter_set_control_register(handle, CTRL_VPP_VPE_DROP_ENABLE, 0);
-    }
+    // D-04 (resolved): the explicit pins>=32 clear that used to live here
+    // (Phase 141) is REMOVED, not merely revised. Plan 142-02 (D-01/D-02)
+    // revision-gated mem_util_calculate_top_address_register's preserve
+    // mask so CTRL_VPP_VPE_DROP_ENABLE now SURVIVES a 32-pin block's
+    // set_address() on Rev 2-class hardware -- an explicit clear here would
+    // silently defeat that fix by re-stripping the very bit the guard
+    // above just asserted, on every revision, before the fix's
+    // revision-gated preserve mask ever gets a chance to matter. See
+    // test_vpp01_dip32_drop_bit_survives_the_block_on_rev2_class
+    // (test/native/avr/test_loop_eprom_v131) for the positive proof, and
+    // test_loop08_the_28_pin_row_keeps_its_drop_bit for its unaffected
+    // 28-pin partner.
 
     const eprom_params_t* row = eprom_params_for(handle->protocol);
     if (row == NULL) {
@@ -230,8 +312,10 @@ void eprom_write_execute(firestarter_handle_t* handle) {
     uint8_t  max_pulses         = pgm_read_byte(&row->max_pulses);
     uint8_t  overprogram_factor = pgm_read_byte(&row->overprogram_factor);
     uint8_t  verify_mode        = pgm_read_byte(&row->verify_mode);
-    uint8_t  vpp_path           = pgm_read_byte(&row->vpp_path);
-    (void)vpp_path;  // hoisted for completeness; Phase 142 / VPP-01 is its consumer
+    // Phase 142 / VPP-01 (resolved): vpp_path is read by eprom_hv_route_mask
+    // above, at the top of this function -- not hoisted here, since nothing
+    // below needs the raw column value again once the block's route has
+    // already been asserted.
     uint32_t org_delay = handle->pulse_delay;
 
     for (uint32_t i = 0; i < handle->data_size; i++) {
@@ -314,6 +398,36 @@ void eprom_write_execute(firestarter_handle_t* handle) {
     }
 }
 
+/*
+ * Phase 142 Plan 04 (D-10 as amended, C-1, D-12) -- the single-exit wrapper
+ * VPP-02 requires. Whichever of the body's four error exits is taken
+ * (row == NULL; MSG_ERR_MAX_PULSES; MSG_ERR_ENERGY_CAP; MSG_ERR_VERIFY --
+ * the pre-existing headline gap, which used to disable nothing at all), or
+ * the success fall-through, control returns HERE, and this conditional is
+ * the ONLY place that decides whether to clear the shared composite --
+ * structural, so a `return` added inside the body later cannot silently
+ * bypass it.
+ *
+ * Conditional on RESPONSE_CODE_ERROR, not unconditional -- D-10's original
+ * "unconditionally" is given up here (operator-confirmed correction C-1).
+ * The tiebreaker is test_loop_eprom_v131.cpp's
+ * test_loop05_a_successful_block_does_not_disable_the_route, which asserts
+ * a SUCCESSFUL block leaves CTRL_VPP_REGULATOR_ENABLE SET. An unconditional
+ * disable would re-arm the once-per-block guard above and re-pay
+ * delay(500) on the very next block too -- roughly 64s added to a 64K Uno
+ * write (128 blocks) against a typical 0x07 write's ~32s total at 100us
+ * pulses. The OPERATION-level disable (as opposed to this per-block loop's
+ * own disable-on-error) is command_done() (firestarter.cpp:162-171), which
+ * zeroes CONTROL_REGISTER unconditionally on every command exit, success
+ * or abort -- plan 142-06 owes the test proving that.
+ */
+void eprom_write_execute(firestarter_handle_t* handle) {
+    eprom_internal_write_execute_body(handle);
+    if (handle->response_code == RESPONSE_CODE_ERROR) {
+        handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);
+    }
+}
+
 
 uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_GET_CHIP_ID);
@@ -324,7 +438,7 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
     delay(100);
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
     chip_id |= (handle->firestarter_get_data(handle, 0x0001));
-    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_A9_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // VPP-03: shared composite (was REGULATOR | A9)
     return chip_id;
 }
 
@@ -337,13 +451,11 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
         return;
     }
 #endif
-    if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP)) {
-        // EPROM_LEGACY: direct VPE path
-        handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 1);
-    } else {
-        // EPROM_STD / EPROM_QUICK: VPE through dropping resistor to produce VPP
-        handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE, 1);
-    }
+    // D-05 / VPP-03 (resolved): route selection via eprom_hv_route_mask --
+    // see eprom_internal_write_execute_body's identical call, above, for
+    // the full rationale. Replaces the byte-identical
+    // protocol==0x0B||FLAG_VPE_AS_VPP fork this file used to carry twice.
+    handle->firestarter_set_control_register(handle, eprom_hv_route_mask(handle), 1);
 
     delay(100);
     uint16_t vpp_mv = rurp_read_voltage_mv();
@@ -390,7 +502,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
             handle->response_code = RESPONSE_CODE_WARNING;
         }
     }
-    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // VPP-03: shared composite (was REGULATOR | DROP)
 }
 
 void eprom_internal_erase(firestarter_handle_t* handle) {
@@ -406,7 +518,7 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
     // After the erase pulse, we should disable the chip to end the programming cycle.
     rurp_chip_disable();
 
-    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE, 0);
+    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // VPP-03: shared composite (was REGULATOR | A9 | VPE)
 }
 
 void eprom_generic_init(firestarter_handle_t* handle) {
@@ -444,11 +556,4 @@ void eprom_internal_set_control_register(firestarter_handle_t* handle, rurp_regi
         bit |= CTRL_VPP_P1_ENABLE;
     }
     ep_set_control_register(handle, bit, state);
-}
-
-void eprom_internal_ensure_regulator_enabled(firestarter_handle_t* handle) {
-    if (handle->firestarter_get_control_register(handle, CTRL_VPP_REGULATOR_ENABLE) == 0) {
-        handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE, 1);
-        delay(500);
-    }
 }

@@ -34,6 +34,29 @@ extern "C" {
      */
     uint32_t eprom_overprogram_us(uint8_t pulse_count, uint32_t pulse_us, uint8_t factor, uint32_t cap_us);
 
+    /*
+     * Phase 142 Plan 04 (D-05, D-06, Q4) -- resolves which EPROM
+     * high-voltage route (direct-VPE vs. drop-resistor) to assert for the
+     * current handle, driven by the eprom_params table's vpp_path column,
+     * with FLAG_VPE_AS_VPP forcing the direct-VPE path on top of whatever
+     * the table says. Both eprom_write_execute and eprom_check_vpp call
+     * this same function (VPP-03), replacing the two byte-identical
+     * hand-rolled forks eprom.cpp used to carry at what were :190 and :340.
+     *
+     * Exposed here (not file-static in eprom.cpp), matching the
+     * eprom_overprogram_us precedent immediately above: a direct
+     * (protocol, ctrl_flags) -> mask truth table is VPP-01's clearest
+     * evidence, and it is the only way to exercise the fail-closed
+     * NULL-row arm without a full drive -- a file-static resolver could
+     * only ever be tested through its effects on the emitted strobe
+     * stream.
+     *
+     * rurp_register_t is already reachable from this header through
+     * firestarter.h (:11 above) -> rurp_shield.h -> rurp_types.h, so this
+     * declaration adds no new include edge.
+     */
+    rurp_register_t eprom_hv_route_mask(firestarter_handle_t* handle);
+
 #ifdef __cplusplus
 }
 #endif

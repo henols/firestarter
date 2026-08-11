@@ -440,15 +440,23 @@ def test_branch_sites_match_the_recorded_inventory():
     )
 
 
-def test_exactly_three_protocol_keyed_sites_at_the_pinned_lines():
+def test_exactly_one_protocol_keyed_site_at_the_pinned_line():
+    """Phase 142 Plan 04 (D-05): the eprom_hv_route_mask resolver collapsed
+    the two duplicated protocol-keyed VPP-route forks (formerly tier-1
+    sites at :190 and :340) into a single call site apiece, leaving only
+    line 70's pulse-fallback switch as a protocol-keyed branch. This
+    locator is now STRICTLY STRONGER than its three-site predecessor: with
+    only one legitimate tier-1 site, ANY second protocol-keyed branch is a
+    violation, where before three were permitted."""
     live = _extract_predicates(_SCAN_EPROM.read_text())
     protocol_lines = sorted(s["line"] for s in live if s["tier"] == "protocol")
-    assert protocol_lines == [70, 190, 340], (
-        "expected exactly three tier-protocol sites at lines [70, 190, "
-        f"340], found {protocol_lines}. A fourth protocol-keyed branch "
-        "site is a second algorithm selector and a TABLE-05 violation -- "
-        "fewer than three means one of the pinned sites was removed "
-        "without updating this inventory."
+    assert protocol_lines == [70], (
+        "expected exactly one tier-protocol site, at line [70], found "
+        f"{protocol_lines} instead. More than [70] means a SECOND "
+        "protocol-keyed branch has appeared -- a second algorithm selector "
+        "and a TABLE-05 violation, to be fixed in src/proms/eprom.cpp, "
+        "never here. An empty list means line 70's own pulse-fallback "
+        "switch was removed without updating this inventory."
     )
 
 

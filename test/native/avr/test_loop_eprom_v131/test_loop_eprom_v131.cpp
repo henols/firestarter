@@ -1244,8 +1244,19 @@ void test_loop05_a_byte_that_misses_within_max_pulses_aborts_the_block(void) {
 }
 
 void test_loop05_the_loops_own_strobes_disable_the_high_voltage_route(void) {
-    /* Same drive as the case above -- re-seeded fresh (setUp() clears all
-     * three recorders and the register cache between cases). */
+    /* Phase 142 Plan 04 (K-1): widened to also assert the drop bit clears.
+     * The REVISION_2_2 override is MANDATORY for that widening to be
+     * decidable at all (L-6, copying the DIP32 cases' override idiom
+     * below): on the DEFAULT REVISION_0 this case used to run on,
+     * CTRL_VPP_VPE_DROP_ENABLE_REV1 (0x01) and CTRL_ADDRESS_LINE_16
+     * collide onto the SAME physical bit, so a drop-bit assertion there
+     * would be UNDECIDABLE, not merely weak. On REVISION_2_2 the drop bit
+     * is CTRL_VPP_VPE_DROP_ENABLE_REV2 (0x01), distinct from
+     * CTRL_ADDRESS_LINE_16_REV2 (0x20) -- this 28-pin, 4-byte, base-0 block
+     * never crosses the A16 boundary, so the override changes nothing else
+     * about this case's original claim. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+
     firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
     const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
     loop_readback_seed(0, block[0], 1);
@@ -1260,7 +1271,7 @@ void test_loop05_the_loops_own_strobes_disable_the_high_voltage_route(void) {
      * than driving the whole command: command_done() (src/firestarter.cpp:
      * 162-171) writes CONTROL_REGISTER = 0x00 on EVERY command exit,
      * unconditionally. An assertion driven through the whole command would
-     * pass even if eprom_write_execute's own budget-failure path disabled
+     * pass even if eprom_write_execute's own single-exit wrapper disabled
      * nothing at all, because command_done() would zero the register
      * anyway on the way out. drive_loop_write calls
      * firestarter_operation_main DIRECTLY (never the whole command, never
@@ -1272,24 +1283,35 @@ void test_loop05_the_loops_own_strobes_disable_the_high_voltage_route(void) {
     int last = control_write_value(n - 1);
     TEST_ASSERT_TRUE_MESSAGE(last >= 0, "the last CONTROL write must be a genuine, decodable value");
     TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_REGULATOR_ENABLE) == 0,
-        "the LAST control value emitted by operation_main must have CTRL_VPP_REGULATOR_ENABLE CLEAR -- eprom_internal_report_budget_failure's own disable");
+        "the LAST control value emitted by operation_main must have CTRL_VPP_REGULATOR_ENABLE CLEAR -- eprom_write_execute's single-exit wrapper (Phase 142 Plan 04), via eprom_internal_report_budget_failure's EPROM_HV_ALL_OFF_MASK disable");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0,
+        "the LAST control value emitted by operation_main must ALSO have CTRL_VPP_VPE_DROP_ENABLE_REV2 CLEAR -- the same EPROM_HV_ALL_OFF_MASK disable clears both bits together (Phase 142 Plan 04, K-1)");
 
-    bool saw_earlier_set = false;
+    bool saw_earlier_regulator_set = false;
+    bool saw_earlier_drop_set = false;
     for (int i = 0; i < n - 1; i++) {
         int v = control_write_value(i);
-        if (v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE)) { saw_earlier_set = true; break; }
+        if (v < 0) continue;
+        if (v & CTRL_VPP_REGULATOR_ENABLE) { saw_earlier_regulator_set = true; }
+        if (v & CTRL_VPP_VPE_DROP_ENABLE_REV2) { saw_earlier_drop_set = true; }
     }
-    TEST_ASSERT_TRUE_MESSAGE(saw_earlier_set,
+    TEST_ASSERT_TRUE_MESSAGE(saw_earlier_regulator_set,
         "an EARLIER control value must have CTRL_VPP_REGULATOR_ENABLE SET -- otherwise the 'last value clear' assertion is vacuously true of a register that was never energised at all");
+    TEST_ASSERT_TRUE_MESSAGE(saw_earlier_drop_set,
+        "an EARLIER control value must have CTRL_VPP_VPE_DROP_ENABLE_REV2 SET too -- otherwise the new drop-bit clear-leg above is vacuously true of a bit that was never set in the first place (Phase 142 Plan 04, K-1)");
 }
 
 void test_loop05_a_successful_block_does_not_disable_the_route(void) {
     /* Paired negative control: a block that fully converges must leave the
      * route SET. Without this, the case above would pass on an
      * implementation that disables the route unconditionally on every
-     * exit -- generalising disable-on-every-exit to every exit in the file
-     * is Phase 142 / VPP-02's job; this phase satisfies only LOOP-05's own
-     * budget-failure exit. */
+     * exit. Phase 142 Plan 04 (D-10 as amended, correction C-1, D-09) --
+     * this assertion is WHY eprom_write_execute's single-exit wrapper
+     * clears EPROM_HV_ALL_OFF_MASK only when response_code ==
+     * RESPONSE_CODE_ERROR, never unconditionally: an unconditional clear
+     * would re-arm the once-per-block guard and re-pay delay(500) on the
+     * NEXT block too. This is the case that keeps that disable
+     * conditional. */
     firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
     const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
     const uint16_t converge_after[4] = {1, 2, 3, 4};
@@ -1570,7 +1592,7 @@ void test_loop08_dip32_block_crossing_an_a16_boundary_keeps_the_route_and_toggle
     TEST_ASSERT_TRUE_MESSAGE(saw_a16_set, "at least one control value must have A16 SET (the 0x010000/0x010001 half) -- proves the block really crossed the boundary");
 }
 
-void test_loop08_dip32_drop_bit_is_cleared_deliberately_before_the_first_pulse(void) {
+void test_vpp01_dip32_drop_bit_survives_the_block_on_rev2_class(void) {
     /* Same handle shape as the case above -- same override reasoning. */
     rurp_get_config()->hardware_revision = REVISION_2_2;
 
@@ -1587,47 +1609,49 @@ void test_loop08_dip32_drop_bit_is_cleared_deliberately_before_the_first_pulse(v
     TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
 
     int n = control_write_count();
-    TEST_ASSERT_TRUE_MESSAGE(n >= 2, "non-vacuity: at least the top-of-block assert (drop SET) and the explicit pins>=32 clear must both have written CONTROL");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2, "non-vacuity: at least the top-of-block assert (drop SET) and the block's first set_address must both have written CONTROL");
 
     int first_pulse_idx = first_genuine_pulse_strobe_index(block, 4);
     TEST_ASSERT_TRUE_MESSAGE(first_pulse_idx >= 0, "non-vacuity: a genuine chip-data pulse must have been recorded");
 
-    /* [D-09 finding, in full] the drop bit is excluded from
-     * mem_util_calculate_top_address_register's preserve mask whenever
-     * handle->pins >= 32 (memory.cpp:161-162), so it would be cleared by
-     * the very first set_address() of the block ANYWAY -- the explicit
-     * `handle->pins >= 32` branch in eprom_write_execute
-     * (src/proms/eprom.cpp:217-219) makes that deliberate and OBSERVABLE
-     * rather than incidental. CTRL_ADDRESS_LINE_16 (0x01 logical) and
-     * CTRL_VPP_VPE_DROP_ENABLE (0x100 logical) are DISTINCT bits on every
-     * build this project ships (-D HARDWARE_REVISION is in the shared
-     * [env] build_flags, so no macro-level collision exists) -- the
-     * mechanism is the preserve mask, never a bit clash. Consolidating the
-     * mask sets and choosing the final DIP32 route (P1 vs drop resistor)
-     * is Phase 142 / VPP-01 and VPP-03 -- this case does not pre-empt that
-     * choice, it only makes the existing clear observable. */
+    /* [D-01/D-02/D-04 finding, in full -- supersedes the pre-Phase-142
+     * "D-09 finding" this comment used to carry, which asserted the
+     * OPPOSITE outcome]. Plan 142-02 revision-gated
+     * mem_util_calculate_top_address_register's preserve mask so
+     * CTRL_VPP_VPE_DROP_ENABLE now SURVIVES this block's every
+     * set_address() on Rev 2-class hardware (D-01/D-02) -- the inverse of
+     * what this case asserted before Phase 142. Plan 142-04 (this plan)
+     * then removed eprom_write_execute's explicit pins>=32 clear (D-04),
+     * which is what makes that survival OBSERVABLE in the strobe stream at
+     * all: with the clear gone, nothing in the write path ever re-clears
+     * the bit the top-of-block assert set below.
+     *
+     * The drop bit is a VPP LEVEL selector (VPE dropped through the
+     * resistor to the ~13V VPP level), never a route: pin-1 VPP routing on
+     * a 32-pin part is a separate, PHYSICAL decision made with a jumper --
+     * this file names no jumper designator and asserts no net
+     * (doc/SHIELD-REVISIONS.md and .planning/v1.7-SHIELD-REVS.md document
+     * that jumper's identity two contradictory ways, an open finding, not
+     * resolved here).
+     *
+     * This case is Rev-2-class ONLY --
+     * test_loop08_the_28_pin_row_keeps_its_drop_bit is its unaffected
+     * 28-pin partner (pins < 32 was never gated on revision). Like every
+     * other claim in this suite, this is a claim about the EMITTED
+     * CONTROL-REGISTER STREAM only, never about silicon (D-03). */
     int v0 = control_write_value(0);
     TEST_ASSERT_TRUE_MESSAGE(v0 >= 0 && (v0 & CTRL_VPP_VPE_DROP_ENABLE_REV2) != 0,
         "control write 0 (the top-of-block assert) must have the drop bit SET -- the 0x08 row's ELSE branch asserts regulator|drop together");
 
-    int v1 = control_write_value(1);
-    TEST_ASSERT_TRUE_MESSAGE(v1 >= 0 && (v1 & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0,
-        "control write 1 (the explicit pins>=32 clear) must have the drop bit CLEAR");
-    int clear_strobe_idx = control_write_strobe_index(1);
-    char ordmsg[112];
-    snprintf(ordmsg, sizeof(ordmsg), "the clearing write (stream index %d) must precede the first genuine data pulse (stream index %d)", clear_strobe_idx, first_pulse_idx);
-    TEST_ASSERT_TRUE_MESSAGE(clear_strobe_idx < first_pulse_idx, ordmsg);
-
-    /* From that clearing write onward (which itself precedes the first
-     * data strobe, per the assertion above) -- and therefore across the
-     * whole per-byte loop, including the A16 crossing -- the drop bit
-     * never reappears: it is excluded from the preserve mask forever
-     * after, on pins>=32. */
-    for (int i = 1; i < n; i++) {
+    /* INVERTED (Phase 142 Plan 04, K-3): the positive claim replacing the
+     * old "write 1 clears it" assertion -- every control value across the
+     * WHOLE block, including across the A16 crossing this block
+     * deliberately drives through, must carry the drop bit. */
+    for (int i = 0; i < n; i++) {
         int v = control_write_value(i);
-        char msg[96];
-        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must not carry CTRL_VPP_VPE_DROP_ENABLE_REV2 -- pins>=32 excludes it from the preserve mask", i, v);
-        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0, msg);
+        char msg[128];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must carry CTRL_VPP_VPE_DROP_ENABLE_REV2 -- plan 142-02's revision-gated preserve mask keeps it across every set_address on Rev 2-class hardware", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_VPE_DROP_ENABLE_REV2) != 0, msg);
     }
 }
 
@@ -1716,7 +1740,9 @@ int main(int argc, char** argv) {
     RUN_TEST(test_loop08_the_route_bit_is_present_in_every_control_value_across_the_block);
     RUN_TEST(test_loop08_route_presence_is_not_vacuous);
     RUN_TEST(test_loop08_dip32_block_crossing_an_a16_boundary_keeps_the_route_and_toggles_a16);
-    RUN_TEST(test_loop08_dip32_drop_bit_is_cleared_deliberately_before_the_first_pulse);
+
+    /* VPP-01 (Phase 142, plan 142-04) */
+    RUN_TEST(test_vpp01_dip32_drop_bit_survives_the_block_on_rev2_class);
     RUN_TEST(test_loop08_the_28_pin_row_keeps_its_drop_bit);
 
     return UNITY_END();
