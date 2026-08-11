@@ -596,6 +596,246 @@ void test_vpp01_dip32_nonEprom_0x10_route_is_byte_identical_before_and_after(voi
     TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x20, control_write_value(0), "control write 0 -- measured pre-change literal (A16 boundary crossing, REV2-physical)");
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * Plan 142-03 Task 1 (VPP-04, D-13/D-15) -- the over-voltage refusal gate
+ * VPP-04's own wording presumed already existed for the EPROM path.
+ * Confirmed false by grep (D-13): MSG_ERR_VPP_HIGH and MSG_WARN_VPP_HIGH
+ * appear in NO test anywhere under test/ or tests/ before this plan.
+ * test_val_eprom pins handle->vpp_mv = 0 against a 0-returning stub
+ * precisely so neither compare ever fires (test_val_eprom.cpp:74);
+ * test_flash_intel_vpp is protocol 0x10 and, per RESEARCH C-2, runs in no
+ * PlatformIO environment and SIGABRTs after case 1, so its own SAF-04
+ * assertions have never been observed to execute. This group AUTHORS the
+ * gate rather than pointing at one that already exists for another family.
+ *
+ * ALL FOUR of (a)/(b)/(c)/(d) below are GREEN ON ARRIVAL for (a)/(b)/(c)
+ * (RESEARCH C-3): eprom_check_vpp (eprom.cpp:331-394) has exactly one
+ * `return` (:337, the Rev-0 warning) and it fires BEFORE any route is
+ * asserted; every other path -- nominal, over-voltage ERROR (:370-371),
+ * over-voltage-with-FLAG_FORCE (:367-368), under-voltage (:389-390) --
+ * falls through to the UNCONDITIONAL clear at :393. (a)/(b)/(c) are
+ * therefore a REGRESSION gate on behaviour that already holds, not newly-
+ * established behaviour -- each is seen RED on its own named planted
+ * violation in task 3 (V1/V2/V3) before its GREEN here is believed. (d) is
+ * the in-range control that proves the injection seam actually varies the
+ * outcome -- flipping its injected reading to 13501 must make it fail
+ * (confirmed in task 3's SUMMARY).
+ *
+ * D-03 non-claims that bound this whole group: no claim about silicon; no
+ * claim that the drop resistor produces ~13V (no native suite reads an
+ * ADC -- rurp_read_voltage_mv is a mock); no claim that the refusal blocks
+ * at a real over-voltage on a real part.
+ * ───────────────────────────────────────────────────────────────────────── */
+void test_vpp04_a_overvoltage_refusal_fires_by_id_with_payload_shape(void) {
+    rurp_get_config()->hardware_revision = REVISION_2_2;  /* mandatory: on
+        REVISION_0 eprom_check_vpp takes the early return at eprom.cpp:334-338
+        and never reaches the over-voltage compare at all (PATTERNS SS B-8);
+        also mandatory because the drop bit and A16 share physical 0x01 on
+        Rev 0/1, which would make leg (b)'s drop-bit clear undecidable. */
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, 0, VPP_BUS_CONFIG_0x07);
+    set_mock_vpp_mv(13501);  /* one mV past the 13000+500 over-voltage boundary -- pins the boundary, not a wildly out-of-range value */
+    drive_vpp_init(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "an injected 13501 mV reading (setpoint 13000, boundary 13500) must refuse with RESPONSE_CODE_ERROR");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_ERR_VPP_HIGH),
+        "MSG_ERR_VPP_HIGH (0xB8) must be logged exactly once, BY ID -- no test in this tree asserts this before this plan (D-13)");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_WARN_VPP_HIGH),
+        "the hard-ERROR fork must NOT also log the WARNING id -- pins the FLAG_FORCE fork in both directions");
+    int idx = find_logged_id(MSG_ERR_VPP_HIGH);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_ERR_VPP_HIGH must actually be present in the logged-id stream");
+    TEST_ASSERT_EQUAL_MESSAGE(8, logged_id_param_count(idx),
+        "the ERROR frame must carry the 8 payload bytes eprom.cpp:369-371 (LOG_ERROR_ID_BYTES) emits");
+}
+
+void test_vpp04_b_no_hv_route_left_asserted_on_the_refusal_path(void) {
+    /* SAF-04 regression, its INTENT quoted verbatim from
+     * test_flash_intel_vpp.cpp:159-171 (its interception mechanism is NOT
+     * copied here -- PATTERNS SS C / RESEARCH C-5 -- because replacing
+     * h.firestarter_set_control_register after configure_memory would
+     * remove the EPROM family's own VPE-to-P1 remap
+     * (eprom_internal_set_control_register, eprom.cpp:441-447) from the
+     * path under test):
+     *   "high-VPP ERROR must leave the regulator cleared ... the original
+     *    write_init early-returned on RESPONSE_CODE_ERROR without driving
+     *    CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE low, leaving 12V
+     *    applied to socket pin 1 after the firmware had just detected
+     *    unsafe over-voltage -- the exact hazard the safety check exists
+     *    to prevent."
+     * For the EPROM family the identical hazard is 13V left on the drop-
+     * resistor path after a detected over-voltage refusal (T-142-HOTRAIL).
+     *
+     * GREEN ON ARRIVAL (C-3): eprom_check_vpp's :393 unconditional clear
+     * already runs on this path today. Planted-RED in task 3 (V2) -- and
+     * that planted run is the one that proves a refusal-only gate (leg (a)
+     * alone) would have passed the exact regression VPP-02 exists to
+     * prevent. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, 0, VPP_BUS_CONFIG_0x07);
+    set_mock_vpp_mv(13501);
+    drive_vpp_init(&h);
+
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2, "non-vacuity: at least the over-voltage assert and the refusal's own disable must both have written CONTROL");
+
+    int last = control_write_value(n - 1);
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0, "the last CONTROL write must be a genuine, decodable value");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_REGULATOR_ENABLE) == 0,
+        "the LAST control value after an over-voltage refusal must have CTRL_VPP_REGULATOR_ENABLE CLEAR -- eprom_check_vpp's own :393 disable");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0,
+        "the LAST control value after an over-voltage refusal must have the drop bit CLEAR too");
+
+    bool saw_earlier_set = false;
+    for (int i = 0; i < n - 1; i++) {
+        int v = control_write_value(i);
+        if (v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE)) { saw_earlier_set = true; break; }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(saw_earlier_set,
+        "an EARLIER control value must have CTRL_VPP_REGULATOR_ENABLE SET -- otherwise the 'last value clear' assertion is vacuously true of a register that was never energised at all");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- soundness precondition for the strobe walk above");
+}
+
+void test_vpp04_c_flag_force_downgrades_to_warning_and_still_clears_the_route(void) {
+    /* GREEN ON ARRIVAL (C-3): the is_flag_set(FLAG_FORCE) fork
+     * (eprom.cpp:366-372) already exists today. Planted-RED in task 3 (V3). */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, FLAG_FORCE, VPP_BUS_CONFIG_0x07);
+    set_mock_vpp_mv(13501);
+    drive_vpp_init(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
+        "FLAG_FORCE must downgrade the identical over-voltage reading to RESPONSE_CODE_WARNING");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_WARN_VPP_HIGH),
+        "MSG_WARN_VPP_HIGH (0x82) must be logged exactly once under FLAG_FORCE");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_VPP_HIGH),
+        "the FLAG_FORCE downgrade must NOT also log the hard-error id");
+
+    /* The downgrade IS the refusal's semantics (D-15c) -- it must leave no
+     * route asserted too, exactly like leg (b) above. */
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2, "non-vacuity: at least the over-voltage assert and the refusal's own disable must both have written CONTROL");
+    int last = control_write_value(n - 1);
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0, "the last CONTROL write must be a genuine, decodable value");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_REGULATOR_ENABLE) == 0,
+        "the LAST control value after the FLAG_FORCE downgrade must have CTRL_VPP_REGULATOR_ENABLE CLEAR too");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0,
+        "the LAST control value after the FLAG_FORCE downgrade must have the drop bit CLEAR too");
+    bool saw_earlier_set = false;
+    for (int i = 0; i < n - 1; i++) {
+        int v = control_write_value(i);
+        if (v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE)) { saw_earlier_set = true; break; }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(saw_earlier_set,
+        "an EARLIER control value must have CTRL_VPP_REGULATOR_ENABLE SET -- otherwise the 'last value clear' assertion is vacuously true");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- soundness precondition for the strobe walk above");
+}
+
+void test_vpp04_d_in_range_reading_fires_neither_error_nor_warning(void) {
+    /* The control that makes (a) and (c) mean anything: without this leg,
+     * (a)'s id assertion could pass for a reason unrelated to the injected
+     * reading (e.g. a resolver that always logs MSG_ERR_VPP_HIGH). Task 3's
+     * SUMMARY records that flipping set_mock_vpp_mv below to 13501 makes
+     * this leg fail -- a control that cannot fail is not a control. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, 0, VPP_BUS_CONFIG_0x07);
+    set_mock_vpp_mv(13000);  /* == setpoint: 13000 > 13500 is false, 13000 < 12350 is false */
+    drive_vpp_init(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "an in-range reading (== setpoint) must leave RESPONSE_CODE_OK");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_VPP_HIGH), "no MSG_ERR_VPP_HIGH on an in-range reading");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_WARN_VPP_HIGH), "no MSG_WARN_VPP_HIGH on an in-range reading");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_WARN_VPP_LOW), "no MSG_WARN_VPP_LOW on an in-range reading");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Plan 142-03 Task 2 (VPP-03, RESEARCH assumption A3) -- pre-rewrite
+ * CMD_ERASE / CMD_CHECK_CHIP_ID control-value baselines. NOT feature tests:
+ * they exist so plan 142-04's conversion of the hand-rolled disables at
+ * eprom.cpp:174/:327/:393/:409 into EPROM_HV_ALL_OFF_MASK is a MEASURED
+ * no-op on the two commands PROJECT.md:189-190 protects ("Erase, blank-
+ * check, chip-ID, bus remapping and VPP validation behavior -- unchanged
+ * except where a change is required for safe shared cleanup"), rather than
+ * a reasoned one. The reasoning they replace: widening a CLEAR mask can
+ * only clear bits already zero, so the written value is identical and
+ * rurp_register_utils.h:39-41's cache-compare elides it identically --
+ * plausible, and exactly the kind of claim RESEARCH says to measure, not
+ * argue ("do not assert byte-identity in prose -- measure it"). Both cases
+ * are planted-RED in task 3 (V4/V5): they are pure equality assertions on a
+ * measured stream that would pass on any change that happens not to move a
+ * bit.
+ * ───────────────────────────────────────────────────────────────────────── */
+void test_vpp03_case_e_cmd_erase_control_stream_is_pinned_pre_rewrite(void) {
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, FLAG_SKIP_BLANK_CHECK, VPP_BUS_CONFIG_0x07);
+    h.cmd = CMD_ERASE;  /* MUST be set before configure_memory so configure_eprom installs eprom_erase_execute as firestarter_operation_main */
+    set_mock_vpp_mv(13000);  /* in-range; this command never reaches eprom_check_vpp, kept for hygiene with the rest of the suite */
+
+    configure_memory(&h);
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    clear_timings();
+    clear_logged_ids();
+    h.firestarter_operation_main(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- soundness precondition for the enumerated sequence below");
+
+    /* Measured pre-rewrite baseline (D-15/A3): observed by running this case
+     * against the UNCHANGED tree in this plan's task 2 -- the "before" side
+     * of research assumption A3. Plan 142-04 must reproduce this IDENTICAL
+     * sequence after the composite-mask conversion lands. */
+    int n = control_write_count();
+    TEST_ASSERT_EQUAL_MESSAGE(4, n, "control_write_count -- measured pre-rewrite literal (CMD_ERASE)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x80, control_write_value(0), "control write 0 -- measured pre-rewrite literal (regulator on, eprom_internal_erase:399)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x90, control_write_value(1), "control write 1 -- measured pre-rewrite literal (first set_address; A17 forced for pins==28)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x96, control_write_value(2), "control write 2 -- measured pre-rewrite literal (A9|VPE asserted for the erase pulse, eprom_internal_erase:402)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x10, control_write_value(3), "control write 3 -- measured pre-rewrite literal (eprom_internal_erase's own disable at :409)");
+
+    int last = control_write_value(n - 1);
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0, "the last CONTROL write must be a genuine, decodable value");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_REGULATOR_ENABLE) == 0,
+        "the LAST control value after CMD_ERASE must have CTRL_VPP_REGULATOR_ENABLE clear -- the property :409 provides today and must keep providing");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_A9_ENABLE) == 0,
+        "the LAST control value after CMD_ERASE must have CTRL_VPP_A9_ENABLE clear");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPE_ENABLE) == 0,
+        "the LAST control value after CMD_ERASE must have CTRL_VPE_ENABLE clear");
+}
+
+void test_vpp03_case_i_cmd_check_chip_id_control_stream_is_pinned_pre_rewrite(void) {
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, FLAG_SKIP_BLANK_CHECK, VPP_BUS_CONFIG_0x07);
+    h.cmd = CMD_CHECK_CHIP_ID;  /* MUST be set before configure_memory so configure_eprom installs eprom_check_chip_id_execute as firestarter_operation_main */
+    h.chip_id = 0xFFFF;  /* the value eprom_get_chip_id will read back: addresses 0x0000 and 0x0001 are both unseeded, and the read-back model returns 0xFF for an unseeded address (host_stubs.cpp's rurp_read_data_buffer) */
+    set_mock_vpp_mv(13000);
+
+    configure_memory(&h);
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    clear_timings();
+    clear_logged_ids();
+    h.firestarter_operation_main(&h);
+
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "response_code must NOT be RESPONSE_CODE_ERROR -- proves the drive actually reached eprom_internal_check_chip_id's comparison (0xFFFF == 0xFFFF) rather than bailing out earlier");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- soundness precondition for the enumerated sequence below");
+
+    /* Measured pre-rewrite baseline (D-15/A3): observed by running this case
+     * against the UNCHANGED tree in this plan's task 2. */
+    int n = control_write_count();
+    TEST_ASSERT_EQUAL_MESSAGE(4, n, "control_write_count -- measured pre-rewrite literal (CMD_CHECK_CHIP_ID)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x80, control_write_value(0), "control write 0 -- measured pre-rewrite literal (regulator on, eprom_get_chip_id:320)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x82, control_write_value(1), "control write 1 -- measured pre-rewrite literal (A9 additionally asserted, eprom_get_chip_id:323)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x92, control_write_value(2), "control write 2 -- measured pre-rewrite literal (first get_data's own set_address; A17 forced for pins==28)");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x10, control_write_value(3), "control write 3 -- measured pre-rewrite literal (eprom_get_chip_id's own disable at :327)");
+
+    int last = control_write_value(n - 1);
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0, "the last CONTROL write must be a genuine, decodable value");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_REGULATOR_ENABLE) == 0,
+        "the LAST control value after CMD_CHECK_CHIP_ID must have CTRL_VPP_REGULATOR_ENABLE clear -- the property :327 provides today and must keep providing");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_A9_ENABLE) == 0,
+        "the LAST control value after CMD_CHECK_CHIP_ID must have CTRL_VPP_A9_ENABLE clear");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -616,6 +856,25 @@ int main(int argc, char** argv) {
     RUN_TEST(test_vpp01_truthtable_pins32_revunknown_drop_bit_absent);
     RUN_TEST(test_vpp01_truthtable_pins32_rev2_2_preserve_never_introduces);
     RUN_TEST(test_vpp01_dip32_nonEprom_0x10_route_is_byte_identical_before_and_after);
+
+    /* Plan 142-03 task 1 (VPP-04, D-13/D-15): the over-voltage refusal gate
+     * VPP-04's own wording presumed already existed for the EPROM path --
+     * confirmed false by grep (D-13). All of (a)/(b)/(c) are a REGRESSION
+     * gate on behaviour that already holds (RESEARCH C-3, green on
+     * arrival); (d) is the in-range control that proves the injection seam
+     * changes the outcome. See task 3's planted violations V1-V3. */
+    RUN_TEST(test_vpp04_a_overvoltage_refusal_fires_by_id_with_payload_shape);
+    RUN_TEST(test_vpp04_b_no_hv_route_left_asserted_on_the_refusal_path);
+    RUN_TEST(test_vpp04_c_flag_force_downgrades_to_warning_and_still_clears_the_route);
+    RUN_TEST(test_vpp04_d_in_range_reading_fires_neither_error_nor_warning);
+
+    /* Plan 142-03 task 2 (VPP-03, RESEARCH assumption A3): pre-rewrite
+     * CMD_ERASE / CMD_CHECK_CHIP_ID control-value baselines -- NOT feature
+     * tests, they pin the current stream so plan 142-04's composite-mask
+     * conversion is a MEASURED no-op on the two commands PROJECT.md:189-190
+     * protects. See task 3's planted violations V4/V5. */
+    RUN_TEST(test_vpp03_case_e_cmd_erase_control_stream_is_pinned_pre_rewrite);
+    RUN_TEST(test_vpp03_case_i_cmd_check_chip_id_control_stream_is_pinned_pre_rewrite);
 
     return UNITY_END();
 }
