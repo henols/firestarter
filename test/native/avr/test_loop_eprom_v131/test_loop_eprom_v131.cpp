@@ -40,6 +40,8 @@ extern "C" {
 #include "firestarter.h"
 #include "eprom.h"
 #include "eprom_params.h"
+#include "eprom_budget.h"  /* Plan 143-01: eprom_worst_pulses / eprom_per_byte_budget_us /
+                             * eprom_block_budget_s -- BF-3-corrected budget arithmetic. */
 #include "memory_utils.h"
 #include "messages.h"  /* Plan 141-07: MSG_ERR_MAX_PULSES / MSG_ERR_ENERGY_CAP --
                          * neither firestarter.h nor eprom.h/eprom_params.h/
@@ -1687,6 +1689,130 @@ void test_loop08_the_28_pin_row_keeps_its_drop_bit(void) {
     }
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+ * Phase 143 Plan 01 / HOST-01 (firmware half) / BF-3 -- six pure-arithmetic
+ * cases proving the corrected per-block worst-case write-time budget
+ * (include/eprom_budget.h, src/proms/eprom_budget.cpp). Every case below
+ * calls eprom_worst_pulses / eprom_per_byte_budget_us / eprom_block_budget_s
+ * directly -- none drives eprom_write_execute, make_loop_handle or
+ * drive_loop_write, so none of this plan's own cases touches the per-byte
+ * loop itself. This plan flips NO requirement checkbox (frontmatter
+ * requirements: [] is deliberate); it contributes the firmware half of
+ * HOST-01 only -- plan 143-10 flips the HOST-* checkboxes after every piece
+ * of evidence exists.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/* Case 1: energy_cap_us == 0 means UNCAPPED, not "cap at zero". Both 0x07
+ * and 0x08 ship energy_cap_us == 0 (eprom_params.cpp:50-51) -- an unguarded
+ * min() would clamp every one of their bytes' pulse budget to zero. */
+void test_budget_uncapped_energy_cap_is_not_a_cap_at_zero(void) {
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(25, eprom_worst_pulses(25, 1000, 0),
+        "energy_cap_us == 0 means UNCAPPED (0x07/0x08 both ship it) -- an unguarded min() "
+        "would clamp every one of their bytes to zero instead of returning max_pulses");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(25000, eprom_per_byte_budget_us(25, 1000, 0, 0, 75000),
+        "per-byte budget under UNCAPPED energy must be max_pulses * pulse_us (25 * 1000), "
+        "not zero");
+}
+
+/* Case 2: the pulse count CEILS, because the shipped loop
+ * (src/proms/eprom.cpp's inner for(;;)) increments accumulated BEFORE
+ * testing it against energy_cap_us -- BF-3. min(max_pulses * pulse_us, cap)
+ * would yield 1 for the first assertion below (50000 / 49999, truncated),
+ * not the true 2. */
+void test_budget_pulse_count_ceils_because_the_loop_tests_after_it_increments(void) {
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(2, eprom_worst_pulses(255, 49999, 50000),
+        "BF-3: ceil(50000/49999) == 2 -- the naive min(max_pulses*pulse, cap) reading "
+        "would yield 1, because the loop increments accumulated before testing it");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(250, eprom_worst_pulses(255, 200, 50000),
+        "BF-3: ceil(50000/200) == 250 -- divides evenly, sanity-checks the shipped 0x0B width");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(167, eprom_worst_pulses(255, 300, 50000),
+        "BF-3: ceil(50000/300) == 167, not floor's 166 -- a non-dividing width must round UP");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(1, eprom_worst_pulses(255, 50000, 50000),
+        "BF-3: ceil(50000/50000) == 1 -- a single pulse already meets the cap exactly");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(255, eprom_worst_pulses(255, 1, 50000),
+        "BF-3: ceil(50000/1) == 50000, clamped down to max_pulses (255) -- the max_pulses "
+        "ceiling still binds when the energy cap alone would allow far more pulses");
+}
+
+/* Case 3: the BF-3 headline number. firestarter/CLAUDE.md's "Algorithm
+ * Handlers" 0x0B row independently derives the same 99998 us figure
+ * (F-141-10) -- the naive 50000 us reading would time out a WORKING write
+ * at ~51 s (D-09: a budget that is too tight is strictly worse than a
+ * generous one, because it fails real silicon that was never broken). */
+void test_budget_0x0b_at_49999us_is_99998us_per_byte_not_50000(void) {
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(99998, eprom_per_byte_budget_us(255, 49999, 50000, 0, 75000),
+        "0x0B @ --pulse-us 49999 is 99998 us/byte (two pulses), not the naive 50000 -- "
+        "firestarter/CLAUDE.md's 0x0B row derives the same figure independently (F-141-10); "
+        "a 50000 us budget would time out a WORKING write at ~51 s (D-09)");
+}
+
+/* Case 4: the overprogram term. All three shipped rows carry
+ * overprogram_factor == 0, so the factor-0 assertion alone can never
+ * distinguish "calls eprom_overprogram_us" from "always returns 0" --
+ * the factor-3 assertions are the ONLY reachable proof the term is wired
+ * at all. A literal `3 * overprogram_factor * pulse_us` restatement (the
+ * reading D-11 and eprom_params.h's own column comment both suggest) would
+ * yield 3*3*1000=9000 for the middle case below, not the shipped function's
+ * 75000 -- an 8.3x under-estimate. */
+void test_budget_overprogram_term_is_zero_for_factor_zero_and_clamped_for_factor_three(void) {
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(25000, eprom_per_byte_budget_us(25, 1000, 0, 0, 75000),
+        "factor 0 (every shipped row): overprogram term is 0, total is pulse-only 25*1000");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(100000, eprom_per_byte_budget_us(25, 1000, 0, 3, 75000),
+        "factor 3, cap 75000: overprogram term must come from CALLING eprom_overprogram_us "
+        "(25*1000 pulse + 75000 overprogram) -- a literal 3*factor*pulse restatement would "
+        "yield 25000+9000=34000, not 100000, an 8.3x under-estimate on the overprogram term");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(35000, eprom_per_byte_budget_us(25, 1000, 0, 3, 10000),
+        "factor 3, cap 10000: the overprogram term clamps at the cap (10000), giving "
+        "25000+10000=35000 -- proves the clamp is honoured, not just the raw product");
+}
+
+/* Case 5: pulse_us == 0 never divides by zero. This is a GUARD, not the
+ * live path: configure_eprom's own pulse-fallback switch (eprom.cpp:68-75)
+ * has already resolved a zero pulse_delay before any ack is packed
+ * (verified chain: parse_json calls configure_memory; init_programmer_framed
+ * calls parse_json and only emits the ack afterwards). */
+void test_budget_zero_pulse_width_never_divides_by_zero(void) {
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(25, eprom_worst_pulses(25, 0, 50000),
+        "pulse_us == 0 must return max_pulses without dividing by zero -- a guard for an "
+        "unresolved pulse width, never the live path (configure_eprom's fallback switch "
+        "always resolves it first)");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, eprom_per_byte_budget_us(25, 0, 50000, 0, 0),
+        "pulse_us == 0 propagates to a zero per-byte budget (25 pulses * 0 us + 0 overprogram)");
+}
+
+/* Case 6: eprom_block_budget_s against all three shipped rows plus the
+ * padding rule, and the non-EPROM "advertise nothing" contract. A returned
+ * 0 means "advertise nothing", never "no time needed" -- the host's own
+ * plausibility clamp then leaves its attribute None and the host's own
+ * fallback applies. */
+void test_budget_block_seconds_matches_the_shipped_rows_and_is_padded(void) {
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(8, eprom_block_budget_s(0x07, 100, 1024),
+        "0x07 @ 100us/1024B: raw 2.5s ceils to 3s, padded x2+2 == 8");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(54, eprom_block_budget_s(0x07, 1000, 1024),
+        "0x07 @ 1000us/1024B: raw 25s ceils to 26s, padded x2+2 == 54");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(3358, eprom_block_budget_s(0x07, 65535, 1024),
+        "0x07 @ 65535us/1024B (host ceiling): raw ~1677.7s ceils to 1678s, padded x2+2 == 3358 "
+        "-- fits uint16_t with room to spare (max 65535)");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(6, eprom_block_budget_s(0x08, 100, 512),
+        "0x08 @ 100us/512B (Uno-class buffer): raw 1.25s ceils to 2s, padded x2+2 == 6");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(106, eprom_block_budget_s(0x0B, 500, 1024),
+        "0x0B @ 500us/1024B (modal shipped width): raw 51.2s ceils to 52s, padded x2+2 == 106");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(208, eprom_block_budget_s(0x0B, 49999, 1024),
+        "0x0B @ 49999us/1024B (the BF-3 pathological width): raw 102.4s ceils to 103s, "
+        "padded x2+2 == 208 -- proves the ceil pulse-count correction survives all the way "
+        "to the advertised seconds value");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(106, eprom_block_budget_s(0x0B, 49999, 512),
+        "0x0B @ 49999us/512B (Uno-class buffer, same pathological width): raw 51.2s ceils to "
+        "52s, padded x2+2 == 106");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, eprom_block_budget_s(0x05, 1000, 1024),
+        "0x05 (flash, no eprom_params row) must return 0 -- \"advertise nothing\", never "
+        "\"no time needed\"; the host's plausibility clamp leaves the attribute None and its "
+        "own fallback applies");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, eprom_block_budget_s(0x0D, 1000, 1024),
+        "0x0D (28C EEPROM, no eprom_params row) must also return 0, same \"advertise "
+        "nothing\" contract as the 0x05 case above");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -1744,6 +1870,14 @@ int main(int argc, char** argv) {
     /* VPP-01 (Phase 142, plan 142-04) */
     RUN_TEST(test_vpp01_dip32_drop_bit_survives_the_block_on_rev2_class);
     RUN_TEST(test_loop08_the_28_pin_row_keeps_its_drop_bit);
+
+    /* Phase 143 Plan 01 / HOST-01 (firmware half) / BF-3 */
+    RUN_TEST(test_budget_uncapped_energy_cap_is_not_a_cap_at_zero);
+    RUN_TEST(test_budget_pulse_count_ceils_because_the_loop_tests_after_it_increments);
+    RUN_TEST(test_budget_0x0b_at_49999us_is_99998us_per_byte_not_50000);
+    RUN_TEST(test_budget_overprogram_term_is_zero_for_factor_zero_and_clamped_for_factor_three);
+    RUN_TEST(test_budget_zero_pulse_width_never_divides_by_zero);
+    RUN_TEST(test_budget_block_seconds_matches_the_shipped_rows_and_is_padded);
 
     return UNITY_END();
 }
