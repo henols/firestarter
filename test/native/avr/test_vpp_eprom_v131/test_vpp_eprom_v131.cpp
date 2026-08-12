@@ -836,6 +836,473 @@ void test_vpp03_case_i_cmd_check_chip_id_control_stream_is_pinned_pre_rewrite(vo
         "the LAST control value after CMD_CHECK_CHIP_ID must have CTRL_VPP_A9_ENABLE clear");
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * Plan 142-05 Task 1 (VPP-01) -- the resolver truth table and the
+ * route-strobe proofs, including the Rev 1 negative.
+ *
+ * Group T -- the resolver truth table (NO DRIVE AT ALL). eprom_hv_route_mask
+ * (declared include/eprom.h, exposed by plan 142-04's D-05/Q4) reads ONLY
+ * handle->ctrl_flags and handle->protocol -- so these cases need neither
+ * configure_memory nor a revision override: the returned mask is LOGICAL,
+ * and the per-revision physical mapper (rurp_map_ctrl_reg_for_hardware_
+ * revision) runs later, downstream of the resolver, only at the point of
+ * the actual register write. This is why this oracle is revision-
+ * independent while every strobe case in Group R below is not.
+ * ───────────────────────────────────────────────────────────────────────── */
+static rurp_register_t resolver_mask_for(uint32_t protocol, uint32_t ctrl_flags) {
+    firestarter_handle_t h = {};
+    h.protocol = protocol;
+    h.ctrl_flags = ctrl_flags;
+    return eprom_hv_route_mask(&h);
+}
+
+void test_vpp01_resolver_0x07_noflags_returns_route_mask(void) {
+    TEST_ASSERT_EQUAL_MESSAGE(EPROM_HV_ROUTE_MASK, resolver_mask_for(0x07, 0),
+        "row (0x07, no flags): eprom_hv_route_mask must return EPROM_HV_ROUTE_MASK -- vpp_path is VPP_PATH_DROP_RESISTOR");
+}
+
+void test_vpp01_resolver_0x08_noflags_returns_route_mask(void) {
+    TEST_ASSERT_EQUAL_MESSAGE(EPROM_HV_ROUTE_MASK, resolver_mask_for(0x08, 0),
+        "row (0x08, no flags): eprom_hv_route_mask must return EPROM_HV_ROUTE_MASK -- vpp_path is VPP_PATH_DROP_RESISTOR");
+}
+
+void test_vpp01_resolver_0x0b_noflags_returns_regulator_only(void) {
+    TEST_ASSERT_EQUAL_MESSAGE(CTRL_VPP_REGULATOR_ENABLE, resolver_mask_for(0x0B, 0),
+        "row (0x0B, no flags): eprom_hv_route_mask must return CTRL_VPP_REGULATOR_ENABLE EXACTLY, drop bit ABSENT -- vpp_path is VPP_PATH_DIRECT_VPE");
+}
+
+void test_vpp01_resolver_0x07_vpeasvpp_returns_regulator_only(void) {
+    TEST_ASSERT_EQUAL_MESSAGE(CTRL_VPP_REGULATOR_ENABLE, resolver_mask_for(0x07, FLAG_VPE_AS_VPP),
+        "row (0x07, FLAG_VPE_AS_VPP): D-06 -- the flag overrides the table's drop-resistor default and forces the direct-VPE path");
+}
+
+void test_vpp01_resolver_0x08_vpeasvpp_returns_regulator_only(void) {
+    TEST_ASSERT_EQUAL_MESSAGE(CTRL_VPP_REGULATOR_ENABLE, resolver_mask_for(0x08, FLAG_VPE_AS_VPP),
+        "row (0x08, FLAG_VPE_AS_VPP): D-06 -- the flag overrides the table's drop-resistor default and forces the direct-VPE path");
+}
+
+void test_vpp01_resolver_0x0b_vpeasvpp_returns_regulator_only(void) {
+    /* The flag AGREES with the table on this row (0x0B's own vpp_path is
+     * already VPP_PATH_DIRECT_VPE) -- pins that the override does not
+     * corrupt an already-direct row when it is redundant with the table. */
+    TEST_ASSERT_EQUAL_MESSAGE(CTRL_VPP_REGULATOR_ENABLE, resolver_mask_for(0x0B, FLAG_VPE_AS_VPP),
+        "row (0x0B, FLAG_VPE_AS_VPP): the flag agrees with the table -- must still return CTRL_VPP_REGULATOR_ENABLE, not a corrupted mask");
+}
+
+void test_vpp01_resolver_unrecognised_protocol_fails_closed_to_route_mask(void) {
+    /* The fail-closed NULL-row arm -- eprom_params_for(0x99) returns NULL,
+     * and eprom_hv_route_mask's own row==NULL branch fails closed toward
+     * EPROM_HV_ROUTE_MASK (the drop-resistor path), the safer default (a
+     * regulated ~13V rather than an unregulated direct rail). This arm is
+     * UNREACHABLE THROUGH ANY DRIVE: configure_eprom (eprom.cpp:86-90)
+     * already refuses an unknown protocol -- setting RESPONSE_CODE_ERROR
+     * and returning -- before firestarter_operation_main/_init is ever
+     * installed, so no handle carrying an unrecognised protocol can ever
+     * reach eprom_hv_route_mask through configure_memory. A direct call on
+     * a bare handle, reachable ONLY because plan 142-04 exposed the
+     * resolver in eprom.h, is the ONLY way to exercise this arm at all --
+     * the whole reason exposing eprom_hv_route_mask was worth doing. */
+    TEST_ASSERT_EQUAL_MESSAGE(EPROM_HV_ROUTE_MASK, resolver_mask_for(0x99, 0),
+        "row (0x99, unrecognised protocol, no flags): fail-closed NULL-row arm must return EPROM_HV_ROUTE_MASK -- unreachable through any drive");
+}
+
+void test_vpp01_resolver_0x0b_result_differs_from_0x07_result(void) {
+    /* Mandatory non-vacuity leg: without this, a resolver that always
+     * returned EPROM_HV_ROUTE_MASK (a constant) would satisfy six of the
+     * seven rows above -- this shows the 0x0B row's direct-VPE result
+     * genuinely differs from the 0x07 row's drop-resistor result. */
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(resolver_mask_for(0x07, 0), resolver_mask_for(0x0B, 0),
+        "0x0B (direct VPE) must differ from 0x07 (drop resistor) -- the mandatory non-vacuity leg for the truth table above");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Group R -- route-strobe proofs that the resolved mask reaches the wire.
+ * Unlike Group T, every case here drives a real write and therefore DOES
+ * need a REVISION_2_2 (or REVISION_1) override (L-6: mandatory for every
+ * drop-bit-adjacent assertion in this suite) and the full make_vpp_handle/
+ * drive_vpp_write contract.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* VPP_BUS_CONFIG_0x0B carries a nonzero static_high_mask (0x00002000UL,
+ * bit 13) -- mem_util_remap_address_bus ORs it into every address
+ * unconditionally, on both the read and write path (memory.cpp:350), so the
+ * read-back model's key for a real (handle-level) address A on this
+ * bus_config is A + 0x2000, not A. Mirrors test_loop_eprom_v131.cpp's
+ * identical k0b() helper -- this is the first 0x0B WRITE this suite drives;
+ * VPP_BUS_CONFIG_0x07 and _0x08 both carry static_high_mask == 0, so
+ * neither needs this adjustment. */
+static uint16_t vpp_k0b(uint32_t real_addr) {
+    return (uint16_t)(real_addr + 0x2000UL);
+}
+
+void test_vpp01_route_0x0b_takes_the_direct_path(void) {
+    /* 0x0B's own table row is VPP_PATH_DIRECT_VPE -- the resolved mask must
+     * reach the wire with NO drop bit in any control value. 500us is
+     * MANDATORY, not incidental: 0x0B is the only shipped row with
+     * energy_cap_us > 0 (50000) -- a wider pulse would be refused
+     * pre-flight by configure_eprom's Refusal 2 and this case would
+     * measure nothing at all. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x0B, 24, 2048, 500, 13000, 0, VPP_BUS_CONFIG_0x0B);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    for (int i = 0; i < 4; i++) {
+        vpp_readback_seed(vpp_k0b((uint32_t)i), block[i], 1, 0xFFFF);
+    }
+    drive_vpp_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code -- the block must converge");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n > 0, "non-vacuity: the block must have produced at least one CONTROL write");
+    bool saw_regulator_set = false;
+    for (int i = 0; i < n; i++) {
+        int v = control_write_value(i);
+        char msg[128];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must NOT carry CTRL_VPP_VPE_DROP_ENABLE_REV2 -- 0x0B takes the direct-VPE path, no drop bit", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0, msg);
+        if (v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE)) { saw_regulator_set = true; }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(saw_regulator_set,
+        "non-vacuity partner: at least one control value must carry CTRL_VPP_REGULATOR_ENABLE -- otherwise the 'no drop bit' walk above is vacuously true of a register that was never energised at all");
+}
+
+void test_vpp01_route_vpeasvpp_forces_the_direct_path_onto_0x07(void) {
+    /* D-06: --vpe-as-vpp forces the direct path onto a 0x07 handle whose
+     * OWN table row is VPP_PATH_DROP_RESISTOR. Its paired control is
+     * test_loop08_the_28_pin_row_keeps_its_drop_bit (test_loop_eprom_v131.
+     * cpp) -- the SAME row (0x07, 28 pins, no flags) keeping the drop bit
+     * WITHOUT the flag, so the pair isolates the flag as the cause. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, FLAG_VPE_AS_VPP, VPP_BUS_CONFIG_0x07);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        vpp_readback_seed((uint16_t)i, block[i], converge_after[i], 0xFFFF);
+    }
+    drive_vpp_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code -- the block must converge");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n > 0, "non-vacuity: the block must have produced at least one CONTROL write");
+    bool saw_regulator_set = false;
+    for (int i = 0; i < n; i++) {
+        int v = control_write_value(i);
+        char msg[160];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must NOT carry CTRL_VPP_VPE_DROP_ENABLE_REV2 -- FLAG_VPE_AS_VPP (D-06) forces the direct-VPE path onto this 0x07 handle", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0, msg);
+        if (v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE)) { saw_regulator_set = true; }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(saw_regulator_set,
+        "non-vacuity partner: at least one control value must carry CTRL_VPP_REGULATOR_ENABLE");
+}
+
+void test_vpp01_route_0x08_on_rev1_still_strips_the_drop_bit(void) {
+    /* D-02's NEGATIVE, the load-bearing case: Rev 1 has NO eprom_check_vpp
+     * refusal of its own (unlike Rev 0's MSG_WARN_REV0_VPP_UNSUPPORTED), so
+     * D-02's revision gate is the ONLY thing standing between a 32-pin part
+     * and a preserved drop bit that would force physical A16 permanently
+     * high on this revision -- the drop bit and A16 share physical 0x01 on
+     * Rev 0/Rev 1 (rurp_hw_rev_utils.h:28-32). A four-byte block based at
+     * address 0 never sets A16, so physical 0x01 can only ever mean the
+     * drop bit here -- the exact argument
+     * test_loop08_the_28_pin_row_keeps_its_drop_bit (test_loop_eprom_v131.
+     * cpp) makes for its own 28-pin case, reused here for a 32-pin part. */
+    rurp_get_config()->hardware_revision = REVISION_1;
+    firestarter_handle_t h = make_vpp_handle(0x08, 32, 262144, 100, 13000, 0, VPP_BUS_CONFIG_0x08);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        vpp_readback_seed((uint16_t)i, block[i], converge_after[i], 0xFFFF);
+    }
+    drive_vpp_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code -- the block must converge");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2, "non-vacuity: at least the top-of-block assert (drop SET) and the block's first set_address must both have written CONTROL");
+
+    int v0 = control_write_value(0);
+    TEST_ASSERT_TRUE_MESSAGE(v0 >= 0 && (v0 & CTRL_VPP_VPE_DROP_ENABLE_REV1) != 0,
+        "control write 0 (the top-of-block assert) must have CTRL_VPP_VPE_DROP_ENABLE_REV1 SET -- the non-vacuity partner proving the drop route was asserted at all");
+
+    for (int i = 1; i < n; i++) {
+        int v = control_write_value(i);
+        char msg[192];
+        snprintf(msg, sizeof(msg), "control write %d (0x%02X) must have CTRL_VPP_VPE_DROP_ENABLE_REV1 CLEAR -- on Rev 1 the drop bit and A16 share physical 0x01, so D-02's preserve mask keeps today's stripping outside the top-of-block assert", i, v);
+        TEST_ASSERT_TRUE_MESSAGE(v >= 0 && (v & CTRL_VPP_VPE_DROP_ENABLE_REV1) == 0, msg);
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Plan 142-05 Task 2 (VPP-03) -- eprom_check_vpp measures the same
+ * physical route the write path applies at its first program pulse.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* The largest control-write index whose stream position (control_write_
+ * strobe_index) is BEFORE strobe_idx -- i.e. the physical control byte in
+ * effect at that stream position. Indices are monotonic (each subsequent
+ * control write happens strictly later in the stream), so this is simply
+ * the last index whose position precedes strobe_idx. */
+static int last_control_write_index_before_strobe(int strobe_idx) {
+    int n = control_write_count();
+    int result = -1;
+    for (int i = 0; i < n; i++) {
+        int cw_strobe_idx = control_write_strobe_index(i);
+        if (cw_strobe_idx >= 0 && cw_strobe_idx < strobe_idx) {
+            result = i;
+        }
+    }
+    return result;
+}
+
+void test_vpp03_check_vpp_measures_the_route_the_write_path_applies_at_the_first_pulse(void) {
+    /* D-03's honest headline, the direct proof, on the row where the
+     * divergence lived. Before this phase, eprom_check_vpp measured 0x08
+     * with the drop bit ON (eprom.cpp:345, pre-142-04 line numbers) while
+     * the write path stripped it before the first pulse (:218) -- the
+     * measured-and-validated voltage was not the voltage applied. Plan
+     * 142-04's resolver (eprom_hv_route_mask) and the removal of the
+     * explicit pins>=32 clear (D-04) are what close that gap; this case is
+     * the equality proof.
+     *
+     * This proves eprom_check_vpp() and the write path now apply the SAME
+     * routing -- a firmware-correctness claim, provable off hardware. It
+     * does NOT claim 0x08 VPP is fixed, does NOT claim anything about
+     * AM27C020 silicon (D-03), and implies no support_status change.
+     * Correction C-4: this guarantee is LOGICAL, not physical -- on Rev
+     * 2-class hardware, logical CTRL_ADDRESS_LINE_18 and logical
+     * CTRL_VPP_P1_ENABLE collapse onto the same physical bit 0x08; that
+     * aliasing is unreachable from a 27C write today, but the record must
+     * say so rather than have Phase 144 discover it. */
+    const rurp_register_t route_mask = (rurp_register_t)(CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE_REV2);
+
+    /* Leg A -- the measured route. eprom_check_vpp's route assert
+     * (eprom.cpp) is its FIRST non-elided CONTROL write, and nothing else
+     * writes CONTROL_REGISTER before rurp_read_voltage_mv() is called, so
+     * control_write_value(0) is the physical byte the measurement was
+     * taken under. set_mock_vpp_mv(13000) == the setpoint, so no VPP-04
+     * arm fires and the stream is undisturbed by eprom_check_vpp's own
+     * warning/error handling. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h_check = make_vpp_handle(0x08, 32, 262144, 100, 13000, 0, VPP_BUS_CONFIG_0x08);
+    set_mock_vpp_mv(13000);
+    drive_vpp_init(&h_check);
+
+    int leg_a_raw = control_write_value(0);
+    TEST_ASSERT_TRUE_MESSAGE(leg_a_raw >= 0, "non-vacuity guard 1: leg A's control_write_value(0) must be decodable (not -1) -- eprom_check_vpp's own route assert");
+    rurp_register_t leg_a_masked = (rurp_register_t)(leg_a_raw & route_mask);
+
+    /* Non-vacuity guard 3 (checked on leg A ONLY, deliberately: leg A is
+     * measured via eprom_check_vpp, untouched by the write-path planted
+     * violation below, so this guard stays green under the plant and the
+     * plant's failure lands on the EQUALITY assertion instead, exactly as
+     * intended). The shared masked value must be non-zero and carry BOTH
+     * bits 0x08's table row selects -- without this, an equality of two
+     * zeros would pass vacuously. */
+    TEST_ASSERT_EQUAL_MESSAGE(route_mask, leg_a_masked,
+        "non-vacuity guard 3: leg A's masked value must carry BOTH CTRL_VPP_REGULATOR_ENABLE and CTRL_VPP_VPE_DROP_ENABLE_REV2 -- the specific route 0x08's table row selects");
+
+    /* Leg B -- the applied route at the first GENUINE program pulse. A
+     * SECOND, identically-parameterised handle. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h_write = make_vpp_handle(0x08, 32, 262144, 100, 13000, 0, VPP_BUS_CONFIG_0x08);
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    const uint16_t converge_after[4] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        vpp_readback_seed((uint16_t)i, block[i], converge_after[i], 0xFFFF);
+    }
+    drive_vpp_write(&h_write, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h_write.response_code, "leg B: the block must converge -- a failed write is not 'the applied route at the first pulse'");
+
+    int first_pulse_idx = first_genuine_pulse_strobe_index(block, 4);
+    TEST_ASSERT_TRUE_MESSAGE(first_pulse_idx >= 0, "non-vacuity guard 2a: a genuine chip-data pulse must have been recorded");
+
+    int last_cw_before_pulse = last_control_write_index_before_strobe(first_pulse_idx);
+    TEST_ASSERT_TRUE_MESSAGE(last_cw_before_pulse >= 0, "non-vacuity guard 2b: the located control-write index must not be negative -- at least the top-of-block assert must precede the first genuine pulse");
+
+    int leg_b_raw = control_write_value(last_cw_before_pulse);
+    TEST_ASSERT_TRUE_MESSAGE(leg_b_raw >= 0, "leg B: the located control write must be a genuine, decodable value");
+    rurp_register_t leg_b_masked = (rurp_register_t)(leg_b_raw & route_mask);
+
+    /* THE ASSERTION: the two masked values must be EQUAL. Before this
+     * phase they differed on this exact row: eprom_check_vpp measured 0x08
+     * with the drop bit ON (eprom.cpp:345, pre-142-04 line numbers) while
+     * eprom_write_execute stripped it before the first pulse (:218), so
+     * the measured-and-validated voltage was not the voltage applied.
+     * VPP-03's purpose is non-divergence and this equality is its direct
+     * proof. */
+    TEST_ASSERT_EQUAL_MESSAGE(leg_a_masked, leg_b_masked,
+        "leg A (the measured route) must equal leg B (the applied route at the first genuine pulse) -- before this phase they differed on this exact row: eprom_check_vpp measured 0x08 with the drop bit ON (eprom.cpp:345, pre-142-04 line numbers) while eprom_write_execute stripped it before the first pulse (:218), so the measured-and-validated voltage was not the voltage applied");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Plan 142-05 Task 3 (VPP-02) -- every write-path error exit disables the
+ * route, including the final-pass verify exit that disabled NOTHING
+ * before this phase.
+ *
+ * The `row == NULL` exit (the :226-shaped exit, per 142-RESEARCH.md's exit
+ * map) is COVERED BY CONSTRUCTION, not by a case: configure_eprom
+ * (eprom.cpp:85-90) already refuses an unknown protocol -- setting
+ * RESPONSE_CODE_ERROR and returning -- before an operation pointer is ever
+ * installed, so no drive can ever reach eprom_internal_write_execute_body
+ * with a NULL row. eprom_write_execute's wrapper disables OUTSIDE the
+ * inner body, so any exit from the body -- reachable or not -- passes
+ * through it. Faking a case for an unreachable exit would be worse than
+ * naming it, so none is authored (see main()'s registration comment for
+ * this same note, restated where a future reader will actually look).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+void test_vpp02_x4_the_final_pass_verify_failure_disables_the_route(void) {
+    /* THE HEADLINE CASE. Before this phase, this exit (eprom.cpp's final
+     * verify pass, formerly :296-314) disabled NOTHING AT ALL --
+     * eprom_write_execute's own single-exit wrapper (Phase 142 Plan 04) is
+     * what clears it now. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, 0, VPP_BUS_CONFIG_0x07);
+    set_mock_vpp_mv(13000);
+
+    const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
+    /* Byte 0: 0xFF on the skip-check read (read_count=0 < converge_after=1);
+     * matches on the verify read after its single pulse (read_count=1, not
+     * < 1, not >= mismatch_from=2 -> target); MISMATCHES on the final
+     * full-block pass (read_count=2 >= mismatch_from=2 -> ~target). THIS IS
+     * THE LEG THE PLAN-142-01 READ-BACK EXTENSION EXISTS FOR: the sibling
+     * suite's unbounded model returns target on every read after
+     * convergence, so a final-pass mismatch would be unreachable there and
+     * this case could never fail for the right reason. */
+    vpp_readback_seed(0, block[0], 1, 2);
+    /* Bytes 1-3: converge and STAY converged (the never-mismatch sentinel)
+     * -- the ONLY MSG_ERR_VERIFY trigger is byte 0. */
+    vpp_readback_seed(1, block[1], 1, 0xFFFF);
+    vpp_readback_seed(2, block[2], 1, 0xFFFF);
+    vpp_readback_seed(3, block[3], 1, 0xFFFF);
+    drive_vpp_write(&h, 0, block, 4);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code -- the final-pass mismatch must abort with an error");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_ERR_VERIFY), "exactly one MSG_ERR_VERIFY frame -- pins the case to the exit it claims");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_MAX_PULSES), "must NOT also fire MSG_ERR_MAX_PULSES -- every byte converges within its single pulse");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_ENERGY_CAP), "must NOT also fire MSG_ERR_ENERGY_CAP -- 0x07 ships energy_cap_us=0 (uncapped)");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
+
+    /* SS B-9 idiom: last-clear + paired non-vacuity. */
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2, "non-vacuity: at least the top-of-block assert and the wrapper's error-exit disable must both have written CONTROL");
+    int last = control_write_value(n - 1);
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0, "the last CONTROL write must be a genuine, decodable value");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_REGULATOR_ENABLE) == 0,
+        "the LAST control value after the final-pass verify failure must have CTRL_VPP_REGULATOR_ENABLE CLEAR -- this exit disabled NOTHING before this phase; eprom_write_execute's wrapper is what clears it now");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0,
+        "the LAST control value after the final-pass verify failure must ALSO have the drop bit CLEAR");
+    bool saw_earlier_set = false;
+    for (int i = 0; i < n - 1; i++) {
+        int v = control_write_value(i);
+        if (v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE)) { saw_earlier_set = true; break; }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(saw_earlier_set,
+        "an EARLIER control value must have CTRL_VPP_REGULATOR_ENABLE SET -- otherwise the 'last value clear' assertion is vacuously true of a register that was never energised at all");
+}
+
+void test_vpp02_x3_the_energy_cap_exit_disables_the_route(void) {
+    /* 0x0B is the ONLY shipped row with energy_cap_us > 0 (50000, which at
+     * 500us pulses binds at exactly 100 pulses) -- MSG_ERR_ENERGY_CAP is
+     * therefore unreachable on 0x07/0x08 BY DATA, not by accident (both
+     * ship energy_cap_us=0, uncapped).
+     *
+     * T-141-CAP (test_loop_eprom_v131.cpp's own named finding, reused
+     * here verbatim): a 100-pulse block emits far more strobe/timing
+     * entries than the recorders' 512-entry caps, so strobe_overflowed()
+     * WILL be nonzero here, legitimately -- the tail is dropped, the
+     * prefix stays valid. This case therefore does NOT read
+     * control_write_value(n-1) as "the last write": under overflow that
+     * index no longer names the genuine final write at all. Two oracles
+     * stay sound instead: control_write_value(0) (the top-of-block
+     * assert, always captured intact long before 512 entries could ever
+     * accumulate) for the non-vacuity partner, and the handle's own
+     * control-register CACHE, read directly via
+     * firestarter_get_control_register -- unbounded, and always the true
+     * final LOGICAL state regardless of how many strobes overflowed
+     * (production's own top-of-block gate reads the identical cache the
+     * identical way). */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x0B, 24, 2048, 500, 13000, 0, VPP_BUS_CONFIG_0x0B);
+    const uint8_t block[1] = {0x3C};
+    vpp_readback_seed(vpp_k0b(0), block[0], 65535, 0xFFFF);  /* never converges within any reachable read count */
+    drive_vpp_write(&h, 0, block, 1);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code -- the energy cap must abort with an error");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_ERR_ENERGY_CAP), "exactly one MSG_ERR_ENERGY_CAP frame -- pins the case to the exit it claims");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_VERIFY), "must NOT also fire MSG_ERR_VERIFY -- 0x0B ships VERIFY_PER_PULSE, no final pass");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_MAX_PULSES), "must NOT also fire MSG_ERR_MAX_PULSES -- the energy cap binds first, at 100 pulses, well below max_pulses=255");
+
+    /* Non-vacuity partner, prefix-safe (T-141-CAP): the top-of-block
+     * assert (index 0) must have set the regulator. */
+    int v0 = control_write_value(0);
+    TEST_ASSERT_TRUE_MESSAGE(v0 >= 0 && (v0 & CTRL_VPP_REGULATOR_ENABLE) != 0,
+        "control write 0 (the top-of-block assert) must have CTRL_VPP_REGULATOR_ENABLE SET -- the non-vacuity partner proving the route was asserted at all");
+
+    /* The final-state assertion, read from the unbounded register cache
+     * rather than a possibly-truncated strobe tail (T-141-CAP):
+     * eprom_internal_report_budget_failure's own EPROM_HV_ALL_OFF_MASK
+     * disable must have left the regulator (and the drop bit, vacuously
+     * true on 0x0B, whose own route never sets it) CLEAR. Note these are
+     * the LOGICAL macro names (not the _REV2 physical variants) -- the
+     * cache holds the pre-remap logical value, the same value production's
+     * own top-of-block gate check reads. */
+    TEST_ASSERT_FALSE_MESSAGE(h.firestarter_get_control_register(&h, CTRL_VPP_REGULATOR_ENABLE),
+        "after the energy-cap failure, CTRL_VPP_REGULATOR_ENABLE must be CLEAR in the control-register cache -- eprom_internal_report_budget_failure's own EPROM_HV_ALL_OFF_MASK disable");
+    TEST_ASSERT_FALSE_MESSAGE(h.firestarter_get_control_register(&h, CTRL_VPP_VPE_DROP_ENABLE),
+        "after the energy-cap failure, CTRL_VPP_VPE_DROP_ENABLE must ALSO be CLEAR -- vacuously true on 0x0B (whose own route never sets it), named explicitly rather than silently skipped");
+}
+
+void test_vpp02_e1_write_init_error_exit_leaves_no_route_asserted(void) {
+    /* DEFENSIVE cover, NOT evidence of a fix (correction C-3): BOTH of
+     * eprom_write_init's error sources (eprom_check_vpp's over-voltage
+     * refusal here; eprom_internal_check_chip_id's mismatch, untested
+     * here) already clear EPROM_HV_ALL_OFF_MASK themselves before
+     * returning -- this exit leaked NOTHING before eprom_write_init's own
+     * wrapper (Phase 142 Plan 04) existed. This case is non-regression
+     * cover for a defensive wrapper, proving VPP-02's disable guarantee
+     * covers the write_init function boundary too (D-12) -- it is NOT
+     * proof of a correction, and presenting it as one would be
+     * overclaiming. Its DRIVE is mechanically the same as plan 142-03's
+     * VPP-04(b) (both reach eprom_check_vpp's identical over-voltage
+     * refusal through drive_vpp_init) -- restated here deliberately, under
+     * VPP-02's own requirement, per 142-RESEARCH.md's own instruction that
+     * a single cheap case suffices. */
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, 0, VPP_BUS_CONFIG_0x07);
+    set_mock_vpp_mv(13501);  /* one mV past the over-voltage boundary -- eprom_check_vpp errors, eprom_write_init takes its early return */
+    drive_vpp_init(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code -- the over-voltage refusal must abort eprom_write_init");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_ERR_VPP_HIGH), "exactly one MSG_ERR_VPP_HIGH frame -- pins the case to the exit it claims");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_VERIFY), "must NOT also fire MSG_ERR_VERIFY -- this exit never reaches the write-execute body at all");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_MAX_PULSES), "must NOT also fire MSG_ERR_MAX_PULSES -- this exit never reaches the write-execute body at all");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_ENERGY_CAP), "must NOT also fire MSG_ERR_ENERGY_CAP -- this exit never reaches the write-execute body at all");
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- tiny drive, must be sound");
+
+    int n = control_write_count();
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2, "non-vacuity: at least the over-voltage assert and its own disable must both have written CONTROL");
+    int last = control_write_value(n - 1);
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0, "the last CONTROL write must be a genuine, decodable value");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_REGULATOR_ENABLE) == 0,
+        "the LAST control value after write_init's error exit must have CTRL_VPP_REGULATOR_ENABLE CLEAR -- already true before this phase (C-3), eprom_check_vpp's own unconditional clear");
+    TEST_ASSERT_TRUE_MESSAGE((last & CTRL_VPP_VPE_DROP_ENABLE_REV2) == 0,
+        "the LAST control value after write_init's error exit must ALSO have the drop bit CLEAR");
+    bool saw_earlier_set = false;
+    for (int i = 0; i < n - 1; i++) {
+        int v = control_write_value(i);
+        if (v >= 0 && (v & CTRL_VPP_REGULATOR_ENABLE)) { saw_earlier_set = true; break; }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(saw_earlier_set,
+        "an EARLIER control value must have CTRL_VPP_REGULATOR_ENABLE SET -- otherwise the 'last value clear' assertion is vacuously true of a register that was never energised at all");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -875,6 +1342,38 @@ int main(int argc, char** argv) {
      * protects. See task 3's planted violations V4/V5. */
     RUN_TEST(test_vpp03_case_e_cmd_erase_control_stream_is_pinned_pre_rewrite);
     RUN_TEST(test_vpp03_case_i_cmd_check_chip_id_control_stream_is_pinned_pre_rewrite);
+
+    /* Plan 142-05 Task 1 (VPP-01): the resolver truth table (Group T,
+     * direct calls on a bare handle, no drive) and the route-strobe
+     * proofs (Group R), including the Rev 1 negative. */
+    RUN_TEST(test_vpp01_resolver_0x07_noflags_returns_route_mask);
+    RUN_TEST(test_vpp01_resolver_0x08_noflags_returns_route_mask);
+    RUN_TEST(test_vpp01_resolver_0x0b_noflags_returns_regulator_only);
+    RUN_TEST(test_vpp01_resolver_0x07_vpeasvpp_returns_regulator_only);
+    RUN_TEST(test_vpp01_resolver_0x08_vpeasvpp_returns_regulator_only);
+    RUN_TEST(test_vpp01_resolver_0x0b_vpeasvpp_returns_regulator_only);
+    RUN_TEST(test_vpp01_resolver_unrecognised_protocol_fails_closed_to_route_mask);
+    RUN_TEST(test_vpp01_resolver_0x0b_result_differs_from_0x07_result);
+    RUN_TEST(test_vpp01_route_0x0b_takes_the_direct_path);
+    RUN_TEST(test_vpp01_route_vpeasvpp_forces_the_direct_path_onto_0x07);
+    RUN_TEST(test_vpp01_route_0x08_on_rev1_still_strips_the_drop_bit);
+
+    /* Plan 142-05 Task 2 (VPP-03): eprom_check_vpp measures the same
+     * physical route the write path applies at its first program pulse. */
+    RUN_TEST(test_vpp03_check_vpp_measures_the_route_the_write_path_applies_at_the_first_pulse);
+
+    /* Plan 142-05 Task 3 (VPP-02): every write-path error exit disables
+     * the route, including the final-pass verify exit that disabled
+     * NOTHING before this phase. The row==NULL exit (the :226-shaped
+     * exit) is COVERED BY CONSTRUCTION, not by a case -- configure_eprom
+     * already refuses an unknown protocol before an operation pointer is
+     * ever installed, so no drive can reach it; eprom_write_execute's
+     * wrapper disables OUTSIDE the inner body, so any exit -- reachable
+     * or not -- passes through it. Faking a case for it would be worse
+     * than naming it, so none is authored. */
+    RUN_TEST(test_vpp02_x4_the_final_pass_verify_failure_disables_the_route);
+    RUN_TEST(test_vpp02_x3_the_energy_cap_exit_disables_the_route);
+    RUN_TEST(test_vpp02_e1_write_init_error_exit_leaves_no_route_asserted);
 
     return UNITY_END();
 }
