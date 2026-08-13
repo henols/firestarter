@@ -10,6 +10,7 @@
 #include <Arduino.h>
 #include <stdlib.h>
 
+#include "eprom_budget.h"
 #include "eprom_operations.h"
 #include "hardware_operations.h"
 #include "json_parser.h"
@@ -154,7 +155,58 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     LOG_INFO_ID_U8(MSG_INFO_HW, (uint8_t)rurp_get_hardware_revision());
 #endif
     LOG_INFO_ID_U8(MSG_INFO_CMD, (uint8_t)handle->cmd);
-    LOG_OK_ID_U16(MSG_OK_READY, (uint16_t)DATA_BUFFER_SIZE);
+    // CAP-02 is being PORTED here, not invented: it shipped on origin/beta
+    // as PR #49 (13eb350 / b1737b2), and this branch forked one commit
+    // earlier, at 3085084. Without it the v1.31 host REFUSES every
+    // connection -- _probe_port raises FirmwareOutdatedError when
+    // firmware_identity is None, and
+    // tests/test_fwguard.py::test_absent_identity_refuses asserts exactly
+    // that refusal on purpose (BF-1).
+    //
+    // Wire layout, three length-discriminated extensions of one variable
+    // blob:
+    //   [buffer_size u16 BE][hw_revision u8][ver_len u8][ver bytes][write_budget_s u16 BE]
+    //      CAP-01              CAP-02                                CAP-03
+    //
+    // MSG_OK_READY's catalog entry is a variable-length byte blob
+    // (param_bytes = -1), so this needs NO messages.toml edit and NO
+    // codegen run -- include/messages.h (codegen-generated, id-only) stays
+    // untouched.
+    //
+    // CAP-03 (HOST-01) is emitted for EVERY command, not just CMD_WRITE --
+    // the ack's shape must not vary by command, or a length-discriminating
+    // host decoder loses its only discriminator. eprom_block_budget_s
+    // returns 0 for a non-EPROM protocol; the host's [1, 14400]
+    // plausibility clamp then leaves its attribute None and the host's own
+    // fallback applies -- correct for a family whose block time this table
+    // cannot bound, and it is also what covers the non-memory-command case
+    // where configure_memory never ran and pulse_delay is still 0.
+    //
+    // The advertised budget is already PADDED by the firmware (D-09): only
+    // the firmware knows the once-per-block VPE settle, the final verify
+    // pass(es), the per-pulse settle and the serial transport time, so the
+    // host applies no multiplier of its own. See include/eprom_budget.h for
+    // the padding rule in prose.
+    {
+        const char* _ver = FW_VERSION;
+        uint8_t _vlen = (uint8_t)strlen(_ver);
+        if (_vlen > 32) _vlen = 32;
+        uint8_t _ready[4 + 32 + 2];
+        _ready[0] = (uint8_t)(((uint16_t)DATA_BUFFER_SIZE >> 8) & 0xFF);
+        _ready[1] = (uint8_t)((uint16_t)DATA_BUFFER_SIZE & 0xFF);
+#ifdef HARDWARE_REVISION
+        _ready[2] = (uint8_t)rurp_get_hardware_revision();
+#else
+        _ready[2] = 0xFE;  // REVISION_UNKNOWN -- the symbol lives inside that same #ifdef
+#endif
+        _ready[3] = _vlen;
+        memcpy(_ready + 4, _ver, _vlen);
+        uint16_t _budget = eprom_block_budget_s(handle->protocol, handle->pulse_delay,
+                                                 (uint32_t)DATA_BUFFER_SIZE);
+        _ready[4 + _vlen]     = (uint8_t)((_budget >> 8) & 0xFF);
+        _ready[4 + _vlen + 1] = (uint8_t)(_budget & 0xFF);
+        LOG_OK_ID_BYTES(MSG_OK_READY, _ready, (uint8_t)(4 + _vlen + 2));
+    }
     op_reset_timeout();
     return true;
 }
