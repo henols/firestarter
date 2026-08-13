@@ -1937,7 +1937,7 @@ void test_progress_emits_when_the_clock_advances_past_the_interval(void) {
     }
 
     TEST_ASSERT_TRUE_MESSAGE(progress_count >= 2,
-        "at least 2 MSG_DATA_PROGRESS frames must have fired while the mocked clock advanced past EPROM_PROGRESS_EMIT_INTERVAL_MS repeatedly across this 8-byte drive -- zero would mean the emission never fires (deleted or unreachable); exactly 1 would not prove the cadence REPEATS");
+        "at least 2 MSG_DATA_PROGRESS frames must have fired while the mocked clock advanced past EPROM_PROGRESS_EMIT_INTERVAL_MS repeatedly across this 16-byte drive -- zero would mean the emission never fires (deleted or unreachable); exactly 1 would not prove the cadence REPEATS");
 }
 
 void test_progress_emits_nothing_when_the_clock_does_not_advance(void) {
