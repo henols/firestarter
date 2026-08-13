@@ -5,16 +5,16 @@
       "src/proms/eprom_params.cpp"
     ],
     "blob_shas": {
-      "src/proms/eprom.cpp": "17f5f4185b8a11590e2343d6d8d289cafcb19a45",
+      "src/proms/eprom.cpp": "cedc88dc20936d0749f03572551b0621063ae930",
       "src/proms/eprom_params.cpp": "5dffe841aeb7013f9f53e9991a6248b203ae22da"
     },
-    "recorded_at_head": "4a890b93c4844a3b980465aa1feb5488bcb7feca",
-    "recorded_by": "Phase 142 Plan 04 -- because L-2 requires this golden and the eprom.cpp source change to land in the SAME commit (the one-commit property that keeps the D-18 gate RED once, for one reason), recorded_at_head necessarily names this commit's PARENT rather than the commit that actually carries this file. Do not read that as a mistake: it is the deliberate one-commit offset this plan's own objective documents.",
+    "recorded_at_head": "a5a39d92128edbdb97f425e1538227a85a257e57",
+    "recorded_by": "Phase 142 Plan 04 -- because L-2 requires this golden and the eprom.cpp source change to land in the SAME commit (the one-commit property that keeps the D-18 gate RED once, for one reason), recorded_at_head necessarily names this commit's PARENT rather than the commit that actually carries this file. Do not read that as a mistake: it is the deliberate one-commit offset this plan's own objective documents. Phase 143 Plan 05 -- the same one-commit property, under D-23's name this phase: this file's blob_shas['src/proms/eprom.cpp'] is the SHA of the working-tree file as it will read once committed (git hash-object src/proms/eprom.cpp, run before staging), and recorded_at_head is this commit's PARENT (a5a39d92128edbdb97f425e1538227a85a257e57, the tip of plan 143-03) rather than the commit that actually carries this file -- deliberate, for the identical structural reason Phase 142 recorded above, not a second mistake.",
     "requirement": "TABLE-05",
     "decision": "D-12, D-13",
     "why_two_checks": "A blob-SHA match alone cannot distinguish 'unchanged' from 'a branch deleted together with the code that consumed it' -- both leave the file's other bytes identical to some other prior state's bytes, so the live re-parsed site-by-site inventory (predicate text + keyed_on + tier, compared positionally) is what makes a deletion, or a new insertion, visible even when nothing else about the blob changed.",
     "how_to_update": "If eprom.cpp or eprom_params.cpp legitimately change in a way that moves this inventory, re-derive it by running an independent parse against the new file (never hand-edit a line number, a keyed_on set, a class, or a count merely to make a surprise disappear), and state in the commit message which site changed, or was added or removed, and why. Diffing the extractor's live output against this JSON is the only sanctioned way to update it.",
-    "frozen_for": "Phase 142 (plan 142-04) replaced the two duplicated protocol-keyed VPP-route predicates (formerly :190 in eprom_write_execute and :340 in eprom_check_vpp, both `if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP))`) with a single exposed resolver, eprom_hv_route_mask, driven by the eprom_params table's vpp_path column (D-05); removed the explicit `pins >= 32` drop-bit clear this file carried since Phase 141, now that plan 142-02's revision-gated preserve mask makes an explicit clear actively wrong on Rev 2-class hardware (D-04); deleted the dead eprom_internal_ensure_regulator_enabled helper, which had zero callers (Q6); and added two conditional single-exit wrappers (eprom_write_init, eprom_write_execute) that clear the shared EPROM_HV_ALL_OFF_MASK composite whenever response_code == RESPONSE_CODE_ERROR (D-10 as amended, D-12). Net effect: tier-1 protocol-keyed sites fell from 3 to exactly 1 (only :70's pulse-fallback switch survives -- D-01 forbids touching it), and total sites fell from 27 to 26 (4 removed, 3 added). No phase in this milestone is currently scheduled to rewrite src/proms/eprom.cpp again; if one does, an unchanged site count across that phase would itself be suspicious and should be checked by hand, exactly as this note warned before Phase 142 landed.",
+    "frozen_for": "Phase 142 (plan 142-04) replaced the two duplicated protocol-keyed VPP-route predicates (formerly :190 in eprom_write_execute and :340 in eprom_check_vpp, both `if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP))`) with a single exposed resolver, eprom_hv_route_mask, driven by the eprom_params table's vpp_path column (D-05); removed the explicit `pins >= 32` drop-bit clear this file carried since Phase 141, now that plan 142-02's revision-gated preserve mask makes an explicit clear actively wrong on Rev 2-class hardware (D-04); deleted the dead eprom_internal_ensure_regulator_enabled helper, which had zero callers (Q6); and added two conditional single-exit wrappers (eprom_write_init, eprom_write_execute) that clear the shared EPROM_HV_ALL_OFF_MASK composite whenever response_code == RESPONSE_CODE_ERROR (D-10 as amended, D-12). Net effect: tier-1 protocol-keyed sites fell from 3 to exactly 1 (only :70's pulse-fallback switch survives -- D-01 forbids touching it), and total sites fell from 27 to 26 (4 removed, 3 added). No phase in this milestone is currently scheduled to rewrite src/proms/eprom.cpp again; if one does, an unchanged site count across that phase would itself be suspicious and should be checked by hand, exactly as this note warned before Phase 142 landed. Phase 143 (plan 143-05, HOST-02) added exactly ONE new code element inside eprom_internal_write_execute_body: a time-keyed (millis()), #ifndef SERIAL_ON_IO-guarded MSG_DATA_PROGRESS emission at the top of the per-byte loop body (immediately after `addr` is computed, before the LOOP-06 skips), plus its own guarded state variable (`last_emit_ms`) declared just above the loop. Net effect on THIS inventory: zero sites added, zero removed, zero re-keyed -- the new predicate compares two millis()-derived values against a named constant and reads no handle-> field and none of the three predicate helpers, so `_is_relevant` correctly excludes it; `counts` stays 26 / 1 / 25 and `protocol_lines` stays exactly [70]. Every site whose original line number was >= 321 (inside or after the outer per-byte loop) shifted down by the inserted line count; sites above that point are byte- and line-identical. This was checked by hand, per the note above, and confirmed unchanged in kind (only line numbers moved).",
     "allowlist_rationale": "protocol is the sole ALGORITHM key end to end (v1.20 protocol-only dispatch; TABLE-05): only the pulse-fallback switch (handle->protocol) at line 70 -- together with the eprom_params.cpp table, itself asserted switch-free below -- selects programming-algorithm SHAPE (max_pulses / overprogram_factor / overprogram_cap_us / energy_cap_us / verify_mode / vpp_path). Every tier-2 site pinned here is a pre-existing operation-flag (a ctrl_flags bit read via is_flag_set), a hardware-routing predicate (the resolver's own FLAG_VPE_AS_VPP override, which no longer co-occurs with a handle->protocol read in the same predicate span now that Phase 142 moved the table lookup into a separate statement; or the pin_routing predicate keyed on pins+bus_config.vpp_line), a disable-guarantee gate (the two single-exit wrappers' response_code == RESPONSE_CODE_ERROR checks, Phase 142), a loop-bounds check, a status/idempotency check, or a plain data comparison (voltage, chip ID, verify byte, or a pulse_delay-vs-zero sentinel test) -- never a second axis that chooses algorithm shape. The tier-2 set is PINNED, not FORBIDDEN: D-13's rule taken literally ('a branch keyed on any other handle field fails the gate') would make this gate RED against roughly twenty-five pre-existing sites on arrival, and a gate that can never be seen to pass proves nothing (D-15 trap 2). Pinning the inventory instead means a NEW site, or an existing site's predicate/keyed_on/tier changing, fails the gate, while today's arrival state is GREEN and non-vacuous. CORRECTED (142-04, C-6): the previous text here cited three stale colon-prefixed line numbers plus a stale ordinal reference to the algorithm-selector switch, all left over from an earlier renumbering that the 141-05 re-derivation never caught; the authoritative numbers are, and have only ever been, in the sites array below -- this prose intentionally names no line numbers at all now, so it cannot go stale the same way again."
   },
   "sites": [
@@ -149,7 +149,7 @@
       "reason": "Checks whether the VPP regulator control-register bit is already set before running the enable sequence and its settle delay, so that sequence runs at most once; a hardware-state idempotency guard -- the VPP ROUTE itself is chosen by eprom_hv_route_mask(handle) (Phase 142 Plan 04), called immediately inside this guard, not here. CORRECTED (142-04): the reason previously recorded here cited 'the allowlisted :145 branch immediately inside this guard' -- a line-number cross-reference that was already stale before this phase (the fork it meant was at :190, not :145) and is now doubly wrong, because there is no branch immediately inside this guard any more at all: the route decision is a single function call. This text intentionally names no line number for that call, so it cannot go stale the same way twice."
     },
     {
-      "line": 321,
+      "line": 330,
       "predicate": "i < handle->data_size",
       "keyed_on": [
         "data_size"
@@ -159,7 +159,7 @@
       "reason": "Bounds the per-byte pulse-to-verify loop (LOOP-01, Phase 141) by the transfer's own byte count (data_size); a loop terminator, not a branch on protocol identity."
     },
     {
-      "line": 331,
+      "line": 411,
       "predicate": "if (handle->firestarter_get_data(handle, addr) == expected)",
       "keyed_on": [
         "firestarter_get_data"
@@ -169,7 +169,7 @@
       "reason": "LOOP-06's already-matching skip: reads the byte back from the chip before pulsing and skips straight to the next byte if it already matches the expected value; a pre-pulse optimisation read-compare, not a protocol/algorithm branch. Runs immediately after the (unrelated, not handle->-keyed) expected == 0xFF skip just above it."
     },
     {
-      "line": 344,
+      "line": 424,
       "predicate": "if (handle->firestarter_get_data(handle, addr) == expected)",
       "keyed_on": [
         "firestarter_get_data"
@@ -179,7 +179,7 @@
       "reason": "LOOP-01's own pulse-to-verify convergence check, inside the fixed-width pulse loop: re-reads the byte after each pulse and breaks out on a match. Same predicate text as the :331 already-matching skip but a structurally distinct site -- a different loop with a different purpose (this is the pulse loop's success exit; :331 is a pre-pulse skip that may cause this loop to never run at all for a given byte)."
     },
     {
-      "line": 381,
+      "line": 461,
       "predicate": "i < handle->data_size",
       "keyed_on": [
         "data_size"
@@ -189,7 +189,7 @@
       "reason": "Bounds the verify_mode == VERIFY_PER_PULSE_PLUS_FINAL final full-block verify pass (0x07/0x08 only) by the transfer's own byte count (data_size); a loop terminator, not a branch on protocol identity. Mirrors memory_verify_execute's own full-block loop shape in memory.cpp."
     },
     {
-      "line": 426,
+      "line": 506,
       "predicate": "if (handle->response_code == RESPONSE_CODE_ERROR)",
       "keyed_on": [
         "response_code"
@@ -199,7 +199,7 @@
       "reason": "NEW (Phase 142 Plan 04, VPP-02's headline requirement; D-10 as amended, correction C-1, D-12): the single-exit wrapper's own gate for eprom_write_execute. After eprom_internal_write_execute_body returns -- from any of its four error exits (row == NULL; MSG_ERR_MAX_PULSES; MSG_ERR_ENERGY_CAP; MSG_ERR_VERIFY, the pre-existing headline gap that used to disable nothing at all) or its success fall-through -- this conditional is the ONLY place that decides whether to clear the shared EPROM_HV_ALL_OFF_MASK composite: structural, not remembered, so a future `return` added inside the body cannot silently escape the guarantee. Conditional rather than unconditional specifically because test_loop_eprom_v131.cpp's test_loop05_a_successful_block_does_not_disable_the_route requires a successful block to leave CTRL_VPP_REGULATOR_ENABLE SET (an unconditional clear would re-arm the once-per-block guard and re-pay delay(500) on the next block too)."
     },
     {
-      "line": 463,
+      "line": 543,
       "predicate": "if (vpp_mv > (uint32_t)handle->vpp_mv + 500)",
       "keyed_on": [
         "vpp_mv"
@@ -209,7 +209,7 @@
       "reason": "Compares a measured VPP millivolt reading against the caller-supplied vpp_mv target plus a fixed margin to detect an over-voltage fault; a voltage data comparison, not a protocol selector."
     },
     {
-      "line": 478,
+      "line": 558,
       "predicate": "if (is_flag_set(FLAG_FORCE))",
       "keyed_on": [
         "ctrl_flags"
@@ -219,7 +219,7 @@
       "reason": "Reads the caller-supplied FLAG_FORCE ctrl_flags bit to downgrade an out-of-range VPP condition from a hard error to a warning; independent of the programming algorithm."
     },
     {
-      "line": 486,
+      "line": 566,
       "predicate": "if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100)",
       "keyed_on": [
         "vpp_mv"
@@ -229,7 +229,7 @@
       "reason": "Compares a measured VPP millivolt reading against 95% of the caller-supplied vpp_mv target to detect an under-voltage condition; a voltage data comparison, not a protocol selector."
     },
     {
-      "line": 526,
+      "line": 606,
       "predicate": "if (handle->response_code == RESPONSE_CODE_ERROR)",
       "keyed_on": [
         "response_code"
@@ -239,7 +239,7 @@
       "reason": "Early-exits eprom_generic_init when the preceding VPP check already set an error response code; a generic error-propagation guard, not an algorithm choice."
     },
     {
-      "line": 529,
+      "line": 609,
       "predicate": "if (handle->chip_id > 0)",
       "keyed_on": [
         "chip_id"
@@ -249,7 +249,7 @@
       "reason": "Tests whether the caller supplied a non-zero expected chip_id (0 means 'skip the check'); a caller opt-in gate for an optional verification step, not a protocol/algorithm branch."
     },
     {
-      "line": 530,
+      "line": 610,
       "predicate": "is_flag_set(FLAG_FORCE)",
       "keyed_on": [
         "ctrl_flags"
@@ -259,7 +259,7 @@
       "reason": "Ternary reading the caller-supplied FLAG_FORCE ctrl_flags bit to choose whether a chip-ID mismatch is reported as a warning or an error; independent of the programming algorithm."
     },
     {
-      "line": 537,
+      "line": 617,
       "predicate": "if (chip_id != handle->chip_id)",
       "keyed_on": [
         "chip_id"
@@ -269,7 +269,7 @@
       "reason": "Compares the chip ID just read from silicon against the caller-supplied expected chip_id; an identity-check data comparison, not a protocol selector."
     },
     {
-      "line": 554,
+      "line": 634,
       "predicate": "if (bit & CTRL_VPE_ENABLE && using_p1_as_vpp(handle))",
       "keyed_on": [
         "pins+bus_config.vpp_line"

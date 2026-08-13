@@ -317,10 +317,90 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
     // below needs the raw column value again once the block's route has
     // already been asserted.
     uint32_t org_delay = handle->pulse_delay;
+    // Phase 143 Plan 05 (HOST-02, D-02) -- feeds the time-gated intra-block
+    // progress emission a few lines below; see that block's own comment for
+    // the full BF-2 rationale behind the #ifndef SERIAL_ON_IO guard. The
+    // declaration itself must be guarded too: an unreferenced local on
+    // uno/uno328pb would be an unused-variable warning, and the AVR
+    // warning policy is exactly zero.
+#ifndef SERIAL_ON_IO
+    uint32_t last_emit_ms = millis();
+#endif
 
     for (uint32_t i = 0; i < handle->data_size; i++) {
         uint8_t expected = (uint8_t)handle->data_buffer[i];
         uint32_t addr = handle->address + i;
+
+        /*
+         * Phase 143 Plan 05 (HOST-02, D-02/D-03/D-04) -- intra-block write
+         * progress, compiled in on leonardo and native only.
+         *
+         * BF-2 (143-RESEARCH.md), in full: on uno/uno328pb the whole
+         * per-byte loop runs inside one programmer-mode window
+         * (operation_utils.cpp's _execute_operation calls
+         * rurp_set_programmer_mode(); callback(handle); rurp_set_
+         * communication_mode();), and rurp_set_programmer_mode()
+         * (src/boards/uno_rurp_shield.cpp) tears the UART down for the
+         * block's whole duration via rurp_serial_end(). The Uno's strong
+         * rurp_log_id() override (same file) DEFERS rather than emits while
+         * com_mode == false, into a 4-slot deferred_log buffer
+         * (DEFERRED_LOG_MAX); a 5th deferred frame is silently DROPPED. On
+         * this path that dropped slot would be one a subsequent
+         * MSG_ERR_MAX_PULSES frame needs, turning a program FAILURE into a
+         * host transport timeout -- exactly HOST-03's anti-goal, on a path
+         * that works today without this emission.
+         *
+         * The same trap is already documented in-tree, twice, each guarded
+         * at RUNTIME: src/boards/uno_rurp_shield.cpp's own DEFERRED_LOG_MAX
+         * sizing-rationale comment ("an operation emits at most ~1-2
+         * critical frames per programmer-mode window"), and
+         * mem_util_blank_check's MSG_DATA_PROGRESS emit comment in
+         * src/proms/memory.cpp, which gates on `handle->cmd !=
+         * CMD_BLANK_CHECK`. This call site has no handle->cmd it could
+         * test that way (eprom_write_execute only ever runs for CMD_WRITE),
+         * so it is guarded at COMPILE time instead -- same defect class,
+         * different mechanism.
+         *
+         * Rejected mitigations (each keeps the trap, at a cost):
+         *   - a runtime com_mode accessor: costs an accessor call on every
+         *     target and still delivers no intra-block progress on Uno,
+         *     with no mechanism to reserve the error-frame slots;
+         *   - raising DEFERRED_LOG_MAX: RAM cost on the tightest-RAM
+         *     target, and still zero intra-block delivery on Uno;
+         *   - reserving headroom by emitting at most DEFERRED_LOG_MAX - 2
+         *     frames: a fragile invariant split across two files, and
+         *     still no delivery on Uno.
+         *
+         * D-06's non-claim, both dimensions: intra-block write progress is
+         * emitted on the EPROM path only, and delivered on leonardo only.
+         *
+         * The predicate below is TIME-keyed (millis()) and reads no
+         * handle->protocol at all, so it adds no tier-1 protocol-keyed
+         * site -- configure_eprom's pulse-fallback switch (:70) remains
+         * this file's only one (TABLE-05).
+         *
+         * Payload is (absolute chip address, handle->mem_size) -- identical
+         * shape to mem_util_blank_check's own MSG_DATA_PROGRESS emit
+         * (memory.cpp), so 0xE0 keeps exactly ONE payload contract; a
+         * block-relative pair (D-04's rejected alternative) would have
+         * given the id a second meaning depending on which operation
+         * emitted it.
+         *
+         * Placed BEFORE the LOOP-06 skips just below, so the cadence is
+         * independent of how many bytes are skipped -- the more honest
+         * reading of "progress" than gating on bytes actually pulsed.
+         *
+         * Unsigned-difference form: a millis() rollover (~49.7 days)
+         * cannot stall the cadence -- (uint32_t) subtraction wraps
+         * correctly regardless of which side of the rollover last_emit_ms
+         * sits on.
+         */
+#ifndef SERIAL_ON_IO
+        if ((uint32_t)(millis() - last_emit_ms) >= EPROM_PROGRESS_EMIT_INTERVAL_MS) {
+            last_emit_ms = millis();
+            LOG_DATA_ID_U32_U32(MSG_DATA_PROGRESS, addr, handle->mem_size);
+        }
+#endif
 
         // LOOP-06 skips, before any pulse. 0xFF checked first, without a
         // read: an already-erased target never needs a pulse on a UV

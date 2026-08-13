@@ -90,7 +90,17 @@ static inline bool _process_incoming_data(firestarter_handle_t* handle) {
     if (msg_type == OP_MSG_INCOMPLETE) {
         // No message from host. If we are not already waiting for data, request it.
         if (!is_operation_waiting_for_data(handle)) {
-            // The host application shows its own progress, so we just ask for data.
+            // Phase 143 Plan 05 (HOST-02, D-06): on leonardo the firmware now
+            // emits MSG_DATA_PROGRESS from inside the per-byte program loop
+            // (src/proms/eprom.cpp), so the host's progress bar can reflect
+            // bytes actually programmed rather than only bytes handed to the
+            // firmware at each chunk request below. On SERIAL_ON_IO targets
+            // (uno/uno328pb) that emission is compiled out (BF-2), so the
+            // host's own chunk-handoff bar -- driven by this MSG_OK_REQ_DATA
+            // request/response cadence -- remains the only progress source
+            // there. D-06's non-claim, restated: intra-block write progress
+            // is emitted on the EPROM path only, and delivered on leonardo
+            // only.
             LOG_OK_ID(MSG_OK_REQ_DATA);
             set_operation_waiting_for_data(handle);
         }

@@ -57,6 +57,33 @@ extern "C" {
      */
     rurp_register_t eprom_hv_route_mask(firestarter_handle_t* handle);
 
+    /*
+     * Phase 143 Plan 05 (HOST-02, D-02/D-03) -- cadence for the intra-block
+     * MSG_DATA_PROGRESS (0xE0) emission inside eprom.cpp's per-byte program
+     * loop, which runs on leonardo and native only (compiled out, variable
+     * and all, on uno/uno328pb -- see that emission's own comment in
+     * eprom.cpp for the BF-2 rationale). Named here, not as a file-local
+     * #define in eprom.cpp (a #define costs 0 B until referenced), so the
+     * native cadence cases in test_loop_eprom_v131.cpp can reference it by
+     * name instead of duplicating the number.
+     *
+     * 1000 ms is chosen so that even against a host that somehow kept the
+     * OLD 10 s response-window timeout (HOST-01 raises it; this constant's
+     * value is independent of that raise), the window is still fed with
+     * 10x margin. At the modal 0x07 pulse width (100 us, max_pulses 25,
+     * energy_cap_us 0 == uncapped) a full 1024-byte block worst-cases at
+     * ~2.6 s (1024 * 25 * 100us), so a 1 s interval yields about 2 frames
+     * per block -- visible bar movement at negligible wire cost. At
+     * --pulse-us 65535 (the same uncapped row's worst case, and the CLI's
+     * own pulse ceiling) a block takes about 1678 s (1024 * 25 * 65535us),
+     * giving about 1678 frames of 10 payload bytes each (1 id + 8 params +
+     * 1 crc, per _firestarter_emit_frame's own len_u16 accounting) --
+     * roughly 17 kB over ~28 minutes, irrelevant at 250000 baud. A larger
+     * interval such as 5 s would make the progress bar feel dead on an
+     * ordinary write without saving anything that matters.
+     */
+    #define EPROM_PROGRESS_EMIT_INTERVAL_MS 1000
+
 #ifdef __cplusplus
 }
 #endif
