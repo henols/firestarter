@@ -110,6 +110,16 @@ extern "C" int      logged_ids_overflowed(void);
  * setUp / tearDown
  * ───────────────────────────────────────────────────────────────────────── */
 
+/* Phase 143 Plan 05 (HOST-02, D-02/D-03) -- advancing millis() clock, file-
+ * static so the AlwaysDo lambda in setUp (a capture-less closure, matching
+ * this file's existing delay()/delayMicroseconds() lambdas) can mutate it.
+ * Reset to 0 in setUp below. Precedent: test_cobs_data_frame.cpp's own
+ * millis_counter (that file uses ArduinoFake(Function) rather than this
+ * file's established bare ArduinoFake() form for delay/delayMicroseconds/
+ * micros -- matched to THIS file's own convention below rather than
+ * switched, since both forms link and this file is already consistent). */
+static unsigned long millis_counter;
+
 void setUp(void) {
     ArduinoFakeReset();
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t))).AlwaysReturn(1);
@@ -130,9 +140,44 @@ void setUp(void) {
     When(Method(ArduinoFake(), delay)).AlwaysDo([](unsigned long ms) {
         timing_push(TIMING_KIND_DELAY_MS, (uint32_t)ms);
     });
-    /* Unused by any case in this plan, but ArduinoFake SIGABRTs on any
-     * unmocked call -- cheap insurance matching house convention. */
-    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+    /* Phase 143 Plan 05 (HOST-02, D-02/D-03) -- replaces the old
+     * `AlwaysReturn(0)` frozen mock. eprom.cpp's new intra-block progress
+     * emission (src/proms/eprom.cpp, guarded #ifndef SERIAL_ON_IO --
+     * compiled IN on this native env, exactly as on leonardo) is TIME-gated
+     * via millis(): frozen at 0, it would NEVER fire, so a cadence case
+     * would pass VACUOUSLY with zero frames. Advances by a fixed 200 ms
+     * step per call (same fixed-increment shape as test_cobs_data_frame.cpp's
+     * millis_counter precedent, which prevents an infinite spin in any
+     * timeout loop that polls millis()).
+     *
+     * 200 ms, not a rounder 500 ms, is a deliberate, measured choice
+     * (D-25 finding, this plan's own execution): the emission fires at the
+     * TOP of the outer per-byte loop, BEFORE the LOOP-06 skips (by design,
+     * so the cadence is skip-count-independent) -- so it also fires on
+     * every iteration of every PRE-EXISTING case's drive, not just this
+     * plan's own two cases. The longest pre-existing block in this suite is
+     * 4 bytes (grep-confirmed), and
+     * test_loop06_a_block_of_only_skipped_bytes_emits_no_pulse_at_all
+     * asserts logged_id_count() == 0 on exactly such a 4-byte, all-0xFF
+     * drive -- a step of 500 ms (tried first) accumulates past
+     * EPROM_PROGRESS_EMIT_INTERVAL_MS (1000) within that case's own 4
+     * iterations and turns it RED (observed: "Expected 0 Was 2"), which is
+     * this plan's own no-change-to-pre-existing-cases constraint, violated.
+     * 200 ms keeps 4 iterations' worst-case accumulated delta at 800 ms
+     * (4 * 200), safely under the 1000 ms interval, while this plan's own
+     * two cases below use a 16-byte block (still capped at 8 DISTINCT
+     * read-back-model seeds -- LOOP_READBACK_MAX_ENTRIES) to reach enough
+     * iterations for the cadence to repeat. test_progress_emits_nothing_
+     * when_the_clock_does_not_advance below locally re-mocks this method
+     * with AlwaysReturn(0) for the span of its own case only -- the NEXT
+     * case's ArduinoFakeReset() above wipes that override and this line
+     * reinstalls the advancing lambda fresh every case, so no case can ever
+     * inherit another's clock behaviour. */
+    millis_counter = 0;
+    When(Method(ArduinoFake(), millis)).AlwaysDo([]() -> unsigned long {
+        millis_counter += 200;
+        return millis_counter;
+    });
     When(Method(ArduinoFake(), micros)).AlwaysReturn(0);
 
     clear_strobes();
@@ -1813,6 +1858,119 @@ void test_budget_block_seconds_matches_the_shipped_rows_and_is_padded(void) {
         "nothing\" contract as the 0x05 case above");
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+ * Phase 143 Plan 05 / HOST-02 (firmware half) / D-02, D-03 -- two cadence
+ * cases proving the new time-gated MSG_DATA_PROGRESS emission
+ * (src/proms/eprom.cpp, guarded #ifndef SERIAL_ON_IO -- compiled IN on this
+ * native env, exactly as on leonardo) fires when the mocked clock advances
+ * past EPROM_PROGRESS_EMIT_INTERVAL_MS, and fires NOT AT ALL when it does
+ * not -- the non-vacuity control every cadence oracle needs (D-25,
+ * T-143-VACUOUSCLOCK). This plan flips NO requirement checkbox (frontmatter
+ * requirements: [] is deliberate); it contributes the firmware half of
+ * HOST-02 only -- plan 143-10 flips the HOST-* checkboxes after every piece
+ * of evidence exists.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+void test_progress_emits_when_the_clock_advances_past_the_interval(void) {
+    /* 16 bytes: the first 8 are non-0xFF and individually seeded to
+     * converge after exactly 1 pulse each (readback defaults an UNSEEDED
+     * address to 0xFF forever, so a non-0xFF expected value with
+     * converge_after=1 guarantees the pulse loop genuinely runs for each of
+     * these) -- proving the per-byte loop actually programs real data, not
+     * merely iterates. The remaining 8 are 0xFF (LOOP-06's own first skip
+     * rule: `if (expected == 0xFF) continue;` short-circuits BEFORE any
+     * read, so these need no read-back seed at all -- LOOP_READBACK_MAX_
+     * ENTRIES caps simultaneously seeded addresses at 8, and this suite's
+     * pre-existing cases never seed more). Both halves still pass through
+     * this plan's progress-emit check, which sits BEFORE either LOOP-06
+     * skip (D-02's own placement reason: cadence independent of how many
+     * bytes are skipped) -- the extra 8 iterations exist ONLY to give the
+     * mocked clock (200 ms/call, see setUp's comment for why not 500)
+     * enough iterations to cross EPROM_PROGRESS_EMIT_INTERVAL_MS (1000)
+     * more than once; measured, this drive produces 3 frames (at i=4, 9,
+     * 14), comfortably clearing the ">= 2" bar below. */
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[16] = {
+        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    };
+    for (int i = 0; i < 8; i++) {
+        loop_readback_seed((uint16_t)i, block[i], 1);
+    }
+    drive_loop_write(&h, 0, block, 16);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code, "response_code -- the 8 real bytes converge; the 8 0xFF bytes need no convergence at all");
+    TEST_ASSERT_EQUAL_MESSAGE(0, logged_ids_overflowed(), "logged_ids_overflowed -- the captured prefix must be complete, not truncated");
+
+    /* Filtered by id: the stub also records MSG_DEBUG entries from any
+     * production LOG_DEBUG_ID_SUB* call in the build_src_filter (none fire
+     * here -- SERIAL_DEBUG is undefined in this env -- but an unfiltered
+     * count is not a sound oracle regardless, per host_stubs.cpp's own
+     * module comment). */
+    int n = logged_id_count();
+    int progress_count = 0;
+    bool have_last = false;
+    uint32_t last_addr = 0;
+    for (int i = 0; i < n; i++) {
+        if (logged_id_at(i) != MSG_DATA_PROGRESS) continue;
+        progress_count++;
+
+        TEST_ASSERT_EQUAL_MESSAGE(8, logged_id_param_count(i),
+            "MSG_DATA_PROGRESS payload is 8 bytes -- u32 address + u32 handle->mem_size (D-04: ONE payload contract, matching mem_util_blank_check's own emit byte for byte)");
+        uint32_t addr = ((uint32_t)logged_id_param(i, 0) << 24) | ((uint32_t)logged_id_param(i, 1) << 16)
+                      | ((uint32_t)logged_id_param(i, 2) << 8)  | (uint32_t)logged_id_param(i, 3);
+        uint32_t mem_size = ((uint32_t)logged_id_param(i, 4) << 24) | ((uint32_t)logged_id_param(i, 5) << 16)
+                          | ((uint32_t)logged_id_param(i, 6) << 8)  | (uint32_t)logged_id_param(i, 7);
+
+        char amsg[112];
+        snprintf(amsg, sizeof(amsg), "progress frame %d: address 0x%08lX must lie in [handle->address, handle->address + data_size)", i, (unsigned long)addr);
+        TEST_ASSERT_TRUE_MESSAGE(addr >= h.address && addr < h.address + 16, amsg);
+        TEST_ASSERT_EQUAL_UINT32_MESSAGE(h.mem_size, mem_size, "progress frame's second u32 must equal handle->mem_size (D-04's one payload contract -- absolute address plus chip geometry, never a block-relative pair)");
+
+        if (have_last) {
+            char imsg[128];
+            snprintf(imsg, sizeof(imsg), "progress frame %d's address (0x%08lX) must be STRICTLY greater than the previous frame's (0x%08lX) -- D-03: time-bounded, not byte-counted", i, (unsigned long)addr, (unsigned long)last_addr);
+            TEST_ASSERT_TRUE_MESSAGE(addr > last_addr, imsg);
+        }
+        last_addr = addr;
+        have_last = true;
+    }
+
+    TEST_ASSERT_TRUE_MESSAGE(progress_count >= 2,
+        "at least 2 MSG_DATA_PROGRESS frames must have fired while the mocked clock advanced past EPROM_PROGRESS_EMIT_INTERVAL_MS repeatedly across this 8-byte drive -- zero would mean the emission never fires (deleted or unreachable); exactly 1 would not prove the cadence REPEATS");
+}
+
+void test_progress_emits_nothing_when_the_clock_does_not_advance(void) {
+    /* Non-vacuity control (D-25, T-143-VACUOUSCLOCK): without this case, the
+     * positive case above could pass for the WRONG reason -- e.g. an
+     * emission that fires unconditionally, every iteration, rather than one
+     * genuinely gated on elapsed mocked time. Freezing millis() here
+     * locally overrides setUp's advancing lambda for the rest of THIS case
+     * only: the next case's own setUp() call (ArduinoFakeReset() then
+     * re-When(...millis...)) wipes this override and reinstalls the
+     * advancing lambda fresh, so this freeze cannot leak forward. A frozen
+     * clock is exactly the state native_trace_v131 is pinned in (its own
+     * setUp also pins millis() to AlwaysReturn(0), Phase 138) -- which is
+     * why D-02's emission adds ZERO new frames to that frozen trace (D-24);
+     * Phase 144 / TEST-06 will find zero D-02-attributable strobes there. */
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+
+    firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
+    const uint8_t block[16] = {
+        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    };
+    for (int i = 0; i < 8; i++) {
+        loop_readback_seed((uint16_t)i, block[i], 1);
+    }
+    drive_loop_write(&h, 0, block, 16);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "response_code -- the write must still complete successfully; a case that passes because the write failed early proves nothing");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_DATA_PROGRESS),
+        "zero MSG_DATA_PROGRESS frames with the clock frozen at a constant (matching native_trace_v131's own AlwaysReturn(0) pin, D-24) -- the emission must be genuinely time-gated, never unconditional");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -1878,6 +2036,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_budget_overprogram_term_is_zero_for_factor_zero_and_clamped_for_factor_three);
     RUN_TEST(test_budget_zero_pulse_width_never_divides_by_zero);
     RUN_TEST(test_budget_block_seconds_matches_the_shipped_rows_and_is_padded);
+
+    /* Phase 143 Plan 05 / HOST-02 (firmware half) / D-02, D-03 */
+    RUN_TEST(test_progress_emits_when_the_clock_advances_past_the_interval);
+    RUN_TEST(test_progress_emits_nothing_when_the_clock_does_not_advance);
 
     return UNITY_END();
 }
