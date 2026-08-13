@@ -115,7 +115,10 @@ Coverage:
      prose reference to it call this "the seven consumers", but its own
      verified enumeration -- reproduced in this plan's read_first block --
      lists NINE distinct (file, line) call sites across five files:
-     src/firestarter.cpp:40,103,109; src/boards/rurp_common.cpp:53;
+     src/firestarter.cpp:41,104,110 (Phase 143 Plan 03 shifted these three by
+     +1 -- an #include "eprom_budget.h" line added above every one of them;
+     re-verified, not re-derived, since the census is a hand-pinned tuple,
+     not a golden with a re-derivation script); src/boards/rurp_common.cpp:53;
      include/rurp_hw_rev_utils.h:95,101; src/hardware_operations.cpp:107,119;
      platform/py32f071/src/py32f071_rurp_shield.cpp:297. This module asserts
      the verified, enumerable count (nine), not the mislabeled prose count
@@ -177,9 +180,11 @@ _DEF_SEARCH_DIRS = ("src", "platform", "lib")
 # nine-vs-seven correction). Each entry is (repo-relative path, 1-indexed
 # line number, function name called on that line).
 _C14_CONSUMER_SITES = (
-    ("src/firestarter.cpp", 40, "rurp_load_config"),
-    ("src/firestarter.cpp", 103, "rurp_get_config"),
-    ("src/firestarter.cpp", 109, "rurp_save_config"),
+    # Phase 143 Plan 03 (BF-1/CAP-03): added one #include line above every
+    # site below in this file, shifting all three by +1 (40/103/109 -> here).
+    ("src/firestarter.cpp", 41, "rurp_load_config"),
+    ("src/firestarter.cpp", 104, "rurp_get_config"),
+    ("src/firestarter.cpp", 110, "rurp_save_config"),
     ("src/boards/rurp_common.cpp", 53, "rurp_get_config"),
     ("include/rurp_hw_rev_utils.h", 95, "rurp_get_config"),
     ("include/rurp_hw_rev_utils.h", 101, "rurp_get_config"),
