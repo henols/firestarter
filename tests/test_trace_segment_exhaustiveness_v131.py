@@ -138,6 +138,9 @@ pattern, not an omission). Stdlib and pytest only.
 
 import os
 import re
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
@@ -153,6 +156,14 @@ _SCAN_NEW = Path(
 _SCAN_PRECHANGE = Path(
     os.environ.get("FIRESTARTER_TRACE_SEGMENT_SCAN_PRECHANGE", str(_REPO_ROOT / _PRECHANGE_REL))
 )
+
+# The two fixtures' REAL sources -- resolved via _REPO_ROOT directly (never
+# via the seams above), because these paths name the ONE true copy the S2
+# ceremony in the planted-violation tests below must prove untouched,
+# regardless of whatever scratch path a planted run happens to point a seam
+# at.
+_REAL_NEW_PATH = _REPO_ROOT / _NEW_REL
+_REAL_PRECHANGE_PATH = _REPO_ROOT / _PRECHANGE_REL
 
 # ---------------------------------------------------------------------------
 # Entry kind/pin vocabulary -- from the fixture's own macros and
@@ -871,6 +882,309 @@ def test_own_needles_do_not_appear_verbatim_in_this_module():
             "in this module's own source -- rebuild it from at least two "
             "literal pieces so this gate cannot match itself."
         )
+
+
+# ---------------------------------------------------------------------------
+# D-18 planted-violation machinery (Coverage 10-11). Both legs prove this
+# module's own RED is LOCATING, not just present: a pre-authored leg can be
+# UNREACHABLE, and RED alone proves nothing until it has also been seen to
+# fail for the right reason (D-18, 144-CONTEXT.md).
+#
+# A CHILD PROCESS is mandatory for both plants: _SCAN_NEW/_SCAN_PRECHANGE
+# bind at IMPORT time, and monkeypatch.setenv cannot reach an already-
+# imported module-level value (S6). Copied structurally from
+# tests/test_requirement_case_mapping_v131.py:651-682's own
+# `_run_gate_in_subprocess` and its FIRESTARTER_144_GATE_CHILD recursion
+# guard (itself copied from tests/test_flash_path_record_sync.py's
+# FIRESTARTER_129_GATE_CHILD), extended here to accept more than one node
+# id at once (Plant B scopes to two legs in a single child run).
+# ---------------------------------------------------------------------------
+
+
+def _resolve_git():
+    """Resolve the `git` binary, fail-closed -- copied structurally from
+    test_golden_trace_identity_eprom_v131.py's own `_resolve_git` via
+    test_requirement_case_mapping_v131.py's copy. Deliberately never
+    bypassed via any decorator or runtime call that would mark this outcome
+    as skipped: a missing `git` must FAIL this suite, never be silently
+    skipped, or the S2 ceremony below could never prove the real fixtures
+    are untouched."""
+    git_bin = shutil.which(os.environ.get("GIT", "git"))
+    assert git_bin is not None, (
+        "git not found on PATH (checked $GIT, falling back to 'git'). This "
+        "must FAIL the suite, never be silently skipped -- a missing git "
+        "would otherwise turn the S2 real-fixtures-untouched ceremony into "
+        "a silent no-op."
+    )
+    return git_bin
+
+
+def _git_hash_object(path):
+    """Resolve git fail-closed and hash-object `path` (list-form argv,
+    shell=False)."""
+    git_bin = _resolve_git()
+    result = subprocess.run(
+        [git_bin, "hash-object", str(path)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+def _git_porcelain(path):
+    """Resolve git fail-closed and return `git status --porcelain` for
+    `path` (list-form argv, shell=False). Empty output means a clean
+    tree."""
+    git_bin = _resolve_git()
+    result = subprocess.run(
+        [git_bin, "-C", str(path), "status", "--porcelain"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout
+
+
+def _run_gate_in_subprocess(env_overrides, node_ids=None):
+    """Run `[sys.executable, "-m", "pytest", <target(s)>, "-q", "-rs"]`
+    with cwd=_REPO_ROOT and os.environ merged with env_overrides, capturing
+    text output, and return the CompletedProcess.
+
+    A child process is MANDATORY here: _SCAN_NEW/_SCAN_PRECHANGE bind at
+    IMPORT time, and monkeypatch.setenv cannot reach an already-imported
+    module-level value (S6). `-rs` is passed so a skipped outcome (rather
+    than a failure) would be visible in the captured output.
+
+    `node_ids`, if given, may be a single node-id string or an iterable of
+    them -- each becomes its own `<module_path>::<node_id>` target
+    argument, so pytest scopes the run to exactly those tests (Plant B
+    scopes to two: the partition leg and the parse-lengths leg).
+
+    Guards against infinite recursion by refusing to run (a plain assert,
+    never a skip) when FIRESTARTER_144_GATE_CHILD is already set in the
+    CURRENT process, and sets that variable in the child's environment.
+    """
+    assert os.environ.get("FIRESTARTER_144_GATE_CHILD") is None, (
+        "refusing to spawn a nested gate subprocess -- "
+        "FIRESTARTER_144_GATE_CHILD is already set in this process; this "
+        "would recurse indefinitely if it were allowed to proceed."
+    )
+    module_path = str(_HERE / "test_trace_segment_exhaustiveness_v131.py")
+    if node_ids is None:
+        targets = [module_path]
+    elif isinstance(node_ids, str):
+        targets = [f"{module_path}::{node_ids}"]
+    else:
+        targets = [f"{module_path}::{node_id}" for node_id in node_ids]
+
+    env = dict(os.environ)
+    env.update(env_overrides)
+    env["FIRESTARTER_144_GATE_CHILD"] = "1"
+    return subprocess.run(
+        [sys.executable, "-m", "pytest", *targets, "-q", "-rs"],
+        cwd=str(_REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_planted_unclassifiable_entry_is_located(tmp_path):
+    """Coverage 10 -- D-18 Plant A. Copy the real NEW fixture's text
+    verbatim, mutate exactly ONE entry -- PROTO_07's OUTPUT_ENABLE-assert
+    toggle at its own positional index 21 -- to an unclassifiable shape by
+    replacing its pin with 0x40 (none of the five known pins), assert the
+    mutated text differs from the real text (a silently-unmatched
+    replacement would be a vacuous plant), write it under tmp_path (never
+    the real tree), and run test_every_entry_falls_in_exactly_one_segment
+    against the mutated copy in a CHILD PROCESS via
+    FIRESTARTER_TRACE_SEGMENT_SCAN_NEW.
+
+    The RED transcript must name the array, the positional index, and the
+    (kind,pin,value,us) tuple containing 0x40 -- a message that only
+    reports a count is a defect; an unattributed entry must be LOCATABLE.
+
+    S2 ceremony: both real fixtures are git-hash-object'd before and after,
+    asserted unchanged, and the whole firmware repo's porcelain is asserted
+    clean at the end."""
+    before_new = _git_hash_object(_REAL_NEW_PATH)
+    before_prechange = _git_hash_object(_REAL_PRECHANGE_PATH)
+    real_text = _REAL_NEW_PATH.read_text()
+
+    mutate_target = "{2, 0x04, 0x01, 0UL}, /* 21 */"
+    replacement = "{2, 0x40, 0x01, 0UL}, /* 21 */"
+    assert real_text.count(mutate_target) >= 1, (
+        f"plant target {mutate_target!r} not found in the real NEW fixture "
+        "-- the fixture may have changed since this plant was authored."
+    )
+    mutated_text = real_text.replace(mutate_target, replacement, 1)
+    assert mutated_text != real_text, (
+        "planted mutation did not actually change the text -- the "
+        f"replacement target {mutate_target!r} was not found (the fixture's "
+        "wording may have changed) -- a silently-unmatched replacement is a "
+        "vacuous plant."
+    )
+
+    scratch_path = tmp_path / "planted_unclassifiable_eprom_v131_expected.h"
+    scratch_path.write_text(mutated_text)
+
+    result = _run_gate_in_subprocess(
+        {"FIRESTARTER_TRACE_SEGMENT_SCAN_NEW": str(scratch_path)},
+        node_ids="test_every_entry_falls_in_exactly_one_segment",
+    )
+    output = result.stdout + result.stderr
+
+    assert result.returncode != 0, (
+        "expected the partition leg to FAIL against a scan target with an "
+        f"unclassifiable entry, got returncode=0.\nOutput:\n{output}"
+    )
+    assert "EPROM_V131_TRACE_PROTO_07" in output, (
+        "expected the RED output to name the array "
+        f"EPROM_V131_TRACE_PROTO_07.\nOutput:\n{output}"
+    )
+    assert "index 21" in output, (
+        f"expected the RED output to name the positional index 21.\n"
+        f"Output:\n{output}"
+    )
+    assert "0x40" in output, (
+        "expected the RED output to show the mutated pin value 0x40 as "
+        f"part of the located entry's (kind,pin,value,us) tuple.\n"
+        f"Output:\n{output}"
+    )
+    assert "0x01" in output, (
+        "expected the RED output to show the entry's value field (0x01) "
+        f"as part of the located tuple.\nOutput:\n{output}"
+    )
+
+    after_new = _git_hash_object(_REAL_NEW_PATH)
+    after_prechange = _git_hash_object(_REAL_PRECHANGE_PATH)
+    assert after_new == before_new, (
+        "the planted mutation touched the REAL new fixture -- it must only "
+        "ever be written under tmp_path, never the real tree."
+    )
+    assert after_prechange == before_prechange, (
+        "the planted mutation touched the REAL pre-change fixture -- it "
+        "must only ever be written under tmp_path, never the real tree."
+    )
+    assert _git_porcelain(_REPO_ROOT) == "", (
+        "the firmware repo's working tree is no longer clean after the "
+        "planted-unclassifiable-entry test."
+    )
+
+
+def test_planted_delete_and_duplicate_defeats_a_count_only_check(tmp_path):
+    """Coverage 11 -- D-18 Plant B. Copy the real NEW fixture's text
+    verbatim, DELETE one entry (PROTO_07's payload data write at positional
+    index 22) and, in the SAME edit, insert a DUPLICATE of a different
+    entry (PROTO_07's index 10, a CE-low strobe) into that vacated slot --
+    so PROTO_07's array length is UNCHANGED (91 stays 91: that equality is
+    what makes this plant meaningful, since it proves a COUNT-ONLY check
+    would have passed it). Assert the mutated text differs from the real
+    text, write it under tmp_path, and run BOTH the partition leg and the
+    parse-lengths leg against the mutated copy in a CHILD PROCESS.
+
+    The overall run must FAIL, and the failure must be attributable to the
+    set-equality/disjointness assertion specifically -- NOT to a length
+    mismatch (the parse-lengths leg must itself PASS, proving the length
+    really is unchanged).
+
+    S2 ceremony: both real fixtures are git-hash-object'd before and after,
+    asserted unchanged, and the whole firmware repo's porcelain is asserted
+    clean at the end."""
+    before_new = _git_hash_object(_REAL_NEW_PATH)
+    before_prechange = _git_hash_object(_REAL_PRECHANGE_PATH)
+    real_text = _REAL_NEW_PATH.read_text()
+
+    delete_target = "{1, 0x00, 0x55, 0UL}, /* 22 */"
+    duplicate_source = "{2, 0x20, 0x00, 0UL}, /* 10 */"
+    assert real_text.count(delete_target) >= 1, (
+        f"plant delete-target {delete_target!r} not found in the real NEW "
+        "fixture -- the fixture may have changed since this plant was "
+        "authored."
+    )
+    assert real_text.count(duplicate_source) >= 1, (
+        f"plant duplicate-source {duplicate_source!r} not found in the "
+        "real NEW fixture -- the fixture may have changed since this plant "
+        "was authored."
+    )
+    replacement = "{2, 0x20, 0x00, 0UL}, /* 22 (planted duplicate of index 10) */"
+    mutated_text = real_text.replace(delete_target, replacement, 1)
+    assert mutated_text != real_text, (
+        "planted delete+duplicate did not actually change the text -- the "
+        f"delete-target {delete_target!r} was not found (the fixture's "
+        "wording may have changed) -- a silently-unmatched replacement is a "
+        "vacuous plant."
+    )
+
+    real_arrays = dict(_parse_arrays_with_fields(_REAL_NEW_PATH))
+    real_proto07_len = len(real_arrays["EPROM_V131_TRACE_PROTO_07"])
+
+    scratch_path = tmp_path / "planted_delete_dup_eprom_v131_expected.h"
+    scratch_path.write_text(mutated_text)
+    mutated_arrays = dict(_parse_arrays_with_fields(scratch_path))
+    mutated_proto07_len = len(mutated_arrays["EPROM_V131_TRACE_PROTO_07"])
+
+    assert mutated_proto07_len == real_proto07_len == 91, (
+        "expected the mutated PROTO_07 array's entry count to equal the "
+        f"real count -- real={real_proto07_len} mutated={mutated_proto07_len} "
+        "(both expected to be 91). This equality is what makes the plant "
+        "meaningful: it proves a COUNT-ONLY check would have PASSED this "
+        "exact mutation."
+    )
+
+    result = _run_gate_in_subprocess(
+        {"FIRESTARTER_TRACE_SEGMENT_SCAN_NEW": str(scratch_path)},
+        node_ids=(
+            "test_every_entry_falls_in_exactly_one_segment",
+            "test_new_arrays_parse_to_the_captured_lengths",
+        ),
+    )
+    output = result.stdout + result.stderr
+
+    assert result.returncode != 0, (
+        "expected the partition leg to FAIL against a length-preserving "
+        f"delete+duplicate mutation, got returncode=0.\nOutput:\n{output}"
+    )
+    assert "EPROM_V131_TRACE_PROTO_07" in output, (
+        f"expected the RED output to name the array.\nOutput:\n{output}"
+    )
+    assert "does NOT equal set(range(len(entries)))" in output, (
+        "expected the failure to be attributable to the set-equality "
+        f"assertion specifically.\nOutput:\n{output}"
+    )
+    assert "index 22" in output, (
+        f"expected the RED output to name index 22 as uncovered by any "
+        f"segment.\nOutput:\n{output}"
+    )
+    assert "count-only check" in output, (
+        "expected the RED output to state that a count-only check would "
+        f"NOT have caught this.\nOutput:\n{output}"
+    )
+    assert "1 passed" in output, (
+        "expected the parse-lengths leg to PASS (proving the array length "
+        f"is genuinely unchanged at 91) -- not a length mismatch.\n"
+        f"Output:\n{output}"
+    )
+    assert "1 failed" in output, (
+        "expected exactly the partition leg to FAIL.\n"
+        f"Output:\n{output}"
+    )
+
+    after_new = _git_hash_object(_REAL_NEW_PATH)
+    after_prechange = _git_hash_object(_REAL_PRECHANGE_PATH)
+    assert after_new == before_new, (
+        "the planted mutation touched the REAL new fixture -- it must only "
+        "ever be written under tmp_path, never the real tree."
+    )
+    assert after_prechange == before_prechange, (
+        "the planted mutation touched the REAL pre-change fixture -- it "
+        "must only ever be written under tmp_path, never the real tree."
+    )
+    assert _git_porcelain(_REPO_ROOT) == "", (
+        "the firmware repo's working tree is no longer clean after the "
+        "planted-delete-and-duplicate test."
+    )
 
 
 # ---------------------------------------------------------------------------
