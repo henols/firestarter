@@ -28,7 +28,8 @@ Coverage:
   2. Clean native control — both captured_test_native*.log files exit 0 with 141 and 17
      in the PASS: line.
   3. Planted flash regression exits non-zero, prints FAIL:, and the output names both
-     the baseline figure (26016, post-landing) and the observed figure (26528).
+     the baseline figure (26906, the v1.31-tip Phase 144 Plan 05 re-anchored to) and
+     the observed figure (27418).
   4. Planted unparseable log exits exactly 2 (the literal return code, not just
      non-zero) and does NOT print PASS:.
   5. Planted errored-suites log exits non-zero naming ERRORED — proving the gate
@@ -38,10 +39,11 @@ Coverage:
   7. Baseline-seam precedence: pointing FIRESTARTER_SIZE_BASELINE at a temp JSON whose
      Leonardo flash figure differs makes the previously-clean captured_build_leonardo.log
      FAIL — proving the checker genuinely reads the seam rather than embedding numbers.
-  8. --policy merge05 permits the ACTUAL post-landing figures (Leonardo -56, Uno +22,
-     uno328pb +28, RAM unchanged, read straight from the re-captured captured_build_*.log
-     fixtures) against the frozen BASE-01 record — no longer a pre-landing prediction,
-     since Plan 124-10 re-captured the fixtures from the real landed tree.
+  8. --policy merge05 permits the re-anchored figures (EXACT ZERO delta on all three
+     targets, read straight from the re-captured captured_build_*.log fixtures) against
+     BASE-01 — Phase 144 Plan 05 (D-11) re-anchored BASE-01 in place to the same v1.31
+     tip, so a PASS here means the anchor moved, not that growth stayed inside v1.24's
+     original band (D-14).
   9. --policy merge05 fires on a planted +65 B Uno-class flash growth (one byte outside
      the 64 B band), naming both the computed delta and the band.
   10. --policy merge05 fires on a planted +1 B Leonardo flash growth (Leonardo must not
@@ -56,11 +58,11 @@ diffable against the source so a reviewer can see exactly what was planted):
 
   planted_size_baseline_flash_regression.log
     = captured_build_leonardo.log with the Flash: line's `used` figure raised from
-      26016 to 26528 (+512 B, the same offset the original Phase-123 fixture used, now
-      applied to the post-landing figure re-captured by Phase 124 Plan 10 -- see below).
-      The percentage/bar-graph columns are left exactly as captured (now inconsistent
-      with the new `used` figure) -- a free proof that the parser anchors on the
-      `(used N bytes from M bytes)` tail and never reads the bar.
+      26906 to 27418 (+512 B, the same offset every prior version of this fixture has
+      used since Phase 123, now applied to the v1.31-tip figure Phase 144 Plan 05
+      re-captured -- see below). The percentage/bar-graph columns are left exactly as
+      captured (now inconsistent with the new `used` figure) -- a free proof that the
+      parser anchors on the `(used N bytes from M bytes)` tail and never reads the bar.
 
   Phase 124 Plan 10 (W-1 half (b)) re-captured captured_build_{uno,uno328pb,leonardo}.log
   and captured_test_native{,_nodevtools}_summary.log from the post-landing tree (all five
@@ -75,6 +77,18 @@ diffable against the source so a reviewer can see exactly what was planted):
   in git history; their numbers are also preserved permanently in
   scripts/baseline/size_baseline_base01.json.
 
+  Phase 144 Plan 05 (D-10, D-11, D-13) re-captured captured_build_{uno,uno328pb,leonardo}
+  .log AGAIN, from the v1.31 tip (uno 24824/1573, uno328pb 24874/1579, leonardo
+  26906/2014, both native envs still 141 cases/17 suites) -- three more phases (140-143)
+  had landed src/ changes since Phase 124. Unlike Phase 124 Plan 10, this time the three
+  `policy_*` planted fixtures below WERE re-derived, because D-11 re-anchored
+  scripts/baseline/size_baseline_base01.json itself to the same v1.31 tip -- it no longer
+  holds the v1.24 figures (23932/23976/26072) the paragraph above describes. Each was
+  re-derived preserving its single cause and its asserted delta (+65 B / +1 B / +1 B),
+  never its absolute figure, per D-18: a re-derived plant is a NEW plant and needs its
+  own proof that it still fires. The pre-re-anchor `policy_*` fixtures and BASE-01's
+  v1.24 content are preserved in git history, never kept in-tree (D-12).
+
   planted_size_baseline_unparseable.log
     = captured_build_uno.log with BOTH the `RAM:` and `Flash:` report lines deleted
       (lines 85-86 of the source) and everything else intact.
@@ -87,17 +101,26 @@ diffable against the source so a reviewer can see exactly what was planted):
       still reads 17, so a gate asserting only the count would incorrectly pass.
 
   planted_size_baseline_policy_uno_over_band.log
-    = captured_build_uno.log with the Flash: line's `used` figure raised from 23932 to
-      23997 (+65 B — one byte outside MERGE-05's 64 B uno-class band). Everything else,
+    = captured_build_uno.log with the Flash: line's `used` figure raised from 24824 to
+      24889 (+65 B — one byte outside MERGE-05's 64 B uno-class band). Everything else,
       including the now-stale percentage/bar columns, is left exactly as captured.
+      Re-derived by Phase 144 Plan 05 from 23932/23997 (D-18): the +65 B delta is
+      unchanged, only the anchor moved.
 
   planted_size_baseline_policy_leonardo_growth.log
     = captured_build_leonardo.log with the Flash: line's `used` figure raised from
-      26072 to 26073 (+1 B — Leonardo must not grow at all under MERGE-05).
+      26906 to 26907 (+1 B — Leonardo must not grow at all under MERGE-05).
+      Re-derived by Phase 144 Plan 05 from 26072/26073 (D-18): the +1 B delta is
+      unchanged, only the anchor moved.
 
   planted_size_baseline_policy_ram_moved.log
     = captured_build_uno.log with the RAM: line's `used` figure raised from 1573 to
       1574 (+1 B — RAM equality is enforced under the band mode too, on all three envs).
+      Re-derived by Phase 144 Plan 05 from the same 1573/1574 pair (D-18): RAM has been
+      unmoved since Phase 123, so only the source capture's Flash: line moved underneath
+      it (kept at the new zero-delta anchor value 24824, never the old 23932) -- without
+      this re-derivation the fixture would carry a second, unintended deviation (a
+      ~900 B flash shrink against the new anchor) alongside the intended RAM move.
 
 Self-contained path resolution below — NOT in conftest.py (firestarter/tests/ has no
 conftest.py anywhere in the repo; this is a recorded house-rule pattern decision, per
@@ -173,9 +196,9 @@ def test_clean_native_both_envs_pass():
 
 def test_planted_flash_regression_flips_checker_to_failure():
     """Coverage 3 — the planted +512 B Leonardo flash figure exits non-zero and names
-    both the baseline (26016, the post-landing figure Phase 124 Plan 10 re-baselined the
-    live default to) and observed (26528) figures -- the message must name both numbers,
-    not merely fail."""
+    both the baseline (26906, the v1.31-tip figure Phase 144 Plan 05 re-anchored the
+    live default to, D-10) and observed (27418) figures -- the message must name both
+    numbers, not merely fail."""
     result = _run_checker(
         ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression.log'}"]
     )
@@ -184,8 +207,8 @@ def test_planted_flash_regression_flips_checker_to_failure():
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "FAIL:" in result.stdout, f"Expected FAIL: in output. Got:\n{result.stdout}"
-    assert "26016" in result.stdout, f"Expected baseline figure 26016. Got:\n{result.stdout}"
-    assert "26528" in result.stdout, f"Expected observed figure 26528. Got:\n{result.stdout}"
+    assert "26906" in result.stdout, f"Expected baseline figure 26906. Got:\n{result.stdout}"
+    assert "27418" in result.stdout, f"Expected observed figure 27418. Got:\n{result.stdout}"
 
 
 def test_planted_unparseable_log_exits_exactly_2():
@@ -265,18 +288,25 @@ def test_baseline_seam_precedence_flips_clean_log_to_fail(tmp_path):
 
 
 def test_policy_merge05_permits_the_measured_landing_deltas():
-    """Coverage 8 — --policy merge05 PASSES on the ACTUAL post-landing figures, read
-    against the frozen BASE-01 record (scripts/baseline/size_baseline_base01.json),
-    never the live default baseline.
+    """Coverage 8 — --policy merge05 PASSES on the re-anchored figures, read against
+    BASE-01 (scripts/baseline/size_baseline_base01.json), never the live default
+    baseline.
 
     Before Phase 124 Plan 10, this test synthesized RESEARCH's *predicted* post-landing
     deltas (Leonardo -56, Uno +22, uno328pb +28, RAM unchanged) onto tmp_path copies of
     the then-still-pre-landing captured_build_*.log fixtures, because the real landing
     had not happened yet. Plan 124-10 re-captured captured_build_{uno,uno328pb,leonardo}
     .log directly from the real, now-landed tree (uno 23954/1573, uno328pb 24004/1579,
-    leonardo 26016/2014) -- so this test now feeds those committed fixtures straight to
-    the checker with no synthesis step, and the assertion is no longer a *prediction*
-    but a direct measurement of the real MERGE-05 outcome."""
+    leonardo 26016/2014) -- so this test fed those committed fixtures straight to
+    the checker with no synthesis step, and the assertion was no longer a *prediction*
+    but a direct measurement of the real MERGE-05 outcome.
+
+    Phase 144 Plan 05 (D-10, D-11, D-14): the fixtures were re-captured again, from the
+    real, now-landed v1.31 tree (uno 24824/1573, uno328pb 24874/1579, leonardo
+    26906/2014) — and BASE-01 itself was re-anchored in place to those identical
+    figures. This leg therefore now asserts EXACT IDENTITY at ZERO delta on all three
+    targets, not growth staying inside a band. It reads PASS because the anchor moved
+    to v1.31, not because growth stayed inside v1.24's original band."""
     argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
     for env, fixture in (
         ("leonardo", "captured_build_leonardo.log"),
