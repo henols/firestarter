@@ -4,22 +4,40 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 138 Plan 03 (PREP-03 / D-01 / D-02 / D-04) — the single source of
+ * Phase 144 Plan 03 (TEST-06 / D-05 / D-06 / D-08) — the single source of
  * truth the test_trace_eprom_v131 suite asserts its MERGED strobe+timing
- * stream against.
+ * stream against, RE-CAPTURED at this phase's tip.
  *
- * Every literal array below (EPROM_V131_TRACE_PROTO_07/_08/_0B, pasted by
- * Phase 138 Plan 05 Task 1 from the dumps Plan 03 Task 3 produced) is
- * authored EMPIRICALLY from a recorded dump of real, UNMODIFIED production
- * code (eprom_write_execute driving the current, pre-v1.31 27C program
- * loop) — never hand-derived. This fixture freezes the pre-change v1.31
- * cadence so Phase 144's TEST-06 ("every changed strobe attributable to a
- * named decision") has something concrete to diff the new cadence against.
- * Plan 05 also switched the three protocol cases in test_trace_eprom_v131.cpp
- * from soundness-only assertions to full ordered positional equality
- * (v131_assert_stream_equals against the arrays below) as their primary
- * assertion, keeping the pre-existing overflow/determinism/response-code
- * checks alongside it.
+ * Every literal array below (EPROM_V131_TRACE_PROTO_07/_08/_0B) is authored
+ * EMPIRICALLY from a cold dump of the REAL, UNMODIFIED post-v1.31
+ * eprom_write_execute — the per-byte pulse-to-verify loop landed by Phase
+ * 141, the shared eprom_hv_route_mask() HV-routing resolver landed by Phase
+ * 142, and the eprom_params_t table landed by Phase 140 all bear on this
+ * capture — never hand-derived. Exact capture command sequence:
+ *
+ *   cd /workspaces/firestarter && PLATFORMIO_BUILD_FLAGS="-D EPROM_V131_TRACE_DUMP" \
+ *     pio test -e native_trace_v131 --without-testing
+ *   cd /workspaces/firestarter && .pio/build/native_trace_v131/firestarter_native \
+ *     > /tmp/gsd-144/trace_dump.txt
+ *
+ * (`pio test` swallows printf — the dump must come from invoking the built
+ * binary directly, per this suite's own #ifdef EPROM_V131_TRACE_DUMP block
+ * at test_trace_eprom_v131.cpp:350-361.) Measured totals, read verbatim from
+ * the dump's own banners: EPROM_V131_TRACE_PROTO_07 total=91,
+ * EPROM_V131_TRACE_PROTO_08 total=115, EPROM_V131_TRACE_PROTO_0B total=59 —
+ * all three with strobe_overflow=0 timing_overflow=0 (recorder caps are 512
+ * each; 115 is 22 percent of cap, ample headroom). This capture is confirmed
+ * distinct from `.planning/phases/141-per-byte-program-loop/141-NEW-TRACE.md`
+ * section 5's stale pasteable arrays (91/119/59 there — the 0x08 total is
+ * wrong by +4 — never used as a source for a single line below).
+ *
+ * The PRE-CHANGE cadence this fixture used to hold (198/221/201 merged
+ * entries, one array per protocol) is preserved byte-for-byte, untouched, at
+ * test/native/avr/_shared/eprom_v131_expected_prechange.h — git blob
+ * ca3e09f164e6e1c541ecb63d15bbebf5bce41d70 (a git blob SHA is content-only
+ * and path-independent, so this single fact is the whole of the rename's
+ * proof). That file is #included by nothing; it is a historical artifact
+ * plan 144-04 diffs the arrays below against, not a second live fixture.
  *
  * The trace records EVERY timing entry UNFILTERED — including the 1 µs
  * latch delay that rurp_internal_write_to_register emits after each
@@ -33,6 +51,12 @@
  * entries that occurred between them, spliced positionally by the sequence
  * key each timing_entry_t carries (its `seq`, the strobe_count() value at
  * push time). See v131_merged_at() below for the exact splice rule.
+ *
+ * This fixture now arms the identity gate for v1.32 drift detection
+ * (tests/golden/eprom_v131_trace_inventory.json's meta.frozen_for): a future
+ * divergence from the three arrays below is a regression to investigate,
+ * not expected work — the inverse framing of what this file's banner said
+ * before this capture replaced it.
  */
 
 #ifndef __EPROM_V131_EXPECTED_H__
@@ -211,438 +235,374 @@ static int v131_snapshot(v131_trace_entry_t* out, int max_len) {
 }
 
 /* ─── Frozen per-protocol arrays ─────────────────────────────────────────────
- * The three merged strobe+timing streams below are the pre-change v1.31
- * cadence, one per EPROM protocol, each frozen by Phase 138 Plan 05 Task 1
- * from the empirical dumps Plan 03 Task 3 produced (see each array's own
- * banner for chip/bus_config/seed detail and the non-obvious behaviour it
- * encodes).
+ * The three merged strobe+timing streams below are the POST-v1.31 cadence,
+ * one per EPROM protocol, captured by Phase 144 Plan 03 from a cold dump of
+ * the real, unmodified eprom_write_execute at this phase's tip (see the file
+ * header above for the exact capture command sequence; see each array's own
+ * banner below for its chip identity, bus_config and measured total).
  */
 
 /* ─── EPROM_V131_TRACE_PROTO_07 -- AM27C512, protocol 0x07, DIP28_27512 ─────
- * Captured EMPIRICALLY: the built native_trace_v131 binary
- * (.pio/build/native_trace_v131/firestarter_native) run DIRECTLY with
- * EPROM_V131_TRACE_DUMP defined (`pio test` swallows printf) -- never
- * hand-derived. Chip AM27C512, pinout key DIP28_27512, pins=28,
- * mem_size=65536, bus_config { address_mask=0x0000FFFF, matching_lines=16,
- * rw_line=0xFF (none), vpp_line=0xFF (none), static_high_mask=0x00000000 }
- * (138-03-TRACE-CAPTURE.md §5, derived via gen_sdp_bus_config.py's own
- * derive_row against the shipped chip_database.json -- never invented).
- * Synthetic 4-byte block at address 0 (V131_SYNTHETIC_BLOCK,
- * trace_readback_seed calls in test_trace_eprom_v131.cpp):
- *   idx0 target=0x3C converge_after=0 (already-matching byte)
- *   idx1 target=0xFF converge_after=0 (erased-state byte)
- *   idx2 target=0x55 converge_after=2 (needs 3 passes -- the worst case)
- *   idx3 target=0xAA converge_after=1 (needs 2 passes)
- * 198 merged entries (142 strobes + 56 timings, 138-03-TRACE-CAPTURE.md §2),
- * exactly 3 passes, RESPONSE_CODE_OK, zero recorder overflow, proven
- * deterministic across two drives before this array was pasted.
+ * Captured EMPIRICALLY by Phase 144 Plan 03: the built native_trace_v131
+ * binary (.pio/build/native_trace_v131/firestarter_native) run DIRECTLY with
+ * EPROM_V131_TRACE_DUMP defined (`pio test` swallows printf) against the
+ * REAL, UNMODIFIED post-v1.31 eprom_write_execute -- never hand-derived.
+ * Same chip, bus_config and synthetic 4-byte block as the frozen pre-change
+ * capture (test/native/avr/_shared/eprom_v131_expected_prechange.h, blob
+ * ca3e09f164e6e1c541ecb63d15bbebf5bce41d70): pins=28, mem_size=65536,
+ * bus_config { address_mask=0x0000FFFF, matching_lines=16, rw_line=0xFF
+ * (none), vpp_line=0xFF (none), static_high_mask=0x00000000 }; idx0
+ * target=0x3C converge_after=0, idx1 target=0xFF converge_after=0, idx2
+ * target=0x55 converge_after=2 (3 passes), idx3 target=0xAA converge_after=1
+ * (2 passes).
  *
- * Non-obvious behaviour this array encodes (at least three, per D-04/D-06):
- *  1. The FIRST pass programs ALL FOUR bytes, including idx0 (already
- *     matching its target) and idx1 (the erased-state 0xFF byte) -- because
- *     eprom_write_execute's mismatch_bitmask starts memset to 0xFF
- *     (eprom.cpp:157), not derived from an actual first verify. Phase 141's
- *     LOOP-06 changes this "program everything unconditionally" behaviour;
- *     this array freezes it as it stands today.
- *  2. The program PULSE WIDTH GROWS across passes: 100us (pass 1) / 105us
- *     (pass 2) / 110us (pass 3) for the SAME byte (idx2) in THIS SINGLE
- *     capture -- eprom.cpp:177's adaptive
- *     `org_delay + org_delay * retries / NUMBER_OF_RETRIES` formula
- *     (org_delay=100, retries=1,2 on passes 2,3). A strobe-only recorder
- *     could never distinguish these three pulses from each other.
- *  3. The LSB/MSB/CONTROL_REGISTER register cache elides a latch whenever
- *     the newly-computed value equals the cached one (rurp_register_utils.h,
- *     Phase 116 D-06's own precedent) -- e.g. byte idx0's LSB/MSB latches are
- *     both elided on pass 1 because the cache already holds (0,0) from
- *     reset_register_cache. A raw call-log golden would assert phantom
- *     entries the shield never sees.
- *  4. Every NON-elided latch contributes its own 1us TIMING_KIND_DELAY_US
- *     entry (rurp_internal_write_to_register's post-strobe
- *     delayMicroseconds(1)) -- visible throughout this array as the `us=1`
- *     entries immediately following a register-latch pin pair.
- *  5. mem_util_calculate_top_address_register unconditionally ORs in
- *     CTRL_ADDRESS_LINE_17 (0x10) for `pins==28` chips ONLY (memory.cpp:169)
- *     -- visible here as the CONTROL_REGISTER correction (ctrl 0x85->0x95)
- *     on the very first byte of pass 1, then elided for every later byte in
- *     the same pass because the corrected value stays cache-stable.
+ * total=91 (was 198 pre-change), strobe_overflow=0, timing_overflow=0
+ * (recorder caps are 512 each). RESPONSE_CODE_OK, zero recorder overflow,
+ * proven deterministic across two drives before this array was pasted.
+ * Every entry below is pasted verbatim from the recorder's own dump output
+ * -- each retains only its own trailing positional-index comment, exactly
+ * as the recorder emits it; no hand-authored per-segment comment is added
+ * here the way the pre-change array had them, because a segment label the
+ * recorder itself never emitted would be documentation dressed as data.
+ * Plan 144-04 performs the structural, per-entry attribution this array's
+ * shrink from 198 to 91 entries calls for.
  *
- * This is the PRE-CHANGE cadence, frozen for Phase 144's TEST-06 to diff the
- * new (post-v1.31) cadence against. A future divergence from this array is
- * expected work, not a regression -- PROJECT.md's own "not behavior-
- * preserving" caveat for this milestone.
+ * This is the POST-v1.31 cadence, now frozen for v1.32 drift detection
+ * (tests/golden/eprom_v131_trace_inventory.json's meta.frozen_for) -- a
+ * future divergence from this array is a regression to investigate, not
+ * expected work.
  */
 static const v131_trace_entry_t EPROM_V131_TRACE_PROTO_07[] = {
-    /* one-time VPP-regulator enable (ctrl -> 0x81) + ms=500 */
-    {1, 0x00, 0x81, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 500UL},
-    /* pass 1: VPE/route assert (ctrl -> 0x85) + ms=10 */
-    {1, 0x00, 0x85, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 10UL},
-    /* pass 1: program byte@lsb=0x00 payload=0x3C pulse=100us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x95, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    {1, 0x00, 0x3C, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 100UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: program byte@lsb=0x01 payload=0xFF pulse=100us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xFF, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 100UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: program byte@lsb=0x02 payload=0x55 pulse=100us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0x55, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 100UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: program byte@lsb=0x03 payload=0xAA pulse=100us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xAA, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 100UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: VPE/route release (ctrl -> 0x91) */
-    {1, 0x00, 0x91, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    /* pass 1: verify byte@lsb=0x00 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x00, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: verify byte@lsb=0x01 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: verify byte@lsb=0x02 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: verify byte@lsb=0x03 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: VPE/route assert (ctrl -> 0x95) + ms=10 */
-    {1, 0x00, 0x95, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 10UL},
-    /* pass 2: program byte@lsb=0x02 payload=0x55 pulse=105us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0x55, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 105UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: program byte@lsb=0x03 payload=0xAA pulse=105us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xAA, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 105UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: VPE/route release (ctrl -> 0x91) */
-    {1, 0x00, 0x91, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    /* pass 2: verify byte@lsb=0x00 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x00, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: verify byte@lsb=0x01 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: verify byte@lsb=0x02 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: verify byte@lsb=0x03 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: VPE/route assert (ctrl -> 0x95) + ms=10 */
-    {1, 0x00, 0x95, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 10UL},
-    /* pass 3: program byte@lsb=0x02 payload=0x55 pulse=110us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0x55, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 110UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: VPE/route release (ctrl -> 0x91) */
-    {1, 0x00, 0x91, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    /* pass 3: verify byte@lsb=0x00 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x00, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: verify byte@lsb=0x01 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: verify byte@lsb=0x02 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: verify byte@lsb=0x03 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
+    {1, 0x00, 0x81, 0UL}, /* 0 */
+    {2, 0x08, 0x01, 0UL}, /* 1 */
+    {3, 0x00, 0x00, 1UL}, /* 2 */
+    {2, 0x08, 0x00, 0UL}, /* 3 */
+    {4, 0x00, 0x00, 500UL}, /* 4 */
+    {2, 0x04, 0x00, 0UL}, /* 5 */
+    {1, 0x00, 0x91, 0UL}, /* 6 */
+    {2, 0x08, 0x01, 0UL}, /* 7 */
+    {3, 0x00, 0x00, 1UL}, /* 8 */
+    {2, 0x08, 0x00, 0UL}, /* 9 */
+    {2, 0x20, 0x00, 0UL}, /* 10 */
+    {3, 0x00, 0x00, 3UL}, /* 11 */
+    {2, 0x20, 0x01, 0UL}, /* 12 */
+    {2, 0x04, 0x00, 0UL}, /* 13 */
+    {1, 0x00, 0x02, 0UL}, /* 14 */
+    {2, 0x01, 0x01, 0UL}, /* 15 */
+    {3, 0x00, 0x00, 1UL}, /* 16 */
+    {2, 0x01, 0x00, 0UL}, /* 17 */
+    {2, 0x20, 0x00, 0UL}, /* 18 */
+    {3, 0x00, 0x00, 3UL}, /* 19 */
+    {2, 0x20, 0x01, 0UL}, /* 20 */
+    {2, 0x04, 0x01, 0UL}, /* 21 */
+    {1, 0x00, 0x55, 0UL}, /* 22 */
+    {3, 0x00, 0x00, 3UL}, /* 23 */
+    {2, 0x20, 0x00, 0UL}, /* 24 */
+    {3, 0x00, 0x00, 100UL}, /* 25 */
+    {2, 0x20, 0x01, 0UL}, /* 26 */
+    {2, 0x04, 0x00, 0UL}, /* 27 */
+    {2, 0x20, 0x00, 0UL}, /* 28 */
+    {3, 0x00, 0x00, 3UL}, /* 29 */
+    {2, 0x20, 0x01, 0UL}, /* 30 */
+    {2, 0x04, 0x01, 0UL}, /* 31 */
+    {1, 0x00, 0x55, 0UL}, /* 32 */
+    {3, 0x00, 0x00, 3UL}, /* 33 */
+    {2, 0x20, 0x00, 0UL}, /* 34 */
+    {3, 0x00, 0x00, 100UL}, /* 35 */
+    {2, 0x20, 0x01, 0UL}, /* 36 */
+    {2, 0x04, 0x00, 0UL}, /* 37 */
+    {2, 0x20, 0x00, 0UL}, /* 38 */
+    {3, 0x00, 0x00, 3UL}, /* 39 */
+    {2, 0x20, 0x01, 0UL}, /* 40 */
+    {2, 0x04, 0x00, 0UL}, /* 41 */
+    {1, 0x00, 0x03, 0UL}, /* 42 */
+    {2, 0x01, 0x01, 0UL}, /* 43 */
+    {3, 0x00, 0x00, 1UL}, /* 44 */
+    {2, 0x01, 0x00, 0UL}, /* 45 */
+    {2, 0x20, 0x00, 0UL}, /* 46 */
+    {3, 0x00, 0x00, 3UL}, /* 47 */
+    {2, 0x20, 0x01, 0UL}, /* 48 */
+    {2, 0x04, 0x01, 0UL}, /* 49 */
+    {1, 0x00, 0xAA, 0UL}, /* 50 */
+    {3, 0x00, 0x00, 3UL}, /* 51 */
+    {2, 0x20, 0x00, 0UL}, /* 52 */
+    {3, 0x00, 0x00, 100UL}, /* 53 */
+    {2, 0x20, 0x01, 0UL}, /* 54 */
+    {2, 0x04, 0x00, 0UL}, /* 55 */
+    {2, 0x20, 0x00, 0UL}, /* 56 */
+    {3, 0x00, 0x00, 3UL}, /* 57 */
+    {2, 0x20, 0x01, 0UL}, /* 58 */
+    {2, 0x04, 0x00, 0UL}, /* 59 */
+    {1, 0x00, 0x00, 0UL}, /* 60 */
+    {2, 0x01, 0x01, 0UL}, /* 61 */
+    {3, 0x00, 0x00, 1UL}, /* 62 */
+    {2, 0x01, 0x00, 0UL}, /* 63 */
+    {2, 0x20, 0x00, 0UL}, /* 64 */
+    {3, 0x00, 0x00, 3UL}, /* 65 */
+    {2, 0x20, 0x01, 0UL}, /* 66 */
+    {2, 0x04, 0x00, 0UL}, /* 67 */
+    {1, 0x00, 0x01, 0UL}, /* 68 */
+    {2, 0x01, 0x01, 0UL}, /* 69 */
+    {3, 0x00, 0x00, 1UL}, /* 70 */
+    {2, 0x01, 0x00, 0UL}, /* 71 */
+    {2, 0x20, 0x00, 0UL}, /* 72 */
+    {3, 0x00, 0x00, 3UL}, /* 73 */
+    {2, 0x20, 0x01, 0UL}, /* 74 */
+    {2, 0x04, 0x00, 0UL}, /* 75 */
+    {1, 0x00, 0x02, 0UL}, /* 76 */
+    {2, 0x01, 0x01, 0UL}, /* 77 */
+    {3, 0x00, 0x00, 1UL}, /* 78 */
+    {2, 0x01, 0x00, 0UL}, /* 79 */
+    {2, 0x20, 0x00, 0UL}, /* 80 */
+    {3, 0x00, 0x00, 3UL}, /* 81 */
+    {2, 0x20, 0x01, 0UL}, /* 82 */
+    {2, 0x04, 0x00, 0UL}, /* 83 */
+    {1, 0x00, 0x03, 0UL}, /* 84 */
+    {2, 0x01, 0x01, 0UL}, /* 85 */
+    {3, 0x00, 0x00, 1UL}, /* 86 */
+    {2, 0x01, 0x00, 0UL}, /* 87 */
+    {2, 0x20, 0x00, 0UL}, /* 88 */
+    {3, 0x00, 0x00, 3UL}, /* 89 */
+    {2, 0x20, 0x01, 0UL}, /* 90 */
 };
 #define EPROM_V131_TRACE_PROTO_07_LEN (int)(sizeof(EPROM_V131_TRACE_PROTO_07) / sizeof(EPROM_V131_TRACE_PROTO_07[0]))
 
 /* ─── EPROM_V131_TRACE_PROTO_08 -- AM27C020, protocol 0x08, DIP32_27C020 ────
- * Captured EMPIRICALLY: the built native_trace_v131 binary run DIRECTLY with
- * EPROM_V131_TRACE_DUMP defined (`pio test` swallows printf) -- never
- * hand-derived. Chip AM27C020, pinout key DIP32_27C020, pins=32,
- * mem_size=262144, bus_config { address_mask=0x0011FFFF, matching_lines=17,
- * rw_line=0x16 (22), vpp_line=0x15 (21), static_high_mask=0x00000000 }
- * (138-03-TRACE-CAPTURE.md §5, derived via gen_sdp_bus_config.py's own
- * derive_row -- never invented). Same synthetic 4-byte block as _07 (address
- * 0, V131_SYNTHETIC_BLOCK): idx0=0x3C conv=0, idx1=0xFF conv=0, idx2=0x55
- * conv=2 (3 passes), idx3=0xAA conv=1 (2 passes). 221 merged entries (157
- * strobes + 64 timings, 138-03-TRACE-CAPTURE.md §2), exactly 3 passes,
- * RESPONSE_CODE_OK, zero recorder overflow, proven deterministic across two
- * drives before this array was pasted.
+ * Captured EMPIRICALLY by Phase 144 Plan 03: the built native_trace_v131
+ * binary run DIRECTLY with EPROM_V131_TRACE_DUMP defined (`pio test`
+ * swallows printf) against the REAL, UNMODIFIED post-v1.31
+ * eprom_write_execute -- never hand-derived. Same chip, bus_config and
+ * synthetic 4-byte block as the frozen pre-change capture
+ * (eprom_v131_expected_prechange.h, blob
+ * ca3e09f164e6e1c541ecb63d15bbebf5bce41d70): pins=32, mem_size=262144,
+ * bus_config { address_mask=0x0011FFFF, matching_lines=17, rw_line=0x16
+ * (22), vpp_line=0x15 (21), static_high_mask=0x00000000 }; same synthetic
+ * block as _07: idx0=0x3C conv=0, idx1=0xFF conv=0, idx2=0x55 conv=2 (3
+ * passes), idx3=0xAA conv=1 (2 passes). vpp_line=0x15 exactly equals
+ * VPP_P1_32_DIP, so using_p1_as_vpp(handle) is TRUE for this chip.
  *
- * Non-obvious behaviour this array encodes (at least three, per D-04/D-06):
- *  1. The FIRST pass programs ALL FOUR bytes unconditionally -- same
- *     memset(mismatch_bitmask, 0xFF, ...) start-state as _07 (eprom.cpp:157).
- *  2. The program PULSE WIDTH GROWS across passes on the same byte (idx2):
- *     100us / 105us / 110us -- eprom.cpp:177's adaptive
- *     `org_delay + org_delay * retries / NUMBER_OF_RETRIES` formula.
- *  3. vpp_line=0x15 exactly equals VPP_P1_32_DIP, so using_p1_as_vpp(handle)
- *     is TRUE for this chip (memory_utils.h) -- eprom_internal_set_control_
- *     register (eprom.cpp:319-325) remaps every CTRL_VPE_ENABLE assert/
- *     release to CTRL_VPP_P1_ENABLE instead. Visible here as ctrl 0x81->0x89
- *     (assert, +0x08 not +0x04) and 0x89->0x80 (release, -0x08) -- `_07`
- *     above shows +0x04/-0x04 for the identical call, because using_p1_as_
- *     vpp is FALSE there (vpp_line=0xFF sentinel).
- *  4. Every CONTROL_REGISTER write that clears CTRL_VPP_P1_ENABLE (a
- *     set->clear transition on that bit) carries an EXTRA 4us
- *     TIMING_KIND_DELAY_US settle entry immediately after it
- *     (rurp_internal_write_to_register's own P1-specific settle) -- `_07`
- *     never shows this entry at all, because `_07` never touches that bit.
- *  5. The LSB/MSB/CONTROL_REGISTER cache elides a latch whenever the
- *     newly-computed value equals the cached one; e.g. byte idx0's LSB/MSB
- *     latches are elided on pass 1 (cache already holds (0,0)), while its
- *     CONTROL correction (0x89->0x88, mem_util_calculate_top_address_register)
- *     still fires because that value has not yet been latched. Every
- *     non-elided latch contributes its own 1us TIMING_KIND_DELAY_US entry.
+ * total=115 (was 221 pre-change), strobe_overflow=0, timing_overflow=0
+ * (recorder caps are 512 each; 115 is 22 percent of cap). RESPONSE_CODE_OK,
+ * zero recorder overflow, proven deterministic across two drives before
+ * this array was pasted. Every entry below is pasted verbatim from the
+ * recorder's own dump output -- each retains only its own trailing
+ * positional-index comment; no hand-authored per-segment comment is added.
+ * Plan 144-04 performs the structural, per-entry attribution this array's
+ * shrink from 221 to 115 entries calls for.
  *
- * This is the PRE-CHANGE cadence, frozen for Phase 144's TEST-06 to diff the
- * new (post-v1.31) cadence against. A future divergence from this array is
- * expected work, not a regression.
+ * This is the POST-v1.31 cadence, now frozen for v1.32 drift detection
+ * (tests/golden/eprom_v131_trace_inventory.json's meta.frozen_for) -- a
+ * future divergence from this array is a regression to investigate, not
+ * expected work.
  */
 static const v131_trace_entry_t EPROM_V131_TRACE_PROTO_08[] = {
-    /* one-time VPP-regulator enable (ctrl -> 0x81) + ms=500 */
-    {1, 0x00, 0x81, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 500UL},
-    /* pass 1: VPE/route assert (ctrl -> 0x89) + ms=10 */
-    {1, 0x00, 0x89, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 10UL},
-    /* pass 1: program byte@lsb=0x00 payload=0x3C pulse=100us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x88, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    {1, 0x00, 0x3C, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 100UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: program byte@lsb=0x01 payload=0xFF pulse=100us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xFF, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 100UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: program byte@lsb=0x02 payload=0x55 pulse=100us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0x55, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 100UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: program byte@lsb=0x03 payload=0xAA pulse=100us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xAA, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 100UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: VPE/route release (ctrl -> 0x80) + p1_settle_us=4 */
-    {1, 0x00, 0x80, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {3, 0x00, 0x00, 4UL},
-    /* pass 1: verify byte@lsb=0x00 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x00, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xC0, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: verify byte@lsb=0x01 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: verify byte@lsb=0x02 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: verify byte@lsb=0x03 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: VPE/route assert (ctrl -> 0xC8) + ms=10 */
-    {1, 0x00, 0xC8, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 10UL},
-    /* pass 2: program byte@lsb=0x02 payload=0x55 pulse=105us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0x88, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    {1, 0x00, 0x55, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 105UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: program byte@lsb=0x03 payload=0xAA pulse=105us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xAA, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 105UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: VPE/route release (ctrl -> 0x80) + p1_settle_us=4 */
-    {1, 0x00, 0x80, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {3, 0x00, 0x00, 4UL},
-    /* pass 2: verify byte@lsb=0x00 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x00, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xC0, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: verify byte@lsb=0x01 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: verify byte@lsb=0x02 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: verify byte@lsb=0x03 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: VPE/route assert (ctrl -> 0xC8) + ms=10 */
-    {1, 0x00, 0xC8, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 10UL},
-    /* pass 3: program byte@lsb=0x02 payload=0x55 pulse=110us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0x88, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    {1, 0x00, 0x55, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 110UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: VPE/route release (ctrl -> 0x80) + p1_settle_us=4 */
-    {1, 0x00, 0x80, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {3, 0x00, 0x00, 4UL},
-    /* pass 3: verify byte@lsb=0x00 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x00, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xC0, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: verify byte@lsb=0x01 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: verify byte@lsb=0x02 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: verify byte@lsb=0x03 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
+    {1, 0x00, 0x81, 0UL}, /* 0 */
+    {2, 0x08, 0x01, 0UL}, /* 1 */
+    {3, 0x00, 0x00, 1UL}, /* 2 */
+    {2, 0x08, 0x00, 0UL}, /* 3 */
+    {4, 0x00, 0x00, 500UL}, /* 4 */
+    {2, 0x04, 0x00, 0UL}, /* 5 */
+    {1, 0x00, 0xC0, 0UL}, /* 6 */
+    {2, 0x08, 0x01, 0UL}, /* 7 */
+    {3, 0x00, 0x00, 1UL}, /* 8 */
+    {2, 0x08, 0x00, 0UL}, /* 9 */
+    {2, 0x20, 0x00, 0UL}, /* 10 */
+    {3, 0x00, 0x00, 3UL}, /* 11 */
+    {2, 0x20, 0x01, 0UL}, /* 12 */
+    {2, 0x04, 0x00, 0UL}, /* 13 */
+    {1, 0x00, 0x02, 0UL}, /* 14 */
+    {2, 0x01, 0x01, 0UL}, /* 15 */
+    {3, 0x00, 0x00, 1UL}, /* 16 */
+    {2, 0x01, 0x00, 0UL}, /* 17 */
+    {2, 0x20, 0x00, 0UL}, /* 18 */
+    {3, 0x00, 0x00, 3UL}, /* 19 */
+    {2, 0x20, 0x01, 0UL}, /* 20 */
+    {2, 0x04, 0x01, 0UL}, /* 21 */
+    {1, 0x00, 0x80, 0UL}, /* 22 */
+    {2, 0x08, 0x01, 0UL}, /* 23 */
+    {3, 0x00, 0x00, 1UL}, /* 24 */
+    {2, 0x08, 0x00, 0UL}, /* 25 */
+    {1, 0x00, 0x55, 0UL}, /* 26 */
+    {3, 0x00, 0x00, 3UL}, /* 27 */
+    {2, 0x20, 0x00, 0UL}, /* 28 */
+    {3, 0x00, 0x00, 100UL}, /* 29 */
+    {2, 0x20, 0x01, 0UL}, /* 30 */
+    {2, 0x04, 0x00, 0UL}, /* 31 */
+    {1, 0x00, 0xC0, 0UL}, /* 32 */
+    {2, 0x08, 0x01, 0UL}, /* 33 */
+    {3, 0x00, 0x00, 1UL}, /* 34 */
+    {2, 0x08, 0x00, 0UL}, /* 35 */
+    {2, 0x20, 0x00, 0UL}, /* 36 */
+    {3, 0x00, 0x00, 3UL}, /* 37 */
+    {2, 0x20, 0x01, 0UL}, /* 38 */
+    {2, 0x04, 0x01, 0UL}, /* 39 */
+    {1, 0x00, 0x80, 0UL}, /* 40 */
+    {2, 0x08, 0x01, 0UL}, /* 41 */
+    {3, 0x00, 0x00, 1UL}, /* 42 */
+    {2, 0x08, 0x00, 0UL}, /* 43 */
+    {1, 0x00, 0x55, 0UL}, /* 44 */
+    {3, 0x00, 0x00, 3UL}, /* 45 */
+    {2, 0x20, 0x00, 0UL}, /* 46 */
+    {3, 0x00, 0x00, 100UL}, /* 47 */
+    {2, 0x20, 0x01, 0UL}, /* 48 */
+    {2, 0x04, 0x00, 0UL}, /* 49 */
+    {1, 0x00, 0xC0, 0UL}, /* 50 */
+    {2, 0x08, 0x01, 0UL}, /* 51 */
+    {3, 0x00, 0x00, 1UL}, /* 52 */
+    {2, 0x08, 0x00, 0UL}, /* 53 */
+    {2, 0x20, 0x00, 0UL}, /* 54 */
+    {3, 0x00, 0x00, 3UL}, /* 55 */
+    {2, 0x20, 0x01, 0UL}, /* 56 */
+    {2, 0x04, 0x00, 0UL}, /* 57 */
+    {1, 0x00, 0x03, 0UL}, /* 58 */
+    {2, 0x01, 0x01, 0UL}, /* 59 */
+    {3, 0x00, 0x00, 1UL}, /* 60 */
+    {2, 0x01, 0x00, 0UL}, /* 61 */
+    {2, 0x20, 0x00, 0UL}, /* 62 */
+    {3, 0x00, 0x00, 3UL}, /* 63 */
+    {2, 0x20, 0x01, 0UL}, /* 64 */
+    {2, 0x04, 0x01, 0UL}, /* 65 */
+    {1, 0x00, 0x80, 0UL}, /* 66 */
+    {2, 0x08, 0x01, 0UL}, /* 67 */
+    {3, 0x00, 0x00, 1UL}, /* 68 */
+    {2, 0x08, 0x00, 0UL}, /* 69 */
+    {1, 0x00, 0xAA, 0UL}, /* 70 */
+    {3, 0x00, 0x00, 3UL}, /* 71 */
+    {2, 0x20, 0x00, 0UL}, /* 72 */
+    {3, 0x00, 0x00, 100UL}, /* 73 */
+    {2, 0x20, 0x01, 0UL}, /* 74 */
+    {2, 0x04, 0x00, 0UL}, /* 75 */
+    {1, 0x00, 0xC0, 0UL}, /* 76 */
+    {2, 0x08, 0x01, 0UL}, /* 77 */
+    {3, 0x00, 0x00, 1UL}, /* 78 */
+    {2, 0x08, 0x00, 0UL}, /* 79 */
+    {2, 0x20, 0x00, 0UL}, /* 80 */
+    {3, 0x00, 0x00, 3UL}, /* 81 */
+    {2, 0x20, 0x01, 0UL}, /* 82 */
+    {2, 0x04, 0x00, 0UL}, /* 83 */
+    {1, 0x00, 0x00, 0UL}, /* 84 */
+    {2, 0x01, 0x01, 0UL}, /* 85 */
+    {3, 0x00, 0x00, 1UL}, /* 86 */
+    {2, 0x01, 0x00, 0UL}, /* 87 */
+    {2, 0x20, 0x00, 0UL}, /* 88 */
+    {3, 0x00, 0x00, 3UL}, /* 89 */
+    {2, 0x20, 0x01, 0UL}, /* 90 */
+    {2, 0x04, 0x00, 0UL}, /* 91 */
+    {1, 0x00, 0x01, 0UL}, /* 92 */
+    {2, 0x01, 0x01, 0UL}, /* 93 */
+    {3, 0x00, 0x00, 1UL}, /* 94 */
+    {2, 0x01, 0x00, 0UL}, /* 95 */
+    {2, 0x20, 0x00, 0UL}, /* 96 */
+    {3, 0x00, 0x00, 3UL}, /* 97 */
+    {2, 0x20, 0x01, 0UL}, /* 98 */
+    {2, 0x04, 0x00, 0UL}, /* 99 */
+    {1, 0x00, 0x02, 0UL}, /* 100 */
+    {2, 0x01, 0x01, 0UL}, /* 101 */
+    {3, 0x00, 0x00, 1UL}, /* 102 */
+    {2, 0x01, 0x00, 0UL}, /* 103 */
+    {2, 0x20, 0x00, 0UL}, /* 104 */
+    {3, 0x00, 0x00, 3UL}, /* 105 */
+    {2, 0x20, 0x01, 0UL}, /* 106 */
+    {2, 0x04, 0x00, 0UL}, /* 107 */
+    {1, 0x00, 0x03, 0UL}, /* 108 */
+    {2, 0x01, 0x01, 0UL}, /* 109 */
+    {3, 0x00, 0x00, 1UL}, /* 110 */
+    {2, 0x01, 0x00, 0UL}, /* 111 */
+    {2, 0x20, 0x00, 0UL}, /* 112 */
+    {3, 0x00, 0x00, 3UL}, /* 113 */
+    {2, 0x20, 0x01, 0UL}, /* 114 */
 };
 #define EPROM_V131_TRACE_PROTO_08_LEN (int)(sizeof(EPROM_V131_TRACE_PROTO_08) / sizeof(EPROM_V131_TRACE_PROTO_08[0]))
 
 /* ─── EPROM_V131_TRACE_PROTO_0B -- AM2716, protocol 0x0B, DIP24_2716 ────────
- * Captured EMPIRICALLY: the built native_trace_v131 binary run DIRECTLY with
- * EPROM_V131_TRACE_DUMP defined (`pio test` swallows printf) -- never
- * hand-derived. Chip AM2716, pinout key DIP24_2716, pins=24, mem_size=2048,
+ * Captured EMPIRICALLY by Phase 144 Plan 03: the built native_trace_v131
+ * binary run DIRECTLY with EPROM_V131_TRACE_DUMP defined (`pio test`
+ * swallows printf) against the REAL, UNMODIFIED post-v1.31
+ * eprom_write_execute -- never hand-derived. Same chip, bus_config and
+ * synthetic 4-byte block as the frozen pre-change capture
+ * (eprom_v131_expected_prechange.h, blob
+ * ca3e09f164e6e1c541ecb63d15bbebf5bce41d70): pins=24, mem_size=2048,
  * bus_config { address_mask=0x000007FF, matching_lines=11, rw_line=0xFF
- * (none), vpp_line=0x0B (11), static_high_mask=0x00002000 (bit 13) }
- * (138-03-TRACE-CAPTURE.md §5, derived via gen_sdp_bus_config.py's own
- * derive_row -- never invented). Same synthetic 4-byte block as _07/_08
- * (address 0, V131_SYNTHETIC_BLOCK): idx0=0x3C conv=0, idx1=0xFF conv=0,
- * idx2=0x55 conv=2 (3 passes), idx3=0xAA conv=1 (2 passes). 201 merged
- * entries (142 strobes + 59 timings, 138-03-TRACE-CAPTURE.md §2), exactly 3
- * passes, RESPONSE_CODE_OK, zero recorder overflow, proven deterministic
- * across two drives before this array was pasted.
+ * (none), vpp_line=0x0B (11), static_high_mask=0x00002000 (bit 13) }; same
+ * synthetic block as _07/_08: idx0=0x3C conv=0, idx1=0xFF conv=0, idx2=0x55
+ * conv=2 (3 passes), idx3=0xAA conv=1 (2 passes). vpp_line=0x0B exactly
+ * equals VPP_P21_24_DIP, so using_p1_as_vpp(handle) is also TRUE for this
+ * chip.
  *
- * Non-obvious behaviour this array encodes (at least three, per D-04/D-06):
- *  1. The FIRST pass programs ALL FOUR bytes unconditionally -- same
- *     memset(mismatch_bitmask, 0xFF, ...) start-state as _07/_08
- *     (eprom.cpp:157).
- *  2. The program PULSE WIDTH GROWS across passes on the same byte (idx2):
- *     500us / 525us / 550us -- the SAME eprom.cpp:177 adaptive formula as
- *     _07/_08, scaled from this chip's larger 500us base (C1's adjudication,
- *     infoic-field-dictionary.md:210-217 -- NOT the 50000us BUG-2 artifact
- *     gh#15 quoted).
- *  3. protocol==0x0B takes eprom_write_execute's OTHER one-time VPP-enable
- *     branch (eprom.cpp:145-147): ctrl -> 0x80 alone (CTRL_VPP_REGULATOR_
- *     ENABLE only), NOT 0x81 like _07/_08's CTRL_VPP_VPE_DROP_ENABLE path --
- *     visible as this array's very first entry.
- *  4. vpp_line=0x0B exactly equals VPP_P21_24_DIP, so using_p1_as_vpp(handle)
- *     is ALSO TRUE for this chip (a 24-pin, not 32-pin, P1-routing constant
- *     -- a different wiring reason than _08's), so every CTRL_VPE_ENABLE
- *     assert/release is likewise remapped to CTRL_VPP_P1_ENABLE, and every
- *     P1 set->clear transition carries the same extra 4us settle _08 shows.
- *  5. This chip's static_high_mask (bit 13) is realized as a PERMANENT
- *     MSB=0x20 contribution -- mem_util_remap_address_bus ORs
- *     static_high_mask into the remapped address before it is split into
- *     LSB/MSB, so byte idx0's very first access latches MSB 0x00->0x20 (a
- *     latch _07/_08 never show at all, since their remapped MSB stays 0
- *     throughout), then stays cache-elided for every later byte in this
- *     4-byte block. A raw call-log golden that assumed MSB==0x00 for a
- *     low-address block would be wrong for this one chip.
+ * total=59 (was 201 pre-change), strobe_overflow=0, timing_overflow=0
+ * (recorder caps are 512 each). RESPONSE_CODE_OK, zero recorder overflow,
+ * proven deterministic across two drives before this array was pasted.
+ * Every entry below is pasted verbatim from the recorder's own dump output
+ * -- each retains only its own trailing positional-index comment; no
+ * hand-authored per-segment comment is added. Plan 144-04 performs the
+ * structural, per-entry attribution this array's shrink from 201 to 59
+ * entries calls for.
  *
- * This is the PRE-CHANGE cadence, frozen for Phase 144's TEST-06 to diff the
- * new (post-v1.31) cadence against. A future divergence from this array is
- * expected work, not a regression.
+ * This is the POST-v1.31 cadence, now frozen for v1.32 drift detection
+ * (tests/golden/eprom_v131_trace_inventory.json's meta.frozen_for) -- a
+ * future divergence from this array is a regression to investigate, not
+ * expected work.
  */
 static const v131_trace_entry_t EPROM_V131_TRACE_PROTO_0B[] = {
-    /* one-time VPP-regulator enable (ctrl -> 0x80) + ms=500 */
-    {1, 0x00, 0x80, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 500UL},
-    /* pass 1: VPE/route assert (ctrl -> 0x88) + ms=10 */
-    {1, 0x00, 0x88, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 10UL},
-    /* pass 1: program byte@lsb=0x00 payload=0x3C pulse=500us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x20, 0UL}, {2, 0x02, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x02, 0x00, 0UL},
-    {1, 0x00, 0x3C, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 500UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: program byte@lsb=0x01 payload=0xFF pulse=500us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xFF, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 500UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: program byte@lsb=0x02 payload=0x55 pulse=500us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0x55, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 500UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: program byte@lsb=0x03 payload=0xAA pulse=500us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xAA, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 500UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: VPE/route release (ctrl -> 0x80) + p1_settle_us=4 */
-    {1, 0x00, 0x80, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {3, 0x00, 0x00, 4UL},
-    /* pass 1: verify byte@lsb=0x00 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x00, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: verify byte@lsb=0x01 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: verify byte@lsb=0x02 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 1: verify byte@lsb=0x03 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: VPE/route assert (ctrl -> 0x88) + ms=10 */
-    {1, 0x00, 0x88, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 10UL},
-    /* pass 2: program byte@lsb=0x02 payload=0x55 pulse=525us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0x55, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 525UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: program byte@lsb=0x03 payload=0xAA pulse=525us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0xAA, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 525UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: VPE/route release (ctrl -> 0x80) + p1_settle_us=4 */
-    {1, 0x00, 0x80, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {3, 0x00, 0x00, 4UL},
-    /* pass 2: verify byte@lsb=0x00 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x00, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: verify byte@lsb=0x01 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: verify byte@lsb=0x02 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 2: verify byte@lsb=0x03 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: VPE/route assert (ctrl -> 0x88) + ms=10 */
-    {1, 0x00, 0x88, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {4, 0x00, 0x00, 10UL},
-    /* pass 3: program byte@lsb=0x02 payload=0x55 pulse=550us */
-    {2, 0x04, 0x01, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {1, 0x00, 0x55, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 550UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: VPE/route release (ctrl -> 0x80) + p1_settle_us=4 */
-    {1, 0x00, 0x80, 0UL}, {2, 0x08, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x08, 0x00, 0UL}, {3, 0x00, 0x00, 4UL},
-    /* pass 3: verify byte@lsb=0x00 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x00, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: verify byte@lsb=0x01 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x01, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: verify byte@lsb=0x02 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x02, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
-    /* pass 3: verify byte@lsb=0x03 */
-    {2, 0x04, 0x00, 0UL},
-    {1, 0x00, 0x03, 0UL}, {2, 0x01, 0x01, 0UL}, {3, 0x00, 0x00, 1UL}, {2, 0x01, 0x00, 0UL},
-    {2, 0x20, 0x00, 0UL}, {3, 0x00, 0x00, 3UL}, {2, 0x20, 0x01, 0UL},
+    {1, 0x00, 0x80, 0UL}, /* 0 */
+    {2, 0x08, 0x01, 0UL}, /* 1 */
+    {3, 0x00, 0x00, 1UL}, /* 2 */
+    {2, 0x08, 0x00, 0UL}, /* 3 */
+    {4, 0x00, 0x00, 500UL}, /* 4 */
+    {2, 0x04, 0x00, 0UL}, /* 5 */
+    {1, 0x00, 0x20, 0UL}, /* 6 */
+    {2, 0x02, 0x01, 0UL}, /* 7 */
+    {3, 0x00, 0x00, 1UL}, /* 8 */
+    {2, 0x02, 0x00, 0UL}, /* 9 */
+    {2, 0x20, 0x00, 0UL}, /* 10 */
+    {3, 0x00, 0x00, 3UL}, /* 11 */
+    {2, 0x20, 0x01, 0UL}, /* 12 */
+    {2, 0x04, 0x00, 0UL}, /* 13 */
+    {1, 0x00, 0x02, 0UL}, /* 14 */
+    {2, 0x01, 0x01, 0UL}, /* 15 */
+    {3, 0x00, 0x00, 1UL}, /* 16 */
+    {2, 0x01, 0x00, 0UL}, /* 17 */
+    {2, 0x20, 0x00, 0UL}, /* 18 */
+    {3, 0x00, 0x00, 3UL}, /* 19 */
+    {2, 0x20, 0x01, 0UL}, /* 20 */
+    {2, 0x04, 0x01, 0UL}, /* 21 */
+    {1, 0x00, 0x55, 0UL}, /* 22 */
+    {3, 0x00, 0x00, 3UL}, /* 23 */
+    {2, 0x20, 0x00, 0UL}, /* 24 */
+    {3, 0x00, 0x00, 500UL}, /* 25 */
+    {2, 0x20, 0x01, 0UL}, /* 26 */
+    {2, 0x04, 0x00, 0UL}, /* 27 */
+    {2, 0x20, 0x00, 0UL}, /* 28 */
+    {3, 0x00, 0x00, 3UL}, /* 29 */
+    {2, 0x20, 0x01, 0UL}, /* 30 */
+    {2, 0x04, 0x01, 0UL}, /* 31 */
+    {1, 0x00, 0x55, 0UL}, /* 32 */
+    {3, 0x00, 0x00, 3UL}, /* 33 */
+    {2, 0x20, 0x00, 0UL}, /* 34 */
+    {3, 0x00, 0x00, 500UL}, /* 35 */
+    {2, 0x20, 0x01, 0UL}, /* 36 */
+    {2, 0x04, 0x00, 0UL}, /* 37 */
+    {2, 0x20, 0x00, 0UL}, /* 38 */
+    {3, 0x00, 0x00, 3UL}, /* 39 */
+    {2, 0x20, 0x01, 0UL}, /* 40 */
+    {2, 0x04, 0x00, 0UL}, /* 41 */
+    {1, 0x00, 0x03, 0UL}, /* 42 */
+    {2, 0x01, 0x01, 0UL}, /* 43 */
+    {3, 0x00, 0x00, 1UL}, /* 44 */
+    {2, 0x01, 0x00, 0UL}, /* 45 */
+    {2, 0x20, 0x00, 0UL}, /* 46 */
+    {3, 0x00, 0x00, 3UL}, /* 47 */
+    {2, 0x20, 0x01, 0UL}, /* 48 */
+    {2, 0x04, 0x01, 0UL}, /* 49 */
+    {1, 0x00, 0xAA, 0UL}, /* 50 */
+    {3, 0x00, 0x00, 3UL}, /* 51 */
+    {2, 0x20, 0x00, 0UL}, /* 52 */
+    {3, 0x00, 0x00, 500UL}, /* 53 */
+    {2, 0x20, 0x01, 0UL}, /* 54 */
+    {2, 0x04, 0x00, 0UL}, /* 55 */
+    {2, 0x20, 0x00, 0UL}, /* 56 */
+    {3, 0x00, 0x00, 3UL}, /* 57 */
+    {2, 0x20, 0x01, 0UL}, /* 58 */
 };
 #define EPROM_V131_TRACE_PROTO_0B_LEN (int)(sizeof(EPROM_V131_TRACE_PROTO_0B) / sizeof(EPROM_V131_TRACE_PROTO_0B[0]))
 
