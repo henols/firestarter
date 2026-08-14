@@ -72,6 +72,19 @@ Coverage:
   7. test_own_needles_do_not_appear_verbatim_in_this_module -- every
      concatenation-built needle from Coverage 6 appears NOWHERE verbatim in
      this module's own source.
+  8. test_planted_renamed_case_is_detected -- D-18 Plant A. A case
+     TEST-02 is mapped against is renamed in a SCRATCH copy (never the
+     real tree) of test_loop_eprom_v131, run through Coverage 1's own leg
+     in a CHILD PROCESS via FIRESTARTER_CASE_MAP_SCAN_ROOT, and the RED
+     transcript must name both the missing case and TEST-02 -- proving a
+     renamed or deleted native case fails the gate with a locating
+     message, not a silent pass.
+  9. test_planted_emptied_scan_root_fails_the_non_vacuity_leg -- D-18
+     Plant B. An EMPTY scratch scan root, run through Coverage 5's own leg
+     in a CHILD PROCESS, must fail naming the hardcoded floor (88) and the
+     observed count (0) -- proving an emptied or misdirected scan root
+     fails the non-vacuity leg instead of making every membership check
+     pass vacuously over an empty set.
 
 Environment seams: (this repository has no central environment-variable
 inventory -- this docstring is the only place a reader can discover them,
@@ -84,16 +97,24 @@ mirroring tests/test_ack_layout_source_contract_v143.py's own convention)
     planted-violation run must set it in a CHILD PROCESS environment
     before this module is imported, never via a post-import monkeypatch
     (monkeypatch.setenv has no effect on an already-bound module-level
-    value).
+    value). Coverage 8 and 9 are the two legs that set it, always through
+    `_run_gate_in_subprocess`, never through `monkeypatch.setenv` (S6).
+  - FIRESTARTER_144_GATE_CHILD -- a child-process recursion guard only,
+    read (never written by anything but `_run_gate_in_subprocess` itself)
+    to refuse spawning a nested gate subprocess from inside one. It is not
+    a behavioural seam: it carries no path, no floor and no case name, and
+    no test above reads it for any other purpose. Copied structurally from
+    tests/test_flash_path_record_sync.py's own FIRESTARTER_129_GATE_CHILD.
   - Coverage 5's FIRST half, Coverage 6 and Coverage 7 deliberately never
-    read this seam: Coverage 5's first half recomputes the default target
-    directly from the repository root without ever reading os.environ (the
-    check_permitted_claims.py `_HERE`-resolves-to-the-wrong-directory
-    landmine, closed here by construction); 6 and 7 read only this
-    module's own source. A stray seam value left set after a planted run
-    cannot make Coverage 5's first half, 6 or 7 pass vacuously -- at worst
-    Coverage 1-4 and Coverage 5's second half redirect to whatever the
-    seam happens to point at, which fails loudly rather than silently.
+    read either seam: Coverage 5's first half recomputes the default
+    target directly from the repository root without ever reading
+    os.environ (the check_permitted_claims.py `_HERE`-resolves-to-the-
+    wrong-directory landmine, closed here by construction); 6 and 7 read
+    only this module's own source. A stray seam value left set after a
+    planted run cannot make Coverage 5's first half, 6 or 7 pass
+    vacuously -- at worst Coverage 1-4 and Coverage 5's second half
+    redirect to whatever the seam happens to point at, which fails loudly
+    rather than silently.
 
 CI framing, stated honestly: `pytest tests/ -v` appears in
 `.github/workflows/build.yml:161` and `.github/workflows/beta-build.yml:134`,
@@ -109,11 +130,12 @@ would obligate raising both in the same commit, which this plan does not
 do), it adds no shared pytest configuration or fixture-registration file
 anywhere (firestarter/tests/ has none, by house convention, and this module
 does not introduce one), and it imports nothing beyond the Python standard
-library (os, re, pathlib in this plan's first task; subprocess, sys and
-shutil are added by this same file's second task for the D-18 planted-
-violation legs). It never imports, parametrizes against, or edits any other
-existing test module -- the scanning logic below is its own independent
-re-derivation of this plan's own gate specification, never a shared helper.
+library: os, re and pathlib for the mapping and self-protection legs
+(Coverage 1-7); subprocess, sys and shutil for the D-18 planted-violation
+legs' child-process runs and fail-closed git resolution (Coverage 8-9). It
+never imports, parametrizes against, or edits any other existing test
+module -- the scanning logic below is its own independent re-derivation of
+this plan's own gate specification, never a shared helper.
 
 Self-contained path resolution below -- NOT in conftest.py (firestarter/
 tests/ has no conftest.py anywhere in the repo; a recorded house-rule
@@ -122,6 +144,9 @@ pattern, not an omission). Stdlib and pytest only.
 
 import os
 import re
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
@@ -533,3 +558,248 @@ def test_own_needles_do_not_appear_verbatim_in_this_module():
             "in this module's own source -- rebuild it from at least two "
             "literal pieces so this gate cannot match itself."
         )
+
+
+# ---------------------------------------------------------------------------
+# D-18 planted-violation machinery (Coverage 8-9). Both legs prove this
+# module's own RED is locating, not just present: a pre-authored leg can be
+# UNREACHABLE, and RED alone proves nothing until it has also been seen to
+# pass for the right reason (D-18, 144-CONTEXT.md).
+#
+# A CHILD PROCESS is mandatory for both plants: _SCAN_SUITES binds at
+# IMPORT time, and monkeypatch.setenv cannot reach an already-imported
+# module-level value (S6). Copied structurally from
+# tests/test_flash_path_record_sync.py:269-305's own
+# `_run_gate_in_subprocess` and its FIRESTARTER_129_GATE_CHILD recursion
+# guard.
+# ---------------------------------------------------------------------------
+
+# The three mapped suites' REAL sources -- resolved via _REPO_ROOT directly
+# (never via _SCAN_SUITES/the seam), because these paths name the ONE true
+# copy the S2 ceremony below must prove untouched, regardless of whatever
+# scratch root a planted run happens to point the seam at.
+_REAL_SUITE_PATHS = {
+    suite: _REPO_ROOT / _SUITES_REL / suite / f"{suite}.cpp" for suite in _MAPPED_SUITES
+}
+
+
+def _resolve_git():
+    """Resolve the `git` binary, fail-closed -- copied structurally from
+    tests/test_golden_trace_identity_eprom_v131.py's own `_resolve_git`.
+    Deliberately never bypassed via any decorator or runtime call that
+    would mark this outcome as skipped: a missing `git` must FAIL this
+    suite, never be silently skipped, or the S2 ceremony below could never
+    prove the real suite sources are untouched."""
+    git_bin = shutil.which(os.environ.get("GIT", "git"))
+    assert git_bin is not None, (
+        "git not found on PATH (checked $GIT, falling back to 'git'). This "
+        "must FAIL the suite, never be silently skipped -- a missing git "
+        "would otherwise turn the S2 real-sources-untouched ceremony into "
+        "a silent no-op."
+    )
+    return git_bin
+
+
+def _git_hash_object(path):
+    """Resolve `git` fail-closed and hash-object `path` (list-form argv,
+    shell=False)."""
+    git_bin = _resolve_git()
+    result = subprocess.run(
+        [git_bin, "hash-object", str(path)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+def _git_porcelain(path):
+    """Resolve `git` fail-closed and return `git status --porcelain` for
+    `path` (list-form argv, shell=False). Empty output means a clean
+    tree."""
+    git_bin = _resolve_git()
+    result = subprocess.run(
+        [git_bin, "-C", str(path), "status", "--porcelain"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout
+
+
+def _hash_real_suites():
+    """git hash-object every real mapped-suite source, keyed by suite
+    name. Called before AND after each planted run below so the S2
+    ceremony can assert none of the three real sources changed."""
+    return {suite: _git_hash_object(path) for suite, path in _REAL_SUITE_PATHS.items()}
+
+
+def _copy_real_suites_to(scratch_root):
+    """Copy each of the three mapped suites' REAL source (read via
+    _REAL_SUITE_PATHS, never through the seam) verbatim into
+    `scratch_root/<suite>/<suite>.cpp`. Returns {suite: dest_path}."""
+    dests = {}
+    for suite, real_path in _REAL_SUITE_PATHS.items():
+        dest_dir = scratch_root / suite
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = dest_dir / f"{suite}.cpp"
+        dest_path.write_text(real_path.read_text())
+        dests[suite] = dest_path
+    return dests
+
+
+def _run_gate_in_subprocess(env_overrides, node_id=None):
+    """Run `[sys.executable, "-m", "pytest", <this module's path>, "-q",
+    "-rs"]` (optionally scoped to `node_id`) with `cwd=_REPO_ROOT` and
+    `os.environ` merged with `env_overrides`, capturing text output, and
+    return the `CompletedProcess`.
+
+    A child process is MANDATORY here: `_SCAN_SUITES` binds at IMPORT
+    time, and `monkeypatch.setenv` cannot reach an already-imported
+    module-level value (S6). `-rs` is passed so a skipped outcome (rather
+    than a failure) would be visible in the captured output.
+
+    Guards against infinite recursion by refusing to run (a plain assert,
+    never a skip) when FIRESTARTER_144_GATE_CHILD is already set in the
+    CURRENT process, and sets that variable in the child's environment.
+    """
+    assert os.environ.get("FIRESTARTER_144_GATE_CHILD") is None, (
+        "refusing to spawn a nested gate subprocess -- "
+        "FIRESTARTER_144_GATE_CHILD is already set in this process; this "
+        "would recurse indefinitely if it were allowed to proceed."
+    )
+    module_path = str(_HERE / "test_requirement_case_mapping_v131.py")
+    target = f"{module_path}::{node_id}" if node_id else module_path
+    env = dict(os.environ)
+    env.update(env_overrides)
+    env["FIRESTARTER_144_GATE_CHILD"] = "1"
+    return subprocess.run(
+        [sys.executable, "-m", "pytest", target, "-q", "-rs"],
+        cwd=str(_REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_planted_renamed_case_is_detected(tmp_path):
+    """Coverage 8 -- D-18 Plant A. A case TEST-02 is mapped against
+    (test_loop01_pulse_width_never_grows_between_attempts) is renamed in a
+    SCRATCH copy of test_loop_eprom_v131 -- never the real tree (S2
+    ceremony) -- and Coverage 1's own leg, run in a CHILD PROCESS (the
+    seam binds at import; monkeypatch.setenv cannot reach it, S6), must
+    name both the missing case and the requirement that lost it."""
+    renamed_case = "test_loop01_pulse_width_never_grows_between_attempts"
+    truncated_case = "test_loop01_pulse_width_never_grows"
+
+    before_hashes = _hash_real_suites()
+    real_loop_path = _REAL_SUITE_PATHS["test_loop_eprom_v131"]
+    real_text = real_loop_path.read_text()
+
+    assert real_text.count(renamed_case) == 2, (
+        f"expected {renamed_case!r} to appear exactly twice in the real "
+        "file (the function definition and its RUN_TEST site), found "
+        f"{real_text.count(renamed_case)} -- the plant's 'both occurrences' "
+        "claim would no longer hold."
+    )
+    mutated_text = real_text.replace(renamed_case, truncated_case)
+    assert mutated_text != real_text, (
+        f"planted rename did not actually change the text -- the target "
+        f"{renamed_case!r} was not found (the suite may have changed)."
+    )
+
+    scratch_root = tmp_path / "scratch_suites"
+    dests = _copy_real_suites_to(scratch_root)
+    dests["test_loop_eprom_v131"].write_text(mutated_text)
+
+    result = _run_gate_in_subprocess(
+        {"FIRESTARTER_CASE_MAP_SCAN_ROOT": str(scratch_root)},
+        node_id="test_every_mapped_requirement_names_only_existing_cases",
+    )
+    output = result.stdout + result.stderr
+
+    assert result.returncode != 0, (
+        "expected the mapping gate to FAIL against a scan root with a "
+        f"renamed case, got returncode=0.\nOutput:\n{output}"
+    )
+    assert renamed_case in output, (
+        f"expected the RED output to name the missing case {renamed_case!r}"
+        f".\nOutput:\n{output}"
+    )
+    assert "TEST-02" in output, (
+        f"expected the RED output to name the requirement TEST-02 that "
+        f"lost its case.\nOutput:\n{output}"
+    )
+    # Leg isolation -- this run is scoped to ONE node id, so no OTHER
+    # leg's phrase should appear, proving the RED is attributable to
+    # exactly the membership check, not a coincidental floor or count
+    # complaint (88 names are still extractable from the scratch root
+    # minus one rename, so a count-only complaint would be misleading).
+    assert "hardcoded floor" not in output, (
+        f"expected no hardcoded-floor complaint (a different leg's phrase) "
+        f"in this node-id-scoped run.\nOutput:\n{output}"
+    )
+    assert "emptied or misdirected scan root" not in output, (
+        f"expected no non-vacuity-leg complaint (a different leg's phrase) "
+        f"in this node-id-scoped run.\nOutput:\n{output}"
+    )
+
+    after_hashes = _hash_real_suites()
+    assert after_hashes == before_hashes, (
+        f"real suite source(s) changed during the planted-rename run -- "
+        f"before={before_hashes} after={after_hashes}. Planted content "
+        "must only ever be written under tmp_path, never the real tree."
+    )
+    assert _git_porcelain(_REPO_ROOT) == "", (
+        "the firmware repo's working tree is no longer clean after the "
+        "planted-rename test."
+    )
+
+
+def test_planted_emptied_scan_root_fails_the_non_vacuity_leg(tmp_path):
+    """Coverage 9 -- D-18 Plant B. An EMPTY scratch scan root (no .cpp
+    anywhere) must fail Coverage 5's own leg (test_scan_targets_are_non_
+    vacuous), run in a CHILD PROCESS, with a message naming the hardcoded
+    floor (88) and the observed count (0) -- proving an emptied or
+    misdirected scan root fails the gate's non-vacuity leg instead of
+    making every membership check in Coverage 1 pass vacuously over an
+    empty set. Run via -rs so a skipped outcome (rather than a failure)
+    would be visible."""
+    before_hashes = _hash_real_suites()
+
+    scratch_root = tmp_path / "empty_scratch_suites"
+    scratch_root.mkdir(parents=True)
+    assert list(scratch_root.iterdir()) == [], (
+        f"expected {scratch_root} to be empty before the child run."
+    )
+
+    result = _run_gate_in_subprocess(
+        {"FIRESTARTER_CASE_MAP_SCAN_ROOT": str(scratch_root)},
+        node_id="test_scan_targets_are_non_vacuous",
+    )
+    output = result.stdout + result.stderr
+
+    assert result.returncode != 0, (
+        "expected the non-vacuity leg to FAIL against an EMPTY scan root, "
+        f"got returncode=0.\nOutput:\n{output}"
+    )
+    assert "is 0, expected >= 88" in output, (
+        "expected the RED output to name the observed count (0) and the "
+        f"hardcoded floor (88) together.\nOutput:\n{output}"
+    )
+    assert "skipped" not in output.lower(), (
+        "expected the child run NOT to report a skipped outcome (-rs "
+        "makes any skip visible) -- an emptied scan root must FAIL, never "
+        f"SKIP.\nOutput:\n{output}"
+    )
+
+    after_hashes = _hash_real_suites()
+    assert after_hashes == before_hashes, (
+        f"real suite source(s) changed during the planted-empty-root run "
+        f"-- before={before_hashes} after={after_hashes}. Planted content "
+        "must only ever be written under tmp_path, never the real tree."
+    )
+    assert _git_porcelain(_REPO_ROOT) == "", (
+        "the firmware repo's working tree is no longer clean after the "
+        "planted-empty-root test."
+    )
