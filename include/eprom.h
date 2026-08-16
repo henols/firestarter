@@ -114,31 +114,57 @@ extern "C" {
      * never converge. The old code got its amortisation from batching a
      * whole pass of pulses before one verify pass; a per-byte loop cannot.
      *
-     * VALUES. TOES ("OE/VPP Setup Time") is 2.0 us MIN and TVS ("OE/VPP
-     * Valid after CE High") is 2.0 us MIN, both from the W27C512 AC
-     * PROGRAMMING/ERASE CHARACTERISTICS table; OE/VPP rise time (TPRT) is
-     * 50 ns MIN. 100 us and 10 us are 50x and 5x those minima, chosen with
-     * that much margin because the RURP shield's own VPE switch rise time is
-     * a BOARD property that no measurement in this project has ever
-     * characterised -- the datasheet bounds the chip, not the board. They are
-     * deliberately far below the deleted code's delay(10): that 10 ms was
-     * paid once per block-pass and could be arbitrary; at per-pulse
-     * granularity it would cost 1024 x 10 ms = 10.2 s on a Leonardo block
-     * against the 8 s this protocol's own CAP-03 advertisement asks the host
-     * to wait (eprom_budget.h), i.e. it would convert a working write into a
-     * host transport timeout. At 100 us + 10 us the same block costs about
-     * 0.11 s of settle.
+     * VALUES -- DATASHEET FLOOR, THEN MEASURED. TOES ("OE/VPP Setup Time")
+     * is 2.0 us MIN and TVS ("OE/VPP Valid after CE High") is 2.0 us MIN,
+     * both from the W27C512 AC PROGRAMMING/ERASE CHARACTERISTICS table;
+     * OE/VPP rise time (TPRT) is 50 ns MIN. Those are the CHIP's floors. The
+     * values below are 500x and 50x them, and the extra margin is not
+     * decoration: the RURP shield's own VPE switch rise time is a BOARD
+     * property that no measurement in this project has ever characterised,
+     * and this session could not characterise it either (no DMM available).
      *
-     * SELF-CORRECTING, WITHIN LIMITS: an under-settle does not corrupt, it
-     * only wastes a pulse -- the loop re-pulses up to max_pulses. It is not
-     * unbounded, though; an under-settle bad enough to make every pulse
-     * ineffective reappears as MSG_ERR_MAX_PULSES, which is exactly the
-     * symptom this fix was written for, so a future bench failure here must
-     * be re-discriminated against the old 10 ms value rather than assumed
-     * to be a worn part.
+     * The pair was therefore chosen on the bench, not from the datasheet.
+     * At the first values tried, 100 us / 10 us, the loop programmed
+     * correctly -- write time held at ~40 s per 64 KiB, which is the ~1
+     * pulse per byte figure, so the pulses were plainly effective -- but 1
+     * of 3 full 64 KiB cycles failed its final full-array verify on a SINGLE
+     * byte (0x85 read back as 0xc5 at 0x007acf: bit 6 took enough charge to
+     * pass the per-pulse verify and not enough to hold). At 1000 us / 100 us
+     * that did not recur in 11 consecutive 64 KiB cycles across three
+     * different images -- 719 424 programmed bytes, zero margin failures,
+     * every cycle byte-exact against an independent read-back. Stated
+     * honestly: 11/11 against 2/3 is suggestive, not proof (p ~ 0.025 under
+     * the null of an unchanged per-byte failure rate), and the residual
+     * could equally have been a marginal cell or a program-window VPP droop
+     * that this session had no instrument to see. The larger value is the
+     * conservative choice, and it is cheap in the only currency that matters
+     * here.
+     *
+     * The COST, so nobody has to re-measure it: ~110 s per 64 KiB write, up
+     * from ~40 s at 100 us. That is well inside budget -- a 1024-byte
+     * Leonardo block spends about 1.13 s in these settles against the 8 s
+     * this protocol's own CAP-03 advertisement asks the host to wait
+     * (eprom_budget.h). This is also the ceiling on how far these values can
+     * grow: the deleted code's delay(10) was paid once per block-PASS, so it
+     * could be arbitrary, but at per-pulse granularity 10 ms would cost
+     * 1024 x 10 ms = 10.2 s per block and convert a working write into a
+     * host transport timeout. Anything above ~7 ms is unsafe for that reason
+     * alone, quite apart from the AVR delayMicroseconds ceiling of 16383 us
+     * that tests/test_write_path_source_contract_v131.py range-checks.
+     *
+     * SELF-CORRECTING, WITHIN LIMITS: a mild under-settle does not corrupt,
+     * it only wastes a pulse -- the loop re-pulses up to max_pulses. Two
+     * limits on that comfort, both observed above. An under-settle bad
+     * enough to make every pulse ineffective reappears as
+     * MSG_ERR_MAX_PULSES, the exact symptom this fix was written for. And an
+     * under-settle that is merely MARGINAL is not self-correcting at all: it
+     * converges the per-pulse verify on a weakly programmed cell and only
+     * shows up later, as MSG_ERR_VERIFY from the full-array pass. A future
+     * bench failure of EITHER shape must be re-discriminated by raising
+     * these values before anyone concludes the part is worn.
      */
-    #define EPROM_VPP_SETUP_US 100
-    #define EPROM_VPP_HOLD_US  10
+    #define EPROM_VPP_SETUP_US 1000
+    #define EPROM_VPP_HOLD_US  100
 
 #ifdef __cplusplus
 }
