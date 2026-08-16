@@ -28,8 +28,9 @@ Coverage:
   2. Clean native control — both captured_test_native*.log files exit 0 with 141 and 17
      in the PASS: line.
   3. Planted flash regression exits non-zero, prints FAIL:, and the output names both
-     the baseline figure (26906, the v1.31-tip Phase 144 Plan 05 re-anchored to) and
-     the observed figure (27418).
+     the baseline figure (27002, the post-route-assert-fix figure the debug session
+     w27c512-program-fail-byte0 re-anchored the live default to) and the observed
+     figure (27514).
   4. Planted unparseable log exits exactly 2 (the literal return code, not just
      non-zero) and does NOT print PASS:.
   5. Planted errored-suites log exits non-zero naming ERRORED — proving the gate
@@ -58,7 +59,7 @@ diffable against the source so a reviewer can see exactly what was planted):
 
   planted_size_baseline_flash_regression.log
     = captured_build_leonardo.log with the Flash: line's `used` figure raised from
-      26906 to 27418 (+512 B, the same offset every prior version of this fixture has
+      27002 to 27514 (+512 B, the same offset every prior version of this fixture has
       used since Phase 123, now applied to the v1.31-tip figure Phase 144 Plan 05
       re-captured -- see below). The percentage/bar-graph columns are left exactly as
       captured (now inconsistent with the new `used` figure) -- a free proof that the
@@ -101,15 +102,20 @@ diffable against the source so a reviewer can see exactly what was planted):
       still reads 17, so a gate asserting only the count would incorrectly pass.
 
   planted_size_baseline_policy_uno_over_band.log
-    = captured_build_uno.log with the Flash: line's `used` figure raised from 24824 to
-      24889 (+65 B — one byte outside MERGE-05's 64 B uno-class band). Everything else,
+    = captured_build_uno.log AS IT READ AT BASE-01'S ANCHOR with the Flash: line's
+      `used` figure raised from 24824 to 24889 (+65 B — one byte outside MERGE-05's
+      64 B uno-class band). This and the two other policy-mode planted logs are
+      compared against BASE-01, which the w27c512-program-fail-byte0 debug session
+      deliberately did NOT move, so they were left at the anchor figures when the
+      captured_build_*.log trio shifted +96 B with the live tree. Everything else,
       including the now-stale percentage/bar columns, is left exactly as captured.
       Re-derived by Phase 144 Plan 05 from 23932/23997 (D-18): the +65 B delta is
       unchanged, only the anchor moved.
 
   planted_size_baseline_policy_leonardo_growth.log
     = captured_build_leonardo.log with the Flash: line's `used` figure raised from
-      26906 to 26907 (+1 B — Leonardo must not grow at all under MERGE-05).
+      26906 to 26907 (+1 B — Leonardo must not grow at all under MERGE-05). Left at
+      the BASE-01 anchor for the reason given under the uno-class entry above.
       Re-derived by Phase 144 Plan 05 from 26072/26073 (D-18): the +1 B delta is
       unchanged, only the anchor moved.
 
@@ -196,8 +202,8 @@ def test_clean_native_both_envs_pass():
 
 def test_planted_flash_regression_flips_checker_to_failure():
     """Coverage 3 — the planted +512 B Leonardo flash figure exits non-zero and names
-    both the baseline (26906, the v1.31-tip figure Phase 144 Plan 05 re-anchored the
-    live default to, D-10) and observed (27418) figures -- the message must name both
+    both the baseline (27002, the figure the w27c512-program-fail-byte0 debug session
+    re-anchored the live default to) and observed (27514) figures -- the message must name both
     numbers, not merely fail."""
     result = _run_checker(
         ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression.log'}"]
@@ -207,8 +213,8 @@ def test_planted_flash_regression_flips_checker_to_failure():
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "FAIL:" in result.stdout, f"Expected FAIL: in output. Got:\n{result.stdout}"
-    assert "26906" in result.stdout, f"Expected baseline figure 26906. Got:\n{result.stdout}"
-    assert "27418" in result.stdout, f"Expected observed figure 27418. Got:\n{result.stdout}"
+    assert "27002" in result.stdout, f"Expected baseline figure 27002. Got:\n{result.stdout}"
+    assert "27514" in result.stdout, f"Expected observed figure 27514. Got:\n{result.stdout}"
 
 
 def test_planted_unparseable_log_exits_exactly_2():
@@ -306,12 +312,26 @@ def test_policy_merge05_permits_the_measured_landing_deltas():
     26906/2014) — and BASE-01 itself was re-anchored in place to those identical
     figures. This leg therefore now asserts EXACT IDENTITY at ZERO delta on all three
     targets, not growth staying inside a band. It reads PASS because the anchor moved
-    to v1.31, not because growth stayed inside v1.24's original band."""
+    to v1.31, not because growth stayed inside v1.24's original band.
+
+    Debug session w27c512-program-fail-byte0 (Phase 145 Gate 2 root-cause fix)
+    SEVERED this leg from captured_build_*.log and gave it its own frozen inputs,
+    merge05_base01_anchor_*.log, which hold BASE-01's own anchor figures verbatim
+    (uno 24824, uno328pb 24874, leonardo 26906). Reason, stated plainly: that fix
+    added 96 B of flash to all three targets, and the captured_build_*.log fixtures
+    have to track the LIVE tree because five other legs feed them to the default
+    byte-identity mode. Continuing to feed them here would have quietly converted
+    this leg from "the comparator passes at zero delta" into a false claim that the
+    current tree is inside MERGE-05's band -- it is NOT, and
+    test_policy_merge05_fires_on_the_current_tree immediately below is the
+    machine-checked record of that breach. So this leg keeps proving exactly the
+    comparator property it was written for, on inputs frozen at the anchor, and no
+    longer doubles as a measurement of a tree that has moved."""
     argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
     for env, fixture in (
-        ("leonardo", "captured_build_leonardo.log"),
-        ("uno", "captured_build_uno.log"),
-        ("uno328pb", "captured_build_uno328pb.log"),
+        ("leonardo", "merge05_base01_anchor_leonardo.log"),
+        ("uno", "merge05_base01_anchor_uno.log"),
+        ("uno328pb", "merge05_base01_anchor_uno328pb.log"),
     ):
         argv += ["--avr-log", f"{env}={_FIXTURES / fixture}"]
 
@@ -322,6 +342,53 @@ def test_policy_merge05_permits_the_measured_landing_deltas():
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "PASS:" in result.stdout, f"Expected PASS: in stdout. Got:\n{result.stdout}"
+
+
+def test_policy_merge05_fires_on_the_current_tree():
+    """Debug session w27c512-program-fail-byte0 — the honest counterpart to the leg
+    directly above, and the reason that one had to be re-pointed.
+
+    The current tree's real measured sizes (captured_build_*.log, which the default
+    byte-identity mode's own clean-control legs prove are in lockstep with
+    scripts/baseline/size_baseline.json) are +96 B against BASE-01 on all three
+    targets. MERGE-05's bands are 0 B on leonardo and 64 B uno-class, so the band
+    comparator FAILS on every one of them. That is recorded here as an assertion
+    rather than as prose in a JSON meta field, so it cannot rot: the day someone
+    adjudicates the band — by re-anchoring BASE-01, by widening the band, or by
+    shrinking the fix — this leg goes RED and forces the decision to be written down.
+
+    What the +96 B is: eprom_internal_program_pulse plus the two settle constants,
+    restoring the program-voltage route assert Phase 141 dropped. It is a defect fix
+    that returns behaviour the pre-v1.31 firmware had, not new feature surface.
+    Whether MERGE-05's band admits a defect fix is a milestone requirements
+    judgement, and a debug session deliberately did not make it by moving the anchor
+    a second time (Phase 144 / D-11 moved it once already, and the green that
+    produced was the anchor moving, not growth staying inside a band)."""
+    argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
+    for env, fixture in (
+        ("leonardo", "captured_build_leonardo.log"),
+        ("uno", "captured_build_uno.log"),
+        ("uno328pb", "captured_build_uno328pb.log"),
+    ):
+        argv += ["--avr-log", f"{env}={_FIXTURES / fixture}"]
+
+    result = _run_checker(argv)
+    assert result.returncode == 1, (
+        "expected --policy merge05 to FAIL (exit 1) against the current tree: the "
+        "program-voltage route-assert fix is +96 B on every target, over both the "
+        "0 B leonardo band and the 64 B uno-class band.\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    for env, band in (("leonardo", "0 B"), ("uno", "64 B"), ("uno328pb", "64 B")):
+        assert f"{env}: flash_used baseline=" in result.stdout, (
+            f"expected the FAIL output to name {env}. Got:\n{result.stdout}"
+        )
+    assert result.stdout.count("delta=+96") == 3, (
+        "expected all three targets to be exactly +96 B over BASE-01 -- if this "
+        "number moved, the fix's flash cost moved with it and both this leg and "
+        "scripts/baseline/size_baseline.json's merge05_clause need re-deriving.\n"
+        f"Got:\n{result.stdout}"
+    )
 
 
 def test_policy_merge05_fires_on_uno_class_over_band():

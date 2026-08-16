@@ -76,7 +76,7 @@ Linking .pio/build/uno328pb/firestarter_uno328pb.elf
 Checking size .pio/build/uno328pb/firestarter_uno328pb.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [========  ]  77.1% (used 1579 bytes from 2048 bytes)
-Flash: [========  ]  77.1% (used 24970 bytes from 32384 bytes)
+Flash: [========  ]  76.8% (used 24874 bytes from 32384 bytes)
 Building .pio/build/uno328pb/firestarter_uno328pb.hex
 ========================= [SUCCESS] Took 2.41 seconds =========================
 

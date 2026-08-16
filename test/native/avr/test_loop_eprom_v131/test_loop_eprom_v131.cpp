@@ -631,17 +631,67 @@ void test_loop01_pulse_width_never_grows_between_attempts(void) {
     TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- small block, must be sound");
     TEST_ASSERT_EQUAL_MESSAGE(0, timing_overflowed(), "timing_overflowed -- small block, must be sound");
 
-    int count_100 = 0;
+    /* Debug session w27c512-program-fail-byte0 -- this leg used to identify
+     * a pulse-width entry BY VALUE ("any delayMicroseconds that is not 1, 3
+     * or 100 is LOOP-02's growth"). That test could not survive its own
+     * subject: the fix that restored the program-voltage route assert added
+     * an EPROM_VPP_SETUP_US settle whose value (100) is the same number as
+     * this chip's pulse width, so a value-keyed count would have read 20
+     * pulses where there are 10, and a value-keyed allowlist would have had
+     * to be widened by exactly the constant it is meant to police.
+     *
+     * Identify the pulse width STRUCTURALLY instead, which is what the
+     * property was always about: the pulse width is the delay emitted while
+     * /CE is asserted AND the part's outputs are disabled.
+     * timing_after_strobe(t) is the strobe count at push time, so timing t
+     * sits between strobe seq-1 and strobe seq; a CE-gated delay is
+     * therefore one whose preceding strobe drives CHIP_ENABLE low and whose
+     * following strobe drives it high again. Both halves of the loop emit
+     * one: memory_set_data's program pulse and memory_get_data's read
+     * strobe. /OE separates them, and does so by definition rather than by
+     * coincidence -- memory_set_data opens with rurp_chip_input() (OE high,
+     * outputs off, the part is being driven) while memory_get_data opens
+     * with rurp_chip_output() (OE low, the part is driving). This is
+     * strictly stronger than the value check it replaces -- it would still
+     * catch growth if a grown width happened to collide with some other
+     * constant in the stream -- and it no longer has an opinion about how
+     * many other delays the write path emits or what they are worth. */
     int n = timing_count();
+    int sc = strobe_count();
+    int pulses_seen = 0;
+    uint32_t first_width = 0;
     for (int i = 0; i < n; i++) {
         if (timing_kind(i) != TIMING_KIND_DELAY_US) continue;
+        int seq = timing_after_strobe(i);
+        if (seq < 1 || seq >= sc) continue;
+        bool ce_low_before = strobe_kind(seq - 1) == STROBE_KIND_PIN &&
+                             strobe_pin(seq - 1) == CHIP_ENABLE &&
+                             strobe_value(seq - 1) == 0;
+        bool ce_high_after = strobe_kind(seq) == STROBE_KIND_PIN &&
+                             strobe_pin(seq) == CHIP_ENABLE &&
+                             strobe_value(seq) == 1;
+        if (!(ce_low_before && ce_high_after)) continue;
+        /* Most recent OUTPUT_ENABLE strobe at or before the /CE fall. */
+        int oe = -1;
+        for (int j = seq - 2; j >= 0; j--) {
+            if (strobe_kind(j) == STROBE_KIND_PIN && strobe_pin(j) == OUTPUT_ENABLE) {
+                oe = strobe_value(j);
+                break;
+            }
+        }
+        TEST_ASSERT_TRUE_MESSAGE(oe >= 0, "no OUTPUT_ENABLE strobe precedes a CE-gated delay -- the stream cannot be classified, which must FAIL rather than silently skip");
+        if (oe != 1) continue;  /* OE low: this is a verify read, not a pulse */
         uint32_t us = timing_us(i);
-        char msg[112];
-        snprintf(msg, sizeof(msg), "timing entry %d (delayMicroseconds) has value %lu -- expected 1 (register-shift overhead), 3 or 100; any FOURTH distinct value is LOOP-02's growth", i, (unsigned long)us);
-        TEST_ASSERT_TRUE_MESSAGE(us == 1UL || us == 3UL || us == 100UL, msg);
-        if (us == 100UL) count_100++;
+        if (pulses_seen == 0) {
+            first_width = us;
+        }
+        char msg[136];
+        snprintf(msg, sizeof(msg), "pulse %d is %lu us but pulse 1 was %lu us -- the width must be FIXED across every attempt; a growing width is LOOP-02's retry escalation", pulses_seen + 1, (unsigned long)us, (unsigned long)first_width);
+        TEST_ASSERT_EQUAL_UINT32_MESSAGE(first_width, us, msg);
+        pulses_seen++;
     }
-    TEST_ASSERT_EQUAL_MESSAGE(10, count_100, "exactly one 100us pulse-width entry per pulse -- 10 total across the block (1+2+3+4)");
+    TEST_ASSERT_EQUAL_MESSAGE(100, (int)first_width, "the fixed width must be the handle's own pulse_delay (100us), never a derived one");
+    TEST_ASSERT_EQUAL_MESSAGE(10, pulses_seen, "exactly one CE-gated pulse-width entry per pulse -- 10 total across the block (1+2+3+4)");
 }
 
 /* Case 3: a verify read follows every pulse. Deliberately does NOT assert

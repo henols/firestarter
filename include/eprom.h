@@ -84,6 +84,62 @@ extern "C" {
      */
     #define EPROM_PROGRESS_EMIT_INTERVAL_MS 1000
 
+    /*
+     * Debug session w27c512-program-fail-byte0 (Phase 145 Gate 2) -- the
+     * settle either side of the program-voltage route assert that wraps
+     * every program pulse in eprom.cpp's per-byte loop.
+     *
+     * WHY THE WRAP EXISTS AT ALL. Phase 141 rewrote eprom_write_execute as
+     * a per-byte pulse-to-verify loop and deleted program_mismatched_bytes()
+     * "outright" (141-PATTERNS.md:158). That function was the ONLY place the
+     * write path ever asserted CTRL_VPE_ENABLE -- it wrapped each program
+     * pass in set_control_register(CTRL_VPE_ENABLE, 1) / delay(10) / ... /
+     * set_control_register(CTRL_VPE_ENABLE, 0). The replacement loop calls
+     * firestarter_set_data() bare, and memory_set_data() (memory.cpp) writes
+     * no control register of its own, so from Phase 141 until this fix every
+     * CE program strobe on 0x07/0x08/0x0B was emitted with the 12 V rail
+     * generated but never switched onto the socket. The repo's own two
+     * empirical golden traces show it directly: the pre-v1.31 capture latches
+     * 0x85/0x95 into CONTROL_REGISTER during the program pass on 0x07 (bit
+     * 0x04 set), the post-v1.31 capture latches only 0x81/0x91.
+     *
+     * WHY PER PULSE AND NOT ONCE PER BLOCK. The W27C512 datasheet's TABLE OF
+     * OPERATING MODES makes both halves mandatory: Program is entered with
+     * CE = VIL and OE/VPP = VPP (12 V), while Program Verify requires OE/VPP
+     * LOW. On this family the program voltage and the output-enable control
+     * share one pin, so the route MUST come down before the loop's verify
+     * read and go back up for the next pulse. A once-per-block assert (which
+     * memory.cpp's unconditional preserve mask would happily carry) would
+     * leave the part in Output Disable for every verify and the loop would
+     * never converge. The old code got its amortisation from batching a
+     * whole pass of pulses before one verify pass; a per-byte loop cannot.
+     *
+     * VALUES. TOES ("OE/VPP Setup Time") is 2.0 us MIN and TVS ("OE/VPP
+     * Valid after CE High") is 2.0 us MIN, both from the W27C512 AC
+     * PROGRAMMING/ERASE CHARACTERISTICS table; OE/VPP rise time (TPRT) is
+     * 50 ns MIN. 100 us and 10 us are 50x and 5x those minima, chosen with
+     * that much margin because the RURP shield's own VPE switch rise time is
+     * a BOARD property that no measurement in this project has ever
+     * characterised -- the datasheet bounds the chip, not the board. They are
+     * deliberately far below the deleted code's delay(10): that 10 ms was
+     * paid once per block-pass and could be arbitrary; at per-pulse
+     * granularity it would cost 1024 x 10 ms = 10.2 s on a Leonardo block
+     * against the 8 s this protocol's own CAP-03 advertisement asks the host
+     * to wait (eprom_budget.h), i.e. it would convert a working write into a
+     * host transport timeout. At 100 us + 10 us the same block costs about
+     * 0.11 s of settle.
+     *
+     * SELF-CORRECTING, WITHIN LIMITS: an under-settle does not corrupt, it
+     * only wastes a pulse -- the loop re-pulses up to max_pulses. It is not
+     * unbounded, though; an under-settle bad enough to make every pulse
+     * ineffective reappears as MSG_ERR_MAX_PULSES, which is exactly the
+     * symptom this fix was written for, so a future bench failure here must
+     * be re-discriminated against the old 10 ms value rather than assumed
+     * to be a worn part.
+     */
+    #define EPROM_VPP_SETUP_US 100
+    #define EPROM_VPP_HOLD_US  10
+
 #ifdef __cplusplus
 }
 #endif

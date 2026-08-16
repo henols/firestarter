@@ -50,6 +50,22 @@ is added; the convention test cannot.
 | `captured_test_native_summary.log` | `captured_` | BASE-01 comparator native-env parsing |
 | `captured_test_native_nodevtools_summary.log` | `captured_` | same, `native_nodevtools` env |
 | `captured_native_warnings_excerpt.log` | `captured_` | BASE-06 warning gate — proves the parser survives real `pio test` framing around a genuine macro-redefinition diagnostic, not just a bare compiler invocation |
+| `merge05_base01_anchor_uno.log` | (none) | `--policy merge05` band comparator ONLY |
+| `merge05_base01_anchor_uno328pb.log` | (none) | same |
+| `merge05_base01_anchor_leonardo.log` | (none) | same |
+
+The `merge05_base01_anchor_*.log` trio was split out of the `captured_build_*.log` trio by
+debug session `w27c512-program-fail-byte0`, and is frozen at BASE-01's own anchor figures
+(uno 24824, uno328pb 24874, leonardo 26906). The two roles the `captured_` trio used to serve
+at once became contradictory when that session's fix added 96 B of flash to every AVR target:
+`captured_build_*.log` must track the LIVE tree (five default-mode legs feed them straight to
+`scripts/baseline/size_baseline.json`), while the band comparator's PASS leg must be fed
+inputs that sit at the band's anchor. Feeding the live logs to both would have silently turned
+the band leg into a false claim that the current tree is inside MERGE-05's band — it is not,
+and `test_policy_merge05_fires_on_the_current_tree` asserts the breach explicitly. These three
+carry no `captured_`/`planted_`/`clean_` prefix on purpose: they are neither a raw capture of
+the current tree nor a deliberate violation, but a capture frozen at a past anchor point, and
+`tests/test_checker_convention.py` does not require a prefix of a file it does not enumerate.
 
 ## Release-asset fixture trees (Phase 128 Plan 01)
 

@@ -1,24 +1,45 @@
 {
   "meta": {
     "source": "test/native/avr/_shared/eprom_v131_expected.h",
-    "recorded_by": "Phase 144 Plan 03 -- because D-05, D-06 and D-08 require the renamed pre-change header, the new fixture and this inventory to land in the SAME commit (the one-commit property that keeps the identity gate from going transiently RED for a reason that is really a git exit code, per F-05), recorded_at_head necessarily names this commit's PARENT rather than the commit that actually carries this file. Do not read that as a mistake: it is the deliberate one-commit offset this plan's own objective documents. This file's blob_sha is the SHA of the working-tree fixture as it will read once committed (git hash-object test/native/avr/_shared/eprom_v131_expected.h, run BEFORE staging).",
+    "recorded_by": "Phase 144 Plan 03 -- because D-05, D-06 and D-08 require the renamed pre-change header, the new fixture and this inventory to land in the SAME commit (the one-commit property that keeps the identity gate from going transiently RED for a reason that is really a git exit code, per F-05), recorded_at_head necessarily names this commit's PARENT rather than the commit that actually carries this file. Do not read that as a mistake: it is the deliberate one-commit offset this plan's own objective documents. This file's blob_sha is the SHA of the working-tree fixture as it will read once committed (git hash-object test/native/avr/_shared/eprom_v131_expected.h, run BEFORE staging). RE-RECORDED by debug session w27c512-program-fail-byte0 (Phase 145 Gate 2 root-cause fix), under the identical one-commit property: blob_sha is `git hash-object test/native/avr/_shared/eprom_v131_expected.h` run on the working tree BEFORE staging, and recorded_at_head names this commit's PARENT (a594173d2bbbabe74e6a470b4751528435246326). Entry counts moved from EPROM_V131_TRACE_PROTO_07 91, EPROM_V131_TRACE_PROTO_08 115, EPROM_V131_TRACE_PROTO_0B 59 to EPROM_V131_TRACE_PROTO_07 121, EPROM_V131_TRACE_PROTO_08 148, EPROM_V131_TRACE_PROTO_0B 92 because that session restored the program-voltage route assert Phase 141 dropped: each program pulse now carries a CONTROL latch group raising the route, an EPROM_VPP_SETUP_US settle, an EPROM_VPP_HOLD_US settle, and a CONTROL latch group lowering it again. The growth is therefore EXPECTED WORK for this change and a REGRESSION for any later one -- meta.frozen_for's v1.32 drift-detection reading is unchanged, it is only re-anchored. The fixture was re-captured cold (rm -rf .pio/build/native_trace_v131, then the same PLATFORMIO_BUILD_FLAGS=\"-D EPROM_V131_TRACE_DUMP\" build-and-run-directly sequence the fixture header documents), and the suite's own two-drive determinism check passed against the pasted arrays.",
     "requirement": "TEST-06",
-    "blob_sha": "8c956f431b3691dadb493946955680576279510b",
-    "recorded_at_head": "7b2ba16caefb940e4aadbd90015f9925ce2593b8",
+    "blob_sha": "774a7e509ae021a13c4741d7eca9049bfb49f4df",
+    "recorded_at_head": "a594173d2bbbabe74e6a470b4751528435246326",
     "why_two_checks": "A whole-file blob match alone cannot distinguish 'unchanged' from 'an array deleted together with the assertions that consumed it' -- both leave the remaining bytes identical to some other prior state's remaining bytes, so the per-array name+entry-count inventory is what makes a deletion visible.",
     "how_to_update": "If this file legitimately changes, re-derive this inventory from the file with an independent parse (never hand-edit the numbers) AND state in the commit message which array changed and why -- never edit this JSON merely to make a surprise disappear.",
     "frozen_for": "This record now arms the identity gate for v1.32 drift detection: a divergence from these three arrays (EPROM_V131_TRACE_PROTO_07/_08/_0B) is a regression to investigate, not expected work. It no longer names Phase 144 as the consumer that will diff this fixture against the pre-change cadence -- that diff, against the arrays preserved byte-for-byte in eprom_v131_expected_prechange.h, is plan 144-04's job, using the capture this record describes as its post-change side.",
     "measured_entry_counts": {
-      "0x07": { "strobes": 66, "timings": 25, "merged": 91 },
-      "0x08": { "strobes": 84, "timings": 31, "merged": 115 },
-      "0x0B": { "strobes": 42, "timings": 17, "merged": 59 }
+      "0x07": {
+        "strobes": 66,
+        "timings": 25,
+        "merged": 91
+      },
+      "0x08": {
+        "strobes": 84,
+        "timings": 31,
+        "merged": 115
+      },
+      "0x0B": {
+        "strobes": 42,
+        "timings": 17,
+        "merged": 59
+      }
     },
     "overflow_observed": "false for both recorders on every one of the three new captures -- strobe_overflowed()==0 and timing_overflowed()==0 in all cases, per Phase 144 Plan 03's trace_dump.txt banners (##### EPROM_V131_TRACE_PROTO_07/_08/_0B, each reading strobe_overflow=0 timing_overflow=0)",
     "prechange_header_non_claim": "D-08's named non-claim: with a single inventory record here, nothing gate-asserts test/native/avr/_shared/eprom_v131_expected_prechange.h. Its preserved blob ca3e09f164e6e1c541ecb63d15bbebf5bce41d70 stays hand-verifiable via `git rev-parse HEAD:test/native/avr/_shared/eprom_v131_expected_prechange.h` and is cited in the phase record (144-03-SUMMARY.md), but it is NOT machine-checked by this or any other gate. No second inventory record is added to close this gap -- deferred work."
   },
   "arrays": [
-    { "name": "EPROM_V131_TRACE_PROTO_07", "entries": 91 },
-    { "name": "EPROM_V131_TRACE_PROTO_08", "entries": 115 },
-    { "name": "EPROM_V131_TRACE_PROTO_0B", "entries": 59 }
+    {
+      "name": "EPROM_V131_TRACE_PROTO_07",
+      "entries": 121
+    },
+    {
+      "name": "EPROM_V131_TRACE_PROTO_08",
+      "entries": 148
+    },
+    {
+      "name": "EPROM_V131_TRACE_PROTO_0B",
+      "entries": 92
+    }
   ]
 }

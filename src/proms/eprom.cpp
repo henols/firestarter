@@ -224,6 +224,35 @@ static void eprom_internal_report_budget_failure(firestarter_handle_t* handle, u
 }
 
 /*
+ * Debug session w27c512-program-fail-byte0 -- ONE program pulse, with the
+ * program-voltage route asserted for its duration and released again before
+ * the caller's verify read. See include/eprom.h's EPROM_VPP_SETUP_US /
+ * EPROM_VPP_HOLD_US comment for the regression this restores, why the assert
+ * has to be per-pulse rather than per-block, and where the two settle values
+ * come from.
+ *
+ * CTRL_VPE_ENABLE is named here, never CTRL_VPP_P1_ENABLE, exactly as the
+ * deleted program_mismatched_bytes() named it: eprom_internal_set_control_
+ * register (bottom of this file) substitutes P1 for VPE whenever
+ * using_p1_as_vpp(handle) holds, which is what made the pre-v1.31 traces
+ * show +0x04/-0x04 on 0x07 (vpp_line = 0xFF sentinel) but +0x08/-0x08 on
+ * 0x08 and 0x0B. Naming P1 directly here would break that substitution on
+ * the two protocols that need it.
+ *
+ * The route bit survives the address latch that memory_set_data performs
+ * between the assert and the CE strobe: mem_util_calculate_top_address_
+ * register (memory.cpp) preserves CTRL_VPE_ENABLE and CTRL_VPP_P1_ENABLE
+ * unconditionally, on every revision.
+ */
+static void eprom_internal_program_pulse(firestarter_handle_t* handle, uint32_t addr, uint8_t expected) {
+    handle->firestarter_set_control_register(handle, CTRL_VPE_ENABLE, 1);
+    delayMicroseconds(EPROM_VPP_SETUP_US);
+    handle->firestarter_set_data(handle, addr, expected);
+    delayMicroseconds(EPROM_VPP_HOLD_US);
+    handle->firestarter_set_control_register(handle, CTRL_VPE_ENABLE, 0);
+}
+
+/*
  * Phase 142 Plan 04 (D-05, D-06, Q4) -- the single function that resolves
  * which EPROM high-voltage route to assert for the current handle. Called
  * from both eprom_internal_write_execute_body (below) and eprom_check_vpp
@@ -418,7 +447,15 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
         uint8_t pulses = 0;
         uint32_t accumulated = 0;
         for (;;) {
-            handle->firestarter_set_data(handle, addr, expected);
+            // Debug session w27c512-program-fail-byte0: the pulse now goes
+            // out through eprom_internal_program_pulse, which asserts the
+            // program-voltage route for the strobe and releases it again
+            // before the verify read two lines below. Calling
+            // firestarter_set_data bare here -- what Phase 141 shipped --
+            // strobes CE with the 12 V rail generated but never switched
+            // onto the part, so no cell can change and every byte exhausts
+            // max_pulses.
+            eprom_internal_program_pulse(handle, addr, expected);
             pulses++;
             accumulated += org_delay;  // D-02: pulse widths only
             if (handle->firestarter_get_data(handle, addr) == expected) {
@@ -448,7 +485,13 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
         uint32_t op_us = eprom_overprogram_us(pulses, org_delay, overprogram_factor, overprogram_cap_us);
         if (op_us) {
             handle->pulse_delay = op_us;
-            handle->firestarter_set_data(handle, addr, expected);
+            // Same route wrap as the convergence pulses above -- an
+            // overprogram pulse is a program pulse and needs the program
+            // voltage just as much. Still unreachable with any shipped row
+            // (overprogram_factor is 0 on all three), but a future row that
+            // sets a non-zero factor must not inherit the bug this session
+            // fixed.
+            eprom_internal_program_pulse(handle, addr, expected);
             handle->pulse_delay = org_delay;
         }
     }

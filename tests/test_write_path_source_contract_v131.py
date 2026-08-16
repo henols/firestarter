@@ -193,6 +193,18 @@ _DELAY_US_CALL_RE = re.compile(r"\bdelayMicroseconds\s*\(\s*([^()]*?)\s*\)")
 _DELAY_US_DEFINITION_LINE_RE = re.compile(r"\bvoid\s+delayMicroseconds\s*\(")
 _ALLOWED_DELAY_US_ARGS = frozenset({"settling", "strobe", "rem"})
 
+# Macro-constant arguments additionally permitted at a delayMicroseconds()
+# call site (debug session w27c512-program-fail-byte0). These are NOT clamped
+# runtime names like the three above -- each must be an object-like #define
+# under include/ whose replacement list is a plain decimal literal, i.e. a
+# named literal. The companion leg
+# test_every_allowlisted_delay_us_macro_resolves_to_an_in_range_literal
+# RESOLVES every name in this set against the real headers and range-checks
+# the value, and fails closed if a name resolves to nothing, so adding a name
+# here cannot smuggle in an unbounded, runtime or out-of-range argument the
+# way widening _ALLOWED_DELAY_US_ARGS would.
+_ALLOWED_DELAY_US_MACROS = frozenset({"EPROM_VPP_SETUP_US", "EPROM_VPP_HOLD_US"})
+
 _SPLIT_MAX_DEFINE_RE = re.compile(r"#\s*define\s+MEM_UTIL_DELAY_US_MAX\s+16383UL\b")
 _SPLIT_LE_COMPARE_RE = re.compile(r"\bif\s*\(\s*us\s*<=\s*MEM_UTIL_DELAY_US_MAX\s*\)")
 
@@ -481,13 +493,90 @@ def test_every_remaining_delaymicroseconds_argument_is_a_literal_or_a_clamped_va
     violations = [
         (p, ln, arg)
         for (p, ln, arg) in sites
-        if not re.fullmatch(r"\d+", arg) and arg not in _ALLOWED_DELAY_US_ARGS
+        if not re.fullmatch(r"\d+", arg)
+        and arg not in _ALLOWED_DELAY_US_ARGS
+        and arg not in _ALLOWED_DELAY_US_MACROS
     ]
     assert violations == [], (
         "found delayMicroseconds() call(s) whose argument is neither a "
-        "decimal literal nor one of the read path's clamped names "
-        f"{sorted(_ALLOWED_DELAY_US_ARGS)!r}:\n"
+        "decimal literal, nor one of the read path's clamped names "
+        f"{sorted(_ALLOWED_DELAY_US_ARGS)!r}, nor one of the resolved "
+        f"named-literal macros {sorted(_ALLOWED_DELAY_US_MACROS)!r}:\n"
         + "\n".join(f"{p}:{ln}: delayMicroseconds({a})" for p, ln, a in violations)
+    )
+
+
+def test_every_allowlisted_delay_us_macro_resolves_to_an_in_range_literal():
+    """Companion to Coverage 8 (debug session w27c512-program-fail-byte0).
+
+    The leg above accepts a small set of MACRO names at a
+    delayMicroseconds() call site. On its own that would be a bare
+    allowlist -- a name nobody re-checks. This leg closes that: every name
+    in _ALLOWED_DELAY_US_MACROS must resolve, in the real headers under
+    include/, to an object-like #define whose replacement list is a plain
+    decimal literal, and that literal must sit in [1, 16383] -- the same
+    accurate ceiling test_the_split_helper_ceiling_is_16383 below pins,
+    because a macro argument gets no split-helper protection.
+
+    Fails closed three ways: an allowlisted name that resolves to nothing;
+    a name that resolves to something other than a decimal literal (an
+    expression, a cast, another macro); and a name whose value is outside
+    the accurate range. A name defined more than once also fails -- two
+    definitions mean the value a call site gets depends on include order,
+    which this leg cannot read.
+    """
+    headers = [
+        p
+        for p in _iter_tree_source_files()
+        if p.suffix in (".h", ".hpp") and p.is_relative_to(_REPO_ROOT / "include")
+    ]
+    assert headers, (
+        "non-vacuous guard: the sweep found zero headers under "
+        f"{_REPO_ROOT / 'include'} -- a locator resolving to nothing must "
+        "FAIL, never read as nothing to check."
+    )
+    assert _ALLOWED_DELAY_US_MACROS, (
+        "non-vacuous guard: _ALLOWED_DELAY_US_MACROS is empty, so this leg "
+        "would assert nothing. Empty it only together with the macro arm of "
+        "the violations filter in the leg above."
+    )
+
+    resolved = {}
+    unparsed = {}
+    for name in sorted(_ALLOWED_DELAY_US_MACROS):
+        # Object-like define only: the name must be followed by whitespace,
+        # never by '(' -- a function-like macro takes an argument this leg
+        # cannot range-check.
+        define_re = re.compile(
+            r"^[ \t]*#[ \t]*define[ \t]+" + re.escape(name) + r"[ \t]+(.+?)[ \t]*$",
+            re.M,
+        )
+        hits = []
+        for p in headers:
+            for m in define_re.finditer(_strip_comments(p.read_text(encoding="utf-8"))):
+                hits.append((p, m.group(1)))
+        assert len(hits) == 1, (
+            f"{name} must have exactly ONE object-like #define under "
+            f"include/ for its value to be readable here; found {len(hits)}: "
+            f"{[str(p) for p, _ in hits]}"
+        )
+        _, body = hits[0]
+        if re.fullmatch(r"\d+", body):
+            resolved[name] = int(body)
+        else:
+            unparsed[name] = body
+
+    assert unparsed == {}, (
+        "every allowlisted delayMicroseconds() macro must expand to a plain "
+        "decimal literal -- these do not, so their runtime value cannot be "
+        f"range-checked from source: {unparsed!r}"
+    )
+    out_of_range = {n: v for n, v in resolved.items() if not 1 <= v <= 16383}
+    assert out_of_range == {}, (
+        "AVR delayMicroseconds() takes a 16-bit unsigned int and its 16 MHz "
+        "arm computes `us <<= 2`, overflowing above 16383, and a macro "
+        "argument bypasses mem_util_delay_us's split helper entirely -- "
+        f"these allowlisted macros are outside [1, 16383]: {out_of_range!r}"
     )
 
 
