@@ -148,12 +148,19 @@ Microchip 27C512A DS11173G §1.6 agrees. **Named, scoped divergence (F-140-05):*
 the rest of the 1000 µs sub-population) genuinely want a `3 x N` margin pulse; serving them correctly
 requires splitting `0x07` into a second dispatch key, which TABLE-05's single-dispatch-key
 constraint forbids this milestone — recorded as a Phase 146 follow-up, not silently dropped. The
-firmware's present loop (`eprom.cpp:159-179`) is **retry escalation of `pulse_delay`**, not an Intel
-3N margin pulse; Phase 141 replaces it. Full per-value attribution:
+firmware's shipped loop (`eprom.cpp:449-478`) is instead a **per-byte pulse-to-verify loop**:
+`eprom_internal_program_pulse()` asserts the program-voltage route, waits `EPROM_VPP_SETUP_US`
+(1000 µs) before the strobe and `EPROM_VPP_HOLD_US` (100 µs) after it, then releases the route; the
+byte is re-read and, on mismatch, the same fixed-width pulse (never grown) repeats until it converges
+or `max_pulses` (25 on this row) is exhausted, at which point the byte fails as `MSG_ERR_MAX_PULSES`
+(0xBD) — not an Intel 3N margin pulse. This row's `verify_mode` column (`eprom_params.cpp`) is
+`VERIFY_PER_PULSE_PLUS_FINAL`, so convergence of the per-byte loop is followed by one additional
+full-array verify pass. Full per-value attribution:
 `tests/golden/eprom_params_citations.json` (Phase 140 / TABLE-04).
 Citation: Winbond W27C512 Data Sheet, Rev A4 (Nov 1999), "SMART PROGRAMMING ALGORITHM 2" flowchart
 (this document has no §6.2 — do not cite one); ST M27C512 datasheet, Rev 3 (May 2007), §2.6 / Fig. 4;
-Microchip 27C512A DS11173G (2004), §1.6.
+Microchip 27C512A DS11173G (2004), §1.6; shipped loop `eprom.cpp:449-478`,
+`eprom_internal_program_pulse()` `eprom.cpp:247-253`, settle constants `include/eprom.h:166-167`.
 
 **Erase model:** UV light erasure for UV-EPROM variants (no electrical erase). Electrically-erasable 0x07 EE-EPROMs (W27C512, W27E512, SST27SF512) are erased via `eprom_internal_erase()` which applies VPE to A9 pin. `FLAG_CAN_ERASE` is derived from `electrical.type == "EEPROM"` (Phase 77 fix) and must be set for auto-erase-before-write.
 Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.9 §6.4 Erase Operation.
@@ -162,6 +169,23 @@ Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.9 §6.4 Erase Operation.
 Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.5 §5 Pin Description (pin 1 = VPP, 28-pin).
 
 **Pin roles:** 28-pin DIP. A0–A15, D0–D7, CE (pin 20), OE/VPP (pin 22 on CMOS 27C variants — shared OE/PGM, but 0x07 is handled via the CE path). JP4 jumper required on RURP to route VPP to pin 1 for 28-pin DIP programming. Chip ID via A9 VPP (read manufacturer/device ID by raising A9 to VPP level via `CTRL_VPP_A9_ENABLE`).
+
+**Host pulse-override:** The per-run pulse width can be overridden from the host via
+`firestarter write --pulse-us N` (1–65535 µs). That bound is **minipro parity** — `-o pulse=N` is a
+`uint16` — and is **not** a wire-type or hardware limit: `pulse-delay` is parsed by the unclamped
+`extract_long` macro chain (`json_parser.c:279-282`, invoked at `:305`) into an unclamped `uint32_t`,
+so a value above 65535 is reachable on the wire independently of the host flag. The firmware-side
+backstop is the pre-flight, per-byte energy-budget refusal in `configure_eprom()`
+(`eprom.cpp:106-108`), `MSG_ERR_PULSE_TOO_WIDE` (0xAE); this row ships `energy_cap_us = 0` (uncapped,
+`eprom_params.cpp`), so that refusal is structurally unreachable here.
+Citation: `firestarter_app/firestarter/cli_handlers.py:568-578` (option help text); `json_parser.c:279-282,305`; `eprom.cpp:106-108`.
+
+**Program-VCC ceiling (accepted debt):** The raised program-VCC all four vendor algorithms assume
+for threshold margin — the ~6.25 V ceiling named below — is unreachable on this shield, which has no
+VCC-raise path (`include/eprom_params.h`'s `verify_mode` header comment). This milestone buys timing,
+pulse-count and verify fidelity and **not** silicon-margin fidelity; it is hardware-bound and
+recorded here rather than attempted.
+Citation: `include/eprom_params.h:32-34`; `.planning/REQUIREMENTS.md` §"Evidence ceiling — fixed before any code moves".
 
 ---
 
@@ -197,6 +221,23 @@ Citation: `datasheets/0x08-EPROM-QUICK/W27C020.pdf` p.4 §Pin Description (pin 1
 
 **Pin roles:** 32-pin DIP. A0–A18 (full 19-bit address, CONTROL_REGISTER carries A16–A18), D0–D7, CE, OE, PGM/WE. VPP on pin 1 (P1_VPP_ENABLE).
 
+**Host pulse-override:** The per-run pulse width can be overridden from the host via
+`firestarter write --pulse-us N` (1–65535 µs). That bound is **minipro parity** — `-o pulse=N` is a
+`uint16` — and is **not** a wire-type or hardware limit: `pulse-delay` is parsed by the unclamped
+`extract_long` macro chain (`json_parser.c:279-282`, invoked at `:305`) into an unclamped `uint32_t`,
+so a value above 65535 is reachable on the wire independently of the host flag. The firmware-side
+backstop is the pre-flight, per-byte energy-budget refusal in `configure_eprom()`
+(`eprom.cpp:106-108`), `MSG_ERR_PULSE_TOO_WIDE` (0xAE); this row ships `energy_cap_us = 0` (uncapped,
+`eprom_params.cpp`), so that refusal is structurally unreachable here, the same as the 0x07 row above.
+Citation: `firestarter_app/firestarter/cli_handlers.py:568-578` (option help text); `json_parser.c:279-282,305`; `eprom.cpp:106-108`.
+
+**Program-VCC ceiling (accepted debt):** The raised program-VCC all four vendor algorithms assume
+for threshold margin — the ~6.25 V ceiling named below — is unreachable on this shield, which has no
+VCC-raise path (`include/eprom_params.h`'s `verify_mode` header comment). This milestone buys timing,
+pulse-count and verify fidelity and **not** silicon-margin fidelity; it is hardware-bound and
+recorded here rather than attempted.
+Citation: `include/eprom_params.h:32-34`; `.planning/REQUIREMENTS.md` §"Evidence ceiling — fixed before any code moves".
+
 ---
 
 ### 1.5 — 0x0B PROTO_EPROM_24PIN: 24-pin UV-EPROM, 12–25 V Direct-VPE Rail
@@ -230,6 +271,24 @@ full per-cell citation.
 Citation: `datasheets/0x0B-EPROM-LEGACY/2516_EPROM.pdf` p.2 §Vpp Programming Voltage.
 
 **Pin roles:** 24-pin DIP. A0–A12 (no A13 — hardwired), D0–D7, CE, OE, VPP (varies by chip; commonly pin 21 for 2716/2732 family). The RURP firmware calculates the 24-pin MSB register value specially in `mem_util_calculate_msb_register()`.
+
+**Host pulse-override:** The per-run pulse width can be overridden from the host via
+`firestarter write --pulse-us N` (1–65535 µs). That bound is **minipro parity** — `-o pulse=N` is a
+`uint16` — and is **not** a wire-type or hardware limit: `pulse-delay` is parsed by the unclamped
+`extract_long` macro chain (`json_parser.c:279-282`, invoked at `:305`) into an unclamped `uint32_t`,
+so a value above 65535 is reachable on the wire independently of the host flag. The firmware-side
+backstop is the pre-flight, per-byte energy-budget refusal in `configure_eprom()`
+(`eprom.cpp:106-108`), `MSG_ERR_PULSE_TOO_WIDE` (0xAE); this row ships `energy_cap_us = 50000` (50 ms,
+`eprom_params.cpp`), so — unlike the 0x07/0x08 rows above, where the refusal is unreachable — a
+`--pulse-us` value above 50000 is refused here before any high voltage is enabled.
+Citation: `firestarter_app/firestarter/cli_handlers.py:568-578` (option help text); `json_parser.c:279-282,305`; `eprom.cpp:106-108`.
+
+**Program-VCC ceiling (accepted debt):** The raised program-VCC all four vendor algorithms assume
+for threshold margin — the ~6.25 V ceiling — is unreachable on this shield, which has no VCC-raise
+path (`include/eprom_params.h`'s `verify_mode` header comment). This milestone buys timing,
+pulse-count and verify fidelity and **not** silicon-margin fidelity; it is hardware-bound and
+recorded here rather than attempted.
+Citation: `include/eprom_params.h:32-34`; `.planning/REQUIREMENTS.md` §"Evidence ceiling — fixed before any code moves".
 
 ---
 
