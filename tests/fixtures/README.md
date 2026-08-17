@@ -61,8 +61,13 @@ at once became contradictory when that session's fix added 96 B of flash to ever
 `captured_build_*.log` must track the LIVE tree (five default-mode legs feed them straight to
 `scripts/baseline/size_baseline.json`), while the band comparator's PASS leg must be fed
 inputs that sit at the band's anchor. Feeding the live logs to both would have silently turned
-the band leg into a false claim that the current tree is inside MERGE-05's band — it is not,
-and `test_policy_merge05_fires_on_the_current_tree` asserts the breach explicitly. These three
+the band leg into a false claim that the current tree is inside MERGE-05's original band — it
+is not, and the live tree's +96 B is instead admitted explicitly, under a named
+defect-fix exemption, by `test_policy_merge05_admits_the_documented_defect_fix` (the v1.31
+Phase 145 adjudication; it replaced `test_policy_merge05_fires_on_the_current_tree`, which
+asserted the un-adjudicated breach). The split still stands: this trio holds BASE-01's anchor
+figures, so a future re-anchor or exemption change cannot silently move the PASS leg's
+inputs underneath it. These three
 carry no `captured_`/`planted_`/`clean_` prefix on purpose: they are neither a raw capture of
 the current tree nor a deliberate violation, but a capture frozen at a past anchor point, and
 `tests/test_checker_convention.py` does not require a prefix of a file it does not enumerate.

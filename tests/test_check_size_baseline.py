@@ -41,14 +41,22 @@ Coverage:
      Leonardo flash figure differs makes the previously-clean captured_build_leonardo.log
      FAIL — proving the checker genuinely reads the seam rather than embedding numbers.
   8. --policy merge05 permits the re-anchored figures (EXACT ZERO delta on all three
-     targets, read straight from the re-captured captured_build_*.log fixtures) against
+     targets, read from the frozen merge05_base01_anchor_*.log trio) against
      BASE-01 — Phase 144 Plan 05 (D-11) re-anchored BASE-01 in place to the same v1.31
      tip, so a PASS here means the anchor moved, not that growth stayed inside v1.24's
      original band (D-14).
-  9. --policy merge05 fires on a planted +65 B Uno-class flash growth (one byte outside
-     the 64 B band), naming both the computed delta and the band.
-  10. --policy merge05 fires on a planted +1 B Leonardo flash growth (Leonardo must not
-      grow at all), naming the env and the computed delta.
+  8b. --policy merge05 ADMITS the current tree's +96 B against BASE-01 under the named
+      defect-fix exemption (MERGE05_DEFECT_FIX_EXEMPTION_BYTES) with the +96 still
+      visible in the PASS text, AND still FAILS one byte past it (planted +97 B on
+      leonardo) — the adjudication and its negative control in one leg. Replaces
+      test_policy_merge05_fires_on_the_current_tree, which asserted the un-adjudicated
+      breach and which the adjudication was designed to turn RED.
+  9. --policy merge05 fires on a planted +161 B Uno-class flash growth (one byte outside
+     the EFFECTIVE 160 B allowance = unchanged 64 B band + 96 B exemption), naming the
+     computed delta, the allowance, and the allowance's decomposition.
+  10. --policy merge05 fires on a planted +97 B Leonardo flash growth (leonardo's base
+      band stays 0 B, so its effective allowance is exactly the 96 B exemption),
+      naming the env and the computed delta.
   11. --policy merge05 fires on a planted +1 B RAM move (RAM equality holds under the
       band mode too), naming ram_used.
   12. The default (no --policy) mode is unchanged by the new flag: all three captured
@@ -103,21 +111,33 @@ diffable against the source so a reviewer can see exactly what was planted):
 
   planted_size_baseline_policy_uno_over_band.log
     = captured_build_uno.log AS IT READ AT BASE-01'S ANCHOR with the Flash: line's
-      `used` figure raised from 24824 to 24889 (+65 B — one byte outside MERGE-05's
-      64 B uno-class band). This and the two other policy-mode planted logs are
-      compared against BASE-01, which the w27c512-program-fail-byte0 debug session
-      deliberately did NOT move, so they were left at the anchor figures when the
-      captured_build_*.log trio shifted +96 B with the live tree. Everything else,
-      including the now-stale percentage/bar columns, is left exactly as captured.
-      Re-derived by Phase 144 Plan 05 from 23932/23997 (D-18): the +65 B delta is
-      unchanged, only the anchor moved.
+      `used` figure raised from 24824 to 24985 (+161 B — one byte outside the
+      EFFECTIVE uno-class allowance of 160 B: the unchanged 64 B band plus the 96 B
+      adjudicated defect-fix exemption). This and the two other policy-mode planted
+      logs are compared against BASE-01, which neither the
+      w27c512-program-fail-byte0 debug session nor the v1.31 Phase 145 adjudication
+      moved, so they stay at the anchor figures while the captured_build_*.log trio
+      sits +96 B ahead with the live tree. Everything else, including the now-stale
+      percentage/bar columns, is left exactly as captured.
+      Re-derived twice, each time preserving the single cause and the
+      one-byte-past-the-ceiling role, never the absolute figure (D-18): by Phase 144
+      Plan 05 from 23932/23997 when the anchor moved, and by the v1.31 Phase 145
+      adjudication from 24889 (+65 B) when the enforced ceiling moved from 64 B to
+      160 B. Without the second re-derivation this plant would sit INSIDE the
+      allowance and its leg would have gone falsely green while still claiming to
+      prove a firing.
 
   planted_size_baseline_policy_leonardo_growth.log
     = captured_build_leonardo.log with the Flash: line's `used` figure raised from
-      26906 to 26907 (+1 B — Leonardo must not grow at all under MERGE-05). Left at
-      the BASE-01 anchor for the reason given under the uno-class entry above.
-      Re-derived by Phase 144 Plan 05 from 26072/26073 (D-18): the +1 B delta is
-      unchanged, only the anchor moved.
+      26906 to 27003 (+97 B — leonardo's base band stays 0 B must-not-grow, so its
+      effective allowance is exactly the 96 B exemption and this is one byte past
+      it). Left at the BASE-01 anchor for the reason given under the uno-class entry
+      above. Re-derived by Phase 144 Plan 05 from 26072/26073, then by the v1.31
+      Phase 145 adjudication from 26907 (+1 B) — same D-18 reasoning as the
+      uno-class entry: a +1 B plant now sits inside the exemption. This single
+      fixture backs two legs (Coverage 10 and the negative-control arm of
+      test_policy_merge05_admits_the_documented_defect_fix), deliberately shared
+      rather than committed twice byte-identically.
 
   planted_size_baseline_policy_ram_moved.log
     = captured_build_uno.log with the RAM: line's `used` figure raised from 1573 to
@@ -322,11 +342,18 @@ def test_policy_merge05_permits_the_measured_landing_deltas():
     have to track the LIVE tree because five other legs feed them to the default
     byte-identity mode. Continuing to feed them here would have quietly converted
     this leg from "the comparator passes at zero delta" into a false claim that the
-    current tree is inside MERGE-05's band -- it is NOT, and
-    test_policy_merge05_fires_on_the_current_tree immediately below is the
-    machine-checked record of that breach. So this leg keeps proving exactly the
-    comparator property it was written for, on inputs frozen at the anchor, and no
-    longer doubles as a measurement of a tree that has moved."""
+    current tree is inside MERGE-05's original band -- it is NOT.
+
+    v1.31 Phase 145 adjudicated that breach: the live tree's +96 B is now ADMITTED
+    under a named, SHA-attributed exemption, and
+    test_policy_merge05_admits_the_documented_defect_fix immediately below is the
+    machine-checked record of the admission AND of the re-armed tripwire one byte
+    past it (it replaced test_policy_merge05_fires_on_the_current_tree, which
+    recorded the un-adjudicated breach). This leg's split from the live logs still
+    earns its keep: frozen inputs mean neither a future re-anchor nor a future
+    exemption change can move this leg's premise underneath it. So it keeps proving
+    exactly the comparator property it was written for -- zero delta against the
+    anchor passes -- and never doubles as a measurement of a tree that has moved."""
     argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
     for env, fixture in (
         ("leonardo", "merge05_base01_anchor_leonardo.log"),
@@ -344,26 +371,41 @@ def test_policy_merge05_permits_the_measured_landing_deltas():
     assert "PASS:" in result.stdout, f"Expected PASS: in stdout. Got:\n{result.stdout}"
 
 
-def test_policy_merge05_fires_on_the_current_tree():
-    """Debug session w27c512-program-fail-byte0 — the honest counterpart to the leg
-    directly above, and the reason that one had to be re-pointed.
+def test_policy_merge05_admits_the_documented_defect_fix():
+    """Coverage 8b — the adjudication leg (v1.31 Phase 145). Two arms, and the
+    second one is the whole point of the first.
 
-    The current tree's real measured sizes (captured_build_*.log, which the default
-    byte-identity mode's own clean-control legs prove are in lockstep with
-    scripts/baseline/size_baseline.json) are +96 B against BASE-01 on all three
-    targets. MERGE-05's bands are 0 B on leonardo and 64 B uno-class, so the band
-    comparator FAILS on every one of them. That is recorded here as an assertion
-    rather than as prose in a JSON meta field, so it cannot rot: the day someone
-    adjudicates the band — by re-anchoring BASE-01, by widening the band, or by
-    shrinking the fix — this leg goes RED and forces the decision to be written down.
+    History, so nobody re-litigates this by accident. Debug session
+    w27c512-program-fail-byte0 added +96 B of flash to all three AVR targets
+    (eprom_internal_program_pulse plus its two VPP settle constants, commits
+    eb563d2 and ebe9cb3 — a defect fix restoring behaviour the pre-v1.31 firmware
+    had, not new feature surface). MERGE-05's base bands are 0 B on leonardo and
+    64 B uno-class, so the tripwire fired, exactly as designed. The predecessor of
+    this leg, `test_policy_merge05_fires_on_the_current_tree`, asserted that breach
+    so it could not rot into a JSON prose field, and said in as many words that the
+    day someone adjudicated it this leg would go RED and force the decision to be
+    written down. That day is this commit: the +96 B was ADMITTED as a named,
+    SHA-attributed exemption (MERGE05_DEFECT_FIX_EXEMPTION_BYTES in
+    scripts/check_size_baseline.py, where the full rationale lives), NOT by
+    re-anchoring BASE-01 a third time, NOT by widening either band literal, and NOT
+    by shrinking the fix. BASE-01's avr_targets are byte-unchanged (uno 24824,
+    uno328pb 24874, leonardo 26906) and so are both band literals.
 
-    What the +96 B is: eprom_internal_program_pulse plus the two settle constants,
-    restoring the program-voltage route assert Phase 141 dropped. It is a defect fix
-    that returns behaviour the pre-v1.31 firmware had, not new feature surface.
-    Whether MERGE-05's band admits a defect fix is a milestone requirements
-    judgement, and a debug session deliberately did not make it by moving the anchor
-    a second time (Phase 144 / D-11 moved it once already, and the green that
-    produced was the anchor moving, not growth staying inside a band)."""
+    Arm 1 — the current tree PASSES at exactly the admitted figure, and the +96 B is
+    still VISIBLE in the PASS text with its decomposition. A pass whose output hid
+    the delta would be laundering, not adjudication, so the visibility is asserted,
+    not assumed.
+
+    Arm 2 — the NEGATIVE CONTROL, and the reason arm 1 is not a blank cheque: one
+    byte beyond the exemption (a planted +97 B on leonardo, whose effective
+    allowance is 0 + 96) still exits 1. Without this arm the exemption would be
+    untested and could silently widen to admit anything. The tripwire is re-armed at
+    the new floor, not removed. It shares its fixture with
+    test_policy_merge05_fires_on_leonardo_growth (Coverage 10) rather than
+    committing a second byte-identical plant; the two legs assert different
+    properties of the same firing — that one names the env and the delta, this one
+    names the effective allowance and pairs the failure with arm 1's pass."""
+    # Arm 1: the live tree is admitted, at exactly +96 on every target.
     argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
     for env, fixture in (
         ("leonardo", "captured_build_leonardo.log"),
@@ -373,28 +415,63 @@ def test_policy_merge05_fires_on_the_current_tree():
         argv += ["--avr-log", f"{env}={_FIXTURES / fixture}"]
 
     result = _run_checker(argv)
-    assert result.returncode == 1, (
-        "expected --policy merge05 to FAIL (exit 1) against the current tree: the "
-        "program-voltage route-assert fix is +96 B on every target, over both the "
-        "0 B leonardo band and the 64 B uno-class band.\n"
+    assert result.returncode == 0, (
+        "expected --policy merge05 to PASS (exit 0) against the current tree under "
+        "the adjudicated defect-fix exemption.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
-    for env, band in (("leonardo", "0 B"), ("uno", "64 B"), ("uno328pb", "64 B")):
-        assert f"{env}: flash_used baseline=" in result.stdout, (
-            f"expected the FAIL output to name {env}. Got:\n{result.stdout}"
-        )
-    assert result.stdout.count("delta=+96") == 3, (
-        "expected all three targets to be exactly +96 B over BASE-01 -- if this "
-        "number moved, the fix's flash cost moved with it and both this leg and "
-        "scripts/baseline/size_baseline.json's merge05_clause need re-deriving.\n"
+    assert "PASS:" in result.stdout, f"Expected PASS: in stdout. Got:\n{result.stdout}"
+    assert result.stdout.count("+96<=") == 3, (
+        "expected all three targets to report their delta as exactly +96 B IN THE "
+        "PASS TEXT -- an exemption that makes the admitted growth invisible in the "
+        "report is laundering. If this number moved, the fix's flash cost moved with "
+        "it and MERGE05_DEFECT_FIX_EXEMPTION_BYTES, this leg and "
+        "scripts/baseline/size_baseline.json's merge05_clause all need re-deriving.\n"
         f"Got:\n{result.stdout}"
+    )
+    assert "band0+exempt96" in result.stdout and "band64+exempt96" in result.stdout, (
+        "expected the PASS text to show the allowance DECOMPOSED into the unchanged "
+        "band literal plus the named exemption, on both the leonardo (0 B) and the "
+        f"uno-class (64 B) targets. Got:\n{result.stdout}"
+    )
+
+    # Arm 2 (negative control): one byte past the exemption still fails.
+    over = _run_checker(
+        [
+            "--policy",
+            "merge05",
+            "--baseline",
+            str(_BASE01_BASELINE),
+            "--avr-log",
+            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth.log'}",
+        ]
+    )
+    assert over.returncode == 1, (
+        "NEGATIVE CONTROL: expected exit 1 on a planted +97 B leonardo growth — one "
+        "byte beyond the 96 B exemption. If this passes, the exemption has become a "
+        "blank cheque and the forward tripwire is gone.\n"
+        f"stdout:\n{over.stdout}\nstderr:\n{over.stderr}"
+    )
+    assert "delta=+97" in over.stdout, (
+        f"Expected the one-past-the-exemption delta named. Got:\n{over.stdout}"
+    )
+    assert "allowance of 96 B" in over.stdout, (
+        f"Expected the leonardo effective allowance named. Got:\n{over.stdout}"
     )
 
 
 def test_policy_merge05_fires_on_uno_class_over_band():
-    """Coverage 9 — the planted +65 B Uno-class flash growth (one byte outside the
-    64 B band) must fail --policy merge05, naming both the computed delta and the
-    band it exceeds."""
+    """Coverage 9 — the planted +161 B Uno-class flash growth (one byte outside the
+    EFFECTIVE 160 B allowance: the unchanged 64 B band plus the 96 B adjudicated
+    defect-fix exemption) must fail --policy merge05, naming the computed delta, the
+    allowance it exceeds, and the allowance's decomposition.
+
+    Re-derived from +65 B by the v1.31 Phase 145 adjudication, for the same D-18
+    reason Phase 144 Plan 05 re-derived it before: once the exemption exists, a +65 B
+    plant is INSIDE the allowance and this leg would have gone falsely green while
+    still claiming to prove a firing. The plant's single cause (a raised uno `used`
+    figure) and its role (exactly one byte outside the enforced ceiling) are
+    unchanged; only the number moved, and only because the ceiling moved."""
     result = _run_checker(
         [
             "--policy",
@@ -409,13 +486,29 @@ def test_policy_merge05_fires_on_uno_class_over_band():
         f"expected non-zero exit on a planted +65 B uno-class flash growth.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
-    assert "delta=+65" in result.stdout, f"Expected 'delta=+65'. Got:\n{result.stdout}"
-    assert "band of 64" in result.stdout, f"Expected 'band of 64'. Got:\n{result.stdout}"
+    assert "delta=+161" in result.stdout, f"Expected 'delta=+161'. Got:\n{result.stdout}"
+    assert "allowance of 160 B" in result.stdout, (
+        f"Expected 'allowance of 160 B'. Got:\n{result.stdout}"
+    )
+    assert "band 64 B + defect-fix exemption 96 B" in result.stdout, (
+        "Expected the allowance decomposed into the unchanged 64 B band plus the "
+        f"named 96 B exemption. Got:\n{result.stdout}"
+    )
 
 
 def test_policy_merge05_fires_on_leonardo_growth():
-    """Coverage 10 — the planted +1 B Leonardo flash growth must fail --policy
-    merge05 (Leonardo must not grow at all), naming the env and the delta."""
+    """Coverage 10 — the planted +97 B Leonardo flash growth must fail --policy
+    merge05 (Leonardo's base band is still 0 B must-not-grow, so its effective
+    allowance is exactly the 96 B exemption and +97 is one byte past it), naming the
+    env and the delta.
+
+    Re-derived from +1 B by the v1.31 Phase 145 adjudication for the same reason as
+    Coverage 9 above: a +1 B plant now sits inside the exemption and this leg would
+    have gone falsely green. The plant's single cause and its one-byte-past-the-
+    ceiling role are unchanged. This is the same fixture
+    test_policy_merge05_admits_the_documented_defect_fix uses as its negative
+    control — deliberately shared rather than duplicated byte-identically; see that
+    leg's docstring for the division of labour."""
     result = _run_checker(
         [
             "--policy",
@@ -431,7 +524,7 @@ def test_policy_merge05_fires_on_leonardo_growth():
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "leonardo" in result.stdout, f"Expected 'leonardo'. Got:\n{result.stdout}"
-    assert "delta=+1" in result.stdout, f"Expected 'delta=+1'. Got:\n{result.stdout}"
+    assert "delta=+97" in result.stdout, f"Expected 'delta=+97'. Got:\n{result.stdout}"
 
 
 def test_policy_merge05_fires_on_ram_move():
