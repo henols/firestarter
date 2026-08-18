@@ -29,6 +29,10 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
+// AVR delayMicroseconds() accurate ceiling -- see mem_util_delay_us /
+// mem_util_split_delay below.
+#define MEM_UTIL_DELAY_US_MAX 16383UL
+
 void memory_read_execute(firestarter_handle_t* handle);
 void memory_write_execute(firestarter_handle_t* handle);
 void memory_verify_execute(firestarter_handle_t* handle);
@@ -158,18 +162,94 @@ rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, ui
 
 rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* handle, uint32_t address) {
     rurp_register_t top_address = ((uint32_t)address >> 16) & (CTRL_ADDRESS_LINE_16 | CTRL_ADDRESS_LINE_17 | CTRL_ADDRESS_LINE_18 | CTRL_READ_WRITE);
+    // CTRL_VPE_ENABLE, CTRL_VPP_P1_ENABLE, CTRL_VPP_A9_ENABLE and CTRL_VPP_REGULATOR_ENABLE are
+    // UNCONDITIONALLY preserved below — this is why VPE survives a per-byte verify read. It is
+    // NOT because the verify read leaves the control register alone: every address write (the
+    // one caller of this function) writes CONTROL_REGISTER unconditionally on every byte, for
+    // both the pulse and the verify; the unconditional preserve mask is what carries the route
+    // bit across that write.
     rurp_register_t mask = CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE | CTRL_VPP_P1_ENABLE | CTRL_VPP_REGULATOR_ENABLE;
+    // Phase 142 / D-01: CTRL_VPP_VPE_DROP_ENABLE is a VPP LEVEL selector -- VPE dropped through
+    // the resistor to the ~13V VPP level -- and nothing else. Phase 141 hand-off H1 disproved the
+    // bit-collision theory this comment used to cite as its justification for excluding
+    // pins >= 32 below. Routing VPP to socket pin 1 on a 32-pin part is a separate, PHYSICAL
+    // decision made with a jumper -- the operator's correction, verbatim: "no exclusion at all --
+    // 32 pin IC's with vpp on pin one is controlled with a jumper" -- so the drop bit was never
+    // protecting a route; excluding it for pins >= 32 silently programmed 0x08 on the UN-DROPPED
+    // rail instead. (This file names no jumper designator and asserts no net: doc/SHIELD-
+    // REVISIONS.md and .planning/v1.7-SHIELD-REVS.md document that jumper's identity two
+    // contradictory ways, a discrepancy logged as a finding, not resolved here.)
+    //
+    // For pins < 32 the drop bit is preserved unconditionally below, on every revision -- this is
+    // unchanged. For pins >= 32 (the #ifdef HARDWARE_REVISION arm a few lines down) the preserve
+    // is gated on hardware revision ALONE (D-02, amended 2026-08-11, operator-confirmed): this
+    // function sees only `handle` and `address`, and revision alone is sufficient, so a new
+    // `handle` field (RAM cost plus a plumbing seam) and keying on the protocol value instead
+    // (a fourth tier-1 protocol-keyed site, a TABLE-05 violation) were both considered and
+    // rejected. The gate is necessary, not fastidious: on Rev 0 / Rev 1,
+    // rurp_map_ctrl_reg_for_hardware_revision() maps
+    // CTRL_VPP_VPE_DROP_ENABLE and CTRL_ADDRESS_LINE_16 onto the SAME physical bit 0x01
+    // (rurp_hw_rev_utils.h:28-32), so preserving the drop bit there would force physical A16
+    // permanently high; on Rev 2-class the two are distinct physical bits (0x01 vs 0x20,
+    // rurp_pinout.h:174 vs :179), so preserving one does not disturb the other.
     if (handle->pins < 32) {
-        // CTRL_VPP_VPE_DROP_ENABLE and CTRL_ADDRESS_LINE_16 share the same CONTROL bit — preserving CTRL_VPP_VPE_DROP_ENABLE
-        // would corrupt A16 for 32-pin (512KB) chips. DIP32 chips use CTRL_VPP_P1_ENABLE instead.
         mask |= CTRL_VPP_VPE_DROP_ENABLE;
     }
+#ifdef HARDWARE_REVISION
+    else {
+        switch (rurp_get_hardware_revision()) {
+        case REVISION_2_0:
+        case REVISION_2_1:
+        case REVISION_2_2:
+        case REVISION_2_3:
+            // The arm's nominal reach widens to every 32-pin protocol on Rev 2-class (0x0E, 0x29,
+            // 0x10, 32-pin flash), not just the EPROM family -- but none of them ever SETS the
+            // drop bit, so there is nothing for this preserve to leak. Proven, not argued:
+            // test_vpp_eprom_v131.cpp's 32-pin non-EPROM byte-identity case
+            // (test_vpp01_dip32_nonEprom_0x10_route_is_byte_identical_before_and_after) and its
+            // "preserve, never introduce" leg
+            // (test_vpp01_truthtable_pins32_rev2_2_preserve_never_introduces).
+            mask |= CTRL_VPP_VPE_DROP_ENABLE;  // D-01 / D-02
+            break;
+        default:
+            // Fail-safe direction: REVISION_0, REVISION_1, REVISION_UNKNOWN (0xFE) and any
+            // unrecognised byte keep TODAY'S stripping -- adds nothing. Matches
+            // rurp_hw_rev_utils.h:33-37's own `default` leaving ctrl_reg = 0. Deliberately an
+            // explicit four-case set above, never a `>= REVISION_2_0` range test:
+            // rurp_shield.h:25-31 numbers revisions 0..5, and a range test would silently swallow
+            // a future REVISION_2_4.
+            break;
+        }
+    }
+#endif
     top_address |= rurp_read_from_register(CONTROL_REGISTER) & mask;
 
     if (handle->pins == 28) {
         top_address |= CTRL_ADDRESS_LINE_17;
     }
     return top_address;
+}
+
+void mem_util_split_delay(uint32_t us, uint32_t* out_ms, uint16_t* out_us) {
+    if (us <= MEM_UTIL_DELAY_US_MAX) {
+        *out_ms = 0;
+        *out_us = (uint16_t)us;  // <= 16383, fits and is accurate
+        return;
+    }
+    *out_ms = us / 1000UL;
+    *out_us = (uint16_t)(us % 1000UL);  // <= 999, always under the ceiling
+}
+
+void mem_util_delay_us(uint32_t us) {
+    uint32_t ms;
+    uint16_t rem;
+    mem_util_split_delay(us, &ms, &rem);
+    if (ms) {
+        delay(ms);  // unsigned long -- 32-bit safe
+    }
+    if (rem) {
+        delayMicroseconds(rem);
+    }
 }
 
 void mem_util_set_address(firestarter_handle_t* handle, uint32_t address) {
@@ -254,7 +334,7 @@ void memory_set_data(firestarter_handle_t* handle, uint32_t address, uint8_t dat
     rurp_write_data_buffer(data);
     delayMicroseconds(3);  // Needed for slower address changes like slow ROMs and "Power through address lines"
     rurp_chip_enable();
-    delayMicroseconds(handle->pulse_delay);
+    mem_util_delay_us(handle->pulse_delay);
     rurp_chip_disable();
 }
 

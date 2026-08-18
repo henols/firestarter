@@ -21,6 +21,25 @@ rurp_register_t mem_util_calculate_lsb_register(firestarter_handle_t* handle, ui
 rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, uint32_t address);
 rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* handle, uint32_t address);
 
+/*
+ * 32-bit-safe microsecond delay. AVR's delayMicroseconds() takes a 16-bit
+ * `unsigned int` and its 16 MHz arm computes `us <<= 2`, which overflows at
+ * 16384 -- so the exact accurate ceiling is 16383, and any request above it
+ * produces a MUCH SHORTER delay (e.g. 20000 -> ~3615 us), never a longer
+ * one. Source: framework-arduino-avr 5.3.0 cores/arduino/wiring.c:120,
+ * :167-183. delay() takes an `unsigned long` and is 32-bit safe, so
+ * mem_util_delay_us splits a request into whole milliseconds via delay()
+ * plus a sub-millisecond remainder via delayMicroseconds().
+ *
+ * mem_util_split_delay is exposed here (not made static) so a native test
+ * case can assert the split arithmetic directly: the native stubs record
+ * no elapsed time, only the arguments passed to the mocked delay /
+ * delayMicroseconds calls, so the arithmetic is the only part a test off
+ * real hardware can verify.
+ */
+void mem_util_split_delay(uint32_t us, uint32_t* out_ms, uint16_t* out_us);
+void mem_util_delay_us(uint32_t us);
+
 static inline bool using_p1_as_vpp(const firestarter_handle_t* handle) {
     return (handle->pins == 32 && handle->bus_config.vpp_line == VPP_P1_32_DIP) ||
            (handle->pins == 28 && handle->bus_config.vpp_line == VPP_P1_28_DIP) ||

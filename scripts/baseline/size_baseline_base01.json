@@ -14,29 +14,30 @@
     "roadmap_cross_check": "5 of 6 ROADMAP-recorded figures reproduced byte-exact on a clean rebuild this phase: Leonardo 26072/2014, Uno 23932/1573, uno328pb flash 23976. The sixth figure, uno328pb RAM (1579 B used / 469 B free), had never been recorded anywhere before this phase — it is supplied here for the first time. No discrepancy was found between any measured figure and the ROADMAP cross-check.",
     "supersedes": "firestarter/scripts/check_uno_ram.sh, whose hardcoded RAM_FLOOR=545 (minimum acceptable free RAM in bytes) is ABOVE the measured 475 B free on uno recorded in this baseline — that script is red today and is referenced by neither CI workflow. This baseline replaces a stale, already-failing gate, not a green one. Plan 123-02 removes the script.",
     "consumed_by": "firestarter/scripts/check_size_baseline.py (BASE-01 comparator, Plan 123-02) and firestarter/scripts/check_build_warnings.py (BASE-06 warning gate, Plan 123-03). Unlike firestarter_app/tools/baseline/dispatch_baseline.json (explicitly provenance-only, consumed by nothing), this file IS load-bearing: both scripts read it as their recorded truth via the FIRESTARTER_SIZE_BASELINE env seam.",
-    "note": "Every figure below was re-measured in this session (D-03) via `pio run -t clean -e <env> && pio run -e <env>` for the three AVR targets and `pio test -e <env>` for the two native environments, on the firmware tree at firmware_tree_sha above (byte-identical to origin/beta at the same SHA — the v1.23 milestone branch had zero commits at measurement time). Nothing here is recalled from ROADMAP.md or PROJECT.md prose."
+    "note": "Every figure below was re-measured in this session (D-03) via `pio run -t clean -e <env> && pio run -e <env>` for the three AVR targets and `pio test -e <env>` for the two native environments, on the firmware tree at firmware_tree_sha above (byte-identical to origin/beta at the same SHA — the v1.23 milestone branch had zero commits at measurement time). Nothing here is recalled from ROADMAP.md or PROJECT.md prose.",
+    "re_anchor_note": "Phase 144 Plan 05 (D-11, D-12) overwrote this file's avr_targets in place to the same v1.31-tip figures scripts/baseline/size_baseline.json now holds (uno 24824/32256, uno328pb 24874/32384, leonardo 26906/28672; RAM 1573/1579/2014 unchanged on all three) -- see that file's own meta for the full measurement procedure and tree SHAs. This file's ORIGINAL meta (generated/phase/generated_by/firmware_tree_sha/host_app_tree_sha/note above) is left untouched as the historical record of BASE-01's Phase-123 genesis; it describes the measurement session that produced BASE-01's original v1.24 figures (uno 23932, uno328pb 23976, leonardo 26072), which this overwrite retires. BASE-01's forward MECHANISM is unchanged: MERGE05_UNO_CLASS_FLASH_BAND stays 64 in scripts/check_size_baseline.py, the leonardo must-not-grow band stays 0 B, check_size_baseline.py itself is NOT modified by this plan, and the canonical `--policy merge05` invocation still names this file explicitly via `--baseline scripts/baseline/size_baseline_base01.json`. Only the judged reference POINT moved, from the v1.24 tip to the v1.31 tip -- a green --policy merge05 run after this commit means the anchor moved, not that flash growth stayed inside the original v1.24 band (D-14). No in-tree copy of the v1.24 avr_targets content is kept: git history is the record (D-12) -- see blob SHA b940c91655600a57ad7ef67cba723943af929daf for the byte-identical frozen Phase-124 form of this file (unchanged until this commit), and scripts/baseline/size_baseline.json's own meta.supersedes for the parallel disclosure."
   },
   "avr_targets": {
     "uno": {
-      "flash_used": 23932,
+      "flash_used": 24824,
       "flash_total": 32256,
-      "flash_free": 8324,
+      "flash_free": 7432,
       "ram_used": 1573,
       "ram_total": 2048,
       "ram_free": 475
     },
     "uno328pb": {
-      "flash_used": 23976,
+      "flash_used": 24874,
       "flash_total": 32384,
-      "flash_free": 8408,
+      "flash_free": 7510,
       "ram_used": 1579,
       "ram_total": 2048,
       "ram_free": 469
     },
     "leonardo": {
-      "flash_used": 26072,
+      "flash_used": 26906,
       "flash_total": 28672,
-      "flash_free": 2600,
+      "flash_free": 1766,
       "ram_used": 2014,
       "ram_total": 2560,
       "ram_free": 546

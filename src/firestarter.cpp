@@ -10,6 +10,7 @@
 #include <Arduino.h>
 #include <stdlib.h>
 
+#include "eprom_budget.h"
 #include "eprom_operations.h"
 #include "hardware_operations.h"
 #include "json_parser.h"
@@ -154,42 +155,76 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     LOG_INFO_ID_U8(MSG_INFO_HW, (uint8_t)rurp_get_hardware_revision());
 #endif
     LOG_INFO_ID_U8(MSG_INFO_CMD, (uint8_t)handle->cmd);
-    // CAP-02: the operation-setup ack carries every identity value the host
-    // needs to gate compatibility BEFORE any hardware moves. configure_memory
-    // has already run at this point, but every configure_* handler is pure
-    // (function-pointer assignment only) and the VPP regulator is not engaged
-    // until firestarter_operation_init, which sits behind op_wait_for_ack() —
-    // so a host that refuses here stops the sequence with the rail still down.
+    // CAP-02 is being PORTED here, not invented: it shipped on origin/beta
+    // as PR #49 (13eb350 / b1737b2), and this branch forked one commit
+    // earlier, at 3085084. Without it the v1.31 host REFUSES every
+    // connection -- _probe_port raises FirmwareOutdatedError when
+    // firmware_identity is None, and
+    // tests/test_fwguard.py::test_absent_identity_refuses asserts exactly
+    // that refusal on purpose (BF-1).
     //
-    // Wire layout, extending the CAP-01 2-byte buffer-size region:
-    //   [buffer_size u16 BE][effective_hw_revision u8][ver_len u8][ver bytes]
+    // Wire layout, three length-discriminated extensions of one variable
+    // blob:
+    //   [buffer_size u16 BE][hw_revision u8][ver_len u8][ver bytes][write_budget_s u16 BE]
+    //      CAP-01              CAP-02                                CAP-03
     //
-    // MSG_OK_READY is declared `params = [{ type = "bytes" }]` in the message
-    // catalog, so this needs no catalog edit and no codegen regen. Hosts
-    // predating CAP-02 test `len(params) == 2`, miss, and fall back to their
-    // 512-byte floor — degraded throughput, never a misparse.
+    // MSG_OK_READY's catalog entry is a variable-length byte blob
+    // (param_bytes = -1), so this needs NO messages.toml edit and NO
+    // codegen run -- include/messages.h (codegen-generated, id-only) stays
+    // untouched.
     //
-    // The revision byte is ALWAYS emitted: on builds without HARDWARE_REVISION
-    // it is 0xFE (the REVISION_UNKNOWN value — the symbol itself is inside that
-    // same #ifdef, so it cannot be named here). Keeping the byte unconditional
-    // means the ack's shape never varies by build configuration, only by the
-    // length of the version string, and "no detection compiled in" reaches the
-    // host as a value it can reject rather than as a missing field.
+    // CAP-03 (HOST-01) is emitted for EVERY command, not just CMD_WRITE --
+    // the ack's shape must not vary by command, or a length-discriminating
+    // host decoder loses its only discriminator. eprom_block_budget_s
+    // returns 0 for a non-EPROM protocol; the host's [1, 14400]
+    // plausibility clamp then leaves its attribute None and the host's own
+    // fallback applies -- correct for a family whose block time this table
+    // cannot bound, and it is also what covers the non-memory-command case
+    // where configure_memory never ran and pulse_delay is still 0.
+    //
+    // The advertised budget is already PADDED by the firmware (D-09): only
+    // the firmware knows the once-per-block VPE settle, the final verify
+    // pass(es), the per-pulse settle and the serial transport time, so the
+    // host applies no multiplier of its own. See include/eprom_budget.h for
+    // the padding rule in prose.
+    //
+    // Two facts preserved from PR #49's own comment, which the merge that
+    // brought beta into this branch resolved away in favour of the CAP-03
+    // superset above. Both are about this emission and neither is stated
+    // elsewhere:
+    //
+    // 1. Backward compatibility is a LENGTH test, and it degrades rather than
+    //    misparses. Hosts predating CAP-02 test `len(params) == 2`, miss, and
+    //    fall back to their 512-byte chunk floor: reduced throughput on
+    //    Leonardo, never a misparse. The same property is what lets CAP-03
+    //    ride on top -- see the length-discrimination note above.
+    //
+    // 2. Emitting identity HERE is safe, and deliberately so. configure_memory
+    //    has already run at this point, but every configure_* handler is pure
+    //    (function-pointer assignment only) and the VPP regulator is not
+    //    engaged until firestarter_operation_init, which sits behind
+    //    op_wait_for_ack(). So a host that reads this ack and refuses stops the
+    //    sequence with the rail still DOWN -- the compatibility gate cannot
+    //    itself energise the part it is protecting.
     {
         const char* _ver = FW_VERSION;
         uint8_t _vlen = (uint8_t)strlen(_ver);
         if (_vlen > 32) _vlen = 32;
-        uint8_t _ready[4 + 32];
+        uint8_t _ready[4 + 32 + 2];
         _ready[0] = (uint8_t)(((uint16_t)DATA_BUFFER_SIZE >> 8) & 0xFF);
         _ready[1] = (uint8_t)((uint16_t)DATA_BUFFER_SIZE & 0xFF);
 #ifdef HARDWARE_REVISION
         _ready[2] = (uint8_t)rurp_get_hardware_revision();
 #else
-        _ready[2] = 0xFE;
+        _ready[2] = 0xFE;  // REVISION_UNKNOWN -- the symbol lives inside that same #ifdef
 #endif
         _ready[3] = _vlen;
         memcpy(_ready + 4, _ver, _vlen);
-        LOG_OK_ID_BYTES(MSG_OK_READY, _ready, (uint8_t)(4 + _vlen));
+        uint16_t _budget = eprom_block_budget_s(handle->protocol, handle->pulse_delay,
+                                                 (uint32_t)DATA_BUFFER_SIZE);
+        _ready[4 + _vlen]     = (uint8_t)((_budget >> 8) & 0xFF);
+        _ready[4 + _vlen + 1] = (uint8_t)(_budget & 0xFF);
+        LOG_OK_ID_BYTES(MSG_OK_READY, _ready, (uint8_t)(4 + _vlen + 2));
     }
     op_reset_timeout();
     return true;

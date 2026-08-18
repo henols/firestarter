@@ -75,6 +75,15 @@ the SAFE-02 handoff to Phases 88/89.
 
 Each section below gives the NAME-01 four facets (write algorithm, erase model, VPP behavior, pin roles) with datasheet-anchored citations. Datasheet citations use the form `datasheets/<slug>/<file>.pdf p.N §section` wherever page and section are recoverable.
 
+> **Note (Phase 140 / TABLE-04, F-140-08):** the `datasheets/<slug>/<file>.pdf` paths cited
+> throughout this section do **not** resolve on this branch — that tree exists only on
+> `v1.16-protocol-first-architecture-rebuild`. To recover a cited PDF, run
+> `git show v1.16-protocol-first-architecture-rebuild:datasheets/<slug>/<file>.pdf > <file>.pdf`
+> from the firmware repo root. For the three 27C write-algorithm rows (§§1.3, 1.4, 1.5),
+> per-value attribution is machine-readable and gate-enforced at
+> `tests/golden/eprom_params_citations.json` (Phase 140 / TABLE-04) — that sidecar, not this
+> prose, is authoritative for any value in `eprom_params_t`.
+
 ---
 
 ### 1.1 — 0x05 PROTO_FLASH_5V_PAGE: 5V Page-Write Flash (EEPROM-like)
@@ -124,8 +133,34 @@ Citation: `datasheets/0x06-FLASH-AMD-ALT/SST39SF040.pdf` p.4 §DC Characteristic
 **Handler:** `configure_eprom()` → `eprom.cpp`
 **DB chip count:** 170 (AM27Cxxx, 27Cxxx, W27C512, W27E512, ST M27C512, AT27xxx series)
 
-**Write algorithm:** JEDEC Intelligent Programming (1 ms pulse × N + 3× overpulse): set address and data, assert CE (PGM) low for `pulse_delay` µs (default 1000 µs for 0x07), de-assert CE, read back and verify. If mismatch: increment retry counter, repeat. After success: apply overpulse = 3 × retry_count pulses (max ~25 ms total). The ST M27C512 PRESTO IIB variant uses 100 µs pulses set via the DB `pulse-delay` field.
-Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.7 §6.2 Programming Algorithm; `datasheets/0x07-EPROM-STD/ST-M27C512.pdf` p.8 §PRESTO IIB.
+**Write algorithm:** Pulse width is a **database datum**, read from `handle->pulse_delay` on every
+write path — never a protocol constant. 1000 µs is only the `pulse_delay == 0` fallback
+(`eprom.cpp:71-76`); the row's modal database value is 100 µs, across 113 of its 170 chips. Set
+address and data, assert CE (PGM) low for `pulse_delay` µs, de-assert CE, read back and verify; on
+mismatch, increment the retry counter and repeat, up to `max_pulses = 25` (Winbond W27C512 and ST
+M27C512 flowcharts — Microchip 27C512A specifies 10; 25 is the maximum across the row's cited
+datasheets, chosen so no compliant part is refused by a backstop set too low). **No overprogram
+pulse is applied on this row** (`overprogram_factor = 0`): Winbond W27C512 Rev A4's "SMART
+PROGRAMMING ALGORITHM 2" flowchart has no overprogram step; ST M27C512 Rev 3 §2.6 states, verbatim,
+"No overprogram pulses are applied since the verify in MARGIN MODE provides the necessary margin";
+Microchip 27C512A DS11173G §1.6 agrees. **Named, scoped divergence (F-140-05):** the 22 Intel-family
+1 ms parts on this row (Intel 2764/2764A/27128/27128A/27512, TI TMS2764, NEC UPD2764, ST M2764A and
+the rest of the 1000 µs sub-population) genuinely want a `3 x N` margin pulse; serving them correctly
+requires splitting `0x07` into a second dispatch key, which TABLE-05's single-dispatch-key
+constraint forbids this milestone — recorded as a Phase 146 follow-up, not silently dropped. The
+firmware's shipped loop (`eprom.cpp:449-478`) is instead a **per-byte pulse-to-verify loop**:
+`eprom_internal_program_pulse()` asserts the program-voltage route, waits `EPROM_VPP_SETUP_US`
+(1000 µs) before the strobe and `EPROM_VPP_HOLD_US` (100 µs) after it, then releases the route; the
+byte is re-read and, on mismatch, the same fixed-width pulse (never grown) repeats until it converges
+or `max_pulses` (25 on this row) is exhausted, at which point the byte fails as `MSG_ERR_MAX_PULSES`
+(0xBD) — not an Intel 3N margin pulse. This row's `verify_mode` column (`eprom_params.cpp`) is
+`VERIFY_PER_PULSE_PLUS_FINAL`, so convergence of the per-byte loop is followed by one additional
+full-array verify pass. Full per-value attribution:
+`tests/golden/eprom_params_citations.json` (Phase 140 / TABLE-04).
+Citation: Winbond W27C512 Data Sheet, Rev A4 (Nov 1999), "SMART PROGRAMMING ALGORITHM 2" flowchart
+(this document has no §6.2 — do not cite one); ST M27C512 datasheet, Rev 3 (May 2007), §2.6 / Fig. 4;
+Microchip 27C512A DS11173G (2004), §1.6; shipped loop `eprom.cpp:449-478`,
+`eprom_internal_program_pulse()` `eprom.cpp:247-253`, settle constants `include/eprom.h:166-167`.
 
 **Erase model:** UV light erasure for UV-EPROM variants (no electrical erase). Electrically-erasable 0x07 EE-EPROMs (W27C512, W27E512, SST27SF512) are erased via `eprom_internal_erase()` which applies VPE to A9 pin. `FLAG_CAN_ERASE` is derived from `electrical.type == "EEPROM"` (Phase 77 fix) and must be set for auto-erase-before-write.
 Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.9 §6.4 Erase Operation.
@@ -134,6 +169,23 @@ Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.9 §6.4 Erase Operation.
 Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.5 §5 Pin Description (pin 1 = VPP, 28-pin).
 
 **Pin roles:** 28-pin DIP. A0–A15, D0–D7, CE (pin 20), OE/VPP (pin 22 on CMOS 27C variants — shared OE/PGM, but 0x07 is handled via the CE path). JP4 jumper required on RURP to route VPP to pin 1 for 28-pin DIP programming. Chip ID via A9 VPP (read manufacturer/device ID by raising A9 to VPP level via `CTRL_VPP_A9_ENABLE`).
+
+**Host pulse-override:** The per-run pulse width can be overridden from the host via
+`firestarter write --pulse-us N` (1–65535 µs). That bound is **minipro parity** — `-o pulse=N` is a
+`uint16` — and is **not** a wire-type or hardware limit: `pulse-delay` is parsed by the unclamped
+`extract_long` macro chain (`json_parser.c:279-282`, invoked at `:305`) into an unclamped `uint32_t`,
+so a value above 65535 is reachable on the wire independently of the host flag. The firmware-side
+backstop is the pre-flight, per-byte energy-budget refusal in `configure_eprom()`
+(`eprom.cpp:106-108`), `MSG_ERR_PULSE_TOO_WIDE` (0xAE); this row ships `energy_cap_us = 0` (uncapped,
+`eprom_params.cpp`), so that refusal is structurally unreachable here.
+Citation: `firestarter_app/firestarter/cli_handlers.py:568-578` (option help text); `json_parser.c:279-282,305`; `eprom.cpp:106-108`.
+
+**Program-VCC ceiling (accepted debt):** The raised program-VCC all four vendor algorithms assume
+for threshold margin — the ~6.25 V ceiling named below — is unreachable on this shield, which has no
+VCC-raise path (`include/eprom_params.h`'s `verify_mode` header comment). This milestone buys timing,
+pulse-count and verify fidelity and **not** silicon-margin fidelity; it is hardware-bound and
+recorded here rather than attempted.
+Citation: `include/eprom_params.h:32-34`; `.planning/REQUIREMENTS.md` §"Evidence ceiling — fixed before any code moves".
 
 ---
 
@@ -144,8 +196,23 @@ Citation: `datasheets/0x07-EPROM-STD/W27C512.pdf` p.5 §5 Pin Description (pin 1
 **Handler:** `configure_eprom()` → `eprom.cpp`
 **DB chip count:** 127 (AM27C010, AM27C020, AM27C040, W27C020, AT27C010 series — 1 Mbit–8 Mbit)
 
-**Write algorithm:** Same Intelligent Programming algorithm as 0x07. Default pulse width = 100 µs for 0x08 (see INV-06 pulse-delay defaults in §3). 32-pin format adds address lines A16–A18 via CONTROL_REGISTER bits. See INV-03 (0x08 P1-as-VPP in §3) for the VPP routing distinction vs 0x07.
-Citation: `datasheets/0x08-EPROM-QUICK/W27C020.pdf` p.7 §Programming Algorithm; `datasheets/0x08-EPROM-QUICK/AM27C020.pdf` p.10 §Quick-Pulse Programming.
+**Write algorithm:** Family: Intel Quick-Pulse / AMD Flashrite / ST PRESTO II. Pulse width is a
+**database datum**, not a protocol constant — 100 µs is the modal database value (104 of 127 chips)
+and is only the `pulse_delay == 0` fallback in firmware (`eprom.cpp:71-76`; see INV-06 pulse-delay
+defaults in §3). `max_pulses = 25`, from the Winbond W27C020 and ST M27C1001 flowcharts; the row's
+representative part, AMD Am27C020, states only "until it verifies or the maximum is reached"
+without giving a number. **No overprogram pulse is applied on this row** (`overprogram_factor = 0`),
+resolved from three independent vendors: ST M27C1001 §2.6, verbatim, "No overprogram pulse is
+applied since the verify in Margin mode provides necessary margin to each programmed cell"; AMD
+Am27C020's Flashrite description; Winbond W27C020's flowchart — all three independently omit an
+overprogram step. This agrees with `PROJECT.md`'s prose ("not for Quick-Pulse / Flashrite / PRESTO,
+so it is gated per row") and **contradicts `PROJECT.md`'s own throughput table**, which gives 0x08 a
+`3 x N x pulse` overpulse (D-06, named in the Phase 140 record; not edited here). 32-pin format adds
+address lines A16–A18 via CONTROL_REGISTER bits. See INV-03 (0x08 P1-as-VPP in §3) for the VPP
+routing distinction vs 0x07.
+Citation: Winbond W27C020 (Preliminary) datasheet, "SMART PROGRAMMING ALGORITHM" flowchart; ST
+M27C1001 datasheet, Fig. 5; AMD Am27C020 datasheet (FINAL), Flashrite description. See
+`tests/golden/eprom_params_citations.json` for the full per-cell citation.
 
 **Erase model:** UV light erasure for UV-EPROM variants. Some 0x08 parts (W27C020, W27E040) are electrically erasable EE-EPROMs — `FLAG_CAN_ERASE` applies identically to 0x07. AM27C020 write failures (0-bits-programmed) are an open defect (FUT-06); the 0x08 write/VPP path on 32-pin Large EPROM is under investigation.
 
@@ -153,6 +220,23 @@ Citation: `datasheets/0x08-EPROM-QUICK/W27C020.pdf` p.7 §Programming Algorithm;
 Citation: `datasheets/0x08-EPROM-QUICK/W27C020.pdf` p.4 §Pin Description (pin 1 = VPP, 32-pin DIP).
 
 **Pin roles:** 32-pin DIP. A0–A18 (full 19-bit address, CONTROL_REGISTER carries A16–A18), D0–D7, CE, OE, PGM/WE. VPP on pin 1 (P1_VPP_ENABLE).
+
+**Host pulse-override:** The per-run pulse width can be overridden from the host via
+`firestarter write --pulse-us N` (1–65535 µs). That bound is **minipro parity** — `-o pulse=N` is a
+`uint16` — and is **not** a wire-type or hardware limit: `pulse-delay` is parsed by the unclamped
+`extract_long` macro chain (`json_parser.c:279-282`, invoked at `:305`) into an unclamped `uint32_t`,
+so a value above 65535 is reachable on the wire independently of the host flag. The firmware-side
+backstop is the pre-flight, per-byte energy-budget refusal in `configure_eprom()`
+(`eprom.cpp:106-108`), `MSG_ERR_PULSE_TOO_WIDE` (0xAE); this row ships `energy_cap_us = 0` (uncapped,
+`eprom_params.cpp`), so that refusal is structurally unreachable here, the same as the 0x07 row above.
+Citation: `firestarter_app/firestarter/cli_handlers.py:568-578` (option help text); `json_parser.c:279-282,305`; `eprom.cpp:106-108`.
+
+**Program-VCC ceiling (accepted debt):** The raised program-VCC all four vendor algorithms assume
+for threshold margin — the ~6.25 V ceiling named below — is unreachable on this shield, which has no
+VCC-raise path (`include/eprom_params.h`'s `verify_mode` header comment). This milestone buys timing,
+pulse-count and verify fidelity and **not** silicon-margin fidelity; it is hardware-bound and
+recorded here rather than attempted.
+Citation: `include/eprom_params.h:32-34`; `.planning/REQUIREMENTS.md` §"Evidence ceiling — fixed before any code moves".
 
 ---
 
@@ -163,8 +247,23 @@ Citation: `datasheets/0x08-EPROM-QUICK/W27C020.pdf` p.4 §Pin Description (pin 1
 **Handler:** `configure_eprom()` → `eprom.cpp`
 **DB chip count:** 32 (2716, 2732, 2732A, ETC2716, and small 24-pin EEPROMs)
 
-**Write algorithm:** Same Intelligent Programming pulse algorithm. Default pulse width = 500 µs for 0x0B (see INV-06 in §3). VPP pin location varies by chip revision — pin 21 on 2716, pin 18's A10 doubles as OE/VPP on 2732. A13 is hardwired high for 24-pin socket mode (MSB register bit 5 = `ADDRESS_LINE_13`).
-Citation: `datasheets/0x0B-EPROM-LEGACY/2516_EPROM.pdf` p.3 §Programming Procedure.
+**Write algorithm:** TI TMS 2516-25/35/45 JL (December 1979, revised May 1982) specifies a **single
+50 ms pulse per location** (`t_w(PR)` = 45 / **50** / 55 ms), permits verification immediately after
+each location, and specifies **no final full-array pass** and **no overprogram**. The firmware ships
+a looped pulse-verify with a **per-byte accumulated-energy cap of 50 ms** (`energy_cap_us`),
+satisfying both readings (milestone D-02). 500 µs is only the `pulse_delay == 0` fallback
+(`eprom.cpp:71-76`; see INV-06 in §3). **Recorded, not applied here (F-140-07):** the justification
+published for the 50 ms figure — "100 x 500 µs is the classic 2716 total programming time" — is
+factually wrong: this same TI TMS 2516 datasheet states its own total programming time for all bits
+is **100 seconds**, and 50 ms is the per-location pulse width, not a total. The **value** (50000 µs)
+has a genuine primary datasheet basis; the **reason** published for it does not. Phase 146 / CLOSE-04
+reconciles the posted text; this phase records the correction without editing it. VPP pin location
+varies by chip revision — pin 21 on 2716, pin 18's A10 doubles as OE/VPP on 2732. A13 is hardwired
+high for 24-pin socket mode (MSB register bit 5 = `ADDRESS_LINE_13`).
+Citation: TI TMS 2516 datasheet ("TMS 2516-25/35/45 JL"), December 1979 (revised May 1982), AC
+"recommended timing requirements for programming" table, parameter `t_w(PR)`, and p.138 "start
+programming" / p.139 "program verification". See `tests/golden/eprom_params_citations.json` for the
+full per-cell citation.
 
 **Erase model:** UV light erasure only for UV-EPROM variants (2716, 2732, 2732A, 2516). Small 24-pin EEPROMs in this bucket (AT28C04, 28C16) erase via `eprom_internal_erase()` applying VPE to A9 pin.
 
@@ -172,6 +271,24 @@ Citation: `datasheets/0x0B-EPROM-LEGACY/2516_EPROM.pdf` p.3 §Programming Proced
 Citation: `datasheets/0x0B-EPROM-LEGACY/2516_EPROM.pdf` p.2 §Vpp Programming Voltage.
 
 **Pin roles:** 24-pin DIP. A0–A12 (no A13 — hardwired), D0–D7, CE, OE, VPP (varies by chip; commonly pin 21 for 2716/2732 family). The RURP firmware calculates the 24-pin MSB register value specially in `mem_util_calculate_msb_register()`.
+
+**Host pulse-override:** The per-run pulse width can be overridden from the host via
+`firestarter write --pulse-us N` (1–65535 µs). That bound is **minipro parity** — `-o pulse=N` is a
+`uint16` — and is **not** a wire-type or hardware limit: `pulse-delay` is parsed by the unclamped
+`extract_long` macro chain (`json_parser.c:279-282`, invoked at `:305`) into an unclamped `uint32_t`,
+so a value above 65535 is reachable on the wire independently of the host flag. The firmware-side
+backstop is the pre-flight, per-byte energy-budget refusal in `configure_eprom()`
+(`eprom.cpp:106-108`), `MSG_ERR_PULSE_TOO_WIDE` (0xAE); this row ships `energy_cap_us = 50000` (50 ms,
+`eprom_params.cpp`), so — unlike the 0x07/0x08 rows above, where the refusal is unreachable — a
+`--pulse-us` value above 50000 is refused here before any high voltage is enabled.
+Citation: `firestarter_app/firestarter/cli_handlers.py:568-578` (option help text); `json_parser.c:279-282,305`; `eprom.cpp:106-108`.
+
+**Program-VCC ceiling (accepted debt):** The raised program-VCC all four vendor algorithms assume
+for threshold margin — the ~6.25 V ceiling — is unreachable on this shield, which has no VCC-raise
+path (`include/eprom_params.h`'s `verify_mode` header comment). This milestone buys timing,
+pulse-count and verify fidelity and **not** silicon-margin fidelity; it is hardware-bound and
+recorded here rather than attempted.
+Citation: `include/eprom_params.h:32-34`; `.planning/REQUIREMENTS.md` §"Evidence ceiling — fixed before any code moves".
 
 ---
 

@@ -58,6 +58,8 @@ set(FIRESTARTER_COMMON_SOURCES
     "${REPOSITORY_ROOT}/src/rurp_config_utils.cpp"
     "${REPOSITORY_ROOT}/src/proms/memory.cpp"
     "${REPOSITORY_ROOT}/src/proms/eprom.cpp"
+    "${REPOSITORY_ROOT}/src/proms/eprom_params.cpp"
+    "${REPOSITORY_ROOT}/src/proms/eprom_budget.cpp"
     "${REPOSITORY_ROOT}/src/proms/eeprom_28c.cpp"
     "${REPOSITORY_ROOT}/src/proms/flash_nor_unlock.cpp"
     "${REPOSITORY_ROOT}/src/proms/flash_5v_page.cpp"

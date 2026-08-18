@@ -115,6 +115,17 @@ in firmware at all — each page write auto-erases internally, and the SDP
 protection state is not readable. See [`doc/PROTOCOLS.md`](./doc/PROTOCOLS.md)
 §1.6 for the full write/erase model.
 
+The three 27C UV/EE-EPROM protocols (`0x07`/`0x08`/`0x0B`) now program with a
+**per-byte pulse-to-verify loop**: a fixed-width pulse from the chip database
+(never a protocol constant, and overridable per run via `firestarter write
+--pulse-us N`), verify, repeat up to a per-protocol max-pulses backstop, with
+a failure naming the address and the pulse count. What this shield cannot
+do: the raised program-VCC the vendor algorithms assume for threshold margin
+— roughly **6.25 V** above nominal — is unreachable here, so this is timing,
+pulse-count and verify fidelity, not silicon-margin fidelity — hardware-bound
+and recorded, not attempted. See [`doc/PROTOCOLS.md`](./doc/PROTOCOLS.md)
+§§1.3–1.5 for the full per-protocol model.
+
 ## Shield Revision Support
 
 The firmware detects the connected RURP shield's silkscreen revision at boot via an ADC voltage-band lookup on pin A3. Rev 2.0+ shields carry the R41 detect divider; pre-detect-resistor boards (Rev 0 / Rev 1) and any board landing in the guard gap fall through to `rev_unknown` and honor the EEPROM `hw_revision` byte override. The detected silkscreen string surfaces on the firmware handshake (`MSG_OK_REV`).
