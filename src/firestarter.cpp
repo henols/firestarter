@@ -187,6 +187,25 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     // pass(es), the per-pulse settle and the serial transport time, so the
     // host applies no multiplier of its own. See include/eprom_budget.h for
     // the padding rule in prose.
+    //
+    // Two facts preserved from PR #49's own comment, which the merge that
+    // brought beta into this branch resolved away in favour of the CAP-03
+    // superset above. Both are about this emission and neither is stated
+    // elsewhere:
+    //
+    // 1. Backward compatibility is a LENGTH test, and it degrades rather than
+    //    misparses. Hosts predating CAP-02 test `len(params) == 2`, miss, and
+    //    fall back to their 512-byte chunk floor: reduced throughput on
+    //    Leonardo, never a misparse. The same property is what lets CAP-03
+    //    ride on top -- see the length-discrimination note above.
+    //
+    // 2. Emitting identity HERE is safe, and deliberately so. configure_memory
+    //    has already run at this point, but every configure_* handler is pure
+    //    (function-pointer assignment only) and the VPP regulator is not
+    //    engaged until firestarter_operation_init, which sits behind
+    //    op_wait_for_ack(). So a host that reads this ack and refuses stops the
+    //    sequence with the rail still DOWN -- the compatibility gate cannot
+    //    itself energise the part it is protecting.
     {
         const char* _ver = FW_VERSION;
         uint8_t _vlen = (uint8_t)strlen(_ver);
