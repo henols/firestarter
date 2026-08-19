@@ -18,4 +18,4 @@ native_nodevtools  native/avr/test_frame_vectors    PASSED    00:00:00.864
 native_nodevtools  native/avr/test_val_eeprom28c    PASSED    00:00:00.963
 native_nodevtools  native/avr/test_data_input       PASSED    00:00:04.342
 native_nodevtools  native/avr/test_messages         PASSED    00:00:04.508
-================ 141 test cases: 141 succeeded in 00:00:42.479 ================
+================ 151 test cases: 151 succeeded in 00:00:42.479 ================

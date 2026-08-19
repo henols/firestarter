@@ -23,14 +23,18 @@ deliberate violation per exit-taxonomy arm). Paying a cold-toolchain `pio` cost 
 pytest would make this suite non-hermetic and slow.
 
 Coverage:
-  1. Clean AVR control — each of the three captured_build_*.log files exits 0 and its
-     PASS: line names the env.
-  2. Clean native control — both captured_test_native*.log files exit 0 with 141 and 17
-     in the PASS: line.
+  1. Clean AVR control — each of the three captured_build_v132_*.log files exits 0
+     against the LIVE default baseline and its PASS: line names the env. SEVERED from
+     captured_build_*.log by Phase 149 Plan 07 (orchestrator-directed) -- see that
+     test's own docstring for the full reasoning.
+  2. Clean native control — both captured_test_native*.log files exit 0 with 151 and 17
+     in the PASS: line (Phase 149 Plan 07 updated these two fixtures IN PLACE, 141 -> 151,
+     since nothing else in this module depends on them staying frozen).
   3. Planted flash regression exits non-zero, prints FAIL:, and the output names both
-     the baseline figure (27002, the post-route-assert-fix figure the debug session
-     w27c512-program-fail-byte0 re-anchored the live default to) and the observed
-     figure (27514).
+     the baseline figure (27212, the page-size-seam figure D-14 re-anchored the live
+     default to) and the observed figure (27724). SEVERED onto
+     planted_size_baseline_flash_regression_v132.log by Phase 149 Plan 07
+     (orchestrator-directed) -- see that test's own docstring for the full reasoning.
   4. Planted unparseable log exits exactly 2 (the literal return code, not just
      non-zero) and does NOT print PASS:.
   5. Planted errored-suites log exits non-zero naming ERRORED — proving the gate
@@ -59,8 +63,10 @@ Coverage:
       naming the env and the computed delta.
   11. --policy merge05 fires on a planted +1 B RAM move (RAM equality holds under the
       band mode too), naming ram_used.
-  12. The default (no --policy) mode is unchanged by the new flag: all three captured
-      logs still exit 0 and the output never contains the band-mode `<=64` substring.
+  12. The default (no --policy) mode is unchanged by the new flag: all three
+      captured_build_v132_*.log logs (SEVERED from captured_build_*.log, Phase 149
+      Plan 07, orchestrator-directed) still exit 0 and the output never contains the
+      band-mode `<=64` substring.
 
 Derivation of each planted fixture from its named captured_ source (single stated edit,
 diffable against the source so a reviewer can see exactly what was planted):
@@ -97,6 +103,28 @@ diffable against the source so a reviewer can see exactly what was planted):
   never its absolute figure, per D-18: a re-derived plant is a NEW plant and needs its
   own proof that it still fires. The pre-re-anchor `policy_*` fixtures and BASE-01's
   v1.24 content are preserved in git history, never kept in-tree (D-12).
+
+  Phase 149 Plan 07 (D-14, orchestrator-directed severance, NOT a re-capture of
+  captured_build_*.log) added a FOURTH fixture family,
+  captured_build_v132_{uno,uno328pb,leonardo}.log, transcribed from the committed
+  cold post-change logs (uno 25130/1575, uno328pb 25180/1581, leonardo 27212/2016,
+  both native envs 151/17): D-14 re-anchored scripts/baseline/size_baseline.json's
+  live default avr_targets/native_envs to these figures, which the pre-149
+  captured_build_*.log trio no longer matches. Unlike every prior re-capture above,
+  this one does NOT touch captured_build_{uno,uno328pb,leonardo}.log in place --
+  test_baseline_seam_precedence_flips_clean_log_to_fail and
+  test_policy_merge05_admits_the_documented_defect_fix's Arm 1 both still need that
+  trio frozen at the pre-149 figures, so a fourth SEVERED family was added instead,
+  following the exact precedent test_policy_merge05_permits_the_measured_landing_
+  deltas set below when the Phase 145 debug session severed it onto
+  merge05_base01_anchor_*.log for the same reason (a leg needing frozen inputs while
+  the live tree keeps moving). planted_size_baseline_flash_regression_v132.log was
+  derived from captured_build_v132_leonardo.log the same way its non-v132 sibling
+  above was, keeping the same +512 B offset (27212 -> 27724).
+  captured_test_native_summary.log and captured_test_native_nodevtools_summary.log
+  were updated IN PLACE, 141 -> 151 cases/succeeded (suites unchanged at 17) --
+  no severance needed there, since test_clean_native_both_envs_pass is the ONLY leg
+  in this module reading either native summary fixture at test time.
 
   planted_size_baseline_unparseable.log
     = captured_build_uno.log with BOTH the `RAM:` and `Flash:` report lines deleted
@@ -189,11 +217,27 @@ def _run_checker(argv=None, env_overrides=None):
 
 
 def test_clean_avr_all_three_envs_pass():
-    """Coverage 1 — each captured_build_*.log exits 0 and its PASS: line names the env."""
+    """Coverage 1 — each captured_build_v132_*.log exits 0 against the LIVE default
+    baseline, and its PASS: line names the env.
+
+    SEVERED from captured_build_*.log by Phase 149 Plan 07 (orchestrator-directed,
+    same shape as the Phase 145 severance below at
+    test_policy_merge05_permits_the_measured_landing_deltas): D-14 re-anchored
+    scripts/baseline/size_baseline.json's avr_targets to the post-149 cold figures
+    (uno 25130/1575, uno328pb 25180/1581, leonardo 27212/2016), which the pre-149
+    captured_build_*.log fixtures no longer match -- feeding them here would have
+    made this leg permanently RED. captured_build_*.log itself is NOT touched: four
+    other legs (test_baseline_seam_precedence_flips_clean_log_to_fail,
+    test_policy_merge05_admits_the_documented_defect_fix's Arm 1, and two more
+    below) still need it frozen at the pre-149 figures. This leg instead reads a new
+    fixture family, captured_build_v132_{uno,uno328pb,leonardo}.log, transcribed
+    byte-for-byte from the same committed cold logs D-14 used
+    (.planning/phases/149-firmware-page-size-seam-dual-repo-lockstep/
+    149-postchange-cold-*.log), never re-derived warm."""
     for env_name, fixture in (
-        ("uno", "captured_build_uno.log"),
-        ("uno328pb", "captured_build_uno328pb.log"),
-        ("leonardo", "captured_build_leonardo.log"),
+        ("uno", "captured_build_v132_uno.log"),
+        ("uno328pb", "captured_build_v132_uno328pb.log"),
+        ("leonardo", "captured_build_v132_leonardo.log"),
     ):
         result = _run_checker(["--avr-log", f"{env_name}={_FIXTURES / fixture}"])
         assert result.returncode == 0, (
@@ -209,7 +253,16 @@ def test_clean_avr_all_three_envs_pass():
 
 
 def test_clean_native_both_envs_pass():
-    """Coverage 2 — both captured_test_native*.log files exit 0 with 141 and 17 in PASS:."""
+    """Coverage 2 — both captured_test_native*.log files exit 0 with 151 and 17 in PASS:.
+
+    Phase 149 Plan 07 (orchestrator-directed) updated captured_test_native_summary.log
+    and captured_test_native_nodevtools_summary.log IN PLACE, 141 -> 151 cases/succeeded
+    (D-04's ten new native cases, funded and landed in plan 04; suites unchanged at 17).
+    No severance needed here, unlike the AVR captured_build_*.log family: this is the
+    ONLY leg in this module that consumes either native summary fixture, so nothing
+    else depends on 141 staying frozen -- planted_size_baseline_suites_errored.log
+    (Coverage 5) is its own independent, statically-planted fixture, not derived from
+    these two at test time."""
     for env_name, fixture in (
         ("native", "captured_test_native_summary.log"),
         ("native_nodevtools", "captured_test_native_nodevtools_summary.log"),
@@ -220,25 +273,36 @@ def test_clean_native_both_envs_pass():
             f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
         assert "PASS:" in result.stdout
-        assert "141" in result.stdout, f"Expected '141' in output. Got:\n{result.stdout}"
+        assert "151" in result.stdout, f"Expected '151' in output. Got:\n{result.stdout}"
         assert "17" in result.stdout, f"Expected '17' in output. Got:\n{result.stdout}"
 
 
 def test_planted_flash_regression_flips_checker_to_failure():
     """Coverage 3 — the planted +512 B Leonardo flash figure exits non-zero and names
-    both the baseline (27002, the figure the w27c512-program-fail-byte0 debug session
-    re-anchored the live default to) and observed (27514) figures -- the message must name both
-    numbers, not merely fail."""
+    both the baseline (27212, the page-size-seam figure D-14 re-anchored the live
+    default to) and observed (27724) figures -- the message must name both numbers,
+    not merely fail.
+
+    SEVERED from planted_size_baseline_flash_regression.log by Phase 149 Plan 07
+    (orchestrator-directed, same reasoning as test_clean_avr_all_three_envs_pass
+    above): that fixture is derived from the pre-149 captured_build_leonardo.log and
+    stays frozen there for test_baseline_seam_precedence_flips_clean_log_to_fail's
+    sake (Coverage 7, which does not care about the absolute figure but still reads
+    this exact file). This leg instead reads a new plant,
+    planted_size_baseline_flash_regression_v132.log, derived from
+    captured_build_v132_leonardo.log with the same +512 B offset every prior version
+    of this fixture has used since Phase 123 (27212 + 512 = 27724), against the
+    now-current live default baseline."""
     result = _run_checker(
-        ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression.log'}"]
+        ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression_v132.log'}"]
     )
     assert result.returncode != 0, (
         f"expected non-zero exit on a planted flash regression.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "FAIL:" in result.stdout, f"Expected FAIL: in output. Got:\n{result.stdout}"
-    assert "27002" in result.stdout, f"Expected baseline figure 27002. Got:\n{result.stdout}"
-    assert "27514" in result.stdout, f"Expected observed figure 27514. Got:\n{result.stdout}"
+    assert "27212" in result.stdout, f"Expected baseline figure 27212. Got:\n{result.stdout}"
+    assert "27724" in result.stdout, f"Expected observed figure 27724. Got:\n{result.stdout}"
 
 
 def test_planted_unparseable_log_exits_exactly_2():
@@ -642,11 +706,16 @@ def test_policy_merge05_fires_on_ram_move():
 def test_default_mode_is_unchanged_by_the_new_flag():
     """Coverage 12 — T-124-08: the default (no --policy) mode must be textually
     unchanged by the new flag's addition. All three captured logs still exit 0 and
-    the output never contains the band-mode `<=64` substring."""
+    the output never contains the band-mode `<=64` substring.
+
+    SEVERED onto the v132 family by Phase 149 Plan 07 (orchestrator-directed), for
+    the same reason as test_clean_avr_all_three_envs_pass above: this leg exercises
+    DEFAULT mode against whatever the live default baseline currently is, so it must
+    track D-14's re-anchor rather than the frozen pre-149 captured_build_*.log."""
     for env_name, fixture in (
-        ("uno", "captured_build_uno.log"),
-        ("uno328pb", "captured_build_uno328pb.log"),
-        ("leonardo", "captured_build_leonardo.log"),
+        ("uno", "captured_build_v132_uno.log"),
+        ("uno328pb", "captured_build_v132_uno328pb.log"),
+        ("leonardo", "captured_build_v132_leonardo.log"),
     ):
         result = _run_checker(["--avr-log", f"{env_name}={_FIXTURES / fixture}"])
         assert result.returncode == 0, (

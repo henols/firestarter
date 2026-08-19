@@ -18,4 +18,4 @@ native         native/avr/test_frame_vectors    PASSED    00:00:00.971
 native         native/avr/test_val_eeprom28c    PASSED    00:00:00.916
 native         native/avr/test_data_input       PASSED    00:00:04.247
 native         native/avr/test_messages         PASSED    00:00:04.459
-================ 141 test cases: 141 succeeded in 00:00:45.643 ================
+================ 151 test cases: 151 succeeded in 00:00:45.643 ================
