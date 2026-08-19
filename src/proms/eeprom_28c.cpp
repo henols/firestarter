@@ -16,21 +16,36 @@
 #include "operation_utils.h"
 #include "rurp_pinout.h"
 
-/* PAGE_SIZE 64 is a deliberate CONSERVATIVE FLOOR (D-13), not an unexamined
- * default. A mem_size-derived band table (the shape flash_5v_page.cpp's
+/* AT28C_PAGE_SIZE_FALLBACK 64 is a deliberate CONSERVATIVE FLOOR (D-13, and
+ * D-10 of Phase 149: renamed from the old unqualified identifier, which
+ * claimed to be *the* page size -- that claim was half of what made this
+ * comment misleading). A mem_size-derived band table (the shape flash_5v_page.cpp's
  * flash_5v_page_page_size() uses -- READ-ONLY ANALOG, FIX-04 frozen -- NOT
  * adopted here) would be WRONG for 0x0D: the pinned infoic.xml (commit
  * a8efaedc, <database type='INFOIC2PLUS'>) records AT28MC010 at 128 KB with
  * page_size = 0x0040 (64) while AT28C010 at the SAME 128 KB density carries
  * 0x0080 (128) -- same density, different page size, so density alone
- * cannot select the right value. 64 errs SAFE: a smaller flush granularity
- * issues two legal write cycles into one physical page and can never
- * overrun a page. It is self-checking once FIX-06's read-back lands (plan
- * 117-03), which verifies whatever granularity is actually used. The real
- * per-chip value is delivered by a separate, DEFERRED phase (infoic.xml ->
- * build_db.py -> chip_database.json -> wire -> json_parser.c -> handler;
- * 117-CONTEXT.md <deferred>; not yet inserted into ROADMAP.md). */
-#define PAGE_SIZE 64
+ * cannot select the right value. D-01 re-verified this argument, and both
+ * chips are in the delivered set below.
+ *
+ * The floor's safety for the 66 rows Phase 149 D-04 leaves on it is
+ * unproven, not disproven: their page_size comes from records filed
+ * upstream under other algorithms (0x07/0x0B), so we cannot assert their
+ * real page is 16 or 32 either -- the page_size attribute is meaningful for
+ * the algorithm that consumes it, and a record filed under 0x07/0x0B is not
+ * evidence about a 28C page buffer.
+ *
+ * Phase 149 (PGSZ-01/PGSZ-02) delivered the per-chip value for the 18
+ * upstream-native 0x0D rows: infoic.xml -> build_db.py -> chip_database.json
+ * -> wire -> json_parser.c -> the mask resolver below --
+ * software-proven and unvalidated on silicon. AT28C_PAGE_SIZE_MAX (512) is a
+ * deliberately board-invariant validation ceiling, not the buffer-size
+ * constant (512 on uno/uno328pb/native, 1024 on leonardo), so the
+ * validation contract is one rule on all four build environments and the
+ * native test's coverage of it is total; 512 is still at or above the
+ * largest page any row in the database carries (256). */
+#define AT28C_PAGE_SIZE_FALLBACK 64
+#define AT28C_PAGE_SIZE_MAX 512
 
 // AT28C datasheet-max write-cycle time (t_WC), in milliseconds -- the
 // unconditional wall-clock floor D-04 requires before polling for SDP-disable
@@ -534,7 +549,61 @@ void eeprom28c_write_init(firestarter_handle_t* handle) {
     }
 }
 
+// Phase 149 (D-06/D-07): resolve the validated flush mask from a delivered
+// page-size. Returns `requested - 1` when `requested` is a power of two in
+// [1, AT28C_PAGE_SIZE_MAX], and AT28C_PAGE_SIZE_FALLBACK - 1 otherwise.
+//
+// Zero MUST be rejected before the subtraction -- the check below tests
+// `requested == 0` first, deliberately, because the power-of-two test alone
+// (`(requested & (requested - 1)) == 0`) admits 0. `0 - 1` on an unsigned
+// type wraps to an all-ones mask, which would flush almost never -- the
+// dangerous direction, since a page load that never flushes never gets
+// read-back-verified until the very last byte.
+//
+// The fallback is silent by design (D-07): a new message ID would cost
+// PROGMEM against a leonardo budget with 0 bytes of MERGE-05 headroom, to
+// report a condition only our own host could cause -- the compensating
+// control is the exhaustive host-side invariant (Plan 03's
+// tests/test_page_size_invariants.py) that every emitted page_size is a
+// power of two in range, for every one of the 746 chips in the generated
+// database. This function's return value is only ever ANDed with an
+// address below, never used to index memory, so the failure mode of a
+// wrong `requested` is wrong flush granularity, never a buffer overrun.
+static uint32_t eeprom28c_page_mask(uint16_t requested) {
+    if (requested == 0) {
+        return (uint32_t)AT28C_PAGE_SIZE_FALLBACK - 1;
+    }
+    if (requested <= AT28C_PAGE_SIZE_MAX && (requested & (requested - 1)) == 0) {
+        return (uint32_t)requested - 1;
+    }
+    return (uint32_t)AT28C_PAGE_SIZE_FALLBACK - 1;
+}
+
 void eeprom28c_write_execute(firestarter_handle_t* handle) {
+    // Phase 149 (D-06): the validated flush mask, resolved ONCE here, above
+    // the per-byte loop -- never per byte, and never a runtime `%` by a
+    // variable divisor (which would pull __udivmodsi4 into a build with
+    // zero flash headroom). D-06's literal text says "at write-INIT"; this
+    // site satisfies its substance (resolved once, never per byte) while
+    // being MECHANISM-CORRECTED against the literal site -- record this as
+    // mechanism-corrected / intent-satisfied, never as failed (the same
+    // voice as configure_eeprom28c's LOCK-04 precedent comment above).
+    // Three measured reasons this site was chosen over write_init:
+    //   1. --policy merge05 requires ram_used EXACTLY unchanged; a second
+    //      stored field (on the handle or as a file-scope static) would
+    //      cost RAM for no behavioural gain.
+    //   2. eeprom28c_write_init has an early `return` on a chip-ID
+    //      mismatch, so a mask resolved after it would be only
+    //      conditionally initialised.
+    //   3. Every existing native case in this suite calls
+    //      configure_memory(&h) then h.firestarter_operation_main(&h) and
+    //      NEVER firestarter_operation_init -- a mask resolved in
+    //      write_init would leave every test_fix06_* case at mask 0
+    //      (flushes every byte), silently changing
+    //      test_fix06_page_boundary_window_readback's two-window geometry.
+    //      write_execute's top is reached by every existing case and every
+    //      new one.
+    const uint32_t page_mask = eeprom28c_page_mask(handle->page_size);
     // Window-start index into handle->data_buffer for
     // eeprom28c_verify_page_readback below. D-08 (Claude's Discretion,
     // decision 2): the read-back covers ONLY the bytes of the CURRENT flush
@@ -631,7 +700,7 @@ void eeprom28c_write_execute(firestarter_handle_t* handle) {
         }
         page_load_previous_us = page_load_now_us;
 
-        bool page_end = ((address + 1) % PAGE_SIZE) == 0;
+        bool page_end = ((address + 1) & page_mask) == 0;
         bool last_byte = (i == handle->data_size - 1);
         if (page_end || last_byte) {
             // D-07: completion and data-landed proof are two functions with

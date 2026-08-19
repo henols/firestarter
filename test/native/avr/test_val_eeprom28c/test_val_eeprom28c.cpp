@@ -56,6 +56,14 @@ static uint32_t s_planted_base_address;
 static uint32_t s_planted_stale_address;
 static uint8_t  s_planted_stale_value;
 
+/* Phase 149 (D-09) -- the flush-count oracle. Counts every entry to the
+ * mocked firestarter_get_data below -- the ONLY correct seam for observing
+ * flush cadence: every flush-path read in production goes through
+ * handle->firestarter_get_data, while the bus recorder captures register
+ * WRITES only (never reads) and caps at 256 entries, which a 512-byte
+ * geometry could overflow. Reset in setUp() beside the other sentinels. */
+static uint32_t s_get_data_calls;
+
 void setUp(void) {
     ArduinoFakeReset();
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t))).AlwaysReturn(1);
@@ -82,6 +90,7 @@ void setUp(void) {
     s_planted_base_address = 0;
     s_planted_stale_address = EEPROM28C_PLANTED_SENTINEL;
     s_planted_stale_value = 0;
+    s_get_data_calls = 0;
 }
 
 void tearDown(void) {}
@@ -96,6 +105,7 @@ void tearDown(void) {}
  * same 0x10 + k pattern make_write_handle() below fills data_buffer with.
  * Dispatch is on ADDRESS only, never on call order. */
 static uint8_t mock_get_data_planted(firestarter_handle_t*, uint32_t address) {
+    s_get_data_calls++;
     if (s_planted_stale_address != EEPROM28C_PLANTED_SENTINEL && address == s_planted_stale_address) {
         return s_planted_stale_value;
     }
@@ -201,7 +211,7 @@ void test_eeprom28c_blank_check_configure_no_vpp(void) {
 /* ─── FIX-06: planted partial write, old-versus-new contrast (D-09) ────── */
 
 /* The side-by-side contrast, both halves in one test function. Geometry:
- * base address 0, data_size 8 (PAGE_SIZE 64, so this is one flush on
+ * base address 0, data_size 8 (AT28C_PAGE_SIZE_FALLBACK 64, so this is one flush on
  * last_byte). Plant a stale 0xFF at address 0x0002 -- an EARLIER byte, not
  * the last -- so the page's last byte always reads back correctly, the
  * DQ7-complement completion arm reports done, and only the read-back can
@@ -253,7 +263,7 @@ void test_fix06_clean_page_write_succeeds_isolation_control(void) {
 }
 
 /* Page-boundary window reset. Geometry: base address 56, data_size 16, so
- * with PAGE_SIZE 64 the write flushes twice -- once at address 63 on
+ * with AT28C_PAGE_SIZE_FALLBACK 64 the write flushes twice -- once at address 63 on
  * page_end (buffer window 0..7, addresses 56..63) and once at the last
  * byte (window 8..15, addresses 64..71). Driven three times with a fresh
  * handle and freshly reset mock state each time. */
@@ -301,6 +311,84 @@ void test_fix06_page_boundary_window_readback(void) {
     }
 }
 
+/* ─── Phase 149 (D-09): the flush-count oracle ──────────────────────────
+ *
+ * Geometry, every case below: make_write_handle(0, 128) -- base 0,
+ * data_size 128, planted base address 0 and the stale-address sentinel
+ * cleared, so the write is CLEAN. The arithmetic, derived from the two
+ * production readers: eeprom28c_wait_for_page_write does a DOUBLE read per
+ * flush on a clean poll and eeprom28c_verify_page_readback does exactly one
+ * read per buffer byte over disjoint windows, so for a clean write
+ * s_get_data_calls == 2 * flushes + data_size. Page 64 -> 2 flushes -> 132;
+ * page 128 -> 1 flush -> 130. Criterion 1's OBSERVATION that a delivered
+ * 128 changes flush cadence rests on these two counts differing.
+ *
+ * Every case drives configure_memory(&h) then h.firestarter_operation_main(&h)
+ * -- never firestarter_operation_init -- so the mask, resolved in
+ * eeprom28c_write_execute itself, is reached the same way every existing
+ * case in this suite already is. */
+
+void test_pgsz_absent_field_reproduces_the_64_byte_cadence(void) {
+    firestarter_handle_t h = make_write_handle(0, 128);
+    /* h.page_size left at its zero-initialised value -- PGSZ-02's fallback leg. */
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_planted;
+    h.firestarter_operation_main(&h);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "a clean 128-byte write with no page-size delivered must not report ERROR");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(132, s_get_data_calls,
+        "absent page-size must reproduce the 64-byte flush cadence (2 flushes -> 132 calls)");
+}
+
+void test_pgsz_delivered_128_halves_the_flush_count(void) {
+    firestarter_handle_t h = make_write_handle(0, 128);
+    h.page_size = 128;
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_planted;
+    h.firestarter_operation_main(&h);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "a clean 128-byte write at a delivered 128-byte page must not report ERROR");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(130, s_get_data_calls,
+        "a delivered 128 must be OBSERVED to halve the flush count (1 flush -> 130 calls)");
+}
+
+void test_pgsz_explicit_64_matches_the_absent_cadence(void) {
+    firestarter_handle_t h = make_write_handle(0, 128);
+    h.page_size = 64;
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_planted;
+    h.firestarter_operation_main(&h);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "a clean 128-byte write at an explicit 64-byte page must not report ERROR");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(132, s_get_data_calls,
+        "an explicit 64 must agree with the absent-field fallback cadence (D-03)");
+}
+
+void test_pgsz_non_power_of_two_falls_back_silently(void) {
+    firestarter_handle_t h = make_write_handle(0, 128);
+    h.page_size = 96;
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_planted;
+    h.firestarter_operation_main(&h);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "a clean 128-byte write at a non-power-of-two page-size must not report ERROR");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(132, s_get_data_calls,
+        "a non-power-of-two page-size (96) must fall back to the 64-byte cadence silently");
+}
+
+void test_pgsz_out_of_range_falls_back_silently(void) {
+    firestarter_handle_t h = make_write_handle(0, 128);
+    h.page_size = 2048;
+    configure_memory(&h);
+    h.firestarter_get_data = mock_get_data_planted;
+    h.firestarter_operation_main(&h);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "a clean 128-byte write at an out-of-range page-size must not report ERROR");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(132, s_get_data_calls,
+        "an out-of-range page-size (2048, above AT28C_PAGE_SIZE_MAX) must fall back to the "
+        "64-byte cadence silently");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -314,6 +402,13 @@ int main(int argc, char** argv) {
     RUN_TEST(test_fix06_planted_partial_write_fails_fixed_path_and_passes_legacy_poll);
     RUN_TEST(test_fix06_clean_page_write_succeeds_isolation_control);
     RUN_TEST(test_fix06_page_boundary_window_readback);
+
+    /* Phase 149 (D-09): the flush-count oracle */
+    RUN_TEST(test_pgsz_absent_field_reproduces_the_64_byte_cadence);
+    RUN_TEST(test_pgsz_delivered_128_halves_the_flush_count);
+    RUN_TEST(test_pgsz_explicit_64_matches_the_absent_cadence);
+    RUN_TEST(test_pgsz_non_power_of_two_falls_back_silently);
+    RUN_TEST(test_pgsz_out_of_range_falls_back_silently);
 
     return UNITY_END();
 }

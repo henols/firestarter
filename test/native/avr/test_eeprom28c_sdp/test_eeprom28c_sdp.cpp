@@ -1472,7 +1472,7 @@ static uint8_t mock_get_data_page_load_always_wrong(firestarter_handle_t*, uint3
 }
 
 /* Case 26 -- the report line fires on a completing write, with the correct
- * worst value. Two pages (data_size 72, PAGE_SIZE 64: one flush at the
+ * worst value. Two pages (data_size 72, AT28C_PAGE_SIZE_FALLBACK 64: one flush at the
  * page-64 boundary, one at the last byte), so the flush path runs more than
  * once. The scripted tick queue is deliberately NON-MONOTONIC with its
  * largest gap at byte index 40 -- neither the first byte (0) nor the last
@@ -1483,7 +1483,7 @@ static uint8_t mock_get_data_page_load_always_wrong(firestarter_handle_t*, uint3
  * every read past the script's end, which reads as "a real measurement" but
  * is actually just the tail repeated. */
 void test_case26_write_execute_reports_worst_interval_on_completing_write(void) {
-    const size_t   data_size = 72; /* > PAGE_SIZE (64): two flush windows */
+    const size_t   data_size = 72; /* > AT28C_PAGE_SIZE_FALLBACK (64): two flush windows */
     const size_t   spike_after_byte = 40; /* the (spike_after_byte+1)-th byte's load -- deliberately mid-write */
     const uint32_t spike_us = 77;
 
@@ -1537,7 +1537,7 @@ void test_case26_write_execute_reports_worst_interval_on_completing_write(void) 
  * huge tail value is installed and must NEVER be observed in the decoded
  * result, since the loop must abort before it is ever read. */
 void test_case27_write_execute_reports_worst_interval_on_aborting_write(void) {
-    const size_t   loaded_before_abort = 64; /* PAGE_SIZE -- the first page, in full */
+    const size_t   loaded_before_abort = 64; /* AT28C_PAGE_SIZE_FALLBACK -- the first page, in full */
     const size_t   spike_after_byte = 30;    /* mid-first-page, not first/last of the loaded range */
     const uint32_t spike_us = 55;
     const uint32_t never_reached_tail = 999999999u;
