@@ -111,42 +111,46 @@ diffable against the source so a reviewer can see exactly what was planted):
 
   planted_size_baseline_policy_uno_over_band.log
     = captured_build_uno.log AS IT READ AT BASE-01'S ANCHOR with the Flash: line's
-      `used` figure raised from 24824 to 24985 (+161 B — one byte outside the
-      EFFECTIVE uno-class allowance of 160 B: the unchanged 64 B band plus the 96 B
-      adjudicated defect-fix exemption). This and the two other policy-mode planted
-      logs are compared against BASE-01, which neither the
-      w27c512-program-fail-byte0 debug session nor the v1.31 Phase 145 adjudication
-      moved, so they stay at the anchor figures while the captured_build_*.log trio
-      sits +96 B ahead with the live tree. Everything else, including the now-stale
-      percentage/bar columns, is left exactly as captured.
-      Re-derived twice, each time preserving the single cause and the
+      `used` figure raised from 24824 to 25195 (+371 B — one byte outside the
+      EFFECTIVE uno-class allowance of 370 B: the unchanged 64 B band plus the 96 B
+      defect-fix exemption plus the 210 B Phase 149 page-size-seam exemption). This
+      and the two other policy-mode planted logs are compared against BASE-01, which
+      no adjudication to date has moved, so they stay at the anchor figures while the
+      captured_build_*.log trio sits +96 B ahead with the tree as it read before Phase
+      149. Everything else, including the now-stale percentage/bar columns, is left
+      exactly as captured.
+      Re-derived THREE times now, each time preserving the single cause and the
       one-byte-past-the-ceiling role, never the absolute figure (D-18): by Phase 144
-      Plan 05 from 23932/23997 when the anchor moved, and by the v1.31 Phase 145
+      Plan 05 from 23932/23997 when the anchor moved, by the v1.31 Phase 145
       adjudication from 24889 (+65 B) when the enforced ceiling moved from 64 B to
-      160 B. Without the second re-derivation this plant would sit INSIDE the
-      allowance and its leg would have gone falsely green while still claiming to
-      prove a firing.
+      160 B, and by Phase 149 (D-12) from 24985 (+161 B) when the ceiling moved again
+      from 160 B to 370 B on landing the page-size-seam exemption. Without this third
+      re-derivation this plant would sit INSIDE the new allowance and its leg would
+      have gone falsely green while still claiming to prove a firing.
 
   planted_size_baseline_policy_leonardo_growth.log
     = captured_build_leonardo.log with the Flash: line's `used` figure raised from
-      26906 to 27003 (+97 B — leonardo's base band stays 0 B must-not-grow, so its
-      effective allowance is exactly the 96 B exemption and this is one byte past
-      it). Left at the BASE-01 anchor for the reason given under the uno-class entry
-      above. Re-derived by Phase 144 Plan 05 from 26072/26073, then by the v1.31
-      Phase 145 adjudication from 26907 (+1 B) — same D-18 reasoning as the
-      uno-class entry: a +1 B plant now sits inside the exemption. This single
-      fixture backs two legs (Coverage 10 and the negative-control arm of
-      test_policy_merge05_admits_the_documented_defect_fix), deliberately shared
-      rather than committed twice byte-identically.
+      26906 to 27213 (+307 B — leonardo's base band stays 0 B must-not-grow, so its
+      effective allowance is exactly the 96 B defect-fix exemption plus the 210 B
+      Phase 149 page-size-seam exemption, and this is one byte past it). Left at the
+      BASE-01 anchor for the reason given under the uno-class entry above. Re-derived
+      by Phase 144 Plan 05 from 26072/26073, by the v1.31 Phase 145 adjudication from
+      26907 (+1 B), and now by Phase 149 (D-12) from 27003 (+97 B) — same D-18
+      reasoning as the uno-class entry: a +97 B plant now sits inside the new
+      allowance. This single fixture backs two legs (Coverage 10 and the
+      negative-control arm of test_policy_merge05_admits_the_documented_defect_fix),
+      deliberately shared rather than committed twice byte-identically.
 
   planted_size_baseline_policy_ram_moved.log
     = captured_build_uno.log with the RAM: line's `used` figure raised from 1573 to
-      1574 (+1 B — RAM equality is enforced under the band mode too, on all three envs).
-      Re-derived by Phase 144 Plan 05 from the same 1573/1574 pair (D-18): RAM has been
-      unmoved since Phase 123, so only the source capture's Flash: line moved underneath
-      it (kept at the new zero-delta anchor value 24824, never the old 23932) -- without
-      this re-derivation the fixture would carry a second, unintended deviation (a
-      ~900 B flash shrink against the new anchor) alongside the intended RAM move.
+      1576 (+3 B — one byte past the Phase 149 page-size-seam RAM exemption of 2 B;
+      before Phase 149, RAM equality was enforced exactly under the band mode too, on
+      all three envs, with zero tolerance). Re-derived by Phase 144 Plan 05 from the
+      same 1573/1574 pair (D-18) when only the source capture's Flash: line moved
+      underneath it, and now by Phase 149 (D-12) from 1574 (+1 B) to 1576 (+3 B) --
+      the RAM clause gained its own named exemption for the first time (the single
+      `uint16_t page_size` handle field, measured +2 B on all three targets), so a
+      +1 B plant now sits inside the new tolerance and would have gone falsely green.
 
 Self-contained path resolution below — NOT in conftest.py (firestarter/tests/ has no
 conftest.py anywhere in the repo; this is a recorded house-rule pattern decision, per
@@ -353,7 +357,16 @@ def test_policy_merge05_permits_the_measured_landing_deltas():
     earns its keep: frozen inputs mean neither a future re-anchor nor a future
     exemption change can move this leg's premise underneath it. So it keeps proving
     exactly the comparator property it was written for -- zero delta against the
-    anchor passes -- and never doubles as a measurement of a tree that has moved."""
+    anchor passes -- and never doubles as a measurement of a tree that has moved.
+
+    Phase 149 (D-12) added a second flash exemption
+    (MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES, 210 B) and a RAM exemption
+    (MERGE05_PAGE_SIZE_SEAM_RAM_EXEMPTION_BYTES, 2 B) alongside the existing
+    defect-fix exemption -- this leg's own arithmetic did not need re-deriving:
+    zero delta against the anchor sits inside ANY non-negative allowance, however
+    many terms compose it, so the widened allowance changes nothing this leg
+    asserts. Its frozen inputs (`merge05_base01_anchor_*.log`) are, correctly,
+    untouched by this phase."""
     argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
     for env, fixture in (
         ("leonardo", "merge05_base01_anchor_leonardo.log"),
@@ -372,8 +385,9 @@ def test_policy_merge05_permits_the_measured_landing_deltas():
 
 
 def test_policy_merge05_admits_the_documented_defect_fix():
-    """Coverage 8b — the adjudication leg (v1.31 Phase 145). Two arms, and the
-    second one is the whole point of the first.
+    """Coverage 8b — the adjudication leg (v1.31 Phase 145), extended by Phase 149
+    (PGSZ-04, D-12) to admit a SECOND named exemption without disturbing the first.
+    Two arms, and the second one is the whole point of the first.
 
     History, so nobody re-litigates this by accident. Debug session
     w27c512-program-fail-byte0 added +96 B of flash to all three AVR targets
@@ -384,28 +398,42 @@ def test_policy_merge05_admits_the_documented_defect_fix():
     this leg, `test_policy_merge05_fires_on_the_current_tree`, asserted that breach
     so it could not rot into a JSON prose field, and said in as many words that the
     day someone adjudicated it this leg would go RED and force the decision to be
-    written down. That day is this commit: the +96 B was ADMITTED as a named,
+    written down. That day was v1.31 Phase 145: the +96 B was ADMITTED as a named,
     SHA-attributed exemption (MERGE05_DEFECT_FIX_EXEMPTION_BYTES in
     scripts/check_size_baseline.py, where the full rationale lives), NOT by
     re-anchoring BASE-01 a third time, NOT by widening either band literal, and NOT
-    by shrinking the fix. BASE-01's avr_targets are byte-unchanged (uno 24824,
-    uno328pb 24874, leonardo 26906) and so are both band literals.
+    by shrinking the fix.
 
-    Arm 1 — the current tree PASSES at exactly the admitted figure, and the +96 B is
-    still VISIBLE in the PASS text with its decomposition. A pass whose output hid
-    the delta would be laundering, not adjudication, so the visibility is asserted,
-    not assumed.
+    Phase 149 repeats the shape one level up: the page-size wire seam
+    (PGSZ-01/PGSZ-02) added a further +210 B of flash and +2 B of RAM on all three
+    targets. Rather than folding that growth into the existing 96 B constant --
+    which would launder Phase 149's cost into Phase 145's already-adjudicated
+    number -- it is admitted as a SECOND, separately-named exemption,
+    MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES (flash) plus
+    MERGE05_PAGE_SIZE_SEAM_RAM_EXEMPTION_BYTES (RAM, the first time the RAM clause
+    has admitted anything beyond exact equality). BASE-01's avr_targets are still
+    byte-unchanged (uno 24824, uno328pb 24874, leonardo 26906) and so are both
+    flash band literals -- captured here, not merely stated, by
+    test_base01_is_not_re_anchored_by_the_new_exemption below.
+
+    Arm 1 — the tree as captured before Phase 149 (captured_build_*.log, still at
+    +96 B flash / +0 B RAM against BASE-01) PASSES, and BOTH admitted figures are
+    still VISIBLE in the PASS text with their full decomposition -- the +96 B
+    inherited from Phase 145 and the +210 B / seam-RAM-tolerance headroom Phase 149
+    adds alongside it. A pass whose output hid either delta would be laundering,
+    not adjudication, so the visibility is asserted, not assumed.
 
     Arm 2 — the NEGATIVE CONTROL, and the reason arm 1 is not a blank cheque: one
-    byte beyond the exemption (a planted +97 B on leonardo, whose effective
-    allowance is 0 + 96) still exits 1. Without this arm the exemption would be
-    untested and could silently widen to admit anything. The tripwire is re-armed at
-    the new floor, not removed. It shares its fixture with
+    byte beyond the NEW effective allowance (a planted +307 B on leonardo, whose
+    effective allowance is now 0 + 96 + 210 = 306) still exits 1. Without this arm
+    the exemption would be untested and could silently widen to admit anything. The
+    tripwire is re-armed at the new floor, not removed. It shares its fixture with
     test_policy_merge05_fires_on_leonardo_growth (Coverage 10) rather than
     committing a second byte-identical plant; the two legs assert different
     properties of the same firing — that one names the env and the delta, this one
     names the effective allowance and pairs the failure with arm 1's pass."""
-    # Arm 1: the live tree is admitted, at exactly +96 on every target.
+    # Arm 1: the pre-Phase-149 tree is admitted, at exactly +96 flash / +0 RAM on
+    # every target -- both comfortably inside the NEW allowance too.
     argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
     for env, fixture in (
         ("leonardo", "captured_build_leonardo.log"),
@@ -416,26 +444,35 @@ def test_policy_merge05_admits_the_documented_defect_fix():
 
     result = _run_checker(argv)
     assert result.returncode == 0, (
-        "expected --policy merge05 to PASS (exit 0) against the current tree under "
-        "the adjudicated defect-fix exemption.\n"
+        "expected --policy merge05 to PASS (exit 0) against the pre-Phase-149 tree "
+        "under the adjudicated defect-fix exemption, still comfortably inside the "
+        "new page-size-seam allowance.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "PASS:" in result.stdout, f"Expected PASS: in stdout. Got:\n{result.stdout}"
     assert result.stdout.count("+96<=") == 3, (
-        "expected all three targets to report their delta as exactly +96 B IN THE "
-        "PASS TEXT -- an exemption that makes the admitted growth invisible in the "
-        "report is laundering. If this number moved, the fix's flash cost moved with "
-        "it and MERGE05_DEFECT_FIX_EXEMPTION_BYTES, this leg and "
+        "expected all three targets to report their flash delta as exactly +96 B "
+        "IN THE PASS TEXT -- an exemption that makes the admitted growth invisible "
+        "in the report is laundering. If this number moved, the fix's flash cost "
+        "moved with it and MERGE05_DEFECT_FIX_EXEMPTION_BYTES, this leg and "
         "scripts/baseline/size_baseline.json's merge05_clause all need re-deriving.\n"
         f"Got:\n{result.stdout}"
     )
-    assert "band0+exempt96" in result.stdout and "band64+exempt96" in result.stdout, (
-        "expected the PASS text to show the allowance DECOMPOSED into the unchanged "
-        "band literal plus the named exemption, on both the leonardo (0 B) and the "
-        f"uno-class (64 B) targets. Got:\n{result.stdout}"
+    assert (
+        "band0+exempt96+seam210" in result.stdout
+        and "band64+exempt96+seam210" in result.stdout
+    ), (
+        "expected the PASS text to show the flash allowance DECOMPOSED into THREE "
+        "terms -- the unchanged band literal, the Phase 145 defect-fix exemption "
+        "and the Phase 149 page-size-seam exemption -- on both the leonardo (0 B) "
+        f"and the uno-class (64 B) targets. Got:\n{result.stdout}"
+    )
+    assert "ram=1573/2048[+0<=2=seam2]" in result.stdout, (
+        "expected uno's RAM figure to show the new RAM allowance's decomposition "
+        f"even at zero delta. Got:\n{result.stdout}"
     )
 
-    # Arm 2 (negative control): one byte past the exemption still fails.
+    # Arm 2 (negative control): one byte past the NEW allowance still fails.
     over = _run_checker(
         [
             "--policy",
@@ -447,31 +484,65 @@ def test_policy_merge05_admits_the_documented_defect_fix():
         ]
     )
     assert over.returncode == 1, (
-        "NEGATIVE CONTROL: expected exit 1 on a planted +97 B leonardo growth — one "
-        "byte beyond the 96 B exemption. If this passes, the exemption has become a "
-        "blank cheque and the forward tripwire is gone.\n"
+        "NEGATIVE CONTROL: expected exit 1 on a planted +307 B leonardo growth — one "
+        "byte beyond the new 306 B allowance (96 B defect-fix + 210 B page-size-seam "
+        "exemptions). If this passes, the exemption has become a blank cheque and "
+        "the forward tripwire is gone.\n"
         f"stdout:\n{over.stdout}\nstderr:\n{over.stderr}"
     )
-    assert "delta=+97" in over.stdout, (
+    assert "delta=+307" in over.stdout, (
         f"Expected the one-past-the-exemption delta named. Got:\n{over.stdout}"
     )
-    assert "allowance of 96 B" in over.stdout, (
+    assert "allowance of 306 B" in over.stdout, (
         f"Expected the leonardo effective allowance named. Got:\n{over.stdout}"
+    )
+    assert "band 0 B + defect-fix exemption 96 B + page-size-seam exemption 210 B" in over.stdout, (
+        f"Expected the FAIL line to decompose the allowance into all three terms. "
+        f"Got:\n{over.stdout}"
+    )
+
+
+def test_base01_is_not_re_anchored_by_the_new_exemption():
+    """Phase 149 (D-12, PGSZ-04) binding precondition, captured as a leg rather
+    than only stated in prose: BASE-01's avr_targets are byte-unchanged and both
+    flash band literals are byte-unchanged after the page-size-seam exemption
+    landed. A green --policy merge05 run after a re-anchor would mean the anchor
+    moved, not that growth stayed inside the band -- BASE-01's own re_anchor_note
+    says exactly this."""
+    with open(_BASE01_BASELINE) as f:
+        base01 = json.load(f)
+    assert base01["avr_targets"]["uno"]["flash_used"] == 24824
+    assert base01["avr_targets"]["uno328pb"]["flash_used"] == 24874
+    assert base01["avr_targets"]["leonardo"]["flash_used"] == 26906
+    assert base01["avr_targets"]["uno"]["ram_used"] == 1573
+    assert base01["avr_targets"]["uno328pb"]["ram_used"] == 1579
+    assert base01["avr_targets"]["leonardo"]["ram_used"] == 2014
+
+    checker_src = (_REPO_ROOT / "scripts" / "check_size_baseline.py").read_text()
+    assert "MERGE05_UNO_CLASS_FLASH_BAND = 64" in checker_src, (
+        "the uno-class flash band must stay exactly 64 -- widening it would "
+        "silently admit unrelated future growth"
+    )
+    assert "MERGE05_DEFECT_FIX_EXEMPTION_BYTES = 96" in checker_src, (
+        "the Phase 145 defect-fix exemption must stay exactly 96 -- it is not "
+        "this phase's number to change"
     )
 
 
 def test_policy_merge05_fires_on_uno_class_over_band():
-    """Coverage 9 — the planted +161 B Uno-class flash growth (one byte outside the
-    EFFECTIVE 160 B allowance: the unchanged 64 B band plus the 96 B adjudicated
-    defect-fix exemption) must fail --policy merge05, naming the computed delta, the
-    allowance it exceeds, and the allowance's decomposition.
+    """Coverage 9 — the planted +371 B Uno-class flash growth (one byte outside the
+    EFFECTIVE 370 B allowance: the unchanged 64 B band plus the 96 B defect-fix
+    exemption plus the Phase 149 210 B page-size-seam exemption) must fail --policy
+    merge05, naming the computed delta, the allowance it exceeds, and the
+    allowance's full three-term decomposition.
 
-    Re-derived from +65 B by the v1.31 Phase 145 adjudication, for the same D-18
-    reason Phase 144 Plan 05 re-derived it before: once the exemption exists, a +65 B
-    plant is INSIDE the allowance and this leg would have gone falsely green while
-    still claiming to prove a firing. The plant's single cause (a raised uno `used`
-    figure) and its role (exactly one byte outside the enforced ceiling) are
-    unchanged; only the number moved, and only because the ceiling moved."""
+    Re-derived from +161 B by Phase 149 (D-12), for the same D-18 reason Phase 144
+    Plan 05 and the v1.31 Phase 145 adjudication each re-derived it before: once
+    the new exemption exists, a +161 B plant is INSIDE the allowance and this leg
+    would have gone falsely green while still claiming to prove a firing. The
+    plant's single cause (a raised uno `used` figure) and its role (exactly one
+    byte outside the enforced ceiling) are unchanged; only the number moved, and
+    only because the ceiling moved."""
     result = _run_checker(
         [
             "--policy",
@@ -483,29 +554,34 @@ def test_policy_merge05_fires_on_uno_class_over_band():
         ]
     )
     assert result.returncode != 0, (
-        f"expected non-zero exit on a planted +65 B uno-class flash growth.\n"
+        f"expected non-zero exit on a planted +371 B uno-class flash growth.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
-    assert "delta=+161" in result.stdout, f"Expected 'delta=+161'. Got:\n{result.stdout}"
-    assert "allowance of 160 B" in result.stdout, (
-        f"Expected 'allowance of 160 B'. Got:\n{result.stdout}"
+    assert "delta=+371" in result.stdout, f"Expected 'delta=+371'. Got:\n{result.stdout}"
+    assert "allowance of 370 B" in result.stdout, (
+        f"Expected 'allowance of 370 B'. Got:\n{result.stdout}"
     )
-    assert "band 64 B + defect-fix exemption 96 B" in result.stdout, (
-        "Expected the allowance decomposed into the unchanged 64 B band plus the "
-        f"named 96 B exemption. Got:\n{result.stdout}"
+    assert (
+        "band 64 B + defect-fix exemption 96 B + page-size-seam exemption 210 B"
+        in result.stdout
+    ), (
+        "Expected the allowance decomposed into all three terms: the unchanged "
+        "64 B band, the 96 B defect-fix exemption and the 210 B page-size-seam "
+        f"exemption. Got:\n{result.stdout}"
     )
 
 
 def test_policy_merge05_fires_on_leonardo_growth():
-    """Coverage 10 — the planted +97 B Leonardo flash growth must fail --policy
+    """Coverage 10 — the planted +307 B Leonardo flash growth must fail --policy
     merge05 (Leonardo's base band is still 0 B must-not-grow, so its effective
-    allowance is exactly the 96 B exemption and +97 is one byte past it), naming the
-    env and the delta.
+    allowance is exactly the 96 B defect-fix exemption plus the 210 B page-size-
+    seam exemption = 306 B, and +307 is one byte past it), naming the env and the
+    delta.
 
-    Re-derived from +1 B by the v1.31 Phase 145 adjudication for the same reason as
-    Coverage 9 above: a +1 B plant now sits inside the exemption and this leg would
-    have gone falsely green. The plant's single cause and its one-byte-past-the-
-    ceiling role are unchanged. This is the same fixture
+    Re-derived from +97 B by Phase 149 (D-12) for the same reason as Coverage 9
+    above: a +97 B plant now sits inside the new exemption and this leg would have
+    gone falsely green. The plant's single cause and its one-byte-past-the-ceiling
+    role are unchanged. This is the same fixture
     test_policy_merge05_admits_the_documented_defect_fix uses as its negative
     control — deliberately shared rather than duplicated byte-identically; see that
     leg's docstring for the division of labour."""
@@ -520,16 +596,25 @@ def test_policy_merge05_fires_on_leonardo_growth():
         ]
     )
     assert result.returncode != 0, (
-        f"expected non-zero exit on a planted +1 B Leonardo flash growth.\n"
+        f"expected non-zero exit on a planted +307 B Leonardo flash growth.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "leonardo" in result.stdout, f"Expected 'leonardo'. Got:\n{result.stdout}"
-    assert "delta=+97" in result.stdout, f"Expected 'delta=+97'. Got:\n{result.stdout}"
+    assert "delta=+307" in result.stdout, f"Expected 'delta=+307'. Got:\n{result.stdout}"
 
 
 def test_policy_merge05_fires_on_ram_move():
-    """Coverage 11 — the planted +1 B RAM move must fail --policy merge05 (RAM
-    equality holds under the band mode too), naming ram_used."""
+    """Coverage 11 — the planted +3 B RAM move (one byte past the Phase 149
+    page-size-seam RAM exemption of 2 B) must fail --policy merge05, naming
+    ram_used and the RAM allowance's own decomposition.
+
+    Before Phase 149, RAM equality was enforced with zero tolerance under the
+    band mode, and a +1 B plant fired. Phase 149 (D-12) measured RAM moving by
+    +2 B on all three AVR targets (the single `uint16_t page_size` handle field)
+    and funded it with a named RAM exemption -- so the old +1 B plant now sits
+    INSIDE the tolerance and would go falsely green. Re-derived to +3 B, one byte
+    past the new 2 B tolerance, preserving the plant's single cause and its
+    one-byte-past-the-ceiling role."""
     result = _run_checker(
         [
             "--policy",
@@ -541,10 +626,17 @@ def test_policy_merge05_fires_on_ram_move():
         ]
     )
     assert result.returncode != 0, (
-        f"expected non-zero exit on a planted +1 B RAM move.\n"
+        f"expected non-zero exit on a planted +3 B RAM move.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "ram_used" in result.stdout, f"Expected 'ram_used'. Got:\n{result.stdout}"
+    assert "delta=+3" in result.stdout, f"Expected 'delta=+3'. Got:\n{result.stdout}"
+    assert "ram allowance of 2 B" in result.stdout, (
+        f"Expected 'ram allowance of 2 B'. Got:\n{result.stdout}"
+    )
+    assert "page-size-seam exemption 2 B" in result.stdout, (
+        f"Expected the RAM allowance's own decomposition named. Got:\n{result.stdout}"
+    )
 
 
 def test_default_mode_is_unchanged_by_the_new_flag():

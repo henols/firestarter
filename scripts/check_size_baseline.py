@@ -22,11 +22,22 @@ Two modes, selected by the presence/absence of `--policy merge05`:
     eb563d2 and ebe9cb3) on all three AVR targets -- see that constant's
     comment for what the bytes are and which three alternatives (re-anchoring
     BASE-01 a third time, widening the bands, shrinking the fix) were
-    considered and rejected. The exemption is additive and flash-only: the RAM
-    clause keeps zero tolerance, the band literals are unchanged, BASE-01's
-    recorded figures are unchanged, and the deltas are printed with their
-    decomposition so the admitted +96 B stays visible in both the PASS and the
-    FAIL text. This is a one-shot assertion meant
+    considered and rejected. Since Phase 149 (PGSZ-04, D-12) it ALSO enforces
+    a second, separately-named, SHA-attributed flash exemption,
+    MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES (210 B, commits 58c6a3c and
+    28bf089), and its own named RAM exemption (2 B, this module's single
+    RAM-tolerance constant, defined immediately after the flash one) -- the
+    first time the RAM clause has admitted anything beyond exact equality;
+    see each constant's own comment for its own bytes, its own rejected
+    alternatives, and its own scope. Every exemption is additive and every
+    clause's own scope is
+    respected: flash's two named exemptions never touch RAM, RAM's named
+    exemption never touches flash, the band literals are unchanged, BASE-01's
+    recorded figures are unchanged, and every delta is printed with its full
+    decomposition so each admitted amount stays independently visible in both
+    the PASS and the FAIL text -- summing exemptions together to hide which
+    phase funded which byte is exactly what this decomposition exists to
+    prevent. This is a one-shot assertion meant
     to be run against the FROZEN `scripts/baseline/size_baseline_base01.json`
     record (Phase 124 Plan 02) — the pre-landing figures — never against
     whatever `scripts/baseline/size_baseline.json` says after Plan 124-10
@@ -48,9 +59,10 @@ Exit codes (identical taxonomy in both modes):
   0 — every env supplied compared clean against the baseline/policy (gate passes)
   1 — an env's observed figures diverge from the baseline (default mode) or
       fall outside MERGE-05's effective allowance (`--policy merge05`; base
-      band plus the named defect-fix exemption), OR zero envs were
-      compared (the never-vacuous guard: a comparator that compares nothing
-      must not report success — not bypassed by `--policy`)
+      band plus every named exemption -- flash's defect-fix and
+      page-size-seam exemptions, RAM's page-size-seam exemption), OR zero
+      envs were compared (the never-vacuous guard: a comparator that
+      compares nothing must not report success — not bypassed by `--policy`)
   2 — a supplied log could not be parsed (no `RAM:`/`Flash:` report found, or no
       `N test cases:` summary line, or no per-suite SUMMARY rows), or the CLI
       invocation itself is malformed (e.g. an unrecognised `--policy` value) —
@@ -73,12 +85,15 @@ was given. It does NOT prove that log came from a clean build — only
 `--rebuild` guarantees that, by invoking `pio` itself.
 
 Non-claim: a green `--policy merge05` run proves the deltas are inside the
-effective allowance -- the band the requirement licenses plus the exemption
-this project adjudicated and recorded. It does NOT prove the deltas are
-inside MERGE-05's original v1.23-era band (they are not: v1.31 ships +96 B
-over it, admitted deliberately), it proves nothing about whether the deltas
-are desirable, and nothing about the log having come from a clean build
-(only `--rebuild` guarantees that).
+effective allowance -- the band the requirement licenses plus every named
+exemption this project has adjudicated and recorded. It does NOT prove the
+deltas are inside MERGE-05's original v1.23-era band (they are not: the tree
+ships +306 B of flash over it as of Phase 149, admitted deliberately across
+two named exemptions), it proves nothing about whether the deltas are
+desirable, and nothing about the log having come from a clean build (only
+`--rebuild` guarantees that). It also does not prove the change is
+validated on real hardware -- see the calling phase's own artifact for that
+boundary.
 
 Usage:
     python3 scripts/check_size_baseline.py --avr-log leonardo=path/to/build.log
@@ -165,6 +180,106 @@ MERGE05_UNO_CLASS_FLASH_BAND = 64
 # zero tolerance and is deliberately NOT widened by this constant -- RAM did not
 # move, so any RAM delta must still fail.
 MERGE05_DEFECT_FIX_EXEMPTION_BYTES = 96
+
+# The second, SEPARATELY-NAMED, SHA-attributed flash exemption, in bytes, ADDED
+# to each target's allowance alongside MERGE05_DEFECT_FIX_EXEMPTION_BYTES.
+# Phase 149 (PGSZ-04, D-12). Applies to all three AVR targets alike -- the
+# single place this literal lives is _merge05_flash_allowance() below, the
+# same single-consumer property the other two flash literals have.
+#
+# What the 210 bytes ARE: the page-size wire seam, from this phase's own
+# firmware commits 58c6a3c ("add page-size wire key, handle field and
+# per-command reset") and 28bf089 ("validated bitwise page mask at the 0x0D
+# flush boundary") -- one PROGMEM key string ("page-size"), one
+# key_parsers[] dispatch row, one extract_int getter (get_page_size), one
+# uint16_t handle field (firestarter_handle_t.page_size), one per-command
+# reset beside chip_id, the eeprom28c_page_mask() resolver (a validated
+# power-of-two mask bounded by AT28C_PAGE_SIZE_FALLBACK/AT28C_PAGE_SIZE_MAX)
+# and the flush test's change from `% PAGE_SIZE` to a hoisted bitwise AND.
+# Measured at exactly +210 B on all three AVR targets (uno, uno328pb,
+# leonardo) against BASE-01, minus the already-admitted 96 B defect-fix
+# exemption above -- see .planning/phases/149-firmware-page-size-seam-dual-
+# repo-lockstep/149-SIZE-TRANSCRIPTS.md for the cold rm -rf + pio run
+# capture this figure was read from. The dead json_init() deletion (also in
+# 58c6a3c) contributed 0 bytes and is not counted: --gc-sections was already
+# discarding it, so there was nothing to reclaim.
+#
+# WHY an exemption. The same three alternatives from
+# MERGE05_DEFECT_FIX_EXEMPTION_BYTES above were considered and rejected
+# again here:
+#   - NOT a re-anchor of scripts/baseline/size_baseline_base01.json. Its own
+#     re_anchor_note already records the lesson this would repeat: a green
+#     --policy merge05 run after a re-anchor means the anchor moved, not
+#     that flash growth stayed inside the original band. BASE-01's
+#     avr_targets stay byte-unchanged: uno 24824, uno328pb 24874, leonardo
+#     26906.
+#   - NOT a widening of MERGE05_UNO_CLASS_FLASH_BAND (stays 64 B) or of the
+#     leonardo 0 B band. Either would silently admit unrelated future
+#     growth and destroy the tripwire.
+#   - NOT a shrink of the seam. The wire key, the handle field, the
+#     per-command reset and the validated mask are all load-bearing for
+#     PGSZ-01/PGSZ-02; trimming them to fit a band that predates the seam's
+#     own existence is the wrong incentive and risks the feature.
+# The growth is instead NAMED here, so it is admitted in one visible,
+# attributable place rather than laundered into a moved reference point or
+# into MERGE05_DEFECT_FIX_EXEMPTION_BYTES's own number.
+#
+# The tripwire stays ARMED at the new floor: a delta of one byte beyond the
+# new effective allowance still FAILS. That is a machine-checked negative
+# control, not a claim -- tests/test_check_size_baseline.py's
+# test_policy_merge05_fires_on_leonardo_growth feeds a planted log one byte
+# past the new leonardo allowance (0 + 96 + 210 = 306 B) and asserts exit 1.
+#
+# SCOPE: flash only. compare_avr_policy_merge05's ram_used clause is
+# governed by this module's own separate RAM-tolerance constant, defined
+# immediately below -- this one does not touch RAM.
+#
+# The change this constant funds is software-proven and unvalidated on silicon
+# (Evidence Ceiling, v1.32 PROJECT.md): no AT28C part was involved in measuring
+# it, and the figure says nothing about runtime behaviour on real hardware.
+MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES = 210
+
+# The named RAM exemption paired with the flash exemption immediately above,
+# in bytes. Phase 149 (PGSZ-04, D-12's "one thing the research did not
+# surface" finding). Read by exactly one function, _merge05_ram_allowance()
+# below -- the same single-consumer property every other MERGE-05 literal in
+# this module has.
+#
+# What the 2 bytes ARE: the single `uint16_t page_size` field added to
+# firestarter_handle_t (firestarter/include/firestarter.h, commit 58c6a3c),
+# whose only instance is the file-scope global `handle`
+# (firestarter/src/firestarter.cpp:33). AVR aligns every scalar to 1 byte,
+# so there is no padding to absorb it. Measured at exactly +2 B on all
+# three AVR targets (uno, uno328pb, leonardo) against BASE-01 -- see
+# 149-SIZE-TRANSCRIPTS.md for the cold capture.
+#
+# WHY a named exemption rather than relaxing compare_avr_policy_merge05's
+# RAM clause in general:
+#   - NOT a general loosening of the ram_used clause. MERGE-05's zero
+#     tolerance protects every OTHER change from admitting RAM growth by
+#     accident; loosening it project-wide would silence that protection for
+#     every future phase, not just this one.
+#   - NOT folded into MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES above. That
+#     constant is SCOPE: flash only; mixing a RAM cost into a flash number
+#     would launder a RAM change into a flash figure.
+#   - NOT a narrower field to dodge the exemption. A uint8_t log2-exponent
+#     form was considered (149-CONTEXT.md, Claude's Discretion) and
+#     rejected: the RAM clause's tolerance is zero either way, so a
+#     narrower field changes this constant's size, not whether it is
+#     needed.
+# The growth is instead NAMED here, exactly as the flash exemption above is
+# named, so it is admitted in one visible, attributable place.
+#
+# The tripwire stays ARMED at the new floor: a RAM delta of one byte beyond
+# this exemption still FAILS. tests/test_check_size_baseline.py's
+# test_policy_merge05_fires_on_ram_move feeds a planted log one byte past
+# the new RAM allowance and asserts exit 1.
+#
+# SCOPE: RAM only. This constant does not touch
+# MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES or either flash band literal -- a
+# flash-only change still requires zero RAM tolerance beyond what this
+# constant admits.
+MERGE05_PAGE_SIZE_SEAM_RAM_EXEMPTION_BYTES = 2
 
 # Matches both the RAM: and Flash: report lines in one pattern. Anchored at
 # column 0, multiline. Does NOT capture the percentage or the bar-graph
@@ -273,27 +388,48 @@ def compare_avr(env, parsed, baseline):
 
 def _merge05_flash_allowance(env):
     """Resolve `env`'s MERGE-05 flash-growth figures. Returns
-    (band, exemption, allowance, band_label).
+    (band, defect_exemption, seam_exemption, allowance, band_label) -- a
+    5-tuple, never a summed 4-tuple.
 
-    Sole consumer of BOTH MERGE05_UNO_CLASS_FLASH_BAND and
-    MERGE05_DEFECT_FIX_EXEMPTION_BYTES -- compare_avr_policy_merge05 (the FAIL
-    arm) and main()'s PASS-line builder both call this rather than each
-    recomputing the band, so neither literal is ever read in two places and the
-    pass/fail arms can never disagree about the allowance. (Before the exemption
-    was added, main() DID recompute `band` itself, quietly falsifying the band
-    literal's own "single place this literal lives" comment; that duplication is
+    Sole consumer of MERGE05_UNO_CLASS_FLASH_BAND,
+    MERGE05_DEFECT_FIX_EXEMPTION_BYTES AND MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES
+    -- compare_avr_policy_merge05 (the FAIL arm) and main()'s PASS-line builder
+    both call this rather than each recomputing the band, so none of the three
+    literals is ever read in two places and the pass/fail arms can never
+    disagree about the allowance. (Before the first exemption was added,
+    main() DID recompute `band` itself, quietly falsifying the band literal's
+    own "single place this literal lives" comment; that duplication stays
     removed here.)
 
-    `allowance` is the effective ceiling actually enforced: base band plus the
-    named defect-fix exemption. `band` and `exemption` are returned separately
-    so every message can show the decomposition instead of only the sum -- the
-    +96 B stays visible in the output rather than being absorbed into one
-    widened number.
+    `allowance` is the effective ceiling actually enforced: base band plus
+    BOTH named exemptions. `band`, `defect_exemption` and `seam_exemption`
+    are returned SEPARATELY, never summed into one another, so every message
+    can show the full decomposition instead of only the total -- the +96 B
+    and the +210 B each stay independently visible in the output rather than
+    being absorbed into one widened number. Adding the page-size-seam
+    exemption into the existing defect-fix exemption's value would destroy
+    exactly this property and launder Phase 149's growth into Phase 145's
+    number.
     """
     band = 0 if env == "leonardo" else MERGE05_UNO_CLASS_FLASH_BAND
     band_label = "leonardo" if env == "leonardo" else "uno-class"
-    exemption = MERGE05_DEFECT_FIX_EXEMPTION_BYTES
-    return band, exemption, band + exemption, band_label
+    defect_exemption = MERGE05_DEFECT_FIX_EXEMPTION_BYTES
+    seam_exemption = MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES
+    allowance = band + defect_exemption + seam_exemption
+    return band, defect_exemption, seam_exemption, allowance, band_label
+
+
+def _merge05_ram_allowance(env):
+    """Resolve `env`'s MERGE-05 RAM-growth tolerance. Returns (tolerance, label).
+
+    Sole consumer of this module's own RAM-exemption constant (defined just
+    above) -- compare_avr_policy_merge05's RAM clause is the only call site,
+    mirroring _merge05_flash_allowance's single-consumer shape. `tolerance`
+    is uniform
+    across all three AVR targets (uno, uno328pb, leonardo): the RAM cost that
+    earned this exemption was measured identical on all three.
+    """
+    return MERGE05_PAGE_SIZE_SEAM_RAM_EXEMPTION_BYTES, "page-size-seam"
 
 
 def compare_avr_policy_merge05(env, parsed, baseline):
@@ -302,22 +438,29 @@ def compare_avr_policy_merge05(env, parsed, baseline):
 
     Rules:
       - leonardo: base band 0 B -- flash_used must not grow at all beyond the
-        exemption (it may shrink).
+        exemptions (it may shrink).
       - uno / uno328pb: base band MERGE05_UNO_CLASS_FLASH_BAND bytes over the
         recorded value.
       - all three: the effective flash ceiling is that base band PLUS
-        MERGE05_DEFECT_FIX_EXEMPTION_BYTES -- the named, SHA-attributed
-        defect-fix exemption adjudicated in v1.31 Phase 145 (see the constant's
-        own comment for what the bytes are, which three alternatives were
-        rejected, and why). Both figures are resolved in one place by
-        _merge05_flash_allowance(). Every message prints the decomposition
-        (`band N B + defect-fix exemption 96 B`) so the admitted growth stays
+        MERGE05_DEFECT_FIX_EXEMPTION_BYTES (the named, SHA-attributed
+        defect-fix exemption adjudicated in v1.31 Phase 145) PLUS
+        MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES (the named, SHA-attributed
+        page-size-seam exemption from Phase 149 -- see each constant's own
+        comment for what the bytes are, which alternatives were rejected,
+        and why). All three figures are resolved in one place by
+        _merge05_flash_allowance(). Every message prints the full
+        decomposition (`band N B + defect-fix exemption 96 B + page-size-seam
+        exemption 210 B`) so each admitted growth stays independently
         visible rather than disappearing into a single widened number.
-      - all three: ram_used must be exactly unchanged. The exemption is a FLASH
-        allowance only and does not touch this clause. MERGE-05's text binds
-        RAM equality on Uno/Leonardo only; equality is enforced on uno328pb
-        too because it is measured equal -- deliberately stronger than the
-        requirement text, never weaker.
+      - all three: ram_used must not grow beyond this module's own named
+        RAM exemption (it may shrink freely) --
+        resolved by _merge05_ram_allowance(), the RAM analog of the flash
+        resolver. Before Phase 149 this clause required ram_used to be
+        EXACTLY unchanged; Phase 149's own `uint16_t page_size` handle field
+        moved RAM by a measured, named, SHA-attributed +2 B on all three
+        targets, so the clause is now "within the admitted RAM exemption",
+        deliberately stronger than the requirement text everywhere outside
+        that exemption, never weaker.
       - all three: flash_total and ram_total must be unchanged (a changed
         total means the board or framework moved -- a finding, not a pass),
         reusing compare_avr's existing message text verbatim.
@@ -331,20 +474,26 @@ def compare_avr_policy_merge05(env, parsed, baseline):
     flash_used, flash_total = parsed["Flash"]
     failures = []
 
-    band, exemption, allowance, band_label = _merge05_flash_allowance(env)
+    band, defect_exemption, seam_exemption, allowance, band_label = _merge05_flash_allowance(
+        env
+    )
     flash_delta = flash_used - rec["flash_used"]
     if flash_delta > allowance:
         failures.append(
             f"{env}: flash_used baseline={rec['flash_used']} observed={flash_used} "
             f"delta={flash_delta:+d} exceeds MERGE-05 {band_label} allowance of "
-            f"{allowance} B (band {band} B + defect-fix exemption {exemption} B)"
+            f"{allowance} B (band {band} B + defect-fix exemption {defect_exemption} B "
+            f"+ page-size-seam exemption {seam_exemption} B)"
         )
 
-    if ram_used != rec["ram_used"]:
-        ram_delta = ram_used - rec["ram_used"]
+    ram_tolerance, ram_label = _merge05_ram_allowance(env)
+    ram_delta = ram_used - rec["ram_used"]
+    if ram_delta > ram_tolerance:
         failures.append(
             f"{env}: ram_used baseline={rec['ram_used']} observed={ram_used} "
-            f"delta={ram_delta:+d} (MERGE-05 requires ram_used unchanged)"
+            f"delta={ram_delta:+d} exceeds MERGE-05 ram allowance of {ram_tolerance} B "
+            f"({ram_label} exemption {ram_tolerance} B) (MERGE-05 requires ram_used "
+            "within the admitted allowance)"
         )
 
     if flash_total != rec["flash_total"]:
@@ -533,12 +682,15 @@ def main(argv):
             ru, rt = parsed["RAM"]
             if policy == "merge05":
                 rec = baseline["avr_targets"][env]
-                band, exemption, allowance, _label = _merge05_flash_allowance(env)
+                band, defect_exemption, seam_exemption, allowance, _label = _merge05_flash_allowance(env)
                 flash_delta = u - rec["flash_used"]
+                ram_tolerance, _ram_label = _merge05_ram_allowance(env)
+                ram_delta = ru - rec["ram_used"]
                 compared.append(
                     f"{env}(flash={u}/{t}"
-                    f"[{flash_delta:+d}<={allowance}=band{band}+exempt{exemption}],"
-                    f"ram={ru}/{rt}[=])"
+                    f"[{flash_delta:+d}<={allowance}=band{band}+exempt{defect_exemption}"
+                    f"+seam{seam_exemption}],"
+                    f"ram={ru}/{rt}[{ram_delta:+d}<={ram_tolerance}=seam{ram_tolerance}])"
                 )
             else:
                 compared.append(f"{env}(flash={u}/{t},ram={ru}/{rt})")
