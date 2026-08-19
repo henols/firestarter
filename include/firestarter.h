@@ -199,6 +199,10 @@ typedef struct firestarter_handle {
     uint32_t read_strobe_us;     /* /CE read-strobe pulse width (µs; 0 = use default 3µs) */
     uint32_t ctrl_flags;
     uint16_t chip_id;
+    uint16_t page_size;          /* per-chip page-write size delivered by the host over the wire
+                                   * (Phase 149, PGSZ-01/PGSZ-02); 0 = absent, so the 0x0D handler
+                                   * applies its own named floor (AT28C_PAGE_SIZE_FALLBACK). Reset
+                                   * per command in json_parse, exactly like chip_id above (D-05). */
     char data_buffer[DATA_BUFFER_SIZE];
     uint32_t data_size;
     bus_config_t bus_config;
