@@ -29,9 +29,17 @@ Two modes, selected by the presence/absence of `--policy merge05`:
     RAM-tolerance constant, defined immediately after the flash one) -- the
     first time the RAM clause has admitted anything beyond exact equality;
     see each constant's own comment for its own bytes, its own rejected
-    alternatives, and its own scope. Every exemption is additive and every
+    alternatives, and its own scope. Since Phase 151 (LOCK-02, D-01/D-02) it
+    ALSO enforces a THIRD, separately-named, SHA-attributed flash exemption
+    (288 B, commits 32c32e7, f66d817, 8db7e55 and 0444b1c/3ff9f34, its own
+    module-level constant defined immediately after the page-size-seam
+    exemption above) -- the `dev lock-status` firmware read,
+    admitted flash-only with NO new RAM exemption (Phase 151's own RAM growth
+    measured at exactly 0 B; the pre-existing +2 B RAM delta against BASE-01
+    is Phase 149's, unchanged, and already fully covered by the RAM
+    exemption constant below). Every exemption is additive and every
     clause's own scope is
-    respected: flash's two named exemptions never touch RAM, RAM's named
+    respected: flash's three named exemptions never touch RAM, RAM's named
     exemption never touches flash, the band literals are unchanged, BASE-01's
     recorded figures are unchanged, and every delta is printed with its full
     decomposition so each admitted amount stays independently visible in both
@@ -59,8 +67,9 @@ Exit codes (identical taxonomy in both modes):
   0 — every env supplied compared clean against the baseline/policy (gate passes)
   1 — an env's observed figures diverge from the baseline (default mode) or
       fall outside MERGE-05's effective allowance (`--policy merge05`; base
-      band plus every named exemption -- flash's defect-fix and
-      page-size-seam exemptions, RAM's page-size-seam exemption), OR zero
+      band plus every named exemption -- flash's defect-fix,
+      page-size-seam and lock-status-read exemptions, RAM's page-size-seam
+      exemption), OR zero
       envs were compared (the never-vacuous guard: a comparator that
       compares nothing must not report success — not bypassed by `--policy`)
   2 — a supplied log could not be parsed (no `RAM:`/`Flash:` report found, or no
@@ -88,8 +97,8 @@ Non-claim: a green `--policy merge05` run proves the deltas are inside the
 effective allowance -- the band the requirement licenses plus every named
 exemption this project has adjudicated and recorded. It does NOT prove the
 deltas are inside MERGE-05's original v1.23-era band (they are not: the tree
-ships +306 B of flash over it as of Phase 149, admitted deliberately across
-two named exemptions), it proves nothing about whether the deltas are
+ships +594 B of flash over it as of Phase 151, admitted deliberately across
+three named exemptions), it proves nothing about whether the deltas are
 desirable, and nothing about the log having come from a clean build (only
 `--rebuild` guarantees that). It also does not prove the change is
 validated on real hardware -- see the calling phase's own artifact for that
@@ -239,11 +248,87 @@ MERGE05_DEFECT_FIX_EXEMPTION_BYTES = 96
 # it, and the figure says nothing about runtime behaviour on real hardware.
 MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES = 210
 
-# The named RAM exemption paired with the flash exemption immediately above,
-# in bytes. Phase 149 (PGSZ-04, D-12's "one thing the research did not
-# surface" finding). Read by exactly one function, _merge05_ram_allowance()
-# below -- the same single-consumer property every other MERGE-05 literal in
-# this module has.
+# The THIRD, SEPARATELY-NAMED, SHA-attributed flash exemption, in bytes, ADDED
+# to each target's allowance alongside MERGE05_DEFECT_FIX_EXEMPTION_BYTES and
+# MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES. Phase 151 (LOCK-02, D-01/D-02). Applies
+# to all three AVR targets alike -- the single place this literal lives is
+# _merge05_flash_allowance() below, the same single-consumer property the
+# other two flash literals have.
+#
+# What the 288 bytes ARE: the `dev lock-status` firmware read, end to end --
+# the widened parse gate and is_memory_cmd()'s ninth admitted case (commit
+# 32c32e7); the new MSG_DATA_PROTECTION_STATUS catalog id's PROGMEM string and
+# LOG_DATA_ID_BYTES emission site (commit f66d817); the shared AMD/JEDEC
+# ID-mode read flash_util_read_in_id_mode plus the pinned, cited
+# protection-sequence constants for both the 0x06 and 0x05 families (commit
+# 8db7e55); the two *_read_protection_execute functions
+# (flash_nor_unlock_read_protection_execute, flash_5v_page_read_protection_execute)
+# and their two dispatch arms (commit 0444b1c); and eprom_lock_status plus
+# loop()'s CMD_LOCK_STATUS arm (commit 3ff9f34). No new byte_flip_t table was
+# needed for either family -- both reuse FLASH_ENABLE_ID/FLASH_DISABLE_ID
+# verbatim, measured at exactly 0 B, a zero-byte item recorded rather than
+# omitted. Measured at exactly +288 B on all three AVR targets (uno,
+# uno328pb, leonardo) against BASE-01, minus the already-admitted 96 B
+# defect-fix and 210 B page-size-seam exemptions above -- see
+# .planning/phases/151-protection-readability-lock-status/151-SIZE-TRANSCRIPTS.md
+# for the cold rm -rf + pio run capture this figure was read from.
+#
+# WHY an exemption. The same three alternatives from the two exemptions above
+# were considered and rejected again here:
+#   - NOT a re-anchor of scripts/baseline/size_baseline_base01.json. BASE-01's
+#     avr_targets stay byte-unchanged: uno 24824, uno328pb 24874, leonardo
+#     26906. tests/test_check_size_baseline.py's
+#     test_base01_is_not_re_anchored_by_the_new_exemption is the direct
+#     tripwire on this constant: it machine-checks both BASE-01's frozen
+#     growth axis AND the flash_total == 32768 pin, and a new NAMED exemption
+#     is the sanctioned mechanism that leaves it green -- re-anchoring BASE-01
+#     is the forbidden side of the same line.
+#   - NOT a widening of MERGE05_UNO_CLASS_FLASH_BAND (stays 64 B), and NOT a
+#     widening of the leonardo inline `band = 0` literal in
+#     _merge05_flash_allowance() below. Either would silently admit unrelated
+#     future growth and destroy the tripwire, and folding this phase's bytes
+#     into that unnamed literal would launder them into the exact figure
+#     a7w's own decomposition (band0 + exempt96 + seam210) records as zero.
+#   - NOT a shrink of the feature. `dev lock-status` is a beta-only,
+#     `-D DEV_TOOLS`-gated read (D-01) whose cost is unavoidable on every AVR
+#     target because that flag is inherited by all three in the shared
+#     `[env]` block -- trimming the read to fit a band set before the command
+#     existed is the wrong incentive and risks the feature.
+# The growth is instead NAMED here, so it is admitted in one visible,
+# attributable place rather than laundered into a moved reference point or
+# into either existing exemption's own number.
+#
+# The tripwire stays ARMED at the new floor: a delta of one byte beyond the
+# new effective allowance still FAILS. That is a machine-checked negative
+# control, not a claim -- tests/test_check_size_baseline.py's
+# test_policy_merge05_fires_on_leonardo_growth feeds a planted log one byte
+# past the new leonardo allowance (0 + 96 + 210 + 288 = 594 B) and asserts
+# exit 1.
+#
+# SCOPE: flash only. Phase 151's own RAM growth measured at exactly 0 B on
+# all three targets (151-SIZE-TRANSCRIPTS.md); the pre-existing +2 B RAM
+# delta against BASE-01 is Phase 149's, unmoved by this phase, and remains
+# fully covered by MERGE05_PAGE_SIZE_SEAM_RAM_EXEMPTION_BYTES below. No
+# second RAM exemption is authored -- see that constant's own comment, which
+# this constant does not touch.
+#
+# Evidence Ceiling (v1.32 PROJECT.md, 151-DESIGN.md SS8): the change this
+# constant funds is software-proven and unrun on silicon on the 0x06
+# (AMD Autoselect) half -- no bench leg for it exists anywhere in this
+# phase's plans. The 0x05 (Winbond boot-block) half is exercised only
+# through a capped --force probe on the operator's W29C040, and no artifact
+# claims that gated leg is silicon-validated. No AT28C part was involved in
+# measuring either half, and the figure says nothing about runtime behaviour
+# on real hardware.
+MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES = 288
+
+# The named RAM exemption paired with MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES
+# above (no longer textually adjacent since Phase 151's own flash-only
+# exemption was inserted between them -- the pairing is by SCOPE, not by
+# position), in bytes. Phase 149 (PGSZ-04, D-12's "one thing the research did
+# not surface" finding). Read by exactly one function,
+# _merge05_ram_allowance() below -- the same single-consumer property every
+# other MERGE-05 literal in this module has.
 #
 # What the 2 bytes ARE: the single `uint16_t page_size` field added to
 # firestarter_handle_t (firestarter/include/firestarter.h, commit 58c6a3c),
@@ -388,13 +473,14 @@ def compare_avr(env, parsed, baseline):
 
 def _merge05_flash_allowance(env):
     """Resolve `env`'s MERGE-05 flash-growth figures. Returns
-    (band, defect_exemption, seam_exemption, allowance, band_label) -- a
-    5-tuple, never a summed 4-tuple.
+    (band, defect_exemption, seam_exemption, lock_status_exemption, allowance,
+    band_label) -- a 6-tuple, never a summed 5-tuple.
 
     Sole consumer of MERGE05_UNO_CLASS_FLASH_BAND,
-    MERGE05_DEFECT_FIX_EXEMPTION_BYTES AND MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES
+    MERGE05_DEFECT_FIX_EXEMPTION_BYTES, MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES
+    AND MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES
     -- compare_avr_policy_merge05 (the FAIL arm) and main()'s PASS-line builder
-    both call this rather than each recomputing the band, so none of the three
+    both call this rather than each recomputing the band, so none of the four
     literals is ever read in two places and the pass/fail arms can never
     disagree about the allowance. (Before the first exemption was added,
     main() DID recompute `band` itself, quietly falsifying the band literal's
@@ -402,21 +488,28 @@ def _merge05_flash_allowance(env):
     removed here.)
 
     `allowance` is the effective ceiling actually enforced: base band plus
-    BOTH named exemptions. `band`, `defect_exemption` and `seam_exemption`
-    are returned SEPARATELY, never summed into one another, so every message
-    can show the full decomposition instead of only the total -- the +96 B
-    and the +210 B each stay independently visible in the output rather than
-    being absorbed into one widened number. Adding the page-size-seam
-    exemption into the existing defect-fix exemption's value would destroy
-    exactly this property and launder Phase 149's growth into Phase 145's
-    number.
+    ALL THREE named flash exemptions. `band`, `defect_exemption`,
+    `seam_exemption` and `lock_status_exemption` are returned SEPARATELY,
+    never summed into one another, so every message can show the full
+    decomposition instead of only the total -- the +96 B, the +210 B and the
+    +288 B each stay independently visible in the output rather than being
+    absorbed into one widened number. Adding any one of these exemptions into
+    another's value would destroy exactly this property and launder one
+    phase's growth into a different phase's number (Phase 149's into Phase
+    145's, or Phase 151's into either).
+
+    Does NOT touch the unnamed, fifth MERGE-05 literal -- leonardo's own
+    inline `band = 0` immediately below. That literal stays a plain zero;
+    Phase 151's bytes are a separately-named addend beside it, never folded
+    into a non-zero leonardo band.
     """
     band = 0 if env == "leonardo" else MERGE05_UNO_CLASS_FLASH_BAND
     band_label = "leonardo" if env == "leonardo" else "uno-class"
     defect_exemption = MERGE05_DEFECT_FIX_EXEMPTION_BYTES
     seam_exemption = MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES
-    allowance = band + defect_exemption + seam_exemption
-    return band, defect_exemption, seam_exemption, allowance, band_label
+    lock_status_exemption = MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES
+    allowance = band + defect_exemption + seam_exemption + lock_status_exemption
+    return band, defect_exemption, seam_exemption, lock_status_exemption, allowance, band_label
 
 
 def _merge05_ram_allowance(env):
@@ -445,13 +538,16 @@ def compare_avr_policy_merge05(env, parsed, baseline):
         MERGE05_DEFECT_FIX_EXEMPTION_BYTES (the named, SHA-attributed
         defect-fix exemption adjudicated in v1.31 Phase 145) PLUS
         MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES (the named, SHA-attributed
-        page-size-seam exemption from Phase 149 -- see each constant's own
-        comment for what the bytes are, which alternatives were rejected,
-        and why). All three figures are resolved in one place by
-        _merge05_flash_allowance(). Every message prints the full
+        page-size-seam exemption from Phase 149) PLUS
+        MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES (the named, SHA-attributed
+        `dev lock-status` read exemption from Phase 151 -- see each
+        constant's own comment for what the bytes are, which alternatives
+        were rejected, and why). All four figures are resolved in one place
+        by _merge05_flash_allowance(). Every message prints the full
         decomposition (`band N B + defect-fix exemption 96 B + page-size-seam
-        exemption 210 B`) so each admitted growth stays independently
-        visible rather than disappearing into a single widened number.
+        exemption 210 B + lock-status-read exemption 288 B`) so each
+        admitted growth stays independently visible rather than disappearing
+        into a single widened number.
       - all three: ram_used must not grow beyond this module's own named
         RAM exemption (it may shrink freely) --
         resolved by _merge05_ram_allowance(), the RAM analog of the flash
@@ -474,16 +570,22 @@ def compare_avr_policy_merge05(env, parsed, baseline):
     flash_used, flash_total = parsed["Flash"]
     failures = []
 
-    band, defect_exemption, seam_exemption, allowance, band_label = _merge05_flash_allowance(
-        env
-    )
+    (
+        band,
+        defect_exemption,
+        seam_exemption,
+        lock_status_exemption,
+        allowance,
+        band_label,
+    ) = _merge05_flash_allowance(env)
     flash_delta = flash_used - rec["flash_used"]
     if flash_delta > allowance:
         failures.append(
             f"{env}: flash_used baseline={rec['flash_used']} observed={flash_used} "
             f"delta={flash_delta:+d} exceeds MERGE-05 {band_label} allowance of "
             f"{allowance} B (band {band} B + defect-fix exemption {defect_exemption} B "
-            f"+ page-size-seam exemption {seam_exemption} B)"
+            f"+ page-size-seam exemption {seam_exemption} B "
+            f"+ lock-status-read exemption {lock_status_exemption} B)"
         )
 
     ram_tolerance, ram_label = _merge05_ram_allowance(env)
@@ -682,14 +784,21 @@ def main(argv):
             ru, rt = parsed["RAM"]
             if policy == "merge05":
                 rec = baseline["avr_targets"][env]
-                band, defect_exemption, seam_exemption, allowance, _label = _merge05_flash_allowance(env)
+                (
+                    band,
+                    defect_exemption,
+                    seam_exemption,
+                    lock_status_exemption,
+                    allowance,
+                    _label,
+                ) = _merge05_flash_allowance(env)
                 flash_delta = u - rec["flash_used"]
                 ram_tolerance, _ram_label = _merge05_ram_allowance(env)
                 ram_delta = ru - rec["ram_used"]
                 compared.append(
                     f"{env}(flash={u}/{t}"
                     f"[{flash_delta:+d}<={allowance}=band{band}+exempt{defect_exemption}"
-                    f"+seam{seam_exemption}],"
+                    f"+seam{seam_exemption}+lock{lock_status_exemption}],"
                     f"ram={ru}/{rt}[{ram_delta:+d}<={ram_tolerance}=seam{ram_tolerance}])"
                 )
             else:
