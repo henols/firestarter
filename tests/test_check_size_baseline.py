@@ -180,6 +180,100 @@ diffable against the source so a reviewer can see exactly what was planted):
       `uint16_t page_size` handle field, measured +2 B on all three targets), so a
       +1 B plant now sits inside the new tolerance and would have gone falsely green.
 
+Quick task 260820-a7w (make the flash-limit guards report the AVR MCUs' real 32768 B
+flash size) -- TWO NEW fixture families, because BOTH recorded baselines
+(scripts/baseline/size_baseline.json AND size_baseline_base01.json) moved their
+flash_total on all three targets, stranding nine legs across both modes whose fixtures
+still carried the old, bootloader-reduced totals:
+
+  Family A -- default mode, REAL logs. captured_build_fullflash_{uno,uno328pb,
+  leonardo}.log are byte-for-byte copies of the cold-rebuild logs this quick task
+  committed at .planning/quick/260820-a7w-make-the-flash-limit-guards-to-be-the-ac/
+  260820-a7w-cold-{uno,uno328pb,leonardo}.log (uno 25130/32768/1575, uno328pb
+  25180/32768/1581, leonardo 27212/32768/2016 -- flash_used/ram_used unmoved from the
+  v132 family they retire; only flash_total moved, for real, because the ceiling
+  itself moved). planted_size_baseline_flash_regression_fullflash.log is derived from
+  captured_build_fullflash_leonardo.log with the same +512 B offset every prior
+  generation of this fixture has used since Phase 123 (27212 + 512 = 27724), so it
+  fails on flash_used alone.
+
+  Family B -- --policy merge05, SYNTHETIC (derived, never captured, exactly as every
+  prior generation of these fixtures was). Each existing merge05 fixture had ONLY its
+  Flash: line's total changed to 32768 -- `used` and the RAM: line are byte-identical
+  to the source, and the percentage column was recomputed purely for readability
+  (SIZE_RE never captures the percentage or the bar-graph column, so a stale
+  percentage would be cosmetic, not load-bearing -- moot here since every percentage
+  below WAS recomputed):
+    merge05_base01_anchor_fullflash_{uno,uno328pb,leonardo}.log
+      <- merge05_base01_anchor_{uno,uno328pb,leonardo}.log (used 24824/24874/26906,
+         BASE-01's own anchor figures, unchanged)
+    merge05_defect_fix_fullflash_{uno,uno328pb,leonardo}.log
+      <- captured_build_{uno,uno328pb,leonardo}.log (used 24920/24970/27002). This
+         family gets a PURPOSE name rather than inheriting `captured_build_*`: the old
+         name meant "a captured default-mode log", and after this severance the
+         family is read by exactly one leg, the merge05 defect-fix admission arm.
+    planted_size_baseline_policy_uno_over_band_fullflash.log
+      <- planted_size_baseline_policy_uno_over_band.log (used 25195, +371 vs
+         BASE-01's 24824, one byte past the 370 B allowance)
+    planted_size_baseline_policy_leonardo_growth_fullflash.log
+      <- planted_size_baseline_policy_leonardo_growth.log (used 27213, +307 vs
+         BASE-01's 26906, one byte past the 306 B allowance; shared by two legs, as
+         before)
+    planted_size_baseline_policy_ram_moved_fullflash.log
+      <- planted_size_baseline_policy_ram_moved.log (flash used 24824 unchanged, RAM
+         used 1576, +3 vs BASE-01's 1573, one byte past the 2 B RAM tolerance)
+
+  Because BASE-01's flash_used/ram_used anchors never moved, EVERY existing delta
+  assertion in these legs still holds unchanged: 25195-24824=+371 (370 B allowance),
+  27213-26906=+307 (306 B allowance), 1576-1573=+3 (2 B allowance), and the
+  defect-fix family is +96 on all three targets -- nothing here was re-derived, only
+  re-frozen at the new flash_total.
+
+  Nine legs repointed: test_clean_avr_all_three_envs_pass and
+  test_default_mode_is_unchanged_by_the_new_flag -> the three
+  captured_build_fullflash_*.log; test_planted_flash_regression_flips_checker_to_
+  failure -> planted_size_baseline_flash_regression_fullflash.log;
+  test_baseline_seam_precedence_flips_clean_log_to_fail -> captured_build_fullflash_
+  leonardo.log (a REPAIR: this leg's prior fixture, captured_build_leonardo.log, had
+  been failing against the untampered live baseline on flash_used AND ram_used since
+  Phase 149 severed four legs away from it and left it stale -- the leg's tampered
+  flash_used=1 plant was proving nothing about the env seam it was written to test;
+  this quick task did not introduce that staleness, only repaired it);
+  test_policy_merge05_permits_the_measured_landing_deltas -> the three
+  merge05_base01_anchor_fullflash_*.log; test_policy_merge05_admits_the_documented_
+  defect_fix -> Arm 1 to the three merge05_defect_fix_fullflash_*.log, Arm 2 to
+  planted_size_baseline_policy_leonardo_growth_fullflash.log;
+  test_policy_merge05_fires_on_uno_class_over_band,
+  test_policy_merge05_fires_on_leonardo_growth and test_policy_merge05_fires_on_
+  ram_move -> their respective `_fullflash` plants (the leonardo-growth fixture is
+  shared with the defect-fix leg's Arm 2, as before). Each had begun firing, or would
+  have begun firing, on `flash_total ... (board or framework moved)` in ADDITION to
+  the one reason it names -- a leg that fires for two reasons no longer proves the
+  one it was written for.
+
+  test_base01_is_not_re_anchored_by_the_new_exemption was STRENGTHENED, not
+  repointed (it reads BASE-01 directly, never a fixture): its docstring's claim that
+  "BASE-01's avr_targets are byte-unchanged" is corrected to the two-axis split the
+  operator ruled on (board identity moved, growth did not), and new assertions pin
+  flash_total == 32768 on all three targets alongside the pre-existing frozen
+  flash_used/ram_used pins.
+
+  RETIRED, read by no leg after this severance (disposition: KEPT in git history,
+  NOT deleted from tests/fixtures/ -- deleting them would erase a still-legible
+  measurement record of the pre-260820-a7w ceilings without shrinking the test
+  matrix, since `git ls-files` and this project's fixture-inventory convention
+  already exclude anything a checker or test does not name; keeping them costs
+  nothing and preserves the exact byte-for-byte record Phase 144/145/149 measured):
+  captured_build_v132_{uno,uno328pb,leonardo}.log and its planted sibling
+  planted_size_baseline_flash_regression_v132.log; the pre-149
+  captured_build_{uno,uno328pb,leonardo}.log trio; merge05_base01_anchor_{uno,
+  uno328pb,leonardo}.log; and the three pre-fullflash planted_size_baseline_policy_*
+  fixtures. Separately, and NOT this task's doing:
+  planted_size_baseline_flash_regression.log (the pre-v132 sibling of the fixture
+  above) was ALREADY orphaned before this quick task -- no leg referenced it even at
+  the previous commit; recorded here so it is not mistaken for a casualty of this
+  severance.
+
 Self-contained path resolution below — NOT in conftest.py (firestarter/tests/ has no
 conftest.py anywhere in the repo; this is a recorded house-rule pattern decision, per
 test_update_version.py's own comment, not an omission). Stdlib and pytest only.
@@ -217,27 +311,25 @@ def _run_checker(argv=None, env_overrides=None):
 
 
 def test_clean_avr_all_three_envs_pass():
-    """Coverage 1 — each captured_build_v132_*.log exits 0 against the LIVE default
-    baseline, and its PASS: line names the env.
+    """Coverage 1 — each captured_build_fullflash_*.log exits 0 against the LIVE
+    default baseline, and its PASS: line names the env.
 
-    SEVERED from captured_build_*.log by Phase 149 Plan 07 (orchestrator-directed,
-    same shape as the Phase 145 severance below at
-    test_policy_merge05_permits_the_measured_landing_deltas): D-14 re-anchored
-    scripts/baseline/size_baseline.json's avr_targets to the post-149 cold figures
-    (uno 25130/1575, uno328pb 25180/1581, leonardo 27212/2016), which the pre-149
-    captured_build_*.log fixtures no longer match -- feeding them here would have
-    made this leg permanently RED. captured_build_*.log itself is NOT touched: four
-    other legs (test_baseline_seam_precedence_flips_clean_log_to_fail,
-    test_policy_merge05_admits_the_documented_defect_fix's Arm 1, and two more
-    below) still need it frozen at the pre-149 figures. This leg instead reads a new
-    fixture family, captured_build_v132_{uno,uno328pb,leonardo}.log, transcribed
-    byte-for-byte from the same committed cold logs D-14 used
-    (.planning/phases/149-firmware-page-size-seam-dual-repo-lockstep/
-    149-postchange-cold-*.log), never re-derived warm."""
+    SEVERED again by quick task 260820-a7w (make the flash-limit guards report the
+    real 32768 B MCU size): that task moved scripts/baseline/size_baseline.json's
+    avr_targets.*.flash_total to 32768 on all three targets (flash_used/ram_used
+    unmoved: uno 25130/1575, uno328pb 25180/1581, leonardo 27212/2016), which the
+    Phase 149 captured_build_v132_*.log family no longer matches (it still carries
+    the old, bootloader-reduced totals) -- feeding it here would have made this leg
+    permanently RED. captured_build_v132_*.log itself is NOT touched: it is retired,
+    not repointed (see the module docstring's disposition table). This leg instead
+    reads a new fixture family, captured_build_fullflash_{uno,uno328pb,leonardo}.log,
+    copied byte-for-byte from the committed cold logs quick task 260820-a7w captured
+    at .planning/quick/260820-a7w-make-the-flash-limit-guards-to-be-the-ac/
+    260820-a7w-cold-*.log, never re-derived warm."""
     for env_name, fixture in (
-        ("uno", "captured_build_v132_uno.log"),
-        ("uno328pb", "captured_build_v132_uno328pb.log"),
-        ("leonardo", "captured_build_v132_leonardo.log"),
+        ("uno", "captured_build_fullflash_uno.log"),
+        ("uno328pb", "captured_build_fullflash_uno328pb.log"),
+        ("leonardo", "captured_build_fullflash_leonardo.log"),
     ):
         result = _run_checker(["--avr-log", f"{env_name}={_FIXTURES / fixture}"])
         assert result.returncode == 0, (
@@ -279,22 +371,23 @@ def test_clean_native_both_envs_pass():
 
 def test_planted_flash_regression_flips_checker_to_failure():
     """Coverage 3 — the planted +512 B Leonardo flash figure exits non-zero and names
-    both the baseline (27212, the page-size-seam figure D-14 re-anchored the live
-    default to) and observed (27724) figures -- the message must name both numbers,
-    not merely fail.
+    both the baseline (27212, unmoved by quick task 260820-a7w) and observed (27724)
+    figures -- the message must name both numbers, not merely fail on flash_total too.
 
-    SEVERED from planted_size_baseline_flash_regression.log by Phase 149 Plan 07
-    (orchestrator-directed, same reasoning as test_clean_avr_all_three_envs_pass
-    above): that fixture is derived from the pre-149 captured_build_leonardo.log and
-    stays frozen there for test_baseline_seam_precedence_flips_clean_log_to_fail's
-    sake (Coverage 7, which does not care about the absolute figure but still reads
-    this exact file). This leg instead reads a new plant,
-    planted_size_baseline_flash_regression_v132.log, derived from
-    captured_build_v132_leonardo.log with the same +512 B offset every prior version
-    of this fixture has used since Phase 123 (27212 + 512 = 27724), against the
-    now-current live default baseline."""
+    SEVERED again by quick task 260820-a7w, for the same reason as
+    test_clean_avr_all_three_envs_pass above: planted_size_baseline_flash_regression_
+    v132.log is derived from captured_build_v132_leonardo.log, which still carries the
+    old 28672 B total, so feeding it here after the live baseline's flash_total moved
+    to 32768 would make the checker fail for TWO reasons (flash_used AND flash_total)
+    instead of the one this leg names -- exactly the false-green/false-cause pattern
+    this project's own fixture-severance precedent exists to avoid. This leg instead
+    reads a new plant, planted_size_baseline_flash_regression_fullflash.log, derived
+    from captured_build_fullflash_leonardo.log with the same +512 B offset every prior
+    version of this fixture has used since Phase 123 (27212 + 512 = 27724), against
+    the now-current live default baseline (flash_total 32768, unaffected by the
+    plant)."""
     result = _run_checker(
-        ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression_v132.log'}"]
+        ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression_fullflash.log'}"]
     )
     assert result.returncode != 0, (
         f"expected non-zero exit on a planted flash regression.\n"
@@ -361,16 +454,32 @@ def test_never_vacuous_with_no_logs_and_no_rebuild():
 
 def test_baseline_seam_precedence_flips_clean_log_to_fail(tmp_path):
     """Coverage 7 — pointing FIRESTARTER_SIZE_BASELINE at a temp JSON whose Leonardo
-    flash figure differs must make the previously-clean captured_build_leonardo.log
-    FAIL. Proves the checker genuinely reads its baseline through the env seam rather
-    than embedding the recorded numbers in the script itself."""
+    flash figure differs must make a genuinely clean captured log FAIL. Proves the
+    checker reads its baseline through the env seam rather than embedding the
+    recorded numbers in the script itself.
+
+    REPAIR, not an improvement introduced by the ceiling change -- stated honestly.
+    This leg used to call its fixture (captured_build_leonardo.log) "previously
+    clean", but it was not: since Phase 149 Plan 07 severed four legs onto the
+    v132/fullflash-precedent fixture families and left captured_build_leonardo.log
+    itself frozen at the pre-149 figures, that fixture had been failing against the
+    untampered LIVE baseline on both flash_used (27212 vs the file's 27002) and
+    ram_used (2016 vs 2014) the whole time. So the tampered flash_used=1 this test
+    plants was proving nothing about the env seam specifically -- the fixture
+    already failed for two unrelated reasons before the tamper was even applied.
+    Quick task 260820-a7w's move of flash_total to 32768 would have added a THIRD
+    unrelated failure reason on top (flash_total 28672 vs 32768) had this leg stayed
+    pointed at the same stale fixture. Repointing it at
+    captured_build_fullflash_leonardo.log -- genuinely clean against the live
+    baseline on every figure -- restores the leg's actual premise: the ONLY failure
+    this run should produce is the one this test plants."""
     real_baseline = json.loads(_BASELINE.read_text())
     real_baseline["avr_targets"]["leonardo"]["flash_used"] = 1
     tampered = tmp_path / "tampered_size_baseline.json"
     tampered.write_text(json.dumps(real_baseline))
 
     result = _run_checker(
-        ["--avr-log", f"leonardo={_FIXTURES / 'captured_build_leonardo.log'}"],
+        ["--avr-log", f"leonardo={_FIXTURES / 'captured_build_fullflash_leonardo.log'}"],
         env_overrides={"FIRESTARTER_SIZE_BASELINE": str(tampered)},
     )
     assert result.returncode != 0, (
@@ -429,13 +538,26 @@ def test_policy_merge05_permits_the_measured_landing_deltas():
     defect-fix exemption -- this leg's own arithmetic did not need re-deriving:
     zero delta against the anchor sits inside ANY non-negative allowance, however
     many terms compose it, so the widened allowance changes nothing this leg
-    asserts. Its frozen inputs (`merge05_base01_anchor_*.log`) are, correctly,
-    untouched by this phase."""
+    asserts. Its frozen inputs (`merge05_base01_anchor_*.log`) were, correctly,
+    untouched by that phase.
+
+    Quick task 260820-a7w (make the flash-limit guards report the real 32768 B MCU
+    size) went hard-RED here, unlike Phase 149 above: this leg asserts EXIT 0, and
+    BASE-01's own flash_total moved from 32256/32384/28672 to 32768 (operator ruling
+    -- a board-identity axis move, not a growth re-anchor; see
+    scripts/baseline/size_baseline_base01.json's own meta note), which the frozen
+    merge05_base01_anchor_*.log trio no longer matched on flash_total, even though
+    flash_used still sat at exactly the anchor's figures. Re-frozen onto a new family,
+    merge05_base01_anchor_fullflash_{uno,uno328pb,leonardo}.log, changing ONLY the
+    Flash: line's total (24824/32256->32768, 24874/32384->32768, 26906/28672->32768)
+    -- every `used` figure, the RAM: line, and the zero-delta premise this leg proves
+    are all unchanged. The leg still proves exactly what it always did: a fixture at
+    BASE-01's exact anchor passes at zero delta."""
     argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
     for env, fixture in (
-        ("leonardo", "merge05_base01_anchor_leonardo.log"),
-        ("uno", "merge05_base01_anchor_uno.log"),
-        ("uno328pb", "merge05_base01_anchor_uno328pb.log"),
+        ("leonardo", "merge05_base01_anchor_fullflash_leonardo.log"),
+        ("uno", "merge05_base01_anchor_fullflash_uno.log"),
+        ("uno328pb", "merge05_base01_anchor_fullflash_uno328pb.log"),
     ):
         argv += ["--avr-log", f"{env}={_FIXTURES / fixture}"]
 
@@ -495,14 +617,27 @@ def test_policy_merge05_admits_the_documented_defect_fix():
     test_policy_merge05_fires_on_leonardo_growth (Coverage 10) rather than
     committing a second byte-identical plant; the two legs assert different
     properties of the same firing — that one names the env and the delta, this one
-    names the effective allowance and pairs the failure with arm 1's pass."""
+    names the effective allowance and pairs the failure with arm 1's pass.
+
+    Quick task 260820-a7w went hard-RED on Arm 1: BASE-01's flash_total moved to
+    32768 (operator ruling), which captured_build_{uno,uno328pb,leonardo}.log no
+    longer matches (they still carry the old bootloader-reduced totals), so feeding
+    them here would add a `flash_total ... (board or framework moved)` failure to a
+    leg that names its own exit code and PASS text explicitly. Arm 1 is repointed to
+    a purpose-named fixture family, merge05_defect_fix_fullflash_{uno,uno328pb,
+    leonardo}.log, derived from captured_build_{uno,uno328pb,leonardo}.log with ONLY
+    the total changed to 32768 -- the purpose-name (rather than inheriting
+    captured_build_*) marks that this family is now read only by this arm, not by
+    any default-mode leg. Arm 2's fixture was already `planted_size_baseline_policy_
+    leonardo_growth.log`, sharing with Coverage 10 below -- see that leg's own
+    docstring update for why it too moved to the `_fullflash` family."""
     # Arm 1: the pre-Phase-149 tree is admitted, at exactly +96 flash / +0 RAM on
     # every target -- both comfortably inside the NEW allowance too.
     argv = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
     for env, fixture in (
-        ("leonardo", "captured_build_leonardo.log"),
-        ("uno", "captured_build_uno.log"),
-        ("uno328pb", "captured_build_uno328pb.log"),
+        ("leonardo", "merge05_defect_fix_fullflash_leonardo.log"),
+        ("uno", "merge05_defect_fix_fullflash_uno.log"),
+        ("uno328pb", "merge05_defect_fix_fullflash_uno328pb.log"),
     ):
         argv += ["--avr-log", f"{env}={_FIXTURES / fixture}"]
 
@@ -544,7 +679,7 @@ def test_policy_merge05_admits_the_documented_defect_fix():
             "--baseline",
             str(_BASE01_BASELINE),
             "--avr-log",
-            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth.log'}",
+            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth_fullflash.log'}",
         ]
     )
     assert over.returncode == 1, (
@@ -568,11 +703,23 @@ def test_policy_merge05_admits_the_documented_defect_fix():
 
 def test_base01_is_not_re_anchored_by_the_new_exemption():
     """Phase 149 (D-12, PGSZ-04) binding precondition, captured as a leg rather
-    than only stated in prose: BASE-01's avr_targets are byte-unchanged and both
-    flash band literals are byte-unchanged after the page-size-seam exemption
-    landed. A green --policy merge05 run after a re-anchor would mean the anchor
+    than only stated in prose, STRENGTHENED by quick task 260820-a7w to machine-check
+    the two-axis split the operator ruled on.
+
+    CORRECTED (quick task 260820-a7w): this docstring used to claim "BASE-01's
+    avr_targets are byte-unchanged" -- that is now FALSE. Quick task 260820-a7w moved
+    BASE-01's avr_targets.*.flash_total from 32256/32384/28672 to 32768 on all three
+    targets (plus each flash_free, derived), by explicit operator ruling. The true
+    invariant this leg proves is narrower and still holds: BASE-01's GROWTH axis
+    (flash_used, ram_used) is byte-unchanged, while its board-identity axis
+    (flash_total) is licensed to move when the silicon ceiling genuinely changes. A
+    green --policy merge05 run after a growth-axis re-anchor would mean the anchor
     moved, not that growth stayed inside the band -- BASE-01's own re_anchor_note
-    says exactly this."""
+    says exactly this, and it is why this leg pins flash_used/ram_used, never
+    flash_total, as the thing that must not move without cause. Both halves are now
+    machine-checked below: the growth axis is pinned exactly as before, and the
+    board-identity axis is pinned at its NEW value (32768) so a future accidental
+    edit away from 32768 -- in either direction -- also fails this leg."""
     with open(_BASE01_BASELINE) as f:
         base01 = json.load(f)
     assert base01["avr_targets"]["uno"]["flash_used"] == 24824
@@ -581,6 +728,11 @@ def test_base01_is_not_re_anchored_by_the_new_exemption():
     assert base01["avr_targets"]["uno"]["ram_used"] == 1573
     assert base01["avr_targets"]["uno328pb"]["ram_used"] == 1579
     assert base01["avr_targets"]["leonardo"]["ram_used"] == 2014
+    # Board-identity axis (quick task 260820-a7w): licensed to move, pinned at its
+    # new value so an accidental drift away from it is also caught.
+    assert base01["avr_targets"]["uno"]["flash_total"] == 32768
+    assert base01["avr_targets"]["uno328pb"]["flash_total"] == 32768
+    assert base01["avr_targets"]["leonardo"]["flash_total"] == 32768
 
     checker_src = (_REPO_ROOT / "scripts" / "check_size_baseline.py").read_text()
     assert "MERGE05_UNO_CLASS_FLASH_BAND = 64" in checker_src, (
@@ -606,7 +758,16 @@ def test_policy_merge05_fires_on_uno_class_over_band():
     would have gone falsely green while still claiming to prove a firing. The
     plant's single cause (a raised uno `used` figure) and its role (exactly one
     byte outside the enforced ceiling) are unchanged; only the number moved, and
-    only because the ceiling moved."""
+    only because the ceiling moved.
+
+    SEVERED by quick task 260820-a7w: BASE-01's flash_total moved to 32768, but
+    planted_size_baseline_policy_uno_over_band.log still carries the old 32256 B
+    total, so it had begun firing on flash_total too (`board or framework moved`)
+    in addition to the planted flash_used breach this leg names -- a leg that fires
+    for two reasons no longer proves the one it names. Repointed to
+    planted_size_baseline_policy_uno_over_band_fullflash.log, changing ONLY the
+    total to 32768; the planted `used` figure (25195) and its single-byte-past-the-
+    ceiling role are unchanged."""
     result = _run_checker(
         [
             "--policy",
@@ -614,7 +775,7 @@ def test_policy_merge05_fires_on_uno_class_over_band():
             "--baseline",
             str(_BASE01_BASELINE),
             "--avr-log",
-            f"uno={_FIXTURES / 'planted_size_baseline_policy_uno_over_band.log'}",
+            f"uno={_FIXTURES / 'planted_size_baseline_policy_uno_over_band_fullflash.log'}",
         ]
     )
     assert result.returncode != 0, (
@@ -648,7 +809,15 @@ def test_policy_merge05_fires_on_leonardo_growth():
     role are unchanged. This is the same fixture
     test_policy_merge05_admits_the_documented_defect_fix uses as its negative
     control — deliberately shared rather than duplicated byte-identically; see that
-    leg's docstring for the division of labour."""
+    leg's docstring for the division of labour.
+
+    SEVERED by quick task 260820-a7w for the same reason as Coverage 9 above: this
+    fixture had begun firing on flash_total (still 28672 B, against BASE-01's new
+    32768 B) as well as the planted flash_used breach, so it moved to
+    planted_size_baseline_policy_leonardo_growth_fullflash.log -- total changed to
+    32768 only, `used` (27213) and its single-byte-past-the-ceiling role unchanged.
+    Shared, as before, with test_policy_merge05_admits_the_documented_defect_fix's
+    Arm 2 negative control."""
     result = _run_checker(
         [
             "--policy",
@@ -656,7 +825,7 @@ def test_policy_merge05_fires_on_leonardo_growth():
             "--baseline",
             str(_BASE01_BASELINE),
             "--avr-log",
-            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth.log'}",
+            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth_fullflash.log'}",
         ]
     )
     assert result.returncode != 0, (
@@ -678,7 +847,15 @@ def test_policy_merge05_fires_on_ram_move():
     and funded it with a named RAM exemption -- so the old +1 B plant now sits
     INSIDE the tolerance and would go falsely green. Re-derived to +3 B, one byte
     past the new 2 B tolerance, preserving the plant's single cause and its
-    one-byte-past-the-ceiling role."""
+    one-byte-past-the-ceiling role.
+
+    SEVERED by quick task 260820-a7w for the same reason as Coverage 9/10 above:
+    this fixture (derived from captured_build_uno.log) still carried the old
+    32256 B total against BASE-01's new 32768 B, firing on flash_total as well as
+    the planted RAM breach. Repointed to
+    planted_size_baseline_policy_ram_moved_fullflash.log -- total changed to
+    32768 only; the planted RAM `used` figure (1576) and flash `used` (24824,
+    unchanged from the anchor) are untouched."""
     result = _run_checker(
         [
             "--policy",
@@ -686,7 +863,7 @@ def test_policy_merge05_fires_on_ram_move():
             "--baseline",
             str(_BASE01_BASELINE),
             "--avr-log",
-            f"uno={_FIXTURES / 'planted_size_baseline_policy_ram_moved.log'}",
+            f"uno={_FIXTURES / 'planted_size_baseline_policy_ram_moved_fullflash.log'}",
         ]
     )
     assert result.returncode != 0, (
@@ -708,14 +885,16 @@ def test_default_mode_is_unchanged_by_the_new_flag():
     unchanged by the new flag's addition. All three captured logs still exit 0 and
     the output never contains the band-mode `<=64` substring.
 
-    SEVERED onto the v132 family by Phase 149 Plan 07 (orchestrator-directed), for
-    the same reason as test_clean_avr_all_three_envs_pass above: this leg exercises
-    DEFAULT mode against whatever the live default baseline currently is, so it must
-    track D-14's re-anchor rather than the frozen pre-149 captured_build_*.log."""
+    SEVERED again by quick task 260820-a7w, for the same reason as
+    test_clean_avr_all_three_envs_pass above: this leg exercises DEFAULT mode
+    against whatever the live default baseline currently is, so it must track
+    260820-a7w's flash_total move rather than the now-retired
+    captured_build_v132_*.log family, which still carries the pre-260820-a7w
+    ceilings."""
     for env_name, fixture in (
-        ("uno", "captured_build_v132_uno.log"),
-        ("uno328pb", "captured_build_v132_uno328pb.log"),
-        ("leonardo", "captured_build_v132_leonardo.log"),
+        ("uno", "captured_build_fullflash_uno.log"),
+        ("uno328pb", "captured_build_fullflash_uno328pb.log"),
+        ("leonardo", "captured_build_fullflash_leonardo.log"),
     ):
         result = _run_checker(["--avr-log", f"{env_name}={_FIXTURES / fixture}"])
         assert result.returncode == 0, (
