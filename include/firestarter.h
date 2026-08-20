@@ -91,6 +91,15 @@
 #define CMD_CONFIG 14
 #define CMD_HW_VERSION 15
 
+// Phase 151, LOCK-02 (D-01/D-02): 16 is the next unused integer -- no slot
+// below 11 was free (CMD_READ_VPP..CMD_HW_VERSION occupy 11-15, and Slots 9
+// and 10 were the only two free command values below that, per the
+// CMD_SDP_UNLOCK/CMD_SDP_LOCK comment above). This IS a memory command: the
+// protection-status read is issued through handle->firestarter_get_data,
+// a protocol-handler function pointer only configure_memory() sets, so it
+// needs a protocol handler exactly as CMD_READ/CMD_WRITE/etc do.
+#define CMD_LOCK_STATUS 16
+
 // Replaces the #ifdef DEV_TOOLS-conditional ordinal admission guard that
 // used to live at firestarter.cpp's parse_json (the old
 // `if (handle->cmd < CMD_DEV_ADDRESS)` test, itself wrapped in
@@ -98,8 +107,15 @@
 // CMD_DEV_ADDRESS/CMD_DEV_REGISTER only exist under -D DEV_TOOLS, so any
 // guard naming them had no choice but to be preprocessor-conditional too.
 // is_memory_cmd() removes the need for a conditional entirely by not
-// naming those two symbols at all -- it enumerates the eight commands that
-// legitimately configure a memory bus, by name, unconditionally.
+// naming those two symbols at all -- it enumerates the commands that
+// legitimately configure a memory bus, by name, unconditionally. This
+// access-control gate admitted eight commands from Phase 119 until Phase
+// 151, and now admits nine: Phase 151 (LOCK-02, OD-3) added CMD_LOCK_STATUS
+// as the ninth. rurp_pinmap_guard.h's rurp_pinmap_refuses() DELEGATES to
+// this predicate rather than re-listing its set, so the provisional-pinmap
+// refusal for CMD_LOCK_STATUS follows automatically from this one edit --
+// but that guard's test suite (test_pinmap_provisional) runs in NO CI leg,
+// so it is verified with a local `pio test` run, not CI green.
 //
 // This is a DELIBERATE SAFETY TIGHTENING (D-01), not a preserved behaviour:
 // today, a RELEASE build (no -D DEV_TOOLS) still runs json_parse AND
@@ -119,7 +135,7 @@
 // Hard constraints (Plan 119-03's source-scan gate makes the first
 // machine-checked):
 //  - NO preprocessor conditional of any kind inside this function's body.
-//    All eight named macros below are unconditionally defined, so none is
+//    All nine named macros below are unconditionally defined, so none is
 //    needed (D-02).
 //  - static inline, IN THIS HEADER (not a .cpp / new translation unit):
 //    [env:native]'s build_src_filter compiles only src/proms/,
@@ -140,6 +156,7 @@ static inline bool is_memory_cmd(uint8_t cmd) {
         case CMD_VERIFY:
         case CMD_SDP_UNLOCK:
         case CMD_SDP_LOCK:
+        case CMD_LOCK_STATUS:
             return true;
         default:
             return false;
