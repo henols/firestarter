@@ -15,6 +15,12 @@ extern "C" {
 
     void configure_flash_5v_page(firestarter_handle_t* handle);
 
+    // Phase 151 (LOCK-02): CMD_LOCK_STATUS operation for the 0x05 Winbond
+    // Product-ID boot-block family. Declared here so the native suite (and
+    // any future caller) can drive it directly without going through
+    // configure_memory.
+    void flash_5v_page_read_protection_execute(firestarter_handle_t* handle);
+
 #ifdef __cplusplus
 }
 #endif
