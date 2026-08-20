@@ -1,6 +1,6 @@
 /*
  * Project Name: Firestarter
- * Copyright (c) 2024 Henrik Olsson
+ * Copyright (c) 2026 Henrik Olsson
  *
  * Permission is hereby granted under MIT license.
  *
@@ -11,7 +11,7 @@
  * Re-run codegen after editing the canonical catalog.
  *
  * Catalog version: 1
- * Total messages: 76
+ * Total messages: 77
  */
 
 #ifndef __MESSAGES_H__
@@ -106,6 +106,7 @@ extern "C" {
 #define MSG_ERR_MAX_PULSES                0xBD
 #define MSG_ERR_ENERGY_CAP                0xBE
 #define MSG_DATA_PROGRESS                 0xE0
+#define MSG_DATA_PROTECTION_STATUS        0xE1
 #define MSG_DATA_SENDING                  0xE2
 #define MSG_DATA_VPP_VOLTAGE              0xE4
 #define MSG_DATA_VPE_VOLTAGE              0xE5
