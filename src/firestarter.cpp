@@ -349,6 +349,15 @@ void loop() {
         case CMD_SDP_LOCK:
             finished = eprom_sdp_lock(&handle);
             break;
+        // Phase 151 (LOCK-02): CMD_LOCK_STATUS, in the same one-line shape
+        // as every other arm in this switch. eprom_lock_status is the
+        // eprom_blank_check shape with no LOG_DEBUG_ID_SUB line -- see that
+        // function's own comment for why. This sits outside every
+        // preprocessor conditional, exactly like CMD_SDP_UNLOCK/CMD_SDP_LOCK
+        // above.
+        case CMD_LOCK_STATUS:
+            finished = eprom_lock_status(&handle);
+            break;
         case CMD_READ_VPP:
         case CMD_READ_VPE:
             finished = hw_read_voltage(&handle);
