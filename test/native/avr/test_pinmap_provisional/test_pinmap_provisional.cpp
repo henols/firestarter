@@ -95,9 +95,9 @@ static void assert_cmd_refused(uint8_t cmd, const char* cmd_name) {
     TEST_ASSERT_NULL_MESSAGE(h.firestarter_operation_end, msg);
 }
 
-/* Eight per-command cases, D-12's exact set (is_memory_cmd()'s set),
- * never one aggregate loop -- a failure names which command stopped
- * refusing. */
+/* Nine per-command cases, is_memory_cmd()'s exact set (D-12's original
+ * eight plus Phase 151's CMD_LOCK_STATUS, LOCK-02/OD-3), never one
+ * aggregate loop -- a failure names which command stopped refusing. */
 
 void test_pinmap_provisional_refuses_cmd_read(void) {
     assert_cmd_refused(CMD_READ, "CMD_READ");
@@ -131,10 +131,15 @@ void test_pinmap_provisional_refuses_cmd_sdp_lock(void) {
     assert_cmd_refused(CMD_SDP_LOCK, "CMD_SDP_LOCK");
 }
 
-/* Negative control 1 -- the refusal PREDICATE itself: true for all eight
- * D-12 commands, false for a command outside the set. Proves the
- * predicate (not just configure_memory's use of it) is exactly D-12's set,
- * under this env's RURP_PINMAP_PROVISIONAL=1. */
+void test_pinmap_provisional_refuses_cmd_lock_status(void) {
+    assert_cmd_refused(CMD_LOCK_STATUS, "CMD_LOCK_STATUS");
+}
+
+/* Negative control 1 -- the refusal PREDICATE itself: true for all NINE
+ * is_memory_cmd() commands (D-12's original eight plus Phase 151's
+ * CMD_LOCK_STATUS), false for a command outside the set. Proves the
+ * predicate (not just configure_memory's use of it) is exactly
+ * is_memory_cmd()'s set, under this env's RURP_PINMAP_PROVISIONAL=1. */
 void test_pinmap_refuses_predicate_truth_table(void) {
     TEST_ASSERT_TRUE_MESSAGE(rurp_pinmap_refuses(CMD_READ), "CMD_READ must be in the refused set");
     TEST_ASSERT_TRUE_MESSAGE(rurp_pinmap_refuses(CMD_WRITE), "CMD_WRITE must be in the refused set");
@@ -144,11 +149,12 @@ void test_pinmap_refuses_predicate_truth_table(void) {
     TEST_ASSERT_TRUE_MESSAGE(rurp_pinmap_refuses(CMD_VERIFY), "CMD_VERIFY must be in the refused set");
     TEST_ASSERT_TRUE_MESSAGE(rurp_pinmap_refuses(CMD_SDP_UNLOCK), "CMD_SDP_UNLOCK must be in the refused set");
     TEST_ASSERT_TRUE_MESSAGE(rurp_pinmap_refuses(CMD_SDP_LOCK), "CMD_SDP_LOCK must be in the refused set");
+    TEST_ASSERT_TRUE_MESSAGE(rurp_pinmap_refuses(CMD_LOCK_STATUS), "CMD_LOCK_STATUS must be in the refused set");
 
-    /* Named negative control: a command outside D-12's set must NOT be
-     * refused by the predicate. */
+    /* Named negative control: a command outside is_memory_cmd()'s set must
+     * NOT be refused by the predicate. */
     TEST_ASSERT_FALSE_MESSAGE(rurp_pinmap_refuses(CMD_FW_VERSION),
-        "CMD_FW_VERSION is outside D-12's set and must not be refused by the predicate");
+        "CMD_FW_VERSION is outside is_memory_cmd()'s set and must not be refused by the predicate");
 }
 
 /* Negative control 2 -- the SCOPED-not-blanket proof: an identity/config
@@ -169,7 +175,8 @@ int main(int argc, char** argv) {
     (void)argv;
     UNITY_BEGIN();
 
-    /* Eight per-command refusal cases (MERGE-04, D-12) */
+    /* Nine per-command refusal cases (MERGE-04, D-12; ninth added Phase 151
+     * LOCK-02/OD-3) */
     RUN_TEST(test_pinmap_provisional_refuses_cmd_read);
     RUN_TEST(test_pinmap_provisional_refuses_cmd_write);
     RUN_TEST(test_pinmap_provisional_refuses_cmd_erase);
@@ -178,6 +185,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_pinmap_provisional_refuses_cmd_verify);
     RUN_TEST(test_pinmap_provisional_refuses_cmd_sdp_unlock);
     RUN_TEST(test_pinmap_provisional_refuses_cmd_sdp_lock);
+    RUN_TEST(test_pinmap_provisional_refuses_cmd_lock_status);
 
     /* Two negative controls */
     RUN_TEST(test_pinmap_refuses_predicate_truth_table);

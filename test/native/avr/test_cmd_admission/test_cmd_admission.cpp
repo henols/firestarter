@@ -60,10 +60,15 @@ void tearDown(void) {
 /* Case 1 — the load-bearing case: EVERY value in [0, 255], not a sample.
  * Exhaustiveness over the full uint8_t domain is what makes the two-env run
  * a set-equality proof rather than a spot check. Expected membership is the
- * literal set {1,2,3,4,5,6,9,10} using bare numeric literals so this case
+ * literal set {1,2,3,4,5,6,9,10,16} using bare numeric literals so this case
  * compiles identically whether or not the CMD_* macros it is checking
  * against exist under DEV_TOOLS — it does not reference any CMD_DEV_* macro
- * at all (see case 2's comment for why that matters). */
+ * at all (see case 2's comment for why that matters). Phase 151 (LOCK-02,
+ * OD-3) grew the expected set from eight values to nine by adding 16
+ * (CMD_LOCK_STATUS). Note: 16 IS a real, unconditionally-defined CMD_*
+ * macro (unlike 7/8), but this case still spells it as a bare literal to
+ * keep the file's one deliberate rule -- case 1 names no CMD_* macro at
+ * all -- true without exception. */
 void test_admission_truth_table_over_every_cmd_value(void) {
     for (int c = 0; c <= 255; c++) {
         bool expected;
@@ -76,6 +81,7 @@ void test_admission_truth_table_over_every_cmd_value(void) {
             case 6:
             case 9:
             case 10:
+            case 16:
                 expected = true;
                 break;
             default:
@@ -86,6 +92,25 @@ void test_admission_truth_table_over_every_cmd_value(void) {
         snprintf(msg, sizeof(msg), "is_memory_cmd(%d) mismatch", c);
         TEST_ASSERT_EQUAL_MESSAGE(expected, is_memory_cmd((uint8_t)c), msg);
     }
+}
+
+/* Case 1b — a count assertion, deliberately separate from case 1's
+ * membership loop (Phase 151, LOCK-02). A truth-table-only change can be
+ * satisfied by two compensating edits (e.g. adding one true and removing
+ * one other true, leaving membership subtly wrong but the count right by
+ * accident is not possible here, and the inverse -- membership right but
+ * the count test absent -- is exactly the gap this leg closes); a direct
+ * count of how many of the 256 values admit cannot be satisfied that way
+ * because it is computed independently of the switch statement above. */
+void test_admission_count_is_exactly_nine(void) {
+    int count = 0;
+    for (int c = 0; c <= 255; c++) {
+        if (is_memory_cmd((uint8_t)c)) {
+            count++;
+        }
+    }
+    TEST_ASSERT_EQUAL_MESSAGE(9, count,
+        "is_memory_cmd() must admit exactly nine of the 256 possible uint8_t values (Phase 151, LOCK-02)");
 }
 
 /* Case 2 — cmd 7 and 8 (CMD_DEV_ADDRESS / CMD_DEV_REGISTER) are excluded.
@@ -108,6 +133,19 @@ void test_admission_rejects_dev_tool_ordinals_7_and_8(void) {
         "cmd 7 (CMD_DEV_ADDRESS, DEV_TOOLS-conditional) must not be admitted");
     TEST_ASSERT_FALSE_MESSAGE(is_memory_cmd(8),
         "cmd 8 (CMD_DEV_REGISTER, DEV_TOOLS-conditional) must not be admitted");
+}
+
+/* Boundary controls around the new ninth value, 16 (CMD_LOCK_STATUS),
+ * Phase 151 (LOCK-02). Both as bare numeric literals, matching case 1's
+ * bare-literal idiom: 15 is CMD_HW_VERSION, the highest pre-existing
+ * command, and must remain false; 17 is the first value above the new
+ * ninth admission and must be false too, proving the growth stopped at
+ * exactly one new value rather than opening a wider range. */
+void test_admission_boundary_around_cmd_lock_status(void) {
+    TEST_ASSERT_FALSE_MESSAGE(is_memory_cmd(15),
+        "cmd 15 (CMD_HW_VERSION, highest pre-existing command) must not be admitted");
+    TEST_ASSERT_FALSE_MESSAGE(is_memory_cmd(17),
+        "cmd 17 (first value above the new ninth admission, 16) must not be admitted");
 }
 
 /* Case 3 — CMD_IDLE (0), RESEARCH F-B2's third behaviour delta. Today an
@@ -140,7 +178,9 @@ int main(int argc, char** argv) {
     UNITY_BEGIN();
 
     RUN_TEST(test_admission_truth_table_over_every_cmd_value);
+    RUN_TEST(test_admission_count_is_exactly_nine);
     RUN_TEST(test_admission_rejects_dev_tool_ordinals_7_and_8);
+    RUN_TEST(test_admission_boundary_around_cmd_lock_status);
     RUN_TEST(test_admission_rejects_cmd_idle_zero);
     RUN_TEST(test_admission_rejects_non_memory_commands);
 
