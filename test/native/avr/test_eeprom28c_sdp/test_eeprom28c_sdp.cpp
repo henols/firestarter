@@ -330,6 +330,27 @@ static firestarter_handle_t make_sdp_handle(const sdp_bus_config_row_t& row, uin
     return h;
 }
 
+/* ERASE-01 / 152-CONTEXT.md D-07: the ONLY factory in this suite that leaves
+ * the blank-check axis LIVE (ctrl_flags = 0, not FLAG_SKIP_BLANK_CHECK).
+ * Every other factory here ORs FLAG_SKIP_BLANK_CHECK in unconditionally, so
+ * all 29 existing cases already exercise the no-blank-check path and are
+ * unaffected by this factory's existence. This factory's whole purpose is
+ * to prove that the blank-check axis no longer changes anything on 0x0D --
+ * with the skip flag CLEAR, write-INIT must still be single-shot and must
+ * still emit the exact golden stream, because the pre-write blank check is
+ * deleted outright, not merely gated. */
+static firestarter_handle_t make_sdp_handle_blank_check_enabled(const sdp_bus_config_row_t& row) {
+    firestarter_handle_t h = {};
+    h.protocol = 0x0D;
+    h.cmd = CMD_WRITE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id = 0;
+    h.mem_size = row.mem_size;
+    h.bus_config = row.bus_config;
+    h.ctrl_flags = 0;
+    return h;
+}
+
 static firestarter_handle_t make_identity_handle(uint16_t expected_chip_id, uint32_t ctrl_flags) {
     firestarter_handle_t h = {};
     h.protocol = 0x0D;
@@ -1634,6 +1655,35 @@ void test_case29_write_execute_report_preserves_response_code(void) {
         "the response_code check above is meaningful rather than vacuous");
 }
 
+/* Case 30 -- ERASE-01 / 152-CONTEXT.md D-07. Built from
+ * make_sdp_handle_blank_check_enabled (the ONLY factory in this suite that
+ * leaves the blank-check axis live), this case proves that a write-INIT
+ * driven with FLAG_SKIP_BLANK_CHECK CLEAR is byte-identical in behavior to
+ * every other case here (which all drive with the flag SET): no blank-check
+ * progress allocation, no multi-call INIT loop, and the exact same golden
+ * stream. `mem_util_blank_check` is the ONLY setter of
+ * is_operation_in_progress on this path (memory.cpp:401-425), so a FALSE
+ * result below is the single-shot-INIT proof, not an assumption. */
+void test_case30_write_init_no_blank_check_with_flag_clear_erase01(void) {
+    firestarter_handle_t h = make_sdp_handle_blank_check_enabled(SDP_BUS_CONFIGS[0]); /* AT28C256 */
+    drive_write_init(&h, 0x00);
+
+    TEST_ASSERT_FALSE_MESSAGE(is_operation_in_progress(&h),
+        "Case 30 (ERASE-01): is_operation_in_progress must be FALSE after exactly one "
+        "eeprom28c_write_init call with FLAG_SKIP_BLANK_CHECK clear -- mem_util_blank_check is "
+        "the only setter of this flag on the write-INIT path, so TRUE here would mean the "
+        "pre-write blank check still ran and left a multi-call INIT loop pending");
+    TEST_ASSERT_NULL_MESSAGE(h.progress_data,
+        "Case 30 (ERASE-01): h.progress_data must be NULL -- a non-NULL value means "
+        "mem_util_blank_check allocated a blank_check_progress_data_t block, i.e. the "
+        "pre-write blank check still ran");
+    sdp_assert_stream_equals(SDP_FIXED_DIP28_28C256, SDP_FIXED_DIP28_28C256_LEN,
+        "Case 30 (ERASE-01): with FLAG_SKIP_BLANK_CHECK clear, the AT28C256/DIP28_28C256 stream "
+        "must now be byte-identical to the golden captured with the flag SET -- the D-07 policy "
+        "expressed as a stream identity: a pre-write blank check contributes zero strobes "
+        "whether or not the caller asks to skip it");
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
  * main
  * ───────────────────────────────────────────────────────────────────────── */
@@ -1671,6 +1721,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case27_write_execute_reports_worst_interval_on_aborting_write);
     RUN_TEST(test_case28_write_execute_no_tblc_budget_warn);
     RUN_TEST(test_case29_write_execute_report_preserves_response_code);
+    RUN_TEST(test_case30_write_init_no_blank_check_with_flag_clear_erase01);
 
 #ifdef SDP_TRACE_DUMP
     RUN_TEST(test_dump_lock_goldens);
