@@ -208,6 +208,29 @@ void test_eeprom28c_blank_check_configure_no_vpp(void) {
         "configure_eeprom28c CMD_BLANK_CHECK must NOT set any VPP-enable CTL bit");
 }
 
+/* configure-only: CMD_ERASE must record zero VPP-enable bits (Phase 153 /
+ * ERASE-04, D-153-03).
+ *
+ * SCOPE, STATED HONESTLY (D-153-03): this case covers the CONFIGURE phase
+ * only. `configure_memory` never executes `eeprom28c_erase_execute` -- it
+ * only assigns the `case CMD_ERASE:` arm's `firestarter_operation_main`
+ * pointer -- so this case proves nothing about the erase operation BODY.
+ * `tools/check_dispatch.py` cannot see a handler-body register write at all
+ * (it is database-and-dispatch-table scoped); the real GATE-03 control for
+ * the erase body is plan 05's brace-matched negative source scan of
+ * `eeprom28c_erase_execute` itself, with its own planted-violation leg
+ * observed to fail before being trusted. Naming that limitation here is
+ * what stops a future reader treating this green configure-phase case as
+ * the VPP proof for the whole operation. */
+void test_eeprom28c_erase_configure_no_vpp(void) {
+    firestarter_handle_t h = make_handle(CMD_ERASE);
+    configure_memory(&h);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "configure_memory must not error on 0x0D CMD_ERASE");
+    assert_no_vpp_in_recording(
+        "configure_eeprom28c CMD_ERASE must NOT set any VPP-enable CTL bit");
+}
+
 /* ─── FIX-06: planted partial write, old-versus-new contrast (D-09) ────── */
 
 /* The side-by-side contrast, both halves in one test function. Geometry:
@@ -397,6 +420,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_eeprom28c_read_configure_no_vpp);
     RUN_TEST(test_eeprom28c_write_configure_no_vpp);
     RUN_TEST(test_eeprom28c_blank_check_configure_no_vpp);
+    RUN_TEST(test_eeprom28c_erase_configure_no_vpp);
 
     /* FIX-06: partial writes cannot report success (D-07/D-08/D-09) */
     RUN_TEST(test_fix06_planted_partial_write_fails_fixed_path_and_passes_legacy_poll);
