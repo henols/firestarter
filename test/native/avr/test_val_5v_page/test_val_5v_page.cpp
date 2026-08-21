@@ -37,6 +37,8 @@
 extern "C" {
 #include "memory.h"
 }
+/* Phase 153 (ERASE-02): is_operation_in_progress resolves from here. */
+#include "operation_utils.h"
 #include "firestarter.h"
 #include "flash_utils.h"
 #include "flash_5v_page.h"
@@ -225,6 +227,31 @@ static firestarter_handle_t make_write_handle_with_data(void) {
     return h;
 }
 
+/* Phase 153 (ERASE-02) — the only factory in this suite that drives
+ * flash_5v_page_write_init itself rather than bypassing it. FLAG_CAN_ERASE
+ * and FLAG_SKIP_BLANK_CHECK are both clear (ctrl_flags = 0), which is the
+ * "blank-check would run" configuration: is_flag_set(FLAG_CAN_ERASE) is
+ * false so the erase-on-write block at flash_5v_page.cpp:80-86 is not
+ * entered, and is_flag_set(FLAG_SKIP_BLANK_CHECK) is false so the deleted
+ * conditional's guard would have been satisfied. mem_size is a small 2048 --
+ * BLANK_CHECK_CHUNK_SIZE (memory.cpp:393) -- because mem_util_blank_check
+ * sets is_operation_in_progress and mallocs progress_data on its FIRST call
+ * regardless of mem_size, so the oracle below does not depend on how large
+ * mem_size is. */
+static firestarter_handle_t make_write_init_handle_blank_check_enabled(void) {
+    firestarter_handle_t h = {};
+    h.protocol   = 0x05;
+    h.cmd        = CMD_WRITE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id    = 0; /* skip chip-id branch in write_init */
+    h.mem_size   = 2048;
+    h.address    = 0;
+    h.data_size  = 0;
+    /* ctrl_flags = 0: FLAG_CAN_ERASE clear (no erase-on-write branch),
+     * FLAG_SKIP_BLANK_CHECK clear (the blank-check axis is live). */
+    return h;
+}
+
 /* Helper: scan recording for FLASH_ENABLE_WRITE address signature.
  * FLASH_ENABLE_WRITE addresses: 0x5555, 0x2AAA, 0x5555.
  * fu_flash_fast_address writes (LSB=addr&0xFF, MSB=(addr>>8)&0xFF).
@@ -282,6 +309,44 @@ void test_5v_page_write_execute_no_vpp(void) {
         "flash_5v_page_write_execute must not error on 4-byte zero write");
     assert_no_vpp_in_recording(
         "flash_5v_page_write_execute (operation phase) must NOT set any VPP-enable CTL bit");
+}
+
+/* ─── Phase 153 (ERASE-02): write-INIT must perform no pre-write blank
+ * check on protocol 0x05, whether or not the blank-check skip flag is set ─ */
+
+/* Case (ERASE-02): with FLAG_SKIP_BLANK_CHECK and FLAG_CAN_ERASE both clear,
+ * one call to flash_5v_page_write_init, driven through the dispatch
+ * pointer (not by function name, so this exercises what configure_memory
+ * actually wired), must leave is_operation_in_progress FALSE and
+ * progress_data NULL. mem_util_blank_check is the ONLY setter of either
+ * observable on this path (memory.cpp:401-405), so a FALSE/NULL pair here
+ * is the single-shot-INIT proof, not an assumption of symmetry with the
+ * 0x0D case (test_case30, test_eeprom28c_sdp.cpp). RED before Task 2's
+ * deletion, GREEN after. */
+void test_5v_page_write_init_no_blank_check_with_flag_clear_erase02(void) {
+    firestarter_handle_t h = make_write_init_handle_blank_check_enabled();
+    configure_memory(&h);
+    clear_bus_recording();
+
+    h.firestarter_operation_init(&h);
+
+    TEST_ASSERT_FALSE_MESSAGE(is_operation_in_progress(&h),
+        "ERASE-02: is_operation_in_progress must be FALSE after exactly one "
+        "flash_5v_page_write_init call with FLAG_SKIP_BLANK_CHECK clear -- "
+        "mem_util_blank_check is the only setter of this flag on the write-INIT "
+        "path, so TRUE here would mean the pre-write blank check still ran and "
+        "left a multi-call INIT loop pending");
+    TEST_ASSERT_NULL_MESSAGE(h.progress_data,
+        "ERASE-02: h.progress_data must be NULL -- a non-NULL value means "
+        "mem_util_blank_check allocated a blank_check_progress_data_t block, "
+        "i.e. the pre-write blank check still ran");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "ERASE-02: the removed blank check can no longer fail a write on a "
+        "non-blank part");
+    assert_no_vpp_in_recording(
+        "ERASE-02: with FLAG_CAN_ERASE clear, flash_5v_page_write_init must "
+        "energise no VPP rail -- the erase-on-write branch above the deleted "
+        "conditional must not be entered by this INIT call");
 }
 
 /* ─── Phase 151 (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) ─────────── */
@@ -444,6 +509,9 @@ int main(int argc, char** argv) {
     /* FIX-02B: operation-phase SDP emission + VPP-safety proofs */
     RUN_TEST(test_5v_page_write_execute_emits_sdp);
     RUN_TEST(test_5v_page_write_execute_no_vpp);
+
+    /* Phase 153 (ERASE-02): write-INIT blank-check removal proof */
+    RUN_TEST(test_5v_page_write_init_no_blank_check_with_flag_clear_erase02);
 
     /* Phase 151 (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) */
     RUN_TEST(test_5v_page_lock_status_dispatch);
