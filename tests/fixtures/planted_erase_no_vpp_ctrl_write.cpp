@@ -1,0 +1,45 @@
+// planted_erase_no_vpp_ctrl_write.cpp -- Phase 153 Plan 05 (ERASE-04,
+// D-153-03).
+//
+// DELIBERATELY-BROKEN fixture, never compiled. tests/fixtures/ sits outside
+// every build_src_filter -- PlatformIO builds from src/ and test/, never
+// tests/ -- so this file is never fed to avr-g++ or the native host
+// compiler. Its single purpose is to prove
+// scripts/check_erase_no_vpp.py can FAIL: real reachability evidence for
+// the primary GATE-03 control, not merely a claim in a summary.
+//
+// This is a copy of the real eeprom28c_erase_execute body
+// (firestarter/src/proms/eeprom_28c.cpp) with one splice added: a VPP/VPE
+// control-register write bracketed by rurp_chip_enable()/rurp_chip_disable()
+// -- the exact fragment an executor would produce by copying
+// flash_5v_page_erase_execute's HARDWARE Chip Erase path
+// (flash_5v_page.cpp:196-231, which asserts CTRL_VPE_ENABLE and the VPP
+// boost regulator around that same bracket) into this handler by mistake.
+// Both non-vacuity anchors (handle->firestarter_set_data( and
+// delay(AT28C_TEC_MAX_MS)) are kept intact so this fixture exercises the
+// VIOLATION path, not the anchor path -- a checker that only ever reaches
+// the anchor path would never prove it can see a real hazard.
+
+static void eeprom28c_erase_execute(firestarter_handle_t* handle) {
+    LOG_DEBUG_ID_SUB(DBG_CHIP_ERASE);
+    eeprom28c_sdp_unlock_execute(handle);
+    rurp_set_data_output();
+
+    // PLANTED VIOLATION -- lifted from flash_5v_page_erase_execute's
+    // hardware 12V-on-OE Chip Erase path, not from AN 0544B. This is
+    // exactly the hazard D-153-03 exists to catch: a control-register
+    // write, wrapped in a chip-enable/disable bracket, reaching this body.
+    rurp_chip_disable();
+    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE | CTRL_VPE_ENABLE, 1);
+    rurp_chip_enable();
+
+    handle->firestarter_set_data(handle, 0x5555, 0xAA);
+    handle->firestarter_set_data(handle, 0x2AAA, 0x55);
+    handle->firestarter_set_data(handle, 0x5555, 0x80);
+    handle->firestarter_set_data(handle, 0x5555, 0xAA);
+    handle->firestarter_set_data(handle, 0x2AAA, 0x55);
+    handle->firestarter_set_data(handle, 0x5555, 0x10);
+    delay(AT28C_TEC_MAX_MS);
+
+    rurp_chip_disable();
+}

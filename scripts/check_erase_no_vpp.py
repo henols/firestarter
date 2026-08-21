@@ -9,8 +9,9 @@ Requirements: ERASE-04
 Decisions covered: D-153-03
 
 **The mechanism correction this checker exists to fix (D-153-03).** The
-ROADMAP's criterion 3 implies `firestarter_app/tools/check_dispatch.py` is
-what stops the datasheet's hardware Chip Erase mode (12V on the OE pin,
+ROADMAP's criterion 3 implies the host repository's `tools/check_dispatch.py`
+(the Python-host sibling project) is what stops the datasheet's hardware
+Chip Erase mode (12V on the OE pin,
 AT28C256 DS20006386B Table 6-1) from reaching a `0x0D` chip. It is not, and
 it cannot be: `check_dispatch.py`'s GATE-03 guard fires only on a
 `handler == "configure_eprom"` paired with a no-VPP-pin pinout
@@ -41,9 +42,9 @@ by `{`, never the semicolon-terminated forward declaration a few lines
 above it in the real file) and brace-matched to its closing `}`. Only that
 span is scanned.
 
-**Comments are scanned too, deliberately.** Unlike this checker's sibling
-`firestarter_app/tools/check_no_log_in_sdp_window.py` (which blanks comments
-before scanning), this checker does NOT strip comments from the hazard
+**Comments are scanned too, deliberately.** Unlike this checker's sibling in
+the host repository's tooling, `check_no_log_in_sdp_window.py` (which blanks
+comments before scanning), this checker does NOT strip comments from the hazard
 scan: a comment naming a hazard token inside the matched body is
 indistinguishable, at grep distance, from a real call, and this project has
 already been bitten by comment text invalidating its own gate. Comments
@@ -77,10 +78,11 @@ different exit code from every fail-closed case, so the paired pytest
 from "could not render a trustworthy verdict at all", mirroring
 `check_no_log_in_sdp_window.py`'s own `ERROR:` versus `FAIL:` distinction.
 
-**No dependency, no other-repo scan.** stdlib only. This module never
-reads anything under `firestarter_app/` and never weakens, exempts, or
-re-baselines anything in `firestarter_app/tools/` -- `check_dispatch.py`
-stays byte-unchanged by this phase; `git diff --quiet -- tools/check_dispatch.py`
+**No dependency, no other-repo scan.** stdlib only. This module never reads
+anything under the Python-host sibling repository's tree and never weakens,
+exempts, or re-baselines anything in its `tools/` directory -- the host
+repo's `check_dispatch.py` stays byte-unchanged by this phase;
+`git diff --quiet -- tools/check_dispatch.py`, run from that repository,
 must hold at phase end, independently of this checker's own result.
 
 **No CI leg.** This module -- and its paired pytest -- executes in NO CI
