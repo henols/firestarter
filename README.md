@@ -110,10 +110,21 @@ Report firmware issues at: https://github.com/henols/firestarter/issues
 
 ## Protocol Notes
 
-Protocol `0x0D` (5V parallel EEPROM, AT28C/28C-family) has no erase operation
-in firmware at all — each page write auto-erases internally, and the SDP
-protection state is not readable. See [`doc/PROTOCOLS.md`](./doc/PROTOCOLS.md)
-§1.6 for the full write/erase model.
+Protocol `0x0D` (5V parallel EEPROM, AT28C/28C-family) exposes a **standalone
+chip erase** as of Phase 153: `firestarter erase` dispatches a `CMD_ERASE` arm
+to the **software** six-byte chip-erase sequence from Atmel application note
+"Software Chip Erase" (Rev. 0544B-10/98). The datasheet's *hardware* erase mode
+— which requires **12 V on OE (pin 22)** — is deliberately **not** implemented,
+because that is a hardware-damage hazard on a 5 V part;
+`scripts/check_erase_no_vpp.py` is the gate that keeps it out.
+
+`write` performs **no blank check** on this protocol: each page write
+auto-erases internally, so the pre-write check was a false precondition rather
+than a safety net. A non-blank part is therefore writable without `-b`. `blank`
+remains available as its own step. The SDP protection state is still not
+readable. **This ships software-proven and unvalidated on silicon** — none of it
+is a claim that the `0x0D` write path works on a part. See
+[`doc/PROTOCOLS.md`](./doc/PROTOCOLS.md) §1.6 for the full write/erase model.
 
 The three 27C UV/EE-EPROM protocols (`0x07`/`0x08`/`0x0B`) now program with a
 **per-byte pulse-to-verify loop**: a fixed-width pulse from the chip database
