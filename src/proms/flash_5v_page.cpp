@@ -85,9 +85,22 @@ void flash_5v_page_write_init(firestarter_handle_t* handle) {
             }
         }
     }
-    if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
-        mem_util_blank_check(handle);
-    }
+    // Phase 153 (152-CONTEXT.md D-07 / ERASE-02): flash4 auto-erases per
+    // page during the page-write loop, so a pre-write blank check here was
+    // a false precondition, not a safety net -- removed outright rather
+    // than gated. FLAG_SKIP_BLANK_CHECK is consequently unread on this
+    // protocol; do not restore this conditional on the grounds that the
+    // bit looks orphaned.
+    //
+    // The erase-enable block immediately above (guarding a bulk-erase call
+    // on the erase-enable flag) is a DIFFERENT thing and stays: the host
+    // still clears that flag for algorithm 5, because setting it would
+    // route a 12 V bulk erase onto a 5 V-only part -- a live hardware
+    // hazard, not a retired one.
+    //
+    // D-153-05: an erase-on-write block gated this way, inside a
+    // protocol's write-init, is the pattern an executor must NOT copy
+    // into eeprom28c_write_init.
 }
 
 void flash_5v_page_write_execute(firestarter_handle_t* handle) {
