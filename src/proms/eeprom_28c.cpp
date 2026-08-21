@@ -56,6 +56,26 @@
 // *internal write cycle* that follows the sequence's last byte.
 #define AT28C_TWC_MAX_MS 10
 
+// AT28C whole-device chip-erase cycle time (t_EC), in milliseconds -- the
+// unconditional wall-clock floor the software six-byte chip-erase sequence
+// requires after its terminal byte, before any further byte load is
+// permitted [CITED: Atmel Application Note "Software Chip Erase", Rev.
+// 0544B-10/98 (doc0544.pdf) -- the device internally times the erase so no
+// external clocks are required, and states the Chip Erase Cycle Time t_EC as
+// 20 ms Max]. Sibling of, not a duplicate of, AT28C_TWC_MAX_MS (above), which
+// bounds a single internal WRITE cycle, and AT28C_TBLC_MAX_US (below), which
+// bounds the inter-byte load window inside a command sequence: this one
+// bounds the whole-device ERASE cycle that follows the six-byte erase code's
+// last byte. The same application note forbids any byte load until the
+// erase cycle completes, so this wait is an unconditional delay and not a
+// poll -- the erase operation below must not reuse
+// eeprom28c_wait_for_sdp_completion, which polls. No native test can prove
+// this wall-clock duration: the native host stubs leave delay() unstubbed
+// and record no time (test/native/avr/_shared/host_stubs_common.inc), so the
+// only available proof that this delay is present at all is structural (a
+// source-level assertion that the call exists), never a timing measurement.
+#define AT28C_TEC_MAX_MS 20
+
 // AT28C datasheet-max byte-load cycle time (t_BLC), in microseconds -- the
 // upper bound on the interval between consecutive byte loads within the
 // SDP-disable command sequence (and, per the page-load citation at
@@ -125,6 +145,9 @@ static void eeprom28c_emit_sdp_sequence_timed(firestarter_handle_t* handle, cons
                                                uint8_t emitted_msg_id, uint8_t done_us_msg_id);
 static void eeprom28c_sdp_unlock_execute(firestarter_handle_t* handle);
 static void eeprom28c_sdp_lock_execute(firestarter_handle_t* handle);
+// Phase 153 / ERASE-04: the AN-0544B SOFTWARE six-byte chip erase --
+// deliberately NOT the datasheet's HARDWARE Chip Erase mode (12V on OE).
+static void eeprom28c_erase_execute(firestarter_handle_t* handle);
 
 // AT28C SDP disable: 6-write sequence to magic addresses.
 // D-10: kept 0x0D-local (not driving the byte-identical
