@@ -37,9 +37,17 @@ Two modes, selected by the presence/absence of `--policy merge05`:
     admitted flash-only with NO new RAM exemption (Phase 151's own RAM growth
     measured at exactly 0 B; the pre-existing +2 B RAM delta against BASE-01
     is Phase 149's, unchanged, and already fully covered by the RAM
-    exemption constant below). Every exemption is additive and every
+    exemption constant below). Since Phase 153 (ERASE-08, D-153-01) it ALSO
+    enforces a FOURTH, separately-named, SHA-attributed flash exemption
+    (130 B, commits 0d90e5c, df09704, d9a9993 and 8b7feac, its own
+    module-level constant defined immediately after the lock-status-read
+    exemption above) -- the standalone `CMD_ERASE` software chip-erase,
+    admitted flash-only with NO new RAM exemption (Phase 153's own RAM
+    growth measured at exactly 0 B by construction; the erase supplies its
+    six-byte sequence as inline literal writes rather than a new `.data`
+    table, per D-153-01). Every exemption is additive and every
     clause's own scope is
-    respected: flash's three named exemptions never touch RAM, RAM's named
+    respected: flash's four named exemptions never touch RAM, RAM's named
     exemption never touches flash, the band literals are unchanged, BASE-01's
     recorded figures are unchanged, and every delta is printed with its full
     decomposition so each admitted amount stays independently visible in both
@@ -322,6 +330,96 @@ MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES = 210
 # on real hardware.
 MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES = 288
 
+# The FOURTH, SEPARATELY-NAMED, SHA-attributed flash exemption, in bytes, ADDED
+# to each target's allowance alongside MERGE05_DEFECT_FIX_EXEMPTION_BYTES,
+# MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES and
+# MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES. Phase 153 (ERASE-03/ERASE-04/
+# ERASE-08, D-153-01). Applies to all three AVR targets alike -- the single
+# place this literal lives is _merge05_flash_allowance() below, the same
+# single-consumer property the other three flash literals have.
+#
+# What the 130 bytes ARE, deletions itemised separately from additions:
+#   DELETIONS (a saving):
+#     - the 0x0D pre-write blank-check conditional deleted from
+#       eeprom28c_write_init (commit 0d90e5c) -- a three-line
+#       `if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) { mem_util_blank_check(handle); }`
+#       block, ERASE-01.
+#     - the 0x05 pre-write blank-check conditional deleted from
+#       flash_5v_page_write_init (commit dcb30fe) -- the byte-identical
+#       three-line block, ERASE-02. The surrounding FLAG_CAN_ERASE erase-on-
+#       write block on this protocol is untouched.
+#   ADDITIONS:
+#     - AT28C_TEC_MAX_MS (the 20 ms tEC wait constant) plus
+#       eeprom28c_erase_execute's forward declaration (commit df09704).
+#     - eeprom28c_erase_execute itself (commit d9a9993): the software AN
+#       0544B six-byte chip-erase sequence, emitted through the existing
+#       eeprom28c_emit_command_sequence emitter as six inline
+#       firestarter_set_data calls (no new byte_flip_t table -- see D-153-01
+#       form (a)), preceded by an SDP-disable prefix that reuses
+#       eeprom28c_sdp_unlock_execute VERBATIM (commit 8b7feac wires the call
+#       site) -- the prefix reuse is measured at exactly 0 B additional, a
+#       zero-byte item recorded here rather than omitted, because no new
+#       function body and no new .data table were needed for it.
+#     - the CMD_ERASE dispatch arm in configure_eeprom28c's switch (commit
+#       8b7feac): the same two-line `case CMD_X:` shape as the existing
+#       CMD_SDP_LOCK arm.
+# Net measured at exactly +130 B on all three AVR targets (uno, uno328pb,
+# leonardo) against BASE-01, minus the already-admitted 594 B (96 + 210 +
+# 288) from the three exemptions above -- see
+# .planning/phases/153-write-path-erase-policy/153-DECISIONS.md's "Post-
+# change measured position (cold)" section for the cold rm -rf + pio run
+# capture this figure was read from.
+#
+# WHY an exemption, in the fullest form (the same six alternatives D-153-01
+# rejects on the record):
+#   - NOT a general loosening of the band. MERGE05_UNO_CLASS_FLASH_BAND
+#     stays 64 B and leonardo's inline `band = 0` literal stays a plain
+#     zero -- widening either would silently admit unrelated future growth
+#     and destroy the tripwire.
+#   - NOT folded into MERGE05_DEFECT_FIX_EXEMPTION_BYTES,
+#     MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES or
+#     MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES. Each of those three is
+#     scoped to one attributable commit set; laundering the erase cost into
+#     one of them breaks that single-consumer, single-attribution property.
+#   - NOT a re-anchor of scripts/baseline/size_baseline_base01.json. BASE-01's
+#     avr_targets stay byte-unchanged: uno 24824, uno328pb 24874, leonardo
+#     26906. A green --policy merge05 run after a re-anchor would mean the
+#     anchor moved, not that flash growth stayed inside the original band --
+#     the same lesson the three prior exemptions already record.
+#   - NOT a shrink of the fix to fit. The six-write AN 0544B sequence and its
+#     tEC wait are the datasheet-required shape; trimming them to fit a
+#     pre-existing band is the wrong incentive and risks the feature.
+#   - NOT a byte-neutral offset hunted in unrelated code. That would turn a
+#     one-feature phase into an unrelated refactor for no reason but to dodge
+#     a named admission.
+#   - NOT a leonardo-only compile-time gate on the CMD_ERASE arm. That would
+#     create a functional divergence on the board the operator actually
+#     writes with, which is worse than spending a named exemption.
+# The growth is instead NAMED here, so it is admitted in one visible,
+# attributable place rather than laundered into a moved reference point or
+# into any of the three existing exemptions' own numbers.
+#
+# The tripwire stays ARMED at the new floor: a delta of one byte beyond the
+# new effective allowance still FAILS. That is a machine-checked negative
+# control, not a claim -- plan 15's re-planted leg on the new *_v153*
+# fixture family (tests/test_check_size_baseline.py's
+# test_policy_merge05_fires_on_leonardo_growth analog) feeds a planted log
+# one byte past the new leonardo allowance (0 + 96 + 210 + 288 + 130 = 724 B)
+# and asserts exit 1.
+#
+# SCOPE: flash only. Task 1 measured this phase's RAM delta at exactly 0 B
+# on all three AVR targets against the immediately-prior pre-change
+# position, so compare_avr_policy_merge05's ram_used clause and
+# _merge05_ram_allowance() are untouched by this constant -- the erase was
+# built RAM-neutral by construction (D-153-01 form (a): six inline literal
+# writes, no new .data table).
+#
+# The change this constant funds is software-proven and unvalidated on
+# silicon (Evidence Ceiling, v1.32 PROJECT.md): no AT28C part was involved in
+# measuring it, and the figure says nothing about runtime behaviour on real
+# hardware.
+MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES = 130
+
 # The named RAM exemption paired with MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES
 # above (no longer textually adjacent since Phase 151's own flash-only
 # exemption was inserted between them -- the pairing is by SCOPE, not by
@@ -473,14 +571,16 @@ def compare_avr(env, parsed, baseline):
 
 def _merge05_flash_allowance(env):
     """Resolve `env`'s MERGE-05 flash-growth figures. Returns
-    (band, defect_exemption, seam_exemption, lock_status_exemption, allowance,
-    band_label) -- a 6-tuple, never a summed 5-tuple.
+    (band, defect_exemption, seam_exemption, lock_status_exemption,
+    erase_exemption, allowance, band_label) -- a 7-tuple, never a summed
+    6-tuple.
 
     Sole consumer of MERGE05_UNO_CLASS_FLASH_BAND,
-    MERGE05_DEFECT_FIX_EXEMPTION_BYTES, MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES
-    AND MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES
+    MERGE05_DEFECT_FIX_EXEMPTION_BYTES, MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES,
+    MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES AND
+    MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES
     -- compare_avr_policy_merge05 (the FAIL arm) and main()'s PASS-line builder
-    both call this rather than each recomputing the band, so none of the four
+    both call this rather than each recomputing the band, so none of the five
     literals is ever read in two places and the pass/fail arms can never
     disagree about the allowance. (Before the first exemption was added,
     main() DID recompute `band` itself, quietly falsifying the band literal's
@@ -488,19 +588,20 @@ def _merge05_flash_allowance(env):
     removed here.)
 
     `allowance` is the effective ceiling actually enforced: base band plus
-    ALL THREE named flash exemptions. `band`, `defect_exemption`,
-    `seam_exemption` and `lock_status_exemption` are returned SEPARATELY,
-    never summed into one another, so every message can show the full
-    decomposition instead of only the total -- the +96 B, the +210 B and the
-    +288 B each stay independently visible in the output rather than being
-    absorbed into one widened number. Adding any one of these exemptions into
-    another's value would destroy exactly this property and launder one
-    phase's growth into a different phase's number (Phase 149's into Phase
-    145's, or Phase 151's into either).
+    ALL FOUR named flash exemptions. `band`, `defect_exemption`,
+    `seam_exemption`, `lock_status_exemption` and `erase_exemption` are
+    returned SEPARATELY, never summed into one another, so every message can
+    show the full decomposition instead of only the total -- the +96 B, the
+    +210 B, the +288 B and the +130 B each stay independently visible in the
+    output rather than being absorbed into one widened number. Adding any one
+    of these exemptions into another's value would destroy exactly this
+    property and launder one phase's growth into a different phase's number
+    (Phase 149's into Phase 145's, Phase 151's into either, or Phase 153's
+    into any of the three).
 
-    Does NOT touch the unnamed, fifth MERGE-05 literal -- leonardo's own
+    Does NOT touch the unnamed, sixth MERGE-05 literal -- leonardo's own
     inline `band = 0` immediately below. That literal stays a plain zero;
-    Phase 151's bytes are a separately-named addend beside it, never folded
+    Phase 153's bytes are a separately-named addend beside it, never folded
     into a non-zero leonardo band.
     """
     band = 0 if env == "leonardo" else MERGE05_UNO_CLASS_FLASH_BAND
@@ -508,8 +609,19 @@ def _merge05_flash_allowance(env):
     defect_exemption = MERGE05_DEFECT_FIX_EXEMPTION_BYTES
     seam_exemption = MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES
     lock_status_exemption = MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES
-    allowance = band + defect_exemption + seam_exemption + lock_status_exemption
-    return band, defect_exemption, seam_exemption, lock_status_exemption, allowance, band_label
+    erase_exemption = MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES
+    allowance = (
+        band + defect_exemption + seam_exemption + lock_status_exemption + erase_exemption
+    )
+    return (
+        band,
+        defect_exemption,
+        seam_exemption,
+        lock_status_exemption,
+        erase_exemption,
+        allowance,
+        band_label,
+    )
 
 
 def _merge05_ram_allowance(env):
@@ -540,14 +652,16 @@ def compare_avr_policy_merge05(env, parsed, baseline):
         MERGE05_PAGE_SIZE_SEAM_EXEMPTION_BYTES (the named, SHA-attributed
         page-size-seam exemption from Phase 149) PLUS
         MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES (the named, SHA-attributed
-        `dev lock-status` read exemption from Phase 151 -- see each
-        constant's own comment for what the bytes are, which alternatives
-        were rejected, and why). All four figures are resolved in one place
-        by _merge05_flash_allowance(). Every message prints the full
+        `dev lock-status` read exemption from Phase 151) PLUS
+        MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES (the named, SHA-attributed
+        standalone-erase exemption from Phase 153 -- see each constant's own
+        comment for what the bytes are, which alternatives were rejected, and
+        why). All five figures are resolved in one place by
+        _merge05_flash_allowance(). Every message prints the full
         decomposition (`band N B + defect-fix exemption 96 B + page-size-seam
-        exemption 210 B + lock-status-read exemption 288 B`) so each
-        admitted growth stays independently visible rather than disappearing
-        into a single widened number.
+        exemption 210 B + lock-status-read exemption 288 B + erase-standalone
+        exemption 130 B`) so each admitted growth stays independently visible
+        rather than disappearing into a single widened number.
       - all three: ram_used must not grow beyond this module's own named
         RAM exemption (it may shrink freely) --
         resolved by _merge05_ram_allowance(), the RAM analog of the flash
@@ -575,6 +689,7 @@ def compare_avr_policy_merge05(env, parsed, baseline):
         defect_exemption,
         seam_exemption,
         lock_status_exemption,
+        erase_exemption,
         allowance,
         band_label,
     ) = _merge05_flash_allowance(env)
@@ -585,7 +700,8 @@ def compare_avr_policy_merge05(env, parsed, baseline):
             f"delta={flash_delta:+d} exceeds MERGE-05 {band_label} allowance of "
             f"{allowance} B (band {band} B + defect-fix exemption {defect_exemption} B "
             f"+ page-size-seam exemption {seam_exemption} B "
-            f"+ lock-status-read exemption {lock_status_exemption} B)"
+            f"+ lock-status-read exemption {lock_status_exemption} B "
+            f"+ erase-standalone exemption {erase_exemption} B)"
         )
 
     ram_tolerance, ram_label = _merge05_ram_allowance(env)
@@ -789,6 +905,7 @@ def main(argv):
                     defect_exemption,
                     seam_exemption,
                     lock_status_exemption,
+                    erase_exemption,
                     allowance,
                     _label,
                 ) = _merge05_flash_allowance(env)
@@ -798,7 +915,7 @@ def main(argv):
                 compared.append(
                     f"{env}(flash={u}/{t}"
                     f"[{flash_delta:+d}<={allowance}=band{band}+exempt{defect_exemption}"
-                    f"+seam{seam_exemption}+lock{lock_status_exemption}],"
+                    f"+seam{seam_exemption}+lock{lock_status_exemption}+erase{erase_exemption}],"
                     f"ram={ru}/{rt}[{ram_delta:+d}<={ram_tolerance}=seam{ram_tolerance}])"
                 )
             else:
