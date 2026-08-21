@@ -350,6 +350,135 @@ captured_build_fullflash_{uno,uno328pb,leonardo}.log and its planted sibling
 planted_size_baseline_flash_regression_fullflash.log, plus every family the a7w severance
 already retired (unchanged by this plan).
 
+Plan 153-15 (ERASE-08) — the fourth generation of this severance, and the reason the
+phase's size gate can claim its tripwire is still armed above the widened allowance.
+
+WHAT THE EXEMPTION FUNDS, in one sentence: the standalone software chip erase on
+protocol `0x0D` (`eeprom28c_erase_execute`, dispatched via a new `CMD_ERASE` arm) plus the
+two removed pre-write blank-check conditionals (`eeprom28c_write_init` and
+`flash_5v_page_write_init`) that made the erase's blank-check step honest rather than
+redundant.
+
+THE MEASURED FIGURE, stated once, here, with its transcript pointer: +130 B flash on all
+three AVR targets, +0 B RAM, funded as `MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES = 130` in
+`scripts/check_size_baseline.py` -- see
+`.planning/phases/153-write-path-erase-policy/153-DECISIONS.md`'s "Post-change measured
+position (cold)" section for the cold `rm -rf .pio/build/<env>` + `pio run -e <env>`
+capture this figure was read from. Every fixture below is derived from
+`_merge05_flash_allowance()`/`_merge05_ram_allowance()`'s own returned values, never from
+this literal repeated by hand -- an absolute number copied into a docstring goes stale the
+moment the allowance moves again, which is why the four-group inventory below names each
+plant's single CAUSE and its one-byte-past-the-ceiling ROLE, never its figure, as a claim.
+
+WHICH FAMILY IS RETIRED VERSUS REPOINTED: the `*_v151*` family (Plan 151-10's generation) is
+retired in place and KEPT -- thirteen files, unmodified, `git status --porcelain
+tests/fixtures/` shows zero touched `*_v151*` entries. It is not repointed and not deleted;
+re-anchoring or repointing an existing family instead of severing onto a new one reddens
+legs that assert at sub-allowance deltas, the standing lesson this module has already paid
+for once (Phase 151's own severance record cites the same lesson from the `*_fullflash*`
+generation before it). A NEW family, `*_v153*`, thirteen files, is added instead, in the
+same four groups every prior generation used:
+
+  GROUP 1 -- three cold captures (`captured_build_v153_{uno,uno328pb,leonardo}.log`).
+  CAUSE: a fresh `rm -rf .pio/build/<env>` + single `pio run -e <env>` invocation per
+  target, byte-for-byte, transcribed verbatim. ROLE: the clean-control reference every
+  default-mode leg in this module now reads; each exits 0 against the live baseline.
+
+  GROUP 2 -- three synthetic BASE-01 anchors (`merge05_base01_anchor_v153_
+  {uno,uno328pb,leonardo}.log`). CAUSE: a Group 1 capture with BOTH the RAM: and Flash:
+  lines' `used` figures set to BASE-01's own frozen anchor for that target (matching the
+  `*_v151*` precedent's own shape, not a hand-picked subset of the two lines), everything
+  else left as captured. ROLE: the zero-delta derivation source Group 4's plants are built
+  from -- read by no leg directly at test time, exactly as the `*_v151*` generation's own
+  anchor trio is read by no leg either.
+
+  GROUP 3 -- three exemption-admission logs (`merge05_erase_standalone_v153_
+  {uno,uno328pb,leonardo}.log`). CAUSE: none -- these are byte-for-byte copies of Group 1,
+  by design, not a distinct measurement. ROLE: this exemption's own admission proof, read
+  against BASE-01 in band mode as Arm 4 of
+  `test_policy_merge05_admits_the_documented_defect_fix`, where leonardo sits EXACTLY at
+  the new ceiling (zero headroom) and both uno-class targets sit 64 B inside their own
+  ceiling. Stated explicitly here, as the plan requires: their numeric identity to Group 1
+  is deliberate, not an accidental duplicate.
+
+  GROUP 4 -- four plants, each derived from the allowance functions plus one and OBSERVED
+  to fail before being trusted (`planted_size_baseline_policy_leonardo_growth_v153.log`,
+  `planted_size_baseline_policy_uno_over_band_v153.log`,
+  `planted_size_baseline_policy_ram_moved_v153.log`,
+  `planted_size_baseline_flash_regression_v153.log`). Each carries exactly one deviation:
+  a leonardo-growth plant one byte past the new leonardo flash allowance; a uno-class
+  over-band plant one byte past the new uno-class flash allowance; a RAM-moved plant one
+  byte past the RAM tolerance (arithmetically unchanged this generation -- the erase was
+  built RAM-neutral by construction -- but re-planted onto the new family anyway so no leg
+  reaches across generations); and a flash-regression plant for default mode, derived from
+  the Group 1 leonardo capture with the same +512 B standing offset every prior generation
+  of this fixture has used since Phase 123. All four were run through the checker in the
+  mode they target and their verbatim failure output transcribed to this plan's own
+  SUMMARY.md before any leg was written against them.
+
+LEGS REPOINTED onto `*_v153*`: `test_clean_avr_all_three_envs_pass`,
+`test_default_mode_is_unchanged_by_the_new_flag`,
+`test_planted_flash_regression_flips_checker_to_failure`,
+`test_baseline_seam_precedence_flips_clean_log_to_fail`,
+`test_policy_merge05_fires_on_uno_class_over_band`,
+`test_policy_merge05_fires_on_leonardo_growth`, `test_policy_merge05_fires_on_ram_move`, and
+Arm 2 (the negative control) of `test_policy_merge05_admits_the_documented_defect_fix`,
+which also gains a new Arm 4 reading the three `merge05_erase_standalone_v153_*.log` --
+eight repointings plus one new arm, matching the count the previous generation's own
+severance used.
+
+RECONCILIATION against the observed failing-leg list: 153-14-SUMMARY.md's own hand-off
+named exactly THREE red legs (Arm 2 of `test_policy_merge05_admits_the_documented_
+defect_fix`, `test_policy_merge05_fires_on_uno_class_over_band`, `test_policy_merge05_
+fires_on_leonardo_growth`). Running the full suite at the start of this plan showed SEVEN
+red, not three -- a genuine disagreement, recorded honestly rather than silently absorbed.
+The four not on the historical list: `test_clean_avr_all_three_envs_pass` and
+`test_default_mode_is_unchanged_by_the_new_flag` (both still reading the retired `*_v151*`
+family against a live default baseline Plan 153-14 had already moved -- an omission in that
+plan's own hand-off, not a new coupling this phase introduced); `test_planted_flash_
+regression_flips_checker_to_failure` (red, but for the WRONG reason -- it still asserted the
+stale baseline figure 27500, which the checker's own FAIL text no longer echoed); and
+`test_clean_native_both_envs_pass`, which genuinely IS a new coupling worth naming --
+native case counts moved 163 -> 170 in the same Plan 153-14 revision that moved
+`size_baseline.json`'s avr_targets, and that plan's hand-off never mentioned the native
+side of its own change. All four are fixed by this severance, three by repointing onto the
+new family and one (`test_clean_native_both_envs_pass`) by updating the native summary
+fixtures in place, the established convention for that pair. No leg on the historical
+three-item list failed to fire (none had gone vacuous).
+
+LEGS DELIBERATELY LEFT UNTOUCHED, with the reason: `test_policy_merge05_permits_the_
+measured_landing_deltas` (Coverage 8, reads `merge05_base01_anchor_fullflash_*.log`) and
+Arm 1 of `test_policy_merge05_admits_the_documented_defect_fix` (reads `merge05_defect_
+fix_fullflash_*.log`) both assert at fixed, sub-allowance deltas (+0 and +96 respectively),
+so a widened allowance -- however many terms compose it -- changes nothing either leg
+asserts; their FIXTURES are untouched. Arm 1's own decomposition-string ASSERTIONS are
+WIDENED, not its fixture, to require the new `+erase130` term be visible in the same PASS
+text -- the same "untouched fixture, widened assertion" treatment Plan 151-10 gave Arm 1
+one generation earlier. Arm 3 (Plan 151-10's own admission proof, `merge05_lock_status_
+v151_*.log`) receives the identical treatment for the identical reason: its fixture is KEPT,
+unmodified, as a prior exemption's evidence, but its decomposition-string assertions are
+widened to the current five-term allowance, since it no longer sits at zero headroom now
+that this plan's own exemption widened the ceiling further (that role belongs to the new
+Arm 4 instead).
+
+THE NOT-RE-ANCHORED LEG, `test_base01_is_not_re_anchored_by_the_new_exemption`, is
+STRENGTHENED again, not repointed: it reads BASE-01 and the checker's own source directly
+and must NEVER read a fixture, or it could be satisfied by planting a convenient log. Its
+source-scan gains a fifth pin, the exact string `MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES
+= 130`, plus two new checks unique to this generation: that the constant is actually
+consumed inside `_merge05_flash_allowance()`'s own body (sliced from the function's `def`
+line to the next), and that the constant's NAME never appears inside BASE-01's own raw JSON
+text -- BASE-01 is the frozen anchor, never a place an exemption gets laundered into.
+
+Neither repository's CI runs this suite -- no CI leg exercises it in either repository, so
+the local run recorded in this plan's own SUMMARY.md is the only evidence these assertions
+were ever exercised.
+
+Evidence Ceiling (v1.32 PROJECT.md): the change this family guards is
+software-proven and unvalidated on silicon -- no AT28C part was involved in measuring
+the 130 B figure this exemption admits, and the figure says nothing about runtime
+behaviour on real hardware.
+
 Self-contained path resolution below — NOT in conftest.py (firestarter/tests/ has no
 conftest.py anywhere in the repo; this is a recorded house-rule pattern decision, per
 test_update_version.py's own comment, not an omission). Stdlib and pytest only.
