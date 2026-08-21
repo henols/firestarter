@@ -544,9 +544,19 @@ void eeprom28c_write_init(firestarter_handle_t* handle) {
         // (json_parser.c) already parses it unchanged.
         LOG_WARN_ID(MSG_WARN_SDP_UNLOCK_SKIPPED);
     }
-    if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) {
-        mem_util_blank_check(handle);
-    }
+    // 152-CONTEXT.md D-07 / ERASE-01: no pre-write blank check on this
+    // protocol. On 0x0D the silicon auto-erases per page during the write
+    // itself, and eeprom28c_verify_page_readback already read-back-verifies
+    // every page, so a pre-write blank check was never a safety net here --
+    // it was a false precondition that made a non-blank AT28C part
+    // un-writable without a flag. FLAG_SKIP_BLANK_CHECK is consequently
+    // UNREAD on this protocol; do not restore this conditional on the
+    // grounds that the bit looks orphaned. `blank` remains available as its
+    // own step through the untouched CMD_BLANK_CHECK arm above. Per
+    // D-153-05, no FLAG_CAN_ERASE-gated erase-on-write block is added here
+    // in its place -- D-07 asks for erase as a standalone step, and both
+    // sibling handlers' erase-on-write blocks (flash_5v_page.cpp,
+    // flash_nor_unlock.cpp) are a pattern to recognise, not to copy.
 }
 
 // Phase 149 (D-06/D-07): resolve the validated flush mask from a delivered
