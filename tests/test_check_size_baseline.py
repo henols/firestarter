@@ -387,24 +387,35 @@ def _run_checker(argv=None, env_overrides=None):
 
 
 def test_clean_avr_all_three_envs_pass():
-    """Coverage 1 — each captured_build_v151_*.log exits 0 against the LIVE
+    """Coverage 1 — each captured_build_v153_*.log exits 0 against the LIVE
     default baseline, and its PASS: line names the env.
 
-    SEVERED again by Plan 151-10 (LOCK-02): that plan re-recorded
+    SEVERED again by Plan 153-15 (ERASE-08): Plan 153-14 re-recorded
     scripts/baseline/size_baseline.json's avr_targets.*.flash_used/.ram_used to the
-    cold post-151 figures (uno 25418/1575, uno328pb 25468/1581, leonardo 27500/2016),
-    which the a7w-era captured_build_fullflash_*.log family no longer matches (it
-    still carries the pre-151 figures) -- feeding it here would have made this leg
-    permanently RED. captured_build_fullflash_*.log itself is NOT touched: it is
-    retired, not repointed (see the module docstring's disposition table). This leg
-    instead reads a new fixture family, captured_build_v151_{uno,uno328pb,leonardo}.log,
-    committed byte-for-byte from a cold `rm -rf .pio/build/<env>` + single
-    `pio run -e <env>` invocation per env (151-SIZE-TRANSCRIPTS.md), never re-derived
-    warm."""
+    cold post-erase figures (uno 25548/1575, uno328pb 25598/1581, leonardo 27630/2016),
+    which the *_v151* family no longer matches (it still carries the pre-erase
+    figures) -- feeding it here would have made this leg permanently RED. The
+    *_v151* family itself is NOT touched: it is retired, not repointed (see the module
+    docstring's disposition table). This leg instead reads a new fixture family,
+    captured_build_v153_{uno,uno328pb,leonardo}.log, committed byte-for-byte from a
+    cold `rm -rf .pio/build/<env>` + single `pio run -e <env>` invocation per env
+    (153-DECISIONS.md's "Post-change measured position (cold)" section), never
+    re-derived warm.
+
+    SEVERANCE, this generation: this leg is one of four that plan 153-14's own
+    hand-off did NOT name as red -- 153-14-SUMMARY.md enumerated only three
+    (test_policy_merge05_admits_the_documented_defect_fix's Arm 2,
+    test_policy_merge05_fires_on_uno_class_over_band,
+    test_policy_merge05_fires_on_leonardo_growth). Running the full suite at the
+    start of this plan showed this leg RED too, for the obvious mechanical reason:
+    default mode requires EXACT byte identity against the live baseline, and plan
+    153-14 moved that baseline's avr_targets while this leg still read the *_v151*
+    family. Recorded here as a reconciliation, not a silent fix -- see this plan's
+    own SUMMARY.md."""
     for env_name, fixture in (
-        ("uno", "captured_build_v151_uno.log"),
-        ("uno328pb", "captured_build_v151_uno328pb.log"),
-        ("leonardo", "captured_build_v151_leonardo.log"),
+        ("uno", "captured_build_v153_uno.log"),
+        ("uno328pb", "captured_build_v153_uno328pb.log"),
+        ("leonardo", "captured_build_v153_leonardo.log"),
     ):
         result = _run_checker(["--avr-log", f"{env_name}={_FIXTURES / fixture}"])
         assert result.returncode == 0, (
@@ -420,18 +431,27 @@ def test_clean_avr_all_three_envs_pass():
 
 
 def test_clean_native_both_envs_pass():
-    """Coverage 2 — both captured_test_native*.log files exit 0 with 163 and 17 in PASS:.
+    """Coverage 2 — both captured_test_native*.log files exit 0 with 170 and 17 in PASS:.
 
-    Plan 151-10 updated captured_test_native_summary.log and
-    captured_test_native_nodevtools_summary.log IN PLACE, 151 -> 163 cases/succeeded
-    (Plan 151-08's five new legs in each of test_val_nor_unlock.cpp/test_val_5v_page.cpp
-    plus Plan 151-03's native-mirror-suite growth in test_cmd_admission.cpp; suites
-    unchanged at 17), following the same in-place precedent Phase 149 Plan 07 used
-    (141 -> 151). No severance needed here, unlike the AVR captured_build_*.log family:
-    this is the ONLY leg in this module that consumes either native summary fixture, so
-    nothing else depends on 151 staying frozen -- planted_size_baseline_suites_errored.log
-    (Coverage 5) is its own independent, statically-planted fixture, not derived from
-    these two at test time."""
+    Plan 153-15 updated captured_test_native_summary.log and
+    captured_test_native_nodevtools_summary.log IN PLACE, 163 -> 170 cases/succeeded
+    (this phase's plans 02, 04 and 06 added seven new native cases across
+    test_val_eeprom28c.cpp/test_dispatch/test_eeprom28c_sdp.cpp without adding a new
+    suite file; suites unchanged at 17), following the same in-place precedent Phase
+    149 Plan 07 and Plan 151-10 both used. No severance needed here, unlike the AVR
+    captured_build_*.log family: this is the ONLY leg in this module that consumes
+    either native summary fixture, so nothing else depends on 163 staying frozen --
+    planted_size_baseline_suites_errored.log (Coverage 5) is its own independent,
+    statically-planted fixture, not derived from these two at test time.
+
+    RECONCILIATION: this leg was NOT on 153-14-SUMMARY.md's own three-item red list,
+    but the full suite run at the start of this plan showed it RED -- Plan 153-14's
+    own native re-record (163 -> 170 cases on both envs, size_baseline.json's
+    native_envs block) was a genuine coupling this leg has to the live baseline that
+    153-14's hand-off did not enumerate. A new coupling worth naming, per this plan's
+    own reconciliation instruction; not a repointed fixture family (native summary
+    fixtures are updated in place, never severed, since this is the sole reader of
+    either)."""
     for env_name, fixture in (
         ("native", "captured_test_native_summary.log"),
         ("native_nodevtools", "captured_test_native_nodevtools_summary.log"),
@@ -442,37 +462,44 @@ def test_clean_native_both_envs_pass():
             f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
         assert "PASS:" in result.stdout
-        assert "163" in result.stdout, f"Expected '163' in output. Got:\n{result.stdout}"
+        assert "170" in result.stdout, f"Expected '170' in output. Got:\n{result.stdout}"
         assert "17" in result.stdout, f"Expected '17' in output. Got:\n{result.stdout}"
 
 
 def test_planted_flash_regression_flips_checker_to_failure():
     """Coverage 3 — the planted +512 B Leonardo flash figure exits non-zero and names
-    both the baseline (27500, the post-151 live figure) and observed (28012)
+    both the baseline (27630, the post-erase live figure) and observed (28142)
     figures -- the message must name both numbers, not merely fail on flash_total too.
 
-    SEVERED again by Plan 151-10, for the same reason as
+    SEVERED again by Plan 153-15, for the same reason as
     test_clean_avr_all_three_envs_pass above: planted_size_baseline_flash_regression_
-    fullflash.log is derived from captured_build_fullflash_leonardo.log, which still
-    carries the pre-151 27212 B figure, so feeding it here after the live baseline
-    moved to 27500 would make the checker fail for TWO reasons (flash_used has already
+    v151.log is derived from captured_build_v151_leonardo.log, which still carries
+    the pre-erase 27500 B figure, so feeding it here after the live baseline moved to
+    27630 would make the checker fail for TWO reasons (flash_used has already
     diverged before the plant is even applied) instead of the one this leg names --
     exactly the false-green/false-cause pattern this project's own fixture-severance
     precedent exists to avoid. This leg instead reads a new plant,
-    planted_size_baseline_flash_regression_v151.log, derived from
-    captured_build_v151_leonardo.log with the same +512 B offset every prior version of
-    this fixture has used since Phase 123 (27500 + 512 = 28012), against the
-    now-current live default baseline (flash_used 27500, unaffected by the plant)."""
+    planted_size_baseline_flash_regression_v153.log, derived from
+    captured_build_v153_leonardo.log with the same +512 B offset every prior version of
+    this fixture has used since Phase 123 (27630 + 512 = 28142), against the
+    now-current live default baseline (flash_used 27630, unaffected by the plant).
+
+    RECONCILIATION: this leg was not on 153-14-SUMMARY.md's three-item red list --
+    the full suite run at the start of this plan showed it RED, but for the WRONG
+    reason (it still asserted the stale baseline figure 27500, which the checker's
+    FAIL text no longer echoes since the live baseline moved). A leg that fails, but
+    for a reason different from the one it names, is exactly the false-cause pattern
+    this severance exists to fix, not merely a coincidentally-still-red leg."""
     result = _run_checker(
-        ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression_v151.log'}"]
+        ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression_v153.log'}"]
     )
     assert result.returncode != 0, (
         f"expected non-zero exit on a planted flash regression.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "FAIL:" in result.stdout, f"Expected FAIL: in output. Got:\n{result.stdout}"
-    assert "27500" in result.stdout, f"Expected baseline figure 27500. Got:\n{result.stdout}"
-    assert "28012" in result.stdout, f"Expected observed figure 28012. Got:\n{result.stdout}"
+    assert "27630" in result.stdout, f"Expected baseline figure 27630. Got:\n{result.stdout}"
+    assert "28142" in result.stdout, f"Expected observed figure 28142. Got:\n{result.stdout}"
 
 
 def test_planted_unparseable_log_exits_exactly_2():
@@ -555,14 +582,25 @@ def test_baseline_seam_precedence_flips_clean_log_to_fail(tmp_path):
     stale the moment size_baseline.json's live avr_targets moved to the post-151
     figures (flash_used 27212 -> 27500), for the identical reason stated above. Moved
     to captured_build_v151_leonardo.log, genuinely clean against the re-recorded live
-    baseline, restoring the same premise once more."""
+    baseline, restoring the same premise once more.
+
+    RE-SEVERED again by Plan 153-15, for the identical reason: Plan 153-14 moved
+    size_baseline.json's live avr_targets to the post-erase figures (flash_used
+    27500 -> 27630), which captured_build_v151_leonardo.log no longer matches.
+    Unlike most of this leg's fixture history, this leg was still GREEN at the start
+    of this plan -- it only asserts a non-zero exit and the FAIL: marker, neither of
+    which cares which of two stale-vs-tampered reasons produced the failure, so the
+    staleness was silently riding along rather than causing a visible red. Moved to
+    captured_build_v153_leonardo.log anyway, restoring the leg's actual premise: the
+    ONLY failure this run should produce is the one this test plants, not an
+    accidental second one."""
     real_baseline = json.loads(_BASELINE.read_text())
     real_baseline["avr_targets"]["leonardo"]["flash_used"] = 1
     tampered = tmp_path / "tampered_size_baseline.json"
     tampered.write_text(json.dumps(real_baseline))
 
     result = _run_checker(
-        ["--avr-log", f"leonardo={_FIXTURES / 'captured_build_v151_leonardo.log'}"],
+        ["--avr-log", f"leonardo={_FIXTURES / 'captured_build_v153_leonardo.log'}"],
         env_overrides={"FIRESTARTER_SIZE_BASELINE": str(tampered)},
     )
     assert result.returncode != 0, (
@@ -654,9 +692,10 @@ def test_policy_merge05_permits_the_measured_landing_deltas():
 
 
 def test_policy_merge05_admits_the_documented_defect_fix():
-    """Coverage 8b/8c — the adjudication leg (v1.31 Phase 145), extended by Phase 149
-    (PGSZ-04, D-12) to admit a SECOND named exemption, and by Plan 151-10 (LOCK-02)
-    to admit a THIRD, without disturbing either predecessor. Three arms now.
+    """Coverage 8b/8c/8d — the adjudication leg (v1.31 Phase 145), extended by Phase
+    149 (PGSZ-04, D-12) to admit a SECOND named exemption, by Plan 151-10 (LOCK-02) to
+    admit a THIRD, and now by Plan 153-15 (ERASE-08) to admit a FOURTH, without
+    disturbing any predecessor. Four arms now.
 
     History, so nobody re-litigates this by accident. Debug session
     w27c512-program-fail-byte0 added +96 B of flash to all three AVR targets
@@ -737,12 +776,51 @@ def test_policy_merge05_admits_the_documented_defect_fix():
     planted_size_baseline_policy_leonardo_growth_v151.log (+595 B, one byte past the
     new 0+96+210+288 = 594 B allowance), on the new `*_v151*` family.
 
-    Arm 3 is NEW: the fully-landed post-151 tree (merge05_lock_status_v151_
-    {uno,uno328pb,leonardo}.log, numerically identical to captured_build_v151_*.log
+    Arm 3 (from Plan 151-10) was the fully-landed post-151 tree
+    (merge05_lock_status_v151_{uno,uno328pb,leonardo}.log, numerically identical to
+    captured_build_v151_*.log but read here against BASE-01 under --policy merge05),
+    PASSING at its delta (+594 B leonardo / +658 B uno-class) which sat EXACTLY at
+    the THEN-new ceiling -- zero headroom -- with the four-term decomposition
+    visible. That was the Arm-1 analog for Plan 151-10's own growth.
+
+    Plan 153-15 (ERASE-08) repeats the shape a FOURTH time: the standalone
+    `CMD_ERASE` software chip-erase (commits 0d90e5c, df09704, d9a9993, 8b7feac)
+    added a further +130 B of flash, uniform on all three targets, and +0 B of RAM
+    (153-DECISIONS.md's "Post-change measured position (cold)" section). Rather than
+    folding it into any existing constant, it is admitted as a FOURTH,
+    separately-named exemption, MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES -- flash
+    only; no second RAM exemption, since RAM did not move this phase. BASE-01's
+    avr_targets and both flash band literals remain exactly as they were
+    (test_base01_is_not_re_anchored_by_the_new_exemption's now-five-way source-scan
+    is the direct proof).
+
+    Arm 1 is untouched (its own fixed +96 B delta sits inside any non-negative
+    allowance, however many terms compose it, so the widened ceiling changes
+    nothing it asserts) -- but its assertions below are widened AGAIN to also
+    require the new `+erase130` term visible in the same PASS text, so a
+    silently-dropped fifth term would still be caught here.
+
+    Arm 2 (negative control) is RE-DERIVED again, for the same D-18 reason as
+    Coverage 10 below: the old +595 B plant now sits comfortably inside the new
+    724 B leonardo allowance and would go falsely green. Repointed to
+    planted_size_baseline_policy_leonardo_growth_v153.log (+725 B, one byte past the
+    new 0+96+210+288+130 = 724 B allowance), on the new `*_v153*` family.
+
+    Arm 3 (the Plan 151-10 admission proof, merge05_lock_status_v151_*.log) is KEPT
+    -- its own history is a prior exemption's evidence and deleting it would erase
+    that phase's record -- but its assertions below are widened AGAIN, the same way
+    Arm 1's are: the ceiling it is compared against is now 724/788, not 594/658, so
+    it no longer sits at zero headroom (that role now belongs to Arm 4 below); it
+    sits at +594, 130 B inside the new ceiling, with the five-term decomposition
+    visible.
+
+    Arm 4 is NEW: the fully-landed post-erase tree (merge05_erase_standalone_v153_
+    {uno,uno328pb,leonardo}.log, numerically identical to captured_build_v153_*.log
     but read here against BASE-01 under --policy merge05) PASSES at its delta
-    (+594 B leonardo / +658 B uno-class) sitting EXACTLY at the new ceiling -- zero
-    headroom -- with the full four-term decomposition visible. This is the new
-    exemption's own admission proof, the Arm-1 analog for Plan 151-10's own
+    (+724 B leonardo / +724 B uno-class raw, sitting 64 B inside the 788 B uno-class
+    allowance) with leonardo EXACTLY at the new ceiling -- zero headroom -- and the
+    full five-term decomposition visible on all three targets. This is the new
+    exemption's own admission proof, the Arm-3 analog for Plan 153-15's own
     growth."""
     # Arm 1: the pre-Phase-149 tree is admitted, at exactly +96 flash / +0 RAM on
     # every target -- both comfortably inside the NEW allowance too.
@@ -758,7 +836,7 @@ def test_policy_merge05_admits_the_documented_defect_fix():
     assert result.returncode == 0, (
         "expected --policy merge05 to PASS (exit 0) against the pre-Phase-149 tree "
         "under the adjudicated defect-fix exemption, still comfortably inside the "
-        "new page-size-seam allowance.\n"
+        "new erase-standalone allowance.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "PASS:" in result.stdout, f"Expected PASS: in stdout. Got:\n{result.stdout}"
@@ -771,18 +849,18 @@ def test_policy_merge05_admits_the_documented_defect_fix():
         f"Got:\n{result.stdout}"
     )
     assert (
-        "band0+exempt96+seam210+lock288" in result.stdout
-        and "band64+exempt96+seam210+lock288" in result.stdout
+        "band0+exempt96+seam210+lock288+erase130" in result.stdout
+        and "band64+exempt96+seam210+lock288+erase130" in result.stdout
     ), (
-        "expected the PASS text to show the flash allowance DECOMPOSED into FOUR "
+        "expected the PASS text to show the flash allowance DECOMPOSED into FIVE "
         "terms -- the unchanged band literal, the Phase 145 defect-fix exemption, "
-        "the Phase 149 page-size-seam exemption and Plan 151-10's lock-status-read "
-        "exemption -- on both the leonardo (0 B) and the uno-class (64 B) targets. "
-        f"Got:\n{result.stdout}"
+        "the Phase 149 page-size-seam exemption, Plan 151-10's lock-status-read "
+        "exemption and Plan 153-15's erase-standalone exemption -- on both the "
+        f"leonardo (0 B) and the uno-class (64 B) targets. Got:\n{result.stdout}"
     )
     assert "ram=1573/2048[+0<=2=seam2]" in result.stdout, (
         "expected uno's RAM figure to show the RAM allowance's decomposition "
-        f"even at zero delta -- unchanged by Plan 151-10 (RAM did not move). "
+        f"even at zero delta -- unchanged by Plan 153-15 (RAM did not move). "
         f"Got:\n{result.stdout}"
     )
 
@@ -794,33 +872,34 @@ def test_policy_merge05_admits_the_documented_defect_fix():
             "--baseline",
             str(_BASE01_BASELINE),
             "--avr-log",
-            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth_v151.log'}",
+            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth_v153.log'}",
         ]
     )
     assert over.returncode == 1, (
-        "NEGATIVE CONTROL: expected exit 1 on a planted +595 B leonardo growth — one "
-        "byte beyond the new 594 B allowance (96 B defect-fix + 210 B page-size-seam "
-        "+ 288 B lock-status-read exemptions). If this passes, the exemption has "
-        "become a blank cheque and the forward tripwire is gone.\n"
-        f"stdout:\n{over.stdout}\nstderr:\n{over.stderr}"
+        "NEGATIVE CONTROL: expected exit 1 on a planted +725 B leonardo growth — one "
+        "byte beyond the new 724 B allowance (96 B defect-fix + 210 B page-size-seam "
+        "+ 288 B lock-status-read + 130 B erase-standalone exemptions). If this "
+        "passes, the exemption has become a blank cheque and the forward tripwire "
+        f"is gone.\nstdout:\n{over.stdout}\nstderr:\n{over.stderr}"
     )
-    assert "delta=+595" in over.stdout, (
+    assert "delta=+725" in over.stdout, (
         f"Expected the one-past-the-exemption delta named. Got:\n{over.stdout}"
     )
-    assert "allowance of 594 B" in over.stdout, (
+    assert "allowance of 724 B" in over.stdout, (
         f"Expected the leonardo effective allowance named. Got:\n{over.stdout}"
     )
     assert (
         "band 0 B + defect-fix exemption 96 B + page-size-seam exemption 210 B "
-        "+ lock-status-read exemption 288 B" in over.stdout
+        "+ lock-status-read exemption 288 B + erase-standalone exemption 130 B"
+        in over.stdout
     ), (
-        f"Expected the FAIL line to decompose the allowance into all four terms. "
+        f"Expected the FAIL line to decompose the allowance into all five terms. "
         f"Got:\n{over.stdout}"
     )
 
-    # Arm 3 (NEW, Plan 151-10): the fully-landed post-151 tree PASSES at exactly the
-    # new ceiling -- zero headroom on leonardo -- with the four-term decomposition
-    # visible on all three targets. This is the new exemption's own admission proof.
+    # Arm 3 (Plan 151-10's admission proof, KEPT): now sits 130 B inside the new
+    # ceiling rather than at zero headroom -- its assertions are widened to the
+    # current five-term decomposition, never repointed or deleted.
     argv3 = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
     for env, fixture in (
         ("leonardo", "merge05_lock_status_v151_leonardo.log"),
@@ -829,20 +908,57 @@ def test_policy_merge05_admits_the_documented_defect_fix():
     ):
         argv3 += ["--avr-log", f"{env}={_FIXTURES / fixture}"]
 
-    admitted = _run_checker(argv3)
+    lock_status = _run_checker(argv3)
+    assert lock_status.returncode == 0, (
+        "expected --policy merge05 to still PASS (exit 0) against the fully-landed "
+        "post-151 tree, now comfortably inside the widened post-erase allowance.\n"
+        f"stdout:\n{lock_status.stdout}\nstderr:\n{lock_status.stderr}"
+    )
+    assert "PASS:" in lock_status.stdout, (
+        f"Expected PASS: in stdout. Got:\n{lock_status.stdout}"
+    )
+    assert "+594<=724=band0+exempt96+seam210+lock288+erase130" in lock_status.stdout, (
+        "expected leonardo's delta to sit 130 B inside the new ceiling (no longer "
+        f"zero headroom -- that role moved to Arm 4), decomposition visible. "
+        f"Got:\n{lock_status.stdout}"
+    )
+    assert (
+        lock_status.stdout.count("+594<=788=band64+exempt96+seam210+lock288+erase130")
+        == 2
+    ), (
+        "expected both uno-class targets to report the same +594 B delta against "
+        f"their own 788 B allowance, decomposition visible. Got:\n{lock_status.stdout}"
+    )
+
+    # Arm 4 (NEW, Plan 153-15): the fully-landed post-erase tree PASSES at exactly
+    # the new ceiling -- zero headroom on leonardo -- with the five-term
+    # decomposition visible on all three targets. This is the new exemption's own
+    # admission proof.
+    argv4 = ["--policy", "merge05", "--baseline", str(_BASE01_BASELINE)]
+    for env, fixture in (
+        ("leonardo", "merge05_erase_standalone_v153_leonardo.log"),
+        ("uno", "merge05_erase_standalone_v153_uno.log"),
+        ("uno328pb", "merge05_erase_standalone_v153_uno328pb.log"),
+    ):
+        argv4 += ["--avr-log", f"{env}={_FIXTURES / fixture}"]
+
+    admitted = _run_checker(argv4)
     assert admitted.returncode == 0, (
         "expected --policy merge05 to PASS (exit 0) against the fully-landed "
-        "post-151 tree, exactly at the new allowance ceiling.\n"
+        "post-erase tree, exactly at the new allowance ceiling.\n"
         f"stdout:\n{admitted.stdout}\nstderr:\n{admitted.stderr}"
     )
     assert "PASS:" in admitted.stdout, f"Expected PASS: in stdout. Got:\n{admitted.stdout}"
-    assert "+594<=594=band0+exempt96+seam210+lock288" in admitted.stdout, (
+    assert "+724<=724=band0+exempt96+seam210+lock288+erase130" in admitted.stdout, (
         "expected leonardo's delta to sit EXACTLY at the new ceiling (zero "
         f"headroom), decomposition visible. Got:\n{admitted.stdout}"
     )
-    assert admitted.stdout.count("+594<=658=band64+exempt96+seam210+lock288") == 2, (
-        "expected both uno-class targets to report the same +594 B delta against "
-        f"their own 658 B allowance, decomposition visible. Got:\n{admitted.stdout}"
+    assert (
+        admitted.stdout.count("+724<=788=band64+exempt96+seam210+lock288+erase130")
+        == 2
+    ), (
+        "expected both uno-class targets to report the same +724 B delta against "
+        f"their own 788 B allowance, decomposition visible. Got:\n{admitted.stdout}"
     )
 
 
@@ -870,7 +986,22 @@ def test_base01_is_not_re_anchored_by_the_new_exemption():
     fourth pin, the exact string `MERGE05_LOCK_STATUS_READ_EXEMPTION_BYTES = 288`,
     the direct tripwire on this plan's own new exemption -- a new NAMED exemption
     is the sanctioned mechanism that leaves this leg green; re-anchoring BASE-01 a
-    fourth time is not, and would turn it red."""
+    fourth time is not, and would turn it red.
+
+    STRENGTHENED again by Plan 153-15 (ERASE-08): NOT repointed -- this leg never
+    reads a fixture, by design, so it cannot be satisfied by planting a convenient
+    log; the property it proves (BASE-01's own frozen figures, plus the checker's
+    own source) is orthogonal to any *_v153* fixture. Three new pins added, all
+    reading only BASE-01's own JSON and the checker's own source text:
+    (1) the exact string `MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES = 130` -- the
+    direct tripwire on this plan's own fifth-named-total, fourth-flash exemption;
+    (2) that the constant is actually READ by `_merge05_flash_allowance()` itself
+    (not merely defined and left unconsumed) -- extracted by slicing the function's
+    own source between its `def` line and the next; (3) that the constant's NAME
+    never appears anywhere inside BASE-01's own raw JSON text -- BASE-01 is the
+    frozen anchor, and an exemption constant leaking into it would be a form of
+    laundering this leg exists to catch, not merely re-anchoring the figures
+    directly."""
     with open(_BASE01_BASELINE) as f:
         base01 = json.load(f)
     assert base01["avr_targets"]["uno"]["flash_used"] == 24824
@@ -898,30 +1029,58 @@ def test_base01_is_not_re_anchored_by_the_new_exemption():
         "Plan 151-10's own new exemption must be present, named and exactly 288 -- "
         "the direct tripwire on this plan's own admission"
     )
+    assert "MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES = 130" in checker_src, (
+        "Plan 153-15's own new exemption must be present, named and exactly 130 -- "
+        "the direct tripwire on this plan's own admission"
+    )
+
+    # Strengthening (1): the fourth flash exemption must actually be READ by the
+    # flash allowance resolver, not merely defined and left unconsumed.
+    func_start = checker_src.index("def _merge05_flash_allowance(")
+    func_end = checker_src.index("\ndef ", func_start + 1)
+    flash_allowance_body = checker_src[func_start:func_end]
+    assert "MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES" in flash_allowance_body, (
+        "the erase-standalone exemption constant must be read inside "
+        "_merge05_flash_allowance() itself -- a constant that is only defined and "
+        "never consumed by the resolver is not a real exemption"
+    )
+
+    # Strengthening (2): the exemption constant's NAME must never appear inside
+    # BASE-01's own raw JSON text -- BASE-01 is the frozen anchor, never a place an
+    # exemption gets laundered into.
+    base01_raw = _BASE01_BASELINE.read_text()
+    assert "MERGE05_ERASE_STANDALONE_EXEMPTION_BYTES" not in base01_raw, (
+        "the erase-standalone exemption constant must never be recorded inside "
+        "BASE-01 itself -- BASE-01 is the frozen anchor, not a place exemptions "
+        "get laundered into"
+    )
 
 
 def test_policy_merge05_fires_on_uno_class_over_band():
-    """Coverage 9 — the planted +659 B Uno-class flash growth (one byte outside the
-    EFFECTIVE 658 B allowance: the unchanged 64 B band plus the 96 B defect-fix
-    exemption plus the 210 B page-size-seam exemption plus Plan 151-10's new 288 B
-    lock-status-read exemption) must fail --policy merge05, naming the computed
-    delta, the allowance it exceeds, and the allowance's full four-term
-    decomposition.
+    """Coverage 9 — the planted +789 B Uno-class flash growth (one byte outside the
+    EFFECTIVE 788 B allowance: the unchanged 64 B band plus the 96 B defect-fix
+    exemption plus the 210 B page-size-seam exemption plus Plan 151-10's 288 B
+    lock-status-read exemption plus Plan 153-15's new 130 B erase-standalone
+    exemption) must fail --policy merge05, naming the computed delta, the allowance
+    it exceeds, and the allowance's full five-term decomposition.
 
-    Re-derived from +371 B by Plan 151-10 (LOCK-02), for the same D-18 reason every
-    prior generation of this plant was re-derived: once the new exemption exists, a
-    +371 B plant is INSIDE the new allowance and this leg would have gone falsely
-    green while still claiming to prove a firing. The plant's single cause (a
-    raised uno `used` figure) and its role (exactly one byte outside the enforced
-    ceiling) are unchanged; only the number moved, and only because the ceiling
-    moved.
+    Re-derived from +659 B by Plan 153-15 (ERASE-08), for the same D-18 reason
+    every prior generation of this plant was re-derived: once the new exemption
+    exists, a +659 B plant is INSIDE the new allowance and this leg would have
+    gone falsely green while still claiming to prove a firing. The plant's single
+    cause (a raised uno `used` figure) and its role (exactly one byte outside the
+    enforced ceiling) are unchanged; only the number moved, and only because the
+    ceiling moved.
 
-    SEVERED onto the new `*_v151*` family for the same reason quick task 260820-a7w
-    severed it before: planted_size_baseline_policy_uno_over_band_fullflash.log's
-    `used` figure (25195) is now well inside the new 658 B allowance and would fire
-    for the wrong reason -- or not fire at all -- if fed here unmodified. Repointed
-    to planted_size_baseline_policy_uno_over_band_v151.log, `used` raised to 25483
-    (BASE-01's 24824 + 659), preserving the single-byte-past-the-ceiling role."""
+    SEVERED onto the new `*_v153*` family for the same reason quick task 260820-a7w
+    and Plan 151-10 severed it before: planted_size_baseline_policy_uno_over_band_
+    v151.log's `used` figure (25483) is now well inside the new 788 B allowance and
+    would fire for the wrong reason -- or not fire at all -- if fed here unmodified.
+    Repointed to planted_size_baseline_policy_uno_over_band_v153.log, `used` raised
+    to 25613 (BASE-01's 24824 + 789), preserving the single-byte-past-the-ceiling
+    role, computed by importing the checker: `_merge05_flash_allowance("uno")`
+    returns `(64, 96, 210, 288, 130, 788, "uno-class")`, so 24824 + 788 + 1 =
+    25613."""
     result = _run_checker(
         [
             "--policy",
@@ -929,48 +1088,52 @@ def test_policy_merge05_fires_on_uno_class_over_band():
             "--baseline",
             str(_BASE01_BASELINE),
             "--avr-log",
-            f"uno={_FIXTURES / 'planted_size_baseline_policy_uno_over_band_v151.log'}",
+            f"uno={_FIXTURES / 'planted_size_baseline_policy_uno_over_band_v153.log'}",
         ]
     )
     assert result.returncode != 0, (
-        f"expected non-zero exit on a planted +659 B uno-class flash growth.\n"
+        f"expected non-zero exit on a planted +789 B uno-class flash growth.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
-    assert "delta=+659" in result.stdout, f"Expected 'delta=+659'. Got:\n{result.stdout}"
-    assert "allowance of 658 B" in result.stdout, (
-        f"Expected 'allowance of 658 B'. Got:\n{result.stdout}"
+    assert "delta=+789" in result.stdout, f"Expected 'delta=+789'. Got:\n{result.stdout}"
+    assert "allowance of 788 B" in result.stdout, (
+        f"Expected 'allowance of 788 B'. Got:\n{result.stdout}"
     )
     assert (
         "band 64 B + defect-fix exemption 96 B + page-size-seam exemption 210 B "
-        "+ lock-status-read exemption 288 B" in result.stdout
+        "+ lock-status-read exemption 288 B + erase-standalone exemption 130 B"
+        in result.stdout
     ), (
-        "Expected the allowance decomposed into all four terms: the unchanged "
+        "Expected the allowance decomposed into all five terms: the unchanged "
         "64 B band, the 96 B defect-fix exemption, the 210 B page-size-seam "
-        f"exemption and the new 288 B lock-status-read exemption. Got:\n{result.stdout}"
+        "exemption, the 288 B lock-status-read exemption and the new 130 B "
+        f"erase-standalone exemption. Got:\n{result.stdout}"
     )
 
 
 def test_policy_merge05_fires_on_leonardo_growth():
-    """Coverage 10 — the planted +595 B Leonardo flash growth must fail --policy
+    """Coverage 10 — the planted +725 B Leonardo flash growth must fail --policy
     merge05 (Leonardo's base band is still 0 B must-not-grow, so its effective
-    allowance is exactly 96 + 210 + 288 = 594 B, and +595 is one byte past it),
-    naming the env and the delta.
+    allowance is exactly 96 + 210 + 288 + 130 = 724 B, and +725 is one byte past
+    it), naming the env and the delta.
 
-    Re-derived from +307 B by Plan 151-10 (LOCK-02) for the same reason as
-    Coverage 9 above: a +307 B plant now sits inside the new exemption and this
+    Re-derived from +595 B by Plan 153-15 (ERASE-08) for the same reason as
+    Coverage 9 above: a +595 B plant now sits inside the new exemption and this
     leg would have gone falsely green. The plant's single cause and its
     one-byte-past-the-ceiling role are unchanged. This is the same fixture
     test_policy_merge05_admits_the_documented_defect_fix uses as its Arm 2
     negative control — deliberately shared rather than duplicated byte-identically;
     see that leg's docstring for the division of labour.
 
-    SEVERED onto the new `*_v151*` family for the same reason as Coverage 9 above:
-    this fixture's old +307 B plant is now well inside the new 594 B allowance, so
-    it moved to planted_size_baseline_policy_leonardo_growth_v151.log -- `used`
-    raised to 27501 (BASE-01's 26906 + 595), single-byte-past-the-ceiling role
-    unchanged. Shared, as before, with
-    test_policy_merge05_admits_the_documented_defect_fix's Arm 2 negative
-    control."""
+    SEVERED onto the new `*_v153*` family for the same reason as Coverage 9 above:
+    this fixture's old +595 B plant is now well inside the new 724 B allowance, so
+    it moved to planted_size_baseline_policy_leonardo_growth_v153.log -- `used`
+    raised to 27631 (BASE-01's 26906 + 725), single-byte-past-the-ceiling role
+    unchanged, computed by importing the checker:
+    `_merge05_flash_allowance("leonardo")` returns
+    `(0, 96, 210, 288, 130, 724, "leonardo")`, so 26906 + 724 + 1 = 27631. Shared,
+    as before, with test_policy_merge05_admits_the_documented_defect_fix's Arm 2
+    negative control."""
     result = _run_checker(
         [
             "--policy",
@@ -978,15 +1141,15 @@ def test_policy_merge05_fires_on_leonardo_growth():
             "--baseline",
             str(_BASE01_BASELINE),
             "--avr-log",
-            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth_v151.log'}",
+            f"leonardo={_FIXTURES / 'planted_size_baseline_policy_leonardo_growth_v153.log'}",
         ]
     )
     assert result.returncode != 0, (
-        f"expected non-zero exit on a planted +595 B Leonardo flash growth.\n"
+        f"expected non-zero exit on a planted +725 B Leonardo flash growth.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "leonardo" in result.stdout, f"Expected 'leonardo'. Got:\n{result.stdout}"
-    assert "delta=+595" in result.stdout, f"Expected 'delta=+595'. Got:\n{result.stdout}"
+    assert "delta=+725" in result.stdout, f"Expected 'delta=+725'. Got:\n{result.stdout}"
 
 
 def test_policy_merge05_fires_on_ram_move():
@@ -1016,7 +1179,19 @@ def test_policy_merge05_fires_on_ram_move():
     leg's asserted values (delta=+3, ram allowance of 2 B, page-size-seam exemption
     2 B) are UNCHANGED. Repointed to planted_size_baseline_policy_ram_moved_v151.log,
     whose RAM/Flash figures match its `_fullflash` predecessor exactly -- moved
-    purely so no leg in this module still reads a retired family."""
+    purely so no leg in this module still reads a retired family.
+
+    RE-SEVERED again by Plan 153-15 onto the new `*_v153*` family, for
+    family-consistency ONLY -- Plan 153-15 measured its own RAM growth at exactly
+    0 B against the immediately-prior position (153-DECISIONS.md's "Post-change
+    measured position (cold)" section), so NO second RAM exemption was authored
+    and this leg's asserted values (delta=+3, ram allowance of 2 B, page-size-seam
+    exemption 2 B) remain UNCHANGED, byte-identical to the `_v151` figure -- the
+    plan's own action calls this out explicitly ("that tolerance did not change in
+    this phase, so this plant's figure is arithmetically the same as the previous
+    generation's"). Repointed to planted_size_baseline_policy_ram_moved_v153.log,
+    whose RAM/Flash figures match its `_v151` predecessor exactly -- moved purely
+    so no leg in this module still reads a retired family."""
     result = _run_checker(
         [
             "--policy",
@@ -1024,7 +1199,7 @@ def test_policy_merge05_fires_on_ram_move():
             "--baseline",
             str(_BASE01_BASELINE),
             "--avr-log",
-            f"uno={_FIXTURES / 'planted_size_baseline_policy_ram_moved_v151.log'}",
+            f"uno={_FIXTURES / 'planted_size_baseline_policy_ram_moved_v153.log'}",
         ]
     )
     assert result.returncode != 0, (
@@ -1056,11 +1231,17 @@ def test_default_mode_is_unchanged_by_the_new_flag():
     SEVERED again by Plan 151-10 for the identical reason: the live default
     baseline moved to the post-151 figures, so this leg now reads
     captured_build_v151_{uno,uno328pb,leonardo}.log -- the fixture, never the
-    assertion, moved; the `<=64` substring check is exactly as it was."""
+    assertion, moved; the `<=64` substring check is exactly as it was.
+
+    SEVERED again by Plan 153-15 for the identical reason: the live default
+    baseline moved to the post-erase figures (uno 25548, uno328pb 25598, leonardo
+    27630), so this leg now reads captured_build_v153_{uno,uno328pb,leonardo}.log
+    -- the fixture, never the assertion, moved once more; the `<=64` substring
+    check is exactly as it was."""
     for env_name, fixture in (
-        ("uno", "captured_build_v151_uno.log"),
-        ("uno328pb", "captured_build_v151_uno328pb.log"),
-        ("leonardo", "captured_build_v151_leonardo.log"),
+        ("uno", "captured_build_v153_uno.log"),
+        ("uno328pb", "captured_build_v153_uno328pb.log"),
+        ("leonardo", "captured_build_v153_leonardo.log"),
     ):
         result = _run_checker(["--avr-log", f"{env_name}={_FIXTURES / fixture}"])
         assert result.returncode == 0, (
