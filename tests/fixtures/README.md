@@ -72,6 +72,121 @@ carry no `captured_`/`planted_`/`clean_` prefix on purpose: they are neither a r
 the current tree nor a deliberate violation, but a capture frozen at a past anchor point, and
 `tests/test_checker_convention.py` does not require a prefix of a file it does not enumerate.
 
+## `_fullflash` fixture families (quick task 260820-a7w)
+
+Quick task 260820-a7w made both flash-limit guards report the AVR MCUs' real 32768 B
+flash size (uno 32256->32768, uno328pb 32384->32768, leonardo 28672->32768), moving
+`flash_total` in BOTH recorded baselines (`scripts/baseline/size_baseline.json` AND,
+by operator ruling, `scripts/baseline/size_baseline_base01.json`). Every AVR fixture
+log embeds its ceiling verbatim in its `Flash:` report line, so this stranded nine
+`tests/test_check_size_baseline.py` legs across both modes (default and
+`--policy merge05`) whose fixtures still carried the old totals. Followed this
+directory's established remedy -- sever onto new fixture families -- rather than
+editing shared fixtures in place:
+
+- **`captured_build_fullflash_{uno,uno328pb,leonardo}.log`** (`captured_`) --
+  byte-for-byte copies of the cold-rebuild logs committed at
+  `.planning/quick/260820-a7w-make-the-flash-limit-guards-to-be-the-ac/
+  260820-a7w-cold-{uno,uno328pb,leonardo}.log`. Retires
+  `captured_build_v132_{uno,uno328pb,leonardo}.log` for the default-mode legs.
+- **`planted_size_baseline_flash_regression_fullflash.log`** (`planted_`) -- the
+  usual +512 B Leonardo `used`-figure plant, derived from
+  `captured_build_fullflash_leonardo.log`. Retires
+  `planted_size_baseline_flash_regression_v132.log`.
+- **`merge05_base01_anchor_fullflash_{uno,uno328pb,leonardo}.log`** -- BASE-01's own
+  anchor figures (24824/24874/26906), with ONLY the `Flash:` line's total changed to
+  32768 (percentage recomputed for readability; `used` and the `RAM:` line
+  untouched). Retires `merge05_base01_anchor_{uno,uno328pb,leonardo}.log`.
+- **`merge05_defect_fix_fullflash_{uno,uno328pb,leonardo}.log`** -- derived from
+  `captured_build_{uno,uno328pb,leonardo}.log` (used 24920/24970/27002) the same way,
+  total-only. Given a PURPOSE name rather than inheriting `captured_build_*`: after
+  this severance the family is read by exactly one leg (the merge05 defect-fix
+  admission arm), and the old name meant "a captured default-mode log", which this
+  family no longer is.
+- **`planted_size_baseline_policy_{uno_over_band,leonardo_growth,ram_moved}_
+  fullflash.log`** -- the three `--policy merge05` negative-control plants, each with
+  ONLY the total changed to 32768; every planted `used`/RAM figure and its
+  one-byte-past-the-allowance role are unchanged, because BASE-01's growth anchors
+  never moved.
+
+**Retired, read by no leg after this severance -- KEPT, not deleted.** Decision:
+leave `captured_build_v132_{uno,uno328pb,leonardo}.log` and its planted sibling
+`planted_size_baseline_flash_regression_v132.log`, the pre-149
+`captured_build_{uno,uno328pb,leonardo}.log` trio, `merge05_base01_anchor_{uno,
+uno328pb,leonardo}.log`, and the three pre-`_fullflash` `planted_size_baseline_
+policy_*.log` fixtures in this directory rather than deleting them. Reason: each is
+a byte-for-byte, previously-committed measurement record (Phase 144/145/149's cold
+builds and the corresponding hand-derived plants); this directory's own convention
+already excludes any file the mechanical inventory (`tests/test_checker_convention.py`
+where applicable, or a plain `grep` here) does not name from being treated as live,
+so keeping them costs nothing and preserves a legible history of the pre-260820-a7w
+ceilings without needing a git-history dig. A future severance should apply the same
+reasoning rather than re-litigating it.
+
+**Not this task's doing.** `planted_size_baseline_flash_regression.log` (the pre-v132
+sibling of the fixture retired above) was ALREADY orphaned before quick task
+260820-a7w -- no leg referenced it even at the commit immediately preceding this
+task. Recorded here so it is not mistaken for a casualty of this severance.
+
+## `_v151` fixture family (Plan 151-10, LOCK-02)
+
+Plan 151-10 measured Phase 151's own firmware growth cold: `dev lock-status`
+(Plan 151-08's firmware read) cost +288 B of flash, uniform on all three AVR targets,
+and +0 B of RAM, against the pre-151 live baseline. `scripts/baseline/size_baseline.json`
+was re-recorded to the new cold figures (uno 25418/1575, uno328pb 25468/1581, leonardo
+27500/2016), which the `_fullflash` family (still carrying the pre-151 figures) no
+longer matches -- eight `tests/test_check_size_baseline.py` legs would have gone RED or
+falsely green if left pointed at it. Followed the same established remedy as quick task
+260820-a7w -- sever onto a new fixture family rather than editing shared fixtures in
+place:
+
+- **`captured_build_v151_{uno,uno328pb,leonardo}.log`** (`captured_`) -- byte-for-byte
+  cold `rm -rf .pio/build/<env>` + single `pio run -e <env>` captures per env
+  (`.planning/phases/151-protection-readability-lock-status/151-SIZE-TRANSCRIPTS.md`).
+  Retires `captured_build_fullflash_{uno,uno328pb,leonardo}.log` for the default-mode
+  legs.
+- **`merge05_base01_anchor_v151_{uno,uno328pb,leonardo}.log`** -- BASE-01's own anchor
+  figures (24824/24874/26906, RAM 1573/1579/2014), everything else left as captured.
+  Retires `merge05_base01_anchor_fullflash_{uno,uno328pb,leonardo}.log`.
+- **`merge05_lock_status_v151_{uno,uno328pb,leonardo}.log`** -- the new exemption's own
+  admission proof: BASE-01 + 96 + 210 + 288 = the cold post-151 tree exactly, so
+  numerically identical to `captured_build_v151_*.log` but read against BASE-01 under
+  `--policy merge05`, at zero headroom on leonardo. New purpose-named family; no prior
+  fixture retired by this one.
+- **`planted_size_baseline_policy_leonardo_growth_v151.log`** -- leonardo's `used`
+  raised to 27501 (+595 B, one byte past the new 594 B allowance). Retires
+  `planted_size_baseline_policy_leonardo_growth_fullflash.log`.
+- **`planted_size_baseline_policy_uno_over_band_v151.log`** -- uno's `used` raised to
+  25483 (+659 B, one byte past the new 658 B allowance). Retires
+  `planted_size_baseline_policy_uno_over_band_fullflash.log`.
+- **`planted_size_baseline_policy_ram_moved_v151.log`** -- uno's RAM `used` raised to
+  1576 (+3 B, one byte past the unmoved 2 B RAM tolerance -- Plan 151-10 added NO
+  second RAM exemption, so this figure is unchanged from its `_fullflash` predecessor;
+  moved purely for family-consistency). Retires
+  `planted_size_baseline_policy_ram_moved_fullflash.log`.
+- **`planted_size_baseline_flash_regression_v151.log`** -- the usual +512 B Leonardo
+  `used`-figure plant, derived from `captured_build_v151_leonardo.log` (27500 + 512 =
+  28012). Retires `planted_size_baseline_flash_regression_fullflash.log`.
+
+`captured_test_native_summary.log` and `captured_test_native_nodevtools_summary.log`
+were updated IN PLACE, 151 -> 163 cases/succeeded (suites unchanged at 17) -- no
+severance needed, following the same in-place precedent Phase 149 Plan 07 used, since
+`test_clean_native_both_envs_pass` is the only leg reading either fixture at test time.
+
+**Retired, read by no leg after this severance -- KEPT, not deleted.** Decision:
+leave `captured_build_fullflash_{uno,uno328pb,leonardo}.log` and its planted sibling
+`planted_size_baseline_flash_regression_fullflash.log`, `merge05_base01_anchor_
+fullflash_{uno,uno328pb,leonardo}.log`, `merge05_defect_fix_fullflash_{uno,uno328pb,
+leonardo}.log` (still read by Arm 1 of `test_policy_merge05_admits_the_documented_
+defect_fix` -- NOT retired), and `planted_size_baseline_policy_{uno_over_band,
+leonardo_growth,ram_moved}_fullflash.log` in this directory rather than deleting them.
+Same reasoning as the a7w severance above: each is a byte-for-byte, previously-committed
+measurement record; this directory's own convention already excludes any file the
+mechanical inventory does not name from being treated as live, so keeping them costs
+nothing and preserves a legible history of the pre-151 ceilings without needing a
+git-history dig. Every family the a7w severance itself retired is unaffected by this
+plan and remains exactly as it was left.
+
 ## Release-asset fixture trees (Phase 128 Plan 01)
 
 Three new `pio_build/`-rooted directory-tree fixtures back

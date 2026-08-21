@@ -76,7 +76,7 @@ Linking .pio/build/leonardo/firestarter_leonardo.elf
 Checking size .pio/build/leonardo/firestarter_leonardo.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [========  ]  78.7% (used 2014 bytes from 2560 bytes)
-Flash: [========= ]  93.8% (used 27003 bytes from 28672 bytes)
+Flash: [========= ]  93.8% (used 27213 bytes from 28672 bytes)
 Building .pio/build/leonardo/firestarter_leonardo.hex
 ========================= [SUCCESS] Took 2.49 seconds =========================
 

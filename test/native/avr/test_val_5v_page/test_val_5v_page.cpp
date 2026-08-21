@@ -31,10 +31,18 @@
 #include <ArduinoFake.h>
 #include <unity.h>
 
+#include <vector>
+#include <cstdint>
+
 extern "C" {
 #include "memory.h"
 }
+/* Phase 153 (ERASE-02): is_operation_in_progress resolves from here. */
+#include "operation_utils.h"
 #include "firestarter.h"
+#include "flash_utils.h"
+#include "flash_5v_page.h"
+#include "messages.h"
 #include "rurp_pinout.h"
 
 using namespace fakeit;
@@ -45,14 +53,42 @@ extern "C" int  bus_recording_count();
 extern "C" uint8_t recorded_reg(int i);
 extern "C" uint8_t recorded_data(int i);
 
+/* Phase 151 (LOCK-02) — wire-byte capture for the CMD_LOCK_STATUS legs
+ * below. [env:native]'s build_src_filter links the REAL
+ * src/boards/rurp_serial_utils.cpp into this test binary (see that file's
+ * header comment), so LOG_DATA_ID_BYTES -> rurp_log_id -> _firestarter_
+ * emit_frame really does write one byte at a time to SERIAL_PORT — exactly
+ * the mechanism test_messages/test_rurp_log_id.cpp already captures this
+ * same way. */
+static std::vector<uint8_t> s_wire_bytes;
+
+/* Phase 151 (LOCK-02) — a controllable stand-in for handle->firestarter_get_data,
+ * installed AFTER configure_memory() has already assigned the real
+ * memory_get_data, so it overrides only the specific call the raw-byte-
+ * fidelity leg needs to control. Ignores address/handle deliberately: this
+ * suite's synthetic handle carries a zero-initialized bus_config, so the
+ * real memory_get_data's address remap has no meaningful address to
+ * preserve anyway -- this suite never asserts on the remapped address. */
+static uint8_t s_stub_raw_value = 0;
+static uint8_t stub_get_data_return_fixed(firestarter_handle_t* handle, uint32_t address) {
+    (void)handle; (void)address;
+    return s_stub_raw_value;
+}
+
 void setUp(void) {
     ArduinoFakeReset();
-    When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t))).AlwaysReturn(1);
+    s_wire_bytes.clear();
+    When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t)))
+        .AlwaysDo([](uint8_t b) -> size_t {
+            s_wire_bytes.push_back(b);
+            return (size_t)1;
+        });
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(const uint8_t*, size_t))).AlwaysReturn(1);
     When(Method(ArduinoFake(Serial), flush)).AlwaysReturn();
     /* delayMicroseconds is called by flash_5v_page_wait_for_page_write (10µs poll delay)
-     * and by memory_set_data (3µs write settle). Must be stubbed so the operation-
-     * phase tests (test_5v_page_write_execute_*) don't abort on an unmocked call. */
+     * and by memory_set_data/memory_get_data (3µs write/read settle). Must be stubbed so
+     * the operation-phase tests (test_5v_page_write_execute_*, and Phase 151's
+     * CMD_LOCK_STATUS legs below) don't abort on an unmocked call. */
     When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
     clear_bus_recording();
 }
@@ -191,6 +227,31 @@ static firestarter_handle_t make_write_handle_with_data(void) {
     return h;
 }
 
+/* Phase 153 (ERASE-02) — the only factory in this suite that drives
+ * flash_5v_page_write_init itself rather than bypassing it. FLAG_CAN_ERASE
+ * and FLAG_SKIP_BLANK_CHECK are both clear (ctrl_flags = 0), which is the
+ * "blank-check would run" configuration: is_flag_set(FLAG_CAN_ERASE) is
+ * false so the erase-on-write block at flash_5v_page.cpp:80-86 is not
+ * entered, and is_flag_set(FLAG_SKIP_BLANK_CHECK) is false so the deleted
+ * conditional's guard would have been satisfied. mem_size is a small 2048 --
+ * BLANK_CHECK_CHUNK_SIZE (memory.cpp:393) -- because mem_util_blank_check
+ * sets is_operation_in_progress and mallocs progress_data on its FIRST call
+ * regardless of mem_size, so the oracle below does not depend on how large
+ * mem_size is. */
+static firestarter_handle_t make_write_init_handle_blank_check_enabled(void) {
+    firestarter_handle_t h = {};
+    h.protocol   = 0x05;
+    h.cmd        = CMD_WRITE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id    = 0; /* skip chip-id branch in write_init */
+    h.mem_size   = 2048;
+    h.address    = 0;
+    h.data_size  = 0;
+    /* ctrl_flags = 0: FLAG_CAN_ERASE clear (no erase-on-write branch),
+     * FLAG_SKIP_BLANK_CHECK clear (the blank-check axis is live). */
+    return h;
+}
+
 /* Helper: scan recording for FLASH_ENABLE_WRITE address signature.
  * FLASH_ENABLE_WRITE addresses: 0x5555, 0x2AAA, 0x5555.
  * fu_flash_fast_address writes (LSB=addr&0xFF, MSB=(addr>>8)&0xFF).
@@ -250,6 +311,185 @@ void test_5v_page_write_execute_no_vpp(void) {
         "flash_5v_page_write_execute (operation phase) must NOT set any VPP-enable CTL bit");
 }
 
+/* ─── Phase 153 (ERASE-02): write-INIT must perform no pre-write blank
+ * check on protocol 0x05, whether or not the blank-check skip flag is set ─ */
+
+/* Case (ERASE-02): with FLAG_SKIP_BLANK_CHECK and FLAG_CAN_ERASE both clear,
+ * one call to flash_5v_page_write_init, driven through the dispatch
+ * pointer (not by function name, so this exercises what configure_memory
+ * actually wired), must leave is_operation_in_progress FALSE and
+ * progress_data NULL. mem_util_blank_check is the ONLY setter of either
+ * observable on this path (memory.cpp:401-405), so a FALSE/NULL pair here
+ * is the single-shot-INIT proof, not an assumption of symmetry with the
+ * 0x0D case (test_case30, test_eeprom28c_sdp.cpp). RED before Task 2's
+ * deletion, GREEN after. */
+void test_5v_page_write_init_no_blank_check_with_flag_clear_erase02(void) {
+    firestarter_handle_t h = make_write_init_handle_blank_check_enabled();
+    configure_memory(&h);
+    clear_bus_recording();
+
+    h.firestarter_operation_init(&h);
+
+    TEST_ASSERT_FALSE_MESSAGE(is_operation_in_progress(&h),
+        "ERASE-02: is_operation_in_progress must be FALSE after exactly one "
+        "flash_5v_page_write_init call with FLAG_SKIP_BLANK_CHECK clear -- "
+        "mem_util_blank_check is the only setter of this flag on the write-INIT "
+        "path, so TRUE here would mean the pre-write blank check still ran and "
+        "left a multi-call INIT loop pending");
+    TEST_ASSERT_NULL_MESSAGE(h.progress_data,
+        "ERASE-02: h.progress_data must be NULL -- a non-NULL value means "
+        "mem_util_blank_check allocated a blank_check_progress_data_t block, "
+        "i.e. the pre-write blank check still ran");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "ERASE-02: the removed blank check can no longer fail a write on a "
+        "non-blank part");
+    assert_no_vpp_in_recording(
+        "ERASE-02: with FLAG_CAN_ERASE clear, flash_5v_page_write_init must "
+        "energise no VPP rail -- the erase-on-write branch above the deleted "
+        "conditional must not be entered by this INIT call");
+}
+
+/* ─── Phase 151 (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) ─────────── */
+
+/* Leg 1 (Dispatch): CMD_LOCK_STATUS must wire firestarter_operation_main to
+ * flash_5v_page_read_protection_execute. Unlike flash_nor_unlock.cpp, this
+ * file assigns no firestarter_operation_init before the switch, so
+ * firestarter_operation_init stays NULL from configure_memory's own
+ * top-of-function reset -- there is nothing for the CMD_LOCK_STATUS arm to
+ * null. */
+void test_5v_page_lock_status_dispatch(void) {
+    firestarter_handle_t h = make_handle(0x05, CMD_LOCK_STATUS);
+    configure_memory(&h);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "configure_memory must not error on 0x05 CMD_LOCK_STATUS");
+    TEST_ASSERT_EQUAL_PTR_MESSAGE((const void*)flash_5v_page_read_protection_execute,
+        (const void*)h.firestarter_operation_main,
+        "flash_5v_page: CMD_LOCK_STATUS must wire firestarter_operation_main to flash_5v_page_read_protection_execute");
+    TEST_ASSERT_NULL_MESSAGE((const void*)h.firestarter_operation_init,
+        "flash_5v_page: CMD_LOCK_STATUS must leave firestarter_operation_init NULL (this file assigns none before the switch)");
+}
+
+/* Leg 2 (Sequence pinning): asserts every {address, byte} pair and every
+ * named constant Task 1 transcribed from 151-SEQUENCES.md, by symbol. This
+ * is a CHANGE DETECTOR, NOT A CORRECTNESS PROOF -- infoic.xml's `config`
+ * field is the literal string "NULL" on every 0x05 entry, so there is no
+ * machine-readable upstream to diff this pinning against; it can only
+ * prove the bytes committed today match the bytes committed yesterday.
+ * The address/decode pair here is also this artifact's lowest-confidence
+ * citation (151-SEQUENCES.md: sourced by structural analogy, not an
+ * independently re-checked page) -- pinning it does not upgrade that. */
+void test_5v_page_lock_status_pinned_sequence(void) {
+    TEST_ASSERT_EQUAL_HEX32(0x0002UL, (uint32_t)FLASH_5V_PAGE_BOOT_BLOCK_STATUS_ADDR);
+    TEST_ASSERT_EQUAL_HEX8(0xFF, FLASH_5V_PAGE_BOOT_BLOCK_UNLOCKED);
+    TEST_ASSERT_EQUAL_HEX8(0xFE, FLASH_5V_PAGE_BOOT_BLOCK_LOCKED);
+
+    /* Mode entry/exit is a FINDING (151-SEQUENCES.md): the same AA/55/90 as
+     * FLASH_ENABLE_ID -- no distinct Product-ID-mode table exists in this
+     * project. Pin every {address, byte} pair, not just presence. */
+    TEST_ASSERT_EQUAL_UINT32(0x5555UL, FLASH_ENABLE_ID[0].address);
+    TEST_ASSERT_EQUAL_HEX8(0xAA, FLASH_ENABLE_ID[0].byte);
+    TEST_ASSERT_EQUAL_UINT32(0x2AAAUL, FLASH_ENABLE_ID[1].address);
+    TEST_ASSERT_EQUAL_HEX8(0x55, FLASH_ENABLE_ID[1].byte);
+    TEST_ASSERT_EQUAL_UINT32(0x5555UL, FLASH_ENABLE_ID[2].address);
+    TEST_ASSERT_EQUAL_HEX8(0x90, FLASH_ENABLE_ID[2].byte);
+
+    TEST_ASSERT_EQUAL_UINT32(0x5555UL, FLASH_DISABLE_ID[0].address);
+    TEST_ASSERT_EQUAL_HEX8(0xAA, FLASH_DISABLE_ID[0].byte);
+    TEST_ASSERT_EQUAL_UINT32(0x2AAAUL, FLASH_DISABLE_ID[1].address);
+    TEST_ASSERT_EQUAL_HEX8(0x55, FLASH_DISABLE_ID[1].byte);
+    TEST_ASSERT_EQUAL_UINT32(0x5555UL, FLASH_DISABLE_ID[2].address);
+    TEST_ASSERT_EQUAL_HEX8(0xF0, FLASH_DISABLE_ID[2].byte);
+}
+
+/* Leg 3 (5 V only): mirrors this suite's own central claim -- no VPP-enable
+ * CTL bit may appear in any CONTROL_REGISTER write, this time for the
+ * actual CMD_LOCK_STATUS operation, not just its configure phase. */
+void test_5v_page_lock_status_no_vpp(void) {
+    firestarter_handle_t h = make_handle(0x05, CMD_LOCK_STATUS);
+    configure_memory(&h);
+    clear_bus_recording();
+
+    flash_5v_page_read_protection_execute(&h);
+
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "flash_5v_page_read_protection_execute must not error");
+    assert_no_vpp_in_recording(
+        "flash_5v_page_read_protection_execute must NOT set any VPP-enable CTL bit -- this is a 5V read");
+}
+
+/* Leg 4 (Raw byte fidelity): stubs the data read to a value matching
+ * neither decode constant, and proves the raw byte survives onto the wire
+ * UNMODIFIED (byte 0) with the 0xFF indeterminate decode (byte 1) -- the
+ * property D-03's probe legs depend on (a wrong decode must never destroy
+ * the observation). */
+void test_5v_page_lock_status_raw_byte_fidelity(void) {
+    firestarter_handle_t h = make_handle(0x05, CMD_LOCK_STATUS);
+    configure_memory(&h);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "configure_memory must not error on 0x05 CMD_LOCK_STATUS");
+
+    s_stub_raw_value = 0x37; /* matches neither _UNLOCKED (0xFF) nor _LOCKED (0xFE) */
+    h.firestarter_get_data = stub_get_data_return_fixed;
+    s_wire_bytes.clear();
+
+    flash_5v_page_read_protection_execute(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
+        "an unrecognised raw value must set RESPONSE_CODE_WARNING, never ERROR");
+    /* Frame shape: 4 magic + 2 len + 1 id + 2 params + 1 crc + 1 anchor = 11 bytes. */
+    TEST_ASSERT_EQUAL_size_t_MESSAGE((size_t)11, s_wire_bytes.size(),
+        "expected exactly one 2-param MSG_DATA_PROTECTION_STATUS id-frame");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE((uint8_t)MSG_DATA_PROTECTION_STATUS, s_wire_bytes[6],
+        "frame id must be MSG_DATA_PROTECTION_STATUS");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x37, s_wire_bytes[7],
+        "byte 0 must equal the stubbed raw value EXACTLY -- never coerced to 0xFF or 0xFE");
+    TEST_ASSERT_EQUAL_HEX8_MESSAGE(0xFF, s_wire_bytes[8],
+        "byte 1 must be the 0xFF indeterminate sentinel");
+}
+
+/* Leg 5 (Mode bracketing): this suite's host_stubs.cpp activates
+ * HOST_STUBS_RECORD_BUS, whose rurp_write_to_register override
+ * (_shared/host_stubs_common.inc's `#elif defined(HOST_STUBS_RECORD_BUS)`
+ * arm) records every call unconditionally -- it does NOT compose with
+ * rurp_register_utils.h's cache-compare elision, which lives behind the
+ * separate, independent HOST_STUBS_REAL_REGISTER_UTILS opt-in used by
+ * other suites (e.g. test_vpp_eprom_v131). Measured: no register write is
+ * elided here, so an exact-count/position assertion over the recorded
+ * MOST_SIGNIFICANT_BYTE writes is valid for this suite. flash_util_read_
+ * in_id_mode's call shape is exactly: 3 MSB writes (FLASH_ENABLE_ID's
+ * three byte_flip_t entries) + 1 MSB write (the read's own
+ * mem_util_set_address call, via handle->firestarter_get_data) + 3 MSB
+ * writes (FLASH_DISABLE_ID) = 7 total, deterministically -- this leg
+ * asserts that exact shape, proving entry precedes the read and exit
+ * follows it, without needing to know the read's own (address-remap-
+ * dependent) MSB value. */
+void test_5v_page_lock_status_mode_bracketing(void) {
+    firestarter_handle_t h = make_handle(0x05, CMD_LOCK_STATUS);
+    configure_memory(&h);
+    clear_bus_recording();
+
+    flash_5v_page_read_protection_execute(&h);
+
+    uint8_t msb[16];
+    int msb_count = 0;
+    for (int i = 0; i < bus_recording_count() && msb_count < 16; i++) {
+        if (recorded_reg(i) == MOST_SIGNIFICANT_BYTE) {
+            msb[msb_count++] = recorded_data(i);
+        }
+    }
+
+    TEST_ASSERT_EQUAL_MESSAGE(7, msb_count,
+        "expected 3 (FLASH_ENABLE_ID) + 1 (the read's own address-set) + 3 (FLASH_DISABLE_ID) = 7 MSB writes");
+    TEST_ASSERT_EQUAL_HEX8(0x55, msb[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x2A, msb[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x55, msb[2]);
+    /* msb[3] is the read's own address-set MSB write -- its value is not
+     * asserted here; only its POSITION between entry and exit matters. */
+    TEST_ASSERT_EQUAL_HEX8(0x55, msb[4]);
+    TEST_ASSERT_EQUAL_HEX8(0x2A, msb[5]);
+    TEST_ASSERT_EQUAL_HEX8(0x55, msb[6]);
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -269,6 +509,16 @@ int main(int argc, char** argv) {
     /* FIX-02B: operation-phase SDP emission + VPP-safety proofs */
     RUN_TEST(test_5v_page_write_execute_emits_sdp);
     RUN_TEST(test_5v_page_write_execute_no_vpp);
+
+    /* Phase 153 (ERASE-02): write-INIT blank-check removal proof */
+    RUN_TEST(test_5v_page_write_init_no_blank_check_with_flag_clear_erase02);
+
+    /* Phase 151 (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) */
+    RUN_TEST(test_5v_page_lock_status_dispatch);
+    RUN_TEST(test_5v_page_lock_status_pinned_sequence);
+    RUN_TEST(test_5v_page_lock_status_no_vpp);
+    RUN_TEST(test_5v_page_lock_status_raw_byte_fidelity);
+    RUN_TEST(test_5v_page_lock_status_mode_bracketing);
 
     return UNITY_END();
 }

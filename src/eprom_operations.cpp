@@ -73,6 +73,19 @@ bool eprom_sdp_lock(firestarter_handle_t* handle) {
     return !op_execute_simple_operation(handle);
 }
 
+// Phase 151 (LOCK-02): CMD_LOCK_STATUS entry point, in eprom_blank_check's
+// single-step shape above -- but deliberately WITHOUT a LOG_DEBUG_ID_SUB
+// line. Per 151-DESIGN.md §7: CMD_LOCK_STATUS (16) is numerically greater
+// than CMD_READ_VPP (11), so it falls outside the second, independent
+// diagnostic-ordinal range at firestarter.cpp:136-146 (unchanged by this
+// phase) and this command emits none of that range's three DBG_* lines.
+// Adding a DBG_* call here would need a new [debug] catalog entry this
+// phase deliberately does not mint -- a chosen consequence, not an
+// oversight.
+bool eprom_lock_status(firestarter_handle_t* handle) {
+    return !op_execute_simple_operation(handle);
+}
+
 // Returns true on success/continue, false on error.
 static inline bool _process_incoming_data(firestarter_handle_t* handle) {
     // The operation is "pull" based. The firmware requests a data chunk when it's ready.

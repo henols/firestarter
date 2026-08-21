@@ -24,6 +24,7 @@ bool get_vpp_mv(const char* json, jsmntok_t* tokens, int pos, firestarter_handle
 bool get_algorithm(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_read_settling(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_read_strobe(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+bool get_page_size(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 
 bool get_rw_pin(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
 bool get_vpp_pin(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
@@ -47,12 +48,6 @@ static unsigned long simple_strtoul(const char* s) {
 #define jsoneq(json, tok, s) \
     jsoneq_(json, tok, PSTR(s))
 
-int json_init(const char* json, int len, jsmntok_t* tokens) {
-    jsmn_parser parser;
-    jsmn_init(&parser);
-    return jsmn_parse(&parser, json, len, tokens, sizeof(tokens) / sizeof(tokens[0]));
-}
-
 const char key_mem_size[] PROGMEM = "memory-size";
 const char key_address[] PROGMEM = "address";
 const char key_flags[] PROGMEM = "flags";
@@ -64,6 +59,11 @@ const char key_algorithm[] PROGMEM = "algorithm";
 /* Phase 44 — host-tunable read-timing knobs (D-04 sweep params) */
 const char key_read_settling[] PROGMEM = "read-settling-delay";
 const char key_read_strobe[]   PROGMEM = "read-strobe-us";
+/* Phase 149 — per-chip page-write size delivered by the host (PGSZ-01/PGSZ-02).
+ * Wire key is the HYPHEN form "page-size" -- the internal database key
+ * programming.page_size uses an underscore, so a PROGMEM string written
+ * against the underscore form would silently never match. */
+const char key_page_size[]     PROGMEM = "page-size";
 
 typedef struct {
     PGM_P key;
@@ -76,6 +76,8 @@ static const key_parser_t key_parsers[] PROGMEM = {
     {key_vpp_mv, get_vpp_mv},        {key_algorithm, get_algorithm},
     /* Phase 44 — read-timing sweep knobs (RCA-01 causal proof, D-04) */
     {key_read_settling, get_read_settling},                              {key_read_strobe, get_read_strobe},
+    /* Phase 149 — page-size seam (PGSZ-01/PGSZ-02) */
+    {key_page_size, get_page_size},
 };
 
 int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle) {
@@ -87,6 +89,17 @@ int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter
     handle->bus_config.address_mask = 0;
     handle->bus_config.static_high_mask = 0;
     handle->chip_id = 0;
+    /* D-05: page_size resets to 0 exactly like chip_id above. handle is a
+     * single file-scope global with no per-command memset, and page-size is
+     * emit-when-present, so without this reset a 128 parsed for one chip
+     * would persist into the next command and "absent means 64" becomes
+     * false in practice -- the exact overrun PGSZ-02 exists to prevent.
+     * The two Phase 44 read-timing knobs (read_settling_us, read_strobe_us)
+     * are NOT added to this reset block by this phase (deliberately -- a
+     * pre-existing latent instance of the same defect, filed as a todo by
+     * plan 07); their absence here is not an oversight this phase
+     * introduced. */
+    handle->page_size = 0;
 
     if (token_count < 1 || tokens[0].type != JSMN_OBJECT) {
         return -1; // Not a JSON object
@@ -363,4 +376,16 @@ bool get_read_strobe(const char* json, jsmntok_t* tokens, int pos, firestarter_h
         return 1;
     }
     return 0;
+}
+
+/*
+ * Phase 149 — page-size seam (PGSZ-01/PGSZ-02, D-07).
+ *
+ * Deliberately the plain one-line extract_int form (get_chip_id's model),
+ * NOT the Phase 44 clamp form above: validation (power-of-two, range, the
+ * silent fallback) lives in the 0x0D handler (eeprom28c_page_mask), which
+ * keeps json_parse algorithm-agnostic and costs the fewest bytes here.
+ */
+bool get_page_size(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+    extract_int("page-size", handle->page_size);
 }

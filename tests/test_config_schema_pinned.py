@@ -182,9 +182,17 @@ _DEF_SEARCH_DIRS = ("src", "platform", "lib")
 _C14_CONSUMER_SITES = (
     # Phase 143 Plan 03 (BF-1/CAP-03): added one #include line above every
     # site below in this file, shifting all three by +1 (40/103/109 -> here).
+    # Phase 151 Plan 03 (LOCK-02/OD-3): widened parse_json's memory-command
+    # admission test to `is_memory_cmd(handle->cmd) || handle->cmd <
+    # CMD_READ_VPP` and documented why the CMD_* enum must not be re-ordered.
+    # That comment block sits inside parse_json, ABOVE the get/save pair but
+    # BELOW rurp_load_config, so it shifts only the last two sites, by +15
+    # (104/110 -> 119/125). Site 41 and the six sites in other files are
+    # unaffected. Re-pinned, not relaxed: the census still asserts an exact
+    # line for each of the nine sites.
     ("src/firestarter.cpp", 41, "rurp_load_config"),
-    ("src/firestarter.cpp", 104, "rurp_get_config"),
-    ("src/firestarter.cpp", 110, "rurp_save_config"),
+    ("src/firestarter.cpp", 119, "rurp_get_config"),
+    ("src/firestarter.cpp", 125, "rurp_save_config"),
     ("src/boards/rurp_common.cpp", 53, "rurp_get_config"),
     ("include/rurp_hw_rev_utils.h", 95, "rurp_get_config"),
     ("include/rurp_hw_rev_utils.h", 101, "rurp_get_config"),

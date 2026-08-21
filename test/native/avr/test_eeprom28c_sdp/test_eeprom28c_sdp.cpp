@@ -330,6 +330,27 @@ static firestarter_handle_t make_sdp_handle(const sdp_bus_config_row_t& row, uin
     return h;
 }
 
+/* ERASE-01 / 152-CONTEXT.md D-07: the ONLY factory in this suite that leaves
+ * the blank-check axis LIVE (ctrl_flags = 0, not FLAG_SKIP_BLANK_CHECK).
+ * Every other factory here ORs FLAG_SKIP_BLANK_CHECK in unconditionally, so
+ * all 29 existing cases already exercise the no-blank-check path and are
+ * unaffected by this factory's existence. This factory's whole purpose is
+ * to prove that the blank-check axis no longer changes anything on 0x0D --
+ * with the skip flag CLEAR, write-INIT must still be single-shot and must
+ * still emit the exact golden stream, because the pre-write blank check is
+ * deleted outright, not merely gated. */
+static firestarter_handle_t make_sdp_handle_blank_check_enabled(const sdp_bus_config_row_t& row) {
+    firestarter_handle_t h = {};
+    h.protocol = 0x0D;
+    h.cmd = CMD_WRITE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id = 0;
+    h.mem_size = row.mem_size;
+    h.bus_config = row.bus_config;
+    h.ctrl_flags = 0;
+    return h;
+}
+
 static firestarter_handle_t make_identity_handle(uint16_t expected_chip_id, uint32_t ctrl_flags) {
     firestarter_handle_t h = {};
     h.protocol = 0x0D;
@@ -457,6 +478,22 @@ static firestarter_handle_t make_lock_handle(const sdp_bus_config_row_t& row) {
     return h;
 }
 
+/* Plan 153-04 (ERASE-03/ERASE-04): builds a handle for the erase op --
+ * CMD_ERASE, chip_id 0 (no identity gate -- eeprom28c_erase_execute has
+ * none, since init/end are NULL for this cmd and configure_eeprom28c only
+ * ever sets `main`). Identical to make_lock_handle above except cmd. */
+static firestarter_handle_t make_erase_handle(const sdp_bus_config_row_t& row) {
+    firestarter_handle_t h = {};
+    h.protocol = 0x0D;
+    h.cmd = CMD_ERASE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id = 0;
+    h.mem_size = row.mem_size;
+    h.bus_config = row.bus_config;
+    h.ctrl_flags = 0;
+    return h;
+}
+
 /* Load-bearing order (Task 2's key_link, mirrored from drive_reference_emitter
  * / drive_write_init above): configure_memory (itself writes mem_util_set_address(handle, 0)),
  * THEN reset_register_cache, THEN clear_strobes, THEN the op call --
@@ -464,6 +501,33 @@ static firestarter_handle_t make_lock_handle(const sdp_bus_config_row_t& row) {
  * CMD_SDP_LOCK (LOCK-02) so calling `main` directly IS the whole operation. */
 static void drive_lock_op(firestarter_handle_t* h, rurp_register_t ctrl_seed) {
     configure_memory(h);
+    reset_register_cache(0x00, 0x00, ctrl_seed);
+    clear_strobes();
+    h->firestarter_operation_main(h);
+}
+
+/* Plan 153-04 (ERASE-04): drives the REAL eeprom28c_erase_execute (via
+ * configure_memory dispatch on CMD_ERASE), following the same load-bearing
+ * order as drive_write_init/drive_lock_op above -- configure_memory, THEN
+ * reassign get_data, THEN reset_register_cache, THEN clear_strobes, THEN the
+ * op call directly (init/end are NULL for CMD_ERASE, so main IS the whole
+ * operation, same reasoning as drive_lock_op).
+ *
+ * LOAD-BEARING, unlike drive_lock_op: the erase's SDP-disable prefix
+ * (eeprom28c_sdp_unlock_execute, called first inside eeprom28c_erase_execute)
+ * ends in eeprom28c_wait_for_sdp_completion, which polls via
+ * handle->firestarter_get_data. Left as the real memory_get_data, each of
+ * that poll's up to 2000 iterations would latch a fresh address
+ * (memory_get_data -> firestarter_set_address -> LSB/MSB/CONTROL register
+ * writes), flooding the 512-entry strobe recorder long before the erase's
+ * own six writes ever run and turning every downstream positional stream
+ * assertion into an overflow failure. Reassigning to mock_get_data_keyed
+ * (same mock drive_write_init uses) contributes zero strobes to that poll.
+ * firestarter_set_data is left as the real memory_set_data -- the whole
+ * point of this driver is to record what the production routing emits. */
+static void drive_erase_op(firestarter_handle_t* h, rurp_register_t ctrl_seed) {
+    configure_memory(h);
+    h->firestarter_get_data = mock_get_data_keyed;
     reset_register_cache(0x00, 0x00, ctrl_seed);
     clear_strobes();
     h->firestarter_operation_main(h);
@@ -1375,44 +1439,113 @@ void test_case24_null_main_refusal_emits_not_supported_and_error_response(void) 
         "new catalog id was added");
 }
 
-/* Case 25: the SAME guard proven end to end through the CMD_ERASE dispatch
- * path on protocol 0x0D -- DEVTEST-01's firmware half, at the WIRING level
- * rather than the dispatch level (test_configure_memory.cpp's case group 4
- * only proves firestarter_operation_main stays NULL after configure_memory;
- * this case additionally calls the real op layer and observes the
- * refusal). eprom_erase (src/eprom_operations.cpp) is an AVR-only TU
- * excluded from [env:native]'s build_src_filter, so this case calls
- * op_execute_simple_operation directly -- the exact op-layer function
- * eprom_erase's body delegates to
- * (`return !op_execute_simple_operation(handle);`), deliberately bypassing
- * eprom_erase's own EARLIER FLAG_CAN_ERASE precondition check (a different,
- * unrelated refusal) so this case isolates Task 2's guard alone. */
-void test_case25_cmd_erase_on_0x0d_refused_end_to_end_devtest01(void) {
-    firestarter_handle_t h = make_lock_handle(SDP_BUS_CONFIGS[0]); /* protocol 0x0D, ctrl_flags 0 */
-    h.cmd = CMD_ERASE;
+/* Case 25 helper -- deviation from the plan's literal drive shape, discovered
+ * mid-task (Rule 1/3: the plan's "keep the op_execute_simple_operation drive
+ * as-is" instruction crashed on contact with the REAL state machine once
+ * main stopped being NULL; see the case comment below for the full trace).
+ *
+ * A continuous virtual "OK" byte stream feeding op_wait_for_ack's internal
+ * ACK poll (op_get_message -> rurp_communication_available/peak/read, which
+ * route through the REAL src/boards/rurp_serial_utils.cpp -> Serial, pulled
+ * into this suite's link by Phase 6's [env:native] widening). LOAD-BEARING:
+ * this suite's setUp() mocks millis() to a constant 0 and delay() to a
+ * no-op (both required elsewhere in this file, e.g. Case 8's completion
+ * poll) -- so an op_wait_for_ack() call that is NOT fed an immediate ACK
+ * busy-loops forever rather than timing out, because `millis() < timeout`
+ * can never become false. Feeding 'O','K' resolves every ACK wait on its
+ * very first poll, so that busy-loop is never entered. */
+static size_t s_case25_ack_pos;
+static int case25_serial_available() { return 2; }
+static int case25_serial_peek() {
+    static const uint8_t pattern[2] = {'O', 'K'};
+    return (int)pattern[s_case25_ack_pos % 2];
+}
+static int case25_serial_read() {
+    static const uint8_t pattern[2] = {'O', 'K'};
+    int b = (int)pattern[s_case25_ack_pos % 2];
+    s_case25_ack_pos++;
+    return b;
+}
+
+/* Case 25 -- MANDATORY INVERSION (Phase 153 / ERASE-03). Recorded in the
+ * reversal-record voice this project uses: mechanism-corrected,
+ * intent-satisfied -- never as failed. `configure_eeprom28c` now carries a
+ * `case CMD_ERASE:` arm (Phase 153 plan 03) assigning `eeprom28c_erase_execute`,
+ * so this cell has LEFT Phase 119 D-06's op-layer NULL-main guard's coverage
+ * -- the same guard test_case24 above still proves, generically, for every
+ * cell that remains NULL. All four beats stay POSITIVE.
+ *
+ * Switched the handle factory from make_lock_handle to make_erase_handle
+ * (defined above, alongside drive_erase_op) and reassigned
+ * firestarter_get_data to mock_get_data_keyed before driving: this case now
+ * drives the REAL eeprom28c_erase_execute through op_execute_simple_operation,
+ * whose SDP-disable prefix polls via handle->firestarter_get_data --
+ * left as the real memory_get_data, that poll's read iterations would each
+ * latch a fresh address and could overflow the 512-entry strobe recorder
+ * before this case's own assertions run (drive_erase_op's own comment states
+ * this same reason in full; this case does not use that helper directly
+ * because op_execute_simple_operation, not h.firestarter_operation_main, is
+ * the call under test here -- DEVTEST-01's op-layer entry point). This case
+ * still calls op_execute_simple_operation directly, not eprom_erase
+ * (src/eprom_operations.cpp, an AVR-only TU excluded from [env:native]'s
+ * build_src_filter) -- the exact op-layer function eprom_erase's body
+ * delegates to (`return !op_execute_simple_operation(handle);`),
+ * deliberately bypassing eprom_erase's own EARLIER FLAG_CAN_ERASE
+ * precondition check (a different, unrelated refusal) so this case isolates
+ * ERASE-03's dispatch arm alone.
+ *
+ * DEVIATION (discovered running this case, Rule 1/3): with main non-NULL,
+ * op_execute_stateful_operation no longer short-circuits at the top -- it
+ * enters the REAL INIT/MAIN/END housekeeping state machine
+ * (operation_utils.cpp), which gates every phase transition behind
+ * op_wait_for_ack(). A single call therefore no longer completes the
+ * operation (it did, trivially, when main was NULL and the guard fired
+ * immediately): reaching completion needs FOUR calls to
+ * op_execute_simple_operation (INIT-start ack, MAIN-start ack + the actual
+ * erase run, END-start ack, and the final ack that flips
+ * is_all_operations_done()'s message check), each consuming one ACK. The
+ * loop below drives exactly that, bounded well above the deterministic
+ * count so a shape change fails loudly rather than hanging. */
+void test_case25_cmd_erase_on_0x0d_dispatches_and_succeeds_erase03(void) {
+    firestarter_handle_t h = make_erase_handle(SDP_BUS_CONFIGS[0]); /* protocol 0x0D, ctrl_flags 0 */
     configure_memory(&h);
-    TEST_ASSERT_NULL_MESSAGE(h.firestarter_operation_main,
-        "Case 25 precondition: configure_eeprom28c must leave CMD_ERASE's main NULL on 0x0D -- no "
-        "case CMD_ERASE: arm exists in its switch");
+    TEST_ASSERT_NOT_NULL_MESSAGE(h.firestarter_operation_main,
+        "Case 25 precondition (ERASE-03): configure_eeprom28c now carries a case CMD_ERASE: arm "
+        "assigning eeprom28c_erase_execute, so main must be non-NULL on 0x0D");
+    h.firestarter_get_data = mock_get_data_keyed;
     reset_register_cache(0x00, 0x00, 0x00);
     clear_strobes();
 
-    bool still_in_progress = op_execute_simple_operation(&h);
+    s_case25_ack_pos = 0;
+    When(Method(ArduinoFake(Serial), available)).AlwaysDo(case25_serial_available);
+    When(Method(ArduinoFake(Serial), peek)).AlwaysDo(case25_serial_peek);
+    When(Method(ArduinoFake(Serial), read)).AlwaysDo(case25_serial_read);
+
+    bool still_in_progress = true;
+    int calls = 0;
+    const int MAX_CALLS = 10; /* deterministic trace needs exactly 4; generous margin, not an escape hatch */
+    while (still_in_progress && calls < MAX_CALLS) {
+        still_in_progress = op_execute_simple_operation(&h);
+        calls++;
+    }
 
     TEST_ASSERT_FALSE_MESSAGE(still_in_progress,
-        "Case 25 (DEVTEST-01 fw half): op_execute_simple_operation must return false -- eprom_erase "
-        "would report the erase as finished, exactly as before this fix, but now honestly (an error "
-        "frame is emitted instead of nothing)");
-    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
-        "Case 25 (DEVTEST-01 fw half): CMD_ERASE on 0x0D must now set RESPONSE_CODE_ERROR instead "
-        "of silently completing with RESPONSE_CODE_OK -- this is the phantom-erase fix `dev test` "
-        "needs; the host-side OP_ERASE -> NA mapping stays Phase 121 scope");
+        "Case 25 (ERASE-03, mechanism-corrected/intent-satisfied -- never as failed): "
+        "op_execute_simple_operation must reach completion (false) within MAX_CALLS iterations of "
+        "the real ACK-gated INIT/MAIN/END state machine -- eprom_erase reports the erase as "
+        "finished, the same call-site contract as before this task, now honestly (the erase actually "
+        "ran instead of silently doing nothing)");
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "Case 25 (ERASE-03): CMD_ERASE on 0x0D must now report RESPONSE_CODE_OK -- the new dispatch "
+        "arm routes to a real operation instead of leaving main NULL for the generic op-layer "
+        "refusal");
 
     std::vector<uint8_t> ids;
     sdp_captured_frame_ids(&ids);
-    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_ERR_NOT_SUPPORTED),
-        "Case 25 (DEVTEST-01 fw half): MSG_ERR_NOT_SUPPORTED must appear in the captured frame ids "
-        "for a CMD_ERASE attempt on protocol 0x0D");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_ERR_NOT_SUPPORTED),
+        "Case 25 (ERASE-03): MSG_ERR_NOT_SUPPORTED must NOT appear in the captured frame ids for a "
+        "CMD_ERASE attempt on protocol 0x0D -- an unexpected refusal here is exactly the regression "
+        "this leg now guards against, kept as a negative-presence check rather than deleted");
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -1472,7 +1605,7 @@ static uint8_t mock_get_data_page_load_always_wrong(firestarter_handle_t*, uint3
 }
 
 /* Case 26 -- the report line fires on a completing write, with the correct
- * worst value. Two pages (data_size 72, PAGE_SIZE 64: one flush at the
+ * worst value. Two pages (data_size 72, AT28C_PAGE_SIZE_FALLBACK 64: one flush at the
  * page-64 boundary, one at the last byte), so the flush path runs more than
  * once. The scripted tick queue is deliberately NON-MONOTONIC with its
  * largest gap at byte index 40 -- neither the first byte (0) nor the last
@@ -1483,7 +1616,7 @@ static uint8_t mock_get_data_page_load_always_wrong(firestarter_handle_t*, uint3
  * every read past the script's end, which reads as "a real measurement" but
  * is actually just the tail repeated. */
 void test_case26_write_execute_reports_worst_interval_on_completing_write(void) {
-    const size_t   data_size = 72; /* > PAGE_SIZE (64): two flush windows */
+    const size_t   data_size = 72; /* > AT28C_PAGE_SIZE_FALLBACK (64): two flush windows */
     const size_t   spike_after_byte = 40; /* the (spike_after_byte+1)-th byte's load -- deliberately mid-write */
     const uint32_t spike_us = 77;
 
@@ -1537,7 +1670,7 @@ void test_case26_write_execute_reports_worst_interval_on_completing_write(void) 
  * huge tail value is installed and must NEVER be observed in the decoded
  * result, since the loop must abort before it is ever read. */
 void test_case27_write_execute_reports_worst_interval_on_aborting_write(void) {
-    const size_t   loaded_before_abort = 64; /* PAGE_SIZE -- the first page, in full */
+    const size_t   loaded_before_abort = 64; /* AT28C_PAGE_SIZE_FALLBACK -- the first page, in full */
     const size_t   spike_after_byte = 30;    /* mid-first-page, not first/last of the loaded range */
     const uint32_t spike_us = 55;
     const uint32_t never_reached_tail = 999999999u;
@@ -1634,6 +1767,149 @@ void test_case29_write_execute_report_preserves_response_code(void) {
         "the response_code check above is meaningful rather than vacuous");
 }
 
+/* Case 30 -- ERASE-01 / 152-CONTEXT.md D-07. Built from
+ * make_sdp_handle_blank_check_enabled (the ONLY factory in this suite that
+ * leaves the blank-check axis live), this case proves that a write-INIT
+ * driven with FLAG_SKIP_BLANK_CHECK CLEAR is byte-identical in behavior to
+ * every other case here (which all drive with the flag SET): no blank-check
+ * progress allocation, no multi-call INIT loop, and the exact same golden
+ * stream. `mem_util_blank_check` is the ONLY setter of
+ * is_operation_in_progress on this path (memory.cpp:401-425), so a FALSE
+ * result below is the single-shot-INIT proof, not an assumption. */
+void test_case30_write_init_no_blank_check_with_flag_clear_erase01(void) {
+    firestarter_handle_t h = make_sdp_handle_blank_check_enabled(SDP_BUS_CONFIGS[0]); /* AT28C256 */
+    drive_write_init(&h, 0x00);
+
+    TEST_ASSERT_FALSE_MESSAGE(is_operation_in_progress(&h),
+        "Case 30 (ERASE-01): is_operation_in_progress must be FALSE after exactly one "
+        "eeprom28c_write_init call with FLAG_SKIP_BLANK_CHECK clear -- mem_util_blank_check is "
+        "the only setter of this flag on the write-INIT path, so TRUE here would mean the "
+        "pre-write blank check still ran and left a multi-call INIT loop pending");
+    TEST_ASSERT_NULL_MESSAGE(h.progress_data,
+        "Case 30 (ERASE-01): h.progress_data must be NULL -- a non-NULL value means "
+        "mem_util_blank_check allocated a blank_check_progress_data_t block, i.e. the "
+        "pre-write blank check still ran");
+    sdp_assert_stream_equals(SDP_FIXED_DIP28_28C256, SDP_FIXED_DIP28_28C256_LEN,
+        "Case 30 (ERASE-01): with FLAG_SKIP_BLANK_CHECK clear, the AT28C256/DIP28_28C256 stream "
+        "must now be byte-identical to the golden captured with the flag SET -- the D-07 policy "
+        "expressed as a stream identity: a pre-write blank check contributes zero strobes "
+        "whether or not the caller asks to skip it");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Cases 31-33 (Phase 153 / ERASE-04) -- pinning eeprom28c_erase_execute's
+ * emitted stream against the tree at head, tail and divergence, per
+ * D-153-01's binding gate on the plan-03 inline literals.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Case 31 -- the erase stream's HEAD is the SDP-disable prefix, positionally,
+ * over the golden's full length -- D-153-02's prefix is emitted verbatim
+ * before any erase-specific write happens. Then asserts the stream
+ * continues PAST the prefix: an equality at exactly this length would mean
+ * the erase emitted only the prefix and nothing else -- D-153-02's prefix
+ * WITHOUT D-153-02's erase, the exact silent-half-feature this case guards
+ * against. */
+void test_case31_erase_stream_head_equals_sdp_disable_golden_erase04(void) {
+    firestarter_handle_t h = make_erase_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 / DIP28_28C256 */
+    drive_erase_op(&h, 0x00);
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 31: erase stream must not overflow");
+
+    for (int i = 0; i < SDP_FIXED_DIP28_28C256_LEN; i++) {
+        char msg[192];
+        snprintf(msg, sizeof(msg),
+            "Case 31 (ERASE-04): erase stream index %d must equal SDP_FIXED_DIP28_28C256's entry "
+            "at the same index -- eeprom28c_erase_execute's first bus-visible action is the "
+            "D-153-02 SDP-disable prefix, emitted verbatim", i);
+        TEST_ASSERT_EQUAL_MESSAGE(SDP_FIXED_DIP28_28C256[i].kind, strobe_kind(i), msg);
+        TEST_ASSERT_EQUAL_MESSAGE(SDP_FIXED_DIP28_28C256[i].pin, strobe_pin(i), msg);
+        TEST_ASSERT_EQUAL_MESSAGE(SDP_FIXED_DIP28_28C256[i].value, strobe_value(i), msg);
+    }
+
+    TEST_ASSERT_TRUE_MESSAGE(strobe_count() > SDP_FIXED_DIP28_28C256_LEN,
+        "Case 31 (ERASE-04): the erase stream must continue PAST the SDP-disable prefix's length "
+        "-- the six AN-0544B chip-erase writes follow it; equality at exactly this length would "
+        "mean the erase emitted only the prefix and nothing else, D-153-02's prefix WITHOUT "
+        "D-153-02's erase");
+}
+
+/* Case 32 -- the erase stream's TAIL is the chip-erase terminal byte, not
+ * the SDP-disable terminal byte -- FIX-05's one-nibble hazard class
+ * (EEPROM_SDP_DISABLE 0x20 vs FLASH_ERASE 0x10 at the same table position),
+ * checked on the erase op's own emitted stream. Modelled on Case 17's
+ * derivation: payload, CE-low, CE-high are the last three entries of any
+ * un-elided write, and the erase's own final write (chip-erase's sixth,
+ * address 0x5555 differing from write #5's 0x2AAA) is never elided. */
+void test_case32_erase_stream_terminates_on_chip_erase_byte_erase04(void) {
+    firestarter_handle_t h = make_erase_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 / DIP28_28C256 */
+    drive_erase_op(&h, 0x00);
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 32: erase stream must not overflow");
+
+    int payload_index = strobe_count() - 3;
+    TEST_ASSERT_EQUAL_MESSAGE(STROBE_KIND_DATA, strobe_kind(payload_index),
+        "Case 32 (ERASE-04): the entry three-before-the-end must be a DATA payload write -- the "
+        "erase's terminal command write, per Case 17's un-elided-write derivation");
+
+    size_t erase_len = sizeof(FLASH_ERASE) / sizeof(FLASH_ERASE[0]);
+    uint8_t erase_terminal_byte = FLASH_ERASE[erase_len - 1].byte;
+    size_t sdp_disable_len = sizeof(EEPROM_SDP_DISABLE) / sizeof(EEPROM_SDP_DISABLE[0]);
+    uint8_t sdp_disable_terminal_byte = EEPROM_SDP_DISABLE[sdp_disable_len - 1].byte;
+
+    TEST_ASSERT_EQUAL_MESSAGE(erase_terminal_byte, strobe_value(payload_index),
+        "Case 32 (ERASE-04): the terminal command payload must equal FLASH_ERASE's own last "
+        "entry's byte, read from flash_utils.h (FIX-04 frozen) -- never a retyped literal");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(sdp_disable_terminal_byte, strobe_value(payload_index),
+        "Case 32 (ERASE-04, FIX-05's one-nibble hazard class): the terminal command payload must "
+        "NOT equal EEPROM_SDP_DISABLE's own last entry's byte -- the chip-erase code (0x10) and "
+        "the SDP-disable code (0x20) differ by exactly one nibble in this position, and a stream "
+        "that accidentally emitted the SDP-disable byte again here would still look plausible "
+        "without this check");
+
+    for (int i = payload_index + 1; i < strobe_count(); i++) {
+        char msg[192];
+        snprintf(msg, sizeof(msg),
+            "Case 32 (ERASE-04): index %d must not be a DATA entry -- no data write may follow the "
+            "erase's terminal command payload (index %d)", i, payload_index);
+        TEST_ASSERT_NOT_EQUAL_MESSAGE(STROBE_KIND_DATA, strobe_kind(i), msg);
+    }
+}
+
+/* Case 33 -- the erase op's full stream (SDP-disable prefix immediately
+ * followed by the six chip-erase writes) diverges from a BARE chip-erase-
+ * only reference stream at an EXACT index, never `!= -1` (the same rule
+ * Cases 18/19 exist for -- a not-equal check stays green against a golden
+ * pinned to the wrong expectation). The SDP-disable and chip-erase AN
+ * sequences share IDENTICAL addresses and payload bytes for their first
+ * five writes (0x5555/0xAA, 0x2AAA/0x55, 0x5555/0x80, [elided]/0xAA,
+ * 0x2AAA/0x55) and differ ONLY in the sixth write's terminal payload byte
+ * (0x20 vs 0x10) -- so the erase op's own prefix, walked from index 0
+ * against the bare reference, must diverge at exactly that sixth write's
+ * payload position: SDP_FIXED_DIP28_28C256_LEN - 3, the same "payload is
+ * three-before-the-end of the golden" derivation Case 17/32 use, expressed
+ * against the golden's own length rather than a magic number. Mandatory
+ * sequencing note from Case 18's own comment: drive_reference_emitter calls
+ * clear_strobes(), so the production op's stream is snapshotted FIRST. */
+void test_case33_erase_stream_diverges_from_bare_chip_erase_at_exact_index_erase04(void) {
+    firestarter_handle_t h = make_erase_handle(SDP_BUS_CONFIGS[0]); /* AT28C256 / DIP28_28C256 */
+    drive_erase_op(&h, 0x00);
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 33: erase-stream snapshot must not overflow");
+    sdp_strobe_t erase_snapshot[128]; /* the erase stream is roughly twice a six-write stream; 64 (Case 18/19's size) is not enough */
+    int erase_len = sdp_snapshot(erase_snapshot, 128);
+
+    firestarter_handle_t h_bare = make_sdp_handle(SDP_BUS_CONFIGS[0]);
+    drive_reference_emitter(&h_bare, FLASH_ERASE, sizeof(FLASH_ERASE) / sizeof(FLASH_ERASE[0]), 0x00);
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "Case 33: bare chip-erase reference drive must not overflow");
+
+    int div = sdp_first_divergence(erase_snapshot, erase_len);
+    int expected_div = SDP_FIXED_DIP28_28C256_LEN - 3;
+    TEST_ASSERT_EQUAL_MESSAGE(expected_div, div,
+        "Case 33 (ERASE-04): the erase op's full stream must diverge from a BARE chip-erase-only "
+        "reference stream at EXACTLY SDP_FIXED_DIP28_28C256_LEN - 3 -- the SDP-disable prefix and "
+        "the bare chip-erase reference share the first five writes' addresses and payloads "
+        "byte-for-byte, diverging only at the sixth write's terminal payload (0x20 in the erase's "
+        "prefix vs 0x10 in the bare reference) -- never `!= -1`, the same reason Cases 18 and 19 "
+        "assert exact indices");
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
  * main
  * ───────────────────────────────────────────────────────────────────────── */
@@ -1666,11 +1942,15 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case22_lock_tblc_budget_warn_does_not_fire_at_normal_elapsed);
     RUN_TEST(test_case23_standalone_unlock_matches_auto_unlock_stream);
     RUN_TEST(test_case24_null_main_refusal_emits_not_supported_and_error_response);
-    RUN_TEST(test_case25_cmd_erase_on_0x0d_refused_end_to_end_devtest01);
+    RUN_TEST(test_case25_cmd_erase_on_0x0d_dispatches_and_succeeds_erase03);
     RUN_TEST(test_case26_write_execute_reports_worst_interval_on_completing_write);
     RUN_TEST(test_case27_write_execute_reports_worst_interval_on_aborting_write);
     RUN_TEST(test_case28_write_execute_no_tblc_budget_warn);
     RUN_TEST(test_case29_write_execute_report_preserves_response_code);
+    RUN_TEST(test_case30_write_init_no_blank_check_with_flag_clear_erase01);
+    RUN_TEST(test_case31_erase_stream_head_equals_sdp_disable_golden_erase04);
+    RUN_TEST(test_case32_erase_stream_terminates_on_chip_erase_byte_erase04);
+    RUN_TEST(test_case33_erase_stream_diverges_from_bare_chip_erase_at_exact_index_erase04);
 
 #ifdef SDP_TRACE_DUMP
     RUN_TEST(test_dump_lock_goldens);

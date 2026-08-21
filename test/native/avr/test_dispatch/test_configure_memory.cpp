@@ -307,16 +307,44 @@ void test_case_group3_sdp_cmds_dispatch_on_0x0d_with_null_init_end(void) {
         "unlock above");
 }
 
-/* Case group 4 — DEVTEST-01's firmware half and the 0x0D gaps. */
-void test_case_group4_0x0d_erase_and_chip_id_null_main_devtest01(void) {
+/* Case group 4a — ERASE-03: CMD_ERASE on 0x0D now dispatches to a real op.
+ * Phase 153 added a `case CMD_ERASE:` arm to configure_eeprom28c's switch,
+ * assigning only firestarter_operation_main (no init, no end). This split
+ * off the erase half of the old combined group-4 function -- the old
+ * function's name claimed BOTH commands left main NULL, and only the
+ * chip-id half of that claim is still true after this change, so keeping
+ * one function would leave a false name over a true assertion.
+ *
+ * This cell (CMD_ERASE, protocol 0x0D) has therefore LEFT Phase 119 D-06's
+ * op-layer NULL-main guard's coverage -- dispatch resolving to a non-NULL
+ * main is no longer, by itself, proof the erase is safe. The replacement
+ * proof that the arm actually emits the AN-0544B six-write erase sequence
+ * (not merely that dispatch resolves) is the stream-equality case in
+ * test_eeprom28c_sdp.cpp (Cases 31-33), not this dispatch check. */
+void test_case_group4a_0x0d_erase_dispatches_to_a_real_op_erase03(void) {
     firestarter_handle_t h_erase = make_handle(0x0D, 0, CMD_ERASE);
     configure_memory(&h_erase);
-    TEST_ASSERT_NULL_MESSAGE(h_erase.firestarter_operation_main,
-        "Case group 4 (DEVTEST-01 fw half): CMD_ERASE on 0x0D must leave firestarter_operation_main "
-        "NULL -- configure_eeprom28c has no case CMD_ERASE: arm, so this is now refused by the "
-        "generic op-layer guard rather than silently reporting OK having erased nothing ('dev test' "
-        "phantom erase)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(h_erase.firestarter_operation_main,
+        "Case group 4a (ERASE-03 fw half): CMD_ERASE on 0x0D must now set a non-NULL "
+        "firestarter_operation_main -- configure_eeprom28c carries a `case CMD_ERASE:` arm "
+        "assigning eeprom28c_erase_execute, so this cell has left Phase 119 D-06's op-layer "
+        "NULL-main guard's coverage; the replacement proof that the arm really emits the AN-0544B "
+        "erase sequence (not merely that dispatch resolves) is the stream-equality case in "
+        "test_eeprom28c_sdp.cpp, not this dispatch check");
+    TEST_ASSERT_NULL_MESSAGE(h_erase.firestarter_operation_init,
+        "Case group 4a (ERASE-03 fw half): CMD_ERASE's init is NULL -- configure_eeprom28c's new "
+        "case CMD_ERASE: arm assigns only firestarter_operation_main, mirroring case CMD_SDP_LOCK: "
+        "immediately above it in the same switch");
+    TEST_ASSERT_NULL_MESSAGE(h_erase.firestarter_operation_end,
+        "Case group 4a (ERASE-03 fw half): CMD_ERASE's end is NULL, same reason as init above -- "
+        "the new arm assigns only firestarter_operation_main");
+}
 
+/* Case group 4b — the still-true half of the old combined case: CMD_CHECK_CHIP_ID
+ * on 0x0D leaves firestarter_operation_main NULL. Unchanged from the old
+ * function's chip-id half; only the function name and the erase half were
+ * split out (see Case group 4a above). */
+void test_case_group4b_0x0d_chip_id_null_main_devtest01(void) {
     firestarter_handle_t h_chip_id = make_handle(0x0D, 0, CMD_CHECK_CHIP_ID);
     configure_memory(&h_chip_id);
     TEST_ASSERT_NULL_MESSAGE(h_chip_id.firestarter_operation_main,
@@ -420,7 +448,8 @@ int main(int argc, char** argv) {
     RUN_TEST(test_case_group1_read_write_verify_never_null_main_for_any_protocol);
     RUN_TEST(test_case_group2_sdp_cmds_null_main_for_every_non_0x0d_protocol);
     RUN_TEST(test_case_group3_sdp_cmds_dispatch_on_0x0d_with_null_init_end);
-    RUN_TEST(test_case_group4_0x0d_erase_and_chip_id_null_main_devtest01);
+    RUN_TEST(test_case_group4a_0x0d_erase_dispatches_to_a_real_op_erase03);
+    RUN_TEST(test_case_group4b_0x0d_chip_id_null_main_devtest01);
     RUN_TEST(test_case_group5_sram_erase_blank_check_chip_id_null_main);
     RUN_TEST(test_case_group6_not_implemented_protocol_unchanged_no_double_error);
 

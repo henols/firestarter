@@ -74,7 +74,7 @@ bool parse_json(firestarter_handle_t* handle) {
     }
 
     LOG_DEBUG_ID_SUB_U8(DBG_CMD, (uint8_t)handle->cmd);
-    if (handle->cmd < CMD_READ_VPP) {
+    if (is_memory_cmd(handle->cmd) || handle->cmd < CMD_READ_VPP) {
         json_parse(handle->data_buffer, tokens, token_count, handle);
         // v1.22 Phase 119 (LOCK-03, D-02): is_memory_cmd() replaces the old
         // `#ifdef DEV_TOOLS` / `handle->cmd < CMD_DEV_ADDRESS` ordinal
@@ -84,6 +84,21 @@ bool parse_json(firestarter_handle_t* handle) {
         // / DBG_FLAG_CHIP_EN describe dev-tools-only flags that have no
         // meaning outside a DEV_TOOLS build. In a release build this `else`
         // body compiles empty, which is correct and intended.
+        //
+        // Phase 151 (LOCK-02, OD-3): the outer test above was an
+        // ordinal-only test (`handle->cmd < CMD_READ_VPP`) until this phase.
+        // OD-3 rejected re-ordering the CMD_* enum to bring CMD_LOCK_STATUS
+        // (16) below CMD_READ_VPP (11), because that breaks wire
+        // compatibility with every shipped firmware and every host
+        // constant; it also rejected making the protection-status read a
+        // non-memory command, because handle->firestarter_get_data is a
+        // protocol-handler function pointer set only by configure_memory().
+        // So the outer test is now ALSO predicate-aware
+        // (`is_memory_cmd(handle->cmd) ||`), ordered with the predicate
+        // first so the cheap ordinal test is the fallback rather than the
+        // primary: a memory command above ordinal 11 (CMD_LOCK_STATUS) is
+        // now admitted to json_parse and configure_memory exactly as one
+        // below 11 already was.
         if (is_memory_cmd(handle->cmd)) {
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_FORCE, is_flag_set(FLAG_FORCE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CAN_ERASE, is_flag_set(FLAG_CAN_ERASE));
@@ -141,6 +156,15 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     // regression) for zero safety gain and non-zero flash cost. The two new
     // commands (CMD_SDP_UNLOCK 9, CMD_SDP_LOCK 10) already satisfy this
     // range test unchanged, so there is no coverage gap for them either.
+    //
+    // Phase 151 (LOCK-02, OD-3): CMD_LOCK_STATUS (16) is numerically greater
+    // than CMD_READ_VPP (11), so it falls outside this range by construction
+    // -- this is a CHOICE recorded here, not a discovery made on the bench.
+    // `dev lock-status` therefore emits none of the three DBG_* diagnostic
+    // lines below. This block still gates diagnostic output only, so D-03's
+    // safety argument still does not apply, and converting it to
+    // is_memory_cmd() would cost flash for no safety gain -- see 151-DESIGN.md
+    // §7.
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
         LOG_DEBUG_ID_SUB_U32(DBG_MEM_SIZE, (uint32_t)handle->mem_size);
         LOG_DEBUG_ID_SUB_U32(DBG_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
@@ -324,6 +348,15 @@ void loop() {
             break;
         case CMD_SDP_LOCK:
             finished = eprom_sdp_lock(&handle);
+            break;
+        // Phase 151 (LOCK-02): CMD_LOCK_STATUS, in the same one-line shape
+        // as every other arm in this switch. eprom_lock_status is the
+        // eprom_blank_check shape with no LOG_DEBUG_ID_SUB line -- see that
+        // function's own comment for why. This sits outside every
+        // preprocessor conditional, exactly like CMD_SDP_UNLOCK/CMD_SDP_LOCK
+        // above.
+        case CMD_LOCK_STATUS:
+            finished = eprom_lock_status(&handle);
             break;
         case CMD_READ_VPP:
         case CMD_READ_VPE:
