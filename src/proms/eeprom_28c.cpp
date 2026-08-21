@@ -234,10 +234,20 @@ void configure_eeprom28c(firestarter_handle_t* handle) {
     // blanket default: arm here would silently overwrite that already-correct
     // main and refuse read and verify on ALL 84 0x0D chips. Separately,
     // configure_eeprom28c only ever runs for protocol 0x0D, so a default: arm
-    // here could not refuse any OTHER protocol anyway. The two commands this
-    // protocol genuinely cannot do -- CMD_ERASE and CMD_CHECK_CHIP_ID -- are
-    // refused generically, once, at the operation layer by D-06's NULL-main
-    // guard (Plan 119-07) -- one site instead of six, and provably total.
+    // here could not refuse any OTHER protocol anyway.
+    //
+    // Phase 153 / ERASE-03 corrected the enumeration below: it used to name
+    // CMD_ERASE and CMD_CHECK_CHIP_ID as the two commands this protocol
+    // genuinely cannot do, both refused generically at the operation layer
+    // by D-06's NULL-main guard. That was true until this change and is no
+    // longer true for the erase command: a real dispatch arm for it now
+    // exists below, so this cell is deliberately given up from D-06's
+    // guard's coverage in exchange for a real operation -- the new arm's
+    // own proof that it actually emits the AN-0544B sequence, not merely
+    // that dispatch resolves, is what replaces the guard here.
+    // CMD_CHECK_CHIP_ID remains the one command this protocol genuinely
+    // cannot do, and remains covered by the op-layer guard as before -- one
+    // site instead of six, and provably total for that command alone now.
     // LOCK-04's literal "default: -> MSG_ERR_NOT_SUPPORTED" mechanism is
     // SUPERSEDED by that op-layer guard; record this as mechanism-corrected,
     // intent-satisfied -- never as failed.
@@ -248,6 +258,9 @@ void configure_eeprom28c(firestarter_handle_t* handle) {
             break;
         case CMD_BLANK_CHECK:
             handle->firestarter_operation_main = mem_util_blank_check;
+            break;
+        case CMD_ERASE:
+            handle->firestarter_operation_main = eeprom28c_erase_execute;
             break;
         case CMD_SDP_UNLOCK:
             handle->firestarter_operation_main = eeprom28c_sdp_unlock_execute;
