@@ -483,6 +483,69 @@ static void eeprom28c_sdp_lock_execute(firestarter_handle_t* handle) {
     delay(AT28C_TWC_MAX_MS);
 }
 
+// Phase 153 / ERASE-03 / ERASE-04: the AN-0544B SOFTWARE six-byte chip
+// erase. [CITED: Atmel Application Note "Software Chip Erase", Rev.
+// 0544B-10/98 (doc0544.pdf)] -- the six load commands below drive every
+// byte in the device to 0xFF, the device internally times the erase cycle
+// (t_EC, AT28C_TEC_MAX_MS, 20 ms Max) so no external clock or completion
+// poll is required or permitted, and software data protection remains
+// ENABLED after the erase completes -- this operation does not lock or
+// unlock SDP as a side effect of erasing.
+//
+// This is deliberately NOT the datasheet's HARDWARE Chip Erase mode
+// (AT28C256 DS20006386B Table 6-1), which drives 12V onto the OE pin --
+// DIP28_28C256 pin 22 is OE. This handler energises no programming rail of
+// any kind. The sibling hardware-erase path already exists in this tree,
+// at flash_5v_page.cpp lines 196-231; it is a different file, a different
+// function, and a different electrical mechanism, and nothing in this body
+// resembles it.
+//
+// D-153-02: this operation is prefixed with an SDP-disable sequence, by
+// reusing eeprom28c_sdp_unlock_execute(handle) verbatim, even though AN
+// 0544B is silent on whether
+// the six-byte erase code is decoded on a protected part. The asymmetry:
+// if it is not decoded while protected, the failure is a phantom erase that
+// reports OK having erased nothing -- and on this family SDP state is
+// unreadable (Phase 151), so no oracle could ever catch that phantom erase
+// after the fact. The cost of disabling SDP first, on an already-unprotected
+// part, is six harmless extra bus writes and one t_WC wait. Silence is not
+// permission when the failure mode this way is invisible.
+//
+// D-153-04: this erase is device-global by construction -- the AN 0544B
+// sequence erases the whole part -- and it ignores any sector address; no
+// post-erase blank check is wired (erase -b stays a documented no-op here,
+// `blank` remains its own independent step).
+//
+// The six inline writes below are transcribed from flash_utils.h's
+// FLASH_ERASE table (lines 34-41) rather than referencing it, per
+// D-153-01 (0 B RAM; the header is FIX-04 frozen and a reference would
+// duplicate the table into this translation unit at the same RAM cost).
+// That transcription is pinned against the tree, not against this
+// comment's prose, by a native full-stream equality case (plan 04)
+// comparing this operation's emitted stream, positionally, against a
+// composite reference built from SDP_FIXED_DIP28_28C256 and FLASH_ERASE.
+//
+// No native test can prove the t_EC wall-clock wait below: the native host
+// stubs leave delay() unstubbed and record no time, so the only available
+// proof that the wait exists is structural (a source-level assertion that
+// the call is present), never a timing measurement.
+static void eeprom28c_erase_execute(firestarter_handle_t* handle) {
+    LOG_DEBUG_ID_SUB(DBG_CHIP_ERASE);
+    eeprom28c_sdp_unlock_execute(handle);
+    // eeprom28c_wait_for_sdp_completion (inside the prefix above) ends in
+    // reads through handle->firestarter_get_data, which leaves the data bus
+    // configured as an input. Re-arm it for output before the first erase
+    // write below, or every erase byte is silently dropped.
+    rurp_set_data_output();
+    handle->firestarter_set_data(handle, 0x5555, 0xAA);
+    handle->firestarter_set_data(handle, 0x2AAA, 0x55);
+    handle->firestarter_set_data(handle, 0x5555, 0x80);
+    handle->firestarter_set_data(handle, 0x5555, 0xAA);
+    handle->firestarter_set_data(handle, 0x2AAA, 0x55);
+    handle->firestarter_set_data(handle, 0x5555, 0x10);
+    delay(AT28C_TEC_MAX_MS);
+}
+
 void eeprom28c_write_init(firestarter_handle_t* handle) {
     // Check chip identity via A9-12V (SAF-05) BEFORE SDP-disable (D-08: fail-fast
     // on identity leaves the chip write-protected on mismatch).
