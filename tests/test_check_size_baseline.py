@@ -560,7 +560,17 @@ def test_clean_avr_all_three_envs_pass():
 
 
 def test_clean_native_both_envs_pass():
-    """Coverage 2 — both captured_test_native*.log files exit 0 with 170 and 17 in PASS:.
+    """Coverage 2 — both captured_test_native*.log files exit 0 with 172 and 17 in PASS:.
+
+    Debug session w27c512-write-slow-3x RE-CAPTURED both fixtures, 170 -> 172
+    cases/succeeded, suites unchanged at 17. The two new cases are
+    test_writeperf_route_is_asserted_once_per_pass_not_once_per_byte and
+    test_writeperf_route_assert_count_tracks_passes_not_pulses, added to the
+    EXISTING native/avr/test_val_eprom suite to pin the pass-batched program
+    loop's route-assert cadence inside an env CI actually runs. Both fixtures
+    are genuine captures of `pio test -e native` / `-e native_nodevtools`
+    SUMMARY tails on that session's tree, not hand-edited counts -- the same
+    in-place convention, sourced the honest way.
 
     Plan 153-15 updated captured_test_native_summary.log and
     captured_test_native_nodevtools_summary.log IN PLACE, 163 -> 170 cases/succeeded
@@ -591,7 +601,11 @@ def test_clean_native_both_envs_pass():
             f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
         assert "PASS:" in result.stdout
-        assert "170" in result.stdout, f"Expected '170' in output. Got:\n{result.stdout}"
+        # Anchor updated 170 -> 172 (debug session w27c512-write-slow-3x); the
+        # assertion's meaning is unchanged -- the checker's PASS line must name
+        # the recorded case count. Suites still 17 (the two new cases joined an
+        # existing suite).
+        assert "172" in result.stdout, f"Expected '172' in output. Got:\n{result.stdout}"
         assert "17" in result.stdout, f"Expected '17' in output. Got:\n{result.stdout}"
 
 

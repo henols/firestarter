@@ -20,8 +20,8 @@ to a named decision" -- "counts-plus-narrative" (a blanket snapshot update
 wearing a paragraph) was explicitly rejected as satisfying this. A COUNT
 check alone cannot prove attribution completeness: one entry deleted and one
 duplicated leaves an array's length unchanged and must still be caught. This
-module makes the attribution machine-checked for completeness -- 981 entries
-(620 pre-change + 361 new), every one landing in exactly one attributed
+module makes the attribution machine-checked for completeness -- 1001 entries
+(620 pre-change + 381 new), every one landing in exactly one attributed
 segment, an unattributed or unclassifiable entry failing loudly and
 locatably.
 
@@ -39,7 +39,7 @@ Coverage:
      entries, positional, first-divergence message naming index/expected/
      observed.
   2. test_new_arrays_parse_to_the_captured_lengths -- same shape against the
-     new fixture's (121, 148, 92).
+     new fixture's (131, 149, 101).
   3. test_every_entry_falls_in_exactly_one_segment -- D-07's core assertion:
      for each of the six arrays, the union of the six segment index sets
      equals set(range(len(entries))) AND the six sets are pairwise disjoint.
@@ -56,9 +56,9 @@ Coverage:
      machine must find 7 pulse windows and 12 verify reads, and 7 + 12 must
      equal the independently-recounted total of pin==_PIN_OE strobes (19).
      This is what proves the state machine is not merely self-consistent.
-  6. test_total_attributed_entry_count_is_981 -- the six arrays' ATTRIBUTED
+  6. test_total_attributed_entry_count_matches_the_floor -- the six arrays' ATTRIBUTED
      totals (derived from _segment_indices, never the raw parsed length
-     alone) sum to _TOTAL_ENTRY_FLOOR, with the 620/361 per-stream subtotals
+     alone) sum to _TOTAL_ENTRY_FLOOR, with the 620/381 per-stream subtotals
      named in the message.
   7. test_scan_targets_are_non_vacuous -- self-protection, two halves. Part
      (a) recomputes both DEFAULT paths from _REPO_ROOT WITHOUT reading
@@ -92,7 +92,7 @@ mirroring tests/test_ack_layout_source_contract_v143.py's and
 tests/test_requirement_case_mapping_v131.py's own convention)
   - FIRESTARTER_TRACE_SEGMENT_SCAN_NEW -- overrides the scanned PATH to the
     new (post-v1.31) fixture ONLY -- never a segment name, never an expected
-    length, never the 981 denominator. Binds at IMPORT time (the
+    length, never the _TOTAL_ENTRY_FLOOR denominator. Binds at IMPORT time (the
     module-level `Path(os.environ.get(...))` expression below), so a
     planted-violation run must set it in a CHILD PROCESS environment before
     this module is imported, never via a post-import monkeypatch
@@ -199,7 +199,7 @@ _PIN_CE = 0x20    # CHIP_ENABLE -- the pulse strobe AND the verify-read strobe
 # makes the new capture's `/* N */` positional-index comments harmless --
 # and is also why a comment-KEYED classifier is impossible here: the new
 # stream carries no other comment content at all, so any rule keyed on
-# comment text would classify zero of its 361 entries.
+# comment text would classify zero of its 381 entries.
 # ---------------------------------------------------------------------------
 _ARRAY_DECL_RE = re.compile(
     r"static const v131_trace_entry_t\s+(\w+)\[\]\s*=\s*\{(.*?)\};",
@@ -334,8 +334,8 @@ _SEGMENT_ATTRIBUTION = {
 
 # _PRECHANGE_EXPECTED / _NEW_EXPECTED -- hardcoded per-array entry-count
 # literals, positional (PROTO_07, PROTO_08, PROTO_0B), never derived.
-# _TOTAL_ENTRY_FLOOR = 981 = 620 (198+221+201, the frozen pre-change stream)
-# + 361 (121+148+92, the new stream) -- D-07's own denominator.
+# _TOTAL_ENTRY_FLOOR = 1001 = 620 (198+221+201, the frozen pre-change stream)
+# + 381 (131+149+101, the new stream) -- D-07's own denominator.
 #
 # RE-ANCHORED by debug session w27c512-program-fail-byte0 from 885 / 265
 # (91+115+59). The new stream grew because that session restored the
@@ -344,9 +344,23 @@ _SEGMENT_ATTRIBUTION = {
 # settle, an EPROM_VPP_HOLD_US settle and a CONTROL latch group lowering it
 # again. The PRE-CHANGE subtotal is untouched at 620 -- that fixture is
 # frozen and this session did not re-capture it.
+#
+# RE-ANCHORED AGAIN by debug session w27c512-write-slow-3x, from 981 / 361
+# (121+148+92) to 1001 / 381 (131+149+101). That session replaced the per-BYTE
+# program loop with a PASS-BATCHED one -- the program-voltage route is now
+# asserted once per PASS rather than once per programmed byte, and the scan
+# pass that decides the next pass contributes its own read-back traffic where
+# the per-byte loop interleaved a verify read with each pulse. The per-byte
+# cadence the previous literals described WAS the ~3.2x write-speed regression
+# that session fixed (105.89 s -> 33.51 s for a 64 KiB W27C512 on a leonardo,
+# byte-exact), so this growth is expected work for that change and a
+# regression for any later one. Both subtotals were re-derived from the
+# fixtures by the same parse this module uses, not hand-counted. The
+# PRE-CHANGE subtotal is STILL untouched at 620: that fixture stays frozen and
+# was not re-captured by this session either.
 _PRECHANGE_EXPECTED = (198, 221, 201)
-_NEW_EXPECTED = (121, 148, 92)
-_TOTAL_ENTRY_FLOOR = 981  # 620 (pre-change) + 361 (new)
+_NEW_EXPECTED = (131, 149, 101)
+_TOTAL_ENTRY_FLOOR = 1001  # 620 (pre-change) + 381 (new)
 
 
 # ---------------------------------------------------------------------------
@@ -617,7 +631,7 @@ def test_prechange_arrays_parse_to_the_recorded_lengths():
 
 def test_new_arrays_parse_to_the_captured_lengths():
     """Coverage 2 -- the new post-v1.31 fixture's three arrays parse to
-    exactly (121, 148, 92) entries, positional, same first-divergence shape
+    exactly (131, 149, 101) entries, positional, same first-divergence shape
     as Coverage 1."""
     arrays = _parse_arrays_with_fields(_SCAN_NEW)
     names = [name for name, _entries in arrays]
@@ -774,11 +788,11 @@ def test_pre_change_0x07_pulse_and_verify_counts_match_the_output_enable_toggles
     )
 
 
-def test_total_attributed_entry_count_is_981():
+def test_total_attributed_entry_count_matches_the_floor():
     """Coverage 6 -- the six arrays' ATTRIBUTED totals (sum of
     len(segs[s]) for s in _SEGMENTS, derived from _segment_indices -- never
-    the raw parsed length alone) sum to _TOTAL_ENTRY_FLOOR (981), with the
-    two per-stream subtotals (620 pre-change, 361 new) named in the
+    the raw parsed length alone) sum to _TOTAL_ENTRY_FLOOR (1001), with the
+    two per-stream subtotals (620 pre-change, 381 new) named in the
     message."""
     prechange_total = 0
     for array_name, entries in _parse_arrays_with_fields(_SCAN_PRECHANGE):
@@ -794,12 +808,16 @@ def test_total_attributed_entry_count_is_981():
     assert grand_total == _TOTAL_ENTRY_FLOOR, (
         f"attributed grand total is {grand_total}, expected "
         f"{_TOTAL_ENTRY_FLOOR} -- prechange subtotal={prechange_total} "
-        f"(expected 620), new subtotal={new_total} (expected 361)"
+        f"(expected 620), new subtotal={new_total} (expected 381)"
     )
     assert prechange_total == 620, (
         f"prechange attributed subtotal is {prechange_total}, expected 620"
     )
-    assert new_total == 361, f"new attributed subtotal is {new_total}, expected 361"
+    # 361 -> 381 (debug session w27c512-write-slow-3x): the pass-batched
+    # program loop's re-frozen golden. Anchor only -- the assertion still
+    # requires the ATTRIBUTED subtotal to equal the fixture's own parsed
+    # length, so an unattributed entry still fails here.
+    assert new_total == 381, f"new attributed subtotal is {new_total}, expected 381"
 
 
 # ---------------------------------------------------------------------------
@@ -1029,7 +1047,7 @@ def _run_gate_in_subprocess(env_overrides, node_ids=None):
 def test_planted_unclassifiable_entry_is_located(tmp_path):
     """Coverage 10 -- D-18 Plant A. Copy the real NEW fixture's text
     verbatim, mutate exactly ONE entry -- PROTO_07's OUTPUT_ENABLE-assert
-    toggle at its own positional index 26 -- to an unclassifiable shape by
+    toggle at its own positional index 34 -- to an unclassifiable shape by
     replacing its pin with 0x40 (none of the five known pins), assert the
     mutated text differs from the real text (a silently-unmatched
     replacement would be a vacuous plant), write it under tmp_path (never
@@ -1053,9 +1071,20 @@ def test_planted_unclassifiable_entry_is_located(tmp_path):
     # the first pulse, so this plant's old anchor (positional comment 21)
     # no longer names an OE strobe. Same ENTRY as before -- the first
     # {2, 0x04, 0x01} (OE high, entering a program pulse) in PROTO_07 --
-    # now at positional comment 26.
-    mutate_target = "{2, 0x04, 0x01, 0UL}, /* 26 */"
-    replacement = "{2, 0x40, 0x01, 0UL}, /* 26 */"
+    # then at positional comment 26.
+    #
+    # RE-POINTED AGAIN by debug session w27c512-write-slow-3x, for the same
+    # reason one generation on: the pass-batched program loop moved every
+    # PROTO_07 index again, and the SAME entry -- still the first
+    # {2, 0x04, 0x01} in PROTO_07 -- now sits at positional comment 34. Only
+    # the locator moved; the plant is the identical mutation of the identical
+    # entry to the identical unclassifiable pin (0x40), so what this test
+    # PROVES is unchanged. The re-pointing was derived by parsing the new
+    # fixture for that tuple's first occurrence, not by hand-counting, and the
+    # plant was re-observed RED before being accepted (a plant that no longer
+    # fails proves nothing).
+    mutate_target = "{2, 0x04, 0x01, 0UL}, /* 34 */"
+    replacement = "{2, 0x40, 0x01, 0UL}, /* 34 */"
     assert real_text.count(mutate_target) >= 1, (
         f"plant target {mutate_target!r} not found in the real NEW fixture "
         "-- the fixture may have changed since this plant was authored."
@@ -1085,8 +1114,11 @@ def test_planted_unclassifiable_entry_is_located(tmp_path):
         "expected the RED output to name the array "
         f"EPROM_V131_TRACE_PROTO_07.\nOutput:\n{output}"
     )
-    assert "index 26" in output, (
-        f"expected the RED output to name the positional index 26.\n"
+    # 26 -> 34 with the plant's own locator (same entry, moved by the
+    # pass-batched golden). This literal must track mutate_target's index or
+    # the leg silently stops proving the index is LOCATABLE.
+    assert "index 34" in output, (
+        f"expected the RED output to name the positional index 34.\n"
         f"Output:\n{output}"
     )
     assert "0x40" in output, (
@@ -1118,9 +1150,9 @@ def test_planted_unclassifiable_entry_is_located(tmp_path):
 def test_planted_delete_and_duplicate_defeats_a_count_only_check(tmp_path):
     """Coverage 11 -- D-18 Plant B. Copy the real NEW fixture's text
     verbatim, DELETE one entry (PROTO_07's payload data write at positional
-    index 27) and, in the SAME edit, insert a DUPLICATE of a different
+    index 39) and, in the SAME edit, insert a DUPLICATE of a different
     entry (PROTO_07's index 10, a CE-low strobe) into that vacated slot --
-    so PROTO_07's array length is UNCHANGED (91 stays 91: that equality is
+    so PROTO_07's array length is UNCHANGED (131 stays 131: that equality is
     what makes this plant meaningful, since it proves a COUNT-ONLY check
     would have passed it). Assert the mutated text differs from the real
     text, write it under tmp_path, and run BOTH the partition leg and the
@@ -1143,7 +1175,18 @@ def test_planted_delete_and_duplicate_defeats_a_count_only_check(tmp_path):
     # 0x55 moved from positional comment 22 to 27. The duplicate SOURCE
     # (positional comment 10, the first verify read's /CE fall) sits above
     # the first pulse and did NOT move.
-    delete_target = "{1, 0x00, 0x55, 0UL}, /* 27 */"
+    #
+    # RE-POINTED AGAIN by debug session w27c512-write-slow-3x: the
+    # pass-batched loop moved that same payload write from 27 to 39. The
+    # duplicate SOURCE is STILL positional comment 10 -- verified against the
+    # new fixture, not assumed: the pass-batched loop's scan pass reads the
+    # block before any pulse, so everything above the first pulse kept its
+    # index. Only the delete locator moved; the mutation's SHAPE (delete one
+    # entry, insert a duplicate of another into the vacated slot, leaving the
+    # array length unchanged) is identical, so what this test proves -- that a
+    # COUNT-ONLY check would have passed it -- is unchanged, and it was
+    # re-observed RED before being accepted.
+    delete_target = "{1, 0x00, 0x55, 0UL}, /* 39 */"
     duplicate_source = "{2, 0x20, 0x00, 0UL}, /* 10 */"
     assert real_text.count(delete_target) >= 1, (
         f"plant delete-target {delete_target!r} not found in the real NEW "
@@ -1155,7 +1198,7 @@ def test_planted_delete_and_duplicate_defeats_a_count_only_check(tmp_path):
         "real NEW fixture -- the fixture may have changed since this plant "
         "was authored."
     )
-    replacement = "{2, 0x20, 0x00, 0UL}, /* 27 (planted duplicate of index 10) */"
+    replacement = "{2, 0x20, 0x00, 0UL}, /* 39 (planted duplicate of index 10) */"
     mutated_text = real_text.replace(delete_target, replacement, 1)
     assert mutated_text != real_text, (
         "planted delete+duplicate did not actually change the text -- the "
@@ -1172,7 +1215,7 @@ def test_planted_delete_and_duplicate_defeats_a_count_only_check(tmp_path):
     mutated_arrays = dict(_parse_arrays_with_fields(scratch_path))
     mutated_proto07_len = len(mutated_arrays["EPROM_V131_TRACE_PROTO_07"])
 
-    assert mutated_proto07_len == real_proto07_len == 121, (
+    assert mutated_proto07_len == real_proto07_len == 131, (
         "expected the mutated PROTO_07 array's entry count to equal the "
         f"real count -- real={real_proto07_len} mutated={mutated_proto07_len} "
         "(both expected to be 91). This equality is what makes the plant "
@@ -1200,8 +1243,9 @@ def test_planted_delete_and_duplicate_defeats_a_count_only_check(tmp_path):
         "expected the failure to be attributable to the set-equality "
         f"assertion specifically.\nOutput:\n{output}"
     )
-    assert "index 27" in output, (
-        f"expected the RED output to name index 27 as uncovered by any "
+    # 27 -> 39 with the plant's own delete_target, same reason as Plant A.
+    assert "index 39" in output, (
+        f"expected the RED output to name index 39 as uncovered by any "
         f"segment.\nOutput:\n{output}"
     )
     assert "count-only check" in output, (
