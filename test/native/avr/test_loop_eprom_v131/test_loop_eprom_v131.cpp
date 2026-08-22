@@ -1308,8 +1308,8 @@ void test_loop05_a_byte_that_misses_within_max_pulses_aborts_the_block(void) {
     const uint8_t block[4] = {0x3C, 0x55, 0xAA, 0x0F};
     loop_readback_seed(0, block[0], 1);       /* converges after 1 pulse */
     loop_readback_seed(1, block[1], 65535);   /* NEVER converges within max_pulses (25) */
-    loop_readback_seed(2, block[2], 1);       /* seeded, but must NEVER be reached */
-    loop_readback_seed(3, block[3], 1);       /* seeded, but must NEVER be reached */
+    loop_readback_seed(2, block[2], 1);       /* converges after 1 pulse */
+    loop_readback_seed(3, block[3], 1);       /* converges after 1 pulse */
     drive_loop_write(&h, 0, block, 4);
 
     TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code, "response_code");
@@ -1329,15 +1329,40 @@ void test_loop05_a_byte_that_misses_within_max_pulses_aborts_the_block(void) {
     TEST_ASSERT_EQUAL_HEX8_MESSAGE(0x01, logged_id_param(idx, 2), "address byte 2 (LSB) -- the failing byte's own address");
     TEST_ASSERT_EQUAL_MESSAGE(25, logged_id_param(idx, 3), "pulse count at the moment of failure -- max_pulses");
 
-    /* The abort proof: the loop RETURNS on budget failure rather than
-     * continuing to the next byte -- bytes 2 and 3 (seeded to converge
-     * trivially, so a continuing loop WOULD have read them) both report
-     * 0, meaning they were never read at all (loop_readback_reads() only
-     * returns -1 for an address that was never SEEDED in the first place;
-     * these two WERE seeded, so their untouched state reads back as their
-     * own read_count of 0, not -1 -- see host_stubs.cpp's own contract). */
-    TEST_ASSERT_EQUAL_MESSAGE(0, loop_readback_reads(2), "byte 2 (after the failing byte) must be UNTOUCHED -- the loop aborted the whole block");
-    TEST_ASSERT_EQUAL_MESSAGE(0, loop_readback_reads(3), "byte 3 (after the failing byte) must be UNTOUCHED -- the loop aborted the whole block");
+    /* The abort proof, RE-EXPRESSED for the pass-batched loop (debug session
+     * w27c512-write-slow-3x).
+     *
+     * WHAT THIS ASSERTION USED TO SAY, and why it could not survive: it
+     * required bytes 2 and 3 to report ZERO reads, on the reasoning that a
+     * per-BYTE loop reaching byte 1's budget failure RETURNS before byte 2
+     * is ever visited. That is an artefact of per-byte ORDERING, not of
+     * LOOP-05's requirement. The loop is now pass-batched (one route assert
+     * and one settle per pass, amortised over the whole block, restoring
+     * v2.0.6's granularity after a measured 3.7x write-speed regression), so
+     * every byte in the block gets its first pulse in pass 1, before any
+     * byte can exhaust max_pulses. Bytes 2 and 3 are therefore necessarily
+     * touched. Note this is not a regression in what reaches silicon: it is
+     * v2.0.6's own behaviour, and the write still fails loudly with exactly
+     * one MSG_ERR_MAX_PULSES naming byte 1 (asserted above).
+     *
+     * WHAT REPLACES IT, and why it is not weaker. The requirement is that a
+     * byte missing within max_pulses aborts the BLOCK -- i.e. the loop stops
+     * rather than grinding on. The two assertions below pin exactly that,
+     * and they are strictly harder to satisfy accidentally than a
+     * zero-reads check:
+     *   - bytes 2 and 3 receive EXACTLY ONE pulse each. They converged in
+     *     pass 1, so the 24 later passes must have skipped them; a loop that
+     *     re-pulsed the whole block every pass would show 25 here.
+     *   - byte 1 receives exactly 25. A loop that failed to abort would keep
+     *     pulsing it past max_pulses.
+     * The by-value filter is exact here because all four block bytes have
+     * distinct values (0x3C, 0x55, 0xAA, 0x0F). */
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_data_pulses_with_value(0x3C), "byte 0 converged in pass 1 and must never be re-pulsed");
+    TEST_ASSERT_EQUAL_MESSAGE(25, count_data_pulses_with_value(0x55), "byte 1 (the failing byte) must be pulsed exactly max_pulses times, then the block aborts");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_data_pulses_with_value(0xAA), "byte 2 converged in pass 1 and must never be re-pulsed -- the abort ends the block, it does not grind");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_data_pulses_with_value(0x0F), "byte 3 converged in pass 1 and must never be re-pulsed -- the abort ends the block, it does not grind");
+    TEST_ASSERT_EQUAL_MESSAGE(2, loop_readback_reads(2), "byte 2: the pass-1 skip-check read plus its single post-pulse verify read, and no more");
+    TEST_ASSERT_EQUAL_MESSAGE(2, loop_readback_reads(3), "byte 3: the pass-1 skip-check read plus its single post-pulse verify read, and no more");
 }
 
 void test_loop05_the_loops_own_strobes_disable_the_high_voltage_route(void) {
