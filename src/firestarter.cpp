@@ -19,6 +19,7 @@
 #include "operation_utils.h"
 #include "rurp_shield.h"
 #include "version.h"
+#include "oled.h"
 #if DEV_TOOLS
 #include "dev_tools.h"
 #endif
@@ -42,6 +43,7 @@ void setup() {
 #ifdef HARDWARE_REVISION
     rurp_detect_hardware_revision();
 #endif
+    oledInit();
     rurp_board_setup();
 
     handle.cmd = CMD_IDLE;
@@ -266,6 +268,7 @@ void command_done(firestarter_handle_t* handle) {
 }
 
 void loop() {
+    oledRefresh(handle.cmd);
     if (handle.cmd != CMD_IDLE && timeout < millis()) {
         LOG_ERROR_ID_U8(MSG_ERR_CMD_TIMEOUT, handle.cmd);
         command_done(&handle);

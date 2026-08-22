@@ -1,0 +1,10 @@
+void oledInit();
+void oledSplashScreen();
+void oledDisplayFirmwareVersion();
+void oledDisplayMessage(const char* message);
+void oledDisplayError(const char* error);
+void oledDisplayStatus(const char* status);
+void oledDisplayChipId(uint16_t chip_id);
+void oledDisplayVoltage(uint16_t voltage_mv);
+void oledRefresh(uint8_t cmd);
+void oledActivity();
