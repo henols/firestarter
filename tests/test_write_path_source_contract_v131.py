@@ -60,10 +60,14 @@ Coverage:
      matches for delayMicroseconds(handle->pulse_delay) across BOTH D-06
      sites (src/proms/eprom.cpp and src/proms/memory.cpp), comment-stripped.
   7. test_both_over_ceiling_sites_route_through_the_safe_helper -- the
-     positive counterpart to Coverage 6: mem_util_delay_us(handle->pulse_delay)
-     appears exactly once in EACH of the two D-06 sites -- exactly two call
-     sites in total. A deleted call satisfies Coverage 6 vacuously and
-     fails here.
+     positive counterpart to Coverage 6: mem_util_delay_us(...) appears
+     exactly once in EACH of the two D-06 sites -- exactly two call sites
+     in total. A deleted call satisfies Coverage 6 vacuously and fails
+     here. AMENDED (debug session w27c512-devtest-all-bad): site 2's
+     argument is now EPROM_ERASE_PULSE_US, not handle->pulse_delay -- the
+     erase pulse is not the program pulse -- and this leg additionally
+     asserts ZERO mem_util_delay_us(handle->pulse_delay) sites in
+     src/proms/eprom.cpp.
   8. test_every_remaining_delaymicroseconds_argument_is_a_literal_or_a_clamped_value
      -- sweeps src/, include/, lib/ and platform/ for every remaining
      delayMicroseconds(...) CALL (never a macro-definition body, never the
@@ -178,6 +182,9 @@ _UNCLAMPED_PULSE_DELAY_RE = re.compile(
 )
 _SAFE_HELPER_PULSE_DELAY_RE = re.compile(
     r"mem_util_delay_us\s*\(\s*handle\s*->\s*pulse_delay\s*\)"
+)
+_SAFE_HELPER_ERASE_PULSE_RE = re.compile(
+    r"mem_util_delay_us\s*\(\s*EPROM_ERASE_PULSE_US\s*\)"
 )
 
 _FIRESTARTER_SET_DATA_RE = re.compile(r"\bfirestarter_set_data\b")
@@ -442,16 +449,36 @@ def test_no_unclamped_pulse_delay_reaches_delaymicroseconds():
 def test_both_over_ceiling_sites_route_through_the_safe_helper():
     """Coverage 7 -- the positive counterpart to Coverage 6: a deleted call
     (rather than a rerouted one) satisfies the absence leg above
-    vacuously. This leg requires exactly one
-    mem_util_delay_us(handle->pulse_delay) call site in EACH of the two
-    D-06 sites -- exactly two in total -- so deletion fails here even when
-    it passes Coverage 6."""
+    vacuously. This leg requires exactly one mem_util_delay_us(...) call
+    site in EACH of the two D-06 sites -- exactly two in total -- so
+    deletion fails here even when it passes Coverage 6.
+
+    AMENDED, debug session w27c512-devtest-all-bad. Site 2 (the erase
+    pulse in src/proms/eprom.cpp) no longer passes handle->pulse_delay:
+    that value is the per-BYTE PROGRAM width and using it as the CE ERASE
+    pulse emitted ~100 us against a datasheet T_PWE of 95/100/105 ms. Site
+    2's argument is now the EPROM_ERASE_PULSE_US constant, so this leg
+    keeps its full strength by asserting each site's OWN expected argument
+    rather than dropping the site:
+
+      * site 1 (memory.cpp, the program pulse)  -> handle->pulse_delay
+      * site 2 (eprom.cpp, the erase pulse)     -> EPROM_ERASE_PULSE_US
+
+    and it now ALSO asserts the negative that motivated the amendment:
+    zero mem_util_delay_us(handle->pulse_delay) sites in eprom.cpp, so a
+    regression that puts the program pulse back on the erase path fails
+    here as well as in
+    test_vpp_eprom_v131.cpp::test_erase_ce_pulse_width_is_the_datasheet_
+    erase_pulse_not_the_program_pulse. The D-06 ceiling property this leg
+    exists for is unchanged: both over-ceiling arguments still go through
+    mem_util_delay_us's split helper, never a bare delayMicroseconds."""
     eprom_stripped = _strip_comments(_SCAN_EPROM.read_text())
     memory_stripped = _strip_comments(_SCAN_MEMORY.read_text())
-    eprom_hits = _SAFE_HELPER_PULSE_DELAY_RE.findall(eprom_stripped)
+    eprom_hits = _SAFE_HELPER_ERASE_PULSE_RE.findall(eprom_stripped)
     memory_hits = _SAFE_HELPER_PULSE_DELAY_RE.findall(memory_stripped)
+    eprom_program_pulse_hits = _SAFE_HELPER_PULSE_DELAY_RE.findall(eprom_stripped)
     assert len(eprom_hits) == 1, (
-        "expected exactly 1 mem_util_delay_us(handle->pulse_delay) call "
+        "expected exactly 1 mem_util_delay_us(EPROM_ERASE_PULSE_US) call "
         f"site in {_EPROM_REL} (D-06 site 2, the erase pulse), found "
         f"{len(eprom_hits)}.\nGot ({_EPROM_REL}):\n{eprom_stripped}"
     )
@@ -460,10 +487,16 @@ def test_both_over_ceiling_sites_route_through_the_safe_helper():
         f"site in {_MEMORY_REL} (D-06 site 1, the pulse), found "
         f"{len(memory_hits)}.\nGot ({_MEMORY_REL}):\n{memory_stripped}"
     )
+    assert len(eprom_program_pulse_hits) == 0, (
+        "found mem_util_delay_us(handle->pulse_delay) in "
+        f"{_EPROM_REL} -- handle->pulse_delay is the per-BYTE PROGRAM pulse "
+        "width and must never be spent as the CE ERASE pulse; use "
+        f"EPROM_ERASE_PULSE_US.\nGot ({_EPROM_REL}):\n{eprom_stripped}"
+    )
     total = len(eprom_hits) + len(memory_hits)
     assert total == 2, (
-        "expected exactly 2 mem_util_delay_us(handle->pulse_delay) call "
-        f"sites in total across both D-06 sites, found {total}"
+        "expected exactly 2 mem_util_delay_us(...) call sites in total "
+        f"across both D-06 sites, found {total}"
     )
 
 

@@ -166,6 +166,56 @@ extern "C" {
     #define EPROM_VPP_SETUP_US 1000
     #define EPROM_VPP_HOLD_US  100
 
+    /*
+     * EPROM_ERASE_PULSE_US -- the CE pulse width eprom_internal_erase spends
+     * with OE/VPP and A9 both at VPE. Debug session
+     * w27c512-devtest-all-bad.
+     *
+     * WHY THIS CONSTANT EXISTS. Before it, eprom_internal_erase spent
+     * `handle->pulse_delay` here -- the per-BYTE PROGRAM pulse width, which
+     * arrives from the host as the database's `pulse_duration_us` (100 for
+     * W27C512, 50 for the SST 27SF/27VF rows, 10 for SST 37VF). That value
+     * describes a completely different operation. The Winbond W27C512
+     * datasheet specifies the CE erase pulse width T_PWE as 95 ms min /
+     * 100 ms typ / 105 ms max, so the shipped firmware was emitting an
+     * erase pulse roughly 950x below the datasheet MINIMUM and the part only
+     * ever partially erased. Because CMD_ERASE installs mem_util_blank_check
+     * as its END phase and eprom_write_init runs erase-then-blank-check,
+     * that ONE partial erase reported as FOUR failures from `dev test`
+     * (write, verify, erase, blank-check all BAD) on a chip whose database
+     * row, pinout, VPP, chip-ID and program pulse were all correct.
+     *
+     * WHY 100 ms AND NOT MORE. T_PWE has a datasheet MAXIMUM, not just a
+     * minimum: over-erasing a flotox cell drives it toward depletion mode.
+     * "Raise it for margin" is the wrong instinct here. 100 ms is the
+     * typical, centred inside 95..105 ms, and
+     * test_vpp_eprom_v131.cpp::test_erase_ce_pulse_width_is_the_datasheet_
+     * erase_pulse_not_the_program_pulse asserts BOTH bounds against the
+     * measured CE-low interval so a future widening fails there.
+     *
+     * WHY ONE CONSTANT FOR THE WHOLE FAMILY. eprom_internal_erase is the
+     * only electrical erase the 0x07/0x08/0x0B EPROM family has, and it
+     * implements one specific algorithm -- the Winbond 27C/27E one (A9 at
+     * VPE, address 0, CE pulsed). 28 database rows reach it; the non-Winbond
+     * ones (SST 27SF/27VF/37VF, LG/MX/PT 28Cxxx, M8720) were ALREADY being
+     * driven with that algorithm, so pairing it with that algorithm's own
+     * datasheet pulse width introduces no mismatch that was not there
+     * before -- it removes one. A per-row erase width is deliberately NOT
+     * introduced: minipro's infoic.xml carries no erase-duration attribute,
+     * so the database generator could not source one without inventing a
+     * field, and eprom_params.h's TABLE-02 forbids a pulse-width column.
+     *
+     * EXPRESSED IN MICROSECONDS, deliberately, so the value keeps going
+     * through mem_util_delay_us's split helper: 100000 us is far above the
+     * AVR delayMicroseconds() 16383 us ceiling, which is exactly the
+     * hazard that helper exists to absorb.
+     *
+     * NOT VERIFIED ON SILICON. This value is datasheet-sourced and the
+     * emitted pulse is unit-proven; no bench run has confirmed that it
+     * erases a real W27C512.
+     */
+    #define EPROM_ERASE_PULSE_US 100000UL
+
 #ifdef __cplusplus
 }
 #endif
