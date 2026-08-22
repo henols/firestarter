@@ -3,6 +3,7 @@
     "generated": "2026-08-21",
     "phase": "Phase 153 Plan 14 (ERASE-08): re-record the size baseline for the standalone CMD_ERASE feature's measured cold footprint",
     "generated_by": "Quick task 260820-a7w. Both flash-limit guards moved in lockstep: PlatformIO's reported ceiling was raised via `board_upload.maximum_size = 32768` on all three AVR envs in platformio.ini, plus a second mechanism on uno328pb alone -- the new pre:zero_bootloader_reserve.py SCons hook, which zeroes the MiniCore builder's 384 B urclock-bootloader subtraction via `env.BoardConfig().update(\"bootloader.size\", 0)` so the INI override actually reaches the reported total there too. The figures below are TRANSCRIBED, not computed, from the three cold-rebuild logs this quick task committed at .planning/quick/260820-a7w-make-the-flash-limit-guards-to-be-the-ac/260820-a7w-cold-{uno,uno328pb,leonardo}.log (each `rm -rf .pio/build/<env>` then exactly one `pio run -e <env>` invocation). This revision SUPERSEDES only the three avr_targets flash_total/flash_free figures; flash_used, ram_used, ram_total, ram_free, the native_envs block, envs_agree and the whole warnings block are all re-confirmed unchanged by the same three cold logs and are untouched by this edit.",
+    "native_case_count_revision_260822": "Debug session w27c512-write-slow-3x: native and native_nodevtools move 170 -> 172 cases (succeeded likewise); suites stay 17. The two new cases are test_writeperf_route_is_asserted_once_per_pass_not_once_per_byte and test_writeperf_route_assert_count_tracks_passes_not_pulses, added to the EXISTING native/avr/test_val_eprom suite (hence no suite-count movement) to pin the pass-batched program loop's route-assert cadence inside an env CI actually runs -- .github/workflows/build.yml:142,155 and beta-build.yml:122,128 run only `pio test -e native` and `-e native_nodevtools`, so an assertion in native_trace_v131/native_loop_v131/native_params_v131/native_pinmap_provisional is invisible to automation. Both cases were OBSERVED red against the pre-fix per-byte loop (route asserts 8 and 9 respectively, against expectations of 1 and 2) and green against the fix. NOTHING ELSE IN THIS FILE MOVED: the avr_targets flash_used/ram_used figures below still record the PRE-change position (uno 25548, uno328pb 25598, leonardo 27630) deliberately -- a native-only test adds no AVR bytes, and re-recording the AVR figures is the separate act whoever lands this branch must adjudicate along with the +478/+476/+540 flash growth. The warnings block, native_pinmap_provisional and envs_agree are untouched. Pre-existing and NOT fixed here: envs_agree_note's prose still quotes a stale `{cases: 151, suites: 17}` pair, which no consumer reads.",
     "firmware_tree_sha": "d1652a5d74d8435cdc89f34d0767f22f09e37bcc",
     "host_app_tree_sha": "5e9ca601f71a03f62a213b502c0a96b03ab4161f",
     "platformio_core": "6.1.19",
@@ -63,14 +64,14 @@
   },
   "native_envs": {
     "native": {
-      "cases": 170,
-      "succeeded": 170,
+      "cases": 172,
+      "succeeded": 172,
       "suites": 17,
       "all_passed": true
     },
     "native_nodevtools": {
-      "cases": 170,
-      "succeeded": 170,
+      "cases": 172,
+      "succeeded": 172,
       "suites": 17,
       "all_passed": true
     },
