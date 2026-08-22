@@ -637,7 +637,18 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
     handle->firestarter_set_control_register(handle, CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE, 1);  // Erase with VPE - assumes CTRL_VPP_VPE_DROP_ENABLE isn't set and left active previously
     delay(100);
     rurp_chip_enable();
-    mem_util_delay_us(handle->pulse_delay);  // Phase 141 Plan 04 (LOOP-07/D-06 site 2): 32-bit-safe split delay
+    /* Debug session w27c512-devtest-all-bad: the ERASE pulse, not the
+     * program pulse. This spent `handle->pulse_delay` until now -- the
+     * per-byte PROGRAM width the host sends from the database's
+     * `pulse_duration_us` (100 us for W27C512) -- against a datasheet CE
+     * erase pulse width T_PWE of 95/100/105 ms, so the part only ever
+     * partially erased and `dev test` reported four BAD steps for one
+     * cause. See include/eprom.h's EPROM_ERASE_PULSE_US comment for the
+     * bounds, the 28-row blast radius, and why no per-row erase width
+     * exists. Still routed through mem_util_delay_us (LOOP-07/D-06 site 2):
+     * 100000 us is far over the AVR delayMicroseconds ceiling, which is
+     * precisely what that split helper is for. */
+    mem_util_delay_us(EPROM_ERASE_PULSE_US);
     // After the erase pulse, we should disable the chip to end the programming cycle.
     rurp_chip_disable();
 

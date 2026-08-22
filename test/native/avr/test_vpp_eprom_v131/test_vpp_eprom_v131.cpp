@@ -801,6 +801,82 @@ void test_vpp03_case_e_cmd_erase_control_stream_is_pinned_pre_rewrite(void) {
         "the LAST control value after CMD_ERASE must have CTRL_VPE_ENABLE clear");
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * Debug session w27c512-devtest-all-bad -- the CE ERASE pulse width.
+ *
+ * `eprom_internal_erase` implements the Winbond 27C/27E electrical-erase
+ * algorithm: OE/VPP at VPE, A9 at VPE, address 0x0000, then CE pulsed low.
+ * The W27C512 datasheet's CE erase pulse width T_PWE is 95 ms min / 100 ms
+ * typ / 105 ms max. Before this fix the function spent `handle->pulse_delay`
+ * -- the per-byte PROGRAM pulse width, 100 us for W27C512 -- with CE low,
+ * i.e. ~950x below the datasheet MINIMUM, so the part only ever partially
+ * erased. That is what made `dev test w27c512` report write/verify/erase/
+ * blank-check all BAD: CMD_ERASE installs mem_util_blank_check as its END
+ * phase and eprom_write_init runs erase-then-blank-check, so one partial
+ * erase fails four steps.
+ *
+ * This case measures the CE-low interval from the recorded stream rather
+ * than asserting a literal at the call site, so it stays true if the
+ * constant is ever re-expressed (us vs ms, helper vs bare delay). It is
+ * NOT a control-value test -- case E above already pins those four writes
+ * and this case deliberately leaves them alone.
+ *
+ * Both bounds are asserted. The upper bound is not decoration: T_PWE has a
+ * datasheet MAX, and over-erasing a flotox cell shifts it toward depletion,
+ * so "make it bigger to be safe" is the wrong instinct here and this case
+ * exists to refuse it.
+ * ───────────────────────────────────────────────────────────────────────── */
+void test_erase_ce_pulse_width_is_the_datasheet_erase_pulse_not_the_program_pulse(void) {
+    rurp_get_config()->hardware_revision = REVISION_2_2;
+    /* pulse_delay = 100 us -- exactly W27C512's DB `pulse_duration_us`, so a
+     * regression that re-reads the program pulse here reproduces the shipped
+     * defect's own number and this case names it in the failure message. */
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, FLAG_SKIP_BLANK_CHECK, VPP_BUS_CONFIG_0x07);
+    h.cmd = CMD_ERASE;
+    set_mock_vpp_mv(13000);
+
+    configure_memory(&h);
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    clear_timings();
+    clear_logged_ids();
+    h.firestarter_operation_main(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(0, strobe_overflowed(), "strobe_overflowed -- soundness precondition");
+    TEST_ASSERT_EQUAL_MESSAGE(0, timing_overflowed(), "timing_overflowed -- soundness precondition");
+
+    /* Locate the CE-low / CE-high strobe pair. rurp_chip_enable() drives
+     * CHIP_ENABLE to 0 (active low) and rurp_chip_disable() drives it to 1. */
+    int ce_low = -1, ce_high = -1;
+    for (int i = 0; i < strobe_count(); i++) {
+        if (strobe_kind(i) != STROBE_KIND_PIN || strobe_pin(i) != CHIP_ENABLE) continue;
+        if (ce_low < 0 && strobe_value(i) == 0) { ce_low = i; continue; }
+        if (ce_low >= 0 && strobe_value(i) != 0) { ce_high = i; break; }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(ce_low >= 0, "no CHIP_ENABLE-low strobe found -- the erase never pulsed CE at all");
+    TEST_ASSERT_TRUE_MESSAGE(ce_high > ce_low, "no CHIP_ENABLE-high strobe after the CE-low strobe -- the erase pulse never ended");
+
+    /* Sum every delay pushed between those two strobes. A timing entry's seq
+     * is s_strobe_count AT PUSH TIME, so an entry pushed after strobe k-1 and
+     * before strobe k carries seq == k: the CE-low..CE-high window is
+     * seq in [ce_low+1, ce_high]. DELAY_MS entries carry milliseconds in
+     * `us`, so they are scaled here. */
+    uint32_t ce_low_us = 0;
+    for (int i = 0; i < timing_count(); i++) {
+        int seq = timing_after_strobe(i);
+        if (seq < ce_low + 1 || seq > ce_high) continue;
+        ce_low_us += (timing_kind(i) == TIMING_KIND_DELAY_MS) ? timing_us(i) * 1000UL : timing_us(i);
+    }
+
+    TEST_ASSERT_TRUE_MESSAGE(ce_low_us >= 95000UL,
+        "the CE erase pulse is shorter than the W27C512 datasheet T_PWE MINIMUM of 95 ms. "
+        "A measurement of 100 us means eprom_internal_erase is spending handle->pulse_delay -- "
+        "the per-BYTE PROGRAM pulse -- as the erase pulse again (debug session w27c512-devtest-all-bad)");
+    TEST_ASSERT_TRUE_MESSAGE(ce_low_us <= 105000UL,
+        "the CE erase pulse is longer than the W27C512 datasheet T_PWE MAXIMUM of 105 ms -- "
+        "over-erase shifts a flotox cell toward depletion; this bound is deliberate, do not raise it");
+}
+
 void test_vpp03_case_i_cmd_check_chip_id_control_stream_is_pinned_pre_rewrite(void) {
     rurp_get_config()->hardware_revision = REVISION_2_2;
     firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, FLAG_SKIP_BLANK_CHECK, VPP_BUS_CONFIG_0x07);
@@ -1342,6 +1418,10 @@ int main(int argc, char** argv) {
      * protects. See task 3's planted violations V4/V5. */
     RUN_TEST(test_vpp03_case_e_cmd_erase_control_stream_is_pinned_pre_rewrite);
     RUN_TEST(test_vpp03_case_i_cmd_check_chip_id_control_stream_is_pinned_pre_rewrite);
+
+    /* Debug session w27c512-devtest-all-bad: the CE erase pulse width must be
+     * the datasheet erase pulse, never handle->pulse_delay (the program pulse). */
+    RUN_TEST(test_erase_ce_pulse_width_is_the_datasheet_erase_pulse_not_the_program_pulse);
 
     /* Plan 142-05 Task 1 (VPP-01): the resolver truth table (Group T,
      * direct calls on a bare handle, no drive) and the route-strobe

@@ -5,11 +5,11 @@
       "src/proms/eprom_params.cpp"
     ],
     "blob_shas": {
-      "src/proms/eprom.cpp": "cfc7ec4a54f3c7607b6929a957de67968d37a5ad",
+      "src/proms/eprom.cpp": "67460bb37a1eb1771e4df443c26054af31e9fbaf",
       "src/proms/eprom_params.cpp": "5dffe841aeb7013f9f53e9991a6248b203ae22da"
     },
-    "recorded_at_head": "a594173d2bbbabe74e6a470b4751528435246326",
-    "recorded_by": "Phase 142 Plan 04 -- because L-2 requires this golden and the eprom.cpp source change to land in the SAME commit (the one-commit property that keeps the D-18 gate RED once, for one reason), recorded_at_head necessarily names this commit's PARENT rather than the commit that actually carries this file. Do not read that as a mistake: it is the deliberate one-commit offset this plan's own objective documents. Phase 143 Plan 05 -- the same one-commit property, under D-23's name this phase: this file's blob_shas['src/proms/eprom.cpp'] is the SHA of the working-tree file as it will read once committed (git hash-object src/proms/eprom.cpp, run before staging), and recorded_at_head is this commit's PARENT (a5a39d92128edbdb97f425e1538227a85a257e57, the tip of plan 143-03) rather than the commit that actually carries this file -- deliberate, for the identical structural reason Phase 142 recorded above, not a second mistake. Debug session w27c512-program-fail-byte0 (Phase 145 Gate 2 root-cause fix) -- re-derived a THIRD time, under the identical one-commit property: blob_shas['src/proms/eprom.cpp'] is `git hash-object src/proms/eprom.cpp` run on the working tree before staging, and recorded_at_head names this commit's PARENT (a594173d2bbbabe74e6a470b4751528435246326). The fix adds one file-static helper, eprom_internal_program_pulse, which asserts the program-voltage route around each program pulse -- the assert Phase 141 dropped when it deleted the old block-mismatch reporter, and whose absence made every 27C write fail at its first non-0xFF byte. That helper contains NO conditional at all, so this re-derivation moved ONLY line numbers: all 26 sites keep their predicate, keyed_on and tier byte-identically (machine-checked, not asserted by hand), counts stay 26 / 1 / 25, and the single tier-1 protocol-keyed site remains configure_eprom's pulse-fallback switch, now at line 70 (was 70). 15 of 26 sites shifted; every shifted site sits below the inserted helper, and every site above it is line-identical.",
+    "recorded_at_head": "88d204a5a023bcad6f708b33150502ba90fdec2b",
+    "recorded_by": "Phase 142 Plan 04 -- because L-2 requires this golden and the eprom.cpp source change to land in the SAME commit (the one-commit property that keeps the D-18 gate RED once, for one reason), recorded_at_head necessarily names this commit's PARENT rather than the commit that actually carries this file. Do not read that as a mistake: it is the deliberate one-commit offset this plan's own objective documents. Phase 143 Plan 05 -- the same one-commit property, under D-23's name this phase: this file's blob_shas['src/proms/eprom.cpp'] is the SHA of the working-tree file as it will read once committed (git hash-object src/proms/eprom.cpp, run before staging), and recorded_at_head is this commit's PARENT (a5a39d92128edbdb97f425e1538227a85a257e57, the tip of plan 143-03) rather than the commit that actually carries this file -- deliberate, for the identical structural reason Phase 142 recorded above, not a second mistake. Debug session w27c512-program-fail-byte0 (Phase 145 Gate 2 root-cause fix) -- re-derived a THIRD time, under the identical one-commit property: blob_shas['src/proms/eprom.cpp'] is `git hash-object src/proms/eprom.cpp` run on the working tree before staging, and recorded_at_head names this commit's PARENT (a594173d2bbbabe74e6a470b4751528435246326). The fix adds one file-static helper, eprom_internal_program_pulse, which asserts the program-voltage route around each program pulse -- the assert Phase 141 dropped when it deleted the old block-mismatch reporter, and whose absence made every 27C write fail at its first non-0xFF byte. That helper contains NO conditional at all, so this re-derivation moved ONLY line numbers: all 26 sites keep their predicate, keyed_on and tier byte-identically (machine-checked, not asserted by hand), counts stay 26 / 1 / 25, and the single tier-1 protocol-keyed site remains configure_eprom's pulse-fallback switch, now at line 70 (was 70). 15 of 26 sites shifted; every shifted site sits below the inserted helper, and every site above it is line-identical. Debug session w27c512-devtest-all-bad -- re-derived a FOURTH time, under the identical one-commit property: blob_shas['src/proms/eprom.cpp'] is `git hash-object src/proms/eprom.cpp` run on the working tree before staging, and recorded_at_head names this commit's PARENT (88d204a5a023bcad6f708b33150502ba90fdec2b). The fix changes ONE expression -- eprom_internal_erase's CE pulse width goes from handle->pulse_delay (the per-byte PROGRAM width, ~100 us) to EPROM_ERASE_PULSE_US (100 ms, the W27C512 datasheet T_PWE) -- plus the comment that explains it. It adds NO conditional and NO function, so this re-derivation moved ONLY line numbers: all 26 sites keep their predicate, keyed_on and tier verbatim, and the 5 sites below eprom_internal_erase's pulse shift by exactly 11 lines 649->660, 652->663, 653->664, 660->671, 677->688.",
     "requirement": "TABLE-05",
     "decision": "D-12, D-13",
     "why_two_checks": "A blob-SHA match alone cannot distinguish 'unchanged' from 'a branch deleted together with the code that consumed it' -- both leave the file's other bytes identical to some other prior state's bytes, so the live re-parsed site-by-site inventory (predicate text + keyed_on + tier, compared positionally) is what makes a deletion, or a new insertion, visible even when nothing else about the blob changed.",
@@ -229,7 +229,7 @@
       "reason": "Compares a measured VPP millivolt reading against 95% of the caller-supplied vpp_mv target to detect an under-voltage condition; a voltage data comparison, not a protocol selector."
     },
     {
-      "line": 649,
+      "line": 660,
       "predicate": "if (handle->response_code == RESPONSE_CODE_ERROR)",
       "keyed_on": [
         "response_code"
@@ -239,7 +239,7 @@
       "reason": "Early-exits eprom_generic_init when the preceding VPP check already set an error response code; a generic error-propagation guard, not an algorithm choice."
     },
     {
-      "line": 652,
+      "line": 663,
       "predicate": "if (handle->chip_id > 0)",
       "keyed_on": [
         "chip_id"
@@ -249,7 +249,7 @@
       "reason": "Tests whether the caller supplied a non-zero expected chip_id (0 means 'skip the check'); a caller opt-in gate for an optional verification step, not a protocol/algorithm branch."
     },
     {
-      "line": 653,
+      "line": 664,
       "predicate": "is_flag_set(FLAG_FORCE)",
       "keyed_on": [
         "ctrl_flags"
@@ -259,7 +259,7 @@
       "reason": "Ternary reading the caller-supplied FLAG_FORCE ctrl_flags bit to choose whether a chip-ID mismatch is reported as a warning or an error; independent of the programming algorithm."
     },
     {
-      "line": 660,
+      "line": 671,
       "predicate": "if (chip_id != handle->chip_id)",
       "keyed_on": [
         "chip_id"
@@ -269,7 +269,7 @@
       "reason": "Compares the chip ID just read from silicon against the caller-supplied expected chip_id; an identity-check data comparison, not a protocol selector."
     },
     {
-      "line": 677,
+      "line": 688,
       "predicate": "if (bit & CTRL_VPE_ENABLE && using_p1_as_vpp(handle))",
       "keyed_on": [
         "pins+bus_config.vpp_line"
