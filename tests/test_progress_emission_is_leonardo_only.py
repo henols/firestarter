@@ -291,12 +291,32 @@ _WRITE_EXECUTE_BODY_DEF_RE = re.compile(
 _PROGRESS_EMIT_RE = re.compile(r"\bMSG_DATA_PROGRESS\b")
 _SKIP_0XFF_RE = re.compile(r"\bexpected\s*==\s*0x[fF][fF]\b")
 _STATE_VAR_DECL_RE = re.compile(r"\buint32_t\s+last_emit_ms\s*=\s*millis\s*\(\s*\)\s*;")
+# LOCATOR WIDENED (debug session w27c512-write-slow-3x): the leading
+# (?P<pre>...) group tolerates additional conjuncts BEFORE the
+# time-since-last-frame comparison inside the same `if`. It was added because
+# the pass-batched program loop gates the emit on `pulses == 0` as well as on
+# the interval, and the previous form required the `if (` to open DIRECTLY
+# with the (uint32_t)(millis() - last_emit_ms) term -- so it matched 0 blocks
+# and took Coverage 5 and 6 down with it.
+#
+# WHAT DID NOT CHANGE, and this is the point: every assertion downstream of
+# this regex is untouched in both wording and intent. `interval`, `arg1` and
+# `arg2` still capture exactly the same sub-expressions, and Coverage 5 and 6
+# still demand EPROM_PROGRESS_EMIT_INTERVAL_MS and handle->mem_size verbatim.
+# `pre` is deliberately `[^{]*?` -- lazy, and unable to cross into the block
+# body -- so widening the locator cannot let the emit's own CONTENTS drift.
+# The new gate itself is pinned separately by
+# test_the_emit_is_gated_to_the_first_pass below, so the added conjunct is
+# recorded as a contract rather than merely tolerated here.
 _EMIT_BLOCK_RE = re.compile(
-    r"if\s*\(\s*\(uint32_t\)\s*\(\s*millis\s*\(\s*\)\s*-\s*last_emit_ms\s*\)\s*>=\s*"
+    r"if\s*\((?P<pre>[^{]*?)\(uint32_t\)\s*\(\s*millis\s*\(\s*\)\s*-\s*last_emit_ms\s*\)\s*>=\s*"
     r"(?P<interval>[^()\s]+)\s*\)\s*\{\s*"
     r"last_emit_ms\s*=\s*millis\s*\(\s*\)\s*;\s*"
     r"LOG_DATA_ID_U32_U32\s*\(\s*MSG_DATA_PROGRESS\s*,\s*(?P<arg1>[^,()]+?)\s*,\s*(?P<arg2>[^,()]+?)\s*\)\s*;\s*\}"
 )
+# The pass gate the pass-batched loop added. `pulses` is the loop's pass
+# counter, so `pulses == 0` is "first scan pass only".
+_FIRST_PASS_GATE_RE = re.compile(r"\bpulses\s*==\s*0\s*&&")
 _BARE_1000_RE = re.compile(r"(?<![A-Za-z0-9_])1000(?![A-Za-z0-9_])")
 
 # Preprocessor conditional directives, matched line-by-line on the
@@ -646,6 +666,58 @@ def test_serial_on_io_is_defined_on_exactly_the_uno_class_envs():
 # ---------------------------------------------------------------------------
 # Tests -- self-protection (Coverage 8-10).
 # ---------------------------------------------------------------------------
+
+
+def test_the_emit_is_gated_to_the_first_pass():
+    """Coverage 6b -- debug session w27c512-write-slow-3x. Pins a REAL
+    behavioural change to the emission contract, so it is recorded rather
+    than silently tolerated by the widened locator above.
+
+    WHAT CHANGED. The loop this module scans is no longer per-byte; it is
+    pass-batched (a scan pass alternating with a pulse pass), and the scan
+    pass restarts at index 0 on every pass. MSG_DATA_PROGRESS (0xE0) carries
+    an ABSOLUTE chip address, and the host applies it verbatim -- it assigns
+    the bar's position rather than advancing it
+    (firestarter_app/firestarter/eprom_operations.py::_apply_write_progress
+    sets progress.pbar.n = position). So a frame emitted from a LATER pass
+    would carry a LOWER address than one already sent and the host's write
+    bar would visibly rewind. Gating the emit on the first pass is what makes
+    0xE0's address sequence monotonic within a block, which is the property
+    the host relies on.
+
+    THE CONSEQUENCE, stated because it is a real behaviour change and not a
+    no-op: the first scan pass of a 1024-byte block completes in well under
+    the 1000 ms interval, so on an ordinary write this emit now fires ZERO
+    times per block and the host falls back to its per-chunk handoff bar --
+    the same path every uno/uno328pb write already takes, which the host
+    handles by design (its firmware_drives_bar latch simply never engages).
+    That is not a user-visible regression: a block now completes in ~0.44 s
+    where the per-byte loop took ~1.57 s, so per-chunk granularity is FINER
+    in wall-clock terms than the 1 s intra-block cadence it replaces. The
+    emit is kept, not deleted, because a slow row (a multi-pass block, or a
+    0x0B part at 500 us pulses) can still exceed the interval inside the
+    first pass.
+
+    This leg exists so that removing the gate -- which would restore the
+    rewinding bar -- fails here, and so that a future reader learns the
+    reason from a test rather than from a git archaeology session."""
+    stripped = _strip_comments(_SCAN_EPROM.read_text())
+    body, _ = _extract_write_execute_body(stripped)
+    hits = list(_EMIT_BLOCK_RE.finditer(body))
+    assert len(hits) == 1, (
+        "expected exactly 1 time-gated MSG_DATA_PROGRESS emit block inside "
+        f"eprom_internal_write_execute_body's body, found {len(hits)}.\n"
+        f"Body (comment-stripped):\n{body}"
+    )
+    pre = hits[0].group("pre")
+    assert _FIRST_PASS_GATE_RE.search(pre) is not None, (
+        "expected the emit's own predicate to be gated on the loop's first "
+        f"pass as well as on the interval, found predicate prefix {pre!r} -- "
+        "without that gate a later pass emits a LOWER absolute address than "
+        "one already sent, and the host's write bar (which assigns "
+        "pbar.n from the frame verbatim) rewinds.\n"
+        f"Body (comment-stripped):\n{body}"
+    )
 
 
 def test_scan_targets_are_non_vacuous():

@@ -51,6 +51,14 @@ extern "C" int  bus_recording_count();
 extern "C" uint8_t recorded_reg(int i);
 extern "C" uint8_t recorded_data(int i);
 
+/* Debug session w27c512-write-slow-3x -- read-back model + saturation
+ * reporter, compiled because host_stubs.cpp defines
+ * HOST_STUBS_CUSTOM_READ_DATA_BUFFER. See that file for the byte-index
+ * derivation and for why this invariant lives in THIS suite. */
+extern "C" void val_readback_reset();
+extern "C" void val_readback_seed(uint8_t idx, uint8_t target, uint8_t converge_after);
+extern "C" int  val_recording_saturated();
+
 void setUp(void) {
     ArduinoFakeReset();
     When(OverloadedMethod(ArduinoFake(Serial), write, size_t(uint8_t))).AlwaysReturn(1);
@@ -59,7 +67,18 @@ void setUp(void) {
     /* delay() is called by eprom_check_vpp (delay(100)) and eprom_write_execute
      * (delay(500)). Must be stubbed before any ArduinoFake virtual is called. */
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
+    /* Debug session w27c512-write-slow-3x: the write-cadence cases below drive
+     * eprom_write_execute itself, which the pre-existing cases never did.
+     * delayMicroseconds() is called per route settle and per program pulse;
+     * millis() feeds the MSG_DATA_PROGRESS emit, which IS compiled on native
+     * (only uno/uno328pb define SERIAL_ON_IO). millis() is pinned to a
+     * constant so the time-keyed emit never fires -- it writes no register, so
+     * it cannot perturb the counts, but a frozen clock keeps the recording
+     * minimal and the cases deterministic. */
+    When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
     clear_bus_recording();
+    val_readback_reset();
 }
 
 void tearDown(void) {}
@@ -202,6 +221,175 @@ void test_eprom_0x0B_read_configure_only_does_not_enable_vpp(void) {
     }
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+ * WRITE-CADENCE INVARIANT (debug session w27c512-write-slow-3x)
+ *
+ * WHAT IS PINNED: the number of times eprom_write_execute ASSERTS the
+ * program-voltage route over one block scales with the PASS count, never
+ * with the programmed-byte count.
+ *
+ * WHY IT IS PINNED HERE, of all places: CI runs only `pio test -e native`
+ * and `-e native_nodevtools` (.github/workflows/build.yml:142,155,
+ * beta-build.yml:122,128). It does not run native_trace_v131 (which owns the
+ * frozen cadence golden), native_loop_v131, native_params_v131 or
+ * native_pinmap_provisional, and it does not run check_size_baseline.py at
+ * all. test_val_eprom is in BOTH pinned envs' test_filter, so this is the
+ * only place an automated gate can see the cadence.
+ *
+ * THE REGRESSION IT CATCHES: v1.31's LOOP-01 rewrite made the loop per-BYTE
+ * and put the route assert inside that per-byte step, so every programmed
+ * byte paid EPROM_VPP_SETUP_US (1000 us) + EPROM_VPP_HOLD_US (100 us) of
+ * settle. Measured on a leonardo with a W27C512: 1.568 s per 1024-byte block,
+ * 105.89 s for a 64 KiB device, against 29.71 s on the v2.x firmware
+ * (gh#36 / gh#42). Restoring v2.0.6's per-PASS granularity brought the same
+ * write to 33.51 s, byte-exact. If either count below climbs toward the block
+ * length again, that regression is back.
+ *
+ * WHY ROUTE ASSERTS AND NOT TIMING: this suite's recorder (HOST_STUBS_RECORD_
+ * BUS) sees rurp_write_to_register calls only -- no data strobes, no pins, no
+ * time. That is exactly enough. delayMicroseconds is mocked away, so settle
+ * duration is not observable here, but each settle is emitted immediately
+ * after a route assert, so counting rising edges of the route bit counts the
+ * settles one-for-one. Counting RISING EDGES rather than values-with-the-bit-
+ * set matters: mem_util_set_address writes CONTROL_REGISTER once per byte, so
+ * values carrying the bit are plentiful in both cadences and would not
+ * discriminate.
+ *
+ * The mask is CTRL_VPE_ENABLE | CTRL_VPP_P1_ENABLE, not CTRL_VPE_ENABLE
+ * alone: eprom_internal_set_control_register substitutes P1 for VPE whenever
+ * using_p1_as_vpp(handle) holds. It does not hold for the 28-pin config here
+ * (vpp_line 0xFF), so today only 0x04 is ever seen -- but masking both keeps
+ * the count honest if this fixture is ever pointed at a P1-routed chip
+ * instead of quietly going vacuous. Both bits fit in the recorder's uint8_t
+ * data field (0x04, 0x08), unlike CTRL_VPP_VPE_DROP_ENABLE (0x100) -- see the
+ * pre-existing note above.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/* Mirrors host_stubs_common.inc's HOST_STUBS_MAX_RECORDING, restated because
+ * a #define inside host_stubs.cpp's TU is not visible in this, a SEPARATE
+ * translation unit -- the same convention test_trace_eprom_v131.cpp uses for
+ * its own two cap constants. val_recording_saturated() is the authoritative
+ * check; this literal only makes the failure message legible. */
+#define VAL_EPROM_MAX_RECORDING 256
+
+/* Copied VERBATIM from test_loop_eprom_v131.cpp's LOOP_BUS_CONFIG_0x07,
+ * itself copied from test_trace_eprom_v131.cpp's V131_BUS_CONFIG_0x07. Do
+ * NOT invent one: a zeroed bus_config is DEGENERATE, not an identity remap --
+ * mem_util_remap_address_bus starts from `config.address_mask & address`, and
+ * address_mask == 0 collapses every address to 0, which would send every byte
+ * of the block to the same read-back slot. */
+static const bus_config_t VAL_EPROM_BUS_CONFIG_0x07 = {
+    { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0xFF },
+    0x0000FFFFUL,
+    16,
+    0xFF,
+    0xFF,
+    0x00000000UL
+};
+
+/* Rising edges of the program-route bit across recorded CONTROL_REGISTER
+ * writes == the number of times the loop asserted the route. */
+static int route_assert_count(void) {
+    const uint8_t route = (uint8_t)(CTRL_VPE_ENABLE | CTRL_VPP_P1_ENABLE);
+    int asserts = 0;
+    bool up = false;
+    for (int i = 0; i < bus_recording_count(); i++) {
+        if (recorded_reg(i) != CONTROL_REGISTER) continue;
+        bool now = (recorded_data(i) & route) != 0;
+        if (now && !up) asserts++;
+        up = now;
+    }
+    return asserts;
+}
+
+/* Drives eprom_write_execute directly -- configure_memory then _main, never
+ * _init. _init would run eprom_generic_init/eprom_check_vpp and add register
+ * writes that have nothing to do with the loop's cadence, and on a 256-entry
+ * recorder every avoidable write is budget. Mirrors test_loop_eprom_v131.cpp's
+ * drive_loop_write for exactly the same reason. */
+static void drive_val_write(firestarter_handle_t* h, const uint8_t* block, uint8_t n) {
+    configure_memory(h);
+    clear_bus_recording();
+    h->address = 0;
+    h->data_size = n;
+    for (uint8_t i = 0; i < n; i++) {
+        h->data_buffer[i] = (char)block[i];
+    }
+    h->firestarter_operation_main(h);
+}
+
+static firestarter_handle_t make_write_handle(void) {
+    firestarter_handle_t h = {};
+    h.protocol = 0x07;
+    h.pins = 28;
+    h.mem_size = 65536;
+    h.pulse_delay = 100;
+    h.bus_config = VAL_EPROM_BUS_CONFIG_0x07;
+    h.cmd = CMD_WRITE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.vpp_mv = 0;
+    h.chip_id = 0;
+    h.ctrl_flags = FLAG_SKIP_BLANK_CHECK | FLAG_SKIP_ERASE;
+    return h;
+}
+
+/* Eight distinct non-0xFF targets, each mismatching on its first read and
+ * converging after exactly one pulse. One pass suffices, so a per-PASS
+ * cadence asserts the route ONCE and a per-BYTE cadence asserts it EIGHT
+ * times. */
+void test_writeperf_route_is_asserted_once_per_pass_not_once_per_byte(void) {
+    const uint8_t block[8] = { 0x3C, 0x55, 0xAA, 0x0F, 0x11, 0x22, 0x44, 0x88 };
+    firestarter_handle_t h = make_write_handle();
+    val_readback_reset();
+    for (uint8_t i = 0; i < 8; i++) {
+        val_readback_seed(i, block[i], 1);
+    }
+    drive_val_write(&h, block, 8);
+
+    TEST_ASSERT_FALSE_MESSAGE(val_recording_saturated(),
+        "recorder saturated at " "256" " entries -- every count below would be silently wrong; shrink the block");
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "non-vacuity: the block must actually CONVERGE, otherwise no pulse was ever verified and the counts below describe nothing");
+
+    int asserts = route_assert_count();
+    /* Non-vacuity floor: a loop that never asserted the route at all would
+     * score 0 and satisfy any upper bound trivially. */
+    TEST_ASSERT_GREATER_OR_EQUAL_MESSAGE(1, asserts,
+        "non-vacuity: the program route must be asserted at least once -- 0 would make the bound below vacuous");
+    /* The invariant, as an EXACT count: one pass, therefore one assert. */
+    TEST_ASSERT_EQUAL_MESSAGE(1, asserts,
+        "one pass must cost exactly ONE program-route assert -- 8 means the per-byte cadence (and its 1100us-per-byte settle) is back");
+}
+
+/* Same eight bytes, but byte 3 needs TWO pulses, forcing a second pass. The
+ * discriminator: a per-PASS cadence goes 1 -> 2 (it tracks passes), while a
+ * per-BYTE cadence goes 8 -> 9 (it tracks pulses). Asserting the exact value
+ * pins the scaling law itself, not merely "fewer than the block length". */
+void test_writeperf_route_assert_count_tracks_passes_not_pulses(void) {
+    const uint8_t block[8] = { 0x3C, 0x55, 0xAA, 0x0F, 0x11, 0x22, 0x44, 0x88 };
+    firestarter_handle_t h = make_write_handle();
+    val_readback_reset();
+    for (uint8_t i = 0; i < 8; i++) {
+        val_readback_seed(i, block[i], (uint8_t)(i == 3 ? 2 : 1));
+    }
+    drive_val_write(&h, block, 8);
+
+    TEST_ASSERT_FALSE_MESSAGE(val_recording_saturated(),
+        "recorder saturated at " "256" " entries -- every count below would be silently wrong; shrink the block");
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
+        "non-vacuity: the block must actually CONVERGE, including the two-pulse byte");
+
+    int asserts = route_assert_count();
+    TEST_ASSERT_GREATER_OR_EQUAL_MESSAGE(1, asserts,
+        "non-vacuity: the program route must be asserted at least once");
+    TEST_ASSERT_EQUAL_MESSAGE(2, asserts,
+        "two passes must cost exactly TWO program-route asserts -- 9 means the cadence tracks pulses (per-byte) instead of passes");
+    /* Stated as a scaling law as well as an exact value, so the intent
+     * survives someone re-tuning the fixture's block length. */
+    TEST_ASSERT_LESS_THAN_MESSAGE(8, asserts,
+        "route asserts must never scale with the programmed-byte count");
+}
+
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
@@ -215,6 +403,12 @@ int main(int argc, char** argv) {
     RUN_TEST(test_eprom_0x07_read_configure_only_does_not_enable_vpp);
     RUN_TEST(test_eprom_0x08_read_configure_only_does_not_enable_vpp);
     RUN_TEST(test_eprom_0x0B_read_configure_only_does_not_enable_vpp);
+
+    /* WRITE-CADENCE INVARIANT (debug session w27c512-write-slow-3x) -- the
+     * per-pass route-assert law, enforced here because CI runs only the two
+     * pinned native envs. See the block comment above these two cases. */
+    RUN_TEST(test_writeperf_route_is_asserted_once_per_pass_not_once_per_byte);
+    RUN_TEST(test_writeperf_route_assert_count_tracks_passes_not_pulses);
 
     return UNITY_END();
 }

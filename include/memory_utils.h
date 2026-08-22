@@ -16,6 +16,17 @@ extern "C" {
 
 uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write);
 void mem_util_blank_check(firestarter_handle_t* handle);
+/*
+ * Debug session w27c512-write-slow-3x: exposed so eprom.cpp's
+ * VERIFY_PER_PULSE_PLUS_FINAL arm can CALL the canonical full-block verify
+ * instead of carrying a byte-identical copy of it. eprom.cpp's own comment
+ * already said its copy "mirrors memory_verify_execute exactly: same
+ * MSG_ERR_VERIFY id, same 5-byte payload, same early return" -- this
+ * declaration turns that comment into a linkage. Definition stays in
+ * src/proms/memory.cpp; it is the CMD_VERIFY operation_main there, so it was
+ * already non-static and externally linkable.
+ */
+void memory_verify_execute(firestarter_handle_t* handle);
 void mem_util_set_address(firestarter_handle_t* handle, uint32_t address);
 rurp_register_t mem_util_calculate_lsb_register(firestarter_handle_t* handle, uint32_t address);
 rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, uint32_t address);
