@@ -243,7 +243,15 @@ static void eprom_internal_report_budget_failure(firestarter_handle_t* handle, u
  * between the assert and the CE strobe: mem_util_calculate_top_address_
  * register (memory.cpp) preserves CTRL_VPE_ENABLE and CTRL_VPP_P1_ENABLE
  * unconditionally, on every revision.
+ *
+ * Guarded by EPROM_OVERPROGRAM_SUPPORTED (include/eprom.h) because the
+ * LOOP-03 overprogram site below is now its ONLY caller: the pass-batched
+ * loop asserts and settles the route once per pass, inline, so nothing else
+ * needs a single route-wrapped pulse. Left unguarded it would be an
+ * unreferenced static on the leonardo build -- a -Wunused-function warning,
+ * against an AVR warning policy of exactly zero.
  */
+#if EPROM_OVERPROGRAM_SUPPORTED
 static void eprom_internal_program_pulse(firestarter_handle_t* handle, uint32_t addr, uint8_t expected) {
     handle->firestarter_set_control_register(handle, CTRL_VPE_ENABLE, 1);
     delayMicroseconds(EPROM_VPP_SETUP_US);
@@ -251,6 +259,7 @@ static void eprom_internal_program_pulse(firestarter_handle_t* handle, uint32_t 
     delayMicroseconds(EPROM_VPP_HOLD_US);
     handle->firestarter_set_control_register(handle, CTRL_VPE_ENABLE, 0);
 }
+#endif
 
 /*
  * Phase 142 Plan 04 (D-05, D-06, Q4) -- the single function that resolves
@@ -336,10 +345,14 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
         // NULL row on its own; returns without touching hardware further.
         return;
     }
-    uint32_t overprogram_cap_us = pgm_read_dword(&row->overprogram_cap_us);
     uint32_t energy_cap_us      = pgm_read_dword(&row->energy_cap_us);
     uint8_t  max_pulses         = pgm_read_byte(&row->max_pulses);
+#if EPROM_OVERPROGRAM_SUPPORTED
+    // Read only by the LOOP-03 site below, so guarded with it: unused
+    // locals are -Wunused-variable and the AVR warning policy is zero.
+    uint32_t overprogram_cap_us = pgm_read_dword(&row->overprogram_cap_us);
     uint8_t  overprogram_factor = pgm_read_byte(&row->overprogram_factor);
+#endif
     uint8_t  verify_mode        = pgm_read_byte(&row->verify_mode);
     // Phase 142 / VPP-01 (resolved): vpp_path is read by eprom_hv_route_mask
     // above, at the top of this function -- not hoisted here, since nothing
@@ -535,9 +548,13 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
                 if (was_pending) {
                     // Converged on this pass, after exactly `pulses` pulses.
                     pending[i >> 3] &= (uint8_t)~mask;
-                    // LOOP-03: unreachable with any shipped row
-                    // (overprogram_factor is 0 on all three) -- D-07's
-                    // org_delay save/restore idiom. Exactly one extra
+#if EPROM_OVERPROGRAM_SUPPORTED
+                    // LOOP-03: unreachable from any database row --
+                    // `overprogram_factor` is ABSENT from all 746 rows of
+                    // chip_database.json (the field would sit under
+                    // `programming`), so eprom_overprogram_us returns 0 and
+                    // no margin pulse is ever emitted. D-07's org_delay
+                    // save/restore idiom: exactly one extra
                     // firestarter_set_data call at the computed width,
                     // restored immediately so no failure exit between save
                     // and restore can leak a modified pulse_delay into the
@@ -545,12 +562,20 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
                     // eprom_internal_program_pulse: an overprogram pulse is
                     // a program pulse and needs the program voltage just as
                     // much, and this site runs with the pass's route down.
+                    //
+                    // COMPILED OUT ON LEONARDO ONLY (debug session
+                    // w27c512-write-slow-3x, operator-adjudicated) to fund
+                    // that target's flash. See include/eprom.h's
+                    // EPROM_OVERPROGRAM_SUPPORTED comment for the Caterina-
+                    // cliff reasoning and for the per-target divergence this
+                    // creates the moment a row gains an overprogram_factor.
                     uint32_t op_us = eprom_overprogram_us(pulses, org_delay, overprogram_factor, overprogram_cap_us);
                     if (op_us) {
                         handle->pulse_delay = op_us;
                         eprom_internal_program_pulse(handle, addr, expected);
                         handle->pulse_delay = org_delay;
                     }
+#endif
                 }
                 continue;
             }

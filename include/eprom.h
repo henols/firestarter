@@ -85,6 +85,48 @@ extern "C" {
     #define EPROM_PROGRESS_EMIT_INTERVAL_MS 1000
 
     /*
+     * EPROM_OVERPROGRAM_SUPPORTED -- compiles eprom.cpp's LOOP-03
+     * overprogram call site in (1) or out (0). Debug session
+     * w27c512-write-slow-3x, operator-adjudicated.
+     *
+     * DO NOT "TIDY" THIS AWAY, AND DO NOT MAKE IT UNIFORM ACROSS TARGETS.
+     * It is set to 0 for the leonardo env ONLY, in platformio.ini, and the
+     * reason is flash, not behaviour:
+     *
+     *   - The pass-batched program loop this session shipped costs +772 B
+     *     on leonardo, which overran MERGE-05's 724 B leonardo allowance by
+     *     48 B. Compiling this one call site out gives the bytes back
+     *     without inventing a fifth exemption constant.
+     *   - The harder constraint is the ATmega32U4 CATERINA CLIFF at 28672 B.
+     *     platformio.ini raises the linker's reported ceiling to the chip's
+     *     real 32768 B, so NOTHING warns if the build grows past 28672 --
+     *     it is simply linked over the USB bootloader and the board loses
+     *     bootloader entry. Every byte of leonardo headroom is spent
+     *     against that cliff, not against a diagnostic.
+     *   - uno and uno328pb both PASS the gate with room to spare, so they
+     *     keep the call site. Hence: per-target, deliberately.
+     *
+     * WHAT IS GIVEN UP: an overprogram (margin) pulse after a byte
+     * converges, at eprom_overprogram_us(pulses, ...) width. This is
+     * UNOBSERVABLE TODAY on every target -- `overprogram_factor` is absent
+     * from all 746 rows of chip_database.json (the field would live under
+     * `programming`), so eprom_overprogram_us returns 0 and the pulse is
+     * never emitted by any database row. It WOULD become observable, as a
+     * genuine per-target behavioural divergence, the moment a row gained a
+     * non-zero overprogram_factor: uno/uno328pb would emit the margin pulse
+     * and leonardo would not. Anyone adding such a row must revisit this
+     * define FIRST, and must re-measure leonardo's Caterina margin before
+     * setting it back to 1.
+     *
+     * Native test envs do not define it, so the default below keeps the
+     * call site compiled and covered by test_loop04_no_live_row_emits_an_
+     * overprogram_pulse and the test_loop03_* cases.
+     */
+    #ifndef EPROM_OVERPROGRAM_SUPPORTED
+    #define EPROM_OVERPROGRAM_SUPPORTED 1
+    #endif
+
+    /*
      * Debug session w27c512-program-fail-byte0 (Phase 145 Gate 2) -- the
      * settle either side of the program-voltage route assert that wraps
      * every program pulse in eprom.cpp's per-byte loop.
