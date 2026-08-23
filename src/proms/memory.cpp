@@ -266,6 +266,42 @@ void mem_util_report_voltage(firestarter_handle_t* handle, uint16_t measured_mv,
     handle->response_code = response_code;
 }
 
+/* Shared chip-ID-mismatch report (payload unchanged):
+ *   [actual_id_hi u8][actual_id_lo u8][expected_id_hi u8][expected_id_lo u8]
+ * Four byte-identical-in-shape copies existed -- flash_utils.cpp,
+ * flash_intel.cpp, eprom.cpp, eeprom_28c.cpp -- each comparing a freshly
+ * read chip id against handle->chip_id and reporting the mismatch. The ids
+ * matching emits nothing at all: this function takes an early return before
+ * packing anything, which is the mismatch guard hoisted out of all four call
+ * sites. Severity is the CALLER's decision, passed as warn_only, BECAUSE the
+ * four former copies did not agree on how to derive it and one of them must
+ * not agree: eprom.cpp's standalone CMD_CHECK_CHIP_ID path
+ * (eprom_check_chip_id_execute) refuses unconditionally, independent of
+ * FLAG_FORCE, while its sibling caller eprom_generic_init derives warn_only
+ * from FLAG_FORCE. This helper therefore unifies the COMPARISON and the
+ * PAYLOAD and deliberately does NOT unify the POLICY -- folding
+ * is_flag_set(FLAG_FORCE) in here would make the standalone chip-ID check
+ * start honouring --force, which it must not. Both the id and the
+ * response_code are derived from the same single boolean, so a transposition
+ * between them is impossible by construction here -- deliberately unlike
+ * mem_util_report_voltage, which takes them as two independent parameters
+ * because its under-voltage arm needs a pairing its over-voltage arm does
+ * not. That asymmetry is deliberate, not accidental. Severity rides entirely
+ * in the message id, because every LOG_{WARN,ERROR}_ID_BYTES macro is the
+ * same alias of LOG_ID_BYTES. */
+void mem_util_report_chip_id(firestarter_handle_t* handle, uint16_t actual, bool warn_only) {
+    if (actual == handle->chip_id) {
+        return;
+    }
+    uint8_t _b[4];
+    _b[0] = (uint8_t)((actual >> 8) & 0xFF);
+    _b[1] = (uint8_t)(actual & 0xFF);
+    _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
+    _b[3] = (uint8_t)(handle->chip_id & 0xFF);
+    LOG_ID_BYTES(warn_only ? MSG_WARN_CHIP_ID_MISMATCH : MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+    handle->response_code = warn_only ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
+}
+
 void mem_util_split_delay(uint32_t us, uint32_t* out_ms, uint16_t* out_us) {
     if (us <= MEM_UTIL_DELAY_US_MAX) {
         *out_ms = 0;

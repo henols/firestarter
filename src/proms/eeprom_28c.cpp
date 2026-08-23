@@ -261,7 +261,7 @@ void configure_eeprom28c(firestarter_handle_t* handle) {
 
 // A9-12V chip-identification check for the AT28C EEPROM family.
 // Mirrors eprom_get_chip_id (eprom.cpp:186-197) for the read mechanism and
-// flash_intel_check_chip_id (flash_intel.cpp:146-155) for compare + response.
+// flash_intel_check_chip_id (flash_intel.cpp) for compare + response.
 // Read addresses are derived from mem_size: AT28C256 = 0x7FC0/0x7FC1,
 // AT28C64 = 0x1FC0/0x1FC1, etc. Caller-visible via response_code only;
 // no declaration in eeprom_28c.h (static — internal linkage only).
@@ -288,22 +288,7 @@ static void eeprom28c_check_chip_id(firestarter_handle_t* handle) {
     uint16_t chip_id = handle->firestarter_get_data(handle, mfr_addr) << 8;
     chip_id |= handle->firestarter_get_data(handle, mfr_addr + 1);
     handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_A9_ENABLE, 0);
-    if (chip_id != handle->chip_id) {
-        {
-            uint8_t _b[4];
-            _b[0] = (uint8_t)(((uint16_t)chip_id >> 8) & 0xFF);
-            _b[1] = (uint8_t)((uint16_t)chip_id & 0xFF);
-            _b[2] = (uint8_t)(((uint16_t)handle->chip_id >> 8) & 0xFF);
-            _b[3] = (uint8_t)((uint16_t)handle->chip_id & 0xFF);
-            if (is_flag_set(FLAG_FORCE)) {
-                LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
-                handle->response_code = RESPONSE_CODE_WARNING;
-            } else {
-                LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
-                handle->response_code = RESPONSE_CODE_ERROR;
-            }
-        }
-    }
+    mem_util_report_chip_id(handle, chip_id, is_flag_set(FLAG_FORCE));
 }
 
 // A 0x0D-local, remap-aware command-sequence emitter. Unlike the shipped

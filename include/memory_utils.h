@@ -62,6 +62,16 @@ void mem_util_delay_us(uint32_t us);
 void mem_util_report_voltage(firestarter_handle_t* handle, uint16_t measured_mv,
                               uint16_t expected_mv, uint8_t msg_id, uint8_t response_code);
 
+/*
+ * Retires four chip-ID mismatch blocks across four translation units
+ * (flash_utils.cpp, flash_intel.cpp, eprom.cpp, eeprom_28c.cpp). Definition
+ * lives in src/proms/memory.cpp. warn_only is a parameter, not an internal
+ * is_flag_set(FLAG_FORCE) check, because eprom.cpp's standalone
+ * CMD_CHECK_CHIP_ID path must keep refusing unconditionally regardless of
+ * --force -- do not fold the force test into this helper.
+ */
+void mem_util_report_chip_id(firestarter_handle_t* handle, uint16_t actual, bool warn_only);
+
 static inline bool using_p1_as_vpp(const firestarter_handle_t* handle) {
     return (handle->pins == 32 && handle->bus_config.vpp_line == VPP_P1_32_DIP) ||
            (handle->pins == 28 && handle->bus_config.vpp_line == VPP_P1_28_DIP) ||
