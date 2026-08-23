@@ -81,6 +81,9 @@ _REPO_ROOT = _HERE.parent
 _CHECKER = _REPO_ROOT / "scripts" / "check_no_heap_or_64bit_symbols.py"
 _FIXTURES = _HERE / "fixtures"
 _PLANTED_UNO = _FIXTURES / "planted_no_heap_or_64bit_symbols_prechange_uno" / "avr-nm-uno.txt"
+_CLEAN_POSTCHANGE_UNO = (
+    _FIXTURES / "clean_no_heap_or_64bit_symbols_postchange_uno" / "avr-nm-uno.txt"
+)
 
 # Duplicated from check_no_heap_or_64bit_symbols.py's own HEAP_SYMBOLS /
 # DI64_SYMBOLS / REQUIRED_ANCHORS -- see module docstring for why this is a
@@ -179,10 +182,15 @@ def test_derived_clean_listing_exits_zero_and_names_the_target():
     """Coverage 2 -- SYNTHETIC control, derived from the real pre-change
     listing by deleting exactly the lines whose symbol name is in the
     forbidden sets, leaving the anchors intact. Exits 0, stdout contains
-    PASS: and names the target ('uno'). Plan 06 commits the REAL
-    post-change uno listing and adds test_real_postchange_listing_exits_zero
-    alongside this leg -- until then, this is the only exit-0 control this
-    module has, and it is derived, not a real post-change capture."""
+    PASS: and names the target ('uno'). This was, before plan 06 landed,
+    the only exit-0 control this module had. Plan 06 has since committed
+    the REAL post-change uno listing
+    (tests/fixtures/clean_no_heap_or_64bit_symbols_postchange_uno/avr-nm-uno.txt)
+    and added test_real_postchange_listing_exits_zero below, which is now
+    the gate's real positive control. This leg is kept as a second,
+    independent exit-0 proof derived by construction rather than captured,
+    and its docstring is updated in place rather than deleted so the
+    synthetic-vs-real distinction stays visible."""
 
     def _derive(tmp_path):
         clean_text = _filtered_listing(_PLANTED_UNO.read_text(), drop_forbidden=True)
@@ -201,6 +209,25 @@ def test_derived_clean_listing_exits_zero_and_names_the_target():
         )
         assert "PASS:" in result.stdout, f"expected PASS: in output. Got:\n{result.stdout}"
         assert "uno" in result.stdout, f"expected 'uno' named in PASS output. Got:\n{result.stdout}"
+
+
+def test_real_postchange_listing_exits_zero():
+    """Plan 06's real post-change clean control -- the REAL, committed,
+    unedited avr-nm listing for the real post-change uno build (captured
+    at FW_POST_SHA 98e70af1a89ea69ba9d5a925fa7073fb0bfc61a6, plans 04 and
+    05 both landed), not a synthetic derivative filtered from the
+    pre-change listing at test time. Exits 0, stdout contains PASS:, and
+    stdout names the target ('uno'). This is the gate's real positive
+    control, replacing the promise made in
+    test_derived_clean_listing_exits_zero_and_names_the_target's docstring
+    before this fixture existed."""
+    result = _run_checker(["--nm-output", f"uno={_CLEAN_POSTCHANGE_UNO}"])
+    assert result.returncode == 0, (
+        f"expected exit 0 on the real post-change listing.\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    assert "PASS:" in result.stdout, f"expected PASS: in output. Got:\n{result.stdout}"
+    assert "uno" in result.stdout, f"expected 'uno' named in PASS output. Got:\n{result.stdout}"
 
 
 def test_missing_listing_path_exits_two():
