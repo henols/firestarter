@@ -206,7 +206,8 @@ typedef struct firestarter_handle {
     uint8_t cmd;
     uint8_t operation_state;
     uint8_t response_code;
-    uint32_t protocol;
+    uint8_t protocol;            /* largest dispatched value is 0x39 (PROTO_PHANTOM_0x39,
+                                   * include/proto_constants.h) -- fits uint8_t (157-03, DECODE-04) */
     uint8_t pins;
     uint32_t mem_size;
     uint32_t address;
@@ -214,7 +215,11 @@ typedef struct firestarter_handle {
     uint32_t pulse_delay;
     uint32_t read_settling_us;   /* address-settling delay before /CE assert (µs; 0 = no settling delay) */
     uint32_t read_strobe_us;     /* /CE read-strobe pulse width (µs; 0 = use default 3µs) */
-    uint32_t ctrl_flags;
+    uint16_t ctrl_flags;         /* largest flag is 0x100 (FLAG_SKIP_SDP_UNLOCK); nine flags total,
+                                   * bidirectionally pinned at max 0x100 by
+                                   * firestarter_app/tests/test_revision_constants_parity.py, so a
+                                   * future tenth flag above 0xFFFF trips that gate first (157-03,
+                                   * DECODE-04) */
     uint16_t chip_id;
     uint16_t page_size;          /* per-chip page-write size delivered by the host over the wire
                                    * (Phase 149, PGSZ-01/PGSZ-02); 0 = absent, so the 0x0D handler
