@@ -787,7 +787,18 @@ void test_case6_matching_chip_id_proceeds(void) {
  * moves it here. Do NOT weaken this assertion to make it pass today -- the
  * force/severity fork is exactly what the v1.16 Phase-89 CR-01 regression
  * slipped through (see .planning memory
- * reference_golden_trace_misses_severity_fork.md). */
+ * reference_golden_trace_misses_severity_fork.md).
+ *
+ * Before this plan, the two chip-ID mismatch ids -- MSG_WARN_CHIP_ID_MISMATCH
+ * and MSG_ERR_CHIP_ID_MISMATCH -- appeared in ZERO test files anywhere in
+ * this tree, so severity (which rides entirely in the id, not the
+ * response_code) had no oracle at all. The response_code legs above and the
+ * id legs below are complementary, not redundant: LOG_WARN_ID_BYTES
+ * (include/logging_id.h:119) and LOG_ERROR_ID_BYTES
+ * (include/logging_id.h:110) are the SAME alias of LOG_ID_BYTES, so a
+ * transposed id ships the wrong severity on the wire even when
+ * response_code still reads correctly -- neither leg can see the other's
+ * transposition. */
 void test_case7_mismatching_chip_id_with_force_warns(void) {
     s_mfr_addr_keyed = 32768 - 64;
     s_mfr_hi_keyed = 0xDE;
@@ -803,6 +814,52 @@ void test_case7_mismatching_chip_id_with_force_warns(void) {
     TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
         "migrated (RED, CORRECTION 2): mismatching identity + FLAG_FORCE must WARN, not have its "
         "severity destroyed by the unconditional SDP-disable completion wait");
+
+    /* WARN direction, by id: severity rides entirely in the id, so this leg
+     * is what a transposed (MSG_WARN_CHIP_ID_MISMATCH, MSG_ERR_CHIP_ID_MISMATCH)
+     * swap trips -- the response_code assertion above it structurally cannot
+     * see that transposition. */
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_WARN_CHIP_ID_MISMATCH),
+        "Case 7 (chip-ID severity fork, WARN direction): MSG_WARN_CHIP_ID_MISMATCH must appear in "
+        "the captured frame ids under FLAG_FORCE -- severity rides entirely in the id "
+        "(LOG_WARN_ID_BYTES / LOG_ERROR_ID_BYTES are the same alias of LOG_ID_BYTES), so this leg is "
+        "what a transposed id would trip");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_ERR_CHIP_ID_MISMATCH),
+        "Case 7 (chip-ID severity fork, WARN direction): MSG_ERR_CHIP_ID_MISMATCH must NOT also "
+        "appear under FLAG_FORCE -- this pins the fork in both directions, not just the presence half");
+
+    /* ERROR direction, by id -- Case 11's anti-hollow re-drive shape:
+     * without this second drive, the WARN-direction id assertions above
+     * could pass for a reason unrelated to the flag (e.g. an id that is
+     * always emitted regardless of FLAG_FORCE). Re-driving without the flag
+     * is what proves the id is CONDITIONAL on FLAG_FORCE rather than always
+     * emitted -- an assertion that only ever sees one direction cannot
+     * detect a transposition that swaps both ids at once. */
+    captured_frames.clear();
+    s_mfr_addr_keyed = 32768 - 64;
+    s_mfr_hi_keyed = 0xDE;
+    s_mfr_lo_keyed = 0xAD;
+    firestarter_handle_t h2 = make_identity_handle(0x1F08, 0); /* FLAG_FORCE absent */
+    configure_memory(&h2);
+    h2.firestarter_get_data = mock_get_data_keyed;
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    h2.firestarter_operation_init(&h2);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h2.response_code,
+        "Case 7 (chip-ID severity fork, ERROR direction): mismatching identity WITHOUT FLAG_FORCE "
+        "must refuse with RESPONSE_CODE_ERROR");
+    std::vector<uint8_t> ids2;
+    sdp_captured_frame_ids(&ids2);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids2, (uint8_t)MSG_ERR_CHIP_ID_MISMATCH),
+        "Case 7 (chip-ID severity fork, ERROR direction): MSG_ERR_CHIP_ID_MISMATCH must appear in "
+        "the captured frame ids without FLAG_FORCE -- this re-drive is what proves the id is "
+        "conditional on the flag rather than always emitted");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids2, (uint8_t)MSG_WARN_CHIP_ID_MISMATCH),
+        "Case 7 (chip-ID severity fork, ERROR direction): MSG_WARN_CHIP_ID_MISMATCH must NOT appear "
+        "without FLAG_FORCE -- pins the fork in both directions inside this one case");
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
