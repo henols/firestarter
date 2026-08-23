@@ -1,8 +1,8 @@
 #pragma once
 
 /*
- * Phase 124 Plan 09 (MERGE-04, D-14) -- dependency-free fragment header
- * carrying the PY32F071 pin-map "configured for a real build" guard.
+ * Dependency-free fragment header carrying the PY32F071 pin-map
+ * "configured for a real build" guard.
  *
  * WHY THIS IS A SEPARATE, DEPENDENCY-FREE FILE:
  *   include/boards/py32f071_rurp_shield.h includes py32f0xx_hal.h, which

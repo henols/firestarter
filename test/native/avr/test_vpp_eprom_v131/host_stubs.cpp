@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 142 (VPP-01..VPP-04, D-14) -- host stubs for the EPROM VPP-routing
+ * (VPP-01..VPP-04, D-14) -- host stubs for the EPROM VPP-routing
  * and VPP-validation suite.
  *
  * This is the SECOND suite compiled into the native_loop_v131 env (no

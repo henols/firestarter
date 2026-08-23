@@ -6,7 +6,7 @@
     ],
     "blob_shas": {
       "include/eprom_params.h": "b04c788b02c1be51200d22a876f03f4de876cd9e",
-      "src/proms/eprom_params.cpp": "5dffe841aeb7013f9f53e9991a6248b203ae22da"
+      "src/proms/eprom_params.cpp": "7817c1422d698547e5da5e0bee197b9951fb4465"
     },
     "recorded_at_head": "3c165d5c32e068c254f33603cf804b4b64fe66b1",
     "recorded_by": "Phase 140 Plan 05",
@@ -45,7 +45,8 @@
         "statement": "The justification sentence published on gh#15 and carried in PROJECT.md -- that 50ms 'is exactly the classic 2716 total programming time', derived as 100 x 500us -- is factually wrong. The TI TMS 2516 datasheet states its own total programming time for all bits is 100 seconds; 50ms is the per-location pulse width (t_w(PR) TYP), not a total.",
         "phase_146_handoff": "The value (50000us) is correct and has a genuine primary datasheet basis; only the published REASON is wrong. This phase records the correction without editing the posted gh#15 text or PROJECT.md; Phase 146 / CLOSE-04 reconciles the posted text."
       }
-    ]
+    ],
+    "sweep_note": "The src/proms/eprom_params.cpp blob SHA below was re-derived by the provenance comment sweep (SWEEP-01, SWEEP-06) using `git hash-object` on the swept working-tree file, per this gate's own \"never hand-edit the SHA\" instruction. The sweep changed comment text ONLY: no cell value, no recorded site, no count, no table content and no other blob_shas entry changed. Verified for this record: the comment-stripped text of src/proms/eprom_params.cpp is byte-identical before and after the sweep."
   },
   "cells": [
     {

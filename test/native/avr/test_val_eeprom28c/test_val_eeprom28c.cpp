@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 71 Plan 04 — Tier-1 validation suite for the EEPROM 28C family.
+ * Tier-1 validation suite for the EEPROM 28C family.
  * HARN-01 / D-07 / T-71-WIRED-WRONG.
  *
  * Proves configure_eeprom28c is a 5V-only handler (no VPP regulator use).
@@ -56,7 +56,7 @@ static uint32_t s_planted_base_address;
 static uint32_t s_planted_stale_address;
 static uint8_t  s_planted_stale_value;
 
-/* Phase 149 (D-09) -- the flush-count oracle. Counts every entry to the
+/* (D-09) -- the flush-count oracle. Counts every entry to the
  * mocked firestarter_get_data below -- the ONLY correct seam for observing
  * flush cadence: every flush-path read in production goes through
  * handle->firestarter_get_data, while the bus recorder captures register
@@ -77,7 +77,7 @@ void setUp(void) {
     When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
     When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
-    /* Plan 119-08 (D-16): eeprom28c_write_execute now calls micros() twice
+    /* (D-16): eeprom28c_write_execute now calls micros() twice
      * per byte for the worst-per-byte-interval tracker, and every case in
      * this suite drives write_execute via h.firestarter_operation_main(&h)
      * for CMD_WRITE. Without this mock ArduinoFake aborts (SIGABRT) on the
@@ -427,7 +427,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_fix06_clean_page_write_succeeds_isolation_control);
     RUN_TEST(test_fix06_page_boundary_window_readback);
 
-    /* Phase 149 (D-09): the flush-count oracle */
+    /* (D-09): the flush-count oracle */
     RUN_TEST(test_pgsz_absent_field_reproduces_the_64_byte_cadence);
     RUN_TEST(test_pgsz_delivered_128_halves_the_flush_count);
     RUN_TEST(test_pgsz_explicit_64_matches_the_absent_cadence);

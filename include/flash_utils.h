@@ -59,9 +59,8 @@ extern "C" {
         {0x5555, 0x20},
     };
 
-    /* Phase 151 (LOCK-02) — protection-status read address & decode constants.
-     * Transcribed byte-for-byte from
-     * `.planning/phases/151-protection-readability-lock-status/151-SEQUENCES.md`;
+    /* Protection-status read address & decode constants.
+     * Transcribed byte-for-byte from the project's recorded sequence tables;
      * if this file and that artifact ever disagree, the pinning legs in
      * test_val_nor_unlock.cpp / test_val_5v_page.cpp are measuring the
      * wrong thing, not this header. Both sequences are datasheet-derived —
@@ -121,7 +120,7 @@ extern "C" {
      * Used by flash_nor_unlock and flash_5v_page to avoid duplicating the
      * FLASH_ENABLE_ID / FLASH_DISABLE_ID command sequence.
      *
-     * Phase 151 (LOCK-02): flash_util_read_in_id_mode is the same mode
+     * flash_util_read_in_id_mode is the same mode
      * entry/exit with a caller-supplied read address rather than the fixed
      * 0x0000/0x0001 chip-ID pair — a protect-verify read is this same
      * AMD/JEDEC ID mode, just reading a different word. It therefore lives

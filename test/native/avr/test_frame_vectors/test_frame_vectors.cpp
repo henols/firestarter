@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 52 Plan 02 / Phase 54 Plan 01 — Firmware Unity vector suite.
+ * Firmware Unity vector suite.
  *
  * Asserts both legs of the COBS frame contract against the frozen golden
  * vectors generated in Plan 01 (firestarter/include/frame_vectors.h):
@@ -19,7 +19,7 @@
  * A CRC8 known-answer test (D-06/SC4) pins poly 0x07 / seed 0x00
  * independently of the production CRC8_TABLE PROGMEM array.
  *
- * Phase 54 additions (EVEN-01):
+ * additions (EVEN-01):
  *   test_vector_decode_leg_main_path — MAIN-path cap=DATA_BUFFER_SIZE decode
  *       for ALL vectors including 512/1024-byte ones (SC1/SC4).
  *   test_cmd_idle_overflow_at_full_block — CMD_IDLE cap=DATA_BUFFER_SIZE-1
@@ -166,7 +166,7 @@ void setUp(void) {
 
     /* millis() — monotonically increasing counter.  The COBS decoder does
      * NOT have a wall-clock timeout loop (the 2 s cascade was deleted in
-     * Phase 50 — SC1 win).  This stub is retained for defensive
+     * SC1 win).  This stub is retained for defensive
      * completeness in case any helper path ever calls millis(). */
     When(Method(ArduinoFake(Function), millis))
         .AlwaysDo([&]() -> unsigned long {

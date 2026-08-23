@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 124 Plan 08 -- MERGE-04's refusal, made concrete (D-11, D-12, D-13).
+ * The provisional-pin-map refusal, made concrete.
  *
  * WHY THIS HEADER EXISTS. `is_memory_cmd()` (include/firestarter.h) is the
  * ADMISSION gate: it decides which commands may reach configure_memory() at

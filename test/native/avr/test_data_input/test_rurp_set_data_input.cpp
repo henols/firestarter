@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 28 Wave A — RED unity scaffold for rurp_set_data_input pullup
+ * RED unity scaffold for rurp_set_data_input pullup
  * clearing (FIX-02).
  *
  * Two Unity RUN_TEST cases under the include-as-source pattern (RESEARCH.md

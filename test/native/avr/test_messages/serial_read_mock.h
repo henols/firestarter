@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 50 Plan 01 — ArduinoFake Serial.read / available / peek
+ * ArduinoFake Serial.read / available / peek
  * queued-byte mock helper (RED scaffold).
  *
  * Provides a single helper function that wires ArduinoFake's Serial mock to a

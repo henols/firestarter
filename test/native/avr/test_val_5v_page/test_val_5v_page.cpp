@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 71 Plan 04 — Tier-1 validation suite for the Flash 5V-Page family.
+ * Tier-1 validation suite for the Flash 5V-Page family.
  * HARN-01 / D-07 / T-71-WIRED-WRONG.
  *
  * Proves the configure_flash_5v_page dispatch/configure phase is VPP-safe.
@@ -37,7 +37,7 @@
 extern "C" {
 #include "memory.h"
 }
-/* Phase 153 (ERASE-02): is_operation_in_progress resolves from here. */
+/* (ERASE-02): is_operation_in_progress resolves from here. */
 #include "operation_utils.h"
 #include "firestarter.h"
 #include "flash_utils.h"
@@ -53,7 +53,7 @@ extern "C" int  bus_recording_count();
 extern "C" uint8_t recorded_reg(int i);
 extern "C" uint8_t recorded_data(int i);
 
-/* Phase 151 (LOCK-02) — wire-byte capture for the CMD_LOCK_STATUS legs
+/* (LOCK-02) — wire-byte capture for the CMD_LOCK_STATUS legs
  * below. [env:native]'s build_src_filter links the REAL
  * src/boards/rurp_serial_utils.cpp into this test binary (see that file's
  * header comment), so LOG_DATA_ID_BYTES -> rurp_log_id -> _firestarter_
@@ -62,7 +62,7 @@ extern "C" uint8_t recorded_data(int i);
  * same way. */
 static std::vector<uint8_t> s_wire_bytes;
 
-/* Phase 151 (LOCK-02) — a controllable stand-in for handle->firestarter_get_data,
+/* (LOCK-02) — a controllable stand-in for handle->firestarter_get_data,
  * installed AFTER configure_memory() has already assigned the real
  * memory_get_data, so it overrides only the specific call the raw-byte-
  * fidelity leg needs to control. Ignores address/handle deliberately: this
@@ -227,7 +227,7 @@ static firestarter_handle_t make_write_handle_with_data(void) {
     return h;
 }
 
-/* Phase 153 (ERASE-02) — the only factory in this suite that drives
+/* (ERASE-02) — the only factory in this suite that drives
  * flash_5v_page_write_init itself rather than bypassing it. FLAG_CAN_ERASE
  * and FLAG_SKIP_BLANK_CHECK are both clear (ctrl_flags = 0), which is the
  * "blank-check would run" configuration: is_flag_set(FLAG_CAN_ERASE) is
@@ -510,10 +510,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_5v_page_write_execute_emits_sdp);
     RUN_TEST(test_5v_page_write_execute_no_vpp);
 
-    /* Phase 153 (ERASE-02): write-INIT blank-check removal proof */
+    /* (ERASE-02): write-INIT blank-check removal proof */
     RUN_TEST(test_5v_page_write_init_no_blank_check_with_flag_clear_erase02);
 
-    /* Phase 151 (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) */
+    /* (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) */
     RUN_TEST(test_5v_page_lock_status_dispatch);
     RUN_TEST(test_5v_page_lock_status_pinned_sequence);
     RUN_TEST(test_5v_page_lock_status_no_vpp);

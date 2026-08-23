@@ -5,7 +5,7 @@
  * Permission is hereby granted under MIT license.
  *
  * v1.22 Phase 119 Plan 02 — host stub TU for the test_cmd_admission suite.
- * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
+ * WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * Compiling firmware sources (src/proms/*.cpp) on platform = native leaves
  * the linker hungry for hardware-side symbols defined in the AVR-only TUs

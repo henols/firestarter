@@ -56,10 +56,10 @@ const char key_pin_count[] PROGMEM = "pin-count";
 const char key_pulse_delay[] PROGMEM = "pulse-delay";
 const char key_vpp_mv[] PROGMEM = "vpp_mv";
 const char key_algorithm[] PROGMEM = "algorithm";
-/* Phase 44 — host-tunable read-timing knobs (D-04 sweep params) */
+/* Host-tunable read-timing knobs. */
 const char key_read_settling[] PROGMEM = "read-settling-delay";
 const char key_read_strobe[]   PROGMEM = "read-strobe-us";
-/* Phase 149 — per-chip page-write size delivered by the host (PGSZ-01/PGSZ-02).
+/* Per-chip page-write size delivered by the host.
  * Wire key is the HYPHEN form "page-size" -- the internal database key
  * programming.page_size uses an underscore, so a PROGMEM string written
  * against the underscore form would silently never match. */
@@ -74,9 +74,9 @@ static const key_parser_t key_parsers[] PROGMEM = {
     {key_mem_size, get_memory_size}, {key_address, get_address},         {key_flags, get_flags},
     {key_chip_id, get_chip_id},      {key_pin_count, get_pin_count},     {key_pulse_delay, get_delay},
     {key_vpp_mv, get_vpp_mv},        {key_algorithm, get_algorithm},
-    /* Phase 44 — read-timing sweep knobs (RCA-01 causal proof, D-04) */
+    /* Read-timing sweep knobs. */
     {key_read_settling, get_read_settling},                              {key_read_strobe, get_read_strobe},
-    /* Phase 149 — page-size seam (PGSZ-01/PGSZ-02) */
+    /* Page-size seam. */
     {key_page_size, get_page_size},
 };
 
@@ -89,16 +89,15 @@ int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter
     handle->bus_config.address_mask = 0;
     handle->bus_config.static_high_mask = 0;
     handle->chip_id = 0;
-    /* D-05: page_size resets to 0 exactly like chip_id above. handle is a
+    /* page_size resets to 0 exactly like chip_id above. handle is a
      * single file-scope global with no per-command memset, and page-size is
      * emit-when-present, so without this reset a 128 parsed for one chip
      * would persist into the next command and "absent means 64" becomes
-     * false in practice -- the exact overrun PGSZ-02 exists to prevent.
-     * The two Phase 44 read-timing knobs (read_settling_us, read_strobe_us)
-     * are NOT added to this reset block by this phase (deliberately -- a
-     * pre-existing latent instance of the same defect, filed as a todo by
-     * plan 07); their absence here is not an oversight this phase
-     * introduced. */
+     * false in practice -- the exact overrun this reset exists to prevent.
+     * The two read-timing knobs (read_settling_us, read_strobe_us) are
+     * deliberately NOT in this reset block: that is a pre-existing latent
+     * instance of the same defect, filed as a todo, so their absence here is
+     * not an oversight. */
     handle->page_size = 0;
 
     if (token_count < 1 || tokens[0].type != JSMN_OBJECT) {
@@ -347,15 +346,15 @@ bool get_rev(const char* json, jsmntok_t* tokens, int pos, rurp_configuration_t*
 }
 
 /*
- * Phase 44 — read-timing sweep knobs (RCA-01 / D-04).
+ * Read-timing sweep knobs.
  *
- * T-44-01 cap: both knobs are clamped to READ_TIMING_MAX_US at parse time so
+ * Both knobs are clamped to READ_TIMING_MAX_US at parse time so
  * an absurd JSON value cannot pass an unbounded value to delayMicroseconds()
  * in the read loop.  Values < 3µs are below delayMicroseconds() accuracy on
- * 16 MHz AVR (Pitfall 5) — documented by the caller in memory_get_data().
+ * 16 MHz AVR — documented by the caller in memory_get_data().
  *
  * Zero-ambiguity:
- *   read_settling_us == 0 → no settling delay (explicit test point; D-04)
+ *   read_settling_us == 0 → no settling delay (explicit test point)
  *   read_strobe_us   == 0 → use firmware default 3µs (preserves current behaviour)
  */
 #define READ_TIMING_MAX_US 1000UL   /* T-44-01 sane max (~1ms); caps both knobs */
@@ -379,12 +378,13 @@ bool get_read_strobe(const char* json, jsmntok_t* tokens, int pos, firestarter_h
 }
 
 /*
- * Phase 149 — page-size seam (PGSZ-01/PGSZ-02, D-07).
+ * Page-size seam.
  *
  * Deliberately the plain one-line extract_int form (get_chip_id's model),
- * NOT the Phase 44 clamp form above: validation (power-of-two, range, the
- * silent fallback) lives in the 0x0D handler (eeprom28c_page_mask), which
- * keeps json_parse algorithm-agnostic and costs the fewest bytes here.
+ * NOT the clamp form used by the read-timing knobs above: validation
+ * (power-of-two, range, the silent fallback) lives in the 0x0D handler
+ * (eeprom28c_page_mask), which keeps json_parse algorithm-agnostic and
+ * costs the fewest bytes here.
  */
 bool get_page_size(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
     extract_int("page-size", handle->page_size);

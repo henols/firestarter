@@ -190,14 +190,24 @@ _C14_CONSUMER_SITES = (
     # (104/110 -> 119/125). Site 41 and the six sites in other files are
     # unaffected. Re-pinned, not relaxed: the census still asserts an exact
     # line for each of the nine sites.
-    ("src/firestarter.cpp", 41, "rurp_load_config"),
-    ("src/firestarter.cpp", 119, "rurp_get_config"),
-    ("src/firestarter.cpp", 125, "rurp_save_config"),
+    # The provenance comment sweep (SWEEP-01, SWEEP-06) deleted and reflowed
+    # comment blocks only -- no statement changed -- but that moves line
+    # numbers, which this census pins exactly. src/firestarter.cpp: a deleted
+    # 3-line tombstone above setup()'s rurp_load_config() shifts site 41 by -3
+    # (41 -> 38), and a further -1 from a reflow inside parse_json shifts the
+    # get/save pair by -4 (119/125 -> 115/121). src/hardware_operations.cpp: a
+    # 4-line comment reflowed to 3 shifts both sites by -1 (107/119 ->
+    # 106/118). The other four sites sit in files the sweep did not touch and
+    # are unchanged. Re-derived by locating each call, never by relaxing the
+    # pin.
+    ("src/firestarter.cpp", 38, "rurp_load_config"),
+    ("src/firestarter.cpp", 115, "rurp_get_config"),
+    ("src/firestarter.cpp", 121, "rurp_save_config"),
     ("src/boards/rurp_common.cpp", 53, "rurp_get_config"),
     ("include/rurp_hw_rev_utils.h", 95, "rurp_get_config"),
     ("include/rurp_hw_rev_utils.h", 101, "rurp_get_config"),
-    ("src/hardware_operations.cpp", 107, "rurp_get_config"),
-    ("src/hardware_operations.cpp", 119, "rurp_get_config"),
+    ("src/hardware_operations.cpp", 106, "rurp_get_config"),
+    ("src/hardware_operations.cpp", 118, "rurp_get_config"),
     ("platform/py32f071/src/py32f071_rurp_shield.cpp", 297, "rurp_get_config"),
 )
 

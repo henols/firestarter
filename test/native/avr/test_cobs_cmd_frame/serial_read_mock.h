@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 51 Plan 04 — suite-local copy of the ArduinoFake Serial.read /
+ * suite-local copy of the ArduinoFake Serial.read /
  * available / peek queued-byte mock helper for the test_cobs_cmd_frame suite.
  *
  * This is a LOCAL copy (not the shared test_messages/serial_read_mock.h) so

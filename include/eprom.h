@@ -16,12 +16,12 @@ extern "C" {
     void configure_eprom(firestarter_handle_t* handle);
 
     /*
-     * Phase 141 Plan 04 (LOOP-03, D-08) -- pure overprogram-duration
-     * arithmetic. Exposed here (not file-static in eprom.cpp) because D-08
-     * requires direct native testing: overprogram_factor is 0 on all three
+     * Pure overprogram-duration arithmetic. Exposed here (not file-static in
+     * eprom.cpp) because it requires direct native testing:
+     * overprogram_factor is 0 on all three
      * shipped eprom_params rows (0x07/0x08/0x0B), so the per-byte write
      * loop can never reach this path with today's data, and a pure
-     * function is the only possible oracle for LOOP-03's correctness.
+     * function is the only possible oracle for its correctness.
      *
      * The product is computed entirely in uint32_t
      * ((uint32_t)factor * pulse_count * pulse_us) -- the worst named case
@@ -35,13 +35,13 @@ extern "C" {
     uint32_t eprom_overprogram_us(uint8_t pulse_count, uint32_t pulse_us, uint8_t factor, uint32_t cap_us);
 
     /*
-     * Phase 142 Plan 04 (D-05, D-06, Q4) -- resolves which EPROM
+     * Resolves which EPROM
      * high-voltage route (direct-VPE vs. drop-resistor) to assert for the
      * current handle, driven by the eprom_params table's vpp_path column,
      * with FLAG_VPE_AS_VPP forcing the direct-VPE path on top of whatever
      * the table says. Both eprom_write_execute and eprom_check_vpp call
-     * this same function (VPP-03), replacing the two byte-identical
-     * hand-rolled forks eprom.cpp used to carry at what were :190 and :340.
+     * this same function, replacing the two byte-identical
+     * hand-rolled forks eprom.cpp used to carry.
      *
      * Exposed here (not file-static in eprom.cpp), matching the
      * eprom_overprogram_us precedent immediately above: a direct
@@ -58,11 +58,11 @@ extern "C" {
     rurp_register_t eprom_hv_route_mask(firestarter_handle_t* handle);
 
     /*
-     * Phase 143 Plan 05 (HOST-02, D-02/D-03) -- cadence for the intra-block
+     * Cadence for the intra-block
      * MSG_DATA_PROGRESS (0xE0) emission inside eprom.cpp's per-byte program
      * loop, which runs on leonardo and native only (compiled out, variable
      * and all, on uno/uno328pb -- see that emission's own comment in
-     * eprom.cpp for the BF-2 rationale). Named here, not as a file-local
+     * eprom.cpp for that rationale). Named here, not as a file-local
      * #define in eprom.cpp (a #define costs 0 B until referenced), so the
      * native cadence cases in test_loop_eprom_v131.cpp can reference it by
      * name instead of duplicating the number.

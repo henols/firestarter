@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 50 Plan 01 — host stub TU for the test_cobs_data_frame suite.
+ * host stub TU for the test_cobs_data_frame suite.
  *
  * Provides no-op rurp_* symbol implementations so the test binary links
  * against boards/rurp_serial_utils.cpp (pulled in via build_src_filter) on

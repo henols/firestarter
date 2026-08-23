@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 52 Plan 02 — suite-local copy of the ArduinoFake Serial.read /
+ * suite-local copy of the ArduinoFake Serial.read /
  * available / peek queued-byte mock helper for the test_frame_vectors suite.
  *
  * This is a LOCAL copy (not the shared test_messages/serial_read_mock.h) so

@@ -55,16 +55,15 @@ void configure_flash_5v_page(firestarter_handle_t* handle) {
             handle->firestarter_operation_init = NULL;
             handle->firestarter_operation_main = flash_5v_page_check_chip_id_execute;
             break;
-        // Phase 151 (LOCK-02): a second query arm, modelled on
-        // CMD_CHECK_CHIP_ID just above. Unlike flash_nor_unlock.cpp, this
+        // A second query arm, modelled on CMD_CHECK_CHIP_ID just above.
+        // Unlike flash_nor_unlock.cpp, this
         // file assigns no firestarter_operation_init before the switch, so
         // this arm does not null it -- there is nothing to null. The 0x01
         // force ctrl flag is deliberately not read on this path, for the
         // same reason flash_nor_unlock.cpp's CMD_LOCK_STATUS arm states:
         // elsewhere that bit means "downgrade a chip-ID mismatch to a
         // warning", this read performs no chip-ID check, and honouring the
-        // bit here would give one flag two unrelated meanings (151-DESIGN.md
-        // §6 / C-16).
+        // bit here would give one flag two unrelated meanings.
         case CMD_LOCK_STATUS:
             handle->firestarter_operation_main = flash_5v_page_read_protection_execute;
             break;
@@ -85,8 +84,8 @@ void flash_5v_page_write_init(firestarter_handle_t* handle) {
             }
         }
     }
-    // Phase 153 (152-CONTEXT.md D-07 / ERASE-02): flash4 auto-erases per
-    // page during the page-write loop, so a pre-write blank check here was
+    // flash4 auto-erases per page during the page-write loop, so a
+    // pre-write blank check here was
     // a false precondition, not a safety net -- removed outright rather
     // than gated. FLAG_SKIP_BLANK_CHECK is consequently unread on this
     // protocol; do not restore this conditional on the grounds that the
@@ -98,9 +97,9 @@ void flash_5v_page_write_init(firestarter_handle_t* handle) {
     // route a 12 V bulk erase onto a 5 V-only part -- a live hardware
     // hazard, not a retired one.
     //
-    // D-153-05: an erase-on-write block gated this way, inside a
-    // protocol's write-init, is the pattern an executor must NOT copy
-    // into eeprom28c_write_init.
+    // An erase-on-write block gated this way, inside a protocol's
+    // write-init, is a pattern that must NOT be copied into
+    // eeprom28c_write_init.
 }
 
 void flash_5v_page_write_execute(firestarter_handle_t* handle) {
@@ -160,17 +159,17 @@ void flash_5v_page_check_chip_id_execute(firestarter_handle_t* handle) {
     flash_util_check_chip_id_execute(handle);
 }
 
-// Phase 151 (LOCK-02): CMD_LOCK_STATUS operation for the 0x05 Winbond
+// CMD_LOCK_STATUS operation for the 0x05 Winbond
 // Product-ID boot-block family. Reads the boot-block status byte at
 // FLASH_5V_PAGE_BOOT_BLOCK_STATUS_ADDR through the shared AMD/JEDEC
-// ID-mode helper and reports the raw silicon byte plus a firmware decode,
-// per 151-DESIGN.md §1. This is a 5V read -- flash_util_read_in_id_mode
+// ID-mode helper and reports the raw silicon byte plus a firmware decode.
+// This is a 5V read -- flash_util_read_in_id_mode
 // only enters/exits ID mode via FLASH_ENABLE_ID/FLASH_DISABLE_ID, so no
 // VPP/VPE control-register bit is ever written on this path.
 //
 // Decided against emitting MSG_WARN_FL4_BOOT_BLOCK_LOCKED (0x85) on the
-// reads-as-locked branch below, decided explicitly rather than left open
-// (151-08's own instruction): that id's catalog format string reads "...
+// reads-as-locked branch below, decided explicitly rather than left open:
+// that id's catalog format string reads "...
 // not programmable ... write forced" -- worded for the write-path failure
 // it currently has no emit site for, not for a plain status read that
 // wrote nothing. Emitting it here, alongside a response_code that stays
@@ -178,9 +177,9 @@ void flash_5v_page_check_chip_id_execute(firestarter_handle_t* handle) {
 // observation as a write-path event. The MSG_DATA_PROTECTION_STATUS DATA
 // frame below already carries this observation (byte 1 = 0x01) with no
 // additional catalog id needed, and leonardo's Caterina-cliff margin is
-// too tight (151-08-PLAN.md's budget) to spend bytes on a second,
+// too tight to spend bytes on a second,
 // semantically-mismatched emission. The id stays available, unemitted,
-// for a future write-path pre-flight (CONTEXT.md's deferred "fold lock
+// for a future write-path pre-flight (the deferred "fold lock
 // state into dev test diagnostic reports" idea) where "write forced"
 // would actually be true.
 void flash_5v_page_read_protection_execute(firestarter_handle_t* handle) {

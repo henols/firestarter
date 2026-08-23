@@ -4,15 +4,14 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 143 Plan 01 (HOST-01, firmware half -- BF-3 as corrected) -- the
- * corrected per-block worst-case write-time budget arithmetic declared in
- * eprom_budget.h. Reads the const, PROGMEM eprom_params table
+ * The corrected per-block worst-case write-time budget arithmetic declared
+ * in eprom_budget.h. Reads the const, PROGMEM eprom_params table
  * (eprom_params.h / eprom_params.cpp) and calls the shipped
  * overprogram-duration function (eprom.h / eprom.cpp) rather than
  * restating either.
  *
- * No Arduino framework header is included here (140-RESEARCH.md Pitfall
- * 1): src/proms/not_implemented.cpp is the only other translation unit
+ * No Arduino framework header is included here:
+ * src/proms/not_implemented.cpp is the only other translation unit
  * under src/proms/ that omits it, and this file follows that include
  * discipline verbatim so it adds zero macro-redefinition warnings on the
  * native build. PROGMEM access comes transitively through eprom_params.h
@@ -29,9 +28,8 @@
  * This is a NEW, unpinned translation unit under src/proms/ -- deliberately
  * NOT folded into eprom.cpp or eprom_params.cpp. tests/golden/
  * protocol_branch_inventory.json's meta.blob_shas pins exactly those two
- * files; putting this arithmetic in either would fold it into plan
- * 143-05's D-23 single-commit eprom.cpp constraint and turn the golden RED
- * for two reasons at once. build_src_filter's directory glob (+<proms/>,
+ * files; putting this arithmetic in either would fold it under that pin and
+ * turn the golden RED. build_src_filter's directory glob (+<proms/>,
  * platformio.ini) compiles this file under every native environment with
  * no platformio.ini edit.
  */

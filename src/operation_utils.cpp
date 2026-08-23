@@ -238,9 +238,9 @@ op_message_type op_get_message(firestarter_handle_t* handle) {
                 break;
 
             case '#': {  // Data packet
-                // Phase 50 Plan 02: COBS framing is delimiter-driven (no fixed
-                // header size).  Execution reaches here only after peak()=='#'
-                // confirmed available()>=1; the inner guard is unreachable.
+                // COBS framing is delimiter-driven (no fixed header size).
+                // Execution reaches here only after peak()=='#' confirmed
+                // available()>=1; the inner guard is unreachable.
                 rurp_communication_read();  // consume '#'
                 int res = rurp_communication_read_data(handle->data_buffer, DATA_BUFFER_SIZE);
                 if (res < 0) {

@@ -48,8 +48,8 @@ extern "C" {
 
 // ---- Section 1b: ADC voltage-band thresholds (HARDWARE_REVISION-gated) -------
 // Consumed by rurp_detect_hardware_revision() in rurp_hw_rev_utils.h.
-// Phase 35 Wave 3 D-02 follow-through: thresholds UNCHANGED — Phase 35 Wave 3
-// bench (2026-05-26) validated 0/15 reads in the [200, 220) guard gap across
+// Thresholds UNCHANGED — bench measurement (2026-05-26) validated 0/15 reads
+// in the [200, 220) guard gap across
 // 3 shield revisions; the existing 20-count gap is empirically sufficient.
 // SEMANTIC CHANGE post-Phase 35 Plan 01 INPUT high-Z fix: bands now characterize
 // A3-net composition (R41-only-to-GND = low; external-pull-up-to-+5V = mid;
@@ -97,8 +97,7 @@ extern "C" {
 #endif
 
 // ---- Section 2b: EPROM high-voltage composite masks (EPROM_HV_*) -------
-// Phase 142 / D-07 (Claude's discretion, resolved default taken). Placed
-// here, beside the CTRL_* bits they are built from, rather than in
+// Placed here, beside the CTRL_* bits they are built from, rather than in
 // eprom.h / eprom_params.h: both eprom.cpp and memory.cpp already include
 // this header, and a composite defined next to its own bit definitions
 // cannot drift from them.

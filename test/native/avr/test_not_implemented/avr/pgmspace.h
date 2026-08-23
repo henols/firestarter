@@ -1,5 +1,5 @@
 /*
- * Phase 12 Wave 0 — host-side stub for <avr/pgmspace.h>
+ * host-side stub for <avr/pgmspace.h>
  *
  * The dispatch test runs on platform = native (no AVR libc available).
  * `rurp_shield.h` unconditionally `#include <avr/pgmspace.h>` to get the
@@ -24,7 +24,7 @@
 #define PSTR(s) (s)
 #endif
 
-/* Phase 12 Wave 1: PGM_P is referenced by rurp_shield.h's rurp_log /
+/* PGM_P is referenced by rurp_shield.h's rurp_log /
  * rurp_log_P prototypes. ArduinoFake provides its own arduino/pgmspace.h
  * later in the include order, which also defines PGM_P. Both definitions
  * resolve to `const char *`, so guard with #ifndef to avoid clashes. */

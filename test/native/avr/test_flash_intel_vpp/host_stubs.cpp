@@ -4,8 +4,8 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 12 Wave 1 — host stub TU for the test_flash_intel_vpp suite.
- * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
+ * host stub TU for the test_flash_intel_vpp suite.
+ * WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * Suite-specific extensions (these REPLACE the shared defaults — opt out
  * via HOST_STUBS_CUSTOM_* before including the shared file):

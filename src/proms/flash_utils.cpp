@@ -86,7 +86,7 @@ uint16_t flash_util_get_chip_id(firestarter_handle_t* handle) {
     return chip_id;
 }
 
-/* Phase 151 (LOCK-02): shared single-byte AMD/JEDEC ID-mode read.
+/* Shared single-byte AMD/JEDEC ID-mode read.
  * flash_util_get_chip_id above is the fixed 0x0000/0x0001 pair; a
  * protect-verify read is the identical mode with a caller-supplied
  * address, so it lives beside it rather than duplicating the sequence in

@@ -37,9 +37,9 @@
 #define RURP_PY32F071_PINMAP_PROVISIONAL 1
 
 /*
- * Phase 124 Plan 08 (MERGE-04, D-11/D-12): bridge this board-specific
- * provisional flag to the platform-neutral RURP_PINMAP_PROVISIONAL flag
- * that include/rurp_pinmap_guard.h's shared refusal predicate tests. This
+ * Bridge this board-specific provisional flag to the platform-neutral
+ * RURP_PINMAP_PROVISIONAL flag that include/rurp_pinmap_guard.h's shared
+ * refusal predicate tests. This
  * single block does two jobs at once:
  *
  *   1. The `#if RURP_PY32F071_PINMAP_PROVISIONAL` test below is itself a
@@ -69,8 +69,8 @@
 #endif
 
 /*
- * Phase 124 Plan 09 (MERGE-04, D-14): the "is this pin map configured for a
- * real build" guard is hoisted into a dependency-free fragment header so a
+ * The "is this pin map configured for a real build" guard is hoisted into
+ * a dependency-free fragment header so a
  * host preprocessor can evaluate it standalone (this file cannot be
  * preprocessed locally -- it includes py32f0xx_hal.h a few lines above).
  * RURP_PY32F071_PINMAP_CONFIGURED is no longer #define'd in this file at

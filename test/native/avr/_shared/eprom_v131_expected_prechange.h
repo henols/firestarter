@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 138 Plan 03 (PREP-03 / D-01 / D-02 / D-04) — the single source of
+ * (PREP-03 / D-01 / D-02 / D-04) — the single source of
  * truth the test_trace_eprom_v131 suite asserts its MERGED strobe+timing
  * stream against.
  *
@@ -15,7 +15,7 @@
  * loop) — never hand-derived. This fixture freezes the pre-change v1.31
  * cadence so Phase 144's TEST-06 ("every changed strobe attributable to a
  * named decision") has something concrete to diff the new cadence against.
- * Plan 05 also switched the three protocol cases in test_trace_eprom_v131.cpp
+ * also switched the three protocol cases in test_trace_eprom_v131.cpp
  * from soundness-only assertions to full ordered positional equality
  * (v131_assert_stream_equals against the arrays below) as their primary
  * assertion, keeping the pre-existing overflow/determinism/response-code
@@ -252,7 +252,7 @@ static int v131_snapshot(v131_trace_entry_t* out, int max_len) {
  *     could never distinguish these three pulses from each other.
  *  3. The LSB/MSB/CONTROL_REGISTER register cache elides a latch whenever
  *     the newly-computed value equals the cached one (rurp_register_utils.h,
- *     Phase 116 D-06's own precedent) -- e.g. byte idx0's LSB/MSB latches are
+ *     D-06's own precedent) -- e.g. byte idx0's LSB/MSB latches are
  *     both elided on pass 1 because the cache already holds (0,0) from
  *     reset_register_cache. A raw call-log golden would assert phantom
  *     entries the shield never sees.

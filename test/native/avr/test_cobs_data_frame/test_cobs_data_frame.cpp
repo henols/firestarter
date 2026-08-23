@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 50 Plan 01 — Firmware COBS decode-in-place + bounded-resync
+ * Firmware COBS decode-in-place + bounded-resync
  * Unity suite (RED scaffold).
  *
  * Tests `rurp_communication_read_data()` against the Phase-49-frozen COBS
@@ -246,7 +246,7 @@ void test_cobs_resync_bounded(void) {
 /* ------------------------------------------------------------------------ */
 /* test_cobs_all_zero_payload (FRAME-04 + Pitfall 2)                        */
 /*                                                                           */
-/* Phase 51 Plan 04 (CR-01) update: the PUSH overflow guard was lowered from */
+/* (CR-01) update: the PUSH overflow guard was lowered from */
 /* `out >= DATA_BUFFER_SIZE` to `out >= DATA_BUFFER_SIZE - 1` to reserve    */
 /* the NUL-terminator slot.  The largest payload the decoder now accepts is  */
 /* DATA_BUFFER_SIZE-1 (511 bytes).  A 512-byte payload overflows to -2.      */

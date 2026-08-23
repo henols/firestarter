@@ -9,9 +9,6 @@
 #include "rurp_serial_utils.h"
 #include "rurp_shield.h"
 
-// Phase 9: deleted the two legacy text-prefix log helpers (RAM body +
-// PROGMEM body). See 09-CONTEXT.md D-02.
-
 void rurp_serial_begin(unsigned long baud) {
     SERIAL_PORT.begin(baud);
     while (!SERIAL_PORT) {
@@ -41,12 +38,12 @@ size_t rurp_communication_read_bytes(char* buffer, size_t size) {
     return SERIAL_PORT.readBytes(buffer, size);
 }
 
-// Phase 50 Plan 02: streaming COBS decode-in-place + CRC8 verify + drain-to-0x00 resync.
+// Streaming COBS decode-in-place + CRC8 verify + drain-to-0x00 resync.
 //
 // Frame contract: [COBS(payload + CRC8(payload))][0x00 delimiter]
 // (The '#' marker is consumed by the caller before this function is called.)
 //
-// Algorithm (decode-in-place, no second ~512 B buffer — FRAME-03 / Pattern 2):
+//   Algorithm (decode-in-place, no second ~512 B buffer):
 //
 //   The logical COBS-encoded stream represents [payload | CRC8_byte].  We use
 //   a 1-byte output lookahead (`last_byte`) so the final decoded byte (the
@@ -73,37 +70,38 @@ size_t rurp_communication_read_bytes(char* buffer, size_t size) {
 //     has_last              — `last_byte` holds a valid unwritten decoded byte
 //     last_byte             — 1-byte output lookahead
 //
-//   Overflow guard (T-50-01, CR-01): if out == DATA_BUFFER_SIZE-1 on a commit
+//   Overflow guard: if out == DATA_BUFFER_SIZE-1 on a commit
 //   attempt, drain to the next 0x00 and return -2 (payload too large).
 //   The cap is DATA_BUFFER_SIZE-1 (not DATA_BUFFER_SIZE) to reserve the
 //   NUL-terminator slot: the decoder returns n <= DATA_BUFFER_SIZE-1 always,
 //   so the caller's one-past NUL terminate (data_buffer[n] = '\0') is always
-//   in-bounds — no OOB write into handle.data_size (CR-01 closed).
-//   Error invariant (Pattern 3 / D-06): on ANY COBS/CRC failure, drain bytes
+//   in-bounds — no OOB write into handle.data_size.
+//   Error invariant: on ANY COBS/CRC failure, drain bytes
 //   up to AND INCLUDING the next 0x00 so the RX cursor re-anchors at a frame
 //   boundary.
 //
-// SC1 win: the 2 s timeout_ms loop is GONE; frame boundary = 0x00 delimiter.
-// Negative-code contract: callers check res<0 only (Assumption A4).
-// CR-02: bounded mid-frame inter-byte deadline on both spin sites — armed only
-// once decoding is underway; the deleted 2 s idle cascade is NOT reintroduced;
-// D-06 intent honored (no idle wall-clock timer on the truly-idle path).
+// The 2 s timeout_ms loop is GONE; frame boundary = 0x00 delimiter.
+// Negative-code contract: callers check res<0 only.
+// Bounded mid-frame inter-byte deadline on both spin sites — armed only
+// once decoding is underway; the 2 s idle cascade is NOT reintroduced, and
+// no idle wall-clock timer runs on the truly-idle path.
 
 /* Forward declaration: crc8_ccitt is defined below with the PROGMEM table. */
 static uint8_t crc8_ccitt(uint8_t crc, uint8_t b);
 
 static void _drain_to_delimiter(bool wait_on_silence) {
     /* Consume bytes up to and including the next 0x00 delimiter to re-anchor
-     * the RX cursor at a frame boundary (Pattern 3 / D-06).
+     * the RX cursor at a frame boundary.
      *
-     * CR-02: bounded mid-frame inter-byte deadline — armed only when a frame
+     * Bounded mid-frame inter-byte deadline — armed only when a frame
      * is already in progress (the caller has consumed at least one byte).
      * On host silence (available() stays 0 past TIMEOUT_MS), simply return:
      * the cursor stays where it is; the next loop() iteration re-gates on
-     * available()>0.  The drain itself must never hang (CR-02 closes the
-     * pre-migration regression vs Serial.setTimeout-bounded readBytes).
+     * available()>0.  The drain itself must never hang — that is what
+     * closes the pre-migration regression vs Serial.setTimeout-bounded
+     * readBytes.
      *
-     * 53-04 optimization: `wait_on_silence`. The mid-frame inter-byte deadline
+     * Optimization: `wait_on_silence`. The mid-frame inter-byte deadline
      * caller (read-data spin site) has ALREADY established host silence
      * (available()<=0 sustained for TIMEOUT_MS) with an EMPTY buffer — so a
      * second TIMEOUT_MS silence-wait here is pure redundant latency (~2 s total
@@ -114,11 +112,10 @@ static void _drain_to_delimiter(bool wait_on_silence) {
      * streaming in, so the bounded silence-wait is still wanted there).
      *
      * NOTE: this is a MID-FRAME INTER-BYTE guard, NOT an idle wall-clock
-     * timer.  The 2 s idle cascade deleted in Phase 50 (SC1 win) is NOT
+     * timer.  The deleted 2 s idle cascade is NOT
      * reintroduced: loop() still gates entry into the decoder on
      * rurp_communication_available()>0, so the decoder is never entered on
-     * a truly-idle channel and no timer runs while idle. (D-06 intent honored;
-     * D-06 letter consciously refined — see 51-04-PLAN.md design_reasoning.) */
+     * a truly-idle channel and no timer runs while idle. */
     while (1) {
         if (rurp_communication_available() <= 0) {
             if (!wait_on_silence) {
@@ -149,13 +146,13 @@ int rurp_communication_read_data(char* buffer, size_t cap) {
     /* push_decoded_byte: commit previous `last_byte` to buffer, hold `b` as the
      * new `last_byte`.  Drains and returns -2 on overflow.
      *
-     * Phase 54 (EVEN-01/D-01 Candidate A): overflow guard uses caller-supplied
-     * `cap` instead of the hardcoded DATA_BUFFER_SIZE-1 literal.
-     *   CMD_IDLE path (firestarter.cpp): cap = DATA_BUFFER_SIZE-1  (CR-01 NUL-slot
+     * The overflow guard uses a caller-supplied `cap` instead of a
+     * hardcoded DATA_BUFFER_SIZE-1 literal.
+     *   CMD_IDLE path (firestarter.cpp): cap = DATA_BUFFER_SIZE-1  (NUL-slot
      *       preserved; data_buffer[n] = '\0' is always in-bounds).
      *   MAIN data path (operation_utils.cpp): cap = DATA_BUFFER_SIZE  (full block;
      *       no NUL write follows; consumers use data_buffer[i] index only).
-     * T-54-01: cap is a compile-time constant at both call sites — no runtime
+     * The cap is a compile-time constant at both call sites — no runtime
      * user input controls the bound.  The overflow/drain path is unchanged. */
 #define PUSH(b_)                                \
     do {                                        \
@@ -259,17 +256,17 @@ int rurp_communication_read_data(char* buffer, size_t cap) {
     return (int)out;
 }
 
-// Phase 50 Plan 02: COBS streaming encoder — the dormant mirror of
-// rurp_communication_read_data above (see RESEARCH Trace Target 2: dead code
-// in all shipping envs, rewritten for contract symmetry / Unity round-trip).
+// COBS streaming encoder — the dormant mirror of
+// rurp_communication_read_data above. Dead code in all shipping envs, kept
+// for contract symmetry and Unity round-trip coverage.
 //
 // Emit [COBS(payload + CRC8(payload))][0x00] directly to SERIAL_PORT.
 // ~6 B stack: run_start, run_len, crc.  No second buffer: run data bytes are
 // emitted via SERIAL_PORT.write(buffer+run_start, run_len) from the source
 // buffer; the single CRC byte is held in a 1-byte local.
 //
-// CRC8 uses the EXISTING crc8_ccitt PROGMEM table accessor (D-05/CRC-01).
-// Removes the size>>8 / size&0xFF len_u16 prefix and the XOR checksum.
+// CRC8 uses the EXISTING crc8_ccitt PROGMEM table accessor.
+// No size>>8 / size&0xFF len_u16 prefix and no XOR checksum.
 size_t rurp_communication_write(const char* buffer, size_t size) {
     /* Step 1: compute CRC8-CCITT over raw payload. */
     uint8_t crc = 0;
@@ -344,9 +341,9 @@ size_t rurp_communication_write(const char* buffer, size_t size) {
     return size; /* bytes of payload written (mirrors old interface) */
 }
 
-// --- Phase 6: ID-encoded log frame emitter (CONTEXT §D-01..D-04) ---
+// --- ID-encoded log frame emitter ---
 //
-// Wire frame layout (9+ bytes, W-04 u16 len):
+// Wire frame layout (9+ bytes, u16 len):
 //     bytes 0..3 : 0xAA 0x55 0xAA 0x55         (magic preamble)
 //     bytes 4..5 : len_u16 = 1 + param_count + 1, big-endian MSB first (id + params + crc)
 //     byte 6     : id
@@ -435,7 +432,7 @@ void _firestarter_emit_frame(uint8_t id, const uint8_t* params, uint8_t param_co
     SERIAL_PORT.flush();
 }
 
-// Phase 8 W-04 — wide variant of _firestarter_emit_frame that accepts a
+// Wide variant of _firestarter_emit_frame that accepts a
 // uint16_t param_count so MSG_DATA_CHUNK payloads up to 512 / 1024 bytes
 // do not overflow the uint8_t loop counter. All other wire-frame fields
 // (magic preamble, u16 len, CRC8, 0x0A anchor) are identical.
@@ -477,9 +474,6 @@ void _firestarter_emit_frame_wide(uint8_t id, const uint8_t* params, uint16_t pa
 
     SERIAL_PORT.flush();
 }
-
-// Phase 9: deleted the two weak-default text-prefix log helpers
-// (RAM body + PROGMEM body). See 09-CONTEXT.md D-02.
 
 // Weak default for rurp_log_id — no com_mode gate (Leonardo path). Uno
 // provides a strong override in uno_rurp_shield.cpp that gates by com_mode.

@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 44 Plan 02 — Wave 0 native Unity tests for the two host-tunable
+ * Wave 0 native Unity tests for the two host-tunable
  * read-timing knobs: `read_settling_us` and `read_strobe_us`.
  *
  * RED state before Task 2: these tests will FAIL TO COMPILE because the
@@ -115,7 +115,7 @@ void test_read_settling_us_capped_at_max(void) {
                              "read_settling_us must be capped at READ_TIMING_MAX_US");
 }
 
-/* Phase 149 — page-size parse contract (PGSZ-01/PGSZ-02).
+/* page-size parse contract (PGSZ-01/PGSZ-02).
  *
  * T5: "page-size":128 -> handle.page_size == 128 */
 void test_page_size_parsed_from_json(void) {

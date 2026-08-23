@@ -35,9 +35,6 @@ firestarter_handle_t handle;
 unsigned long timeout = 0;
 
 void setup() {
-    // Phase 9: deleted the SERIAL_DEBUG bootstrap call (legacy soft-serial
-    // debug path replaced by LOG_DEBUG_ID_SUB* from Phase 8 Plan 07).
-
     rurp_load_config();
 #ifdef HARDWARE_REVISION
     rurp_detect_hardware_revision();
@@ -76,22 +73,21 @@ bool parse_json(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB_U8(DBG_CMD, (uint8_t)handle->cmd);
     if (is_memory_cmd(handle->cmd) || handle->cmd < CMD_READ_VPP) {
         json_parse(handle->data_buffer, tokens, token_count, handle);
-        // v1.22 Phase 119 (LOCK-03, D-02): is_memory_cmd() replaces the old
-        // `#ifdef DEV_TOOLS` / `handle->cmd < CMD_DEV_ADDRESS` ordinal
-        // guard. Neither this `if` nor its `else` carries a build-
-        // configuration conditional any more -- only the two debug log
-        // lines inside the `else` body below do, because DBG_FLAG_OUTPUT_EN
-        // / DBG_FLAG_CHIP_EN describe dev-tools-only flags that have no
-        // meaning outside a DEV_TOOLS build. In a release build this `else`
-        // body compiles empty, which is correct and intended.
+        // is_memory_cmd() replaces the old `#ifdef DEV_TOOLS` /
+        // `handle->cmd < CMD_DEV_ADDRESS` ordinal guard. Neither this `if` nor
+        // its `else` carries a build-configuration conditional any more --
+        // only the two debug log lines inside the `else` body below do,
+        // because DBG_FLAG_OUTPUT_EN / DBG_FLAG_CHIP_EN describe
+        // dev-tools-only flags that have no meaning outside a DEV_TOOLS
+        // build. In a release build this `else` body compiles empty, which is
+        // correct and intended.
         //
-        // Phase 151 (LOCK-02, OD-3): the outer test above was an
-        // ordinal-only test (`handle->cmd < CMD_READ_VPP`) until this phase.
-        // OD-3 rejected re-ordering the CMD_* enum to bring CMD_LOCK_STATUS
-        // (16) below CMD_READ_VPP (11), because that breaks wire
-        // compatibility with every shipped firmware and every host
-        // constant; it also rejected making the protection-status read a
-        // non-memory command, because handle->firestarter_get_data is a
+        // The outer test above was an ordinal-only test
+        // (`handle->cmd < CMD_READ_VPP`). Re-ordering the CMD_* enum to bring
+        // CMD_LOCK_STATUS (16) below CMD_READ_VPP (11) was rejected, because
+        // that breaks wire compatibility with every shipped firmware and
+        // every host constant; making the protection-status read a non-memory
+        // command was rejected too, because handle->firestarter_get_data is a
         // protocol-handler function pointer set only by configure_memory().
         // So the outer test is now ALSO predicate-aware
         // (`is_memory_cmd(handle->cmd) ||`), ordered with the predicate
@@ -147,24 +143,23 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
         return false;
     };
 
-    // v1.22 Phase 119 (119-02): this is a SECOND, independent ordinal-range
-    // guard, deliberately NOT converted to is_memory_cmd(). It gates
-    // diagnostic output only (three DBG_* debug log lines), never hardware
-    // configuration, so it is not an admission gate and D-03's safety
-    // argument does not apply here. Converting it would silently DROP these
-    // three debug lines for cmd 7/8 in a DEV_TOOLS build (a diagnostic
-    // regression) for zero safety gain and non-zero flash cost. The two new
-    // commands (CMD_SDP_UNLOCK 9, CMD_SDP_LOCK 10) already satisfy this
-    // range test unchanged, so there is no coverage gap for them either.
+    // This is a SECOND, independent ordinal-range guard, deliberately NOT
+    // converted to is_memory_cmd(). It gates diagnostic output only (three
+    // DBG_* debug log lines), never hardware configuration, so it is not an
+    // admission gate and the safety argument for the admission gate above
+    // does not apply here. Converting it would silently DROP these three
+    // debug lines for cmd 7/8 in a DEV_TOOLS build (a diagnostic regression)
+    // for zero safety gain and non-zero flash cost. The two new commands
+    // (CMD_SDP_UNLOCK 9, CMD_SDP_LOCK 10) already satisfy this range test
+    // unchanged, so there is no coverage gap for them either.
     //
-    // Phase 151 (LOCK-02, OD-3): CMD_LOCK_STATUS (16) is numerically greater
-    // than CMD_READ_VPP (11), so it falls outside this range by construction
-    // -- this is a CHOICE recorded here, not a discovery made on the bench.
+    // CMD_LOCK_STATUS (16) is numerically greater than CMD_READ_VPP (11), so
+    // it falls outside this range by construction -- this is a CHOICE
+    // recorded here, not a discovery made on the bench.
     // `dev lock-status` therefore emits none of the three DBG_* diagnostic
-    // lines below. This block still gates diagnostic output only, so D-03's
+    // lines below. This block still gates diagnostic output only, so that
     // safety argument still does not apply, and converting it to
-    // is_memory_cmd() would cost flash for no safety gain -- see 151-DESIGN.md
-    // §7.
+    // is_memory_cmd() would cost flash for no safety gain.
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
         LOG_DEBUG_ID_SUB_U32(DBG_MEM_SIZE, (uint32_t)handle->mem_size);
         LOG_DEBUG_ID_SUB_U32(DBG_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
@@ -271,18 +266,18 @@ void loop() {
         command_done(&handle);
     } else if (handle.cmd == CMD_IDLE) {
         if (rurp_communication_available() > 0) {
-            /* Phase 51: COBS frame decode replaces the legacy '{'-peek /
-             * discard-non-'{' loop (D-05 deleted).
+            /* COBS frame decode; there is no '{'-peek /
+             * discard-non-'{' loop.
              *
              * rurp_communication_read_data() reads through the 0x00 delimiter,
              * COBS-decodes in place, verifies CRC8 BEFORE any JSON parse byte
-             * is examined (V5 / ADR §4.4 / T-51-01 mitigation), and on any
+             * is examined (V5 / ADR section 4.4), and on any
              * COBS/CRC/overflow failure calls _drain_to_delimiter() internally
              * and returns negative — NO additional drain logic needed here.
              *
              * Gate STRICTLY on n > 0: a zero-length decode is not a valid
              * command.  On n <= 0: log the frame error and stay CMD_IDLE
-             * (bounded recovery is fully handled by the decoder; D-06). */
+             * (bounded recovery is fully handled by the decoder). */
             int n = rurp_communication_read_data(handle.data_buffer, DATA_BUFFER_SIZE - 1);
             if (n > 0) {
                 handle.data_size = (uint32_t)n;
@@ -349,7 +344,7 @@ void loop() {
         case CMD_SDP_LOCK:
             finished = eprom_sdp_lock(&handle);
             break;
-        // Phase 151 (LOCK-02): CMD_LOCK_STATUS, in the same one-line shape
+        // CMD_LOCK_STATUS, in the same one-line shape
         // as every other arm in this switch. eprom_lock_status is the
         // eprom_blank_check shape with no LOG_DEBUG_ID_SUB line -- see that
         // function's own comment for why. This sits outside every

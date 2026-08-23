@@ -4,8 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 143 Plan 01 (HOST-01, firmware half -- BF-3 as corrected) -- the
- * per-block worst-case write-time budget arithmetic. This header declares
+ * The per-block worst-case write-time budget arithmetic. This header declares
  * three pure functions; the arithmetic itself lives in
  * src/proms/eprom_budget.cpp, this header's .cpp analog.
  *

@@ -4,12 +4,12 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 138 Plan 03 (PREP-03 / D-01 / D-02 / D-04) — captures the pre-change
+ * (PREP-03 / D-01 / D-02 / D-04) — captures the pre-change
  * v1.31 27C write loop's merged strobe+timing stream, for all three EPROM
  * protocols (0x07/0x08/0x0B), on a small synthetic block, from the REAL,
  * UNMODIFIED eprom_write_execute.
  *
- * Task 2 built the skeleton: two smoke cases proving the timing hook
+ * built the skeleton: two smoke cases proving the timing hook
  * actually fires — via fakeit's .AlwaysDo, NOT a definition in the shared
  * .inc (ArduinoFake DEFINES delay()/delayMicroseconds() itself as free
  * functions; a second definition would be a link error) — before any real
@@ -21,7 +21,7 @@
  * test_rurp_log_id.cpp idiom (both of which wrap a value-returning method)
  * was needed.
  *
- * Task 3 (this file's remaining content) drives the REAL, UNMODIFIED
+ * (this file's remaining content) drives the REAL, UNMODIFIED
  * eprom_write_execute for all three protocols against a small synthetic
  * 4-byte block, using a stateful read-back model (host_stubs.cpp) so the
  * real up-to-20-pass retry loop converges in exactly 3 passes instead of
@@ -100,7 +100,7 @@ void setUp(void) {
 void tearDown(void) {}
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Task 2 smoke cases — prove the skeleton before any protocol case exists.
+ * smoke cases — prove the skeleton before any protocol case exists.
  * ───────────────────────────────────────────────────────────────────────── */
 
 /* setUp() alone must leave both recorders empty and un-overflowed — the
@@ -134,7 +134,7 @@ void test_smoke_timing_hook_fires_for_delay_and_delaymicroseconds(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Task 3 — bus_config ground truth, derived (not invented) from the host's
+ * bus_config ground truth, derived (not invented) from the host's
  * own code path.
  *
  * Derivation command (run live against firestarter_app, 2026-08-08):
@@ -383,7 +383,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_smoke_setup_leaves_both_recorders_clean);
     RUN_TEST(test_smoke_timing_hook_fires_for_delay_and_delaymicroseconds);
 
-    /* Task 3: real, unmodified write loop, one case per protocol */
+    /* real, unmodified write loop, one case per protocol */
     RUN_TEST(test_protocol_0x07_am27c512_capture_is_sound_and_deterministic);
     RUN_TEST(test_protocol_0x08_am27c020_capture_is_sound_and_deterministic);
     RUN_TEST(test_protocol_0x0B_am2716_capture_is_sound_and_deterministic);

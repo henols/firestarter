@@ -150,5 +150,4 @@ void rurp_set_data_input() {
     DDRE &= ~PORTE_DATA_MASK; // Set pin D6 as output
 }
 
-// Phase 9: deleted the Leonardo SERIAL_DEBUG bootstrap stub. See 09-CONTEXT.md D-02.
 #endif

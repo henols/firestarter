@@ -1,8 +1,8 @@
 #pragma once
 
 /*
- * Phase 125 (VPP-01, VPP-02, decisions D-06/D-07/D-09/D-10/D-11) -- the VPP
- * control capability seam. This header declares VPP control as a platform
+ * The VPP control capability seam. This header declares VPP control as a
+ * platform
  * property that a board either has (a DAC) or does not (a human adjusting a
  * potentiometer), and nothing else. It is a capability declaration, not an
  * implementation -- see src/rurp_vpp.cpp for the (refusal-shaped) bodies.

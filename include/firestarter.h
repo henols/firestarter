@@ -17,7 +17,7 @@
 #define DATA_BUFFER_SIZE 512
 #endif
 
-// D-02: the single shared value-semantics default for the DEV_TOOLS switch,
+// The single shared value-semantics default for the DEV_TOOLS switch,
 // so the same directive means the same thing on every target (AVR, native,
 // native_nodevtools and ARM/py32f071) instead of one presence-semantics
 // mechanism on AVR/native and a different by-omission mechanism on ARM,
@@ -91,9 +91,9 @@
 #define CMD_CONFIG 14
 #define CMD_HW_VERSION 15
 
-// Phase 151, LOCK-02 (D-01/D-02): 16 is the next unused integer -- no slot
-// below 11 was free (CMD_READ_VPP..CMD_HW_VERSION occupy 11-15, and Slots 9
-// and 10 were the only two free command values below that, per the
+// 16 is the next unused integer -- no slot below 11 was free
+// (CMD_READ_VPP..CMD_HW_VERSION occupy 11-15, and slots 9 and 10 were the
+// only two free command values below that, per the
 // CMD_SDP_UNLOCK/CMD_SDP_LOCK comment above). This IS a memory command: the
 // protection-status read is issued through handle->firestarter_get_data,
 // a protocol-handler function pointer only configure_memory() sets, so it

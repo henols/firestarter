@@ -9,8 +9,7 @@
 #define __RURP_CONFIG_STORAGE_H__
 
 /*
- * Phase 126 (CFG-03, CFG-04, decisions D-06/D-07/D-08/D-09) -- the
- * configuration-persistence storage seam. This header declares byte-blob
+ * The configuration-persistence storage seam. This header declares byte-blob
  * persistence as a platform property: EACH platform (AVR EEPROM,
  * py32f071 dual-slot CRC-protected flash) implements the same two
  * functions, and the common policy layer above the seam never knows which

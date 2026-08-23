@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 116 Plan 05 — the always-green SDP harness suite (D-03).
+ * the always-green SDP harness suite (D-03).
  *
  * Executable proof that:
  *  (1) the ordered strobe recorder (116-01's HOST_STUBS_REAL_REGISTER_UTILS)
@@ -188,7 +188,7 @@ static void dump_strobes(const char* tag) {
 #endif
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Task 1 — ordered capture (TRACE-01, D-03, D-06)
+ * ordered capture (TRACE-01, D-03, D-06)
  * ───────────────────────────────────────────────────────────────────────── */
 
 void test_case1_ordered_capture_dip28_28c256(void) {
@@ -234,7 +234,7 @@ void test_case3_ce_oe_edges_distinguishable(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Task 2 — TRACE-03a/b in-suite negatives + LOCK-05 + fixed-stream guards
+ * TRACE-03a/b in-suite negatives + LOCK-05 + fixed-stream guards
  * ───────────────────────────────────────────────────────────────────────── */
 
 /* TRACE-03a: the six-write unlock table with the terminal byte mutated from
@@ -301,7 +301,7 @@ void test_negativeB_lock_table_swapped_for_write_prefix(void) {
 /* LOCK-05 finding, recorded as a case (not prose): FLASH_ENABLE_WRITE_PROTECTION
  * and FLASH_ENABLE_WRITE are byte-identical tables in flash_utils.h (Atmel
  * doc0270 section 19 note 2 -- this duplication is datasheet-correct).
- * Phase 119 LOCK-05 requires the duplication be PRESERVED, not deduplicated.
+ * LOCK-05 requires the duplication be PRESERVED, not deduplicated.
  * A trace-based negative between THESE TWO SPECIFIC tables is therefore
  * impossible by construction -- a later editor must not try to add one. */
 void test_lock05_enable_write_and_write_protection_identical(void) {
@@ -559,7 +559,7 @@ void test_fixed_guard_at28c040(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Task 3 — TRACE-04: address-keyed mock, migrated identity-gate assertions
+ * TRACE-04: address-keyed mock, migrated identity-gate assertions
  * ───────────────────────────────────────────────────────────────────────── */
 
 /* Pattern 3: dispatch on ADDRESS, not call order. Virgin 0xFF everywhere
@@ -649,12 +649,10 @@ int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
 
-    /* Task 1 */
     RUN_TEST(test_case1_ordered_capture_dip28_28c256);
     RUN_TEST(test_case2_elision_is_real);
     RUN_TEST(test_case3_ce_oe_edges_distinguishable);
 
-    /* Task 2 */
     RUN_TEST(test_negativeA_unlock_mutated_diverges_and_matches_erase);
     RUN_TEST(test_negativeB_lock_table_swapped_for_write_prefix);
     RUN_TEST(test_lock05_enable_write_and_write_protection_identical);
@@ -668,7 +666,6 @@ int main(int argc, char** argv) {
     RUN_TEST(test_fixed_guard_at28c010);
     RUN_TEST(test_fixed_guard_at28c040);
 
-    /* Task 3 */
     RUN_TEST(test_migrated_mismatching_chip_id_errors);
     RUN_TEST(test_migrated_zero_chip_id_skips_check);
 

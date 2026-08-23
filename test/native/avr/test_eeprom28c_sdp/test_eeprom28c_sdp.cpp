@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 116 Plan 06 authored this suite PARKED and RED-by-design
+ * authored this suite PARKED and RED-by-design
  * (v1.22 Phase 116 Plan 06, TRACE-02/TRACE-04/TRACE-06). As of v1.22 Phase
  * 117 commit 1 (D-03), the suite is ENABLED in platformio.ini's
  * [env:native] test_filter and runs under `pio test -e native`.
@@ -18,7 +18,7 @@
  * 1 — D-03)". It is GREEN from commit 2 onward, once plan 117-02 lands the
  * production fix.
  *
- * Phase 116's D-01 claimed that this suite's one-line test_filter addition
+ * D-01 claimed that this suite's one-line test_filter addition
  * would itself BE the whole RED-to-GREEN proof. That did not hold
  * (117-CONTEXT.md D-01/D-02/D-03 supersede it): two structural conflicts
  * would have kept the suite RED post-fix for reasons unrelated to the fix —
@@ -97,7 +97,7 @@ using namespace fakeit;
  * itself writes address 0 (mem_util_set_address(handle, 0), memory.cpp:68). */
 extern "C" void reset_register_cache(uint8_t lsb, uint8_t msb, rurp_register_t ctrl);
 
-/* Plan 118-05 (D-08 constraint 1): EEPROM_SDP_DISABLE is the PRODUCTION
+/* (D-08 constraint 1): EEPROM_SDP_DISABLE is the PRODUCTION
  * command table (external linkage granted at eeprom_28c.cpp:122, FIX-05
  * precedent -- test_sdp_harness.cpp:48 declares the identical extern).
  * Case 9's payload-byte-absence walk reads this exact array, never a
@@ -127,7 +127,7 @@ static int      s_reads_at_poll_addr;
  * completion poll can never conclude. Reset false in setUp(). */
 static bool     s_poll_addr_toggles;
 
-/* Plan 119-05 Task 1: the tick source is now a SCRIPTED QUEUE, replacing the
+/* the tick source is now a SCRIPTED QUEUE, replacing the
  * two-slot parity alternator (indexed by call count modulo 2) that served
  * through Plan 118-05. RETIREMENT REASON: D-16's per-byte page-load tracker
  * (Plan 119-08) adds micros() calls INSIDE eeprom28c_write_execute, so any
@@ -169,7 +169,7 @@ static void sdp_script_micros(const std::vector<uint32_t>& ticks, uint32_t tail 
     s_micros_tail = tail;
 }
 
-/* Plan 118-05 Task 2 (D-07 scope discipline): a PER-CASE Serial-frame
+/* (D-07 scope discipline): a PER-CASE Serial-frame
  * capture, reusing test_rurp_log_id.cpp:59-63's existing AlwaysDo idiom
  * verbatim (accumulate every Serial.write(uint8_t) byte into a host
  * std::vector). This is NOT the general-purpose serial-frame baseline
@@ -212,7 +212,7 @@ static bool sdp_ids_contains(const std::vector<uint8_t>& ids, uint8_t id) {
     return false;
 }
 
-/* Plan 119-08 Task 2: decodes the u32 parameter of the FIRST captured frame
+/* decodes the u32 parameter of the FIRST captured frame
  * whose id byte matches `target_id`, walking captured_frames with the SAME
  * documented wire layout sdp_captured_frame_ids uses above (4-byte magic,
  * 2-byte big-endian length, 1 id byte, params, 1 crc byte, 1 anchor byte).
@@ -250,7 +250,7 @@ static bool sdp_decode_u32_param_for_id(uint8_t target_id, uint32_t* out_value) 
 
 void setUp(void) {
     ArduinoFakeReset();
-    /* Plan 118-05 Task 2: was AlwaysReturn(1) through Plan 118-04. Switched to
+    /* was AlwaysReturn(1) through Plan 118-04. Switched to
      * AlwaysDo so every byte is ALSO captured into captured_frames -- this is
      * additive/behaviourally-transparent to every existing case (none of
      * cases 1-8 ever inspects captured_frames), confirmed by re-running all
@@ -309,7 +309,7 @@ void tearDown(void) {}
  * Handle + drive helpers
  * ───────────────────────────────────────────────────────────────────────── */
 
-/* Plan 118-05 (D-08): extra_flags defaults to 0, so every one of cases 1-8's
+/* (D-08): extra_flags defaults to 0, so every one of cases 1-8's
  * existing make_sdp_handle(row) call sites is byte-for-byte unaffected --
  * no signature churn at those eight sites. Cases 9 and 10 pass
  * FLAG_SKIP_SDP_UNLOCK or 0 respectively, from this SAME factory and the
@@ -460,7 +460,7 @@ static rurp_register_t drive_write_init_after_real_read(firestarter_handle_t* h,
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Plan 119-05 Task 2/3 — driving the PRODUCTION lock op (CMD_SDP_LOCK)
+ * driving the PRODUCTION lock op (CMD_SDP_LOCK)
  * ───────────────────────────────────────────────────────────────────────── */
 
 /* Builds a handle for the lock op: CMD_SDP_LOCK, chip_id 0 (no identity
@@ -478,7 +478,7 @@ static firestarter_handle_t make_lock_handle(const sdp_bus_config_row_t& row) {
     return h;
 }
 
-/* Plan 153-04 (ERASE-03/ERASE-04): builds a handle for the erase op --
+/* (ERASE-03/ERASE-04): builds a handle for the erase op --
  * CMD_ERASE, chip_id 0 (no identity gate -- eeprom28c_erase_execute has
  * none, since init/end are NULL for this cmd and configure_eeprom28c only
  * ever sets `main`). Identical to make_lock_handle above except cmd. */
@@ -506,7 +506,7 @@ static void drive_lock_op(firestarter_handle_t* h, rurp_register_t ctrl_seed) {
     h->firestarter_operation_main(h);
 }
 
-/* Plan 153-04 (ERASE-04): drives the REAL eeprom28c_erase_execute (via
+/* (ERASE-04): drives the REAL eeprom28c_erase_execute (via
  * configure_memory dispatch on CMD_ERASE), following the same load-bearing
  * order as drive_write_init/drive_lock_op above -- configure_memory, THEN
  * reassign get_data, THEN reset_register_cache, THEN clear_strobes, THEN the
@@ -993,7 +993,7 @@ void test_case11_tblc_budget_exceeded_warns(void) {
  * OBS-05's serial-channel exception machine-checked instead of prose-only,
  * using the per-case capture declared above -- it does not build the
  * general-purpose recorder D-07 explicitly declined. */
-/* Plan 119-05 Task 1 (re-verified under the scripted micros() queue, no
+/* (re-verified under the scripted micros() queue, no
  * assertion changed): this case drives drive_write_init ONLY -- it never
  * calls eeprom28c_write_execute. That was incidental before the scripted
  * queue existed (the old modulo-2 alternator did not care how many

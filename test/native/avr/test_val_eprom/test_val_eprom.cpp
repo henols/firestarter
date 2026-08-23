@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 71 Plan 04 — Tier-1 validation suite for the EPROM family.
+ * Tier-1 validation suite for the EPROM family.
  * HARN-01 / D-07 / D-08 (verify-can-fail posture).
  *
  * Proves configure_eprom behavior BY SIDE-EFFECT via the recording bus stub:

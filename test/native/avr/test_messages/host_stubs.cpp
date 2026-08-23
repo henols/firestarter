@@ -4,8 +4,8 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 6 — host stub TU for the test_messages suite.
- * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
+ * host stub TU for the test_messages suite.
+ * WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * test_messages stubs the host-side AVR-only symbols that
  * boards/rurp_serial_utils.cpp indirectly references. The widened

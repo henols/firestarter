@@ -40,9 +40,6 @@ static struct {
     uint8_t params[DEFERRED_PARAM_MAX];
 } deferred_log[DEFERRED_LOG_MAX];
 
-// Phase 9: deleted the legacy SERIAL_DEBUG infrastructure (debug pin defines
-// plus the soft-serial debug channel). See 09-CONTEXT.md D-02 + D-08.
-
 
 void rurp_board_setup() {
     // Set control pins on PORTB to output.
@@ -103,14 +100,9 @@ void rurp_set_programmer_mode() {
 }
 
 
-// Phase 9: deleted the two legacy text-prefix log Uno strong overrides
-// (RAM body + PROGMEM body). See 09-CONTEXT.md D-02.
-
-// Phase 6 — Uno strong override of rurp_log_id. The com_mode gate is critical:
-// emitting on the wire while PORTD is repurposed as the data bus would corrupt
-// the programming pulse (per CONTEXT §"Specific Ideas").
-// Phase 8 Plan 07: debug_msg_buffer path removed; LOG_DEBUG_ID_SUB* now handles
-// structured debug output directly via catalog frames.
+// Uno strong override of rurp_log_id. The com_mode gate is critical:
+// emitting on the wire while PORTD is repurposed as the data bus would
+// corrupt the programming pulse.
 void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count) {
     if (com_mode) {
         _firestarter_emit_frame(id, params, param_count);
@@ -181,9 +173,7 @@ void rurp_set_data_input() {
     DDRD = 0x00;
 }
 
-// Phase 9: deleted the legacy SERIAL_DEBUG soft-serial debug channel
-// (helper-setup + log-helper + debug-channel). See 09-CONTEXT.md D-02 + D-08.
-// Replacement is LOG_DEBUG_ID_SUB* from logging_id.h (Phase 8 Plan 07), which
-// routes structured debug emit through the main serial port via id-frames
-// rather than a separate channel.
+// Structured debug emit routes through the main serial port as id-frames
+// (LOG_DEBUG_ID_SUB* in logging_id.h) rather than through a separate
+// soft-serial debug channel.
 #endif

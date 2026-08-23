@@ -83,12 +83,7 @@ extern "C" {
     int rurp_communication_read_data(char* buffer, size_t cap);
 
 
-    // Phase 9: deleted the two legacy text-prefix log declarations
-    // (RAM body + PROGMEM body). See 09-CONTEXT.md D-02.
-
-    // Phase 6 — ID-encoded wire frame emit per CONTEXT §D-01..D-04.
-    // Phase 9: sole surviving log surface after the legacy text-prefix
-    // helpers were deleted (LMIG-01 closed).
+    // ID-encoded wire frame emit -- the sole log surface.
     void rurp_log_id(uint8_t id, const uint8_t* params, uint8_t param_count);
 
     // Fixed-shape packers — wrap the byte-array pack + rurp_log_id call so
@@ -100,7 +95,7 @@ extern "C" {
     void rurp_log_id_u24(uint8_t id, uint32_t v);
     void rurp_log_id_u32(uint8_t id, uint32_t v);
 
-    // Phase 8 W-04 — wide variant for MSG_DATA_CHUNK payloads > 255 bytes.
+    // Wide variant for MSG_DATA_CHUNK payloads > 255 bytes.
     // param_count is uint16_t to avoid overflow for 512 / 1024-byte chunks.
     void rurp_log_id_wide(uint8_t id, const uint8_t* params, uint16_t param_count);
 

@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 6 — convenience macros for the ID-encoded log path (LFW-02).
+ * Convenience macros for the ID-encoded log path.
  *
  * These macros wrap rurp_log_id() so call-sites can emit catalog-driven
  * binary frames without manually packing param byte arrays. Multi-byte
