@@ -17,18 +17,18 @@ static inline bool _process_incoming_data(firestarter_handle_t* handle);
 static inline bool _process_outgoing_data(firestarter_handle_t* handle);
 
 bool eprom_read(firestarter_handle_t* handle) {
-    return !op_execute_stateful_operation(_process_outgoing_data, handle);
+    return op_execute_stateful_operation(_process_outgoing_data, handle);
 }
 
 bool eprom_write(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_WRITE_EPROM);
-    return !op_execute_stateful_operation(_process_incoming_data, handle);
+    return op_execute_stateful_operation(_process_incoming_data, handle);
 }
 
 // Return true if the operation is done, otherwise false
 bool eprom_verify(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_VERIFY_PROM);
-    return !op_execute_stateful_operation(_process_incoming_data, handle);
+    return op_execute_stateful_operation(_process_incoming_data, handle);
 }
 
 bool eprom_erase(firestarter_handle_t* handle) {
@@ -37,7 +37,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
         LOG_ERROR_ID(MSG_ERR_NOT_SUPPORTED);
         return true;
     }
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 bool eprom_check_chip_id(firestarter_handle_t* handle) {
@@ -46,12 +46,12 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
         LOG_ERROR_ID(MSG_ERR_NO_CHIP_ID);
         return true;
     }
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 bool eprom_blank_check(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_BLANK_CHECK_PROM);
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 // LOCK-01/LOCK-02: standalone entry points for CMD_SDP_UNLOCK / CMD_SDP_LOCK
@@ -61,16 +61,13 @@ bool eprom_blank_check(firestarter_handle_t* handle) {
 // would require a new DBG_* catalog id this phase does not need.
 // Deliberately no precondition check -- eprom_erase's FLAG_CAN_ERASE test has
 // no SDP analogue; D-06's op-layer NULL-main guard (Plan 119-07) is what
-// refuses these commands on a protocol whose handler set no main. Each body
-// is exactly op_execute_simple_operation's single-step shape; op_execute_
-// simple_operation returns true when FINISHED, so the `!` inversion here is
-// load-bearing (mirrors eprom_erase/eprom_blank_check above).
+// refuses these commands on a protocol whose handler set no main.
 bool eprom_sdp_unlock(firestarter_handle_t* handle) {
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 bool eprom_sdp_lock(firestarter_handle_t* handle) {
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 // CMD_LOCK_STATUS entry point, in eprom_blank_check's
@@ -82,7 +79,7 @@ bool eprom_sdp_lock(firestarter_handle_t* handle) {
 // Adding a DBG_* call here would need a new [debug] catalog entry that is
 // deliberately not minted -- a chosen consequence, not an oversight.
 bool eprom_lock_status(firestarter_handle_t* handle) {
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 // Returns true on success/continue, false on error.

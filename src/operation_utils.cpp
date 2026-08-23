@@ -54,7 +54,7 @@ static inline bool _single_step_operation_callback(firestarter_handle_t* handle)
  * done immediately after.
  *
  * @param handle Pointer to the firestarter handle.
- * @return true if the operation is still ongoing (e.g., waiting for ACKs), false when fully completed.
+ * @return true when fully completed, false while the operation is in progress (e.g., waiting for ACKs).
  */
 bool op_execute_simple_operation(firestarter_handle_t* handle) {
     return op_execute_stateful_operation(_single_step_operation_callback, handle);
@@ -67,19 +67,25 @@ bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle
             // The host sends a final ACK to close the transaction.
             // We wait for it and then signal that the command is finished.
             if (op_get_message(handle) == OP_MSG_INCOMPLETE) {
-                return true;  // Not finished yet, waiting for final ACK
+                return false;  // Not finished yet, waiting for final ACK
             }
-            return false;  // Received final ACK (or junk), command is finished.
+            return true;  // Received final ACK (or junk), command is finished.
         }
 
         int res = _execute_operation_house_keeping(handle);
         if (res != CONTINUE) {
-            return res == RETURN;
+            return res != RETURN;
         }
         if (is_operation_started(MAIN)) {
-            return callback(handle);
+            // The callback keeps its OWN documented convention (true on
+            // success/continue, false on error) -- see _process_incoming_data
+            // and _process_outgoing_data (eprom_operations.cpp). Flipping the
+            // engine to return true-on-finished does not flip the callback,
+            // so this is the one surviving negation: the nine wrapper call
+            // sites no longer negate, but this single site still does.
+            return !callback(handle);
         }
-        return true;
+        return false;
     }
     // v1.22 Phase 119 D-06/D-07 (119-07 Task 2) -- the generic NULL-main
     // refusal. This is the ONE site that closes the whole phantom-success
@@ -88,7 +94,7 @@ bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle
     //
     // 1. THE MECHANISM IT FIXES. Before this change, a NULL
     //    firestarter_operation_main fell through to a bare `return false`
-    //    here. Every eprom_* caller inverts that return
+    //    here. At the time, every eprom_* caller inverted that return
     //    (`return !op_execute_stateful_operation(...)`), so the command
     //    reported "finished". loop() (firestarter.cpp:216) had already set
     //    handle.response_code = RESPONSE_CODE_OK before the dispatch switch
@@ -151,17 +157,19 @@ bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle
     //    misreads the host's next byte as a fresh frame), not a firmware
     //    refusal. Correct Phase 120 disposition: KEEP that workaround.
     //
-    // The `return false` semantics are UNCHANGED -- every eprom_* caller
-    // still inverts it, so the command still reports finished and
-    // command_done() still runs (chip disabled, registers zeroed). What
-    // changes is that an error frame is now emitted and response_code is
+    // This site now returns `true` directly -- the engine reports finished
+    // as `true` and the nine eprom_* wrappers forward that result without
+    // inverting it -- so the command still reports finished and
+    // command_done() still runs (chip disabled, registers zeroed) exactly as
+    // before. What changes relative to the pre-D-06 state is that an error
+    // frame is now emitted and response_code is
     // RESPONSE_CODE_ERROR instead of the RESPONSE_CODE_OK loop() set: the
     // command still terminates cleanly, it just stops lying about what it
     // did. MSG_ERR_NOT_SUPPORTED (0xA5) already exists and is already
     // eprom_erase's FLAG_CAN_ERASE refusal id -- no new catalog id needed.
     LOG_ERROR_ID(MSG_ERR_NOT_SUPPORTED);
     handle->response_code = RESPONSE_CODE_ERROR;
-    return false;
+    return true;
 }
 
 /**

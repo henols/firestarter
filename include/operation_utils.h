@@ -69,7 +69,7 @@ static inline bool is_operation_waiting_for_data(const firestarter_handle_t* han
  * execution body but don't require complex data exchange with the host.
  *
  * @param handle Pointer to the firestarter handle.
- * @return true if the operation is still ongoing (e.g., waiting for ACKs), false when fully completed.
+ * @return true when fully completed, false while the operation is in progress (e.g., waiting for ACKs).
  */
 bool op_execute_simple_operation(firestarter_handle_t* handle);
 
@@ -81,7 +81,7 @@ bool op_execute_simple_operation(firestarter_handle_t* handle);
  *
  * @param callback A function pointer to the main logic for the operation (e.g., reading or writing data).
  * @param handle Pointer to the firestarter handle.
- * @return true if the operation is still ongoing, false when fully completed.
+ * @return true when fully completed, false while the operation is in progress.
  */
 bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle), firestarter_handle_t* handle);
 

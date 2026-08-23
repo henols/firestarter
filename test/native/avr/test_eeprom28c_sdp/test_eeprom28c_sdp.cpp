@@ -1465,7 +1465,7 @@ void test_case23_standalone_unlock_matches_auto_unlock_stream(void) {
  * involved -- this proves the REFUSAL itself, not any one handler's
  * omission), driven through the REAL op_execute_stateful_operation, exactly
  * as every eprom_* entry point does
- * (`return !op_execute_stateful_operation(callback, handle)`). Passing NULL
+ * (`return op_execute_stateful_operation(callback, handle)`). Passing NULL
  * for the callback parameter is safe: the NULL-main guard at
  * operation_utils.cpp:63 short-circuits before the callback is ever
  * touched. */
@@ -1478,12 +1478,12 @@ void test_case24_null_main_refusal_emits_not_supported_and_error_response(void) 
     h.firestarter_operation_init = NULL;
     h.firestarter_operation_end = NULL;
 
-    bool still_in_progress = op_execute_stateful_operation(NULL, &h);
+    bool finished = op_execute_stateful_operation(NULL, &h);
 
-    TEST_ASSERT_FALSE_MESSAGE(still_in_progress,
-        "Case 24 (D-06/D-07): op_execute_stateful_operation must return false on a NULL main -- "
-        "every eprom_* caller inverts this return to report the command as finished, unchanged "
-        "semantics from before this task");
+    TEST_ASSERT_TRUE_MESSAGE(finished,
+        "Case 24 (D-06/D-07): op_execute_stateful_operation must return true on a NULL main -- "
+        "the engine now reports finished directly and the nine eprom_* wrappers forward that "
+        "result without inverting it, unchanged observable semantics from before this task");
     TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
         "Case 24 (D-06/D-07): the NULL-main fall-through must now set RESPONSE_CODE_ERROR, "
         "replacing the pre-119-07 silent RESPONSE_CODE_OK phantom success");
@@ -1546,7 +1546,7 @@ static int case25_serial_read() {
  * still calls op_execute_simple_operation directly, not eprom_erase
  * (src/eprom_operations.cpp, an AVR-only TU excluded from [env:native]'s
  * build_src_filter) -- the exact op-layer function eprom_erase's body
- * delegates to (`return !op_execute_simple_operation(handle);`),
+ * delegates to (`return op_execute_simple_operation(handle);`),
  * deliberately bypassing eprom_erase's own EARLIER FLAG_CAN_ERASE
  * precondition check (a different, unrelated refusal) so this case isolates
  * ERASE-03's dispatch arm alone.
@@ -1578,20 +1578,26 @@ void test_case25_cmd_erase_on_0x0d_dispatches_and_succeeds_erase03(void) {
     When(Method(ArduinoFake(Serial), peek)).AlwaysDo(case25_serial_peek);
     When(Method(ArduinoFake(Serial), read)).AlwaysDo(case25_serial_read);
 
-    bool still_in_progress = true;
+    bool finished = false;
     int calls = 0;
     const int MAX_CALLS = 10; /* deterministic trace needs exactly 4; generous margin, not an escape hatch */
-    while (still_in_progress && calls < MAX_CALLS) {
-        still_in_progress = op_execute_simple_operation(&h);
+    while (!finished && calls < MAX_CALLS) {
+        finished = op_execute_simple_operation(&h);
         calls++;
     }
 
-    TEST_ASSERT_FALSE_MESSAGE(still_in_progress,
+    TEST_ASSERT_TRUE_MESSAGE(finished,
         "Case 25 (ERASE-03, mechanism-corrected/intent-satisfied -- never as failed): "
-        "op_execute_simple_operation must reach completion (false) within MAX_CALLS iterations of "
+        "op_execute_simple_operation must reach completion (true) within MAX_CALLS iterations of "
         "the real ACK-gated INIT/MAIN/END state machine -- eprom_erase reports the erase as "
         "finished, the same call-site contract as before this task, now honestly (the erase actually "
         "ran instead of silently doing nothing)");
+    TEST_ASSERT_EQUAL_MESSAGE(4, calls,
+        "Case 25 (ERASE-03): completion must take exactly four engine calls -- the INIT-start "
+        "ack, the MAIN-start ack plus the erase run, the END-start ack, and the final ack that "
+        "flips the all-operations-done message check -- the count this case's own DEVIATION "
+        "comment above documents. Without this assertion the case is vacuous: the un-flipped "
+        "loop was measured exiting after one call while this case still reported PASSED");
     TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
         "Case 25 (ERASE-03): CMD_ERASE on 0x0D must now report RESPONSE_CODE_OK -- the new dispatch "
         "arm routes to a real operation instead of leaving main NULL for the generic op-layer "
