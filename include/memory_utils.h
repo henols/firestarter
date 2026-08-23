@@ -51,6 +51,17 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
 void mem_util_split_delay(uint32_t us, uint32_t* out_ms, uint16_t* out_us);
 void mem_util_delay_us(uint32_t us);
 
+/*
+ * Retires four byte-identical VPP-mismatch packing blocks (two in
+ * eprom.cpp's eprom_check_vpp, two in flash_intel.cpp's flash_intel_check_vpp).
+ * Definition lives in src/proms/memory.cpp. The measured_mv/expected_mv
+ * parameter widths are part of the contract: both are uint16_t so `(x + 50)`
+ * promotes to a 16-bit unsigned int on AVR, keeping the division on the
+ * 16-bit __udivmodhi4 helper -- do not widen either parameter.
+ */
+void mem_util_report_voltage(firestarter_handle_t* handle, uint16_t measured_mv,
+                              uint16_t expected_mv, uint8_t msg_id, uint8_t response_code);
+
 static inline bool using_p1_as_vpp(const firestarter_handle_t* handle) {
     return (handle->pins == 32 && handle->bus_config.vpp_line == VPP_P1_32_DIP) ||
            (handle->pins == 28 && handle->bus_config.vpp_line == VPP_P1_28_DIP) ||

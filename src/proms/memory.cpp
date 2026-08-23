@@ -234,6 +234,38 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
     return top_address;
 }
 
+/* Shared VPP-mismatch report (payload unchanged):
+ *   [measured_V u16 BE][measured_tenths u16 BE][expected_V u16 BE][expected_tenths u16 BE]
+ * Four byte-identical copies existed -- eprom.cpp x2, flash_intel.cpp x2 --
+ * holding 24 of the firmware's 31 __udivmodhi4 call sites between them, two in
+ * eprom_check_vpp and two in flash_intel_check_vpp. Arithmetic preserved
+ * EXACTLY, so this is de-duplication, not a behaviour change. Severity rides
+ * entirely in msg_id, because every LOG_{WARN,ERROR}_ID_BYTES macro is the
+ * same alias of LOG_ID_BYTES. The two millivolt parameters are uint16_t
+ * deliberately: both operands are uint16_t at every call site, so `(x + 50)`
+ * promotes to a 16-bit `unsigned int` on AVR and `/1000` compiles to
+ * __udivmodhi4 -- widening either parameter to uint32_t swaps in the 32-bit
+ * __udivmodsi4, erases the saving, and moves the wrap point above 65485 mV,
+ * so do not widen them. */
+void mem_util_report_voltage(firestarter_handle_t* handle, uint16_t measured_mv,
+                              uint16_t expected_mv, uint8_t msg_id, uint8_t response_code) {
+    uint16_t _v0 = (uint16_t)((measured_mv + 50) / 1000);
+    uint16_t _v1 = (uint16_t)((((measured_mv + 50) / 100) % 10));
+    uint16_t _v2 = (uint16_t)((expected_mv + 50) / 1000);
+    uint16_t _v3 = (uint16_t)((((expected_mv + 50) / 100) % 10));
+    uint8_t _b[8];
+    _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
+    _b[1] = (uint8_t)(_v0 & 0xFF);
+    _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
+    _b[3] = (uint8_t)(_v1 & 0xFF);
+    _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
+    _b[5] = (uint8_t)(_v2 & 0xFF);
+    _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
+    _b[7] = (uint8_t)(_v3 & 0xFF);
+    LOG_ID_BYTES(msg_id, _b, 8);
+    handle->response_code = response_code;
+}
+
 void mem_util_split_delay(uint32_t us, uint32_t* out_ms, uint16_t* out_us) {
     if (us <= MEM_UTIL_DELAY_US_MAX) {
         *out_ms = 0;
