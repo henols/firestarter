@@ -749,6 +749,87 @@ void test_vpp04_d_in_range_reading_fires_neither_error_nor_warning(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * The under-voltage severity pairing.
+ * Before this case, nothing anywhere asserted that MSG_WARN_VPP_LOW is
+ * emitted or that it carries RESPONSE_CODE_WARNING -- the only prior
+ * reference to MSG_WARN_VPP_LOW in this whole tree was the negative leg in
+ * test_vpp04_d above (asserting it is ABSENT on an in-range reading).
+ * Severity rides ENTIRELY in the message id here: LOG_WARN_ID_BYTES
+ * (include/logging_id.h:119) and LOG_ERROR_ID_BYTES (include/logging_id.h:110)
+ * are the SAME alias of LOG_ID_BYTES, so the response_code assertion below
+ * structurally cannot see a transposed id, and the id assertions cannot see
+ * a swapped response_code -- the pair together is the oracle, neither half
+ * alone. This suite runs only under native_loop_v131, whose own
+ * platformio.ini comment says NO CI COVERAGE, so this case is a local-run
+ * obligation, not CI-visible evidence.
+ * ───────────────────────────────────────────────────────────────────────── */
+void test_vpp04_e_undervoltage_warning_pairing_fires_by_id_with_payload_shape(void) {
+    rurp_get_config()->hardware_revision = REVISION_2_2;  /* mandatory: on
+        REVISION_0 eprom_check_vpp takes the early return at eprom.cpp:334-338
+        and never reaches the under-voltage compare at all. */
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, 0, VPP_BUS_CONFIG_0x07);
+    /* 12349 is one mV inside the under-voltage boundary: the arm fires when
+     * vpp_mv < handle->vpp_mv * 95 / 100, and with setpoint 13000 that
+     * threshold is 13000 * 95 / 100 == 12350, so 12349 fires and 12350 would
+     * not -- pins the boundary, not a wildly out-of-range value. */
+    set_mock_vpp_mv(12349);
+    drive_vpp_init(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
+        "an injected 12349 mV reading (setpoint 13000, boundary 12350) must warn with RESPONSE_CODE_WARNING");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_WARN_VPP_LOW),
+        "MSG_WARN_VPP_LOW (0x81) must be logged exactly once, BY ID -- no test in this tree asserted "
+        "this positively before this plan");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_VPP_HIGH),
+        "the under-voltage WARN fork must NOT also log the over-voltage ERROR id -- this is what a "
+        "transposed (MSG_WARN_VPP_LOW, RESPONSE_CODE_WARNING) pair trips");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_WARN_VPP_HIGH),
+        "the under-voltage WARN fork must NOT also log the over-voltage WARN id -- the other half of "
+        "what a transposed pair trips");
+    int idx = find_logged_id(MSG_WARN_VPP_LOW);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_WARN_VPP_LOW must actually be present in the logged-id stream");
+    TEST_ASSERT_EQUAL_MESSAGE(8, logged_id_param_count(idx),
+        "the WARN frame must carry the 8 payload bytes eprom.cpp's under-voltage arm (LOG_WARN_ID_BYTES) emits");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * The flash_intel.cpp twin of the under-voltage severity pairing above.
+ * Reading drive_vpp_init and configure_memory suggested
+ * flash_intel_write_init's own VPP check is reachable from this suite
+ * (protocol 0x10 routes configure_memory -> configure_flash_intel ->
+ * flash_intel_write_init for CMD_WRITE, and drive_vpp_init drives exactly
+ * that init path). Reached successfully -- see the SUMMARY for the full
+ * record. FLAG_SKIP_BLANK_CHECK in the ctrl_flags slot is load-bearing:
+ * without it flash_intel_write_init continues past the VPP check into
+ * mem_util_blank_check, which needs data mocks this case does not set and
+ * can overwrite response_code. chip_id left at 0 (make_vpp_handle's default)
+ * skips flash_intel_check_chip_id for the same reason.
+ * ───────────────────────────────────────────────────────────────────────── */
+void test_vpp04_f_flash_intel_undervoltage_warning_pairing(void) {
+    rurp_get_config()->hardware_revision = REVISION_2_2;  /* this file's own
+        REVISION_0 early return applies to flash_intel_check_vpp too. */
+    firestarter_handle_t h = make_vpp_handle(0x10, 32, 262144, 100, 12000, FLAG_SKIP_BLANK_CHECK, VPP_BUS_CONFIG_0x08);
+    /* 11399 is one mV inside the 12000 * 95 / 100 == 11400 boundary. */
+    set_mock_vpp_mv(11399);
+    drive_vpp_init(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
+        "an injected 11399 mV reading (setpoint 12000, boundary 11400) must warn with RESPONSE_CODE_WARNING");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_WARN_VPP_LOW),
+        "MSG_WARN_VPP_LOW (0x81) must be logged exactly once, BY ID, on the flash_intel.cpp twin of the "
+        "eprom.cpp under-voltage arm -- this narrows coverage ceiling 2, it does not remove it: the "
+        "over-voltage arm and the rest of the flash_intel.cpp VPP path stay uncovered");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_VPP_HIGH),
+        "the under-voltage WARN fork must NOT also log the over-voltage ERROR id");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_WARN_VPP_HIGH),
+        "the under-voltage WARN fork must NOT also log the over-voltage WARN id");
+    int idx = find_logged_id(MSG_WARN_VPP_LOW);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_WARN_VPP_LOW must actually be present in the logged-id stream");
+    TEST_ASSERT_EQUAL_MESSAGE(8, logged_id_param_count(idx),
+        "the WARN frame must carry the 8 payload bytes flash_intel_check_vpp's under-voltage arm (LOG_WARN_ID_BYTES) emits");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
  * (VPP-03, RESEARCH assumption A3) -- pre-rewrite
  * CMD_ERASE / CMD_CHECK_CHIP_ID control-value baselines. NOT feature tests:
  * they exist so plan 142-04's conversion of the hand-rolled disables at
@@ -1410,6 +1491,11 @@ int main(int argc, char** argv) {
     RUN_TEST(test_vpp04_b_no_hv_route_left_asserted_on_the_refusal_path);
     RUN_TEST(test_vpp04_c_flag_force_downgrades_to_warning_and_still_clears_the_route);
     RUN_TEST(test_vpp04_d_in_range_reading_fires_neither_error_nor_warning);
+
+    /* The under-voltage severity pairing that nothing asserted before this
+     * plan, on eprom.cpp and its flash_intel.cpp twin. */
+    RUN_TEST(test_vpp04_e_undervoltage_warning_pairing_fires_by_id_with_payload_shape);
+    RUN_TEST(test_vpp04_f_flash_intel_undervoltage_warning_pairing);
 
     /* (VPP-03, RESEARCH assumption A3): pre-rewrite
      * CMD_ERASE / CMD_CHECK_CHIP_ID control-value baselines -- NOT feature
