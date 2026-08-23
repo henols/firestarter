@@ -390,9 +390,34 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
     return reorg_address;
 }
 
-typedef struct {
-    uint32_t address;
-} blank_check_progress_data_t;
+/* Saved address for the multi-call blank check, kept across the two dispatch
+ * calls that make up one mem_util_blank_check invocation.
+ *
+ * This used to be a 4-byte malloc of a struct holding one uint32_t -- the
+ * only caller of malloc/free anywhere in this firmware. That one call site
+ * pulled the whole avr-libc allocator into the image (malloc 312 B + free
+ * 274 B = 586 B), and the allocation result was dereferenced with no NULL
+ * test, immediately after the malloc. On uno, handle (603 B) and the jsmn
+ * token array (512 B) together consume 1115 B of the 2048 B SRAM, leaving
+ * 473 B of shared heap-and-stack headroom -- shared because ram_used counts
+ * only .data and .bss, and the call stack grows down into that same region
+ * on every operation, so the true margin available to a failing allocation
+ * was less than 473 B. On leonardo the same arithmetic (handle 1115 B +
+ * tokens 512 B of 2560 B) leaves 544 B.
+ *
+ * A file-scope static has the identical lifetime: the firmware runs
+ * strictly one command at a time -- single-threaded, no reentrancy, no
+ * nesting -- and nothing outside mem_util_blank_check ever read the removed
+ * field, so nothing outside this function needs to see the static either.
+ * The saved address is written only in the first-call branch below and
+ * read only in the completion branch of a later call, so write-before-read
+ * holds by construction.
+ *
+ * Net RAM: the static costs 4 B where the pointer cost 2 B, and the change
+ * still nets -8 B overall because it retires five allocator globals
+ * (__brkval, __flp, __malloc_heap_start, __malloc_heap_end, __malloc_margin)
+ * along with malloc/free themselves. */
+static uint32_t blank_check_saved_address;
 
 #define BLANK_CHECK_CHUNK_SIZE 2048
 void uint32_to_bytes(char* buffer, int pos, uint32_t value) {
@@ -403,20 +428,14 @@ void uint32_to_bytes(char* buffer, int pos, uint32_t value) {
 }
 
 void mem_util_blank_check(firestarter_handle_t* handle) {
-    blank_check_progress_data_t* progress_data;
     if (!is_operation_in_progress(handle)) {
         set_operation_in_progress(handle);
-        handle->progress_data = malloc(sizeof(blank_check_progress_data_t));
-        progress_data = (blank_check_progress_data_t*)handle->progress_data;
-        progress_data->address = handle->address;
+        blank_check_saved_address = handle->address;
         handle->address = 0;
     } else {
-        progress_data = (blank_check_progress_data_t*)handle->progress_data;
         if (handle->address >= handle->mem_size) {
             clear_operation_in_progress(handle);
-            handle->address = progress_data->address;
-            free(handle->progress_data);
-            handle->progress_data = NULL;
+            handle->address = blank_check_saved_address;
             return;
         }
     }

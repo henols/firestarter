@@ -1774,8 +1774,8 @@ void test_case29_write_execute_report_preserves_response_code(void) {
  * every other case here (which all drive with the flag SET): no blank-check
  * progress allocation, no multi-call INIT loop, and the exact same golden
  * stream. `mem_util_blank_check` is the ONLY setter of
- * is_operation_in_progress on this path (memory.cpp:401-425), so a FALSE
- * result below is the single-shot-INIT proof, not an assumption. */
+ * is_operation_in_progress on this path, so a FALSE result below is the
+ * single-shot-INIT proof, not an assumption. */
 void test_case30_write_init_no_blank_check_with_flag_clear_erase01(void) {
     firestarter_handle_t h = make_sdp_handle_blank_check_enabled(SDP_BUS_CONFIGS[0]); /* AT28C256 */
     drive_write_init(&h, 0x00);
@@ -1785,10 +1785,17 @@ void test_case30_write_init_no_blank_check_with_flag_clear_erase01(void) {
         "eeprom28c_write_init call with FLAG_SKIP_BLANK_CHECK clear -- mem_util_blank_check is "
         "the only setter of this flag on the write-INIT path, so TRUE here would mean the "
         "pre-write blank check still ran and left a multi-call INIT loop pending");
-    TEST_ASSERT_NULL_MESSAGE(h.progress_data,
-        "Case 30 (ERASE-01): h.progress_data must be NULL -- a non-NULL value means "
-        "mem_util_blank_check allocated a blank_check_progress_data_t block, i.e. the "
-        "pre-write blank check still ran");
+    /* The companion "must be NULL" assertion on the removed heap-allocated
+     * handle field is GONE, and so is the field itself: mem_util_blank_check
+     * no longer allocates that block (it keeps its saved address in a
+     * file-scope static in memory.cpp), so there is no allocation left to
+     * observe. This is the loss of a redundant PROBE, not of coverage --
+     * is_operation_in_progress above and the removed allocation used to be
+     * unconditionally adjacent statements in the same then-branch of the
+     * same if, with no intervening control flow, early return or condition,
+     * so a FALSE result there strictly implied the branch -- and therefore
+     * the allocation -- never executed. The behaviour under test is still
+     * pinned by the assertion above. */
     sdp_assert_stream_equals(SDP_FIXED_DIP28_28C256, SDP_FIXED_DIP28_28C256_LEN,
         "Case 30 (ERASE-01): with FLAG_SKIP_BLANK_CHECK clear, the AT28C256/DIP28_28C256 stream "
         "must now be byte-identical to the golden captured with the flag SET -- the D-07 policy "

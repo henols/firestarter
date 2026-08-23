@@ -223,7 +223,6 @@ typedef struct firestarter_handle {
     char data_buffer[DATA_BUFFER_SIZE];
     uint32_t data_size;
     bus_config_t bus_config;
-    void* progress_data;
 
     void (*firestarter_operation_init)(struct firestarter_handle*);
     void (*firestarter_operation_main)(struct firestarter_handle*);
