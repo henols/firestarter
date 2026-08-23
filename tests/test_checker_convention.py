@@ -50,22 +50,38 @@ glob exactly the "introduced in this milestone" set BASE-08 names, with no
 registry file (forbidden by D-08) and no grandfather allow-list (which
 would silently bless the 3 violators above rather than naming them).
 
-FLOOR = 6 -- the number of `check_*.py` files actually shipped into
-`firestarter/scripts/` across Phases 123-128: `check_size_baseline.py`,
+FLOOR = 7 -- the number of `check_*.py` files actually shipped into
+`firestarter/scripts/` across Phases 123-155: `check_size_baseline.py`,
 `check_build_warnings.py`, `check_cmake_manifest.py`,
 `check_orphan_provisional.py` (Phase 123), `check_landing_range.py`
-(Phase 124 Plan 01, MERGE-01) and `check_release_assets.py` (Phase 128
-Plan 01, D-11/D-12, REL-03/REL-02). FIXTURE_FLOOR = 15 -- the number of
-`planted_*` entries actually present in `firestarter/tests/fixtures/` at
-authoring time, including Phase 124's `planted_landing_range_replayed_history/`
-recipe stub and Phase 128's `planted_release_assets_missing_uno328pb/` and
-`planted_release_assets_zero_byte_leonardo/`. This corrects a pre-existing
-drift: `FIXTURE_FLOOR` had been carrying `10` since Phase 123 even though
-Phases 124 and 126 each added `planted_*` fixtures without raising it,
-leaving it 3 below the actual count (13) immediately before this phase.
-Both floors are hardcoded integer literals asserted with `>=` before any
-per-checker assertion runs, so a zero-match glob, an accidental deletion, or
-a shrunken fixture set all FAIL instead of passing silently. A later phase
+(Phase 124 Plan 01, MERGE-01), `check_release_assets.py` (Phase 128
+Plan 01, D-11/D-12, REL-03/REL-02) and `check_no_heap_or_64bit_symbols.py`
+(Phase 155 Plan 02, DEAD-01/DEAD-03, the link-time heap-and-64-bit-runtime
+symbol-absence gate). FIXTURE_FLOOR = 16 -- the number of `planted_*`
+entries actually present in `firestarter/tests/fixtures/` at authoring
+time, including Phase 124's `planted_landing_range_replayed_history/`
+recipe stub, Phase 128's `planted_release_assets_missing_uno328pb/` and
+`planted_release_assets_zero_byte_leonardo/`, and Phase 155's
+`planted_no_heap_or_64bit_symbols_prechange_uno/`. This corrects a
+pre-existing drift: `FIXTURE_FLOOR` had been carrying `10` since Phase 123
+even though Phases 124 and 126 each added `planted_*` fixtures without
+raising it, leaving it 3 below the actual count (13) immediately before
+Phase 128. **A second, still-open instance of the same drift is recorded
+here rather than silently absorbed:** Phase 153 (`5bfae80`) added
+`scripts/check_erase_no_vpp.py` (and its own `planted_erase_no_vpp_ctrl_write*`
+fixture) without bumping either floor, so between Phase 153 and this
+commit, 7 checkers shipped against a floor of 6; after this commit, 8
+checkers ship against the floor of 7 raised here. The `>=` assertions below
+pass either way, since floors are a minimum, not an exact count -- but that
+means `FLOOR`'s own "the number actually shipped" wording is presently
+false by one, a carry-forward candidate for Phase 158 to close by raising
+`FLOOR` to 8 and `FIXTURE_FLOOR` to match the fixture count actually
+present at that time, in the same commit that reconciles it, rather than
+this plan doing so on Phase 153's behalf. Measured actual counts at this
+commit: **8** `check_*.py` files, **30** `planted_*` entries. Both floors
+are hardcoded integer literals asserted with `>=` before any per-checker
+assertion runs, so a zero-match glob, an accidental deletion, or a
+shrunken fixture set all FAIL instead of passing silently. A later phase
 that adds a firmware checker under `firestarter/scripts/` raises both
 floors deliberately in the SAME commit that adds the checker; lowering a
 floor is never the correct response to a red gate here -- it means a
@@ -126,8 +142,8 @@ CHECKER_GLOB = "check_*.py"
 
 # Hardcoded floors -- see module docstring for what each counts and why a
 # future checker addition must raise these in the same commit.
-FLOOR = 6
-FIXTURE_FLOOR = 15
+FLOOR = 7
+FIXTURE_FLOOR = 16
 
 # The three pre-existing, out-of-scope host-repo violators named for the
 # record (module docstring). Not used in any assertion below -- this
