@@ -45,12 +45,14 @@ pytest in a **subprocess**, with `FIRESTARTER_META_ROOT` set in the child
 process's environment -- never an in-process monkeypatch, never a direct
 import of this module under a patched environment.
 
-**CI coverage, stated honestly.** This module executes in NO CI leg on this branch:
-`pytest tests/ -v` runs only in `build.yml` (push/PR to `main`) and
-`beta-build.yml` (push to `beta`) -- neither fires on this firmware
-milestone branch, and `py32f071.yml` has no pytest step at all. The local
-run recorded in this phase's evidence artifact is the only evidence this
-module's assertions were ever exercised. Never imply CI coverage.
+**CI coverage, stated honestly.** `pytest tests/ -v` at the `build.yml` step read
+this session DOES fire on this branch -- that workflow's trigger was widened to
+`push: branches: ['**', '!beta']`, documented in `build.yml`'s own header comment,
+so it runs on every branch except `beta`; `beta-build.yml` runs the sibling leg on
+`push: branches: [beta]`; and `py32f071.yml` still has no pytest step at all. Never
+imply CI coverage where none exists, and never imply its ABSENCE where it does --
+this paragraph exists because an earlier reading of this module made exactly that
+inverse error.
 """
 
 from __future__ import annotations

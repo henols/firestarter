@@ -470,9 +470,14 @@ consumed inside `_merge05_flash_allowance()`'s own body (sliced from the functio
 line to the next), and that the constant's NAME never appears inside BASE-01's own raw JSON
 text -- BASE-01 is the frozen anchor, never a place an exemption gets laundered into.
 
-Neither repository's CI runs this suite -- no CI leg exercises it in either repository, so
-the local run recorded in this plan's own SUMMARY.md is the only evidence these assertions
-were ever exercised.
+The checker itself, `check_size_baseline.py`, is invoked as a size gate by NO
+`.github/` workflow in either repository -- that remains a local-run obligation this
+milestone leans on. But THIS SUITE runs in CI: `build.yml` runs `pytest tests/ -v`
+at `:161`, ungated by any `if:`, and that workflow's trigger (`:34`) is
+`push: branches: ['**', '!beta']` -- every branch except `beta` fires it, so it runs on
+this firmware milestone branch. The sibling leg in `beta-build.yml` (`:134`) covers
+`beta`. Practical consequence, this phase's own central constraint: moving the live
+baseline without severing the fixtures in the same commit turns this suite red in CI.
 
 Evidence Ceiling (v1.32 PROJECT.md): the change this family guards is
 software-proven and unvalidated on silicon -- no AT28C part was involved in measuring
