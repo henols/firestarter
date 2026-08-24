@@ -190,6 +190,14 @@ _C14_CONSUMER_SITES = (
     # (104/110 -> 119/125). Site 41 and the six sites in other files are
     # unaffected. Re-pinned, not relaxed: the census still asserts an exact
     # line for each of the nine sites.
+    # The provenance-oracle correction (2026-08-24) swept the residue the
+    # Phase-154 detector could not see, because it anchored its token at the
+    # comment opener. In include/rurp_hw_rev_utils.h two comment blocks lost a
+    # line each -- analog_read_avg8's 3-line note reflowed to 2, and the
+    # hard-fail-loud block's 4 lines to 3 -- shifting both sites in that file
+    # by -2 (95/101 -> 93/99). No statement changed; all three AVR targets are
+    # byte-identical. Re-pinned, not relaxed: the census still asserts an exact
+    # line for each of the nine sites.
     # The provenance comment sweep (SWEEP-01, SWEEP-06) deleted and reflowed
     # comment blocks only -- no statement changed -- but that moves line
     # numbers, which this census pins exactly. src/firestarter.cpp: a deleted
@@ -204,8 +212,8 @@ _C14_CONSUMER_SITES = (
     ("src/firestarter.cpp", 115, "rurp_get_config"),
     ("src/firestarter.cpp", 121, "rurp_save_config"),
     ("src/boards/rurp_common.cpp", 53, "rurp_get_config"),
-    ("include/rurp_hw_rev_utils.h", 95, "rurp_get_config"),
-    ("include/rurp_hw_rev_utils.h", 101, "rurp_get_config"),
+    ("include/rurp_hw_rev_utils.h", 93, "rurp_get_config"),
+    ("include/rurp_hw_rev_utils.h", 99, "rurp_get_config"),
     ("src/hardware_operations.cpp", 106, "rurp_get_config"),
     ("src/hardware_operations.cpp", 118, "rurp_get_config"),
     ("platform/py32f071/src/py32f071_rurp_shield.cpp", 297, "rurp_get_config"),
