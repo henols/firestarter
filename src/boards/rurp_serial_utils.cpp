@@ -243,7 +243,7 @@ int rurp_communication_read_data(char* buffer, size_t cap) {
     uint8_t rcvd_crc = last_byte; /* 1-byte lookahead holds the CRC8 */
 
     /* Recompute CRC8-CCITT over the decoded payload using the EXISTING PROGMEM
-     * table accessor (D-05 / CRC-01 — UNCHANGED, no new CRC routine). */
+     * table accessor (UNCHANGED, no new CRC routine). */
     uint8_t computed_crc = 0;
     for (size_t i = 0; i < out; i++) {
         computed_crc = crc8_ccitt(computed_crc, (uint8_t)buffer[i]);

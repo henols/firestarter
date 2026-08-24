@@ -112,7 +112,7 @@ uint16_t eprom_block_budget_s(uint32_t protocol, uint32_t pulse_us, uint32_t blo
      * seconds first" padding rule stated in eprom_budget.h. */
     uint32_t raw_s = whole * block_bytes + (rem * block_bytes + 999999UL) / 1000000UL;
 
-    /* "Twice the pulse-only worst case, plus two seconds" (D-09). The "+ 2"
+    /* "Twice the pulse-only worst case, plus two seconds". The "+ 2"
      * makes the one-second floor automatic, so no separate floor test is
      * needed anywhere in this budget. */
     uint32_t padded = raw_s * 2UL + 2UL;

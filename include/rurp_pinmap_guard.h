@@ -28,14 +28,14 @@
  * flag at all, so the #ifndef/#define/#endif default (the same idiom as
  * DATA_BUFFER_SIZE and DEV_TOOLS in include/firestarter.h:16-42) resolves it
  * to 0 there -- the guard then compiles to nothing on every AVR target,
- * zero flash/RAM cost, unchanged from Plan 124-06's recorded figures. The
+ * zero flash/RAM cost, unchanged from the previously recorded figures. The
  * #ifndef wrapper is load-bearing, not decorative: without it, a build that
  * already defines the flag on the command line or via a board header (the
  * py32 case) would hit a macro-redefinition warning, which
  * check_build_warnings.py counts against the watermark.
  *
  * WHY THE PREDICATE DELEGATES TO is_memory_cmd() INSTEAD OF RE-LISTING THE
- * EIGHT COMMANDS (D-12). Re-listing CMD_READ/CMD_WRITE/CMD_ERASE/
+ * EIGHT COMMANDS. Re-listing CMD_READ/CMD_WRITE/CMD_ERASE/
  * CMD_BLANK_CHECK/CMD_CHECK_CHIP_ID/CMD_VERIFY/CMD_SDP_UNLOCK/CMD_SDP_LOCK
  * here would create a second hand-maintained copy of the exact set
  * is_memory_cmd() already enumerates -- two lists that can silently drift
@@ -43,7 +43,7 @@
  * is ALWAYS is_memory_cmd()'s set, by construction, with no second list to
  * forget.
  *
- * WHICH COMMANDS STAY ALLOWED, AND WHY (D-12). The identity/config commands
+ * WHICH COMMANDS STAY ALLOWED, AND WHY. The identity/config commands
  * -- CMD_FW_VERSION, CMD_CONFIG, CMD_HW_VERSION -- are NOT in
  * is_memory_cmd()'s set, so they are never refused here either: the board
  * must stay discoverable (fw version, hw revision, config read/write) even
@@ -58,7 +58,7 @@
  * firestarter_app/tools/check_is_memory_cmd_no_ifdef.py forbids ANY
  * preprocessor conditional inside is_memory_cmd() -- that predicate must
  * stay conditional-free so its two-env (native / native_nodevtools) truth
- * table proof stays meaningful (Phase 119 LOCK-03). The `#if
+ * table proof stays meaningful. The `#if
  * RURP_PINMAP_PROVISIONAL` test therefore lives in this SEPARATE function,
  * in this SEPARATE header, never inside is_memory_cmd() itself.
  *
@@ -69,7 +69,7 @@
  * that makes is_memory_cmd() itself static inline in firestarter.h rather
  * than a .cpp function (see firestarter.h's own comment on that predicate).
  * A definition anywhere else would not link into the native test binary
- * that Plan 124-08's suite requires.
+ * that the guard's own suite requires.
  *
  * The `#if` below is itself what makes THIS header a real CONSUMER of the
  * neutral flag for scripts/check_orphan_provisional.py's orphan-macro scan

@@ -50,7 +50,7 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_operation_main = NULL;
     handle->firestarter_operation_end = NULL;
 
-    // MERGE-04 (D-11/D-12/D-13): while the board's pin map is provisional
+    // While the board's pin map is provisional
     // (RURP_PINMAP_PROVISIONAL, defined by a board header such as
     // include/boards/py32f071_rurp_shield.h), refuse every command that
     // can energise the PROM bus BEFORE any handler configuration below.
@@ -61,11 +61,11 @@ void configure_memory(firestarter_handle_t* handle) {
     // The payload is the COMMAND ordinal (handle->cmd), not the protocol
     // ordinal not_implemented.cpp logs -- this is a command-admission
     // refusal, not a protocol-dispatch refusal. Reusing the existing
-    // MSG_ERR_NOT_SUPPORTED id is deliberate (D-13): a dedicated id would
+    // MSG_ERR_NOT_SUPPORTED id is deliberate: a dedicated id would
     // cost a meta-repo messages.toml edit, a codegen regen, and host
     // constants-parity churn -- cross-repo surface this phase's premise is
     // to prove nothing else moved. The dedicated-id option is recorded as
-    // a deferred idea in 124-CONTEXT.md. On every AVR target
+    // a deferred idea. On every AVR target
     // RURP_PINMAP_PROVISIONAL is never defined (default 0 in
     // rurp_pinmap_guard.h), so this guard compiles to nothing there.
     if (rurp_pinmap_refuses(handle->cmd)) {
@@ -127,8 +127,8 @@ void configure_memory(firestarter_handle_t* handle) {
         return;
     }
 
-    // Named infeasibility arms (D-02): FWH and GAL/PLD — infeasible on RURP.
-    // Explicitly recognized per SC#4 / roadmap Phase 64 requirement (DISP-04).
+    // Named infeasibility arms: FWH and GAL/PLD — infeasible on RURP,
+    // and explicitly recognized as such rather than falling through.
     if (handle->protocol == 0x11 || handle->protocol == 0x2A ||
         handle->protocol == 0x2B || handle->protocol == 0x2C) {
         configure_not_implemented(handle);
@@ -138,7 +138,7 @@ void configure_memory(firestarter_handle_t* handle) {
     // Generic fail-closed guard: every remaining protocol value — including
     // protocol == 0 — is unrecognized and reaches not-implemented. Trusts
     // only handle->protocol end to end; no backward-compat fallback axis
-    // remains (T-64-01, Phase 105 protocol-only dispatch).
+    // remains -- dispatch is protocol-only.
     configure_not_implemented(handle);
 }
 
@@ -361,7 +361,7 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
 
     /*
      * Address-settling delay: time from address-set to /CE assertion.
-     * Zero-ambiguity: 0 = no settling delay (explicit zero — a valid D-04 test
+     * Zero-ambiguity: 0 = no settling delay (explicit zero — a valid test
      * point). Knob: "read-settling-delay" JSON field -> handle->read_settling_us.
      * T-44-01 cap: value already clamped at parse time (READ_TIMING_MAX_US=1000µs);
      * guard here catches any future path that bypasses the parser.

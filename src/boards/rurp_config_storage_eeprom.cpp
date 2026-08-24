@@ -10,7 +10,7 @@
 #include "rurp_shield.h"
 #include <EEPROM.h>
 
-// Moved verbatim from src/rurp_config_utils.cpp:11 (Phase 126, D-07).
+// Moved verbatim from src/rurp_config_utils.cpp.
 // This is an EEPROM ADDRESS, meaningless on py32 -- which is precisely why
 // it lives here, below the storage seam, instead of in the common policy
 // layer or the seam header.
@@ -28,7 +28,7 @@ bool rurp_config_storage_load(void* blob, size_t len) {
     // Returning true unconditionally is byte-identical to the pre-refactor
     // behaviour: EEPROM always yields bytes, and rurp_validate_config()
     // (in the common policy layer) decides whether they are usable. This
-    // is exactly what CFG-04 requires, and it is why D-06 rejected a
+    // is exactly what this seam requires, and it is why the design rejected a
     // richer status enum for the AVR side.
     return true;
 }

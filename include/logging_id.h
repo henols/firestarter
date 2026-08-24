@@ -8,10 +8,10 @@
  *
  * These macros wrap rurp_log_id() so call-sites can emit catalog-driven
  * binary frames without manually packing param byte arrays. Multi-byte
- * params are encoded MSB-first per CONTEXT §D-01..D-04.
+ * params are encoded MSB-first.
  *
  * Coexists with the legacy log_*_const / log_*_format macros in logging.h
- * (LMIG-01). No existing call-site is converted in Phase 6 — these macros
+ * No existing call-site is converted by this header — these macros
  * are the surface Phases 7-8 will migrate call-sites to.
  */
 
@@ -222,7 +222,7 @@
 // In development builds (-D SERIAL_DEBUG) each macro emits an ID frame:
 //   MAGIC | len_u16 | MSG_DEBUG | sub_id [params] | crc | 0x0A
 // The sub_id identifies the specific debug message in the [debug] catalog section
-// (messages.toml / messages.h DBG_* defines from Plan 01).
+// (messages.toml / messages.h DBG_* defines).
 
 #ifdef SERIAL_DEBUG
 

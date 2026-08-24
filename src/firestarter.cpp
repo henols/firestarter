@@ -129,7 +129,7 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     handle->operation_state = 0;
 
     /* data_buffer and data_size are pre-filled by the CMD_IDLE COBS decode
-     * step (Phase 51 — the rurp_communication_read_bytes call is deleted).
+     * step (the rurp_communication_read_bytes call is deleted).
      * data_buffer[data_size] is already NUL-terminated by the CMD_IDLE branch. */
     handle->ctrl_flags = 0x80;
     LOG_DEBUG_ID_SUB_U16(DBG_BUFFER_SIZE, (uint16_t)handle->data_size);
@@ -192,7 +192,7 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     // codegen run -- include/messages.h (codegen-generated, id-only) stays
     // untouched.
     //
-    // CAP-03 (HOST-01) is emitted for EVERY command, not just CMD_WRITE --
+    // CAP-03 is emitted for EVERY command, not just CMD_WRITE --
     // the ack's shape must not vary by command, or a length-discriminating
     // host decoder loses its only discriminator. eprom_block_budget_s
     // returns 0 for a non-EPROM protocol; the host's [1, 14400]
@@ -201,7 +201,7 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     // cannot bound, and it is also what covers the non-memory-command case
     // where configure_memory never ran and pulse_delay is still 0.
     //
-    // The advertised budget is already PADDED by the firmware (D-09): only
+    // The advertised budget is already PADDED by the firmware: only
     // the firmware knows the once-per-block VPE settle, the final verify
     // pass(es), the per-pulse settle and the serial transport time, so the
     // host applies no multiplier of its own. See include/eprom_budget.h for
@@ -323,7 +323,7 @@ void loop() {
         case CMD_CHECK_CHIP_ID:
             finished = eprom_check_chip_id(&handle);
             break;
-        // LOCK-02, corrected form (RESEARCH F-T): with init/end left NULL
+        // Corrected form: with init/end left NULL
         // (configure_eeprom28c), these phases are NOT skipped --
         // _execute_operation_house_keeping_func still calls op_wait_for_ack()
         // and still emits the INIT and END frame pairs, so each costs a host
@@ -337,7 +337,7 @@ void loop() {
         // firmware half. Both arms sit outside any preprocessor conditional.
         // op_wait_for_ack has a 1000 ms timeout and emits MSG_ERR_TIMEOUT on
         // expiry, so a standalone lock issued by a host that does not ACK
-        // times out rather than hangs (relevant to Phase 120, not here).
+        // times out rather than hangs (not this call site's concern).
         case CMD_SDP_UNLOCK:
             finished = eprom_sdp_unlock(&handle);
             break;

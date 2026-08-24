@@ -52,7 +52,7 @@ static unsigned long simple_strtoul(const char* s) {
  *   read_settling_us == 0 → no settling delay (explicit test point)
  *   read_strobe_us   == 0 → use firmware default 3µs (preserves current behaviour)
  *
- * Hoisted above key_parsers[] (DECODE-06 / C-9): the clamp is now applied by
+ * Hoisted above key_parsers[]: the clamp is now applied by
  * the table's `clamp` column below, rather than by two per-key stubs, and
  * the two clamp rows reference this constant, so it must be defined before
  * the table that uses it.
@@ -484,7 +484,7 @@ static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {
 /*
  * OD-3: hand-expanded rather than the extract_long macro form (which
  * expands jsoneq(json, &tokens[pos], "flags"), emitting its own anonymous
- * PSTR("flags")), so that single storage of every wire key -- DECODE-02's
+ * PSTR("flags")), so that single storage of every wire key -- this table's
  * claim -- is guaranteed by the SOURCE, not by an unexplained
  * constant-merging outcome the research could not account for (OD-3 / A6 /
  * OQ-2). get_flags survives deliberately: it is called directly from TWO

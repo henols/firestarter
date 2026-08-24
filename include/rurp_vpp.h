@@ -10,7 +10,7 @@
  * WHY THIS IS DEPENDENCY-FREE:
  *   The only include below is <stdint.h>, which a plain host preprocessor
  *   resolves standalone -- no rurp_shield.h, no <Arduino.h>, no
- *   rurp_platform.h, no PY32 HAL. This is a standing constraint (D-02), not a
+ *   rurp_platform.h, no PY32 HAL. This is a standing constraint, not a
  *   local convenience: a later phase that wants configuration access or
  *   hardware register access must add that dependency deliberately, and pay
  *   for it explicitly, rather than inherit it here for free.
@@ -18,12 +18,12 @@
  * WHAT THIS HEADER TESTS, NOT DEFINES:
  *   For every non-AVR target, the value of RURP_HAS_VPP_DAC is supplied ONLY
  *   by the board/platform build -- for py32f071 that means
- *   platform/py32f071/CMakeLists.txt's target_compile_definitions (D-07).
+ *   platform/py32f071/CMakeLists.txt's target_compile_definitions.
  *   This header never defines the macro for a non-AVR target; it only tests
  *   what the build supplies. A fifth non-AVR board that forgets to supply it
  *   fails at the preprocessor rather than silently inheriting manual control
- *   near an unregulated rail. This is Phase 124 D-14's lesson (a guard that
- *   defines what it tests is dead) applied before the fact.
+ *   near an unregulated rail. The lesson (a guard that defines what it
+ *   tests is dead) is applied before the fact.
  *
  * PERMANENCE:
  *   No Arduino/AVR-class RURP board carries a VPP DAC, and none ever will --

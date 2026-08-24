@@ -15,7 +15,7 @@
  * functions, and the common policy layer above the seam never knows which
  * one it is talking to.
  *
- * WHY EXACTLY TWO FUNCTIONS (D-06):
+ * WHY EXACTLY TWO FUNCTIONS:
  *   The seam is two bool-returning functions over a byte blob --
  *   rurp_config_storage_load(void*, size_t) / rurp_config_storage_save(const
  *   void*, size_t) -- so a backend can report "no valid record" HONESTLY
@@ -26,13 +26,12 @@
  *       from "loaded zeros", handled only by the version-string accident --
  *       the same inference style as v1.22's inverted 0x5555 check;
  *     - a richer status enum (OK / BLANK / CRC_FAIL / IO_ERROR): invents
- *       vocabulary with no consumer today (D-15 explicitly declines to
- *       distinguish blank from both-slots-corrupt on the wire). A
- *       declaration with no implementation and no consumer does not land
- *       (Phase 124 D-01, Phase 125 D-09) -- add it only if a consumer
- *       arrives.
+ *       vocabulary with no consumer today (the wire deliberately does not
+ *       distinguish blank from both-slots-corrupt). A declaration with no
+ *       implementation and no consumer does not land -- add it only if a
+ *       consumer arrives.
  *
- * WHAT STAYS ABOVE THE SEAM (D-07):
+ * WHAT STAYS ABOVE THE SEAM:
  *   All four public config functions -- rurp_get_config, rurp_load_config,
  *   rurp_save_config, rurp_validate_config -- and the rurp_config global
  *   stay in the common policy layer, src/rurp_config_utils.cpp. Their
@@ -42,30 +41,29 @@
  *   meaningless on py32 -- so it lives BELOW the seam, in the AVR backend
  *   translation unit, not here and not in the policy layer.
  *
- * WHY rurp_shield.h IS NOT TOUCHED (D-09):
+ * WHY rurp_shield.h IS NOT TOUCHED:
  *   This header is included by exactly THREE translation units: the common
  *   policy layer (src/rurp_config_utils.cpp) and the two per-platform
  *   backends (src/boards/rurp_config_storage_eeprom.cpp for AVR;
- *   platform/py32f071/src/config_storage_flash.cpp for ARM, landed by Plan
- *   126-08). rurp_shield.h is reachable from 46 translation units, 14 of
- *   them native host_stubs.cpp files -- Phase 125's C-1 measured that ONE
- *   #include line added to rurp_shield.h took `pio test -e native` from
+ *   platform/py32f071/src/config_storage_flash.cpp for ARM).
+ *   rurp_shield.h is reachable from 46 translation units, 14 of them
+ *   native host_stubs.cpp files -- ONE #include line added to
+ *   rurp_shield.h was measured to take `pio test -e native` from
  *   141 cases / 141 succeeded to 17 suites / 0 succeeded. This header is
  *   therefore never included from rurp_shield.h, and never will be.
  *
- * AVR BEHAVIOUR IS UNCHANGED (CFG-04):
+ * AVR BEHAVIOUR IS UNCHANGED:
  *   The AVR implementation of rurp_config_storage_load returns `true`
  *   UNCONDITIONALLY after the typed EEPROM.get() read, and the common
  *   policy layer calls rurp_validate_config() either way -- exactly as it
  *   did before this seam existed. The signature is new; the behaviour is
- *   byte-identical, which is what CFG-04 requires.
+ *   byte-identical, which is what this seam requires.
  *
  * FIRE-PROOF:
- *   tests/test_config_storage_seam_shape.py (Plan 126-05) gates this
- *   header's shape (exactly two declarations, the include-guard form, the
+ *   tests/test_config_storage_seam_shape.py gates this header's shape (exactly two declarations, the include-guard form, the
  *   include-before-extern-C ordering, the includer census of exactly three
  *   translation units). tests/test_config_storage_eeprom_regression.py
- *   (Plan 126-02) pins the AVR access this seam's load/save calls must
+ *   pins the AVR access this seam's load/save calls must
  *   still produce: EEPROM.get/put at offset 48, length sizeof(rurp_configuration_t).
  */
 
@@ -86,7 +84,7 @@ extern "C" {
  * @return true if the read was performed (AVR: always true -- EEPROM always
  *         yields bytes, and rurp_validate_config() decides whether they are
  *         usable); false if this platform can positively determine no valid
- *         record exists (py32: both slots blank or CRC-rejected, D-15).
+ *         record exists (py32: both slots blank or CRC-rejected).
  */
 bool rurp_config_storage_load(void* blob, size_t len);
 
@@ -97,7 +95,7 @@ bool rurp_config_storage_load(void* blob, size_t len);
  * @param len  Number of bytes to write -- callers pass
  *             sizeof(rurp_configuration_t).
  * @return true if the write was performed (AVR: always true). py32's
- *         dual-slot backend (Plan 126-08) also returns true unconditionally
+ *         dual-slot backend also returns true unconditionally
  *         here -- a write failure mode has no consumer today.
  */
 bool rurp_config_storage_save(const void* blob, size_t len);

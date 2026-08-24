@@ -15,17 +15,17 @@
  *     from (eprom_params_t, via eprom_params_for) is entirely the .cpp's
  *     concern.
  * (b) This header deliberately does NOT include, and nothing it includes
- *     may include, any Arduino framework header (140-RESEARCH.md Pitfall
- *     1, restated from include/eprom_params.h's own header comment): a
+ *     may include, any Arduino framework header (restated from
+ *     include/eprom_params.h's own header comment): a
  *     translation unit that pairs that framework header with the platform
  *     PROGMEM shim emits 14 macro-redefinition warnings, and the native
  *     build's warning watermark sits at exactly 1166 with zero headroom --
  *     so this dependency stays out end to end. This header includes only
  *     <stdint.h>.
  *
- * BF-3 (143-RESEARCH.md "Blocking Findings"): 143-CONTEXT.md's D-11 states
- * the per-byte bound as min(max_pulses x pulse, energy_cap_us). That
- * formula is WRONG -- the shipped per-byte loop (src/proms/eprom.cpp's
+ * The per-byte bound is NOT min(max_pulses x pulse, energy_cap_us), the
+ * form a naive reading suggests. That form is WRONG -- the shipped
+ * per-byte loop (src/proms/eprom.cpp's
  * inner `for (;;)`) does `accumulated += org_delay` BEFORE testing
  * `accumulated >= energy_cap_us`, so the last pulse can overshoot the cap
  * by up to `pulse_us - 1`. The functions below implement the corrected
@@ -51,7 +51,7 @@ extern "C" {
  *     pulse to zero, since both of those rows ship energy_cap_us == 0.
  * (b) The pulse count is min(max_pulses, ceil(energy_cap_us / pulse_us)),
  *     NOT min(max_pulses * pulse_us, energy_cap_us) / pulse_us implied by
- *     CONTEXT.md's D-11 wording -- the shipped loop increments the
+ *     a naive reading -- the shipped loop increments the
  *     accumulator and only THEN tests it, so the true pulse count can
  *     exceed a naive energy_cap_us / pulse_us division. Example: at
  *     pulse_us = 49999 against energy_cap_us = 50000, a naive
@@ -88,8 +88,8 @@ uint32_t eprom_worst_pulses(uint8_t max_pulses, uint32_t pulse_us, uint32_t ener
  * eprom_overprogram_us (declared in eprom.h) with the pulse count this
  * function just derived -- never by restating that function's formula.
  * Restating it as a literal `3 * overprogram_factor * pulse_us` (the
- * reading CONTEXT.md's D-11 and include/eprom_params.h's own column
- * comment both suggest) would under-estimate 8.3x for the first future row
+ * reading include/eprom_params.h's own column comment suggests) would
+ * under-estimate 8.3x for the first future row
  * that sets a non-zero factor, because `3` already IS the factor in the
  * shipped function's contract and its `pulse_count` parameter is not `3`
  * again.
@@ -99,7 +99,7 @@ uint32_t eprom_per_byte_budget_us(uint8_t max_pulses, uint32_t pulse_us, uint32_
 
 /*
  * Advertised per-block write-time budget, in whole SECONDS, for one
- * DATA_BUFFER_SIZE-class block -- already PADDED (D-09). A host-side
+ * DATA_BUFFER_SIZE-class block -- already PADDED. A host-side
  * reader cannot see the padding rule from the wire, so it is recorded here
  * in prose:
  *
@@ -109,9 +109,8 @@ uint32_t eprom_per_byte_budget_us(uint8_t max_pulses, uint32_t pulse_us, uint32_
  * MULTIPLIER, not an additive constant, because the per-pulse fixed
  * overhead scales with pulse COUNT, not with block size alone: at 0x0B /
  * --pulse-us 200 the per-byte loop runs 250 pulses x 1024 bytes = 256 000
- * iterations, and an [ASSUMED] (143-RESEARCH.md "Budget Arithmetic and
- * Encoding" A1; NOT measured -- Phase 145 may record the real figure)
- * ~20-60 us per-pulse overhead adds roughly 15 s on top of a 51.2 s
+ * iterations, and an [ASSUMED], NOT measured, ~20-60 us per-pulse
+ * overhead adds roughly 15 s on top of a 51.2 s
  * pulse-only budget -- about 30%. A flat +N seconds could never absorb
  * that at every pulse width.
  *

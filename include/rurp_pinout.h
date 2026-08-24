@@ -5,9 +5,9 @@
  * Permission is hereby granted under MIT license.
  *
  * rurp_pinout.h — canonical CTRL_* / PIN_* / RES_* / JMP_* alias substrate
- * for the silkscreen-label → code-alias migration (Phase 33).
+ * for the silkscreen-label → code-alias migration.
  *
- * This header introduces ONLY the new canonical declarations. Per D-06 no
+ * This header introduces ONLY the new canonical declarations. No
  * backward-compat alias block is included (no `#define <old_name>
  * <new_name>` lines). The old #defines in rurp_shield.h:25-94 remain in
  * place during Wave 1 and serve all existing call-sites; Waves 2 and 3
@@ -31,7 +31,7 @@
 // Including <Arduino.h> here would force C++ classes (String, etc.) through
 // the extern-C wrappers of upstream headers like firestarter.h / flash_utils.h
 // — a latent bracketing bug uncovered when rurp_shield.h started including
-// rurp_pinout.h in Wave 3's D-06 atomic delete.
+// rurp_pinout.h.
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -51,19 +51,16 @@ extern "C" {
 // Thresholds UNCHANGED — bench measurement (2026-05-26) validated 0/15 reads
 // in the [200, 220) guard gap across
 // 3 shield revisions; the existing 20-count gap is empirically sufficient.
-// SEMANTIC CHANGE post-Phase 35 Plan 01 INPUT high-Z fix: bands now characterize
+// SEMANTIC NOTE, since the INPUT high-Z fix: bands now characterize
 // A3-net composition (R41-only-to-GND = low; external-pull-up-to-+5V = mid;
-// floating = high), NOT R41 value alone. The internal pull-up R_top assumed in
-// the Phase 34 band-math (INPUT_PULLUP at rurp_hw_rev_utils.h:43-pre-Plan-01)
-// is disabled post-Plan 01 — R41 value no longer drives ADC variance.
-// See .planning/v1.7-SHIELD-REVS.md §8 "Phase 35 ASCII correction" + §9 table
-// + .planning/v1.7/bench-evidence-35.md §"Band-math semantics under Plan 01
-// INPUT high-Z" for full analysis. v1.8 substrate seed: future Rev 2.4 PCB
-// could add an external R_top to restore the original divider semantics.
-// #define (NOT constexpr) per Phase 33 D-07 — preprocessor constants resolve
+// floating = high), NOT R41 value alone. The internal pull-up R_top the
+// original band-math assumed (INPUT_PULLUP) is now disabled — R41 value no
+// longer drives ADC variance. A future Rev 2.4 PCB could add an external
+// R_top to restore the original divider semantics.
+// #define (NOT constexpr) — preprocessor constants resolve
 // at compile time and contribute 0 B to the .hex until referenced.
 #ifdef HARDWARE_REVISION
-#define ADC_BAND_R41_4K7_HIGH 200  // upper edge of low band (R41-only-to-GND; Rev 2.0/2.1/2.2 + Rev 2.3 stock post-Plan 01)
+#define ADC_BAND_R41_4K7_HIGH 200  // upper edge of low band (R41-only-to-GND; Rev 2.0/2.1/2.2 + Rev 2.3 stock)
 #define ADC_BAND_R41_10K_LOW  220  // lower edge of mid band (external pull-up active — operator-reworked boards); [200, 220) -> REVISION_UNKNOWN guard gap
 #define ADC_BAND_R41_10K_HIGH 600  // upper edge of mid band; above -> high band / floating / no R41
 #endif

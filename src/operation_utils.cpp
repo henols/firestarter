@@ -87,7 +87,7 @@ bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle
         }
         return false;
     }
-    // v1.22 Phase 119 D-06/D-07 (119-07 Task 2) -- the generic NULL-main
+    // The generic NULL-main
     // refusal. This is the ONE site that closes the whole phantom-success
     // class, not just SDP's corner of it. Five things this comment must
     // record (per the plan's task instructions):
@@ -100,10 +100,10 @@ bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle
     //    handle.response_code = RESPONSE_CODE_OK before the dispatch switch
     //    ran, and nothing on this path ever wrote it. So the operation
     //    reported OK, emitted no error frame, and emitted no MSG_MAIN_DONE
-    //    either -- it emitted nothing at all. That silence is DEVTEST-01's
+    //    either -- it emitted nothing at all. That silence is the
     //    "dev test reports OK having done nothing" phantom erase.
     //
-    // 2. WHY THE GUARD LIVES HERE AND NOWHERE ELSE (D-06). Single site,
+    // 2. WHY THE GUARD LIVES HERE AND NOWHERE ELSE. Single site,
     //    smallest flash cost, and provably TOTAL: any protocol whose
     //    handler has no arm for a command is refused here, present and
     //    future, with no per-handler maintenance. Two alternatives were
@@ -116,24 +116,24 @@ bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle
     //    one guard, and each of the six arms would have to be hand-written
     //    not to swallow the pre-set generic mains (see item 3).
     //
-    // 3. WHY THIS CANNOT BREAK read/write/verify (D-05's other half).
+    // 3. WHY THIS CANNOT BREAK read/write/verify.
     //    configure_memory pre-sets the generic main for CMD_READ, CMD_WRITE
     //    and CMD_VERIFY (proms/memory.cpp:48-58) BEFORE the protocol chain
     //    runs, so those three commands are never NULL-main for any protocol
     //    that reaches a configure_* handler -- a source-level invariant, not
     //    a hope, and test_dispatch/test_configure_memory.cpp pins it as a
-    //    positive case. This is also why LOCK-04's ROADMAP-stated mechanism
+    //    positive case. This is also why the originally-stated mechanism
     //    (a `default:` arm inside configure_eeprom28c) was disproven and
     //    corrected rather than implemented: that literal arm would fire for
     //    CMD_READ and CMD_VERIFY too, on all 84 protocol-0x0D chips, because
     //    configure_eeprom28c's own switch only overrides CMD_WRITE and adds
     //    CMD_BLANK_CHECK, leaving the pre-set generic mains for read/verify
-    //    to fall through into that arm. LOCK-04 is mechanism-corrected,
-    //    intent-satisfied by this single guard -- never read as failed.
+    //    to fall through into that arm. The mechanism is corrected and the
+    //    intent satisfied by this single guard.
     //
     // 4. THE BLAST RADIUS, AND WHAT IT DOES NOT REACH. This guard is
     //    generic, so it changes observable behaviour for every previously
-    //    silent-OK (cmd, protocol) cell -- intentionally, per D-07/D-08.
+    //    silent-OK (cmd, protocol) cell -- intentionally.
     //    But op_execute_stateful_operation is reached ONLY from the six
     //    eprom_* entry points in eprom_operations.cpp; hw_read_voltage,
     //    fw_get_version, hw_get_version, hw_get_config, dt_set_registers and
@@ -155,13 +155,13 @@ bool op_execute_stateful_operation(bool (*callback)(firestarter_handle_t* handle
     //    firmware emits 0xA4 MSG_ERR_EMPTY_INPUT is a follow-on artifact of
     //    the old silent completion (the firmware returns to CMD_IDLE, then
     //    misreads the host's next byte as a fresh frame), not a firmware
-    //    refusal. Correct Phase 120 disposition: KEEP that workaround.
+    //    refusal. Correct disposition: KEEP that workaround.
     //
     // This site now returns `true` directly -- the engine reports finished
     // as `true` and the nine eprom_* wrappers forward that result without
     // inverting it -- so the command still reports finished and
     // command_done() still runs (chip disabled, registers zeroed) exactly as
-    // before. What changes relative to the pre-D-06 state is that an error
+    // before. What changes relative to the previous state is that an error
     // frame is now emitted and response_code is
     // RESPONSE_CODE_ERROR instead of the RESPONSE_CODE_OK loop() set: the
     // command still terminates cleanly, it just stops lying about what it

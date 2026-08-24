@@ -18,7 +18,7 @@ constexpr int INPUT_RESOLUTION = 1023;
 
 bool com_mode = true;
 
-// Deferred-log buffer (#transport-protocol-verify, Phase 53).
+// Deferred-log buffer.
 // On the Uno, PORTD doubles as the data bus during programmer mode, so emitting a
 // frame on the wire mid-operation would corrupt the programming pulse — hence the
 // com_mode gate below. Historically rurp_log_id simply DROPPED frames while

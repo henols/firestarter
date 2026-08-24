@@ -45,7 +45,7 @@ extern "C" {
      *
      * Exposed here (not file-static in eprom.cpp), matching the
      * eprom_overprogram_us precedent immediately above: a direct
-     * (protocol, ctrl_flags) -> mask truth table is VPP-01's clearest
+     * (protocol, ctrl_flags) -> mask truth table is the clearest
      * evidence, and it is the only way to exercise the fail-closed
      * NULL-row arm without a full drive -- a file-static resolver could
      * only ever be tested through its effects on the emitted strobe
@@ -68,7 +68,7 @@ extern "C" {
      * name instead of duplicating the number.
      *
      * 1000 ms is chosen so that even against a host that somehow kept the
-     * OLD 10 s response-window timeout (HOST-01 raises it; this constant's
+     * OLD 10 s response-window timeout (the host raises it; this constant's
      * value is independent of that raise), the window is still fed with
      * 10x margin. At the modal 0x07 pulse width (100 us, max_pulses 25,
      * energy_cap_us 0 == uncapped) a full 1024-byte block worst-cases at
@@ -85,8 +85,8 @@ extern "C" {
     #define EPROM_PROGRESS_EMIT_INTERVAL_MS 1000
 
     /*
-     * EPROM_OVERPROGRAM_SUPPORTED -- compiles eprom.cpp's LOOP-03
-     * overprogram call site in (1) or out (0). Debug session
+     * EPROM_OVERPROGRAM_SUPPORTED -- compiles eprom.cpp's overprogram
+     * call site in (1) or out (0). Debug session
      * w27c512-write-slow-3x, operator-adjudicated.
      *
      * DO NOT "TIDY" THIS AWAY, AND DO NOT MAKE IT UNIFORM ACROSS TARGETS.
@@ -94,7 +94,7 @@ extern "C" {
      * reason is flash, not behaviour:
      *
      *   - The pass-batched program loop this session shipped costs +772 B
-     *     on leonardo, which overran MERGE-05's 724 B leonardo allowance by
+     *     on leonardo, which overran the 724 B leonardo size allowance by
      *     48 B. Compiling this one call site out gives the bytes back
      *     without inventing a fifth exemption constant.
      *   - The harder constraint is the ATmega32U4 CATERINA CLIFF at 28672 B.
@@ -127,18 +127,18 @@ extern "C" {
     #endif
 
     /*
-     * Debug session w27c512-program-fail-byte0 (Phase 145 Gate 2) -- the
+     * Debug session w27c512-program-fail-byte0 -- the
      * settle either side of the program-voltage route assert that wraps
      * every program pulse in eprom.cpp's per-byte loop.
      *
-     * WHY THE WRAP EXISTS AT ALL. Phase 141 rewrote eprom_write_execute as
-     * a per-byte pulse-to-verify loop and deleted program_mismatched_bytes()
-     * "outright" (141-PATTERNS.md:158). That function was the ONLY place the
+     * WHY THE WRAP EXISTS AT ALL. eprom_write_execute was rewritten as
+     * a per-byte pulse-to-verify loop and program_mismatched_bytes() was
+     * deleted outright. That function was the ONLY place the
      * write path ever asserted CTRL_VPE_ENABLE -- it wrapped each program
      * pass in set_control_register(CTRL_VPE_ENABLE, 1) / delay(10) / ... /
      * set_control_register(CTRL_VPE_ENABLE, 0). The replacement loop calls
      * firestarter_set_data() bare, and memory_set_data() (memory.cpp) writes
-     * no control register of its own, so from Phase 141 until this fix every
+     * no control register of its own, so from that rewrite until this fix every
      * CE program strobe on 0x07/0x08/0x0B was emitted with the 12 V rail
      * generated but never switched onto the socket. The repo's own two
      * empirical golden traces show it directly: the pre-v1.31 capture latches
@@ -245,7 +245,7 @@ extern "C" {
      * before -- it removes one. A per-row erase width is deliberately NOT
      * introduced: minipro's infoic.xml carries no erase-duration attribute,
      * so the database generator could not source one without inventing a
-     * field, and eprom_params.h's TABLE-02 forbids a pulse-width column.
+     * field, and eprom_params.h forbids a pulse-width column.
      *
      * EXPRESSED IN MICROSECONDS, deliberately, so the value keeps going
      * through mem_util_delay_us's split helper: 100000 us is far above the

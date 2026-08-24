@@ -20,7 +20,7 @@ extern "C" {
 #include "rurp_pinout.h"
 
 #ifdef HARDWARE_REVISION
-// Hardware-revision enum values (out of D-03 alias-scope per Phase 33 RESEARCH —
+// Hardware-revision enum values (out of the alias-migration scope —
 // these are revision identifiers, not RURP-signal aliases).
 #define REVISION_0 0
 #define REVISION_1 1
@@ -89,7 +89,7 @@ extern "C" {
     // Fixed-shape packers — wrap the byte-array pack + rurp_log_id call so
     // each LOG_*_ID_U{8,16,24,32} macro invocation collapses to a single
     // CALL instruction at the call site. MSB-first wire encoding per
-    // CONTEXT §D-01..D-04.
+    // MSB-first parameter encoding.
     void rurp_log_id_u8(uint8_t id, uint8_t v);
     void rurp_log_id_u16(uint8_t id, uint16_t v);
     void rurp_log_id_u24(uint8_t id, uint32_t v);

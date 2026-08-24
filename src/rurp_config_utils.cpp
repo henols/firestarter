@@ -22,7 +22,7 @@ void rurp_load_config() {
     // The bool result is deliberately discarded: rurp_validate_config()
     // below decides usability of whatever bytes came back (or were left
     // untouched), which is what keeps one validate policy on both
-    // platforms (D-14) rather than branching per platform here.
+    // platforms rather than branching per platform here.
     (void)rurp_config_storage_load(config, sizeof(*config));
     rurp_validate_config(config);
 }

@@ -770,7 +770,7 @@ void eeprom28c_write_execute(firestarter_handle_t* handle) {
             window_start = i + 1;
         }
     }
-    (void)page_load_aborted;  // recorded for reader clarity only; both exits report identically (D-16)
+    (void)page_load_aborted;  // recorded for reader clarity only; both exits report identically
     LOG_ID_U32(MSG_INFO_PAGE_LOAD_WORST_US, page_load_worst_us);
 }
 
