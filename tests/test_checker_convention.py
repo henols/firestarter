@@ -50,38 +50,46 @@ glob exactly the "introduced in this milestone" set BASE-08 names, with no
 registry file (forbidden by D-08) and no grandfather allow-list (which
 would silently bless the 3 violators above rather than naming them).
 
-FLOOR = 7 -- the number of `check_*.py` files actually shipped into
+FLOOR = 8 -- the number of `check_*.py` files actually shipped into
 `firestarter/scripts/` across Phases 123-155: `check_size_baseline.py`,
 `check_build_warnings.py`, `check_cmake_manifest.py`,
 `check_orphan_provisional.py` (Phase 123), `check_landing_range.py`
 (Phase 124 Plan 01, MERGE-01), `check_release_assets.py` (Phase 128
-Plan 01, D-11/D-12, REL-03/REL-02) and `check_no_heap_or_64bit_symbols.py`
+Plan 01, D-11/D-12, REL-03/REL-02), `check_no_heap_or_64bit_symbols.py`
 (Phase 155 Plan 02, DEAD-01/DEAD-03, the link-time heap-and-64-bit-runtime
-symbol-absence gate). FIXTURE_FLOOR = 16 -- the number of `planted_*`
-entries actually present in `firestarter/tests/fixtures/` at authoring
-time, including Phase 124's `planted_landing_range_replayed_history/`
-recipe stub, Phase 128's `planted_release_assets_missing_uno328pb/` and
-`planted_release_assets_zero_byte_leonardo/`, and Phase 155's
-`planted_no_heap_or_64bit_symbols_prechange_uno/`. This corrects a
+symbol-absence gate) and `check_erase_no_vpp.py` (Phase 153, ERASE-08, the
+control-register high-voltage negative scan on the AT28C software erase
+path). FIXTURE_FLOOR = 31 -- the number of `planted_*` entries actually
+present in `firestarter/tests/fixtures/` at this commit, including Phase
+124's `planted_landing_range_replayed_history/` recipe stub, Phase 128's
+`planted_release_assets_missing_uno328pb/` and
+`planted_release_assets_zero_byte_leonardo/`, Phase 153's
+`planted_erase_no_vpp_ctrl_write.cpp`, Phase 155's
+`planted_no_heap_or_64bit_symbols_prechange_uno/`, and Phase 158 Plan 04's
+own `planted_size_baseline_flash_regression_v158.log`. This corrects a
 pre-existing drift: `FIXTURE_FLOOR` had been carrying `10` since Phase 123
 even though Phases 124 and 126 each added `planted_*` fixtures without
 raising it, leaving it 3 below the actual count (13) immediately before
-Phase 128. **A second, still-open instance of the same drift is recorded
-here rather than silently absorbed:** Phase 153 (`5bfae80`) added
-`scripts/check_erase_no_vpp.py` (and its own `planted_erase_no_vpp_ctrl_write*`
-fixture) without bumping either floor, so between Phase 153 and this
-commit, 7 checkers shipped against a floor of 6; after this commit, 8
-checkers ship against the floor of 7 raised here. The `>=` assertions below
-pass either way, since floors are a minimum, not an exact count -- but that
-means `FLOOR`'s own "the number actually shipped" wording is presently
-false by one, a carry-forward candidate for Phase 158 to close by raising
-`FLOOR` to 8 and `FIXTURE_FLOOR` to match the fixture count actually
-present at that time, in the same commit that reconciles it, rather than
-this plan doing so on Phase 153's behalf. Measured actual counts at this
-commit: **8** `check_*.py` files, **30** `planted_*` entries. Both floors
-are hardcoded integer literals asserted with `>=` before any per-checker
-assertion runs, so a zero-match glob, an accidental deletion, or a
-shrunken fixture set all FAIL instead of passing silently. A later phase
+Phase 128; a second, later instance of the same drift left the floor at
+`7`/`16` from Phase 153 onward even as an eighth checker
+(`check_erase_no_vpp.py`) and its fixture shipped.
+
+**Closed by Phase 158 Plan 05 (LAND-03's own carry-forward, named by this
+module's own docstring, by `158-before-figures.md` §13, and by
+`158-04-SUMMARY.md`):** both floors are raised in this same commit to the
+counts actually shipped, counted on the tree at this commit rather than
+transcribed from any plan's prose or from the research document --
+`ls scripts/check_*.py | wc -l` gives **8**, `ls tests/fixtures | grep -c
+'^planted_'` gives **31**. The fixture count is one higher than the
+pre-phase figure of 30 recorded in `158-before-figures.md`, because this
+phase's own Plan 04 fixture severance added exactly one new plant
+(`planted_size_baseline_flash_regression_v158.log`) ahead of this commit.
+Both assertions below are `>=`, so this is a **tightening of a loose
+gate**, not a repair of a red one -- neither test was failing before this
+edit, and a reader who sees a floor move should not assume otherwise. The
+`>=` assertions below would have passed either way, at the old floors or
+the new ones -- but `FLOOR`'s own "the number actually shipped" wording is
+now **true**, not "false by one" as it was before this edit. A later phase
 that adds a firmware checker under `firestarter/scripts/` raises both
 floors deliberately in the SAME commit that adds the checker; lowering a
 floor is never the correct response to a red gate here -- it means a
@@ -142,8 +150,8 @@ CHECKER_GLOB = "check_*.py"
 
 # Hardcoded floors -- see module docstring for what each counts and why a
 # future checker addition must raise these in the same commit.
-FLOOR = 7
-FIXTURE_FLOOR = 16
+FLOOR = 8
+FIXTURE_FLOOR = 31
 
 # The three pre-existing, out-of-scope host-repo violators named for the
 # record (module docstring). Not used in any assertion below -- this
