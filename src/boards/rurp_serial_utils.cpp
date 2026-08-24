@@ -174,7 +174,7 @@ int rurp_communication_read_data(char* buffer, size_t cap) {
          * arrive here with at least the first byte already consumed).
          * On host silence past TIMEOUT_MS: drain (bounded) + return negative.
          * This prevents a truncated frame (host kills connection mid-frame)
-         * from hanging the programmer until physical reset (T-51-02 mitigated).
+         * from hanging the programmer until physical reset (mitigated).
          * The truly-idle path is unaffected: loop() guards entry on
          * rurp_communication_available()>0, so no timer runs while idle. */
         if (rurp_communication_available() <= 0) {

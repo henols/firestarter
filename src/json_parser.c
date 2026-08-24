@@ -57,7 +57,7 @@ static unsigned long simple_strtoul(const char* s) {
  * the two clamp rows reference this constant, so it must be defined before
  * the table that uses it.
  */
-#define READ_TIMING_MAX_US 1000UL   /* T-44-01 sane max (~1ms); caps both knobs */
+#define READ_TIMING_MAX_US 1000UL   /* sane max (~1ms); caps both knobs */
 
 const char key_mem_size[] PROGMEM = "memory-size";
 const char key_address[] PROGMEM = "address";
@@ -149,10 +149,10 @@ static const field_desc_t key_parsers[] PROGMEM = {
     /* algorithm -> handle->protocol (the primary dispatch key) */
     FIELD(key_algorithm, protocol, 0),
     /* read-settling-delay -> handle->read_settling_us, clamped to
-     * READ_TIMING_MAX_US (T-44-01). */
+     * READ_TIMING_MAX_US. */
     FIELD(key_read_settling, read_settling_us, READ_TIMING_MAX_US),
     /* read-strobe-us -> handle->read_strobe_us, clamped to
-     * READ_TIMING_MAX_US (T-44-01). */
+     * READ_TIMING_MAX_US. */
     FIELD(key_read_strobe, read_strobe_us, READ_TIMING_MAX_US),
     /* page-size -> handle->page_size. Validation of power-of-two, range and
      * the silent fallback still live in the 0x0D handler
@@ -242,7 +242,7 @@ static void store_field(firestarter_handle_t* handle, const field_desc_t* field,
     uint8_t width_raw = pgm_read_byte(&field->width);
     uint16_t clamp = pgm_read_word(&field->clamp);
 
-    /* 1. T-44-01's read-timing bound now lives here, as the clamp column. */
+    /* 1. The read-timing bound now lives here, as the clamp column. */
     if (clamp != 0 && value > (uint32_t)clamp) {
         value = clamp;
     }

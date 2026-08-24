@@ -363,7 +363,7 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
      * Address-settling delay: time from address-set to /CE assertion.
      * Zero-ambiguity: 0 = no settling delay (explicit zero — a valid test
      * point). Knob: "read-settling-delay" JSON field -> handle->read_settling_us.
-     * T-44-01 cap: value already clamped at parse time (READ_TIMING_MAX_US=1000µs);
+     * Read-timing cap: value already clamped at parse time (READ_TIMING_MAX_US=1000µs);
      * guard here catches any future path that bypasses the parser.
      * Note: values < 3µs are below delayMicroseconds() accuracy on 16 MHz AVR
      * (Pitfall 5) — the sweep should start at 3µs for clean step response.
@@ -380,10 +380,10 @@ uint8_t memory_get_data(firestarter_handle_t* handle, uint32_t address) {
      * Zero-ambiguity: 0 = use firmware default 3µs (preserves current behaviour
      * when the host does not set the param). Knob: "read-strobe-us" JSON field
      * -> handle->read_strobe_us.
-     * T-44-01 cap: clamped at parse time; secondary guard here for safety.
+     * Read-timing cap: clamped at parse time; secondary guard here for safety.
      */
     uint32_t strobe = handle->read_strobe_us ? handle->read_strobe_us : 3UL;
-    if (strobe > 1000UL) strobe = 1000UL;   /* T-44-01 secondary guard */
+    if (strobe > 1000UL) strobe = 1000UL;   /* read-timing secondary guard */
     delayMicroseconds(strobe);
 
     uint8_t data = rurp_read_data_buffer();
