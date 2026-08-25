@@ -50,24 +50,13 @@ void configure_memory(firestarter_handle_t* handle) {
     handle->firestarter_operation_main = NULL;
     handle->firestarter_operation_end = NULL;
 
-    // While the board's pin map is provisional
-    // (RURP_PINMAP_PROVISIONAL, defined by a board header such as
-    // include/boards/py32f071_rurp_shield.h), refuse every command that
-    // can energise the PROM bus BEFORE any handler configuration below.
-    // The three operation pointers are already NULL at this point (above),
-    // so this early return leaves the handle in exactly the same shape
-    // configure_not_implemented() produces (src/proms/not_implemented.cpp)
-    // -- no operation pointer is ever installed for a refused command.
-    // The payload is the COMMAND ordinal (handle->cmd), not the protocol
-    // ordinal not_implemented.cpp logs -- this is a command-admission
-    // refusal, not a protocol-dispatch refusal. Reusing the existing
-    // MSG_ERR_NOT_SUPPORTED id is deliberate: a dedicated id would
-    // cost a meta-repo messages.toml edit, a codegen regen, and host
-    // constants-parity churn -- cross-repo surface this phase's premise is
-    // to prove nothing else moved. The dedicated-id option is recorded as
-    // a deferred idea. On every AVR target
-    // RURP_PINMAP_PROVISIONAL is never defined (default 0 in
-    // rurp_pinmap_guard.h), so this guard compiles to nothing there.
+    // While the board's pin map is provisional (RURP_PINMAP_PROVISIONAL, set by a
+    // board header), refuse every command that can energise the PROM bus, BEFORE
+    // any handler is configured. The three operation pointers are still NULL here,
+    // so this early return leaves the handle exactly as configure_not_implemented()
+    // would. The payload is the COMMAND ordinal, not the protocol ordinal -- this
+    // is a command-admission refusal, not a protocol-dispatch one. On AVR targets
+    // RURP_PINMAP_PROVISIONAL is never defined, so this compiles to nothing.
     if (rurp_pinmap_refuses(handle->cmd)) {
         LOG_ERROR_ID_U8(MSG_ERR_NOT_SUPPORTED, (uint8_t)handle->cmd);
         handle->response_code = RESPONSE_CODE_ERROR;
@@ -169,33 +158,18 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
     // both the pulse and the verify; the unconditional preserve mask is what carries the route
     // bit across that write.
     rurp_register_t mask = CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE | CTRL_VPP_P1_ENABLE | CTRL_VPP_REGULATOR_ENABLE;
-    // CTRL_VPP_VPE_DROP_ENABLE is a VPP LEVEL selector -- VPE dropped through
-    // the resistor to the ~13V VPP level -- and nothing else. The bit-collision
-    // theory this comment used to cite as its justification for excluding
-    // pins >= 32 below was disproved on the bench.
-    // decision made with a jumper -- the operator's correction, verbatim: "no exclusion at all --
-    // 32 pin IC's with vpp on pin one is controlled with a jumper" -- so the drop bit was never
-    // protecting a route; excluding it for pins >= 32 silently programmed 0x08 on the UN-DROPPED
-    // decision made with a jumper -- the operator's correction, verbatim: "no exclusion at all --
-    // 32 pin IC's with vpp on pin one is controlled with a jumper" -- so the drop bit was never
-    // protecting a route; excluding it for pins >= 32 silently programmed 0x08 on the UN-DROPPED
-    // rail instead. (This file names no jumper designator and asserts no net: doc/SHIELD-
-    // REVISIONS.md and the project's shield-revision notes document that jumper's identity two
-    // contradictory ways, a discrepancy logged as a finding, not resolved here.)
+    // CTRL_VPP_VPE_DROP_ENABLE selects a VPP LEVEL -- VPE dropped through the
+    // resistor to ~13 V -- and nothing else. Do NOT exclude pins >= 32 from the
+    // preserve: 32-pin parts with VPP on pin 1 are handled with a jumper, so
+    // excluding the bit silently programs 0x08 on the UN-DROPPED rail.
     //
-    // For pins < 32 the drop bit is preserved unconditionally below, on every revision -- this is
-    // unchanged. For pins >= 32 (the #ifdef HARDWARE_REVISION arm a few lines down) the preserve
-    // is gated on hardware revision ALONE (amended 2026-08-11, operator-confirmed): this
-    // function sees only `handle` and `address`, and revision alone is sufficient, so a new
-    // `handle` field (RAM cost plus a plumbing seam) and keying on the protocol value instead
-    // (a fourth tier-1 protocol-keyed site, which the params table's no-second-dispatch-key
-    // rule forbids) were both considered and
-    // rejected. The gate is necessary, not fastidious: on Rev 0 / Rev 1,
-    // rurp_map_ctrl_reg_for_hardware_revision() maps
-    // CTRL_VPP_VPE_DROP_ENABLE and CTRL_ADDRESS_LINE_16 onto the SAME physical bit 0x01
-    // (rurp_hw_rev_utils.h:28-32), so preserving the drop bit there would force physical A16
-    // permanently high; on Rev 2-class the two are distinct physical bits (0x01 vs 0x20,
-    // rurp_pinout.h:174 vs :179), so preserving one does not disturb the other.
+    // For pins < 32 the drop bit is preserved unconditionally on every revision.
+    // For pins >= 32 the preserve is gated on hardware revision ALONE, and the
+    // gate is necessary: on Rev 0 / Rev 1,
+    // rurp_map_ctrl_reg_for_hardware_revision() maps CTRL_VPP_VPE_DROP_ENABLE and
+    // CTRL_ADDRESS_LINE_16 onto the SAME physical bit, so preserving the drop bit
+    // there would force physical A16 permanently high. On Rev 2-class they are
+    // distinct bits and do not interfere.
     if (handle->pins < 32) {
         mask |= CTRL_VPP_VPE_DROP_ENABLE;
     }
@@ -234,19 +208,16 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
     return top_address;
 }
 
-/* Shared VPP-mismatch report (payload unchanged):
+/* Shared VPP-mismatch report:
  *   [measured_V u16 BE][measured_tenths u16 BE][expected_V u16 BE][expected_tenths u16 BE]
- * Four byte-identical copies existed -- eprom.cpp x2, flash_intel.cpp x2 --
- * holding 24 of the firmware's 31 __udivmodhi4 call sites between them, two in
- * eprom_check_vpp and two in flash_intel_check_vpp. Arithmetic preserved
- * EXACTLY, so this is de-duplication, not a behaviour change. Severity rides
- * entirely in msg_id, because every LOG_{WARN,ERROR}_ID_BYTES macro is the
- * same alias of LOG_ID_BYTES. The two millivolt parameters are uint16_t
- * deliberately: both operands are uint16_t at every call site, so `(x + 50)`
- * promotes to a 16-bit `unsigned int` on AVR and `/1000` compiles to
- * __udivmodhi4 -- widening either parameter to uint32_t swaps in the 32-bit
- * __udivmodsi4, erases the saving, and moves the wrap point above 65485 mV,
- * so do not widen them. */
+ *
+ * Severity rides entirely in msg_id -- every LOG_{WARN,ERROR}_ID_BYTES macro is
+ * the same alias of LOG_ID_BYTES.
+ *
+ * Both millivolt parameters are uint16_t DELIBERATELY: at every call site the
+ * operands are uint16_t, so `(x + 50)` promotes to 16-bit and `/1000` compiles
+ * to __udivmodhi4. Widening either to uint32_t swaps in the 32-bit
+ * __udivmodsi4 and moves the wrap point above 65485 mV. Do not widen them. */
 void mem_util_report_voltage(firestarter_handle_t* handle, uint16_t measured_mv,
                               uint16_t expected_mv, uint8_t msg_id, uint8_t response_code) {
     uint16_t _v0 = (uint16_t)((measured_mv + 50) / 1000);
@@ -266,29 +237,22 @@ void mem_util_report_voltage(firestarter_handle_t* handle, uint16_t measured_mv,
     handle->response_code = response_code;
 }
 
-/* Shared chip-ID-mismatch report (payload unchanged):
+/* Shared chip-ID-mismatch report:
  *   [actual_id_hi u8][actual_id_lo u8][expected_id_hi u8][expected_id_lo u8]
- * Four byte-identical-in-shape copies existed -- flash_utils.cpp,
- * flash_intel.cpp, eprom.cpp, eeprom_28c.cpp -- each comparing a freshly
- * read chip id against handle->chip_id and reporting the mismatch. The ids
- * matching emits nothing at all: this function takes an early return before
- * packing anything, which is the mismatch guard hoisted out of all four call
- * sites. Severity is the CALLER's decision, passed as warn_only, BECAUSE the
- * four former copies did not agree on how to derive it and one of them must
- * not agree: eprom.cpp's standalone CMD_CHECK_CHIP_ID path
- * (eprom_check_chip_id_execute) refuses unconditionally, independent of
- * FLAG_FORCE, while its sibling caller eprom_generic_init derives warn_only
- * from FLAG_FORCE. This helper therefore unifies the COMPARISON and the
- * PAYLOAD and deliberately does NOT unify the POLICY -- folding
- * is_flag_set(FLAG_FORCE) in here would make the standalone chip-ID check
- * start honouring --force, which it must not. Both the id and the
- * response_code are derived from the same single boolean, so a transposition
- * between them is impossible by construction here -- deliberately unlike
- * mem_util_report_voltage, which takes them as two independent parameters
- * because its under-voltage arm needs a pairing its over-voltage arm does
- * not. That asymmetry is deliberate, not accidental. Severity rides entirely
- * in the message id, because every LOG_{WARN,ERROR}_ID_BYTES macro is the
- * same alias of LOG_ID_BYTES. */
+ *
+ * Matching ids emit nothing -- the early return is the mismatch guard hoisted
+ * out of the four former call sites.
+ *
+ * Severity is the CALLER's decision, passed as warn_only, and must stay that
+ * way: eprom.cpp's standalone CMD_CHECK_CHIP_ID path refuses unconditionally,
+ * independent of FLAG_FORCE, while eprom_generic_init derives warn_only from
+ * it. Folding is_flag_set(FLAG_FORCE) in here would make the standalone check
+ * start honouring --force, which it must not.
+ *
+ * The id and the response_code both derive from that one boolean, so they
+ * cannot be transposed -- unlike mem_util_report_voltage, which takes them
+ * separately because its under-voltage arm needs a pairing the over-voltage
+ * arm does not. */
 void mem_util_report_chip_id(firestarter_handle_t* handle, uint16_t actual, bool warn_only) {
     if (actual == handle->chip_id) {
         return;
@@ -458,33 +422,18 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
     return reorg_address;
 }
 
-/* Saved address for the multi-call blank check, kept across the two dispatch
+/* Saved address for the multi-call blank check, held across the two dispatch
  * calls that make up one mem_util_blank_check invocation.
  *
- * This used to be a 4-byte malloc of a struct holding one uint32_t -- the
- * only caller of malloc/free anywhere in this firmware. That one call site
- * pulled the whole avr-libc allocator into the image (malloc 312 B + free
- * 274 B = 586 B), and the allocation result was dereferenced with no NULL
- * test, immediately after the malloc. On uno, handle (603 B) and the jsmn
- * token array (512 B) together consume 1115 B of the 2048 B SRAM, leaving
- * 473 B of shared heap-and-stack headroom -- shared because ram_used counts
- * only .data and .bss, and the call stack grows down into that same region
- * on every operation, so the true margin available to a failing allocation
- * was less than 473 B. On leonardo the same arithmetic (handle 1115 B +
- * tokens 512 B of 2560 B) leaves 544 B.
+ * A file-scope static is safe here: the firmware runs strictly one command at
+ * a time -- single-threaded, no reentrancy, no nesting -- and the value is
+ * written only in the first-call branch and read only in a later call's
+ * completion branch, so write-before-read holds by construction.
  *
- * A file-scope static has the identical lifetime: the firmware runs
- * strictly one command at a time -- single-threaded, no reentrancy, no
- * nesting -- and nothing outside mem_util_blank_check ever read the removed
- * field, so nothing outside this function needs to see the static either.
- * The saved address is written only in the first-call branch below and
- * read only in the completion branch of a later call, so write-before-read
- * holds by construction.
- *
- * Net RAM: the static costs 4 B where the pointer cost 2 B, and the change
- * still nets -8 B overall because it retires five allocator globals
- * (__brkval, __flp, __malloc_heap_start, __malloc_heap_end, __malloc_margin)
- * along with malloc/free themselves. */
+ * Do not replace it with a heap allocation. The previous 4-byte malloc was the
+ * only malloc/free in the firmware and pulled in the whole 586 B avr-libc
+ * allocator, for a result that was dereferenced without a NULL test on a part
+ * with a few hundred bytes of shared heap-and-stack headroom. */
 static uint32_t blank_check_saved_address;
 
 #define BLANK_CHECK_CHUNK_SIZE 2048

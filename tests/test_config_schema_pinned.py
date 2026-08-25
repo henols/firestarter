@@ -190,6 +190,10 @@ _C14_CONSUMER_SITES = (
     # (104/110 -> 119/125). Site 41 and the six sites in other files are
     # unaffected. Re-pinned, not relaxed: the census still asserts an exact
     # line for each of the nine sites.
+    # The narrative-comment cleanup (2026-08-25) reflowed comment blocks in
+    # src/firestarter.cpp, shifting the get/save pair by -13 (115/121 -> 102/108).
+    # Site 38 sits above every edited block and is unmoved. Re-pinned, not
+    # relaxed; no statement changed and all three AVR targets stay byte-identical.
     # The provenance-oracle correction (2026-08-24) swept the residue the
     # Phase-154 detector could not see, because it anchored its token at the
     # comment opener. In include/rurp_hw_rev_utils.h two comment blocks lost a
@@ -209,8 +213,8 @@ _C14_CONSUMER_SITES = (
     # are unchanged. Re-derived by locating each call, never by relaxing the
     # pin.
     ("src/firestarter.cpp", 38, "rurp_load_config"),
-    ("src/firestarter.cpp", 115, "rurp_get_config"),
-    ("src/firestarter.cpp", 121, "rurp_save_config"),
+    ("src/firestarter.cpp", 102, "rurp_get_config"),
+    ("src/firestarter.cpp", 108, "rurp_save_config"),
     ("src/boards/rurp_common.cpp", 53, "rurp_get_config"),
     ("include/rurp_hw_rev_utils.h", 93, "rurp_get_config"),
     ("include/rurp_hw_rev_utils.h", 99, "rurp_get_config"),

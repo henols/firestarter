@@ -40,82 +40,49 @@ size_t rurp_communication_read_bytes(char* buffer, size_t size) {
 
 // Streaming COBS decode-in-place + CRC8 verify + drain-to-0x00 resync.
 //
-// Frame contract: [COBS(payload + CRC8(payload))][0x00 delimiter]
-// (The '#' marker is consumed by the caller before this function is called.)
+// Frame contract: [COBS(payload + CRC8(payload))][0x00 delimiter]. The '#'
+// marker is consumed by the caller.
 //
-//   Algorithm (decode-in-place, no second ~512 B buffer):
+// Decode-in-place, so there is no second ~512 B buffer. A 1-byte output
+// lookahead (`last_byte`) means the final decoded byte -- the CRC8 -- never
+// has to be written to buffer[], which keeps `out` within DATA_BUFFER_SIZE
+// even for a payload of exactly that size. push_decoded_byte() commits the
+// PREVIOUS last_byte and holds the new one; when the delimiter arrives,
+// last_byte is the CRC8 and was never committed.
 //
-//   The logical COBS-encoded stream represents [payload | CRC8_byte].  We use
-//   a 1-byte output lookahead (`last_byte`) so the final decoded byte (the
-//   CRC8) never needs to be written to buffer[], keeping out ≤ DATA_BUFFER_SIZE
-//   even for a payload of exactly DATA_BUFFER_SIZE bytes.
+// Implicit-zero rule: after a non-254 run completes an implicit 0x00 follows
+// in the decoded stream -- but ONLY if more encoded data follows, not at
+// stream end. So the decision is deferred via `implicit_zero_pending`: set it
+// when a non-254 run ends, emit the zero when the next run-code arrives
+// (confirming we are not at the end), discard it if the delimiter arrives.
 //
-//   Key invariant: every decoded byte is "queued" by calling push_decoded_byte()
-//   which commits the PREVIOUS `last_byte` to buffer[out] and holds the new
-//   byte in `last_byte`.  When the 0x00 delimiter arrives, `last_byte` = CRC8
-//   (it was never committed).
+// Overflow guard: on a commit attempt at DATA_BUFFER_SIZE-1, drain to the next
+// 0x00 and return -2. The cap is DATA_BUFFER_SIZE-1, not DATA_BUFFER_SIZE, to
+// reserve the NUL slot -- the caller's one-past terminate is then always
+// in-bounds.
 //
-//   Implicit-zero rule: after a non-254 run completes, an implicit 0x00 follows
-//   the run data in the decoded stream — BUT only if more encoded data follows
-//   (i.e. NOT at stream end).  We defer the decision using `implicit_zero_pending`:
-//   set it when a non-254 run ends, and emit the zero (via push_decoded_byte(0))
-//   when the next run-code arrives (confirming we are not at stream end).  When
-//   the 0x00 delimiter arrives, `implicit_zero_pending` is simply discarded.
+// Error invariant: on ANY COBS or CRC failure, drain up to AND INCLUDING the
+// next 0x00 so the RX cursor re-anchors on a frame boundary.
 //
-//   State (~6 B stack):
-//     out                   — committed payload bytes in buffer[]
-//     block_remaining       — data bytes remaining in current COBS run
-//     was_254_run           — current run started with 0xFF (no implicit zero)
-//     implicit_zero_pending — a deferred implicit zero from the last run
-//     has_last              — `last_byte` holds a valid unwritten decoded byte
-//     last_byte             — 1-byte output lookahead
-//
-//   Overflow guard: if out == DATA_BUFFER_SIZE-1 on a commit
-//   attempt, drain to the next 0x00 and return -2 (payload too large).
-//   The cap is DATA_BUFFER_SIZE-1 (not DATA_BUFFER_SIZE) to reserve the
-//   NUL-terminator slot: the decoder returns n <= DATA_BUFFER_SIZE-1 always,
-//   so the caller's one-past NUL terminate (data_buffer[n] = '\0') is always
-//   in-bounds — no OOB write into handle.data_size.
-//   Error invariant: on ANY COBS/CRC failure, drain bytes
-//   up to AND INCLUDING the next 0x00 so the RX cursor re-anchors at a frame
-//   boundary.
-//
-// The 2 s timeout_ms loop is GONE; frame boundary = 0x00 delimiter.
-// Negative-code contract: callers check res<0 only.
-// Bounded mid-frame inter-byte deadline on both spin sites — armed only
-// once decoding is underway; the 2 s idle cascade is NOT reintroduced, and
-// no idle wall-clock timer runs on the truly-idle path.
+// The inter-byte deadline is armed only once decoding is underway; no
+// wall-clock timer runs on a truly-idle channel.
 
 /* Forward declaration: crc8_ccitt is defined below with the PROGMEM table. */
 static uint8_t crc8_ccitt(uint8_t crc, uint8_t b);
 
 static void _drain_to_delimiter(bool wait_on_silence) {
-    /* Consume bytes up to and including the next 0x00 delimiter to re-anchor
-     * the RX cursor at a frame boundary.
+    /* Consume bytes up to and including the next 0x00 to re-anchor the RX cursor
+     * on a frame boundary. This must never hang.
      *
-     * Bounded mid-frame inter-byte deadline — armed only when a frame
-     * is already in progress (the caller has consumed at least one byte).
-     * On host silence (available() stays 0 past TIMEOUT_MS), simply return:
-     * the cursor stays where it is; the next loop() iteration re-gates on
-     * available()>0.  The drain itself must never hang — that is what
-     * closes the pre-migration regression vs Serial.setTimeout-bounded
-     * readBytes.
+     * `wait_on_silence` false: drain only what is already buffered and return
+     * immediately on an empty buffer. The read-data spin site passes false because
+     * it has ALREADY established host silence with an empty buffer, so a second
+     * silence-wait here is pure latency (~2 s on a truncated frame instead of ~1).
+     * The overflow and read-underrun callers pass true, because a frame tail may
+     * still be streaming in.
      *
-     * Optimization: `wait_on_silence`. The mid-frame inter-byte deadline
-     * caller (read-data spin site) has ALREADY established host silence
-     * (available()<=0 sustained for TIMEOUT_MS) with an EMPTY buffer — so a
-     * second TIMEOUT_MS silence-wait here is pure redundant latency (~2 s total
-     * for a truncated/dropped-delimiter frame). It passes wait_on_silence=false:
-     * drain only bytes that are already buffered (re-anchoring is preserved if a
-     * late tail arrived) and return immediately on an empty buffer (~1 s total).
-     * The overflow / read-underrun callers pass true (a frame tail may still be
-     * streaming in, so the bounded silence-wait is still wanted there).
-     *
-     * NOTE: this is a MID-FRAME INTER-BYTE guard, NOT an idle wall-clock
-     * timer.  The deleted 2 s idle cascade is NOT
-     * reintroduced: loop() still gates entry into the decoder on
-     * rurp_communication_available()>0, so the decoder is never entered on
-     * a truly-idle channel and no timer runs while idle. */
+     * This is a MID-FRAME INTER-BYTE guard, not an idle timer: loop() gates entry
+     * into the decoder on available() > 0, so it is never entered when idle. */
     while (1) {
         if (rurp_communication_available() <= 0) {
             if (!wait_on_silence) {

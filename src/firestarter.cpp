@@ -73,28 +73,15 @@ bool parse_json(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB_U8(DBG_CMD, (uint8_t)handle->cmd);
     if (is_memory_cmd(handle->cmd) || handle->cmd < CMD_READ_VPP) {
         json_parse(handle->data_buffer, tokens, token_count, handle);
-        // is_memory_cmd() replaces the old `#ifdef DEV_TOOLS` /
-        // `handle->cmd < CMD_DEV_ADDRESS` ordinal guard. Neither this `if` nor
-        // its `else` carries a build-configuration conditional any more --
-        // only the two debug log lines inside the `else` body below do,
-        // because DBG_FLAG_OUTPUT_EN / DBG_FLAG_CHIP_EN describe
-        // dev-tools-only flags that have no meaning outside a DEV_TOOLS
-        // build. In a release build this `else` body compiles empty, which is
-        // correct and intended.
+        // Neither this `if` nor its `else` carries a build conditional; only the two
+        // debug log lines inside the `else` do, because the flags they name have no
+        // meaning outside a DEV_TOOLS build. In a release build that body compiles
+        // empty, which is intended.
         //
-        // The outer test above was an ordinal-only test
-        // (`handle->cmd < CMD_READ_VPP`). Re-ordering the CMD_* enum to bring
-        // CMD_LOCK_STATUS (16) below CMD_READ_VPP (11) was rejected, because
-        // that breaks wire compatibility with every shipped firmware and
-        // every host constant; making the protection-status read a non-memory
-        // command was rejected too, because handle->firestarter_get_data is a
-        // protocol-handler function pointer set only by configure_memory().
-        // So the outer test is now ALSO predicate-aware
-        // (`is_memory_cmd(handle->cmd) ||`), ordered with the predicate
-        // first so the cheap ordinal test is the fallback rather than the
-        // primary: a memory command above ordinal 11 (CMD_LOCK_STATUS) is
-        // now admitted to json_parse and configure_memory exactly as one
-        // below 11 already was.
+        // The test is predicate-first (`is_memory_cmd(handle->cmd) ||`) with the cheap
+        // ordinal test as fallback, so a memory command above ordinal 11 is admitted
+        // exactly as one below 11 already was. Re-ordering the CMD_* enum instead was
+        // rejected: it breaks wire compatibility with every shipped firmware and host.
         if (is_memory_cmd(handle->cmd)) {
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_FORCE, is_flag_set(FLAG_FORCE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CAN_ERASE, is_flag_set(FLAG_CAN_ERASE));
@@ -143,23 +130,14 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
         return false;
     };
 
-    // This is a SECOND, independent ordinal-range guard, deliberately NOT
-    // converted to is_memory_cmd(). It gates diagnostic output only (three
-    // DBG_* debug log lines), never hardware configuration, so it is not an
-    // admission gate and the safety argument for the admission gate above
-    // does not apply here. Converting it would silently DROP these three
-    // debug lines for cmd 7/8 in a DEV_TOOLS build (a diagnostic regression)
-    // for zero safety gain and non-zero flash cost. The two new commands
-    // (CMD_SDP_UNLOCK 9, CMD_SDP_LOCK 10) already satisfy this range test
-    // unchanged, so there is no coverage gap for them either.
+    // A SECOND, independent ordinal-range guard, deliberately NOT converted to
+    // is_memory_cmd(). It gates diagnostic output only -- three DBG_* lines --
+    // never hardware configuration, so the admission gate's safety argument does
+    // not apply. Converting it would silently drop those lines for cmd 7/8 in a
+    // DEV_TOOLS build for no safety gain.
     //
-    // CMD_LOCK_STATUS (16) is numerically greater than CMD_READ_VPP (11), so
-    // it falls outside this range by construction -- this is a CHOICE
-    // recorded here, not a discovery made on the bench.
-    // `dev lock-status` therefore emits none of the three DBG_* diagnostic
-    // lines below. This block still gates diagnostic output only, so that
-    // safety argument still does not apply, and converting it to
-    // is_memory_cmd() would cost flash for no safety gain.
+    // CMD_LOCK_STATUS (16) is above CMD_READ_VPP (11) and so falls outside this
+    // range by construction -- a choice, not an oversight.
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
         LOG_DEBUG_ID_SUB_U32(DBG_MEM_SIZE, (uint32_t)handle->mem_size);
         LOG_DEBUG_ID_SUB_U32(DBG_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
@@ -174,57 +152,34 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     LOG_INFO_ID_U8(MSG_INFO_HW, (uint8_t)rurp_get_hardware_revision());
 #endif
     LOG_INFO_ID_U8(MSG_INFO_CMD, (uint8_t)handle->cmd);
-    // CAP-02 is being PORTED here, not invented: it shipped on origin/beta
-    // as PR #49 (13eb350 / b1737b2), and this branch forked one commit
-    // earlier, at 3085084. Without it the v1.31 host REFUSES every
-    // connection -- _probe_port raises FirmwareOutdatedError when
-    // firmware_identity is None, and
-    // tests/test_fwguard.py::test_absent_identity_refuses asserts exactly
-    // that refusal on purpose (BF-1).
-    //
-    // Wire layout, three length-discriminated extensions of one variable
-    // blob:
+    // Wire layout -- three length-discriminated extensions of one variable blob:
     //   [buffer_size u16 BE][hw_revision u8][ver_len u8][ver bytes][write_budget_s u16 BE]
     //      CAP-01              CAP-02                                CAP-03
     //
-    // MSG_OK_READY's catalog entry is a variable-length byte blob
-    // (param_bytes = -1), so this needs NO messages.toml edit and NO
-    // codegen run -- include/messages.h (codegen-generated, id-only) stays
-    // untouched.
+    // MSG_OK_READY's catalog entry is a variable-length byte blob, so extending it
+    // needs no messages.toml edit and no codegen run.
     //
-    // CAP-03 is emitted for EVERY command, not just CMD_WRITE --
-    // the ack's shape must not vary by command, or a length-discriminating
-    // host decoder loses its only discriminator. eprom_block_budget_s
-    // returns 0 for a non-EPROM protocol; the host's [1, 14400]
-    // plausibility clamp then leaves its attribute None and the host's own
-    // fallback applies -- correct for a family whose block time this table
-    // cannot bound, and it is also what covers the non-memory-command case
-    // where configure_memory never ran and pulse_delay is still 0.
+    // Emit this for EVERY command, not just CMD_WRITE: the ack's shape must not
+    // vary by command, or a length-discriminating host decoder loses its only
+    // discriminator. eprom_block_budget_s returns 0 for a non-EPROM protocol, and
+    // the host's plausibility clamp then leaves its attribute unset and falls back
+    // -- which also covers the non-memory-command case where configure_memory
+    // never ran and pulse_delay is still 0.
     //
-    // The advertised budget is already PADDED by the firmware: only
-    // the firmware knows the once-per-block VPE settle, the final verify
-    // pass(es), the per-pulse settle and the serial transport time, so the
-    // host applies no multiplier of its own. See include/eprom_budget.h for
-    // the padding rule in prose.
+    // The budget is already PADDED by the firmware: only the firmware knows the
+    // once-per-block VPE settle, the verify passes, the per-pulse settle and the
+    // transport time, so the host applies no multiplier. include/eprom_budget.h
+    // has the padding rule.
     //
-    // Two facts preserved from PR #49's own comment, which the merge that
-    // brought beta into this branch resolved away in favour of the CAP-03
-    // superset above. Both are about this emission and neither is stated
-    // elsewhere:
+    // Backward compatibility is a LENGTH test and degrades rather than misparses:
+    // a host predating CAP-02 tests `len(params) == 2`, misses, and falls back to
+    // its 512-byte chunk floor.
     //
-    // 1. Backward compatibility is a LENGTH test, and it degrades rather than
-    //    misparses. Hosts predating CAP-02 test `len(params) == 2`, miss, and
-    //    fall back to their 512-byte chunk floor: reduced throughput on
-    //    Leonardo, never a misparse. The same property is what lets CAP-03
-    //    ride on top -- see the length-discrimination note above.
-    //
-    // 2. Emitting identity HERE is safe, and deliberately so. configure_memory
-    //    has already run at this point, but every configure_* handler is pure
-    //    (function-pointer assignment only) and the VPP regulator is not
-    //    engaged until firestarter_operation_init, which sits behind
-    //    op_wait_for_ack(). So a host that reads this ack and refuses stops the
-    //    sequence with the rail still DOWN -- the compatibility gate cannot
-    //    itself energise the part it is protecting.
+    // Emitting identity HERE is safe: configure_memory has run, but every
+    // configure_* handler is pure function-pointer assignment and the VPP
+    // regulator is not engaged until firestarter_operation_init, behind
+    // op_wait_for_ack(). A host that reads this ack and refuses stops with the rail
+    // still DOWN -- the compatibility gate cannot energise the part it protects.
     {
         const char* _ver = FW_VERSION;
         uint8_t _vlen = (uint8_t)strlen(_ver);
