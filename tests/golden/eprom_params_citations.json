@@ -5,7 +5,7 @@
       "src/proms/eprom_params.cpp"
     ],
     "blob_shas": {
-      "include/eprom_params.h": "376e56410ab9bdc56b1e0f6c7b872df214e28ab8",
+      "include/eprom_params.h": "b8729de6a8f660af738f9c971b524cef2cd8e6d8",
       "src/proms/eprom_params.cpp": "7817c1422d698547e5da5e0bee197b9951fb4465"
     },
     "recorded_at_head": "3c165d5c32e068c254f33603cf804b4b64fe66b1",
