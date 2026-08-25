@@ -33,7 +33,7 @@ uint8_t rurp_map_ctrl_reg_for_hardware_revision(rurp_register_t data) {
     default:
         // REVISION_UNKNOWN + any unrecognized byte fall through to ctrl_reg = 0
         // (fail-safe — no VPP enables, no VPE enables; EEPROM override is the
-        // operator escape hatch per RESEARCH §Caller Audit row 3).
+        // operator escape hatch).
         break;
     }
 

@@ -8,7 +8,7 @@
 #ifndef __PROTO_CONSTANTS_H__
 #define __PROTO_CONSTANTS_H__
 
-// Protocol dispatch constants (v1.19 naming layer).
+// Protocol dispatch constants.
 // Every value below equals the pre-existing raw-hex `handle->protocol`
 // dispatch key it names — the label IS the number. Source of
 // truth: firestarter/doc/PROTOCOLS.md (operator-approved, commit 6e7bd38).
