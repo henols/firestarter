@@ -41,16 +41,15 @@ static unsigned long simple_strtoul(const char* s) {
     jsoneq_(json, tok, PSTR(s))
 
 /*
- /*
-  * Read-timing sweep knobs, clamped at parse time so an absurd JSON value
-  * cannot reach delayMicroseconds() unbounded. Values < 3 us are below
-  * delayMicroseconds() accuracy on a 16 MHz AVR.
-  *
-  *   read_settling_us == 0 -> no settling delay
-  *   read_strobe_us   == 0 -> firmware default 3 us
-  *
-  * Must be defined above key_parsers[]: the table's `clamp` column references it.
-  */
+ * Read-timing sweep knobs, clamped at parse time so an absurd JSON value
+ * cannot reach delayMicroseconds() unbounded. Values < 3 us are below
+ * delayMicroseconds() accuracy on a 16 MHz AVR.
+ *
+ *   read_settling_us == 0 -> no settling delay
+ *   read_strobe_us   == 0 -> firmware default 3 us
+ *
+ * Must be defined above key_parsers[]: the table's `clamp` column references it.
+ */
 #define READ_TIMING_MAX_US 1000UL   /* sane max (~1ms); caps both knobs */
 
 const char key_mem_size[] PROGMEM = "memory-size";
@@ -216,19 +215,18 @@ _Static_assert(sizeof(key_parsers) / sizeof(key_parsers[0]) == 11,
                "guard above to match");
 
 /*
- /*
-  * The single shared write body every table row dispatches through.
-  *
-  * `field` points INTO PROGMEM: read every column with pgm_read_byte /
-  * pgm_read_word, NEVER by dereferencing *field, which compiles and silently
-  * returns RAM garbage on AVR.
-  *
-  * `value` is uint32_t, not `unsigned long`: simple_strtoul returns unsigned
-  * long, which is 32-bit on AVR but 64-bit on native x86-64. Fixing it at 4
-  * bytes makes the saturation branch behave identically on both, so the native
-  * round-trip tests are valid oracles for the AVR build. Do not "simplify" it
-  * back.
-  */
+ * The single shared write body every table row dispatches through.
+ *
+ * `field` points INTO PROGMEM: read every column with pgm_read_byte /
+ * pgm_read_word, NEVER by dereferencing *field, which compiles and silently
+ * returns RAM garbage on AVR.
+ *
+ * `value` is uint32_t, not `unsigned long`: simple_strtoul returns unsigned
+ * long, which is 32-bit on AVR but 64-bit on native x86-64. Fixing it at 4
+ * bytes makes the saturation branch behave identically on both, so the native
+ * round-trip tests are valid oracles for the AVR build. Do not "simplify" it
+ * back.
+ */
 static void store_field(firestarter_handle_t* handle, const field_desc_t* field, uint32_t value) {
     uint8_t offset = pgm_read_byte(&field->offset);
     uint8_t width_raw = pgm_read_byte(&field->width);
@@ -474,15 +472,14 @@ static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {
 #define extract_int(element, register) extract_long(element, register)
 
 /*
- /*
-  * Hand-expanded rather than the extract_long macro form: that macro emits its
-  * own anonymous PSTR("flags"), so expanding it here would store the wire key
-  * twice. get_flags survives deliberately -- it is called directly from
-  * json_parse_config and json_get_cmd, neither of which walks the field table.
-  *
-  * Truncating by assignment gives the same observable result as the table's
-  * FIELD_MASK row, so all three `flags` paths stay consistent.
-  */
+ * Hand-expanded rather than the extract_long macro form: that macro emits its
+ * own anonymous PSTR("flags"), so expanding it here would store the wire key
+ * twice. get_flags survives deliberately -- it is called directly from
+ * json_parse_config and json_get_cmd, neither of which walks the field table.
+ *
+ * Truncating by assignment gives the same observable result as the table's
+ * FIELD_MASK row, so all three `flags` paths stay consistent.
+ */
 bool get_flags(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
     if (jsoneq_(json, &tokens[pos], key_flags) == 0) {
         handle->ctrl_flags = simple_strtoul(json + tokens[pos + 1].start);

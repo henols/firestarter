@@ -120,13 +120,12 @@ void eprom_erase_execute(firestarter_handle_t* handle) {
 }
 
 /*
- /*
-  * DEFENSIVE, not corrective: neither exit of this body leaks a route today.
-  * It is wrapped anyway because eprom_internal_erase's assert is the only
-  * write-path code that raises A9 together with VPE, and that assert's safety
-  * rests on there being no `return` between it and its own clear -- a property
-  * a future edit could otherwise break silently.
-  */
+ * DEFENSIVE, not corrective: neither exit of this body leaks a route today.
+ * It is wrapped anyway because eprom_internal_erase's assert is the only
+ * write-path code that raises A9 together with VPE, and that assert's safety
+ * rests on there being no `return` between it and its own clear -- a property
+ * a future edit could otherwise break silently.
+ */
 static void eprom_internal_write_init_body(firestarter_handle_t* handle) {
     if(!is_operation_in_progress(handle)){
         eprom_generic_init(handle);
@@ -148,13 +147,12 @@ static void eprom_internal_write_init_body(firestarter_handle_t* handle) {
 }
 
 /*
- /*
-  * Single-exit wrapper: whichever exit the body takes, control returns HERE,
-  * and this is the only place that decides whether to clear the shared HV
-  * composite. Structural, so a `return` added inside the body later cannot
-  * bypass it. Conditional on RESPONSE_CODE_ERROR -- see eprom_write_execute's
-  * wrapper below for why it must not be unconditional.
-  */
+ * Single-exit wrapper: whichever exit the body takes, control returns HERE,
+ * and this is the only place that decides whether to clear the shared HV
+ * composite. Structural, so a `return` added inside the body later cannot
+ * bypass it. Conditional on RESPONSE_CODE_ERROR -- see eprom_write_execute's
+ * wrapper below for why it must not be unconditional.
+ */
 void eprom_write_init(firestarter_handle_t* handle) {
     eprom_internal_write_init_body(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {
@@ -177,14 +175,13 @@ uint32_t __attribute__((noinline)) eprom_overprogram_us(uint8_t pulse_count, uin
 }
 
 /*
- /*
-  * The single place a per-byte program-budget failure is reported: disables the
-  * VPP route, packs a 4-byte big-endian {addr_hi, addr_mid, addr_lo,
-  * pulse_count} payload matching MSG_ERR_MAX_PULSES / MSG_ERR_ENERGY_CAP, emits
-  * it, and sets response_code. The wrapper below covers the disable for every
-  * other error exit; this function additionally emits the two messages, which
-  * the wrapper does not.
-  */
+ * The single place a per-byte program-budget failure is reported: disables the
+ * VPP route, packs a 4-byte big-endian {addr_hi, addr_mid, addr_lo,
+ * pulse_count} payload matching MSG_ERR_MAX_PULSES / MSG_ERR_ENERGY_CAP, emits
+ * it, and sets response_code. The wrapper below covers the disable for every
+ * other error exit; this function additionally emits the two messages, which
+ * the wrapper does not.
+ */
 static void eprom_internal_report_budget_failure(firestarter_handle_t* handle, uint32_t address, uint8_t pulse_count, uint8_t msg_id) {
     handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);
     uint8_t _b[4];
@@ -197,24 +194,23 @@ static void eprom_internal_report_budget_failure(firestarter_handle_t* handle, u
 }
 
 /*
- /*
-  * ONE program pulse, with the program-voltage route asserted for its duration
-  * and released before the caller's verify read. include/eprom.h's
-  * EPROM_VPP_SETUP_US comment has the per-pulse constraint and the values.
-  *
-  * Name CTRL_VPE_ENABLE here, never CTRL_VPP_P1_ENABLE:
-  * eprom_internal_set_control_register substitutes P1 for VPE when
-  * using_p1_as_vpp(handle) holds, and naming P1 directly breaks that
-  * substitution on the two protocols that need it.
-  *
-  * The route bit survives the address latch memory_set_data performs between
-  * the assert and the CE strobe -- mem_util_calculate_top_address_register
-  * preserves both route bits on every revision.
-  *
-  * Guarded by EPROM_OVERPROGRAM_SUPPORTED because the overprogram site is its
-  * only caller; unguarded it is an unreferenced static on leonardo, and the
-  * AVR warning policy is zero.
-  */
+ * ONE program pulse, with the program-voltage route asserted for its duration
+ * and released before the caller's verify read. include/eprom.h's
+ * EPROM_VPP_SETUP_US comment has the per-pulse constraint and the values.
+ *
+ * Name CTRL_VPE_ENABLE here, never CTRL_VPP_P1_ENABLE:
+ * eprom_internal_set_control_register substitutes P1 for VPE when
+ * using_p1_as_vpp(handle) holds, and naming P1 directly breaks that
+ * substitution on the two protocols that need it.
+ *
+ * The route bit survives the address latch memory_set_data performs between
+ * the assert and the CE strobe -- mem_util_calculate_top_address_register
+ * preserves both route bits on every revision.
+ *
+ * Guarded by EPROM_OVERPROGRAM_SUPPORTED because the overprogram site is its
+ * only caller; unguarded it is an unreferenced static on leonardo, and the
+ * AVR warning policy is zero.
+ */
 #if EPROM_OVERPROGRAM_SUPPORTED
 static void eprom_internal_program_pulse(firestarter_handle_t* handle, uint32_t addr, uint8_t expected) {
     handle->firestarter_set_control_register(handle, CTRL_VPE_ENABLE, 1);
@@ -226,22 +222,21 @@ static void eprom_internal_program_pulse(firestarter_handle_t* handle, uint32_t 
 #endif
 
 /*
- /*
-  * Resolves which high-voltage route to assert for the current handle. Called
-  * from both the write body and eprom_check_vpp. Declared in eprom.h (exposed,
-  * not file-static) so a native test can drive it directly.
-  *
-  * Resolution order, exactly:
-  *   1. FLAG_VPE_AS_VPP -> CTRL_VPP_REGULATOR_ENABLE. Checked FIRST because it
-  *      is a pure human override (25V NMOS parts, the manual-pot workflow) set
-  *      by no database entry, so it wins over the table with no table read.
-  *   2. row == NULL -> EPROM_HV_ROUTE_MASK, failing closed toward the
-  *      drop-resistor path -- a regulated ~13V rather than an unregulated rail.
-  *   3. row->vpp_path, read ONLY via pgm_read_byte (a direct read compiles and
-  *      silently returns RAM garbage on AVR): VPP_PATH_DIRECT_VPE ->
-  *      CTRL_VPP_REGULATOR_ENABLE; anything else, including unrecognised
-  *      values, -> EPROM_HV_ROUTE_MASK, also failing closed toward the drop path.
-  */
+ * Resolves which high-voltage route to assert for the current handle. Called
+ * from both the write body and eprom_check_vpp. Declared in eprom.h (exposed,
+ * not file-static) so a native test can drive it directly.
+ *
+ * Resolution order, exactly:
+ *   1. FLAG_VPE_AS_VPP -> CTRL_VPP_REGULATOR_ENABLE. Checked FIRST because it
+ *      is a pure human override (25V NMOS parts, the manual-pot workflow) set
+ *      by no database entry, so it wins over the table with no table read.
+ *   2. row == NULL -> EPROM_HV_ROUTE_MASK, failing closed toward the
+ *      drop-resistor path -- a regulated ~13V rather than an unregulated rail.
+ *   3. row->vpp_path, read ONLY via pgm_read_byte (a direct read compiles and
+ *      silently returns RAM garbage on AVR): VPP_PATH_DIRECT_VPE ->
+ *      CTRL_VPP_REGULATOR_ENABLE; anything else, including unrecognised
+ *      values, -> EPROM_HV_ROUTE_MASK, also failing closed toward the drop path.
+ */
 rurp_register_t eprom_hv_route_mask(firestarter_handle_t* handle) {
     if (is_flag_set(FLAG_VPE_AS_VPP)) {
         return CTRL_VPP_REGULATOR_ENABLE;
@@ -310,37 +305,36 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
 #endif
 
     /*
-     /*
-      * PASS-BATCHED program loop: a scan pass and a pulse pass, alternating.
-      *   SCAN  (route down): read every byte still short of its target and flag it
-      *         in `pending`. This read is also the post-pulse verify for the
-      *         previous pass, so the read count per byte is unchanged.
-      *   PULSE (route asserted once): strobe every flagged byte at org_delay.
-      *
-      * The batching is the point: asserting the route per BYTE costs 1100 us of
-      * settle each time -- 1531 us/byte, ~106 s for a 64 KiB device, measured. One
-      * settle per block instead of 1024 of them.
-      *
-      * Preserved from the per-byte loop, precisely:
-      *   - A 0xFF target is never read and never pulsed; an already-matching byte
-      *     is read once and never pulsed.
-      *   - The pulse width is always org_delay, never grown.
-      *   - `pulses` is the per-BYTE count, not a pass counter: every flagged byte
-      *     is strobed exactly once per pulse pass.
-      *   - max_pulses / energy_cap_us are tested only AFTER a failed verify and
-      *     after the converged-early break, so a byte converging on its last
-      *     permitted pulse still succeeds.
-      *   - `pending` is deliberately NOT cleared between passes, so the scan can
-      *     distinguish "was flagged, now matches" (converged this pass) from
-      *     "never flagged" (matched all along) -- the state overprogram needs.
-      *
-      * MARGIN IS NOT TRADED FOR SPEED. The route is held up for the whole pulse
-      * pass, so every strobe after the first sees a better-settled rail than the
-      * per-pulse version gave. OE/VPP still comes fully down before every verify
-      * read, which is the Program-Verify requirement that forces the assert.
-      *
-      * `pending` is a stack bitmask of DATA_BUFFER_SIZE/8 bytes. No static RAM.
-      */
+     * PASS-BATCHED program loop: a scan pass and a pulse pass, alternating.
+     *   SCAN  (route down): read every byte still short of its target and flag it
+     *         in `pending`. This read is also the post-pulse verify for the
+     *         previous pass, so the read count per byte is unchanged.
+     *   PULSE (route asserted once): strobe every flagged byte at org_delay.
+     *
+     * The batching is the point: asserting the route per BYTE costs 1100 us of
+     * settle each time -- 1531 us/byte, ~106 s for a 64 KiB device, measured. One
+     * settle per block instead of 1024 of them.
+     *
+     * Preserved from the per-byte loop, precisely:
+     *   - A 0xFF target is never read and never pulsed; an already-matching byte
+     *     is read once and never pulsed.
+     *   - The pulse width is always org_delay, never grown.
+     *   - `pulses` is the per-BYTE count, not a pass counter: every flagged byte
+     *     is strobed exactly once per pulse pass.
+     *   - max_pulses / energy_cap_us are tested only AFTER a failed verify and
+     *     after the converged-early break, so a byte converging on its last
+     *     permitted pulse still succeeds.
+     *   - `pending` is deliberately NOT cleared between passes, so the scan can
+     *     distinguish "was flagged, now matches" (converged this pass) from
+     *     "never flagged" (matched all along) -- the state overprogram needs.
+     *
+     * MARGIN IS NOT TRADED FOR SPEED. The route is held up for the whole pulse
+     * pass, so every strobe after the first sees a better-settled rail than the
+     * per-pulse version gave. OE/VPP still comes fully down before every verify
+     * read, which is the Program-Verify requirement that forces the assert.
+     *
+     * `pending` is a stack bitmask of DATA_BUFFER_SIZE/8 bytes. No static RAM.
+     */
     const uint16_t block_len = (uint16_t)handle->data_size;
     uint8_t pending[DATA_BUFFER_SIZE / 8];
     memset(pending, 0, sizeof(pending));
@@ -364,25 +358,24 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
             uint8_t expected = (uint8_t)handle->data_buffer[i];
 
         /*
-         /*
-          * Intra-block write progress. Compiled in on leonardo and native ONLY.
-          *
-          * On uno/uno328pb the whole loop runs inside one programmer-mode window, and
-          * rurp_set_programmer_mode() tears the UART down for its duration. The Uno's
-          * rurp_log_id() override defers rather than emits while com_mode is false,
-          * into a 4-slot buffer; a 5th deferred frame is silently DROPPED. That
-          * dropped slot would be one a subsequent MSG_ERR_MAX_PULSES frame needs,
-          * turning a program FAILURE into a host transport timeout. Hence a
-          * COMPILE-time guard, not a runtime one -- this site has no handle->cmd it
-          * could test.
-          *
-          * Payload is (absolute chip address, mem_size), the same shape
-          * mem_util_blank_check emits, so 0xE0 keeps exactly one payload contract.
-          *
-          * Placed BEFORE the skips below so the cadence is independent of how many
-          * bytes are skipped. The unsigned-difference form means a millis() rollover
-          * cannot stall it.
-          */
+         * Intra-block write progress. Compiled in on leonardo and native ONLY.
+         *
+         * On uno/uno328pb the whole loop runs inside one programmer-mode window, and
+         * rurp_set_programmer_mode() tears the UART down for its duration. The Uno's
+         * rurp_log_id() override defers rather than emits while com_mode is false,
+         * into a 4-slot buffer; a 5th deferred frame is silently DROPPED. That
+         * dropped slot would be one a subsequent MSG_ERR_MAX_PULSES frame needs,
+         * turning a program FAILURE into a host transport timeout. Hence a
+         * COMPILE-time guard, not a runtime one -- this site has no handle->cmd it
+         * could test.
+         *
+         * Payload is (absolute chip address, mem_size), the same shape
+         * mem_util_blank_check emits, so 0xE0 keeps exactly one payload contract.
+         *
+         * Placed BEFORE the skips below so the cadence is independent of how many
+         * bytes are skipped. The unsigned-difference form means a millis() rollover
+         * cannot stall it.
+         */
 #ifndef SERIAL_ON_IO
         // Gated on `first_pass`: the scan pass restarts at i == 0 every pass, so
         // emitting from a later pass would send a LOWER address than one already sent
@@ -481,21 +474,20 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
 }
 
 /*
- /*
-  * Single-exit wrapper. Whichever of the body's four error exits is taken (row
-  * NULL, MAX_PULSES, ENERGY_CAP, VERIFY) or the success fall-through, control
-  * returns HERE, and this is the ONLY place deciding whether to clear the
-  * shared composite -- structural, so a later `return` inside the body cannot
-  * bypass it.
-  *
-  * Conditional on RESPONSE_CODE_ERROR, NOT unconditional. An unconditional
-  * disable re-arms the once-per-block guard above and re-pays delay(500) on the
-  * next block too -- roughly 64 s added to a 64 K Uno write. A successful block
-  * must leave the route asserted.
-  *
-  * The operation-level disable is command_done(), which zeroes CONTROL_REGISTER
-  * on every command exit regardless.
-  */
+ * Single-exit wrapper. Whichever of the body's four error exits is taken (row
+ * NULL, MAX_PULSES, ENERGY_CAP, VERIFY) or the success fall-through, control
+ * returns HERE, and this is the ONLY place deciding whether to clear the
+ * shared composite -- structural, so a later `return` inside the body cannot
+ * bypass it.
+ *
+ * Conditional on RESPONSE_CODE_ERROR, NOT unconditional. An unconditional
+ * disable re-arms the once-per-block guard above and re-pays delay(500) on the
+ * next block too -- roughly 64 s added to a 64 K Uno write. A successful block
+ * must leave the route asserted.
+ *
+ * The operation-level disable is command_done(), which zeroes CONTROL_REGISTER
+ * on every command exit regardless.
+ */
 void eprom_write_execute(firestarter_handle_t* handle) {
     eprom_internal_write_execute_body(handle);
     if (handle->response_code == RESPONSE_CODE_ERROR) {

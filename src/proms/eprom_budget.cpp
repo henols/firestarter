@@ -4,34 +4,18 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * The corrected per-block worst-case write-time budget arithmetic declared
- * in eprom_budget.h. Reads the const, PROGMEM eprom_params table
- * (eprom_params.h / eprom_params.cpp) and calls the shipped
- * overprogram-duration function (eprom.h / eprom.cpp) rather than
- * restating either.
+ * Per-block worst-case write-time budget arithmetic, declared in
+ * eprom_budget.h. Reads the PROGMEM eprom_params table and CALLS the shipped
+ * overprogram-duration function rather than restating either.
  *
- * No Arduino framework header is included here:
- * src/proms/not_implemented.cpp is the only other translation unit
- * under src/proms/ that omits it, and this file follows that include
- * discipline verbatim so it adds zero macro-redefinition warnings on the
- * native build. PROGMEM access comes transitively through eprom_params.h
- * (which pulls in the platform PROGMEM compatibility shim) -- this file
- * never includes that shim directly.
+ * Do NOT include an Arduino framework header here: this file follows
+ * not_implemented.cpp's include discipline so it adds zero macro-redefinition
+ * warnings on the native build. PROGMEM access comes transitively through
+ * eprom_params.h.
  *
- * Verified include chain for eprom.h, confirming it too is free of any
- * Arduino framework header: eprom.h -> firestarter.h -> rurp_shield.h ->
- * the platform PROGMEM compatibility shim (include/rurp_platform_compat.h)
- * -- none of the three includes any Arduino core header, so pulling in
- * eprom.h here (for the shipped overprogram function) adds no framework
- * dependency.
- *
- * This is a NEW, unpinned translation unit under src/proms/ -- deliberately
- * NOT folded into eprom.cpp or eprom_params.cpp. tests/golden/
- * protocol_branch_inventory.json's meta.blob_shas pins exactly those two
- * files; putting this arithmetic in either would fold it under that pin and
- * turn the golden RED. build_src_filter's directory glob (+<proms/>,
- * platformio.ini) compiles this file under every native environment with
- * no platformio.ini edit.
+ * Keep this as its OWN translation unit. protocol_branch_inventory.json pins
+ * the blob SHAs of eprom.cpp and eprom_params.cpp, so folding this arithmetic
+ * into either turns that golden RED.
  */
 #include "eprom_budget.h"
 #include "eprom_params.h"

@@ -4,30 +4,23 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * eprom_params_t: a
- * const, protocol_id-keyed parameter table for the three 27C EPROM
- * protocols (0x07/0x08/0x0B). This header declares the type, the two
- * enums, and the accessor only; the PROGMEM storage and the accessor's
- * definition live in src/proms/eprom_params.cpp.
+ * eprom_params_t: a const, protocol_id-keyed parameter table for the three
+ * 27C protocols (0x07/0x08/0x0B). Type, enums and accessor only; the PROGMEM
+ * storage lives in src/proms/eprom_params.cpp.
  *
- * (a) No Arduino framework header is included here, or by anything this
- *     file includes: a translation unit
- *     that pairs that header with the avr/pgmspace.h PROGMEM shim emits 14
- *     macro-redefinition warnings, and the native build's warning
- *     watermark sits at exactly 1166 with zero headroom -- so this
- *     dependency stays out end to end.
- * (b) The struct's fields are ordered largest-first, four bytes before one
- *     (Pitfall 2): the AVR toolchain gives every type 1-byte struct
- *     alignment while a 64-bit host does not, and this order is what keeps
- *     sizeof() == 12 on both.
- * (c) NO PULSE-WIDTH COLUMN. Pulse width is handle->pulse_delay;
- *     the per-protocol fallback constants stay in configure_eprom's switch
- *     (eprom.cpp:71-76) and are not duplicated here under any name.
- * (d) Per-(row, column)-cell attribution (datasheet reference, or a
- *     "no datasheet basis -- reasoned from" note) lives in the
- *     machine-readable, gate-enforced sidecar at
- *     tests/golden/eprom_params_citations.json -- this header
- *     carries no per-value citations of its own.
+ * Do NOT add an Arduino framework include here or to anything this includes:
+ * pairing it with the PROGMEM shim emits 14 macro-redefinition warnings, and
+ * the native warning watermark has zero headroom.
+ *
+ * Fields are ordered largest-first, deliberately: the AVR toolchain gives every
+ * type 1-byte struct alignment and a 64-bit host does not, and this order is
+ * what keeps sizeof() == 12 on both.
+ *
+ * NO PULSE-WIDTH COLUMN. Pulse width is handle->pulse_delay; the per-protocol
+ * fallbacks stay in configure_eprom's switch and are not duplicated here.
+ *
+ * Per-cell datasheet attribution lives in the gate-enforced sidecar
+ * tests/golden/eprom_params_citations.json, not here.
  */
 #ifndef __EPROM_PARAMS_H__
 #define __EPROM_PARAMS_H__

@@ -60,55 +60,40 @@ extern "C" {
     };
 
     /* Protection-status read address & decode constants.
-     * Transcribed byte-for-byte from the project's recorded sequence tables;
-     * if this file and that artifact ever disagree, the pinning legs in
-     * test_val_nor_unlock.cpp / test_val_5v_page.cpp are measuring the
-     * wrong thing, not this header. Both sequences are datasheet-derived —
-     * infoic.xml's `config` field is the literal string "NULL" on every
-     * 0x05 and 0x06 entry, so there is no machine-readable upstream to diff
-     * either sequence against. The strongest available test over these
-     * values is a pinned literal comparison plus this citation comment: a
-     * change detector, not a correctness proof.
      *
-     * Sequence A — 0x06 AMD Autoselect Sector Group Protection Verify.
-     * Citation: AMD (now Infineon/Cypress) Am29F040B datasheet, Rev. F,
-     * §"Autoselect Mode" (Sector Group Protection Verify at word
-     * (SA)+0x02), p. 11; corroborated by Infineon AM29F002B/AM29F002NB and
-     * Macronix MX29F200C T/B v2.1 p.14 §"Sector Protection Verify" via
-     * `firestarter_app/doc/lockable-proms.md:34-40`. SA = 0x0000 (the
-     * lowest sector) per 151-DESIGN.md §2's device-global scope decision —
-     * this reports one sector's state as the device's answer, not a
-     * per-sector map. x8 (byte) mode, the only mode this project's bus
-     * drives. Mode entry/exit is byte-identical to FLASH_ENABLE_ID /
-     * FLASH_DISABLE_ID above (confirmed in 151-SEQUENCES.md) — no new
-     * byte_flip_t table for it. Addressing path: 0x0002 is well under
-     * 64 KiB and is issued through handle->firestarter_get_data
-     * (memory_get_data's generic mem_util_remap_address_bus path, the same
-     * route flash_util_get_chip_id already uses for 0x0000/0x0001) — never
-     * fu_flash_fast_address, which has no A16+ bank register and is used
-     * only by the byte-flipping table writes above, whose own addresses
-     * (0x5555/0x2AAA) are also under 64 KiB. */
+     * Both sequences are datasheet-derived: infoic.xml's `config` field is the
+     * literal string "NULL" on every 0x05 and 0x06 entry, so there is no
+     * machine-readable upstream to diff against. The pinning legs in
+     * test_val_nor_unlock.cpp / test_val_5v_page.cpp are change detectors over
+     * these literals, not correctness proofs.
+     *
+     * Sequence A -- 0x06 AMD Autoselect Sector Group Protection Verify.
+     * [AMD Am29F040B Rev. F, "Autoselect Mode", verify at (SA)+0x02, p.11;
+     * corroborated by AM29F002B/NB and Macronix MX29F200C v2.1 p.14.] SA = 0x0000
+     * -- this reports the lowest sector's state as the device's answer, not a
+     * per-sector map. x8 mode. Mode entry/exit is byte-identical to
+     * FLASH_ENABLE_ID / FLASH_DISABLE_ID above, so there is no separate table.
+     *
+     * Addressing: 0x0002 is under 64 KiB and is issued through
+     * handle->firestarter_get_data, NEVER fu_flash_fast_address -- that path has no
+     * A16+ bank register. */
     #define FLASH_NOR_UNLOCK_PROTECT_VERIFY_ADDR   0x0002UL
     #define FLASH_NOR_UNLOCK_PROTECT_UNPROTECTED   0x00
     #define FLASH_NOR_UNLOCK_PROTECT_PROTECTED     0x01
 
-    /* Sequence B — 0x05 Winbond Product-ID boot-block protection status.
-     * Citation: Winbond W29C020C datasheet, §"Product Identification
-     * Entry/Exit" and the adjoining boot-block protection-status
-     * description, p. 9 (approximate — print revision not independently
-     * confirmed). Product-ID mode entry is a FINDING, not an assumption:
-     * this project has no Product-ID-mode entry distinct from
-     * FLASH_ENABLE_ID, and flash_util_get_chip_id already exercises that
-     * exact AA/55/90 sequence on this part family today (chip_id 0xDA45,
-     * confirmed on silicon) — no new byte_flip_t table for entry/exit. The
-     * status-read address (0x0002) is sourced by structural analogy to that
-     * already-confirmed manufacturer/device word pair, not from an
-     * independently re-checked page — this is the artifact's
-     * lowest-confidence citation, stated as such rather than upgraded
-     * (151-SEQUENCES.md). Decode FF/FE vocabulary corroborated by
-     * `firestarter_app/firestarter/eprom_operations.py:171-172`. Addressing
-     * path: same reasoning as Sequence A above — 0x0002 is under 64 KiB and
-     * goes through handle->firestarter_get_data, never fu_flash_fast_address. */
+    /* Sequence B -- 0x05 Winbond Product-ID boot-block protection status.
+     * [Winbond W29C020C, "Product Identification Entry/Exit" and the adjoining
+     * boot-block protection-status description, p.9 -- print revision not
+     * independently confirmed.]
+     *
+     * There is no Product-ID entry distinct from FLASH_ENABLE_ID:
+     * flash_util_get_chip_id already drives that exact AA/55/90 sequence on this
+     * family, confirmed on silicon. No separate table.
+     *
+     * The status-read address is sourced by structural analogy to that confirmed
+     * manufacturer/device word pair rather than from an independently re-checked
+     * page -- the lowest-confidence citation here, stated as such. Addressing path
+     * as Sequence A. */
     #define FLASH_5V_PAGE_BOOT_BLOCK_STATUS_ADDR   0x0002UL
     #define FLASH_5V_PAGE_BOOT_BLOCK_UNLOCKED      0xFF
     #define FLASH_5V_PAGE_BOOT_BLOCK_LOCKED        0xFE

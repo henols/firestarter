@@ -5,8 +5,8 @@
       "src/proms/eprom_params.cpp"
     ],
     "blob_shas": {
-      "include/eprom_params.h": "b8729de6a8f660af738f9c971b524cef2cd8e6d8",
-      "src/proms/eprom_params.cpp": "7817c1422d698547e5da5e0bee197b9951fb4465"
+      "include/eprom_params.h": "f7fcb97a152d09d7392f0adb9a0b61239a9b6f55",
+      "src/proms/eprom_params.cpp": "b1e7188660ca0c3435ce871e4898b3697fd16057"
     },
     "recorded_at_head": "3c165d5c32e068c254f33603cf804b4b64fe66b1",
     "recorded_by": "Phase 140 Plan 05",

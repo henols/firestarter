@@ -19,18 +19,16 @@ constexpr int INPUT_RESOLUTION = 1023;
 bool com_mode = true;
 
 // Deferred-log buffer.
-// On the Uno, PORTD doubles as the data bus during programmer mode, so emitting a
-// frame on the wire mid-operation would corrupt the programming pulse — hence the
-// com_mode gate below. Historically rurp_log_id simply DROPPED frames while
-// com_mode==false, which silently lost every operation-emitted error/progress
-// frame (blank-check progress, MSG_ERR_VERIFY mismatch, etc.) -> the host saw
-// nothing and timed out (bench-confirmed Uno; Leonardo unaffected — no gate).
-// Instead of dropping, we BUFFER frames emitted during the programmer-mode window
-// and FLUSH them the moment communication mode is restored (wire safe to drive).
-// Sizing: in production builds SERIAL_DEBUG is undefined so DEBUG frames expand to
-// nothing; an operation emits at most ~1-2 critical frames per programmer-mode
-// window, so DEFERRED_LOG_MAX=4 has ample headroom. Narrow frames only — the wide
-// (MSG_DATA_CHUNK) path runs in communication mode and is never deferred.
+//
+// On the Uno PORTD doubles as the data bus in programmer mode, so emitting a
+// frame mid-operation would corrupt the programming pulse -- hence the com_mode
+// gate below. Dropping those frames instead loses every operation-emitted error
+// and progress frame, and the host times out with nothing. So they are BUFFERED
+// and flushed once communication mode is restored.
+//
+// Sizing: DEBUG frames compile out in production and an operation emits at most
+// ~1-2 critical frames per programmer-mode window, so 4 has headroom. Narrow
+// frames only -- the wide MSG_DATA_CHUNK path runs in communication mode.
 #define DEFERRED_LOG_MAX 4
 #define DEFERRED_PARAM_MAX 8  // widest narrow frame (U32_U32 / U16x4 / progress) = 8 bytes
 static uint8_t deferred_count = 0;
@@ -61,24 +59,16 @@ void rurp_board_setup() {
 }
 
 void rurp_set_communication_mode() {
-    // PD0 doubles as UART RX and data-bus bit 0. During programming we
-    // drive PD0 as output, value = last data byte's bit 0. If we just
-    // clear DDRD bit 0 and immediately call Serial.begin(), UART RXEN0 is
-    // enabled while PD0 may still be LOW — UART then samples that as a
-    // START BIT and queues spurious bytes (patterns reflecting data-bus
-    // state during programming) into the RX ring buffer. The host reads
-    // those bytes concatenated with the legitimate "OK: Request data\r\n"
-    // via readline(), and if the corruption happens to break the OK
-    // prefix the parser times out. Bench-discovered via FIRESTARTER_RX_TRACE
-    // (firestarter_prom .planning/...04-HW-VALIDATION.md).
+    // PD0 doubles as UART RX and data-bus bit 0. In programmer mode it is driven
+    // as an output holding the last data byte's bit 0. Clearing DDRD bit 0 and
+    // calling Serial.begin() immediately enables RXEN0 while PD0 may still be LOW,
+    // which the UART samples as a START BIT and queues spurious bytes into the RX
+    // ring. The host then reads those concatenated with the legitimate reply and
+    // the parser times out.
     //
-    // Two-part fix:
-    //   1. Set PORTD bit 0 = 1 BEFORE clearing DDRD bit 0. With DDR=1 and
-    //      PORTD bit 0=1 the pin is actively driven HIGH. When DDR
-    //      transitions to 0 (input), the internal pull-up keeps PD0 HIGH.
-    //      UART hardware sees idle when RXEN0 enables — no false start bit.
-    //   2. After Serial.begin() drain any RX bytes that leaked into the
-    //      ring buffer (belt and braces).
+    // So: set PORTD bit 0 HIGH *before* clearing DDRD bit 0 -- the pin is actively
+    // driven high, and the internal pull-up holds it high through the transition,
+    // so the UART sees idle. Then drain any leaked RX bytes after Serial.begin().
     PORTD |= 0x01;
     DDRD &= ~(0x01);
     rurp_serial_begin(MONITOR_SPEED);

@@ -94,56 +94,26 @@ extern "C" {
 #endif
 
 // ---- Section 2b: EPROM high-voltage composite masks (EPROM_HV_*) -------
-// Placed here, beside the CTRL_* bits they are built from, rather than in
-// eprom.h / eprom_params.h: both eprom.cpp and memory.cpp already include
-// this header, and a composite defined next to its own bit definitions
-// cannot drift from them.
+// Defined beside the CTRL_* bits they are built from so they cannot drift.
 //
-//   - EPROM_-scoped naming: the native warning watermark
-//     (check_build_warnings.py) sits at 1166 with ZERO headroom, and every
-//     one of those 1166 recorded warnings is a macro redefinition. A
-//     generic composite name (e.g. HV_ROUTE_MASK) risks colliding with an
-//     ArduinoFake or pgmspace macro and turning that live gate RED; the
-//     EPROM_ prefix keeps this pair scoped to the EPROM family that owns
-//     it (memory.cpp serves every protocol, not just EPROM).
-//   - These are LOGICAL masks. Their physical effect on the wire is
-//     produced by rurp_map_ctrl_reg_for_hardware_revision() at the point
-//     of the actual register write — this header defines what the
-//     firmware INTENDS, not the physical bit pattern.
-//   - Per-variant values, both composites, both build variants:
-//       EPROM_HV_ROUTE_MASK    = 0x81  (legacy: 0x80 | 0x01)
-//                              = 0x180 (wide:   0x80 | 0x100)
-//       EPROM_HV_ALL_OFF_MASK  = 0x87  (legacy: 0x80 | 0x01 | 0x02 | 0x04)
-//                              = 0x186 (wide:   0x80 | 0x100 | 0x02 | 0x04)
-//   - On the legacy (!HARDWARE_REVISION) arm, CTRL_VPP_VPE_DROP_ENABLE IS
-//     CTRL_ADDRESS_LINE_16 (see :76 above) — a genuine macro alias, not a
-//     coincidence. Both composites therefore also clear A16 on that arm.
-//     Harmless here: both composites are used only to DISABLE the HV
-//     route, and clearing an address line as a side effect of a disable
-//     changes nothing about VPP/VPE state.
-//   - CTRL_VPP_P1_ENABLE is DELIBERATELY ABSENT from EPROM_HV_ALL_OFF_MASK,
-//     for two independent reasons:
-//       (a) eprom_internal_set_control_register() (eprom.cpp) strips
-//           CTRL_VPE_ENABLE from a caller's mask and substitutes
-//           CTRL_VPP_P1_ENABLE whenever using_p1_as_vpp(handle) holds.
-//           Naming BOTH bits in the all-off composite would leave the
-//           physical VPE line never cleared on that substitution path.
-//       (b) On Rev 2-class hardware, logical CTRL_ADDRESS_LINE_18 and
-//           logical CTRL_VPP_P1_ENABLE collapse onto the same physical
-//           bit 0x08 (see CTRL_ADDRESS_LINE_18_REV2 below). Naming P1
-//           buys no additional physical guarantee anyway (correction C-4).
-//   - A PRESERVE/HOLD mask (as opposed to an all-off mask) can NOT be a
-//     #define: its drop-bit membership depends on a runtime hardware
-//     revision read and on handle->pins, neither of which the
-//     preprocessor can see. That conditional stays exactly where it is,
-//     inside mem_util_calculate_top_address_register.
-//   - #define (NOT constexpr), per the same 0-B-until-referenced rule
-//     already recorded at :63-64 above — a composite that nothing calls
-//     costs 0 B in the .hex.
-//   - No bitwise-OR composite #define existed anywhere in this header
-//     before this pair. This establishes a new form rather than
-//     following an existing one; the nearest in-tree precedent is a
-//     single-token alias (e.g. :76, :116, :128 above), not a composite.
+//   - LOGICAL masks. The physical effect is produced by
+//     rurp_map_ctrl_reg_for_hardware_revision() at the register write, so this
+//     header states intent, not the wire pattern.
+//   - The EPROM_ prefix is deliberate: the native warning watermark has zero
+//     headroom and every recorded warning is a macro redefinition, so a generic
+//     name risks colliding with an ArduinoFake or pgmspace macro.
+//   - On the legacy (!HARDWARE_REVISION) arm CTRL_VPP_VPE_DROP_ENABLE IS
+//     CTRL_ADDRESS_LINE_16 -- a real alias. Both composites therefore also
+//     clear A16 there. Harmless: they are only ever used to DISABLE the route.
+//   - CTRL_VPP_P1_ENABLE is DELIBERATELY ABSENT from EPROM_HV_ALL_OFF_MASK.
+//     eprom_internal_set_control_register() strips CTRL_VPE_ENABLE and
+//     substitutes P1 when using_p1_as_vpp(handle) holds; naming BOTH bits would
+//     leave the physical VPE line never cleared on that path. On Rev 2-class,
+//     A18 and P1 collapse onto the same physical bit anyway.
+//   - A PRESERVE/HOLD mask cannot be a #define: its drop-bit membership depends
+//     on a runtime revision read and on handle->pins. That stays inside
+//     mem_util_calculate_top_address_register.
+//   - #define, not constexpr: a composite nothing references costs 0 B.
 #define EPROM_HV_ROUTE_MASK    (CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE)
 #define EPROM_HV_ALL_OFF_MASK  (CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE | CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE)
 
