@@ -74,12 +74,12 @@ void configure_eprom(firestarter_handle_t* handle) {
         }
     }
 
-    // Phase 141 Plan 04 -- both refusals below run AFTER the fallback
+    // Both refusals below run AFTER the fallback
     // switch above resolves pulse_delay: a pulse_delay of 0 would otherwise
     // compare as "not greater than the cap" vacuously, letting an
-    // unresolved default slip past the D-03 check.
+    // unresolved default slip past the protocol check.
 
-    // Refusal 1 (Phase 140 D-05): an unrecognised protocol fails closed
+    // Refusal 1: an unrecognised protocol fails closed
     // here rather than falling back to &EPROM_PARAMS[0], which would route
     // 13V through the drop resistor for an unknown part.
     const eprom_params_t* row = eprom_params_for(handle->protocol);
@@ -89,15 +89,15 @@ void configure_eprom(firestarter_handle_t* handle) {
         return;
     }
 
-    // Refusal 2 (D-03): a pulse wider than this row's per-byte
+    // Refusal 2: a pulse wider than this row's per-byte
     // program-energy budget is refused pre-flight, before any high
     // voltage is enabled, and is never silently clamped -- clamping would
     // emit a pulse whose width no longer matches what the caller asked for
-    // or what the trace claims. Without this, D-01's emit-then-stop rule
+    // or what the trace claims. Without this, the emit-then-stop rule
     // would apply a single up-to-cap VPE pulse to real silicon and then
     // report a *verify* failure -- a misconfiguration wearing a
     // silicon-failure costume. This is also the firmware-side backstop for
-    // Phase 143's --pulse-us bounds, independent of host validation.
+    // the --pulse-us bounds, independent of host validation.
     //
     // energy_cap_us > 0 is mandatory: eprom_params.h defines 0 as
     // UNCAPPED, not "cap at zero" -- an unguarded compare would refuse
@@ -125,9 +125,9 @@ void eprom_erase_execute(firestarter_handle_t* handle) {
 }
 
 /*
- * Phase 142 Plan 04 (D-10 as amended, D-12) -- DEFENSIVE, not corrective.
- * Neither of this body's two exits leaks a route today (142-RESEARCH.md's
- * exit table, E1/E2): the early return below is taken only after
+ * DEFENSIVE, not corrective.
+ * Neither of this body's two exits leaks a route today (see the exit
+ * table, E1/E2): the early return below is taken only after
  * eprom_generic_init already disabled via eprom_check_vpp's or
  * eprom_get_chip_id's own clear, and the fall-through touches no HV bit
  * that eprom_internal_erase (called a few lines below, when reached) does
@@ -161,8 +161,7 @@ static void eprom_internal_write_init_body(firestarter_handle_t* handle) {
 }
 
 /*
- * Phase 142 Plan 04 (D-10 as amended, C-1, D-12) -- the single-exit
- * wrapper. Whichever exit eprom_internal_write_init_body takes (or none),
+ * The single-exit wrapper. Whichever exit eprom_internal_write_init_body takes (or none),
  * control comes back HERE, and this conditional is the ONLY place that
  * decides whether to clear the shared composite -- structural, not
  * remembered, so a `return` added inside the body later cannot silently
@@ -180,8 +179,7 @@ void eprom_write_init(firestarter_handle_t* handle) {
 }
 
 /*
- * Phase 141 Plan 04 (LOOP-03, D-08) -- see include/eprom.h for the full
- * rationale. factor == 0 (every shipped row) always yields 0, so the
+ * See include/eprom.h for the full rationale. factor == 0 (every shipped row) always yields 0, so the
  * per-byte loop's overprogram call is inert on every live protocol; the
  * clamp below yields 0 for cap_us == 0 without a special case, since a
  * positive product always compares greater than a zero cap.
@@ -195,16 +193,14 @@ uint32_t __attribute__((noinline)) eprom_overprogram_us(uint8_t pulse_count, uin
 }
 
 /*
- * Phase 141 Plan 04 (LOOP-05, D-04) -- the single place a per-byte program
- * budget failure is reported. Disables the VPP route exactly as the old
+ * The single place a per-byte program budget failure is reported. Disables the VPP route exactly as the old
  * block-loop's failure path did, packs a 4-byte {addr_hi, addr_mid,
  * addr_lo, pulse_count} big-endian payload -- matching MSG_ERR_MAX_PULSES /
  * MSG_ERR_ENERGY_CAP's catalog shape (u24 address + u8 pulse count) --
  * emits it, and sets response_code.
  *
- * Phase 142 Plan 04 (VPP-02, VPP-03, resolved) -- this function's own
- * disable is now a reference to the shared EPROM_HV_ALL_OFF_MASK composite
- * (VPP-03's mask consolidation), and generalising the disable-on-error
+ * This function's own disable is now a reference to the shared
+ * EPROM_HV_ALL_OFF_MASK composite, and generalising the disable-on-error
  * guarantee to every OTHER exit in the write path is now
  * eprom_write_execute's own single-exit wrapper, below, which clears the
  * same composite structurally on every error exit -- this function is
@@ -245,7 +241,7 @@ static void eprom_internal_report_budget_failure(firestarter_handle_t* handle, u
  * unconditionally, on every revision.
  *
  * Guarded by EPROM_OVERPROGRAM_SUPPORTED (include/eprom.h) because the
- * LOOP-03 overprogram site below is now its ONLY caller: the pass-batched
+ * overprogram site below is now its ONLY caller: the pass-batched
  * loop asserts and settles the route once per pass, inline, so nothing else
  * needs a single route-wrapped pulse. Left unguarded it would be an
  * unreferenced static on the leonardo build -- a -Wunused-function warning,
@@ -262,15 +258,15 @@ static void eprom_internal_program_pulse(firestarter_handle_t* handle, uint32_t 
 #endif
 
 /*
- * Phase 142 Plan 04 (D-05, D-06, Q4) -- the single function that resolves
- * which EPROM high-voltage route to assert for the current handle. Called
- * from both eprom_internal_write_execute_body (below) and eprom_check_vpp
- * (VPP-03's mask/selection consolidation), replacing the two byte-identical
+ * The single function that resolves which EPROM high-voltage route to
+ * assert for the current handle. Called from both
+ * eprom_internal_write_execute_body (below) and eprom_check_vpp as one
+ * consolidated mask/selection, replacing the two byte-identical
  * hand-rolled forks this file used to carry at what were :190 and :340.
- * Declared in eprom.h (Q4: exposed, not file-static) -- see that header
+ * Declared in eprom.h (exposed, not file-static) -- see that header
  * for the full rationale and the include-edge note.
  *
- * Resolution order, exactly (D-06: FLAG_VPE_AS_VPP is a live user-facing
+ * Resolution order, exactly (FLAG_VPE_AS_VPP is a live user-facing
  * escape hatch set by no database entry -- a pure human override for the
  * 25V NMOS parts and the manual-pot workflow -- so it is checked FIRST and
  * forces the direct-VPE path on top of whatever the table says, with no
@@ -305,16 +301,16 @@ rurp_register_t eprom_hv_route_mask(firestarter_handle_t* handle) {
 }
 
 /*
- * Phase 142 Plan 04 (D-10 as amended, C-1, D-12) -- this is everything that
- * used to be the public eprom_write_execute, renamed static and stripped of
+ * This is everything that used to be the public eprom_write_execute,
+ * renamed static and stripped of
  * its own disable logic: see the public wrapper below for the single-exit
  * disable guarantee this body now relies on. A `return` added inside here
  * in the future cannot escape that guarantee, because this body has no
  * other way out.
  */
 static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
-    // --- once per block (LOOP-08) --- KEPT VERBATIM; only the line number
-    // moves. D-05 / VPP-01 (resolved): route selection now comes from
+    // --- once per block --- KEPT VERBATIM; only the line number
+    // moves. Route selection now comes from
     // eprom_hv_route_mask (include/eprom.h), driven by the eprom_params
     // table's vpp_path column -- replacing the hand-rolled
     // protocol==0x0B||FLAG_VPE_AS_VPP fork this guard used to wrap
@@ -322,12 +318,12 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
     // file's one surviving tier-1 protocol-keyed site.
     if (handle->firestarter_get_control_register(handle, CTRL_VPP_REGULATOR_ENABLE) == 0) {
         handle->firestarter_set_control_register(handle, eprom_hv_route_mask(handle), 1);
-        delay(500);  // settle stays amortised once per block -- the whole of LOOP-08
+        delay(500);  // settle stays amortised once per block
     }
 
-    // D-04 (resolved): the explicit pins>=32 clear that used to live here
-    // (Phase 141) is REMOVED, not merely revised. Plan 142-02 (D-01/D-02)
-    // revision-gated mem_util_calculate_top_address_register's preserve
+    // The explicit pins>=32 clear that used to live here is REMOVED, not
+    // merely revised: a revision-gated
+    // mem_util_calculate_top_address_register preserve
     // mask so CTRL_VPP_VPE_DROP_ENABLE now SURVIVES a 32-pin block's
     // set_address() on Rev 2-class hardware -- an explicit clear here would
     // silently defeat that fix by re-stripping the very bit the guard
@@ -348,20 +344,20 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
     uint32_t energy_cap_us      = pgm_read_dword(&row->energy_cap_us);
     uint8_t  max_pulses         = pgm_read_byte(&row->max_pulses);
 #if EPROM_OVERPROGRAM_SUPPORTED
-    // Read only by the LOOP-03 site below, so guarded with it: unused
+    // Read only by the overprogram site below, so guarded with it: unused
     // locals are -Wunused-variable and the AVR warning policy is zero.
     uint32_t overprogram_cap_us = pgm_read_dword(&row->overprogram_cap_us);
     uint8_t  overprogram_factor = pgm_read_byte(&row->overprogram_factor);
 #endif
     uint8_t  verify_mode        = pgm_read_byte(&row->verify_mode);
-    // Phase 142 / VPP-01 (resolved): vpp_path is read by eprom_hv_route_mask
+    // vpp_path is read by eprom_hv_route_mask
     // above, at the top of this function -- not hoisted here, since nothing
     // below needs the raw column value again once the block's route has
     // already been asserted.
     uint32_t org_delay = handle->pulse_delay;
-    // Phase 143 Plan 05 (HOST-02, D-02) -- feeds the time-gated intra-block
-    // progress emission a few lines below; see that block's own comment for
-    // the full BF-2 rationale behind the #ifndef SERIAL_ON_IO guard. The
+    // Feeds the time-gated intra-block progress emission a few lines
+    // below; see that block's own comment for the full rationale behind
+    // the #ifndef SERIAL_ON_IO guard. The
     // declaration itself must be guarded too: an unreferenced local on
     // uno/uno328pb would be an unused-variable warning, and the AVR
     // warning policy is exactly zero.
@@ -393,7 +389,7 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
      *
      * SHAPE: a scan pass and a pulse pass, alternating.
      *   SCAN  (route down): read every byte still short of its target and
-     *         flag it in `pending`. This IS the previous loop's LOOP-06 skip
+     *         flag it in `pending`. This IS the previous loop's skip
      *         pair, and it is ALSO the post-pulse verify for the pass before
      *         it -- one read serves both roles, so the read count per byte
      *         is unchanged from the per-byte loop (scan, re-scan, final
@@ -401,9 +397,9 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
      *   PULSE (route asserted once): strobe every flagged byte at org_delay.
      *
      * WHAT IS PRESERVED, precisely:
-     *   - LOOP-06: a 0xFF target is never read and never pulsed; an
+     *   - A 0xFF target is never read and never pulsed; an
      *     already-matching byte is read once and never pulsed.
-     *   - LOOP-01: the pulse width is always org_delay, never grown.
+     *   - The pulse width is always org_delay, never grown.
      *   - Per-byte pulse accounting: every flagged byte is strobed exactly
      *     once per pulse pass, so a byte still flagged after `pulses` passes
      *     has received exactly `pulses` pulses. `pulses` IS the per-byte
@@ -414,7 +410,7 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
      *   - max_pulses / energy_cap_us, still tested only AFTER a failed
      *     verify and only after the converged-early break, so a byte that
      *     converges on its last permitted pulse still succeeds.
-     *   - LOOP-03 overprogram, at the converging byte's OWN pulse count --
+     *   - Overprogram, at the converging byte's OWN pulse count --
      *     `pending` is deliberately NOT cleared between passes so the scan
      *     can tell "was flagged, now matches" (converged THIS pass) from
      *     "never flagged" (matched all along), which is the only state
@@ -456,10 +452,10 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
             uint8_t expected = (uint8_t)handle->data_buffer[i];
 
         /*
-         * Phase 143 Plan 05 (HOST-02, D-02/D-03/D-04) -- intra-block write
-         * progress, compiled in on leonardo and native only.
+         * Intra-block write progress, compiled in on leonardo and native
+         * only.
          *
-         * BF-2 (143-RESEARCH.md), in full: on uno/uno328pb the whole
+         * The blocking finding, in full: on uno/uno328pb the whole
          * per-byte loop runs inside one programmer-mode window
          * (operation_utils.cpp's _execute_operation calls
          * rurp_set_programmer_mode(); callback(handle); rurp_set_
@@ -471,7 +467,7 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
          * (DEFERRED_LOG_MAX); a 5th deferred frame is silently DROPPED. On
          * this path that dropped slot would be one a subsequent
          * MSG_ERR_MAX_PULSES frame needs, turning a program FAILURE into a
-         * host transport timeout -- exactly HOST-03's anti-goal, on a path
+         * host transport timeout -- exactly this emission's anti-goal, on a path
          * that works today without this emission.
          *
          * The same trap is already documented in-tree, twice, each guarded
@@ -495,22 +491,22 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
          *     frames: a fragile invariant split across two files, and
          *     still no delivery on Uno.
          *
-         * D-06's non-claim, both dimensions: intra-block write progress is
+         * The non-claim, both dimensions: intra-block write progress is
          * emitted on the EPROM path only, and delivered on leonardo only.
          *
          * The predicate below is TIME-keyed (millis()) and reads no
          * handle->protocol at all, so it adds no tier-1 protocol-keyed
          * site -- configure_eprom's pulse-fallback switch (:70) remains
-         * this file's only one (TABLE-05).
+         * this file's only one.
          *
          * Payload is (absolute chip address, handle->mem_size) -- identical
          * shape to mem_util_blank_check's own MSG_DATA_PROGRESS emit
          * (memory.cpp), so 0xE0 keeps exactly ONE payload contract; a
-         * block-relative pair (D-04's rejected alternative) would have
+         * block-relative pair (the rejected alternative) would have
          * given the id a second meaning depending on which operation
          * emitted it.
          *
-         * Placed BEFORE the LOOP-06 skips just below, so the cadence is
+         * Placed BEFORE the skips just below, so the cadence is
          * independent of how many bytes are skipped -- the more honest
          * reading of "progress" than gating on bytes actually pulsed.
          *
@@ -537,7 +533,7 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
             LOG_DATA_ID_U32_U32(MSG_DATA_PROGRESS, handle->address + i, handle->mem_size);
         }
 #endif
-            // LOOP-06 skips, before any pulse. 0xFF checked first, without a
+            // Skips, before any pulse. 0xFF checked first, without a
             // read: an already-erased target never needs a pulse on a UV
             // EPROM (erased state is all-ones; programming only clears bits).
             if (expected == 0xFF) {
@@ -549,11 +545,11 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
                     // Converged on this pass, after exactly `pulses` pulses.
                     pending[i >> 3] &= (uint8_t)~mask;
 #if EPROM_OVERPROGRAM_SUPPORTED
-                    // LOOP-03: unreachable from any database row --
+                    // Unreachable from any database row --
                     // `overprogram_factor` is ABSENT from all 746 rows of
                     // chip_database.json (the field would sit under
                     // `programming`), so eprom_overprogram_us returns 0 and
-                    // no margin pulse is ever emitted. D-07's org_delay
+                    // no margin pulse is ever emitted. The org_delay
                     // save/restore idiom: exactly one extra
                     // firestarter_set_data call at the computed width,
                     // restored immediately so no failure exit between save
@@ -606,7 +602,7 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
         }
 
         // PULSE pass. Debug session w27c512-program-fail-byte0 is what put a
-        // route assert on this path at all: Phase 141 shipped a bare
+        // route assert on this path at all: an earlier revision shipped a bare
         // firestarter_set_data, which strobes CE with the 12 V rail
         // generated but never switched onto the part, so no cell can change
         // and every byte exhausts max_pulses. That assert is kept -- only
@@ -624,7 +620,7 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
         delayMicroseconds(EPROM_VPP_HOLD_US);
         handle->firestarter_set_control_register(handle, CTRL_VPE_ENABLE, 0);
         pulses++;
-        accumulated += org_delay;  // D-02: pulse widths only
+        accumulated += org_delay;  // pulse widths only
     }
 
     // verify_mode: 0x07/0x08 ship VERIFY_PER_PULSE_PLUS_FINAL -- one more
@@ -649,8 +645,8 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
 }
 
 /*
- * Phase 142 Plan 04 (D-10 as amended, C-1, D-12) -- the single-exit wrapper
- * VPP-02 requires. Whichever of the body's four error exits is taken
+ * The single-exit wrapper the write path requires. Whichever of the
+ * body's four error exits is taken
  * (row == NULL; MSG_ERR_MAX_PULSES; MSG_ERR_ENERGY_CAP; MSG_ERR_VERIFY --
  * the pre-existing headline gap, which used to disable nothing at all), or
  * the success fall-through, control returns HERE, and this conditional is
@@ -658,8 +654,8 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
  * structural, so a `return` added inside the body later cannot silently
  * bypass it.
  *
- * Conditional on RESPONSE_CODE_ERROR, not unconditional -- D-10's original
- * "unconditionally" is given up here (operator-confirmed correction C-1).
+ * Conditional on RESPONSE_CODE_ERROR, not unconditional -- an earlier
+ * "unconditionally" formulation is deliberately given up here.
  * The tiebreaker is test_loop_eprom_v131.cpp's
  * test_loop05_a_successful_block_does_not_disable_the_route, which asserts
  * a SUCCESSFUL block leaves CTRL_VPP_REGULATOR_ENABLE SET. An unconditional
@@ -669,7 +665,7 @@ static void eprom_internal_write_execute_body(firestarter_handle_t* handle) {
  * pulses. The OPERATION-level disable (as opposed to this per-block loop's
  * own disable-on-error) is command_done() (firestarter.cpp:162-171), which
  * zeroes CONTROL_REGISTER unconditionally on every command exit, success
- * or abort -- plan 142-06 owes the test proving that.
+ * or abort. That path has no test of its own yet.
  */
 void eprom_write_execute(firestarter_handle_t* handle) {
     eprom_internal_write_execute_body(handle);
@@ -688,7 +684,7 @@ uint16_t eprom_get_chip_id(firestarter_handle_t* handle) {
     delay(100);
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
     chip_id |= (handle->firestarter_get_data(handle, 0x0001));
-    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // VPP-03: shared composite (was REGULATOR | A9)
+    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // shared composite (was REGULATOR | A9)
     return chip_id;
 }
 
@@ -701,7 +697,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
         return;
     }
 #endif
-    // D-05 / VPP-03 (resolved): route selection via eprom_hv_route_mask --
+    // Route selection via eprom_hv_route_mask --
     // see eprom_internal_write_execute_body's identical call, above, for
     // the full rationale. Replaces the byte-identical
     // protocol==0x0B||FLAG_VPE_AS_VPP fork this file used to carry twice.
@@ -718,7 +714,7 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
     } else if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100) {
         mem_util_report_voltage(handle, vpp_mv, handle->vpp_mv, MSG_WARN_VPP_LOW, RESPONSE_CODE_WARNING);
     }
-    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // VPP-03: shared composite (was REGULATOR | DROP)
+    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // shared composite (was REGULATOR | DROP)
 }
 
 void eprom_internal_erase(firestarter_handle_t* handle) {
@@ -738,14 +734,14 @@ void eprom_internal_erase(firestarter_handle_t* handle) {
      * partially erased and `dev test` reported four BAD steps for one
      * cause. See include/eprom.h's EPROM_ERASE_PULSE_US comment for the
      * bounds, the 28-row blast radius, and why no per-row erase width
-     * exists. Still routed through mem_util_delay_us (LOOP-07/D-06 site 2):
+     * exists. Still routed through mem_util_delay_us:
      * 100000 us is far over the AVR delayMicroseconds ceiling, which is
      * precisely what that split helper is for. */
     mem_util_delay_us(EPROM_ERASE_PULSE_US);
     // After the erase pulse, we should disable the chip to end the programming cycle.
     rurp_chip_disable();
 
-    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // VPP-03: shared composite (was REGULATOR | A9 | VPE)
+    handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // shared composite (was REGULATOR | A9 | VPE)
 }
 
 void eprom_generic_init(firestarter_handle_t* handle) {

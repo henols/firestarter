@@ -40,9 +40,9 @@
  * so no value in this column may ever encode a verify VCC. */
 enum { VERIFY_PER_PULSE = 0, VERIFY_PER_PULSE_PLUS_FINAL = 1 };
 
-/* vpp_path names an ABSTRACT route, not a control-register bitmask -- Phase
- * 142 owns the mask sets, and naming a mask here would force this
- * dependency-free header to pull in the shield's register header. */
+/* vpp_path names an ABSTRACT route, not a control-register bitmask -- the
+ * mask sets are owned by the write path, and naming a mask here would force
+ * this dependency-free header to pull in the shield's register header. */
 enum { VPP_PATH_DROP_RESISTOR = 0, VPP_PATH_DIRECT_VPE = 1 };
 
 /* Six columns, largest-first (see (b) above). No pulse-width field of any

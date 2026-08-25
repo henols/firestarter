@@ -5,7 +5,7 @@
       "src/proms/eprom_params.cpp"
     ],
     "blob_shas": {
-      "src/proms/eprom.cpp": "9124a46d45de764b8579b54f524b868b6b7ae0ef",
+      "src/proms/eprom.cpp": "d3aef013b556ad6b5cc34fc54e446a370d5c54c2",
       "src/proms/eprom_params.cpp": "7817c1422d698547e5da5e0bee197b9951fb4465"
     },
     "recorded_at_head": "6bc3ed3371915a38f71ab8d92c593a6913603dfc",
@@ -120,7 +120,7 @@
       "reason": "Reads the caller-supplied FLAG_SKIP_BLANK_CHECK ctrl_flags bit to decide whether a blank-check runs before write; independent of the programming algorithm."
     },
     {
-      "line": 177,
+      "line": 176,
       "predicate": "if (handle->response_code == RESPONSE_CODE_ERROR)",
       "keyed_on": [
         "response_code"
@@ -130,7 +130,7 @@
       "reason": "NEW (Phase 142 Plan 04, D-10 as amended, D-12): the single-exit wrapper's own gate for eprom_write_init. After eprom_internal_write_init_body (:144-:158's enclosing function) returns from either of its two exits, this conditional is the ONLY place that decides whether to clear the shared EPROM_HV_ALL_OFF_MASK composite -- structural, not remembered. Defensive rather than corrective here: neither of that body's own exits leaks a route today (unlike eprom_write_execute's identical wrapper gate at :426, which closes a real, pre-existing gap)."
     },
     {
-      "line": 294,
+      "line": 290,
       "predicate": "if (is_flag_set(FLAG_VPE_AS_VPP))",
       "keyed_on": [
         "ctrl_flags"
@@ -140,7 +140,7 @@
       "reason": "NEW shape, same decision (Phase 142 Plan 04, D-05/D-06): the FLAG_VPE_AS_VPP half of what used to be the duplicated protocol-keyed forks at (what were) :190 and :340 -- `if (handle->protocol == 0x0B || is_flag_set(FLAG_VPE_AS_VPP))`. Both call sites now resolve the route through the single exposed function eprom_hv_route_mask, which checks this flag FIRST (forcing the direct-VPE path on top of whatever the eprom_params table's vpp_path column says) and only then reads the table. Because the flag check and the table read are now two separate statements, this site's predicate span no longer contains a handle->protocol reference at all -- DEMOTING it from a tier-1 protocol-keyed site to a tier-2 flag site (D-06's own framing: FLAG_VPE_AS_VPP is a live user-facing escape hatch set by no database entry, a pure human override for the 25V NMOS parts and the manual-pot workflow, not a second orthogonal dispatch axis)."
     },
     {
-      "line": 323,
+      "line": 319,
       "predicate": "if (handle->firestarter_get_control_register(handle, CTRL_VPP_REGULATOR_ENABLE) == 0)",
       "keyed_on": [
         "firestarter_get_control_register"
@@ -150,7 +150,7 @@
       "reason": "Checks whether the VPP regulator control-register bit is already set before running the enable sequence and its settle delay, so that sequence runs at most once; a hardware-state idempotency guard -- the VPP ROUTE itself is chosen by eprom_hv_route_mask(handle) (Phase 142 Plan 04), called immediately inside this guard, not here. CORRECTED (142-04): the reason previously recorded here cited 'the allowlisted :145 branch immediately inside this guard' -- a line-number cross-reference that was already stale before this phase (the fork it meant was at :190, not :145) and is now doubly wrong, because there is no branch immediately inside this guard any more at all: the route decision is a single function call. This text intentionally names no line number for that call, so it cannot go stale the same way twice."
     },
     {
-      "line": 547,
+      "line": 543,
       "predicate": "if (handle->firestarter_get_data(handle, addr) == expected)",
       "keyed_on": [
         "firestarter_get_data"
@@ -160,7 +160,7 @@
       "reason": "LOOP-06's already-matching skip: reads the byte back from the chip before pulsing and skips straight to the next byte if it already matches the expected value; a pre-pulse optimisation read-compare, not a protocol/algorithm branch. Runs immediately after the (unrelated, not handle->-keyed) expected == 0xFF skip just above it."
     },
     {
-      "line": 676,
+      "line": 672,
       "predicate": "if (handle->response_code == RESPONSE_CODE_ERROR)",
       "keyed_on": [
         "response_code"
@@ -170,7 +170,7 @@
       "reason": "NEW (Phase 142 Plan 04, VPP-02's headline requirement; D-10 as amended, correction C-1, D-12): the single-exit wrapper's own gate for eprom_write_execute. After eprom_internal_write_execute_body returns -- from any of its four error exits (row == NULL; MSG_ERR_MAX_PULSES; MSG_ERR_ENERGY_CAP; MSG_ERR_VERIFY, the pre-existing headline gap that used to disable nothing at all) or its success fall-through -- this conditional is the ONLY place that decides whether to clear the shared EPROM_HV_ALL_OFF_MASK composite: structural, not remembered, so a future `return` added inside the body cannot silently escape the guarantee. Conditional rather than unconditional specifically because test_loop_eprom_v131.cpp's test_loop05_a_successful_block_does_not_disable_the_route requires a successful block to leave CTRL_VPP_REGULATOR_ENABLE SET (an unconditional clear would re-arm the once-per-block guard and re-pay delay(500) on the next block too)."
     },
     {
-      "line": 713,
+      "line": 709,
       "predicate": "if (vpp_mv > (uint32_t)handle->vpp_mv + 500)",
       "keyed_on": [
         "vpp_mv"
@@ -180,7 +180,7 @@
       "reason": "Compares a measured VPP millivolt reading against the caller-supplied vpp_mv target plus a fixed margin to detect an over-voltage fault; a voltage data comparison, not a protocol selector."
     },
     {
-      "line": 718,
+      "line": 714,
       "predicate": "if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100)",
       "keyed_on": [
         "vpp_mv"
@@ -190,7 +190,7 @@
       "reason": "Compares a measured VPP millivolt reading against 95% of the caller-supplied vpp_mv target to detect an under-voltage condition; a voltage data comparison, not a protocol selector."
     },
     {
-      "line": 753,
+      "line": 749,
       "predicate": "if (handle->response_code == RESPONSE_CODE_ERROR)",
       "keyed_on": [
         "response_code"
@@ -200,7 +200,7 @@
       "reason": "Early-exits eprom_generic_init when the preceding VPP check already set an error response code; a generic error-propagation guard, not an algorithm choice."
     },
     {
-      "line": 756,
+      "line": 752,
       "predicate": "if (handle->chip_id > 0)",
       "keyed_on": [
         "chip_id"
@@ -210,7 +210,7 @@
       "reason": "Tests whether the caller supplied a non-zero expected chip_id (0 means 'skip the check'); a caller opt-in gate for an optional verification step, not a protocol/algorithm branch."
     },
     {
-      "line": 757,
+      "line": 753,
       "predicate": "is_flag_set(FLAG_FORCE)",
       "keyed_on": [
         "ctrl_flags"
@@ -220,7 +220,7 @@
       "reason": "Ternary reading the caller-supplied FLAG_FORCE ctrl_flags bit to choose whether a chip-ID mismatch is reported as a warning or an error; independent of the programming algorithm."
     },
     {
-      "line": 775,
+      "line": 771,
       "predicate": "if (bit & CTRL_VPE_ENABLE && using_p1_as_vpp(handle))",
       "keyed_on": [
         "pins+bus_config.vpp_line"
