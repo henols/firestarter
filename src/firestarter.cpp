@@ -137,7 +137,8 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     // DEV_TOOLS build for no safety gain.
     //
     // CMD_LOCK_STATUS (16) is above CMD_READ_VPP (11) and so falls outside this
-    // range by construction -- a choice, not an oversight.
+    // range by construction -- this is a CHOICE, not an oversight, so
+    // `dev lock-status` emits none of the three DBG_* diagnostic lines below.
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
         LOG_DEBUG_ID_SUB_U32(DBG_MEM_SIZE, (uint32_t)handle->mem_size);
         LOG_DEBUG_ID_SUB_U32(DBG_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
