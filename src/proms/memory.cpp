@@ -436,7 +436,10 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
  * with a few hundred bytes of shared heap-and-stack headroom. */
 static uint32_t blank_check_saved_address;
 
-#define BLANK_CHECK_CHUNK_SIZE 2048
+/* One progress frame and one host ack round-trip are spent per chunk, so this
+ * also sets how chatty a blank check is: a 512 KB part is 64 chunks here, where
+ * 2048 made it 256 for no extra visible resolution. */
+#define BLANK_CHECK_CHUNK_SIZE 8192
 void uint32_to_bytes(char* buffer, int pos, uint32_t value) {
     buffer[pos] = (value >> 24) & 0xFF;
     buffer[pos++] = (value >> 16) & 0xFF;
