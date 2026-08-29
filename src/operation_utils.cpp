@@ -233,6 +233,23 @@ static inline bool _single_step_operation_callback(firestarter_handle_t* handle)
             LOG_ERROR_ID_BYTES(MSG_ERR_NOT_BLANK, (const uint8_t*)handle->data_buffer, 4);
         } else if (res != ERROR && is_operation_in_progress(handle)) {
             LOG_DATA_ID_U32_U32(MSG_DATA_PROGRESS, handle->address, handle->mem_size);
+            // The host's MAIN-phase progress handler (_main_phase_simple) acks
+            // every DATA frame unconditionally (matching every other
+            // data-emitting path, e.g. eprom_read's _process_outgoing_data,
+            // which ALWAYS op_wait_for_ack()s after each DATA emit). This
+            // per-chunk loop used to never consume that ack -- it just kept
+            // writing, unthrottled, for the whole multi-hundred-chunk
+            // operation, without ever touching the incoming byte stream.
+            // Left unread for long enough, that produced a silent
+            // handle->cmd -> CMD_IDLE desync deep into the operation (not
+            // through command_done()), surfacing later as the reused
+            // MSG_ERR_EMPTY_INPUT (0xA4) once loop()'s CMD_IDLE branch tried
+            // to COBS-decode whatever bytes were sitting unread. Consuming
+            // the ack here restores the same 1:1 flow control every other
+            // data path already has.
+            if (!op_wait_for_ack(handle)) {
+                return false;
+            }
         }
     }
     if (res == ERROR) {
