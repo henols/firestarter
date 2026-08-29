@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 71 Plan 04 — Tier-1 validation suite for the Intel Flash family.
+ * Tier-1 validation suite for the Intel Flash family.
  * HARN-01 / D-07 / D-08 (verify-can-fail posture).
  *
  * Proves configure_flash_intel behavior BY SIDE-EFFECT via the recording bus stub:

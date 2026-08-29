@@ -4,9 +4,9 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 116 Plan 06 — host stub TU for the PARKED, RED-by-design
+ * host stub TU for the PARKED, RED-by-design
  * test_eeprom28c_sdp suite (TRACE-02 / TRACE-04 / TRACE-06, D-01/D-02/D-09).
- * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
+ * WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * Identical shape to test_sdp_harness/host_stubs.cpp (plan 116-05) — this is
  * the SECOND suite that opts into the same ordered-strobe recorder layer.

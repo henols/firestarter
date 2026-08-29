@@ -35,9 +35,6 @@ firestarter_handle_t handle;
 unsigned long timeout = 0;
 
 void setup() {
-    // Phase 9: deleted the SERIAL_DEBUG bootstrap call (legacy soft-serial
-    // debug path replaced by LOG_DEBUG_ID_SUB* from Phase 8 Plan 07).
-
     rurp_load_config();
 #ifdef HARDWARE_REVISION
     rurp_detect_hardware_revision();
@@ -76,29 +73,15 @@ bool parse_json(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB_U8(DBG_CMD, (uint8_t)handle->cmd);
     if (is_memory_cmd(handle->cmd) || handle->cmd < CMD_READ_VPP) {
         json_parse(handle->data_buffer, tokens, token_count, handle);
-        // v1.22 Phase 119 (LOCK-03, D-02): is_memory_cmd() replaces the old
-        // `#ifdef DEV_TOOLS` / `handle->cmd < CMD_DEV_ADDRESS` ordinal
-        // guard. Neither this `if` nor its `else` carries a build-
-        // configuration conditional any more -- only the two debug log
-        // lines inside the `else` body below do, because DBG_FLAG_OUTPUT_EN
-        // / DBG_FLAG_CHIP_EN describe dev-tools-only flags that have no
-        // meaning outside a DEV_TOOLS build. In a release build this `else`
-        // body compiles empty, which is correct and intended.
+        // Neither this `if` nor its `else` carries a build conditional; only the two
+        // debug log lines inside the `else` do, because the flags they name have no
+        // meaning outside a DEV_TOOLS build. In a release build that body compiles
+        // empty, which is intended.
         //
-        // Phase 151 (LOCK-02, OD-3): the outer test above was an
-        // ordinal-only test (`handle->cmd < CMD_READ_VPP`) until this phase.
-        // OD-3 rejected re-ordering the CMD_* enum to bring CMD_LOCK_STATUS
-        // (16) below CMD_READ_VPP (11), because that breaks wire
-        // compatibility with every shipped firmware and every host
-        // constant; it also rejected making the protection-status read a
-        // non-memory command, because handle->firestarter_get_data is a
-        // protocol-handler function pointer set only by configure_memory().
-        // So the outer test is now ALSO predicate-aware
-        // (`is_memory_cmd(handle->cmd) ||`), ordered with the predicate
-        // first so the cheap ordinal test is the fallback rather than the
-        // primary: a memory command above ordinal 11 (CMD_LOCK_STATUS) is
-        // now admitted to json_parse and configure_memory exactly as one
-        // below 11 already was.
+        // The test is predicate-first (`is_memory_cmd(handle->cmd) ||`) with the cheap
+        // ordinal test as fallback, so a memory command above ordinal 11 is admitted
+        // exactly as one below 11 already was. Re-ordering the CMD_* enum instead was
+        // rejected: it breaks wire compatibility with every shipped firmware and host.
         if (is_memory_cmd(handle->cmd)) {
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_FORCE, is_flag_set(FLAG_FORCE));
             LOG_DEBUG_ID_SUB_U8(DBG_FLAG_CAN_ERASE, is_flag_set(FLAG_CAN_ERASE));
@@ -133,7 +116,7 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     handle->operation_state = 0;
 
     /* data_buffer and data_size are pre-filled by the CMD_IDLE COBS decode
-     * step (Phase 51 — the rurp_communication_read_bytes call is deleted).
+     * step (the rurp_communication_read_bytes call is deleted).
      * data_buffer[data_size] is already NUL-terminated by the CMD_IDLE branch. */
     handle->ctrl_flags = 0x80;
     LOG_DEBUG_ID_SUB_U16(DBG_BUFFER_SIZE, (uint16_t)handle->data_size);
@@ -147,24 +130,15 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
         return false;
     };
 
-    // v1.22 Phase 119 (119-02): this is a SECOND, independent ordinal-range
-    // guard, deliberately NOT converted to is_memory_cmd(). It gates
-    // diagnostic output only (three DBG_* debug log lines), never hardware
-    // configuration, so it is not an admission gate and D-03's safety
-    // argument does not apply here. Converting it would silently DROP these
-    // three debug lines for cmd 7/8 in a DEV_TOOLS build (a diagnostic
-    // regression) for zero safety gain and non-zero flash cost. The two new
-    // commands (CMD_SDP_UNLOCK 9, CMD_SDP_LOCK 10) already satisfy this
-    // range test unchanged, so there is no coverage gap for them either.
+    // A SECOND, independent ordinal-range guard, deliberately NOT converted to
+    // is_memory_cmd(). It gates diagnostic output only -- three DBG_* lines --
+    // never hardware configuration, so the admission gate's safety argument does
+    // not apply. Converting it would silently drop those lines for cmd 7/8 in a
+    // DEV_TOOLS build for no safety gain.
     //
-    // Phase 151 (LOCK-02, OD-3): CMD_LOCK_STATUS (16) is numerically greater
-    // than CMD_READ_VPP (11), so it falls outside this range by construction
-    // -- this is a CHOICE recorded here, not a discovery made on the bench.
-    // `dev lock-status` therefore emits none of the three DBG_* diagnostic
-    // lines below. This block still gates diagnostic output only, so D-03's
-    // safety argument still does not apply, and converting it to
-    // is_memory_cmd() would cost flash for no safety gain -- see 151-DESIGN.md
-    // §7.
+    // CMD_LOCK_STATUS (16) is above CMD_READ_VPP (11) and so falls outside this
+    // range by construction -- this is a CHOICE, not an oversight, so
+    // `dev lock-status` emits none of the three DBG_* diagnostic lines below.
     if (handle->cmd > CMD_IDLE && handle->cmd < CMD_READ_VPP) {
         LOG_DEBUG_ID_SUB_U32(DBG_MEM_SIZE, (uint32_t)handle->mem_size);
         LOG_DEBUG_ID_SUB_U32(DBG_ADDR_MASK, (uint32_t)handle->bus_config.address_mask);
@@ -179,57 +153,34 @@ bool init_programmer_framed(firestarter_handle_t* handle) {
     LOG_INFO_ID_U8(MSG_INFO_HW, (uint8_t)rurp_get_hardware_revision());
 #endif
     LOG_INFO_ID_U8(MSG_INFO_CMD, (uint8_t)handle->cmd);
-    // CAP-02 is being PORTED here, not invented: it shipped on origin/beta
-    // as PR #49 (13eb350 / b1737b2), and this branch forked one commit
-    // earlier, at 3085084. Without it the v1.31 host REFUSES every
-    // connection -- _probe_port raises FirmwareOutdatedError when
-    // firmware_identity is None, and
-    // tests/test_fwguard.py::test_absent_identity_refuses asserts exactly
-    // that refusal on purpose (BF-1).
-    //
-    // Wire layout, three length-discriminated extensions of one variable
-    // blob:
+    // Wire layout -- three length-discriminated extensions of one variable blob:
     //   [buffer_size u16 BE][hw_revision u8][ver_len u8][ver bytes][write_budget_s u16 BE]
     //      CAP-01              CAP-02                                CAP-03
     //
-    // MSG_OK_READY's catalog entry is a variable-length byte blob
-    // (param_bytes = -1), so this needs NO messages.toml edit and NO
-    // codegen run -- include/messages.h (codegen-generated, id-only) stays
-    // untouched.
+    // MSG_OK_READY's catalog entry is a variable-length byte blob, so extending it
+    // needs no messages.toml edit and no codegen run.
     //
-    // CAP-03 (HOST-01) is emitted for EVERY command, not just CMD_WRITE --
-    // the ack's shape must not vary by command, or a length-discriminating
-    // host decoder loses its only discriminator. eprom_block_budget_s
-    // returns 0 for a non-EPROM protocol; the host's [1, 14400]
-    // plausibility clamp then leaves its attribute None and the host's own
-    // fallback applies -- correct for a family whose block time this table
-    // cannot bound, and it is also what covers the non-memory-command case
-    // where configure_memory never ran and pulse_delay is still 0.
+    // Emit this for EVERY command, not just CMD_WRITE: the ack's shape must not
+    // vary by command, or a length-discriminating host decoder loses its only
+    // discriminator. eprom_block_budget_s returns 0 for a non-EPROM protocol, and
+    // the host's plausibility clamp then leaves its attribute unset and falls back
+    // -- which also covers the non-memory-command case where configure_memory
+    // never ran and pulse_delay is still 0.
     //
-    // The advertised budget is already PADDED by the firmware (D-09): only
-    // the firmware knows the once-per-block VPE settle, the final verify
-    // pass(es), the per-pulse settle and the serial transport time, so the
-    // host applies no multiplier of its own. See include/eprom_budget.h for
-    // the padding rule in prose.
+    // The budget is already PADDED by the firmware: only the firmware knows the
+    // once-per-block VPE settle, the verify passes, the per-pulse settle and the
+    // transport time, so the host applies no multiplier. include/eprom_budget.h
+    // has the padding rule.
     //
-    // Two facts preserved from PR #49's own comment, which the merge that
-    // brought beta into this branch resolved away in favour of the CAP-03
-    // superset above. Both are about this emission and neither is stated
-    // elsewhere:
+    // Backward compatibility is a LENGTH test and degrades rather than misparses:
+    // a host predating CAP-02 tests `len(params) == 2`, misses, and falls back to
+    // its 512-byte chunk floor.
     //
-    // 1. Backward compatibility is a LENGTH test, and it degrades rather than
-    //    misparses. Hosts predating CAP-02 test `len(params) == 2`, miss, and
-    //    fall back to their 512-byte chunk floor: reduced throughput on
-    //    Leonardo, never a misparse. The same property is what lets CAP-03
-    //    ride on top -- see the length-discrimination note above.
-    //
-    // 2. Emitting identity HERE is safe, and deliberately so. configure_memory
-    //    has already run at this point, but every configure_* handler is pure
-    //    (function-pointer assignment only) and the VPP regulator is not
-    //    engaged until firestarter_operation_init, which sits behind
-    //    op_wait_for_ack(). So a host that reads this ack and refuses stops the
-    //    sequence with the rail still DOWN -- the compatibility gate cannot
-    //    itself energise the part it is protecting.
+    // Emitting identity HERE is safe: configure_memory has run, but every
+    // configure_* handler is pure function-pointer assignment and the VPP
+    // regulator is not engaged until firestarter_operation_init, behind
+    // op_wait_for_ack(). A host that reads this ack and refuses stops with the rail
+    // still DOWN -- the compatibility gate cannot energise the part it protects.
     {
         const char* _ver = FW_VERSION;
         uint8_t _vlen = (uint8_t)strlen(_ver);
@@ -271,18 +222,18 @@ void loop() {
         command_done(&handle);
     } else if (handle.cmd == CMD_IDLE) {
         if (rurp_communication_available() > 0) {
-            /* Phase 51: COBS frame decode replaces the legacy '{'-peek /
-             * discard-non-'{' loop (D-05 deleted).
+            /* COBS frame decode; there is no '{'-peek /
+             * discard-non-'{' loop.
              *
              * rurp_communication_read_data() reads through the 0x00 delimiter,
              * COBS-decodes in place, verifies CRC8 BEFORE any JSON parse byte
-             * is examined (V5 / ADR §4.4 / T-51-01 mitigation), and on any
+             * is examined (V5 / ADR section 4.4), and on any
              * COBS/CRC/overflow failure calls _drain_to_delimiter() internally
              * and returns negative — NO additional drain logic needed here.
              *
              * Gate STRICTLY on n > 0: a zero-length decode is not a valid
              * command.  On n <= 0: log the frame error and stay CMD_IDLE
-             * (bounded recovery is fully handled by the decoder; D-06). */
+             * (bounded recovery is fully handled by the decoder). */
             int n = rurp_communication_read_data(handle.data_buffer, DATA_BUFFER_SIZE - 1);
             if (n > 0) {
                 handle.data_size = (uint32_t)n;
@@ -328,7 +279,7 @@ void loop() {
         case CMD_CHECK_CHIP_ID:
             finished = eprom_check_chip_id(&handle);
             break;
-        // LOCK-02, corrected form (RESEARCH F-T): with init/end left NULL
+        // Corrected form: with init/end left NULL
         // (configure_eeprom28c), these phases are NOT skipped --
         // _execute_operation_house_keeping_func still calls op_wait_for_ack()
         // and still emits the INIT and END frame pairs, so each costs a host
@@ -342,14 +293,14 @@ void loop() {
         // firmware half. Both arms sit outside any preprocessor conditional.
         // op_wait_for_ack has a 1000 ms timeout and emits MSG_ERR_TIMEOUT on
         // expiry, so a standalone lock issued by a host that does not ACK
-        // times out rather than hangs (relevant to Phase 120, not here).
+        // times out rather than hangs (not this call site's concern).
         case CMD_SDP_UNLOCK:
             finished = eprom_sdp_unlock(&handle);
             break;
         case CMD_SDP_LOCK:
             finished = eprom_sdp_lock(&handle);
             break;
-        // Phase 151 (LOCK-02): CMD_LOCK_STATUS, in the same one-line shape
+        // CMD_LOCK_STATUS, in the same one-line shape
         // as every other arm in this switch. eprom_lock_status is the
         // eprom_blank_check shape with no LOG_DEBUG_ID_SUB line -- see that
         // function's own comment for why. This sits outside every

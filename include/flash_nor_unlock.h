@@ -15,7 +15,7 @@ extern "C" {
 
     void configure_flash_nor_unlock(firestarter_handle_t* handle);
 
-    // Phase 151 (LOCK-02): CMD_LOCK_STATUS operation for the 0x06 AMD
+    // CMD_LOCK_STATUS operation for the 0x06 AMD
     // Autoselect family. Declared here so the native suite (and any future
     // caller) can drive it directly without going through configure_memory.
     void flash_nor_unlock_read_protection_execute(firestarter_handle_t* handle);

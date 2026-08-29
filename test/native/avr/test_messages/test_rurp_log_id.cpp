@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 6 — native Unity tests for rurp_log_id() wire frame.
+ * native Unity tests for rurp_log_id() wire frame.
  *
  * Asserts the exact byte sequence emitted by rurp_log_id() against the
  * locked frame contract from CONTEXT §D-01..D-04:
@@ -236,7 +236,7 @@ void test_ok_ready_u16_param_frame(void) {
 }
 
 void test_oversize_param_count_rejected(void) {
-    // Phase 8 W-04: _firestarter_emit_frame guard raised from 253 to 65533.
+    // W-04: _firestarter_emit_frame guard raised from 253 to 65533.
     // `len = 1 (id) + param_count + 1 (crc)` is now a u16, so no uint8_t
     // param_count value (max 255) can exceed the new guard. The guard matters
     // for future callers that pass > 255 via an internal wide path.

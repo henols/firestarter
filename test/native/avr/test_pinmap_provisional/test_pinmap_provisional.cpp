@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 124 Plan 08 — MERGE-04's refusal suite, compiled ONLY under
+ * MERGE-04's refusal suite, compiled ONLY under
  * [env:native_pinmap_provisional] (RURP_PINMAP_PROVISIONAL=1 in that env's
  * build_flags). This is the suite that proves the production build of
  * configure_memory() (src/proms/memory.cpp) actually consults

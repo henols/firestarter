@@ -4,21 +4,14 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 140 Plan 01 (TABLE-01, TABLE-02, D-01..D-15) -- the const,
- * protocol_id-keyed EPROM parameter table (type declared in
- * eprom_params.h) and its fail-closed linear-scan accessor.
+ * The const, protocol_id-keyed EPROM parameter table and its fail-closed
+ * linear-scan accessor.
  *
- * No Arduino framework header is included here (140-RESEARCH.md Pitfall 1):
- * src/proms/not_implemented.cpp is the only other translation unit under
- * src/proms/ that omits it, and this file follows that include discipline
- * verbatim so it adds zero macro-redefinition warnings on the native build.
+ * Do NOT include an Arduino framework header here -- it would add
+ * macro-redefinition warnings on the native build.
  *
- * Unreferenced by src/ this phase (D-10) -- Phase 141 wires this table into
- * configure_eprom. src/proms/eprom.cpp is byte-unchanged by this plan.
- *
- * protocol_id is the sole lookup key (TABLE-05): the accessor below is a
- * linear SCAN over the table, never a switch -- a switch here would be
- * exactly the second dispatch selector TABLE-05 forbids.
+ * The accessor is a linear SCAN, never a switch: a switch here would be
+ * exactly the second dispatch selector this table exists not to have.
  */
 #include "eprom_params.h"
 
@@ -26,25 +19,13 @@
 static const uint8_t EPROM_PARAM_KEYS[] PROGMEM = { 0x07, 0x08, 0x0B };
 
 /*
- * Row-value attribution (expanded per-cell in the gate-enforced sidecar at
- * tests/golden/eprom_params_citations.json, D-14):
- *
- * 1. 0x07 overprogram_factor = 0 -- operator-decided (2026-08-09); this is
- *    behaviour-preserving, since no protocol applies an overprogram pulse
- *    today, and all three 0x07 datasheets read (Winbond W27C512, ST
- *    M27C512, Microchip 27C512A) specify no overprogram.
- * 2. Named, scoped divergence (F-140-05): the 22 Intel-family 1ms parts on
- *    0x07 genuinely want a 3xN margin pulse. Serving them correctly would
- *    require splitting 0x07 into a second row, which this phase's
- *    "no second dispatch key" constraint (TABLE-05) forbids -- recorded
- *    here as a Phase 146 follow-up candidate, never silently dropped.
- * 3. 0x08 overprogram_factor = 0 resolves D-06 from primary datasheets,
- *    agreeing with PROJECT.md's prose and CONTRADICTING PROJECT.md's own
- *    throughput table -- the contradiction is named here, not smoothed.
- *
- * Per-cell attribution (family, representative part, datasheet revision,
- * or the "no datasheet basis -- reasoned from" form) lives in
+ * Per-cell attribution -- family, representative part, datasheet revision, or
+ * an explicit "no datasheet basis" note -- lives in the gate-enforced sidecar
  * tests/golden/eprom_params_citations.json.
+ *
+ * Known divergence, recorded rather than dropped: the 22 Intel-family 1 ms
+ * parts on 0x07 genuinely want a 3xN margin pulse. Serving them would need a
+ * second 0x07 row, which the table's no-second-dispatch-key rule forbids.
  */
 static const eprom_params_t EPROM_PARAMS[] PROGMEM = {
     /* 0x07 PROTO_EPROM_28PIN */ { 75000UL, 0UL,     25,  0, VERIFY_PER_PULSE_PLUS_FINAL, VPP_PATH_DROP_RESISTOR },
@@ -58,5 +39,5 @@ const eprom_params_t* eprom_params_for(uint32_t protocol) {
             return &EPROM_PARAMS[i];
         }
     }
-    return NULL; /* D-05: fail closed, zero hardware side effects -- never &EPROM_PARAMS[0] */
+    return NULL; /* Fail closed: a null pointer with zero hardware side effects, never &EPROM_PARAMS[0]. */
 }

@@ -4,8 +4,8 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 12 Wave 1 — host stub TU for the test_dispatch suite.
- * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
+ * host stub TU for the test_dispatch suite.
+ * WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * Compiling firmware sources (src/proms/*.cpp) on platform = native leaves
  * the linker hungry for hardware-side symbols defined in the AVR-only TUs

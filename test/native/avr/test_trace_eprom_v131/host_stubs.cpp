@@ -4,9 +4,9 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 138 Plan 03 (PREP-03 / D-01 / D-02 / D-04) — host stub TU for the
+ * (PREP-03 / D-01 / D-02 / D-04) — host stub TU for the
  * test_trace_eprom_v131 suite.
- * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
+ * WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * Suite-specific extensions:
  *   - HOST_STUBS_REAL_REGISTER_UTILS: the SECOND, independent opt-in
@@ -92,7 +92,7 @@ extern "C" void reset_register_cache(uint8_t lsb, uint8_t msb, rurp_register_t c
     control_register = ctrl;
 }
 
-/* Task 3: stateful, index-keyed read-back model. Without this, the default
+/* stateful, index-keyed read-back model. Without this, the default
  * stub returns 0 for every read, so any non-zero target byte in the
  * synthetic block never verifies -- eprom_write_execute runs all
  * NUMBER_OF_RETRIES=20 passes and the strobe recorder overflows on an 8-byte

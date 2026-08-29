@@ -19,7 +19,7 @@ uint8_t rurp_map_ctrl_reg_for_hardware_revision(rurp_register_t data) {
     case REVISION_2_0:
     case REVISION_2_1:
     case REVISION_2_2:
-    case REVISION_2_3:  // <-- NEW (D-07 — ctrl-reg layout identical to REV_2_x per §4 row 6)
+    case REVISION_2_3:  // ctrl-reg layout identical to REV_2_x
         ctrl_reg = data & (CTRL_VPP_A9_ENABLE | CTRL_VPE_ENABLE | CTRL_VPP_P1_ENABLE | CTRL_ADDRESS_LINE_17 | CTRL_READ_WRITE | CTRL_VPP_REGULATOR_ENABLE);
         ctrl_reg |= data & CTRL_VPP_VPE_DROP_ENABLE ? CTRL_VPP_VPE_DROP_ENABLE_REV2 : 0;
         ctrl_reg |= data & CTRL_ADDRESS_LINE_16 ? CTRL_ADDRESS_LINE_16_REV2 : 0;
@@ -33,7 +33,7 @@ uint8_t rurp_map_ctrl_reg_for_hardware_revision(rurp_register_t data) {
     default:
         // REVISION_UNKNOWN + any unrecognized byte fall through to ctrl_reg = 0
         // (fail-safe — no VPP enables, no VPE enables; EEPROM override is the
-        // operator escape hatch per RESEARCH §Caller Audit row 3).
+        // operator escape hatch).
         break;
     }
 
@@ -47,9 +47,8 @@ uint8_t rurp_get_physical_hardware_revision() {
 // 8-sample averaging on a single ADC pin — pure shift-divide, no library call.
 // Robustifies the A3 detect-divider read against AVcc switching noise (the
 // RURP shield's AVcc plane carries data-buffer + control-register switching
-// loads — not a quiet ADC reference). See Phase 34 RESEARCH §ADC Voltage Band
-// Math + §8-Sample Averaging Recommendation. ~104 µs added boot latency,
-// ~30 B added Flash — well within the D-10 [20, 300] B delta band.
+// loads — not a quiet ADC reference). ~104 µs added boot latency,
+// ~30 B added Flash — well within the [20, 300] B delta band.
 static uint16_t analog_read_avg8(uint8_t pin) {
     uint16_t sum = 0;
     for (uint8_t i = 0; i < 8; i++) {
@@ -59,17 +58,17 @@ static uint16_t analog_read_avg8(uint8_t pin) {
 }
 
 void rurp_detect_hardware_revision() {
-    // CR-01/CR-01b (Phase 35 D-01): both ADC pins INPUT (high-Z); let the R41+R_top divider drive A3 per RESEARCH §ADC Voltage Band Math.
+    // Both ADC pins INPUT (high-Z); let the R41+R_top divider drive A3.
     pinMode(PIN_HW_REVISION_DETECT_ADC, INPUT);
     pinMode(PIN_VPP_VOLTAGE_ADC, INPUT);
 
     // 8-sample averaging on the A3 detect divider to robustify against AVcc
-    // switching noise (see Phase 34 RESEARCH §ADC Voltage Band Math).
+    // switching noise.
     uint16_t adc_a3 = analog_read_avg8(PIN_HW_REVISION_DETECT_ADC);
 
     if (adc_a3 < ADC_BAND_R41_4K7_HIGH) {
         // Rev 2.0/2.1/2.2 with R41=4k7 — reports as REVISION_2_0 (broad bucket
-        // per D-04; operator distinguishes 2.1/2.2 via EEPROM hw_revision
+        // operator distinguishes 2.1/2.2 via EEPROM hw_revision
         // override if needed).
         revision = REVISION_2_0;
     } else if (adc_a3 >= ADC_BAND_R41_10K_LOW && adc_a3 < ADC_BAND_R41_10K_HIGH) {
@@ -78,20 +77,19 @@ void rurp_detect_hardware_revision() {
     } else if (adc_a3 >= ADC_BAND_R41_10K_HIGH) {
         // High band — no R41 (pre-detect-resistor era). Disambiguate Rev 0 vs
         // Rev 1 via the legacy A2 divider check (preserved from prior code —
-        // already correct, already shipped per D-06).
+        // already correct, already shipped).
         revision = analogRead(PIN_VPP_VOLTAGE_ADC) < 1000 ? REVISION_1 : REVISION_0;
     } else {
         // adc_a3 in the [ADC_BAND_R41_4K7_HIGH, ADC_BAND_R41_10K_LOW) guard gap —
         // physical detect inconclusive. EEPROM hw_revision override is the
         // escape hatch. 0xFE NOT 0xFF — 0xFF stays reserved as the
-        // EEPROM-override-absent sentinel per D-07.
+        // EEPROM-override-absent sentinel.
         revision = REVISION_UNKNOWN;
     }
 
-    // CR-02 hard-fail-loud (Phase 35 D-02 — Path b planner-final)
-    // One-shot boot-time warn surfaces detect-inconclusive; dispatcher silent
-    // ctrl_reg=0 fail-safe + EEPROM override escape hatch both preserved per
-    // RESEARCH §Caller Audit. Re-uses MSG_INFO_HW (0x5B) per Phase 34 D-09 lock.
+    // Hard-fail-loud: a one-shot boot-time warn surfaces detect-inconclusive;
+    // the dispatcher's silent ctrl_reg=0 fail-safe and the EEPROM override
+    // escape hatch are both preserved. Re-uses MSG_INFO_HW (0x5B).
     if (revision == REVISION_UNKNOWN && rurp_get_config()->hardware_revision == 0xFF) {
         LOG_WARN_ID_U8(MSG_INFO_HW, (uint8_t)REVISION_UNKNOWN);
     }

@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 140 Plan 04 (TABLE-03, TABLE-01) -- exercises, by a running test, the
+ * (TABLE-03, TABLE-01) -- exercises, by a running test, the
  * one property no bench run in Phase 145 can ever cover: F-140-04 measured
  * that 0 of the 329 shipped 27C chips yield pulse_delay == 0, so
  * configure_eprom's pulse_delay == 0 fallback switch (src/proms/eprom.cpp:

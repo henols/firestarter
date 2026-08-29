@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 64 — dispatch unit tests for configure_not_implemented() and
+ * dispatch unit tests for configure_not_implemented() and
  * fail-closed dispatch arms.
  *
  * Tests assert RESPONSE_CODE_ERROR and all-three-NULL op pointers (unlike

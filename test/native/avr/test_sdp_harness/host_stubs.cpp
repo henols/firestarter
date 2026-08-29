@@ -4,9 +4,9 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 116 Plan 05 — host stub TU for the always-green test_sdp_harness suite
+ * host stub TU for the always-green test_sdp_harness suite
  * (TRACE-01 / TRACE-03 / TRACE-04, D-03/D-05/D-06/D-07).
- * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
+ * WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * Suite-specific extensions:
  *   - HOST_STUBS_REAL_REGISTER_UTILS: activate the SECOND, independent opt-in

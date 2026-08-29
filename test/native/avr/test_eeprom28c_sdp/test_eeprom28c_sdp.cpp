@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 116 Plan 06 authored this suite PARKED and RED-by-design
+ * authored this suite PARKED and RED-by-design
  * (v1.22 Phase 116 Plan 06, TRACE-02/TRACE-04/TRACE-06). As of v1.22 Phase
  * 117 commit 1 (D-03), the suite is ENABLED in platformio.ini's
  * [env:native] test_filter and runs under `pio test -e native`.
@@ -18,7 +18,7 @@
  * 1 — D-03)". It is GREEN from commit 2 onward, once plan 117-02 lands the
  * production fix.
  *
- * Phase 116's D-01 claimed that this suite's one-line test_filter addition
+ * D-01 claimed that this suite's one-line test_filter addition
  * would itself BE the whole RED-to-GREEN proof. That did not hold
  * (117-CONTEXT.md D-01/D-02/D-03 supersede it): two structural conflicts
  * would have kept the suite RED post-fix for reasons unrelated to the fix —
@@ -97,7 +97,7 @@ using namespace fakeit;
  * itself writes address 0 (mem_util_set_address(handle, 0), memory.cpp:68). */
 extern "C" void reset_register_cache(uint8_t lsb, uint8_t msb, rurp_register_t ctrl);
 
-/* Plan 118-05 (D-08 constraint 1): EEPROM_SDP_DISABLE is the PRODUCTION
+/* (D-08 constraint 1): EEPROM_SDP_DISABLE is the PRODUCTION
  * command table (external linkage granted at eeprom_28c.cpp:122, FIX-05
  * precedent -- test_sdp_harness.cpp:48 declares the identical extern).
  * Case 9's payload-byte-absence walk reads this exact array, never a
@@ -127,7 +127,7 @@ static int      s_reads_at_poll_addr;
  * completion poll can never conclude. Reset false in setUp(). */
 static bool     s_poll_addr_toggles;
 
-/* Plan 119-05 Task 1: the tick source is now a SCRIPTED QUEUE, replacing the
+/* the tick source is now a SCRIPTED QUEUE, replacing the
  * two-slot parity alternator (indexed by call count modulo 2) that served
  * through Plan 118-05. RETIREMENT REASON: D-16's per-byte page-load tracker
  * (Plan 119-08) adds micros() calls INSIDE eeprom28c_write_execute, so any
@@ -169,7 +169,7 @@ static void sdp_script_micros(const std::vector<uint32_t>& ticks, uint32_t tail 
     s_micros_tail = tail;
 }
 
-/* Plan 118-05 Task 2 (D-07 scope discipline): a PER-CASE Serial-frame
+/* (D-07 scope discipline): a PER-CASE Serial-frame
  * capture, reusing test_rurp_log_id.cpp:59-63's existing AlwaysDo idiom
  * verbatim (accumulate every Serial.write(uint8_t) byte into a host
  * std::vector). This is NOT the general-purpose serial-frame baseline
@@ -212,7 +212,7 @@ static bool sdp_ids_contains(const std::vector<uint8_t>& ids, uint8_t id) {
     return false;
 }
 
-/* Plan 119-08 Task 2: decodes the u32 parameter of the FIRST captured frame
+/* decodes the u32 parameter of the FIRST captured frame
  * whose id byte matches `target_id`, walking captured_frames with the SAME
  * documented wire layout sdp_captured_frame_ids uses above (4-byte magic,
  * 2-byte big-endian length, 1 id byte, params, 1 crc byte, 1 anchor byte).
@@ -250,7 +250,7 @@ static bool sdp_decode_u32_param_for_id(uint8_t target_id, uint32_t* out_value) 
 
 void setUp(void) {
     ArduinoFakeReset();
-    /* Plan 118-05 Task 2: was AlwaysReturn(1) through Plan 118-04. Switched to
+    /* was AlwaysReturn(1) through Plan 118-04. Switched to
      * AlwaysDo so every byte is ALSO captured into captured_frames -- this is
      * additive/behaviourally-transparent to every existing case (none of
      * cases 1-8 ever inspects captured_frames), confirmed by re-running all
@@ -309,7 +309,7 @@ void tearDown(void) {}
  * Handle + drive helpers
  * ───────────────────────────────────────────────────────────────────────── */
 
-/* Plan 118-05 (D-08): extra_flags defaults to 0, so every one of cases 1-8's
+/* (D-08): extra_flags defaults to 0, so every one of cases 1-8's
  * existing make_sdp_handle(row) call sites is byte-for-byte unaffected --
  * no signature churn at those eight sites. Cases 9 and 10 pass
  * FLAG_SKIP_SDP_UNLOCK or 0 respectively, from this SAME factory and the
@@ -460,7 +460,7 @@ static rurp_register_t drive_write_init_after_real_read(firestarter_handle_t* h,
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Plan 119-05 Task 2/3 — driving the PRODUCTION lock op (CMD_SDP_LOCK)
+ * driving the PRODUCTION lock op (CMD_SDP_LOCK)
  * ───────────────────────────────────────────────────────────────────────── */
 
 /* Builds a handle for the lock op: CMD_SDP_LOCK, chip_id 0 (no identity
@@ -478,7 +478,7 @@ static firestarter_handle_t make_lock_handle(const sdp_bus_config_row_t& row) {
     return h;
 }
 
-/* Plan 153-04 (ERASE-03/ERASE-04): builds a handle for the erase op --
+/* (ERASE-03/ERASE-04): builds a handle for the erase op --
  * CMD_ERASE, chip_id 0 (no identity gate -- eeprom28c_erase_execute has
  * none, since init/end are NULL for this cmd and configure_eeprom28c only
  * ever sets `main`). Identical to make_lock_handle above except cmd. */
@@ -506,7 +506,7 @@ static void drive_lock_op(firestarter_handle_t* h, rurp_register_t ctrl_seed) {
     h->firestarter_operation_main(h);
 }
 
-/* Plan 153-04 (ERASE-04): drives the REAL eeprom28c_erase_execute (via
+/* (ERASE-04): drives the REAL eeprom28c_erase_execute (via
  * configure_memory dispatch on CMD_ERASE), following the same load-bearing
  * order as drive_write_init/drive_lock_op above -- configure_memory, THEN
  * reassign get_data, THEN reset_register_cache, THEN clear_strobes, THEN the
@@ -787,7 +787,18 @@ void test_case6_matching_chip_id_proceeds(void) {
  * moves it here. Do NOT weaken this assertion to make it pass today -- the
  * force/severity fork is exactly what the v1.16 Phase-89 CR-01 regression
  * slipped through (see .planning memory
- * reference_golden_trace_misses_severity_fork.md). */
+ * reference_golden_trace_misses_severity_fork.md).
+ *
+ * Before this plan, the two chip-ID mismatch ids -- MSG_WARN_CHIP_ID_MISMATCH
+ * and MSG_ERR_CHIP_ID_MISMATCH -- appeared in ZERO test files anywhere in
+ * this tree, so severity (which rides entirely in the id, not the
+ * response_code) had no oracle at all. The response_code legs above and the
+ * id legs below are complementary, not redundant: LOG_WARN_ID_BYTES
+ * (include/logging_id.h:119) and LOG_ERROR_ID_BYTES
+ * (include/logging_id.h:110) are the SAME alias of LOG_ID_BYTES, so a
+ * transposed id ships the wrong severity on the wire even when
+ * response_code still reads correctly -- neither leg can see the other's
+ * transposition. */
 void test_case7_mismatching_chip_id_with_force_warns(void) {
     s_mfr_addr_keyed = 32768 - 64;
     s_mfr_hi_keyed = 0xDE;
@@ -803,6 +814,52 @@ void test_case7_mismatching_chip_id_with_force_warns(void) {
     TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
         "migrated (RED, CORRECTION 2): mismatching identity + FLAG_FORCE must WARN, not have its "
         "severity destroyed by the unconditional SDP-disable completion wait");
+
+    /* WARN direction, by id: severity rides entirely in the id, so this leg
+     * is what a transposed (MSG_WARN_CHIP_ID_MISMATCH, MSG_ERR_CHIP_ID_MISMATCH)
+     * swap trips -- the response_code assertion above it structurally cannot
+     * see that transposition. */
+    std::vector<uint8_t> ids;
+    sdp_captured_frame_ids(&ids);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_WARN_CHIP_ID_MISMATCH),
+        "Case 7 (chip-ID severity fork, WARN direction): MSG_WARN_CHIP_ID_MISMATCH must appear in "
+        "the captured frame ids under FLAG_FORCE -- severity rides entirely in the id "
+        "(LOG_WARN_ID_BYTES / LOG_ERROR_ID_BYTES are the same alias of LOG_ID_BYTES), so this leg is "
+        "what a transposed id would trip");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids, (uint8_t)MSG_ERR_CHIP_ID_MISMATCH),
+        "Case 7 (chip-ID severity fork, WARN direction): MSG_ERR_CHIP_ID_MISMATCH must NOT also "
+        "appear under FLAG_FORCE -- this pins the fork in both directions, not just the presence half");
+
+    /* ERROR direction, by id -- Case 11's anti-hollow re-drive shape:
+     * without this second drive, the WARN-direction id assertions above
+     * could pass for a reason unrelated to the flag (e.g. an id that is
+     * always emitted regardless of FLAG_FORCE). Re-driving without the flag
+     * is what proves the id is CONDITIONAL on FLAG_FORCE rather than always
+     * emitted -- an assertion that only ever sees one direction cannot
+     * detect a transposition that swaps both ids at once. */
+    captured_frames.clear();
+    s_mfr_addr_keyed = 32768 - 64;
+    s_mfr_hi_keyed = 0xDE;
+    s_mfr_lo_keyed = 0xAD;
+    firestarter_handle_t h2 = make_identity_handle(0x1F08, 0); /* FLAG_FORCE absent */
+    configure_memory(&h2);
+    h2.firestarter_get_data = mock_get_data_keyed;
+    reset_register_cache(0x00, 0x00, 0x00);
+    clear_strobes();
+    h2.firestarter_operation_init(&h2);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h2.response_code,
+        "Case 7 (chip-ID severity fork, ERROR direction): mismatching identity WITHOUT FLAG_FORCE "
+        "must refuse with RESPONSE_CODE_ERROR");
+    std::vector<uint8_t> ids2;
+    sdp_captured_frame_ids(&ids2);
+    TEST_ASSERT_TRUE_MESSAGE(sdp_ids_contains(ids2, (uint8_t)MSG_ERR_CHIP_ID_MISMATCH),
+        "Case 7 (chip-ID severity fork, ERROR direction): MSG_ERR_CHIP_ID_MISMATCH must appear in "
+        "the captured frame ids without FLAG_FORCE -- this re-drive is what proves the id is "
+        "conditional on the flag rather than always emitted");
+    TEST_ASSERT_FALSE_MESSAGE(sdp_ids_contains(ids2, (uint8_t)MSG_WARN_CHIP_ID_MISMATCH),
+        "Case 7 (chip-ID severity fork, ERROR direction): MSG_WARN_CHIP_ID_MISMATCH must NOT appear "
+        "without FLAG_FORCE -- pins the fork in both directions inside this one case");
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -993,7 +1050,7 @@ void test_case11_tblc_budget_exceeded_warns(void) {
  * OBS-05's serial-channel exception machine-checked instead of prose-only,
  * using the per-case capture declared above -- it does not build the
  * general-purpose recorder D-07 explicitly declined. */
-/* Plan 119-05 Task 1 (re-verified under the scripted micros() queue, no
+/* (re-verified under the scripted micros() queue, no
  * assertion changed): this case drives drive_write_init ONLY -- it never
  * calls eeprom28c_write_execute. That was incidental before the scripted
  * queue existed (the old modulo-2 alternator did not care how many
@@ -1408,7 +1465,7 @@ void test_case23_standalone_unlock_matches_auto_unlock_stream(void) {
  * involved -- this proves the REFUSAL itself, not any one handler's
  * omission), driven through the REAL op_execute_stateful_operation, exactly
  * as every eprom_* entry point does
- * (`return !op_execute_stateful_operation(callback, handle)`). Passing NULL
+ * (`return op_execute_stateful_operation(callback, handle)`). Passing NULL
  * for the callback parameter is safe: the NULL-main guard at
  * operation_utils.cpp:63 short-circuits before the callback is ever
  * touched. */
@@ -1421,12 +1478,12 @@ void test_case24_null_main_refusal_emits_not_supported_and_error_response(void) 
     h.firestarter_operation_init = NULL;
     h.firestarter_operation_end = NULL;
 
-    bool still_in_progress = op_execute_stateful_operation(NULL, &h);
+    bool finished = op_execute_stateful_operation(NULL, &h);
 
-    TEST_ASSERT_FALSE_MESSAGE(still_in_progress,
-        "Case 24 (D-06/D-07): op_execute_stateful_operation must return false on a NULL main -- "
-        "every eprom_* caller inverts this return to report the command as finished, unchanged "
-        "semantics from before this task");
+    TEST_ASSERT_TRUE_MESSAGE(finished,
+        "Case 24 (D-06/D-07): op_execute_stateful_operation must return true on a NULL main -- "
+        "the engine now reports finished directly and the nine eprom_* wrappers forward that "
+        "result without inverting it, unchanged observable semantics from before this task");
     TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
         "Case 24 (D-06/D-07): the NULL-main fall-through must now set RESPONSE_CODE_ERROR, "
         "replacing the pre-119-07 silent RESPONSE_CODE_OK phantom success");
@@ -1489,7 +1546,7 @@ static int case25_serial_read() {
  * still calls op_execute_simple_operation directly, not eprom_erase
  * (src/eprom_operations.cpp, an AVR-only TU excluded from [env:native]'s
  * build_src_filter) -- the exact op-layer function eprom_erase's body
- * delegates to (`return !op_execute_simple_operation(handle);`),
+ * delegates to (`return op_execute_simple_operation(handle);`),
  * deliberately bypassing eprom_erase's own EARLIER FLAG_CAN_ERASE
  * precondition check (a different, unrelated refusal) so this case isolates
  * ERASE-03's dispatch arm alone.
@@ -1521,20 +1578,26 @@ void test_case25_cmd_erase_on_0x0d_dispatches_and_succeeds_erase03(void) {
     When(Method(ArduinoFake(Serial), peek)).AlwaysDo(case25_serial_peek);
     When(Method(ArduinoFake(Serial), read)).AlwaysDo(case25_serial_read);
 
-    bool still_in_progress = true;
+    bool finished = false;
     int calls = 0;
     const int MAX_CALLS = 10; /* deterministic trace needs exactly 4; generous margin, not an escape hatch */
-    while (still_in_progress && calls < MAX_CALLS) {
-        still_in_progress = op_execute_simple_operation(&h);
+    while (!finished && calls < MAX_CALLS) {
+        finished = op_execute_simple_operation(&h);
         calls++;
     }
 
-    TEST_ASSERT_FALSE_MESSAGE(still_in_progress,
+    TEST_ASSERT_TRUE_MESSAGE(finished,
         "Case 25 (ERASE-03, mechanism-corrected/intent-satisfied -- never as failed): "
-        "op_execute_simple_operation must reach completion (false) within MAX_CALLS iterations of "
+        "op_execute_simple_operation must reach completion (true) within MAX_CALLS iterations of "
         "the real ACK-gated INIT/MAIN/END state machine -- eprom_erase reports the erase as "
         "finished, the same call-site contract as before this task, now honestly (the erase actually "
         "ran instead of silently doing nothing)");
+    TEST_ASSERT_EQUAL_MESSAGE(4, calls,
+        "Case 25 (ERASE-03): completion must take exactly four engine calls -- the INIT-start "
+        "ack, the MAIN-start ack plus the erase run, the END-start ack, and the final ack that "
+        "flips the all-operations-done message check -- the count this case's own DEVIATION "
+        "comment above documents. Without this assertion the case is vacuous: the un-flipped "
+        "loop was measured exiting after one call while this case still reported PASSED");
     TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_OK, h.response_code,
         "Case 25 (ERASE-03): CMD_ERASE on 0x0D must now report RESPONSE_CODE_OK -- the new dispatch "
         "arm routes to a real operation instead of leaving main NULL for the generic op-layer "
@@ -1774,8 +1837,8 @@ void test_case29_write_execute_report_preserves_response_code(void) {
  * every other case here (which all drive with the flag SET): no blank-check
  * progress allocation, no multi-call INIT loop, and the exact same golden
  * stream. `mem_util_blank_check` is the ONLY setter of
- * is_operation_in_progress on this path (memory.cpp:401-425), so a FALSE
- * result below is the single-shot-INIT proof, not an assumption. */
+ * is_operation_in_progress on this path, so a FALSE result below is the
+ * single-shot-INIT proof, not an assumption. */
 void test_case30_write_init_no_blank_check_with_flag_clear_erase01(void) {
     firestarter_handle_t h = make_sdp_handle_blank_check_enabled(SDP_BUS_CONFIGS[0]); /* AT28C256 */
     drive_write_init(&h, 0x00);
@@ -1785,10 +1848,17 @@ void test_case30_write_init_no_blank_check_with_flag_clear_erase01(void) {
         "eeprom28c_write_init call with FLAG_SKIP_BLANK_CHECK clear -- mem_util_blank_check is "
         "the only setter of this flag on the write-INIT path, so TRUE here would mean the "
         "pre-write blank check still ran and left a multi-call INIT loop pending");
-    TEST_ASSERT_NULL_MESSAGE(h.progress_data,
-        "Case 30 (ERASE-01): h.progress_data must be NULL -- a non-NULL value means "
-        "mem_util_blank_check allocated a blank_check_progress_data_t block, i.e. the "
-        "pre-write blank check still ran");
+    /* The companion "must be NULL" assertion on the removed heap-allocated
+     * handle field is GONE, and so is the field itself: mem_util_blank_check
+     * no longer allocates that block (it keeps its saved address in a
+     * file-scope static in memory.cpp), so there is no allocation left to
+     * observe. This is the loss of a redundant PROBE, not of coverage --
+     * is_operation_in_progress above and the removed allocation used to be
+     * unconditionally adjacent statements in the same then-branch of the
+     * same if, with no intervening control flow, early return or condition,
+     * so a FALSE result there strictly implied the branch -- and therefore
+     * the allocation -- never executed. The behaviour under test is still
+     * pinned by the assertion above. */
     sdp_assert_stream_equals(SDP_FIXED_DIP28_28C256, SDP_FIXED_DIP28_28C256_LEN,
         "Case 30 (ERASE-01): with FLAG_SKIP_BLANK_CHECK clear, the AT28C256/DIP28_28C256 stream "
         "must now be byte-identical to the golden captured with the flag SET -- the D-07 policy "

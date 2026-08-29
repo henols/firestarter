@@ -16,16 +16,9 @@ extern "C" {
 
 uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t address, uint8_t read_write);
 void mem_util_blank_check(firestarter_handle_t* handle);
-/*
- * Debug session w27c512-write-slow-3x: exposed so eprom.cpp's
- * VERIFY_PER_PULSE_PLUS_FINAL arm can CALL the canonical full-block verify
- * instead of carrying a byte-identical copy of it. eprom.cpp's own comment
- * already said its copy "mirrors memory_verify_execute exactly: same
- * MSG_ERR_VERIFY id, same 5-byte payload, same early return" -- this
- * declaration turns that comment into a linkage. Definition stays in
- * src/proms/memory.cpp; it is the CMD_VERIFY operation_main there, so it was
- * already non-static and externally linkable.
- */
+/* Exposed so eprom.cpp's VERIFY_PER_PULSE_PLUS_FINAL arm can CALL the
+ * canonical full-block verify instead of carrying a byte-identical copy.
+ * Defined in src/proms/memory.cpp as the CMD_VERIFY operation_main. */
 void memory_verify_execute(firestarter_handle_t* handle);
 void mem_util_set_address(firestarter_handle_t* handle, uint32_t address);
 rurp_register_t mem_util_calculate_lsb_register(firestarter_handle_t* handle, uint32_t address);
@@ -33,23 +26,37 @@ rurp_register_t mem_util_calculate_msb_register(firestarter_handle_t* handle, ui
 rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* handle, uint32_t address);
 
 /*
- * 32-bit-safe microsecond delay. AVR's delayMicroseconds() takes a 16-bit
- * `unsigned int` and its 16 MHz arm computes `us <<= 2`, which overflows at
- * 16384 -- so the exact accurate ceiling is 16383, and any request above it
- * produces a MUCH SHORTER delay (e.g. 20000 -> ~3615 us), never a longer
- * one. Source: framework-arduino-avr 5.3.0 cores/arduino/wiring.c:120,
- * :167-183. delay() takes an `unsigned long` and is 32-bit safe, so
- * mem_util_delay_us splits a request into whole milliseconds via delay()
- * plus a sub-millisecond remainder via delayMicroseconds().
+ * 32-bit-safe microsecond delay.
  *
- * mem_util_split_delay is exposed here (not made static) so a native test
- * case can assert the split arithmetic directly: the native stubs record
- * no elapsed time, only the arguments passed to the mocked delay /
- * delayMicroseconds calls, so the arithmetic is the only part a test off
- * real hardware can verify.
+ * AVR's delayMicroseconds() takes a 16-bit unsigned int and its 16 MHz arm
+ * computes `us <<= 2`, which overflows at 16384 -- so the accurate ceiling is
+ * 16383, and any request above it produces a MUCH SHORTER delay (20000 ->
+ * ~3615 us), never a longer one. [framework-arduino-avr 5.3.0
+ * cores/arduino/wiring.c]
+ *
+ * So this splits a request into whole milliseconds via delay(), which is
+ * 32-bit safe, plus a sub-millisecond remainder via delayMicroseconds().
  */
 void mem_util_split_delay(uint32_t us, uint32_t* out_ms, uint16_t* out_us);
 void mem_util_delay_us(uint32_t us);
+
+/* Shared VPP-mismatch report. Defined in src/proms/memory.cpp.
+ *
+ * The parameter widths are part of the contract: both are uint16_t so `(x+50)`
+ * promotes to 16-bit on AVR and the division stays on __udivmodhi4. Do not
+ * widen either. */
+void mem_util_report_voltage(firestarter_handle_t* handle, uint16_t measured_mv,
+                              uint16_t expected_mv, uint8_t msg_id, uint8_t response_code);
+
+/*
+ * Retires four chip-ID mismatch blocks across four translation units
+ * (flash_utils.cpp, flash_intel.cpp, eprom.cpp, eeprom_28c.cpp). Definition
+ * lives in src/proms/memory.cpp. warn_only is a parameter, not an internal
+ * is_flag_set(FLAG_FORCE) check, because eprom.cpp's standalone
+ * CMD_CHECK_CHIP_ID path must keep refusing unconditionally regardless of
+ * --force -- do not fold the force test into this helper.
+ */
+void mem_util_report_chip_id(firestarter_handle_t* handle, uint16_t actual, bool warn_only);
 
 static inline bool using_p1_as_vpp(const firestarter_handle_t* handle) {
     return (handle->pins == 32 && handle->bus_config.vpp_line == VPP_P1_32_DIP) ||

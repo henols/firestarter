@@ -17,18 +17,18 @@ static inline bool _process_incoming_data(firestarter_handle_t* handle);
 static inline bool _process_outgoing_data(firestarter_handle_t* handle);
 
 bool eprom_read(firestarter_handle_t* handle) {
-    return !op_execute_stateful_operation(_process_outgoing_data, handle);
+    return op_execute_stateful_operation(_process_outgoing_data, handle);
 }
 
 bool eprom_write(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_WRITE_EPROM);
-    return !op_execute_stateful_operation(_process_incoming_data, handle);
+    return op_execute_stateful_operation(_process_incoming_data, handle);
 }
 
 // Return true if the operation is done, otherwise false
 bool eprom_verify(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_VERIFY_PROM);
-    return !op_execute_stateful_operation(_process_incoming_data, handle);
+    return op_execute_stateful_operation(_process_incoming_data, handle);
 }
 
 bool eprom_erase(firestarter_handle_t* handle) {
@@ -37,7 +37,7 @@ bool eprom_erase(firestarter_handle_t* handle) {
         LOG_ERROR_ID(MSG_ERR_NOT_SUPPORTED);
         return true;
     }
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 bool eprom_check_chip_id(firestarter_handle_t* handle) {
@@ -46,44 +46,40 @@ bool eprom_check_chip_id(firestarter_handle_t* handle) {
         LOG_ERROR_ID(MSG_ERR_NO_CHIP_ID);
         return true;
     }
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 bool eprom_blank_check(firestarter_handle_t* handle) {
     LOG_DEBUG_ID_SUB(DBG_BLANK_CHECK_PROM);
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
-// LOCK-01/LOCK-02: standalone entry points for CMD_SDP_UNLOCK / CMD_SDP_LOCK
+// Standalone entry points for CMD_SDP_UNLOCK / CMD_SDP_LOCK
 // (0x0D-only ops; configure_eeprom28c sets firestarter_operation_main to
 // eeprom28c_sdp_unlock_execute / eeprom28c_sdp_lock_execute). Deliberately no
 // LOG_DEBUG_ID_SUB line here -- eprom_read has none either, and adding one
 // would require a new DBG_* catalog id this phase does not need.
 // Deliberately no precondition check -- eprom_erase's FLAG_CAN_ERASE test has
-// no SDP analogue; D-06's op-layer NULL-main guard (Plan 119-07) is what
-// refuses these commands on a protocol whose handler set no main. Each body
-// is exactly op_execute_simple_operation's single-step shape; op_execute_
-// simple_operation returns true when FINISHED, so the `!` inversion here is
-// load-bearing (mirrors eprom_erase/eprom_blank_check above).
+// no SDP analogue; the op-layer NULL-main guard is what
+// refuses these commands on a protocol whose handler set no main.
 bool eprom_sdp_unlock(firestarter_handle_t* handle) {
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 bool eprom_sdp_lock(firestarter_handle_t* handle) {
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
-// Phase 151 (LOCK-02): CMD_LOCK_STATUS entry point, in eprom_blank_check's
+// CMD_LOCK_STATUS entry point, in eprom_blank_check's
 // single-step shape above -- but deliberately WITHOUT a LOG_DEBUG_ID_SUB
-// line. Per 151-DESIGN.md §7: CMD_LOCK_STATUS (16) is numerically greater
+// line. CMD_LOCK_STATUS (16) is numerically greater
 // than CMD_READ_VPP (11), so it falls outside the second, independent
-// diagnostic-ordinal range at firestarter.cpp:136-146 (unchanged by this
-// phase) and this command emits none of that range's three DBG_* lines.
-// Adding a DBG_* call here would need a new [debug] catalog entry this
-// phase deliberately does not mint -- a chosen consequence, not an
-// oversight.
+// diagnostic-ordinal range in firestarter.cpp, and this command emits none
+// of that range's three DBG_* lines.
+// Adding a DBG_* call here would need a new [debug] catalog entry that is
+// deliberately not minted -- a chosen consequence, not an oversight.
 bool eprom_lock_status(firestarter_handle_t* handle) {
-    return !op_execute_simple_operation(handle);
+    return op_execute_simple_operation(handle);
 }
 
 // Returns true on success/continue, false on error.
@@ -103,17 +99,16 @@ static inline bool _process_incoming_data(firestarter_handle_t* handle) {
     if (msg_type == OP_MSG_INCOMPLETE) {
         // No message from host. If we are not already waiting for data, request it.
         if (!is_operation_waiting_for_data(handle)) {
-            // Phase 143 Plan 05 (HOST-02, D-06): on leonardo the firmware now
-            // emits MSG_DATA_PROGRESS from inside the per-byte program loop
-            // (src/proms/eprom.cpp), so the host's progress bar can reflect
-            // bytes actually programmed rather than only bytes handed to the
-            // firmware at each chunk request below. On SERIAL_ON_IO targets
-            // (uno/uno328pb) that emission is compiled out (BF-2), so the
-            // host's own chunk-handoff bar -- driven by this MSG_OK_REQ_DATA
-            // request/response cadence -- remains the only progress source
-            // there. D-06's non-claim, restated: intra-block write progress
-            // is emitted on the EPROM path only, and delivered on leonardo
-            // only.
+            // On leonardo the firmware emits MSG_DATA_PROGRESS from inside the
+            // per-byte program loop (src/proms/eprom.cpp), so the host's
+            // progress bar can reflect bytes actually programmed rather than
+            // only bytes handed to the firmware at each chunk request below.
+            // On SERIAL_ON_IO targets (uno/uno328pb) that emission is compiled
+            // out, so the host's own chunk-handoff bar -- driven by this
+            // MSG_OK_REQ_DATA request/response cadence -- remains the only
+            // progress source there. The non-claim, restated: intra-block
+            // write progress is emitted on the EPROM path only, and delivered
+            // on leonardo only.
             LOG_OK_ID(MSG_OK_REQ_DATA);
             set_operation_waiting_for_data(handle);
         }
@@ -154,7 +149,7 @@ static inline bool _process_outgoing_data(firestarter_handle_t* handle) {
         return false;  // Error, so finished.
     }
 
-    // Phase 8 W-04: wrap the raw chip-byte chunk in a MSG_DATA_CHUNK ID frame.
+    // Wrap the raw chip-byte chunk in a MSG_DATA_CHUNK ID frame.
     // MSG_DATA_SENDING signals the start of the batch (host may see this before
     // the first chunk). Then the actual data follows as a framed MSG_DATA_CHUNK.
     LOG_DATA_ID(MSG_DATA_SENDING);

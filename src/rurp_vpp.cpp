@@ -8,9 +8,9 @@
 #include "rurp_vpp.h"
 
 /*
- * Phase 125 (VPP-01, VPP-02, D-02/D-11) -- the VPP control capability
+ * The VPP control capability
  * seam's implementation. Dependency-free by construction: the only include
- * is rurp_vpp.h itself. Zero production callers this phase (D-11) -- these
+ * is rurp_vpp.h itself. Zero production callers today -- these
  * three bodies exist so the seam compiles and its guards can be proven to
  * fire; nothing under src/ or platform/ calls them yet.
  *

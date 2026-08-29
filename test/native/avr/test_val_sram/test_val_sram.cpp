@@ -4,13 +4,13 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 71 Plan 04 — Tier-1 validation suite for the SRAM family.
+ * Tier-1 validation suite for the SRAM family.
  * HARN-01 / D-07 / T-71-SRAM-FALSE / Pitfall 2 (from 71-RESEARCH.md).
  *
  * Documents the CURRENT SRAM no-op state (sram.cpp:15-17 is a one-liner with
  * no function-pointer wiring). This is a GREEN baseline for Phase 71.
  *
- * Phase 74 FIX-01 will change this suite: once VAL-06 (Phase 73) resolves
+ * FIX-01 will change this suite: once VAL-06 (Phase 73) resolves
  * whether SRAM should perform register writes, the assertions here will be
  * updated. Until then:
  *   - configure_sram itself records ZERO register writes (pure no-op).
@@ -74,11 +74,11 @@ static firestarter_handle_t make_handle(uint32_t protocol, uint8_t cmd) {
  * These tests call configure_sram standalone (no configure_memory overhead).
  * configure_sram is sram.cpp:15-17: LOG_DEBUG_ID_SUB(DBG_CONFIGURING_SRAM) —
  * a single LOG call with NO rurp_write_to_register calls.
- * Phase 74 FIX-01 will update these GREEN tests when VAL-06 is resolved. */
+ * FIX-01 will update these GREEN tests when VAL-06 is resolved. */
 
 void test_sram_handler_direct_0x0E_records_zero_writes(void) {
     /* configure_sram is currently a no-op (sram.cpp:15-17) — assert zero writes.
-     * Phase 74 FIX-01 will change this; until then GREEN = confirmed no-op. */
+     * FIX-01 will change this; until then GREEN = confirmed no-op. */
     firestarter_handle_t h = make_handle(0x0E, CMD_READ);
     h.firestarter_set_control_register = NULL; /* not needed for direct test */
     configure_sram(&h);

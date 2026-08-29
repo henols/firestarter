@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 1 Plan 01-01 — SAF-04 / SAF-06 Unity tests for flash_intel_write_init
+ * SAF-04 / SAF-06 Unity tests for flash_intel_write_init
  * VPP pre-pulse safety check.
  *
  * Five test cases exercise the flash_intel_check_vpp static helper (added in

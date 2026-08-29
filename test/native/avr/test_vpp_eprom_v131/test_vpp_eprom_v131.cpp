@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 142 (VPP-01..VPP-04, D-14) -- the suite skeleton for the EPROM
+ * (VPP-01..VPP-04, D-14) -- the suite skeleton for the EPROM
  * high-voltage-routing and VPP-validation oracle: setUp/tearDown hooks
  * wiring all four host_stubs.cpp recorder/mock layers, a
  * make_vpp_handle/drive_vpp_init/drive_vpp_write contract for plans 142-03/
@@ -17,7 +17,7 @@
  * (VPP-01..04) is landed by plans 142-03/142-05/142-06 and recorded by
  * 142-07, after every piece of evidence exists.
  *
- * Plans 142-03, 142-05 and 142-06 EXTEND this same file (see their own
+ * EXTEND this same file (see their own
  * files_modified) rather than creating a new one -- so every symbol,
  * constant and helper below is authored as a fixed, reusable contract, not
  * a plan-142-01-only convenience. This mirrors the test_loop_eprom_v131.cpp
@@ -431,7 +431,7 @@ void test_setup_leaves_the_harness_clean_and_the_composites_correct(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Plan 142-02 Task 1 (VPP-01): the (pins, revision) preserve-mask truth
+ * (VPP-01): the (pins, revision) preserve-mask truth
  * table, and the 32-pin non-EPROM no-leak / byte-identity baseline.
  *
  * D-01: the `handle->pins < 32` exclusion in
@@ -597,7 +597,7 @@ void test_vpp01_dip32_nonEprom_0x10_route_is_byte_identical_before_and_after(voi
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Plan 142-03 Task 1 (VPP-04, D-13/D-15) -- the over-voltage refusal gate
+ * (VPP-04, D-13/D-15) -- the over-voltage refusal gate
  * VPP-04's own wording presumed already existed for the EPROM path.
  * Confirmed false by grep (D-13): MSG_ERR_VPP_HIGH and MSG_WARN_VPP_HIGH
  * appear in NO test anywhere under test/ or tests/ before this plan.
@@ -749,7 +749,88 @@ void test_vpp04_d_in_range_reading_fires_neither_error_nor_warning(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Plan 142-03 Task 2 (VPP-03, RESEARCH assumption A3) -- pre-rewrite
+ * The under-voltage severity pairing.
+ * Before this case, nothing anywhere asserted that MSG_WARN_VPP_LOW is
+ * emitted or that it carries RESPONSE_CODE_WARNING -- the only prior
+ * reference to MSG_WARN_VPP_LOW in this whole tree was the negative leg in
+ * test_vpp04_d above (asserting it is ABSENT on an in-range reading).
+ * Severity rides ENTIRELY in the message id here: LOG_WARN_ID_BYTES
+ * (include/logging_id.h:119) and LOG_ERROR_ID_BYTES (include/logging_id.h:110)
+ * are the SAME alias of LOG_ID_BYTES, so the response_code assertion below
+ * structurally cannot see a transposed id, and the id assertions cannot see
+ * a swapped response_code -- the pair together is the oracle, neither half
+ * alone. This suite runs only under native_loop_v131, whose own
+ * platformio.ini comment says NO CI COVERAGE, so this case is a local-run
+ * obligation, not CI-visible evidence.
+ * ───────────────────────────────────────────────────────────────────────── */
+void test_vpp04_e_undervoltage_warning_pairing_fires_by_id_with_payload_shape(void) {
+    rurp_get_config()->hardware_revision = REVISION_2_2;  /* mandatory: on
+        REVISION_0 eprom_check_vpp takes the early return at eprom.cpp:334-338
+        and never reaches the under-voltage compare at all. */
+    firestarter_handle_t h = make_vpp_handle(0x07, 28, 65536, 100, 13000, 0, VPP_BUS_CONFIG_0x07);
+    /* 12349 is one mV inside the under-voltage boundary: the arm fires when
+     * vpp_mv < handle->vpp_mv * 95 / 100, and with setpoint 13000 that
+     * threshold is 13000 * 95 / 100 == 12350, so 12349 fires and 12350 would
+     * not -- pins the boundary, not a wildly out-of-range value. */
+    set_mock_vpp_mv(12349);
+    drive_vpp_init(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
+        "an injected 12349 mV reading (setpoint 13000, boundary 12350) must warn with RESPONSE_CODE_WARNING");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_WARN_VPP_LOW),
+        "MSG_WARN_VPP_LOW (0x81) must be logged exactly once, BY ID -- no test in this tree asserted "
+        "this positively before this plan");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_VPP_HIGH),
+        "the under-voltage WARN fork must NOT also log the over-voltage ERROR id -- this is what a "
+        "transposed (MSG_WARN_VPP_LOW, RESPONSE_CODE_WARNING) pair trips");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_WARN_VPP_HIGH),
+        "the under-voltage WARN fork must NOT also log the over-voltage WARN id -- the other half of "
+        "what a transposed pair trips");
+    int idx = find_logged_id(MSG_WARN_VPP_LOW);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_WARN_VPP_LOW must actually be present in the logged-id stream");
+    TEST_ASSERT_EQUAL_MESSAGE(8, logged_id_param_count(idx),
+        "the WARN frame must carry the 8 payload bytes eprom.cpp's under-voltage arm (LOG_WARN_ID_BYTES) emits");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * The flash_intel.cpp twin of the under-voltage severity pairing above.
+ * Reading drive_vpp_init and configure_memory suggested
+ * flash_intel_write_init's own VPP check is reachable from this suite
+ * (protocol 0x10 routes configure_memory -> configure_flash_intel ->
+ * flash_intel_write_init for CMD_WRITE, and drive_vpp_init drives exactly
+ * that init path). Reached successfully -- see the SUMMARY for the full
+ * record. FLAG_SKIP_BLANK_CHECK in the ctrl_flags slot is load-bearing:
+ * without it flash_intel_write_init continues past the VPP check into
+ * mem_util_blank_check, which needs data mocks this case does not set and
+ * can overwrite response_code. chip_id left at 0 (make_vpp_handle's default)
+ * skips flash_intel_check_chip_id for the same reason.
+ * ───────────────────────────────────────────────────────────────────────── */
+void test_vpp04_f_flash_intel_undervoltage_warning_pairing(void) {
+    rurp_get_config()->hardware_revision = REVISION_2_2;  /* this file's own
+        REVISION_0 early return applies to flash_intel_check_vpp too. */
+    firestarter_handle_t h = make_vpp_handle(0x10, 32, 262144, 100, 12000, FLAG_SKIP_BLANK_CHECK, VPP_BUS_CONFIG_0x08);
+    /* 11399 is one mV inside the 12000 * 95 / 100 == 11400 boundary. */
+    set_mock_vpp_mv(11399);
+    drive_vpp_init(&h);
+
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_WARNING, h.response_code,
+        "an injected 11399 mV reading (setpoint 12000, boundary 11400) must warn with RESPONSE_CODE_WARNING");
+    TEST_ASSERT_EQUAL_MESSAGE(1, count_logged_id(MSG_WARN_VPP_LOW),
+        "MSG_WARN_VPP_LOW (0x81) must be logged exactly once, BY ID, on the flash_intel.cpp twin of the "
+        "eprom.cpp under-voltage arm -- this narrows coverage ceiling 2, it does not remove it: the "
+        "over-voltage arm and the rest of the flash_intel.cpp VPP path stay uncovered");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_ERR_VPP_HIGH),
+        "the under-voltage WARN fork must NOT also log the over-voltage ERROR id");
+    TEST_ASSERT_EQUAL_MESSAGE(0, count_logged_id(MSG_WARN_VPP_HIGH),
+        "the under-voltage WARN fork must NOT also log the over-voltage WARN id");
+    int idx = find_logged_id(MSG_WARN_VPP_LOW);
+    TEST_ASSERT_TRUE_MESSAGE(idx >= 0, "MSG_WARN_VPP_LOW must actually be present in the logged-id stream");
+    TEST_ASSERT_EQUAL_MESSAGE(8, logged_id_param_count(idx),
+        "the WARN frame must carry the 8 payload bytes flash_intel_check_vpp's under-voltage arm (LOG_WARN_ID_BYTES) emits");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * (VPP-03, RESEARCH assumption A3) -- pre-rewrite
  * CMD_ERASE / CMD_CHECK_CHIP_ID control-value baselines. NOT feature tests:
  * they exist so plan 142-04's conversion of the hand-rolled disables at
  * eprom.cpp:174/:327/:393/:409 into EPROM_HV_ALL_OFF_MASK is a MEASURED
@@ -913,7 +994,7 @@ void test_vpp03_case_i_cmd_check_chip_id_control_stream_is_pinned_pre_rewrite(vo
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Plan 142-05 Task 1 (VPP-01) -- the resolver truth table and the
+ * (VPP-01) -- the resolver truth table and the
  * route-strobe proofs, including the Rev 1 negative.
  *
  * Group T -- the resolver truth table (NO DRIVE AT ALL). eprom_hv_route_mask
@@ -1114,7 +1195,7 @@ void test_vpp01_route_0x08_on_rev1_still_strips_the_drop_bit(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Plan 142-05 Task 2 (VPP-03) -- eprom_check_vpp measures the same
+ * (VPP-03) -- eprom_check_vpp measures the same
  * physical route the write path applies at its first program pulse.
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -1217,7 +1298,7 @@ void test_vpp03_check_vpp_measures_the_route_the_write_path_applies_at_the_first
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Plan 142-05 Task 3 (VPP-02) -- every write-path error exit disables the
+ * (VPP-02) -- every write-path error exit disables the
  * route, including the final-pass verify exit that disabled NOTHING
  * before this phase.
  *
@@ -1383,10 +1464,10 @@ int main(int argc, char** argv) {
     (void)argc; (void)argv;
     UNITY_BEGIN();
 
-    /* Plan 142-01 harness self-check (VPP-01..VPP-04 infrastructure) */
+    /* harness self-check (VPP-01..VPP-04 infrastructure) */
     RUN_TEST(test_setup_leaves_the_harness_clean_and_the_composites_correct);
 
-    /* Plan 142-02 task 1 (VPP-01): (pins, revision) preserve-mask truth
+    /* (VPP-01): (pins, revision) preserve-mask truth
      * table -- nine rows, RED-before-GREEN against unchanged memory.cpp --
      * plus the 32-pin non-EPROM byte-identity baseline (Group B). */
     RUN_TEST(test_vpp01_truthtable_pins28_rev2_2_drop_bit_present);
@@ -1400,7 +1481,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_vpp01_truthtable_pins32_rev2_2_preserve_never_introduces);
     RUN_TEST(test_vpp01_dip32_nonEprom_0x10_route_is_byte_identical_before_and_after);
 
-    /* Plan 142-03 task 1 (VPP-04, D-13/D-15): the over-voltage refusal gate
+    /* (VPP-04, D-13/D-15): the over-voltage refusal gate
      * VPP-04's own wording presumed already existed for the EPROM path --
      * confirmed false by grep (D-13). All of (a)/(b)/(c) are a REGRESSION
      * gate on behaviour that already holds (RESEARCH C-3, green on
@@ -1411,7 +1492,12 @@ int main(int argc, char** argv) {
     RUN_TEST(test_vpp04_c_flag_force_downgrades_to_warning_and_still_clears_the_route);
     RUN_TEST(test_vpp04_d_in_range_reading_fires_neither_error_nor_warning);
 
-    /* Plan 142-03 task 2 (VPP-03, RESEARCH assumption A3): pre-rewrite
+    /* The under-voltage severity pairing that nothing asserted before this
+     * plan, on eprom.cpp and its flash_intel.cpp twin. */
+    RUN_TEST(test_vpp04_e_undervoltage_warning_pairing_fires_by_id_with_payload_shape);
+    RUN_TEST(test_vpp04_f_flash_intel_undervoltage_warning_pairing);
+
+    /* (VPP-03, RESEARCH assumption A3): pre-rewrite
      * CMD_ERASE / CMD_CHECK_CHIP_ID control-value baselines -- NOT feature
      * tests, they pin the current stream so plan 142-04's composite-mask
      * conversion is a MEASURED no-op on the two commands PROJECT.md:189-190
@@ -1423,7 +1509,7 @@ int main(int argc, char** argv) {
      * the datasheet erase pulse, never handle->pulse_delay (the program pulse). */
     RUN_TEST(test_erase_ce_pulse_width_is_the_datasheet_erase_pulse_not_the_program_pulse);
 
-    /* Plan 142-05 Task 1 (VPP-01): the resolver truth table (Group T,
+    /* (VPP-01): the resolver truth table (Group T,
      * direct calls on a bare handle, no drive) and the route-strobe
      * proofs (Group R), including the Rev 1 negative. */
     RUN_TEST(test_vpp01_resolver_0x07_noflags_returns_route_mask);
@@ -1438,11 +1524,11 @@ int main(int argc, char** argv) {
     RUN_TEST(test_vpp01_route_vpeasvpp_forces_the_direct_path_onto_0x07);
     RUN_TEST(test_vpp01_route_0x08_on_rev1_still_strips_the_drop_bit);
 
-    /* Plan 142-05 Task 2 (VPP-03): eprom_check_vpp measures the same
+    /* (VPP-03): eprom_check_vpp measures the same
      * physical route the write path applies at its first program pulse. */
     RUN_TEST(test_vpp03_check_vpp_measures_the_route_the_write_path_applies_at_the_first_pulse);
 
-    /* Plan 142-05 Task 3 (VPP-02): every write-path error exit disables
+    /* (VPP-02): every write-path error exit disables
      * the route, including the final-pass verify exit that disabled
      * NOTHING before this phase. The row==NULL exit (the :226-shaped
      * exit) is COVERED BY CONSTRUCTION, not by a case -- configure_eprom

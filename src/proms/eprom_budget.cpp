@@ -4,36 +4,18 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 143 Plan 01 (HOST-01, firmware half -- BF-3 as corrected) -- the
- * corrected per-block worst-case write-time budget arithmetic declared in
- * eprom_budget.h. Reads the const, PROGMEM eprom_params table
- * (eprom_params.h / eprom_params.cpp) and calls the shipped
- * overprogram-duration function (eprom.h / eprom.cpp) rather than
- * restating either.
+ * Per-block worst-case write-time budget arithmetic, declared in
+ * eprom_budget.h. Reads the PROGMEM eprom_params table and CALLS the shipped
+ * overprogram-duration function rather than restating either.
  *
- * No Arduino framework header is included here (140-RESEARCH.md Pitfall
- * 1): src/proms/not_implemented.cpp is the only other translation unit
- * under src/proms/ that omits it, and this file follows that include
- * discipline verbatim so it adds zero macro-redefinition warnings on the
- * native build. PROGMEM access comes transitively through eprom_params.h
- * (which pulls in the platform PROGMEM compatibility shim) -- this file
- * never includes that shim directly.
+ * Do NOT include an Arduino framework header here: this file follows
+ * not_implemented.cpp's include discipline so it adds zero macro-redefinition
+ * warnings on the native build. PROGMEM access comes transitively through
+ * eprom_params.h.
  *
- * Verified include chain for eprom.h, confirming it too is free of any
- * Arduino framework header: eprom.h -> firestarter.h -> rurp_shield.h ->
- * the platform PROGMEM compatibility shim (include/rurp_platform_compat.h)
- * -- none of the three includes any Arduino core header, so pulling in
- * eprom.h here (for the shipped overprogram function) adds no framework
- * dependency.
- *
- * This is a NEW, unpinned translation unit under src/proms/ -- deliberately
- * NOT folded into eprom.cpp or eprom_params.cpp. tests/golden/
- * protocol_branch_inventory.json's meta.blob_shas pins exactly those two
- * files; putting this arithmetic in either would fold it into plan
- * 143-05's D-23 single-commit eprom.cpp constraint and turn the golden RED
- * for two reasons at once. build_src_filter's directory glob (+<proms/>,
- * platformio.ini) compiles this file under every native environment with
- * no platformio.ini edit.
+ * Keep this as its OWN translation unit. protocol_branch_inventory.json pins
+ * the blob SHAs of eprom.cpp and eprom_params.cpp, so folding this arithmetic
+ * into either turns that golden RED.
  */
 #include "eprom_budget.h"
 #include "eprom_params.h"
@@ -114,7 +96,7 @@ uint16_t eprom_block_budget_s(uint32_t protocol, uint32_t pulse_us, uint32_t blo
      * seconds first" padding rule stated in eprom_budget.h. */
     uint32_t raw_s = whole * block_bytes + (rem * block_bytes + 999999UL) / 1000000UL;
 
-    /* "Twice the pulse-only worst case, plus two seconds" (D-09). The "+ 2"
+    /* "Twice the pulse-only worst case, plus two seconds". The "+ 2"
      * makes the one-second floor automatic, so no separate floor test is
      * needed anywhere in this budget. */
     uint32_t padded = raw_s * 2UL + 2UL;

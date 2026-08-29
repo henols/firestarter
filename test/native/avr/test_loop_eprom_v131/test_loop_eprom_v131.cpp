@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 141 Plan 03 (LOOP-01..LOOP-08, D-10) -- the suite skeleton for the
+ * (LOOP-01..LOOP-08, D-10) -- the suite skeleton for the
  * per-byte program loop oracle: setUp hooks wiring all three host_stubs.cpp
  * recorder layers, a fixed make_loop_handle/drive_loop_write contract for
  * plans 141-07/141-08 to drive against, the three bus_config_t literals
@@ -16,7 +16,7 @@
  * plan 141-04's loop rewrite. Dimension-1 requirement coverage (LOOP-01..08)
  * is plan 141-09's, after every piece of evidence exists.
  *
- * Plans 141-07 and 141-08 EXTEND this same file (see their own
+ * EXTEND this same file (see their own
  * files_modified) rather than creating a new one -- so every symbol,
  * constant and helper below is authored as a fixed, reusable contract, not
  * a plan-141-03-only convenience.
@@ -40,10 +40,10 @@ extern "C" {
 #include "firestarter.h"
 #include "eprom.h"
 #include "eprom_params.h"
-#include "eprom_budget.h"  /* Plan 143-01: eprom_worst_pulses / eprom_per_byte_budget_us /
+#include "eprom_budget.h"  /* eprom_worst_pulses / eprom_per_byte_budget_us /
                              * eprom_block_budget_s -- BF-3-corrected budget arithmetic. */
 #include "memory_utils.h"
-#include "messages.h"  /* Plan 141-07: MSG_ERR_MAX_PULSES / MSG_ERR_ENERGY_CAP --
+#include "messages.h"  /* MSG_ERR_MAX_PULSES / MSG_ERR_ENERGY_CAP --
                          * neither firestarter.h nor eprom.h/eprom_params.h/
                          * memory_utils.h pulls this in transitively. */
 
@@ -110,7 +110,7 @@ extern "C" int      logged_ids_overflowed(void);
  * setUp / tearDown
  * ───────────────────────────────────────────────────────────────────────── */
 
-/* Phase 143 Plan 05 (HOST-02, D-02/D-03) -- advancing millis() clock, file-
+/* (HOST-02, D-02/D-03) -- advancing millis() clock, file-
  * static so the AlwaysDo lambda in setUp (a capture-less closure, matching
  * this file's existing delay()/delayMicroseconds() lambdas) can mutate it.
  * Reset to 0 in setUp below. Precedent: test_cobs_data_frame.cpp's own
@@ -140,7 +140,7 @@ void setUp(void) {
     When(Method(ArduinoFake(), delay)).AlwaysDo([](unsigned long ms) {
         timing_push(TIMING_KIND_DELAY_MS, (uint32_t)ms);
     });
-    /* Phase 143 Plan 05 (HOST-02, D-02/D-03) -- replaces the old
+    /* (HOST-02, D-02/D-03) -- replaces the old
      * `AlwaysReturn(0)` frozen mock. eprom.cpp's new intra-block progress
      * emission (src/proms/eprom.cpp, guarded #ifndef SERIAL_ON_IO --
      * compiled IN on this native env, exactly as on leonardo) is TIME-gated
@@ -188,7 +188,7 @@ void setUp(void) {
 }
 
 void tearDown(void) {
-    /* Plan 141-08 (LOOP-08's DIP32 cases): reset any hardware-revision
+    /* (LOOP-08's DIP32 cases): reset any hardware-revision
      * override back to the file's default (REVISION_0, via
      * host_stubs_common.inc's zero-initialised s_host_config) so it can
      * never leak into a case that runs after one of the DIP32 cases below
@@ -445,7 +445,7 @@ void test_logged_id_capture_records_the_id_and_its_packed_params(void) {
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
- * Plan 141-07 (LOOP-01, LOOP-06, LOOP-04) -- behaviour cases proving the
+ * (LOOP-01, LOOP-06, LOOP-04) -- behaviour cases proving the
  * per-byte program loop's cadence, its skip rules and its energy cap,
  * driven through drive_loop_write / make_loop_handle / LOOP_BUS_CONFIG_*
  * (plan 141-03's fixed contract) against the REAL eprom_write_execute
@@ -454,7 +454,7 @@ void test_logged_id_capture_records_the_id_and_its_packed_params(void) {
  * that is plan 141-09's, after every piece of evidence exists (frontmatter
  * requirements: [] is deliberate, per this plan's own <objective>).
  *
- * Plan 141-08 extends this SAME file with LOOP-03, LOOP-05, LOOP-07 and
+ * extends this SAME file with LOOP-03, LOOP-05, LOOP-07 and
  * LOOP-08 cases -- nothing below pre-empts those.
  * ═════════════════════════════════════════════════════════════════════════ */
 
@@ -1065,7 +1065,7 @@ void test_loop04_0x0B_runs_no_final_full_block_verify_pass(void) {
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
- * Plan 141-08 (LOOP-03, LOOP-05, LOOP-07, LOOP-08) -- the phase's remaining
+ * (LOOP-03, LOOP-05, LOOP-07, LOOP-08) -- the phase's remaining
  * four requirements, whose oracles are specialist: the overprogram
  * arithmetic (task 1, below -- a pure function, since no shipped row can
  * reach it), the hard-fail exit and its non-vacuous route disable (task 2),
@@ -1076,7 +1076,7 @@ void test_loop04_0x0B_runs_no_final_full_block_verify_pass(void) {
  * ═════════════════════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Task 1 (LOOP-03, LOOP-07 arithmetic) -- the two pure functions, at their
+ * (LOOP-03, LOOP-07 arithmetic) -- the two pure functions, at their
  * boundaries. No handle, no hardware, no PROGMEM: eprom_overprogram_us and
  * mem_util_split_delay / mem_util_delay_us are called DIRECTLY.
  * ───────────────────────────────────────────────────────────────────────── */
@@ -1299,7 +1299,7 @@ static int count_timing_ms(uint32_t val) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Task 2 (LOOP-05 hard-fail + non-vacuous route disable; LOOP-07's GLOBAL
+ * (LOOP-05 hard-fail + non-vacuous route disable; LOOP-07's GLOBAL
  * ceiling claim under a real drive, plus D-03's pre-flight refusal).
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -1366,7 +1366,7 @@ void test_loop05_a_byte_that_misses_within_max_pulses_aborts_the_block(void) {
 }
 
 void test_loop05_the_loops_own_strobes_disable_the_high_voltage_route(void) {
-    /* Phase 142 Plan 04 (K-1): widened to also assert the drop bit clears.
+    /* (K-1): widened to also assert the drop bit clears.
      * The REVISION_2_2 override is MANDATORY for that widening to be
      * decidable at all (L-6, copying the DIP32 cases' override idiom
      * below): on the DEFAULT REVISION_0 this case used to run on,
@@ -1533,7 +1533,7 @@ void test_loop07_an_over_cap_pulse_is_refused_before_any_high_voltage_on_a_cappe
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * Task 3 (LOOP-08) -- VPE once per block, surviving every verify read,
+ * (LOOP-08) -- VPE once per block, surviving every verify read,
  * across an A16 crossing on a 32-pin part. All six cases assert
  * strobe_overflowed() == 0 as a soundness precondition (small blocks only).
  * ───────────────────────────────────────────────────────────────────────── */
@@ -1810,7 +1810,7 @@ void test_loop08_the_28_pin_row_keeps_its_drop_bit(void) {
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
- * Phase 143 Plan 01 / HOST-01 (firmware half) / BF-3 -- six pure-arithmetic
+ * HOST-01 (firmware half) / BF-3 -- six pure-arithmetic
  * cases proving the corrected per-block worst-case write-time budget
  * (include/eprom_budget.h, src/proms/eprom_budget.cpp). Every case below
  * calls eprom_worst_pulses / eprom_per_byte_budget_us / eprom_block_budget_s
@@ -1934,7 +1934,7 @@ void test_budget_block_seconds_matches_the_shipped_rows_and_is_padded(void) {
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
- * Phase 143 Plan 05 / HOST-02 (firmware half) / D-02, D-03 -- two cadence
+ * HOST-02 (firmware half) / D-02, D-03 -- two cadence
  * cases proving the new time-gated MSG_DATA_PROGRESS emission
  * (src/proms/eprom.cpp, guarded #ifndef SERIAL_ON_IO -- compiled IN on this
  * native env, exactly as on leonardo) fires when the mocked clock advances
@@ -2027,7 +2027,7 @@ void test_progress_emits_nothing_when_the_clock_does_not_advance(void) {
      * clock is exactly the state native_trace_v131 is pinned in (its own
      * setUp also pins millis() to AlwaysReturn(0), Phase 138) -- which is
      * why D-02's emission adds ZERO new frames to that frozen trace (D-24);
-     * Phase 144 / TEST-06 will find zero D-02-attributable strobes there. */
+     * TEST-06 will find zero D-02-attributable strobes there. */
     When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
 
     firestarter_handle_t h = make_loop_handle(0x07, 28, 65536, 100, LOOP_BUS_CONFIG_0x07);
@@ -2104,7 +2104,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_vpp01_dip32_drop_bit_survives_the_block_on_rev2_class);
     RUN_TEST(test_loop08_the_28_pin_row_keeps_its_drop_bit);
 
-    /* Phase 143 Plan 01 / HOST-01 (firmware half) / BF-3 */
+    /* HOST-01 (firmware half) / BF-3 */
     RUN_TEST(test_budget_uncapped_energy_cap_is_not_a_cap_at_zero);
     RUN_TEST(test_budget_pulse_count_ceils_because_the_loop_tests_after_it_increments);
     RUN_TEST(test_budget_0x0b_at_49999us_is_99998us_per_byte_not_50000);
@@ -2112,7 +2112,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_budget_zero_pulse_width_never_divides_by_zero);
     RUN_TEST(test_budget_block_seconds_matches_the_shipped_rows_and_is_padded);
 
-    /* Phase 143 Plan 05 / HOST-02 (firmware half) / D-02, D-03 */
+    /* HOST-02 (firmware half) / D-02, D-03 */
     RUN_TEST(test_progress_emits_when_the_clock_advances_past_the_interval);
     RUN_TEST(test_progress_emits_nothing_when_the_clock_does_not_advance);
 

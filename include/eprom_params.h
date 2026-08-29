@@ -4,30 +4,23 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 140 Plan 01 (TABLE-01, TABLE-02, D-01..D-05) -- eprom_params_t: a
- * const, protocol_id-keyed parameter table for the three 27C EPROM
- * protocols (0x07/0x08/0x0B). This header declares the type, the two
- * enums, and the accessor only; the PROGMEM storage and the accessor's
- * definition live in src/proms/eprom_params.cpp.
+ * eprom_params_t: a const, protocol_id-keyed parameter table for the three
+ * 27C protocols (0x07/0x08/0x0B). Type, enums and accessor only; the PROGMEM
+ * storage lives in src/proms/eprom_params.cpp.
  *
- * (a) No Arduino framework header is included here, or by anything this
- *     file includes (see 140-RESEARCH.md Pitfall 1): a translation unit
- *     that pairs that header with the avr/pgmspace.h PROGMEM shim emits 14
- *     macro-redefinition warnings, and the native build's warning
- *     watermark sits at exactly 1166 with zero headroom -- so this
- *     dependency stays out end to end.
- * (b) The struct's fields are ordered largest-first, four bytes before one
- *     (Pitfall 2): the AVR toolchain gives every type 1-byte struct
- *     alignment while a 64-bit host does not, and this order is what keeps
- *     sizeof() == 12 on both.
- * (c) NO PULSE-WIDTH COLUMN -- TABLE-02. Pulse width is handle->pulse_delay;
- *     the per-protocol fallback constants stay in configure_eprom's switch
- *     (eprom.cpp:71-76, D-03) and are not duplicated here under any name.
- * (d) Per-(row, column)-cell attribution (datasheet reference, or a
- *     "no datasheet basis -- reasoned from" note) lives in the
- *     machine-readable, gate-enforced sidecar at
- *     tests/golden/eprom_params_citations.json (D-14) -- this header
- *     carries no per-value citations of its own.
+ * Do NOT add an Arduino framework include here or to anything this includes:
+ * pairing it with the PROGMEM shim emits 14 macro-redefinition warnings, and
+ * the native warning watermark has zero headroom.
+ *
+ * Fields are ordered largest-first, deliberately: the AVR toolchain gives every
+ * type 1-byte struct alignment and a 64-bit host does not, and this order is
+ * what keeps sizeof() == 12 on both.
+ *
+ * NO PULSE-WIDTH COLUMN. Pulse width is handle->pulse_delay; the per-protocol
+ * fallbacks stay in configure_eprom's switch and are not duplicated here.
+ *
+ * Per-cell datasheet attribution lives in the gate-enforced sidecar
+ * tests/golden/eprom_params_citations.json, not here.
  */
 #ifndef __EPROM_PARAMS_H__
 #define __EPROM_PARAMS_H__
@@ -35,29 +28,29 @@
 #include <stdint.h>
 #include "rurp_platform_compat.h" /* PROGMEM + pgm_read_* on AVR and host alike */
 
-/* verify_mode: WHEN to verify, never at what VCC (D-02). The datasheets'
+/* verify_mode: WHEN to verify, never at what VCC. The datasheets'
  * raised-VCC verify margin is unreachable on this shield's ~6.25V ceiling,
  * so no value in this column may ever encode a verify VCC. */
 enum { VERIFY_PER_PULSE = 0, VERIFY_PER_PULSE_PLUS_FINAL = 1 };
 
-/* vpp_path names an ABSTRACT route, not a control-register bitmask -- Phase
- * 142 owns the mask sets, and naming a mask here would force this
- * dependency-free header to pull in the shield's register header. */
+/* vpp_path names an ABSTRACT route, not a control-register bitmask -- the
+ * mask sets are owned by the write path, and naming a mask here would force
+ * this dependency-free header to pull in the shield's register header. */
 enum { VPP_PATH_DROP_RESISTOR = 0, VPP_PATH_DIRECT_VPE = 1 };
 
 /* Six columns, largest-first (see (b) above). No pulse-width field of any
- * name exists here (TABLE-02) -- no pulse_delay, no pulse_width_us, no
+ * name exists here -- no pulse_delay, no pulse_width_us, no
  * fallback_pulse_us. */
 typedef struct {
-    uint32_t overprogram_cap_us;  /* clamp for min(3 x overprogram_factor x pulse, cap) -- D-08 */
-    uint32_t energy_cap_us;       /* accumulated per-byte program-time budget; 0 = uncapped -- D-01/D-07 */
-    uint8_t  max_pulses;          /* structural retry/backstop ceiling -- D-07 */
-    uint8_t  overprogram_factor;  /* margin-pulse multiplier; 0 = no overprogram -- D-06 */
-    uint8_t  verify_mode;         /* VERIFY_PER_PULSE / VERIFY_PER_PULSE_PLUS_FINAL -- D-02 */
+    uint32_t overprogram_cap_us;  /* clamp for min(3 x overprogram_factor x pulse, cap) */
+    uint32_t energy_cap_us;       /* accumulated per-byte program-time budget; 0 = uncapped */
+    uint8_t  max_pulses;          /* structural retry/backstop ceiling */
+    uint8_t  overprogram_factor;  /* margin-pulse multiplier; 0 = no overprogram */
+    uint8_t  verify_mode;         /* VERIFY_PER_PULSE / VERIFY_PER_PULSE_PLUS_FINAL */
     uint8_t  vpp_path;            /* VPP_PATH_DROP_RESISTOR / VPP_PATH_DIRECT_VPE */
 } eprom_params_t;
 
-/* Compile-time sizeof check only -- NOT the rejected __attribute__((used)) / force-the-table-into-the-image pattern (D-10); do not delete this thinking it is one. */
+/* Compile-time sizeof check only -- NOT the rejected __attribute__((used)) / force-the-table-into-the-image pattern; do not delete this thinking it is one. */
 #ifdef __cplusplus
 static_assert(sizeof(eprom_params_t) == 12,
               "sizeof(eprom_params_t) must be 12 on every target -- Pitfall 2: "
@@ -74,7 +67,7 @@ extern "C" {
  * pgm_read_dword, never dereferenced directly (a direct read compiles and
  * silently returns RAM garbage on AVR). Returns NULL when no row matches
  * `protocol`, so an unrecognised value fails closed with zero hardware
- * side effects (D-05); it never returns a default row.
+ * side effects; it never returns a default row.
  */
 const eprom_params_t* eprom_params_for(uint32_t protocol);
 #ifdef __cplusplus

@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 51 Plan 01 — Firmware COBS command-frame decode + CRC8-reject +
+ * Firmware COBS command-frame decode + CRC8-reject +
  * bounded-recovery Unity suite.
  *
  * Tests `rurp_communication_read_data()` against the Phase-49/50-frozen COBS
@@ -163,7 +163,7 @@ void setUp(void) {
 
     /* millis() — monotonically increasing counter.  The COBS decoder does
      * NOT have a wall-clock timeout loop (the 2 s cascade was deleted in
-     * Phase 50 — SC1 win).  This stub is retained for defensive
+     * SC1 win).  This stub is retained for defensive
      * completeness in case any helper path ever calls millis(). */
     When(Method(ArduinoFake(Function), millis))
         .AlwaysDo([&]() -> unsigned long {

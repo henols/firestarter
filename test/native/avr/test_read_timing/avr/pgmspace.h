@@ -1,5 +1,5 @@
 /*
- * Phase 44 Plan 02 — host-side stub for <avr/pgmspace.h>
+ * host-side stub for <avr/pgmspace.h>
  *
  * Copied from test/native/avr/test_dispatch/avr/pgmspace.h (exact copy).
  * The read-timing test runs on platform = native (no AVR libc available).

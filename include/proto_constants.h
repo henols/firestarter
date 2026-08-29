@@ -8,9 +8,9 @@
 #ifndef __PROTO_CONSTANTS_H__
 #define __PROTO_CONSTANTS_H__
 
-// Protocol dispatch constants (v1.19 naming layer).
+// Protocol dispatch constants.
 // Every value below equals the pre-existing raw-hex `handle->protocol`
-// dispatch key it names — the label IS the number (GATE-01/02). Source of
+// dispatch key it names — the label IS the number. Source of
 // truth: firestarter/doc/PROTOCOLS.md (operator-approved, commit 6e7bd38).
 // This is a legibility layer only: numbers stay the authoritative dispatch
 // key end to end; no numeric value changes here.
@@ -28,7 +28,7 @@
 #define PROTO_SRAM_32PIN_NVRAM 0x29
 #define PROTO_EEPROM_8051BUS 0x34
 
-// Phantom entries (operator-approved honest non-protocols, Phase 100 D-04):
+// Phantom entries (operator-approved honest non-protocols):
 // 0x35 = IC2_ALG_ITE (an ITE EC microcontroller label in minipro, NOT a
 // memory algorithm); 0x39 = no IC2_ALG constant exists at all. Both have
 // zero DB chips — firmware dispatch is preserved only for forward-compat.

@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 52 Plan 02 — host stub TU for test_frame_vectors.
+ * host stub TU for test_frame_vectors.
  *
  * Provides no-op rurp_* symbol implementations so the test binary links
  * against boards/rurp_serial_utils.cpp (pulled in via build_src_filter) on

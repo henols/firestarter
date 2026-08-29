@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 71 Plan 04 — Tier-1 validation suite for the Flash 5V-Page family.
+ * Tier-1 validation suite for the Flash 5V-Page family.
  * HARN-01 / D-07 / T-71-WIRED-WRONG.
  *
  * Proves the configure_flash_5v_page dispatch/configure phase is VPP-safe.
@@ -37,7 +37,7 @@
 extern "C" {
 #include "memory.h"
 }
-/* Phase 153 (ERASE-02): is_operation_in_progress resolves from here. */
+/* (ERASE-02): is_operation_in_progress resolves from here. */
 #include "operation_utils.h"
 #include "firestarter.h"
 #include "flash_utils.h"
@@ -53,7 +53,7 @@ extern "C" int  bus_recording_count();
 extern "C" uint8_t recorded_reg(int i);
 extern "C" uint8_t recorded_data(int i);
 
-/* Phase 151 (LOCK-02) — wire-byte capture for the CMD_LOCK_STATUS legs
+/* (LOCK-02) — wire-byte capture for the CMD_LOCK_STATUS legs
  * below. [env:native]'s build_src_filter links the REAL
  * src/boards/rurp_serial_utils.cpp into this test binary (see that file's
  * header comment), so LOG_DATA_ID_BYTES -> rurp_log_id -> _firestarter_
@@ -62,7 +62,7 @@ extern "C" uint8_t recorded_data(int i);
  * same way. */
 static std::vector<uint8_t> s_wire_bytes;
 
-/* Phase 151 (LOCK-02) — a controllable stand-in for handle->firestarter_get_data,
+/* (LOCK-02) — a controllable stand-in for handle->firestarter_get_data,
  * installed AFTER configure_memory() has already assigned the real
  * memory_get_data, so it overrides only the specific call the raw-byte-
  * fidelity leg needs to control. Ignores address/handle deliberately: this
@@ -227,17 +227,16 @@ static firestarter_handle_t make_write_handle_with_data(void) {
     return h;
 }
 
-/* Phase 153 (ERASE-02) — the only factory in this suite that drives
+/* (ERASE-02) — the only factory in this suite that drives
  * flash_5v_page_write_init itself rather than bypassing it. FLAG_CAN_ERASE
  * and FLAG_SKIP_BLANK_CHECK are both clear (ctrl_flags = 0), which is the
  * "blank-check would run" configuration: is_flag_set(FLAG_CAN_ERASE) is
  * false so the erase-on-write block at flash_5v_page.cpp:80-86 is not
  * entered, and is_flag_set(FLAG_SKIP_BLANK_CHECK) is false so the deleted
  * conditional's guard would have been satisfied. mem_size is a small 2048 --
- * BLANK_CHECK_CHUNK_SIZE (memory.cpp:393) -- because mem_util_blank_check
- * sets is_operation_in_progress and mallocs progress_data on its FIRST call
- * regardless of mem_size, so the oracle below does not depend on how large
- * mem_size is. */
+ * BLANK_CHECK_CHUNK_SIZE -- because mem_util_blank_check sets
+ * is_operation_in_progress on its FIRST call regardless of mem_size, so the
+ * oracle below does not depend on how large mem_size is. */
 static firestarter_handle_t make_write_init_handle_blank_check_enabled(void) {
     firestarter_handle_t h = {};
     h.protocol   = 0x05;
@@ -317,12 +316,14 @@ void test_5v_page_write_execute_no_vpp(void) {
 /* Case (ERASE-02): with FLAG_SKIP_BLANK_CHECK and FLAG_CAN_ERASE both clear,
  * one call to flash_5v_page_write_init, driven through the dispatch
  * pointer (not by function name, so this exercises what configure_memory
- * actually wired), must leave is_operation_in_progress FALSE and
- * progress_data NULL. mem_util_blank_check is the ONLY setter of either
- * observable on this path (memory.cpp:401-405), so a FALSE/NULL pair here
- * is the single-shot-INIT proof, not an assumption of symmetry with the
- * 0x0D case (test_case30, test_eeprom28c_sdp.cpp). RED before Task 2's
- * deletion, GREEN after. */
+ * actually wired), must leave is_operation_in_progress FALSE.
+ * mem_util_blank_check is the ONLY setter of is_operation_in_progress on
+ * this path, and it sets that flag and saves the blank-check address as
+ * unconditionally adjacent statements in the same then-branch of the same
+ * if, with no intervening control flow, early return or condition -- so a
+ * FALSE result here strictly implies that branch never executed, which is
+ * the single-shot-INIT proof, not an assumption of symmetry with the 0x0D
+ * case (test_case30, test_eeprom28c_sdp.cpp). */
 void test_5v_page_write_init_no_blank_check_with_flag_clear_erase02(void) {
     firestarter_handle_t h = make_write_init_handle_blank_check_enabled();
     configure_memory(&h);
@@ -336,10 +337,17 @@ void test_5v_page_write_init_no_blank_check_with_flag_clear_erase02(void) {
         "mem_util_blank_check is the only setter of this flag on the write-INIT "
         "path, so TRUE here would mean the pre-write blank check still ran and "
         "left a multi-call INIT loop pending");
-    TEST_ASSERT_NULL_MESSAGE(h.progress_data,
-        "ERASE-02: h.progress_data must be NULL -- a non-NULL value means "
-        "mem_util_blank_check allocated a blank_check_progress_data_t block, "
-        "i.e. the pre-write blank check still ran");
+    /* The companion "must be NULL" assertion on the removed heap-allocated
+     * handle field is GONE, and so is the field itself: mem_util_blank_check
+     * no longer allocates that block (it keeps its saved address in a
+     * file-scope static), so there is no allocation left to observe. This
+     * is the loss of a redundant PROBE, not of coverage -- is_operation_in_progress
+     * above and the removed allocation used to be unconditionally adjacent
+     * statements in the same then-branch of the same if, with no
+     * intervening control flow, early return or condition, so a FALSE
+     * result there strictly implied the branch -- and therefore the
+     * allocation -- never executed. The behaviour under test is still
+     * pinned by the assertion above. */
     TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
         "ERASE-02: the removed blank check can no longer fail a write on a "
         "non-blank part");
@@ -510,10 +518,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_5v_page_write_execute_emits_sdp);
     RUN_TEST(test_5v_page_write_execute_no_vpp);
 
-    /* Phase 153 (ERASE-02): write-INIT blank-check removal proof */
+    /* (ERASE-02): write-INIT blank-check removal proof */
     RUN_TEST(test_5v_page_write_init_no_blank_check_with_flag_clear_erase02);
 
-    /* Phase 151 (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) */
+    /* (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) */
     RUN_TEST(test_5v_page_lock_status_dispatch);
     RUN_TEST(test_5v_page_lock_status_pinned_sequence);
     RUN_TEST(test_5v_page_lock_status_no_vpp);

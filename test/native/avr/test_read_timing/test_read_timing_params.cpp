@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 44 Plan 02 — Wave 0 native Unity tests for the two host-tunable
+ * Wave 0 native Unity tests for the two host-tunable
  * read-timing knobs: `read_settling_us` and `read_strobe_us`.
  *
  * RED state before Task 2: these tests will FAIL TO COMPILE because the
@@ -28,13 +28,21 @@
 extern "C" {
 #include "json_parser.h"
 #include "jsmn.h"
+#include "memory.h"
 }
 #include "firestarter.h"
 
 using namespace fakeit;
 
 /* Maximum allowed value for read-timing knobs (T-44-01 / RESEARCH §Security
- * Domain). Mirrors the cap defined in memory.cpp / json_parser.c. */
+ * Domain). Mirrors the cap defined in memory.cpp / json_parser.c.
+ *
+ * Unremovable duplicate (C-8, C-21): the production constant is now hoisted
+ * above the field table in src/json_parser.c, but it is a file-scope #define
+ * inside a .c translation unit, not a header export -- this test cannot
+ * reference it. The two copies can therefore drift silently in either
+ * direction and nothing gates that drift. The duplicate is kept deliberately
+ * rather than removed. */
 #define READ_TIMING_MAX_US 1000UL
 
 void setUp(void) {
@@ -102,20 +110,46 @@ void test_read_timing_fields_default_zero_when_absent(void) {
     TEST_ASSERT_EQUAL_UINT32(0, h.read_strobe_us);
 }
 
-/* T4: value above cap → read_settling_us clamped to READ_TIMING_MAX_US
- * (T-44-01 mitigation: an absurd JSON value cannot hang the read loop). */
+/* T4: value above cap → read_settling_us clamped to EXACTLY READ_TIMING_MAX_US
+ * (T-44-01 mitigation: an absurd JSON value cannot hang the read loop).
+ *
+ * Equality, not an upper bound: 0 passes an upper-bound assertion, and 0 is
+ * this knob's own loaded value ("no settling delay" is the explicit test
+ * point for read_settling_us == 0). A clamp regression that stores 0 instead
+ * of the cap would pass a "<=" assertion silently; only an equality catches
+ * it. */
 void test_read_settling_us_capped_at_max(void) {
     /* Use a value well above 1000µs to confirm the cap fires */
     const char* json = "{\"cmd\":1,\"read-settling-delay\":9999}";
     firestarter_handle_t h = make_handle(CMD_READ);
     int rc = parse_json(json, &h);
     TEST_ASSERT_EQUAL_INT(0, rc);
-    /* After cap: handle.read_settling_us must not exceed READ_TIMING_MAX_US */
-    TEST_ASSERT_TRUE_MESSAGE(h.read_settling_us <= READ_TIMING_MAX_US,
-                             "read_settling_us must be capped at READ_TIMING_MAX_US");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(READ_TIMING_MAX_US, h.read_settling_us,
+        "read_settling_us must clamp to EXACTLY READ_TIMING_MAX_US -- T-44-01's "
+        "mitigation for an absurd JSON value reaching delayMicroseconds() in the "
+        "read loop; an equality, not an upper bound, because 0 passes an upper "
+        "bound and 0 is this knob's own loaded value (\"no settling delay\")");
 }
 
-/* Phase 149 — page-size parse contract (PGSZ-01/PGSZ-02).
+/* T4b (DECODE-06, C-8): the missing half of T-44-01's proof -- read_strobe_us
+ * had NO cap test at all before this case. Same reasoning as T4 above:
+ * equality, not an upper bound, because 0 passes an upper bound and 0 is
+ * THIS knob's own loaded value too ("use the firmware default of 3
+ * microseconds"). */
+void test_read_strobe_us_capped_at_max(void) {
+    const char* json = "{\"cmd\":1,\"read-strobe-us\":9999}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(READ_TIMING_MAX_US, h.read_strobe_us,
+        "read_strobe_us must clamp to EXACTLY READ_TIMING_MAX_US -- T-44-01's "
+        "mitigation for an absurd JSON value reaching delayMicroseconds() in the "
+        "read loop; an equality, not an upper bound, because 0 passes an upper "
+        "bound and 0 is this knob's own loaded value (\"use the firmware default "
+        "of 3 microseconds\")");
+}
+
+/* page-size parse contract (PGSZ-01/PGSZ-02).
  *
  * T5: "page-size":128 -> handle.page_size == 128 */
 void test_page_size_parsed_from_json(void) {
@@ -178,6 +212,331 @@ void test_unknown_key_before_page_size_does_not_desync_the_token_walk(void) {
     TEST_ASSERT_EQUAL_UINT16(128, h.page_size);
 }
 
+/* S1 (DECODE-05, T-157-02): an out-of-range wire `algorithm` must SATURATE
+ * to the member's own maximum (0xFF on the now-narrowed uint8_t protocol),
+ * never TRUNCATE into a value that names a real handler. 261 (0x105)
+ * truncates to 0x05, which is PROTO_FLASH_5V_PAGE -- a real, dispatchable
+ * handler. Saturating to 0xFF names no arm of configure_memory's chain. */
+void test_out_of_range_algorithm_saturates_not_truncates(void) {
+    const char* json = "{\"cmd\":1,\"algorithm\":261}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0xFF, h.protocol,
+        "261 must saturate to 0xFF, not truncate to 0x05 -- 0x05 is "
+        "PROTO_FLASH_5V_PAGE, a real handler configure_memory would "
+        "dispatch into");
+}
+
+/* S2 (DECODE-05, T-157-02) -- the load-bearing case. A correct stored byte
+ * (S1) is a DIFFERENT claim from a correct dispatch decision. This case is
+ * the only thing in the repository that pins the second: that a saturated
+ * 0xFF reaches configure_memory's generic fail-closed tail (no named arm
+ * matches 0xFF) and refuses with RESPONSE_CODE_ERROR and all three
+ * operation pointers NULL -- zero hardware side effects. Do not compare
+ * against a named handler's function pointer; the symbol is not exported
+ * to tests. This is test_not_implemented.cpp's local idiom, and it is
+ * strictly stronger. */
+void test_out_of_range_algorithm_dispatch_fail_closes(void) {
+    const char* json = "{\"cmd\":1,\"algorithm\":261}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    configure_memory(&h);
+    TEST_ASSERT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "this is the case that would have caught the defect: the stored "
+        "byte being right (S1) is not the same claim as the dispatch "
+        "fail-closing -- a saturated 0xFF must reach configure_memory's "
+        "generic fail-closed tail");
+    TEST_ASSERT_NULL_MESSAGE(h.firestarter_operation_init,
+        "fail-closed refusal must leave firestarter_operation_init NULL");
+    TEST_ASSERT_NULL_MESSAGE(h.firestarter_operation_main,
+        "fail-closed refusal must leave firestarter_operation_main NULL");
+    TEST_ASSERT_NULL_MESSAGE(h.firestarter_operation_end,
+        "fail-closed refusal must leave firestarter_operation_end NULL");
+}
+
+/* S3 (DECODE-05) -- the non-regression guard. S1 and S2 must not be
+ * satisfiable by breaking every algorithm; a valid, in-range algorithm must
+ * still dispatch to a real handler. No operation-pointer assertion here:
+ * test_configure_memory.cpp documents that configure_sram() is a stub
+ * leaving firestarter_operation_init NULL on a genuine success path, so a
+ * pointer-set assertion would spuriously fail. response_code is the robust
+ * dispatch-success signal. */
+void test_in_range_algorithm_still_dispatches(void) {
+    const char* json = "{\"cmd\":1,\"algorithm\":5}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(5, h.protocol,
+        "a valid in-range algorithm must be stored unchanged");
+    configure_memory(&h);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "this case exists so S1 and S2 cannot be satisfied by breaking "
+        "every algorithm -- a valid protocol must still dispatch to a "
+        "real handler, not fail-close");
+}
+
+/* S4 (DECODE-05, T-157-01): an out-of-range wire `flags` must MASK, never
+ * SATURATE. Saturating a bitmask to its type maximum (0xFFFF on the
+ * now-narrowed uint16_t ctrl_flags) would turn on all nine flags at once --
+ * a fail-open that would make is_flag_set() read true at every one of the
+ * 40 call sites. Asserted per-bit, not merely as an equality, so the case
+ * reads as what it prevents. is_flag_set() itself is not used here: the
+ * macro captures `handle` from the enclosing scope and no call site names
+ * a type. */
+void test_out_of_range_flags_masks_never_sets_every_flag(void) {
+    const char* json = "{\"cmd\":2,\"flags\":65536}";
+    firestarter_handle_t h = make_handle(CMD_WRITE);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.ctrl_flags,
+        "an out-of-range wire flags value must mask to the width-limited "
+        "truncation, never saturate to 0xFFFF -- saturating a bitmask "
+        "turns on every flag at once, a fail-open in a fail-closed phase");
+    TEST_ASSERT_EQUAL_MESSAGE(0, h.ctrl_flags & FLAG_FORCE,
+        "FLAG_FORCE must not be set by an out-of-range flags value");
+    TEST_ASSERT_EQUAL_MESSAGE(0, h.ctrl_flags & FLAG_SKIP_ERASE,
+        "FLAG_SKIP_ERASE must not be set by an out-of-range flags value");
+    TEST_ASSERT_EQUAL_MESSAGE(0, h.ctrl_flags & FLAG_SKIP_BLANK_CHECK,
+        "FLAG_SKIP_BLANK_CHECK must not be set by an out-of-range flags "
+        "value");
+}
+
+/* S5 (DECODE-05, T-157-05): an out-of-range wire `page-size` must saturate
+ * to 0xFFFF, not truncate to a plausible VALID power of two. 65600
+ * (0x10040) truncates to 0x0040 = 64 -- a perfectly valid page size, which
+ * is what makes the hole silent. 0xFFFF is rejected by the consumer.
+ *
+ * Consumer-side evidence (C-20, source-level only -- eeprom28c_page_mask
+ * is `static` in src/proms/eeprom_28c.cpp and unreachable from any test):
+ * 0xFFFF exceeds AT28C_PAGE_SIZE_MAX (512) AND fails the power-of-two test
+ * (0xFFFF & 0xFFFE != 0), so BOTH of eeprom28c_page_mask's guards reject
+ * it and the function returns AT28C_PAGE_SIZE_FALLBACK - 1 -- a MASK
+ * (63), not a size (64). */
+void test_out_of_range_page_size_saturates_not_truncates_to_a_valid_size(void) {
+    const char* json = "{\"cmd\":2,\"page-size\":65600}";
+    firestarter_handle_t h = make_handle(CMD_WRITE);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0xFFFF, h.page_size,
+        "65600 must saturate to 0xFFFF, not truncate to 64 -- 64 is a "
+        "perfectly valid page size, which is what makes the hole silent");
+}
+
+/*
+ * Round-trip cases (OD-5, ceiling 7): a wrong `offsetof` in a key_parsers[]
+ * row is this refactor's most plausible silent defect, and the compile-time
+ * _Static_assert guards CANNOT see it -- they prove an offset fits the
+ * uint8_t column and a width fits the 32-bit store, never that the row
+ * names the RIGHT member. Only an executing test can catch a row that
+ * writes into a neighbouring field.
+ *
+ * Each case below asserts BOTH halves of the offset oracle: the target
+ * member equals the parsed value, AND every other one of the eleven
+ * table-written members is still 0 (make_handle zero-initialises the whole
+ * handle, so a wrong offset that writes into a neighbour is caught there,
+ * not merely by the target member being wrong). Six cases here close the
+ * last six of the eleven rows; `protocol` and `ctrl_flags` are covered by
+ * the DECODE-05 safety cases above, and `read_settling_us`, `read_strobe_us`
+ * and `page_size` are covered by T1/T2/T5 above.
+ */
+
+/* memory-size -> handle->mem_size (uint32_t) */
+void test_memory_size_round_trips_through_the_field_table(void) {
+    const char* json = "{\"cmd\":1,\"memory-size\":65536}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(65536, h.mem_size,
+        "a wrong offsetof in the memory-size row would write into a "
+        "neighbouring member instead -- the compile-time guards cannot see "
+        "that, only this executing round-trip can");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.address,
+        "memory-size's row must not write into address");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.ctrl_flags,
+        "memory-size's row must not write into ctrl_flags");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.chip_id,
+        "memory-size's row must not write into chip_id");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.pins,
+        "memory-size's row must not write into pins");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.pulse_delay,
+        "memory-size's row must not write into pulse_delay");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.vpp_mv,
+        "memory-size's row must not write into vpp_mv");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.protocol,
+        "memory-size's row must not write into protocol");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_settling_us,
+        "memory-size's row must not write into read_settling_us");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_strobe_us,
+        "memory-size's row must not write into read_strobe_us");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.page_size,
+        "memory-size's row must not write into page_size");
+}
+
+/* address -> handle->address (uint32_t) */
+void test_address_round_trips_through_the_field_table(void) {
+    const char* json = "{\"cmd\":1,\"address\":4096}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(4096, h.address,
+        "a wrong offsetof in the address row would write into a "
+        "neighbouring member instead -- the compile-time guards cannot see "
+        "that, only this executing round-trip can");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.mem_size,
+        "address's row must not write into mem_size");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.ctrl_flags,
+        "address's row must not write into ctrl_flags");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.chip_id,
+        "address's row must not write into chip_id");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.pins,
+        "address's row must not write into pins");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.pulse_delay,
+        "address's row must not write into pulse_delay");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.vpp_mv,
+        "address's row must not write into vpp_mv");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.protocol,
+        "address's row must not write into protocol");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_settling_us,
+        "address's row must not write into read_settling_us");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_strobe_us,
+        "address's row must not write into read_strobe_us");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.page_size,
+        "address's row must not write into page_size");
+}
+
+/* pulse-delay -> handle->pulse_delay (uint32_t) */
+void test_pulse_delay_round_trips_through_the_field_table(void) {
+    const char* json = "{\"cmd\":1,\"pulse-delay\":1000}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(1000, h.pulse_delay,
+        "a wrong offsetof in the pulse-delay row would write into a "
+        "neighbouring member instead -- the compile-time guards cannot see "
+        "that, only this executing round-trip can");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.mem_size,
+        "pulse-delay's row must not write into mem_size");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.address,
+        "pulse-delay's row must not write into address");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.ctrl_flags,
+        "pulse-delay's row must not write into ctrl_flags");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.chip_id,
+        "pulse-delay's row must not write into chip_id");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.pins,
+        "pulse-delay's row must not write into pins");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.vpp_mv,
+        "pulse-delay's row must not write into vpp_mv");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.protocol,
+        "pulse-delay's row must not write into protocol");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_settling_us,
+        "pulse-delay's row must not write into read_settling_us");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_strobe_us,
+        "pulse-delay's row must not write into read_strobe_us");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.page_size,
+        "pulse-delay's row must not write into page_size");
+}
+
+/* chip-id -> handle->chip_id (uint16_t) */
+void test_chip_id_round_trips_through_the_field_table(void) {
+    const char* json = "{\"cmd\":1,\"chip-id\":4660}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(4660, h.chip_id,
+        "a wrong offsetof in the chip-id row would write into a "
+        "neighbouring member instead -- the compile-time guards cannot see "
+        "that, only this executing round-trip can");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.mem_size,
+        "chip-id's row must not write into mem_size");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.address,
+        "chip-id's row must not write into address");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.ctrl_flags,
+        "chip-id's row must not write into ctrl_flags");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.pins,
+        "chip-id's row must not write into pins");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.pulse_delay,
+        "chip-id's row must not write into pulse_delay");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.vpp_mv,
+        "chip-id's row must not write into vpp_mv");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.protocol,
+        "chip-id's row must not write into protocol");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_settling_us,
+        "chip-id's row must not write into read_settling_us");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_strobe_us,
+        "chip-id's row must not write into read_strobe_us");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.page_size,
+        "chip-id's row must not write into page_size");
+}
+
+/* vpp_mv -> handle->vpp_mv (uint16_t). Wire key is the UNDERSCORE form, as
+ * declared: `const char key_vpp_mv[] PROGMEM = "vpp_mv";`. A hyphenated
+ * spelling here would silently never match -- the same trap key_page_size's
+ * own comment documents in the opposite direction. */
+void test_vpp_mv_round_trips_through_the_field_table(void) {
+    const char* json = "{\"cmd\":1,\"vpp_mv\":12000}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(12000, h.vpp_mv,
+        "a wrong offsetof in the vpp_mv row would write into a "
+        "neighbouring member instead -- the compile-time guards cannot see "
+        "that, only this executing round-trip can");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.mem_size,
+        "vpp_mv's row must not write into mem_size");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.address,
+        "vpp_mv's row must not write into address");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.ctrl_flags,
+        "vpp_mv's row must not write into ctrl_flags");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.chip_id,
+        "vpp_mv's row must not write into chip_id");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.pins,
+        "vpp_mv's row must not write into pins");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.pulse_delay,
+        "vpp_mv's row must not write into pulse_delay");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.protocol,
+        "vpp_mv's row must not write into protocol");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_settling_us,
+        "vpp_mv's row must not write into read_settling_us");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_strobe_us,
+        "vpp_mv's row must not write into read_strobe_us");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.page_size,
+        "vpp_mv's row must not write into page_size");
+}
+
+/* pin-count -> handle->pins (uint8_t) */
+void test_pin_count_round_trips_through_the_field_table(void) {
+    const char* json = "{\"cmd\":1,\"pin-count\":28}";
+    firestarter_handle_t h = make_handle(CMD_READ);
+    int rc = parse_json(json, &h);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(28, h.pins,
+        "a wrong offsetof in the pin-count row would write into a "
+        "neighbouring member instead -- the compile-time guards cannot see "
+        "that, only this executing round-trip can");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.mem_size,
+        "pin-count's row must not write into mem_size");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.address,
+        "pin-count's row must not write into address");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.ctrl_flags,
+        "pin-count's row must not write into ctrl_flags");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.chip_id,
+        "pin-count's row must not write into chip_id");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.pulse_delay,
+        "pin-count's row must not write into pulse_delay");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.vpp_mv,
+        "pin-count's row must not write into vpp_mv");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, h.protocol,
+        "pin-count's row must not write into protocol");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_settling_us,
+        "pin-count's row must not write into read_settling_us");
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, h.read_strobe_us,
+        "pin-count's row must not write into read_strobe_us");
+    TEST_ASSERT_EQUAL_UINT16_MESSAGE(0, h.page_size,
+        "pin-count's row must not write into page_size");
+}
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
@@ -186,10 +545,22 @@ int main(int argc, char** argv) {
     RUN_TEST(test_read_strobe_us_parsed_from_json);
     RUN_TEST(test_read_timing_fields_default_zero_when_absent);
     RUN_TEST(test_read_settling_us_capped_at_max);
+    RUN_TEST(test_read_strobe_us_capped_at_max);
     RUN_TEST(test_page_size_parsed_from_json);
     RUN_TEST(test_page_size_defaults_zero_when_absent);
     RUN_TEST(test_page_size_resets_between_two_parses_on_the_same_handle);
     RUN_TEST(test_unknown_key_before_a_known_key_does_not_desync_the_token_walk);
     RUN_TEST(test_unknown_key_before_page_size_does_not_desync_the_token_walk);
+    RUN_TEST(test_out_of_range_algorithm_saturates_not_truncates);
+    RUN_TEST(test_out_of_range_algorithm_dispatch_fail_closes);
+    RUN_TEST(test_in_range_algorithm_still_dispatches);
+    RUN_TEST(test_out_of_range_flags_masks_never_sets_every_flag);
+    RUN_TEST(test_out_of_range_page_size_saturates_not_truncates_to_a_valid_size);
+    RUN_TEST(test_memory_size_round_trips_through_the_field_table);
+    RUN_TEST(test_address_round_trips_through_the_field_table);
+    RUN_TEST(test_pulse_delay_round_trips_through_the_field_table);
+    RUN_TEST(test_chip_id_round_trips_through_the_field_table);
+    RUN_TEST(test_vpp_mv_round_trips_through_the_field_table);
+    RUN_TEST(test_pin_count_round_trips_through_the_field_table);
     return UNITY_END();
 }

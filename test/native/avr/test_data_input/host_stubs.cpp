@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 28 Wave A — host stub TU for the test_data_input suite.
+ * host stub TU for the test_data_input suite.
  *
  * This suite uses the include-as-source pattern (the test cpp #includes
  * leonardo_rurp_shield.cpp directly per RESEARCH.md Q2 Option D) and defines
@@ -39,7 +39,7 @@ Serial_::operator bool() {
     return true;
 }
 
-/* Phase 28 Wave A — minimum link-time stubs.
+/* minimum link-time stubs.
  *
  * `[env:native].build_src_filter = +<proms/> +<boards/rurp_serial_utils.cpp>`
  * links src/proms/*.cpp into the test binary. Those TUs reference a handful

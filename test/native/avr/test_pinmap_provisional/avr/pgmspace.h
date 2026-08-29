@@ -1,5 +1,5 @@
 /*
- * Phase 124 Plan 08 — host-side stub for <avr/pgmspace.h>, for the
+ * host-side stub for <avr/pgmspace.h>, for the
  * test_pinmap_provisional suite. Copied from test_dispatch/avr/pgmspace.h
  * (Phase 12 Wave 0), which every native suite directory carries.
  *
@@ -26,7 +26,7 @@
 #define PSTR(s) (s)
 #endif
 
-/* Phase 12 Wave 1: PGM_P is referenced by rurp_shield.h's rurp_log /
+/* PGM_P is referenced by rurp_shield.h's rurp_log /
  * rurp_log_P prototypes. ArduinoFake provides its own arduino/pgmspace.h
  * later in the include order, which also defines PGM_P. Both definitions
  * resolve to `const char *`, so guard with #ifndef to avoid clashes. */

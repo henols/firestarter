@@ -4,9 +4,9 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 124 Plan 08 — host stub TU for the test_pinmap_provisional suite
+ * host stub TU for the test_pinmap_provisional suite
  * (MERGE-04).
- * Phase 6 WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
+ * WR-06 — shared stub body lives in ../_shared/host_stubs_common.inc.
  *
  * Compiling firmware sources (src/proms/*.cpp) on platform = native leaves
  * the linker hungry for hardware-side symbols defined in the AVR-only TUs

@@ -190,14 +190,36 @@ _C14_CONSUMER_SITES = (
     # (104/110 -> 119/125). Site 41 and the six sites in other files are
     # unaffected. Re-pinned, not relaxed: the census still asserts an exact
     # line for each of the nine sites.
-    ("src/firestarter.cpp", 41, "rurp_load_config"),
-    ("src/firestarter.cpp", 119, "rurp_get_config"),
-    ("src/firestarter.cpp", 125, "rurp_save_config"),
+    # The narrative-comment cleanup (2026-08-25) reflowed comment blocks in
+    # src/firestarter.cpp, shifting the get/save pair by -13 (115/121 -> 102/108).
+    # Site 38 sits above every edited block and is unmoved. Re-pinned, not
+    # relaxed; no statement changed and all three AVR targets stay byte-identical.
+    # The provenance-oracle correction (2026-08-24) swept the residue the
+    # Phase-154 detector could not see, because it anchored its token at the
+    # comment opener. In include/rurp_hw_rev_utils.h two comment blocks lost a
+    # line each -- analog_read_avg8's 3-line note reflowed to 2, and the
+    # hard-fail-loud block's 4 lines to 3 -- shifting both sites in that file
+    # by -2 (95/101 -> 93/99). No statement changed; all three AVR targets are
+    # byte-identical. Re-pinned, not relaxed: the census still asserts an exact
+    # line for each of the nine sites.
+    # The provenance comment sweep (SWEEP-01, SWEEP-06) deleted and reflowed
+    # comment blocks only -- no statement changed -- but that moves line
+    # numbers, which this census pins exactly. src/firestarter.cpp: a deleted
+    # 3-line tombstone above setup()'s rurp_load_config() shifts site 41 by -3
+    # (41 -> 38), and a further -1 from a reflow inside parse_json shifts the
+    # get/save pair by -4 (119/125 -> 115/121). src/hardware_operations.cpp: a
+    # 4-line comment reflowed to 3 shifts both sites by -1 (107/119 ->
+    # 106/118). The other four sites sit in files the sweep did not touch and
+    # are unchanged. Re-derived by locating each call, never by relaxing the
+    # pin.
+    ("src/firestarter.cpp", 38, "rurp_load_config"),
+    ("src/firestarter.cpp", 102, "rurp_get_config"),
+    ("src/firestarter.cpp", 108, "rurp_save_config"),
     ("src/boards/rurp_common.cpp", 53, "rurp_get_config"),
-    ("include/rurp_hw_rev_utils.h", 95, "rurp_get_config"),
-    ("include/rurp_hw_rev_utils.h", 101, "rurp_get_config"),
-    ("src/hardware_operations.cpp", 107, "rurp_get_config"),
-    ("src/hardware_operations.cpp", 119, "rurp_get_config"),
+    ("include/rurp_hw_rev_utils.h", 93, "rurp_get_config"),
+    ("include/rurp_hw_rev_utils.h", 99, "rurp_get_config"),
+    ("src/hardware_operations.cpp", 106, "rurp_get_config"),
+    ("src/hardware_operations.cpp", 118, "rurp_get_config"),
     ("platform/py32f071/src/py32f071_rurp_shield.cpp", 297, "rurp_get_config"),
 )
 

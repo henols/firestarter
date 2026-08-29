@@ -136,7 +136,7 @@ void test_admission_rejects_dev_tool_ordinals_7_and_8(void) {
 }
 
 /* Boundary controls around the new ninth value, 16 (CMD_LOCK_STATUS),
- * Phase 151 (LOCK-02). Both as bare numeric literals, matching case 1's
+ * (LOCK-02). Both as bare numeric literals, matching case 1's
  * bare-literal idiom: 15 is CMD_HW_VERSION, the highest pre-existing
  * command, and must remain false; 17 is the first value above the new
  * ninth admission and must be false too, proving the growth stopped at

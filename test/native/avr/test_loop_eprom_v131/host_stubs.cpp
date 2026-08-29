@@ -4,7 +4,7 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 141 Plan 03 (LOOP-01..LOOP-08, D-10) -- host stubs for the per-byte
+ * (LOOP-01..LOOP-08, D-10) -- host stubs for the per-byte
  * program loop suite.
  *
  * This is the SIXTH native env's suite (native_loop_v131), authored because

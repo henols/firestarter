@@ -4,14 +4,14 @@
  *
  * Permission is hereby granted under MIT license.
  *
- * Phase 12 Wave 0 — dispatch unit tests for configure_memory().
+ * dispatch unit tests for configure_memory().
  *
  * One test per protocol in KNOWN_PROTOCOLS (build_db.py:89). Each test
  * constructs a minimal firestarter_handle_t (protocol, cmd, response_code)
  * and asserts `configure_memory()` does not raise RESPONSE_CODE_ERROR (i.e.
  * the chip resolved to a real handler).
  *
- * Phase 105 (protocol-only dispatch): dispatch is keyed on `protocol` alone
+ * (protocol-only dispatch): dispatch is keyed on `protocol` alone
  * — there is no backward-compat fallback axis. Any unrecognized protocol,
  * including 0, reaches `configure_not_implemented()`; see
  * test_not_implemented.cpp for fail-closed coverage.
@@ -179,7 +179,7 @@ void test_5v_page_check_chip_id_0x39_sets_operation(void) {
 /* ─────────────────────────────────────────────────────────────────────────
  * v1.22 Phase 119 D-06/D-07/D-08 (119-07 Task 3) — the complete
  * command-by-protocol matrix enumerated as native cases, made possible by
- * Task 1 widening [env:native]/[env:native_nodevtools]'s build_src_filter
+ * widening [env:native]/[env:native_nodevtools]'s build_src_filter
  * with operation_utils.cpp. RESEARCH F-E precomputed the full matrix, so
  * this is an enumeration to verify, not an exploration.
  *
@@ -308,7 +308,7 @@ void test_case_group3_sdp_cmds_dispatch_on_0x0d_with_null_init_end(void) {
 }
 
 /* Case group 4a — ERASE-03: CMD_ERASE on 0x0D now dispatches to a real op.
- * Phase 153 added a `case CMD_ERASE:` arm to configure_eeprom28c's switch,
+ * added a `case CMD_ERASE:` arm to configure_eeprom28c's switch,
  * assigning only firestarter_operation_main (no init, no end). This split
  * off the erase half of the old combined group-4 function -- the old
  * function's name claimed BOTH commands left main NULL, and only the

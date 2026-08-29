@@ -7,6 +7,7 @@
 
 #include "flash_utils.h"
 #include <Arduino.h>
+#include "memory_utils.h"
 #include "rurp_shield.h"
 #include "rurp_pinout.h"
 #include "logging_id.h"
@@ -77,7 +78,7 @@ uint8_t fu_flash_data_poll() {
 
 /* Shared AMD/JEDEC chip-ID read: FLASH_ENABLE_ID → read 0x0000/0x0001
  * → FLASH_DISABLE_ID. Used by flash_nor_unlock and flash_5v_page (Option B
- * flash-budget mitigation — Phase 74 Plan 02). */
+ * flash-budget mitigation). */
 uint16_t flash_util_get_chip_id(firestarter_handle_t* handle) {
     flash_execute_command(FLASH_ENABLE_ID);
     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
@@ -86,7 +87,7 @@ uint16_t flash_util_get_chip_id(firestarter_handle_t* handle) {
     return chip_id;
 }
 
-/* Phase 151 (LOCK-02): shared single-byte AMD/JEDEC ID-mode read.
+/* Shared single-byte AMD/JEDEC ID-mode read.
  * flash_util_get_chip_id above is the fixed 0x0000/0x0001 pair; a
  * protect-verify read is the identical mode with a caller-supplied
  * address, so it lives beside it rather than duplicating the sequence in
@@ -102,18 +103,5 @@ uint8_t flash_util_read_in_id_mode(firestarter_handle_t* handle, uint32_t addres
 
 void flash_util_check_chip_id_execute(firestarter_handle_t* handle) {
     uint16_t chip_id = flash_util_get_chip_id(handle);
-    if (chip_id != handle->chip_id) {
-        uint8_t _b[4];
-        _b[0] = (uint8_t)((chip_id >> 8) & 0xFF);
-        _b[1] = (uint8_t)(chip_id & 0xFF);
-        _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
-        _b[3] = (uint8_t)(handle->chip_id & 0xFF);
-        if (is_flag_set(FLAG_FORCE)) {
-            LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
-            handle->response_code = RESPONSE_CODE_WARNING;
-        } else {
-            LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
-            handle->response_code = RESPONSE_CODE_ERROR;
-        }
-    }
+    mem_util_report_chip_id(handle, chip_id, is_flag_set(FLAG_FORCE));
 }
