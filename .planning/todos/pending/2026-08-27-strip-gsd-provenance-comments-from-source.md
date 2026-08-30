@@ -19,6 +19,48 @@ made a decision.
 Operator's words: *"it is bloating it and brings no value for someone reading it. This must come to
 an end and this is a hard rule that you arent allowed to override in any way."*
 
+## ✅ PACKAGE HALF DONE 2026-08-30 — app PR #55 open
+
+`firestarter_app/firestarter/` (the shipped package) is **swept and green**, on branch
+`chore/strip-provenance-comments`, PR
+[app#55](https://github.com/henols/firestarter_app/pull/55) against `beta` — **open, not merged.**
+
+Two commits: `7126083` (user-facing surfaces) and `dddde47` (comments and docstrings).
+1976 tests pass, 32 snapshots, ruff clean, Python 3.11.
+
+**The leak was worse than comments.** Click renders a command docstring verbatim as its
+`--help` body, so `write --help` was printing `TRAP #3 / D-13.3`, `Phase 92 decouple`,
+`Phase 153 (ERASE-01/ERASE-02)` and `TRAP #6 / D-17/D-18 (v1.22 HOST-02)` **to end users**.
+Option help advertised `(D-11)` and `(D-07)`. `dev test` report strings carried `(D-01)` and
+`(D-06 marginal policy)` into community issue reports. All of that is gone.
+
+**Firmware needed no work** — its only remaining hits are 4 `CAP-01/02/03` lines, live
+cross-repo wire vocabulary kept deliberately by the v1.33 sweep.
+
+**Two gates pushed back, and both were right to:**
+- `_read_and_parse_lines` is ring-fenced as the v1.9 read-bug RCA baseline with its body
+  digest-pinned. **8 provenance sites survive there on purpose** (`serial_comm.py:410`,
+  `:419`–`:515`) and stay until v1.9 opens the fence.
+- `test_py32_packaging` **required** the literal strings `"D-17"` and `"HOST-01"` to be present
+  in `firmware.py` — a test mandating provenance in source. Those two identifiers were dropped
+  from its phrase list; the gate's actual purpose (proximity of the "accepted deviation" record
+  to `def flash_method(`) is intact.
+
+**Method note for whoever does the rest:** three automated passes were attempted and all three
+were reverted for collateral damage — a line-wise re-wrapper orphaned comment fragments and
+corrupted a string literal until the module stopped parsing; a prose-aware scrubber flattened
+docstring indentation package-wide and ate the parens off `.strip()`. Provenance in this
+codebase is welded into sentences, not parked in tidy parentheticals. **Removing it is editing,
+and editing does not regex.** Do it by hand, in reviewed batches, with `ruff format --check` and
+the full suite after each.
+
+## STILL OPEN
+
+- **`firestarter_app/tools/`** — ~296 hits. Does not ship in the pip package, but is source.
+- **`firestarter_app/tests/`** — ~1774 hits. **A separate decision, not more of the same work:**
+  test files use phase identifiers as gate anchors and several tests *assert* on them, so
+  stripping them changes gate behaviour rather than just hygiene.
+
 ## ⚠ RE-HOMED 2026-08-29 — the routing below is SUPERSEDED, the rule is not
 
 `resolves_phase` was **165**. Phase 165 closed on 2026-08-29 (v1.34, early/scope-reduced) **without
