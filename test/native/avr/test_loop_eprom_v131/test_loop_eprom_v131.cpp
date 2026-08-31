@@ -1736,31 +1736,6 @@ void test_vpp01_dip32_drop_bit_survives_the_block_on_rev2_class(void) {
     int first_pulse_idx = first_genuine_pulse_strobe_index(block, 4);
     TEST_ASSERT_TRUE_MESSAGE(first_pulse_idx >= 0, "non-vacuity: a genuine chip-data pulse must have been recorded");
 
-    /* [D-01/D-02/D-04 finding, in full -- supersedes the pre-Phase-142
-     * "D-09 finding" this comment used to carry, which asserted the
-     * OPPOSITE outcome]. Plan 142-02 revision-gated
-     * mem_util_calculate_top_address_register's preserve mask so
-     * CTRL_VPP_VPE_DROP_ENABLE now SURVIVES this block's every
-     * set_address() on Rev 2-class hardware (D-01/D-02) -- the inverse of
-     * what this case asserted before Phase 142. Plan 142-04 (this plan)
-     * then removed eprom_write_execute's explicit pins>=32 clear (D-04),
-     * which is what makes that survival OBSERVABLE in the strobe stream at
-     * all: with the clear gone, nothing in the write path ever re-clears
-     * the bit the top-of-block assert set below.
-     *
-     * The drop bit is a VPP LEVEL selector (VPE dropped through the
-     * resistor to the ~13V VPP level), never a route: pin-1 VPP routing on
-     * a 32-pin part is a separate, PHYSICAL decision made with a jumper --
-     * this file names no jumper designator and asserts no net
-     * (doc/SHIELD-REVISIONS.md and .planning/v1.7-SHIELD-REVS.md document
-     * that jumper's identity two contradictory ways, an open finding, not
-     * resolved here).
-     *
-     * This case is Rev-2-class ONLY --
-     * test_loop08_the_28_pin_row_keeps_its_drop_bit is its unaffected
-     * 28-pin partner (pins < 32 was never gated on revision). Like every
-     * other claim in this suite, this is a claim about the EMITTED
-     * CONTROL-REGISTER STREAM only, never about silicon (D-03). */
     int v0 = control_write_value(0);
     TEST_ASSERT_TRUE_MESSAGE(v0 >= 0 && (v0 & CTRL_VPP_VPE_DROP_ENABLE_REV2) != 0,
         "control write 0 (the top-of-block assert) must have the drop bit SET -- the 0x08 row's ELSE branch asserts regulator|drop together");
