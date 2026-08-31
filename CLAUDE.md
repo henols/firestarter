@@ -34,7 +34,7 @@ falling back to any other dispatch axis.
 Dispatch reads named `PROTO_<NAME>` constants (`include/proto_constants.h`,
 v1.19 naming layer) — every value equals the pre-existing raw-hex dispatch
 key it names; numbers stay the dispatch key end to end (GATE-01). Source of
-truth for the name set: `firestarter/doc/PROTOCOLS.md` (operator-approved).
+truth for the name set: the `Programming Protocols` wiki page (operator-approved).
 
 Dispatch order in `memory.cpp:configure_memory` (source-of-truth — must match
 `firestarter/src/proms/memory.cpp` line-for-line):
@@ -57,7 +57,7 @@ fall through to.
 ### Algorithm Handlers
 
 Protocol column uses the operator-approved `PROTO_<NAME>` tokens (`include/proto_constants.h`,
-source of truth `firestarter/doc/PROTOCOLS.md`) — the label IS the number; no dispatch/value change.
+source of truth the `Programming Protocols` wiki page) — the label IS the number; no dispatch/value change.
 
 | Protocol               | PROTO_ token           | File              | VPP             | Notes                                                        |
 |------------------------|------------------------|-------------------|-----------------|--------------------------------------------------------------|
@@ -111,7 +111,7 @@ stays `UNVERIFIED` and none of it is a claim that the write path works on a part
 sequence emitted before each write reports its own emission (and measured
 duration) but the SDP protection state itself is not readable — a successful
 emission proves only that the sequence was sent, never the part's actual
-protection state before or after. See `doc/PROTOCOLS.md` §1.6 for the full
+protection state before or after. See the `Programming Protocols` wiki page §1.6 for the full
 model.
 
 ### JSON Wire Protocol
@@ -201,9 +201,9 @@ Firmware flags (from `firestarter.h`):
 
 ### Hardware Revision Documentation
 
-The operator-facing canonical RURP shield revision reference at `firestarter/doc/SHIELD-REVISIONS.md` is a subset clone of the Firestarter meta-repo investigation document at `.planning/v1.7-SHIELD-REVS.md`. It contains the inventory (§1), per-rev capability matrix (§6), silkscreen → code alias table (§7), and per-rev ADC band table (§9). If any of those sections changes in the meta-repo, update the sub-repo doc in lockstep (Phase 35 / v1.7 — close).
+The operator-facing canonical RURP shield revision reference, the `Shield Revisions` wiki page, is a subset clone of the Firestarter meta-repo investigation document at `.planning/v1.7-SHIELD-REVS.md`. It contains the inventory (§1), per-rev capability matrix (§6), silkscreen → code alias table (§7), and per-rev ADC band table (§9). If any of those sections changes in the meta-repo, update the wiki page in lockstep (Phase 35 / v1.7 — close).
 
-The `rurp_pinout.h` `ADC_BAND_R41_*` `#define` values are the firmware-side source of truth for the band-lookup math; the §4 ADC Band Table in `doc/SHIELD-REVISIONS.md` mirrors those values verbatim. Drift between the two = bug; if the values change in `rurp_pinout.h`, update the doc's §4 table + the meta-repo §9 in the same commit-pair.
+The `rurp_pinout.h` `ADC_BAND_R41_*` `#define` values are the firmware-side source of truth for the band-lookup math; the §4 ADC Band Table in the `Shield Revisions` wiki page mirrors those values verbatim. Drift between the two = bug; if the values change in `rurp_pinout.h`, update the wiki page's §4 table + the meta-repo §9 in the same commit-pair.
 
 Post-Phase-35 semantic note: Plan 01 switched `pinMode(PIN_HW_REVISION_DETECT_ADC)` from `INPUT_PULLUP` to `INPUT` (high-Z), disabling the MCU internal pull-up. The R41 detect divider's R_top is therefore no longer active; the existing ADC band thresholds (`200/220/600`) characterize *A3-net composition* (R41-only-to-GND = low; external-pull-up-active = mid; floating = high), not R41 value. Future v1.8 Rev 2.4 PCB could add an external R_top to restore the original schematic-divider semantics.
 

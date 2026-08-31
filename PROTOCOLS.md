@@ -1,7 +1,17 @@
-# Firestarter Protocol Reference
+# Programming Protocols — firmware reference
 
-This is the canonical GitHub-visible protocol vocabulary for the Firestarter EPROM programmer
-firmware. It maps every `protocol_id` present in `chip_database.json` to its
+Implementation reference for how the firmware drives each protocol: write
+algorithms, pulse widths, voltage routing, register constants, datasheet
+citations and dispatch traceability.
+
+This is the developer-facing document. The user-facing description of what each
+protocol is and which chips it is for lives on the wiki:
+https://github.com/henols/firestarter_prom/wiki/Programming-Protocols
+
+The claims region below is machine-read by `tools/wiki/dispatch_mirror.py` in
+the meta repository, which checks that the dispatch table here, the host tool
+and the firmware all agree. Keep its table shape intact when editing.
+
 `datasheets/<hex>-<NAME>/` folder slug (col 1, phase-85 committed, not renamed) and a
 **3-field canonical name entry** — (1) a C-identifier-safe `PROTO_` token, (2) a short human
 display name, (3) the datasheet-cited behavioral facet prose (write algorithm, erase model, VPP
@@ -17,7 +27,6 @@ the SAFE-02 handoff to Phases 88/89.
 - To understand the FM1608 SRAM→FRAM identity correction or the X88C64 EEPROM identity correction, read the relevant bucket section inside §1 — the NAME-04 call-outs are there.
 - To see why a phantom (0x35/0x39) or infeasible (0x11/0x2A/0x2B/0x2C) protocol ID routes to `configure_not_implemented()`, read [§2 (Honest non-protocols)](#2-honest-non-protocols).
 - To find the INV-01..INV-09 traceability matrix (invariants, owning handlers, planned native test function names, suite paths), read [§3 (invariant traceability matrix)](#3-invariant-traceability-matrix).
-- For deeper background on the RURP control-register map, per-bucket algorithm prose, and minipro `protocol_id` taxonomy see `.planning/research/PROTOCOLS.md` (research-grade, not the deliverable) and `.planning/v1.13-PROTOCOL-ENUMERATION.md` (12-bucket landscape + erase-scope findings) in the Firestarter meta-repo.
 
 **Canonical bucket set** (re-verified from `chip_database.json` before authoring — DB is authoritative):
 
@@ -40,6 +49,7 @@ the SAFE-02 handoff to Phases 88/89.
 > documented punctuation deviation from the em-dash col-2 display names below (Phase 102 D-02)
 > — the names are otherwise identical.
 
+<!-- firestarter-claims-begin -->
 | hex | DB chip count | frozen slug (col 1) | PROTO_ token | display name | handler-family | phantom? |
 |-----|--------------|---------------------|--------------------------|--------------------------|-----------------|----------|
 | 0x05 | 27 | `0x05-FLASH-AMD-STD` | `PROTO_FLASH_5V_PAGE` | Flash — 5V page-write (EEPROM-like) | 5v_page (0x05 + phantoms 0x35/0x39) | no |
@@ -68,6 +78,7 @@ the SAFE-02 handoff to Phases 88/89.
 | eeprom28c | `configure_eeprom28c()` | `eeprom_28c.cpp` | 0x0D (single-protocol) |
 | flash_intel | `configure_flash_intel()` | `flash_intel.cpp` | 0x10 (single-protocol) |
 | not-implemented | `configure_not_implemented()` | `not_implemented.cpp` | 0x34 (PCB-blocked) + infeasible 0x11/0x2A/0x2B/0x2C (out of scope, §2.2) |
+<!-- firestarter-claims-end -->
 
 ---
 
@@ -185,7 +196,7 @@ for threshold margin — the ~6.25 V ceiling named below — is unreachable on t
 VCC-raise path (`include/eprom_params.h`'s `verify_mode` header comment). This milestone buys timing,
 pulse-count and verify fidelity and **not** silicon-margin fidelity; it is hardware-bound and
 recorded here rather than attempted.
-Citation: `include/eprom_params.h:32-34`; `.planning/REQUIREMENTS.md` §"Evidence ceiling — fixed before any code moves".
+Citation: `include/eprom_params.h:32-34`.
 
 ---
 
@@ -236,7 +247,7 @@ for threshold margin — the ~6.25 V ceiling named below — is unreachable on t
 VCC-raise path (`include/eprom_params.h`'s `verify_mode` header comment). This milestone buys timing,
 pulse-count and verify fidelity and **not** silicon-margin fidelity; it is hardware-bound and
 recorded here rather than attempted.
-Citation: `include/eprom_params.h:32-34`; `.planning/REQUIREMENTS.md` §"Evidence ceiling — fixed before any code moves".
+Citation: `include/eprom_params.h:32-34`.
 
 ---
 
@@ -267,6 +278,10 @@ full per-cell citation.
 
 **Erase model:** UV light erasure only for UV-EPROM variants (2716, 2732, 2732A, 2516). Small 24-pin EEPROMs in this bucket (AT28C04, 28C16) erase via `eprom_internal_erase()` applying VPE to A9 pin.
 
+**Hardware reference for this bucket:** the small 24-pin EEPROMs need a DIP24-to-DIP32
+adapter before they fit the socket — see [Pin Maps](Pin-Maps) for the pin map, the reroute
+the adapter makes, and the 5 V-only guarantee that applies to these parts.
+
 **VPP behavior:** VPP = 12–25V via `CTRL_VPP_REGULATOR_ENABLE` ONLY — the direct-VPE rail (no drop resistor). See INV-01 (0x0B direct-VPE rail in §3): unlike 0x07/0x08, 0x0B uses `FLAG_VPE_AS_VPP` to apply VPE directly without `CTRL_VPP_VPE_DROP_ENABLE`. The RURP trimpot must be set to the target voltage before programming. NMOS variants (Intel 2716, 2732) historically required 25V — RURP is physically capable of this via the adjustable regulator; firmware warns on under-voltage and proceeds (Phase 79 operator override D-07, best-effort).
 Citation: `datasheets/0x0B-EPROM-LEGACY/2516_EPROM.pdf` p.2 §Vpp Programming Voltage.
 
@@ -288,7 +303,7 @@ for threshold margin — the ~6.25 V ceiling — is unreachable on this shield, 
 path (`include/eprom_params.h`'s `verify_mode` header comment). This milestone buys timing,
 pulse-count and verify fidelity and **not** silicon-margin fidelity; it is hardware-bound and
 recorded here rather than attempted.
-Citation: `include/eprom_params.h:32-34`; `.planning/REQUIREMENTS.md` §"Evidence ceiling — fixed before any code moves".
+Citation: `include/eprom_params.h:32-34`.
 
 ---
 
@@ -481,7 +496,7 @@ reaches them to `not_implemented`.
 | `0x39` | `PROTO_PHANTOM_0x39` | No `IC2_ALG` constant exists for this value in minipro source. Zero chips in `chip_database.json`. Firmware dispatch preserved for forward-compat. |
 
 These are not 5V page-write flash (`PROTO_FLASH_5V_PAGE`) variants, EPROM variants, or any
-other real protocol. They are dead dispatch arms. The old `.planning/research/PROTOCOLS.md` description of 0x35 as "AT29C
+other real protocol. They are dead dispatch arms. An old description of 0x35 as "AT29C
 series" and 0x39 as "AT49F series" was pre-Phase-86 speculation about minipro intent — the
 Phase-86 DB regeneration confirmed zero DB chips for both.
 
@@ -554,3 +569,5 @@ anywhere under the native tree.
 *Datasheets committed in Phase 85; datasheet citation anchors are best-available locators per D-discretion*
 *INV-01..INV-09 ids are the SAFE-02 handoff to Phases 88/89 — grep-intact through recompose*
 *Phase 100 — Canonical Protocol Name Set (3-field schema: `PROTO_` token + display name + handler-family) | Draft authored 2026-07-01 | Operator-approved 2026-07-01 — final name set: 0x0E/0x29 SRAM collision resolved (`PROTO_SRAM_32PIN` / `PROTO_SRAM_32PIN_NVRAM`), phantom tokens `PROTO_PHANTOM_0x35`/`PROTO_PHANTOM_0x39`, 0x34 `PROTO_EEPROM_8051BUS`; all other names approved as drafted*
+
+<!-- firestarter-claim-stamp: db-sha256-16=ccbc8d2c4866a5af verified=2026-08-31 -->

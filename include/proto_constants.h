@@ -8,13 +8,6 @@
 #ifndef __PROTO_CONSTANTS_H__
 #define __PROTO_CONSTANTS_H__
 
-// Protocol dispatch constants.
-// Every value below equals the pre-existing raw-hex `handle->protocol`
-// dispatch key it names — the label IS the number. Source of
-// truth: firestarter/doc/PROTOCOLS.md (operator-approved, commit 6e7bd38).
-// This is a legibility layer only: numbers stay the authoritative dispatch
-// key end to end; no numeric value changes here.
-
 #define PROTO_FLASH_5V_PAGE 0x05
 #define PROTO_FLASH_NOR_UNLOCK 0x06
 #define PROTO_EPROM_28PIN 0x07
