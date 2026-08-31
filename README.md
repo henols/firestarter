@@ -1,151 +1,91 @@
 <p align="left"><img src="https://raw.githubusercontent.com/henols/firestarter_app/refs/heads/main/images/firestarter_logo.png" alt="Firestarter EPROM Programmer" width="200"></p>
 
----
 # Firestarter Firmware
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+The AVR firmware that runs on the Arduino and drives the chip in the socket.
 
+**New here?** Start at [firestarter_prom](https://github.com/henols/firestarter_prom) — what
+Firestarter is, how to install it, and how to read your first chip. You do not need to build
+this firmware by hand; the `firestarter` CLI installs the matching build for you.
 
-[![ko-fi](https://raw.githubusercontent.com/henols/firestarter_app/refs/heads/main/images/ko-fi.png)](https://ko-fi.com/E1E21I2WWW)
+This README covers building and flashing the firmware itself.
 
-----
-The Firestarter Firmaware is intedend to be used with the [Firestarter application](https://github.com/henols/firestarter_app) and the [Relatively-Universal-ROM-Programmer](https://github.com/AndersBNielsen/Relatively-Universal-ROM-Programmer) RURP shield.
+## Supported boards
 
-
-For more information, see the [Firestarter README](https://github.com/henols/firestarter_app/blob/main/README.md).
-
-## Breaking Changes (v1.20)
-
-### Legacy `type` wire field removed — `algorithm` is the sole dispatch key (breaking change)
-
-The host→firmware JSON command no longer carries a `type` field (the old `mem_type`
-integer). `algorithm` (the upstream minipro `protocol_id`) is now the **only** value
-the firmware uses to decide how to program a chip — the backward-compatibility
-`mem_type` fallback dispatch chain has been removed entirely.
-
-A chip database entry — built-in or user override — now **must** carry a usable,
-non-zero `algorithm`. A chip lacking one is refused by the host before any serial
-byte is sent (no more silent fallback to a `mem_type`-derived handler).
-
-**Pre-v1.20 hosts stay safe.** A stale host CLI that still emits a `type` field is
-not harmful: the firmware silently skips unknown JSON fields, so `type` simply no
-longer does anything. The only functional loss is the fallback path itself, which
-was already dead code for every real chip in the database.
-
-**Upgrade:** upgrade both the firmware and the Firestarter CLI together
-(`pip install --pre firestarter && firestarter fw -i --pre`) — the same lockstep
-discipline as every prior breaking wire-protocol change.
-
-This change is beta-only (v1.20). Nothing is promoted to stable without operator authorization.
-
-## Breaking Changes (v1.10)
-
-### Command-channel wire protocol — COBS framing + CRC8 (breaking change)
-
-The host→firmware JSON command channel now uses COBS framing with a CRC8-CCITT integrity byte.
-Every command — including the firmware version probe — is wrapped as `[COBS(JSON + CRC8)][0x00]`.
-The firmware verifies CRC8 **before** the JSON parser sees any byte; the previous command channel had
-no checksum. The legacy `{`-peek plaintext command path has been removed entirely — there is no
-plaintext fallback.
-
-**This is a breaking wire-protocol change with no mixed-version interop.** A new host cannot drive
-old (unframed) firmware, and an old host cannot drive new firmware. A mismatched pair simply fails
-(timeout or decode error). **Upgrade both the firmware and the host CLI together (lockstep)** —
-exactly as required by the v1.2 Message-ID rework.
-
-**Upgrade:** reflash firmware **and** upgrade the Firestarter CLI together (`pip install --pre firestarter && firestarter fw -i --pre`).
-
-This change is beta-only (v1.10). Nothing is promoted to stable without operator authorization.
-
-## Beta / Pre-release Channel
-
-Pre-release firmware `.hex` builds are published as GitHub Pre-releases — tagged `X.Y.ZbN`
-(PEP 440 beta) or `X.Y.ZrcN` (release candidate), marked "Pre-release", NOT marked "Latest".
-The "Latest" filter on `api.github.com` automatically excludes them, so stable-installed apps
-never accidentally pull beta firmware.
-
-### Install paths
-
-1. **Via the app (recommended):**
-   ```bash
-   firestarter fw -i --pre
-   ```
-   See the [firestarter_app README beta section](https://github.com/henols/firestarter_app/blob/main/README.md#beta--pre-release-channel) for the full set of install flags (`--pre`, `--firmware-version`, `--list`, `--stable`).
-
-2. **Direct download:** Visit https://github.com/henols/firestarter/releases, filter the page by
-   selecting the "Pre-release" tag (the GitHub Releases page has a built-in pre-release filter
-   dropdown), then download `firestarter_{board}.hex` (e.g. `firestarter_uno.hex`,
-   `firestarter_uno328pb.hex`, `firestarter_leonardo.hex`) for the target board and flash it
-   manually with `avrdude`.
-
-### Supported boards
-
-Since v1.5, three firmware build targets are emitted per release:
+Three build targets are emitted per release:
 
 | Board | PlatformIO env | MCU | Bootloader | Notes |
-|-------|----------------|-----|------------|-------|
+|---|---|---|---|---|
 | `uno` | `[env:uno]` | ATmega328P | optiboot (stk500v1 `arduino`) | Arduino Uno R3 + RURP shield |
-| `uno328pb` | `[env:uno328pb]` | ATmega328PB | Urclock (MiniCore default) | Arduino Uno R3 carrier board re-MCU'd with ATmega328PB; pin-compatible with `uno` |
-| `leonardo` | `[env:leonardo]` | ATmega32U4 | Caterina (avr109) | Arduino Leonardo + RURP shield (1024-byte data buffer) |
+| `uno328pb` | `[env:uno328pb]` | ATmega328PB | Urclock (MiniCore default) | Uno R3 carrier re-MCU'd with ATmega328PB; pin-compatible with `uno` |
+| `leonardo` | `[env:leonardo]` | ATmega32U4 | Caterina (avr109) | Arduino Leonardo + RURP shield; 1024-byte data buffer |
 
-The firmware reports its board name in the handshake response (`board:` field of `MSG_OK_FW_HANDSHAKE`), and the host CLI's `firestarter fw -i` uses that string to resolve the matching `.hex` asset from the GitHub Release.
+The firmware reports its board name in the handshake response, and `firestarter fw -i` uses that
+string to resolve the matching `.hex` from the GitHub release.
 
-### Stability guarantee
+## Building
 
-> **⚠ No stability guarantees.** Beta builds are intended for testing pre-release features. They may contain bugs, may change without notice, or may be withdrawn. For production / hardware-bench use, install the stable release.
+```bash
+pio run -e uno                 # build
+pio test -e native             # unit tests
+pio run -t upload -e uno       # flash a connected board
+pio run -t monitor -e uno      # serial monitor, 250000 baud
+```
 
-### Reporting issues against a beta build
+Swap `uno` for `leonardo` or `uno328pb`.
 
-When reporting a bug against a beta firmware build, please include:
+## Installing a build
 
-- **Firmware beta version:** the `X.Y.ZbN` string from `include/version.h` in the released source,
-  OR the firmware handshake string printed on `firestarter hw` startup,
-  OR the row in `firestarter fw --list` matching the installed version
-- **Commit SHA:** from the GitHub Release page's commit reference
-- **Board:** `uno`, `uno328pb`, or `leonardo` (or other configured board)
-- **Chip part number + manufacturer** (for hardware-specific issues)
-- **Repro steps**
+Normally, through the CLI:
 
-Report firmware issues at: https://github.com/henols/firestarter/issues
+```bash
+firestarter fw -i              # stable
+firestarter fw -i --pre        # pre-release
+```
 
-## Protocol Notes
+Or download `firestarter_{board}.hex` from
+[Releases](https://github.com/henols/firestarter/releases) and flash it with `avrdude`.
 
-Protocol `0x0D` (5V parallel EEPROM, AT28C/28C-family) exposes a **standalone
-chip erase** as of Phase 153: `firestarter erase` dispatches a `CMD_ERASE` arm
-to the **software** six-byte chip-erase sequence from Atmel application note
-"Software Chip Erase" (Rev. 0544B-10/98). The datasheet's *hardware* erase mode
-— which requires **12 V on OE (pin 22)** — is deliberately **not** implemented,
-because that is a hardware-damage hazard on a 5 V part;
+Pre-release builds are tagged `X.Y.ZbN` or `X.Y.ZrcN` and marked "Pre-release", never "Latest",
+so a stable-installed CLI never pulls beta firmware by accident.
+
+> **Beta builds carry no stability guarantee.** They may contain bugs, change without notice, or
+> be withdrawn. Use a stable release for bench work that matters.
+
+## Protocol reference
+
+- **[PROTOCOLS.md](PROTOCOLS.md)** — per-protocol write algorithms, pulse widths, voltage routing,
+  register constants and datasheet citations
+- **[PINOUTS.md](PINOUTS.md)** — socket pin maps for every chip family, shield pin and
+  control-register assignments, the DIP24 adapter mapping
+
+`PROTOCOLS.md` carries a machine-read claims region checked against the host tool and this
+firmware. Keep its table shape intact when editing.
+
+### One protocol note worth stating here
+
+Protocol `0x0D` (5 V parallel EEPROM) exposes a standalone chip erase using the **software**
+six-byte sequence from Atmel's "Software Chip Erase" application note (Rev. 0544B-10/98). The
+datasheet's *hardware* erase mode, which requires **12 V on OE (pin 22)**, is deliberately **not
+implemented** — that is a hardware-damage hazard on a 5 V part.
 `scripts/check_erase_no_vpp.py` is the gate that keeps it out.
 
-`write` performs **no blank check** on this protocol: each page write
-auto-erases internally, so the pre-write check was a false precondition rather
-than a safety net. A non-blank part is therefore writable without `-b`. `blank`
-remains available as its own step. The SDP protection state is still not
-readable. **This ships software-proven and unvalidated on silicon** — none of it
-is a claim that the `0x0D` write path works on a part. See
-[Programming Protocols](https://github.com/henols/firestarter_prom/wiki/Programming-Protocols) §1.6 for the full write/erase model.
+## Reporting a problem
 
-The three 27C UV/EE-EPROM protocols (`0x07`/`0x08`/`0x0B`) now program with a
-**per-byte pulse-to-verify loop**: a fixed-width pulse from the chip database
-(never a protocol constant, and overridable per run via `firestarter write
---pulse-us N`), verify, repeat up to a per-protocol max-pulses backstop, with
-a failure naming the address and the pulse count. What this shield cannot
-do: the raised program-VCC the vendor algorithms assume for threshold margin
-— roughly **6.25 V** above nominal — is unreachable here, so this is timing,
-pulse-count and verify fidelity, not silicon-margin fidelity — hardware-bound
-and recorded, not attempted. See [Programming Protocols](https://github.com/henols/firestarter_prom/wiki/Programming-Protocols)
-§§1.3–1.5 for the full per-protocol model.
+**[Open an issue here](https://github.com/henols/firestarter_prom/issues)** — the tracker for all
+three repositories. Include:
 
-## Shield Revision Support
+- the firmware version, from `firestarter fw` or `include/version.h`
+- your board: `uno`, `uno328pb` or `leonardo`
+- the chip's part number and manufacturer, for hardware-specific issues
+- steps to reproduce
 
-The firmware detects the connected RURP shield's silkscreen revision at boot via an ADC voltage-band lookup on pin A3. Rev 2.0+ shields carry the R41 detect divider; pre-detect-resistor boards (Rev 0 / Rev 1) and any board landing in the guard gap fall through to `rev_unknown` and honor the EEPROM `hw_revision` byte override. The detected silkscreen string surfaces on the firmware handshake (`MSG_OK_REV`).
+## Documentation
 
-For the per-revision capability matrix, the silkscreen → code alias table, and the per-rev expected ADC band table, see [Shield Revisions](https://github.com/henols/firestarter_prom/wiki/Shield-Revisions).
-
-If detection lands in the guard gap (`rev_unknown`) on a board where you know the revision, set the EEPROM override byte via the host CLI: `firestarter rev <N>` (see the `firestarter_app` README for the byte values).
+Everything else — supported chips, shield revisions, protocols, how to test a chip — is on the
+**[Firestarter wiki](https://github.com/henols/firestarter_prom/wiki)**.
+Version history is in [Breaking Changes](https://github.com/henols/firestarter_prom/wiki/Breaking-Changes).
 
 ## License
-[MIT](https://raw.githubusercontent.com/henols/firestarter/main/LICENSE)
 
-
+[MIT](LICENSE)
