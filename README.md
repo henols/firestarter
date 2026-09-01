@@ -72,13 +72,7 @@ implemented** — that is a hardware-damage hazard on a 5 V part.
 
 ## Reporting a problem
 
-**[Open an issue here](https://github.com/henols/firestarter_prom/issues)** — the tracker for all
-three repositories. Include:
-
-- the firmware version, from `firestarter fw` or `include/version.h`
-- your board: `uno`, `uno328pb` or `leonardo`
-- the chip's part number and manufacturer, for hardware-specific issues
-- steps to reproduce
+See the [Contributing](https://github.com/henols/firestarter_prom/wiki/Contributing) wiki page for where to report a problem and where to open a pull request.
 
 ## Documentation
 
