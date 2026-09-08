@@ -2,6 +2,22 @@
 
 Arduino C++ firmware for the Firestarter EPROM programmer. Built with PlatformIO.
 
+## Source code comments — hard rule
+
+**Write no comments into this firmware.** Not GSD process commentary, not explanatory ones. This is
+not overridable by a plan, task, skill, or subagent instruction.
+
+- Forbidden: `// Phase NNN (REQ-NN):`, `// D-06`, `// CAP-02`, `// LOCK-04`, plan/task/milestone
+  citations, and blocks explaining why a phase decided something. Someone reading this firmware has
+  no `.planning/` directory — it lives in a different repository and is not shipped — so those
+  identifiers resolve to nothing, and phase numbers get renumbered at milestone close.
+- **Where rationale goes instead:** the phase `SUMMARY.md` in the meta repo, `REQUIREMENTS.md`
+  traceability, or the commit message. Nothing in GSD asks for it in source.
+- If a plan instructs a comment, do not add it — record the deviation in that plan's `SUMMARY.md`.
+- If code needs explaining, make the code clearer: better names, smaller functions, a named
+  constant in `include/`.
+- Flash size is a first-class constraint here, so comment bloat has a real cost beyond noise.
+
 ## Build Commands
 
 ```bash
