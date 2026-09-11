@@ -15,13 +15,9 @@
  *   configure_flash_5v_page sets function pointers but writes no VPP-enable CTL bits.
  *   CTRL_VPP_REGULATOR_ENABLE, CTRL_VPP_P1_ENABLE, and CTRL_VPP_VPE_DROP_ENABLE
  *   must NEVER appear set in any recorded CONTROL_REGISTER write during the
- *   configure/dispatch phase.
- *
- *   NOTE: flash_5v_page_erase_execute (called from flash_5v_page_write_init) does use
- *   CTRL_VPP_REGULATOR_ENABLE for the OE=12V erase pulse. This is an operation-
- *   phase VPP use, NOT a configure-phase use. This suite tests the configure
- *   phase only (configure_memory alone, no firestarter_operation_init call), which
- *   is the correct scope for the "dispatch doesn't touch VPP" proof.
+ *   configure/dispatch phase. A subset of cases below also drive
+ *   flash_5v_page_write_init through the dispatched pointer and assert the
+ *   same property over that call.
  *
  * Protocols covered: 0x05 (FLASH_AMD_STD), 0x35 (FLASH_EEPROM), 0x39 (FLASH_EEPROM2).
  * make_handle() phantom-protocol integer literals (0x35, 0x39) unchanged (GATE-01).
@@ -228,13 +224,10 @@ static firestarter_handle_t make_write_handle_with_data(void) {
     return h;
 }
 
-/* (ERASE-02) — the only factory in this suite that drives
- * flash_5v_page_write_init itself rather than bypassing it. FLAG_CAN_ERASE
- * and FLAG_SKIP_BLANK_CHECK are both clear (ctrl_flags = 0), which is the
- * "blank-check would run" configuration: is_flag_set(FLAG_CAN_ERASE) is
- * false so the erase-on-write block at flash_5v_page.cpp:80-86 is not
- * entered, and is_flag_set(FLAG_SKIP_BLANK_CHECK) is false so the deleted
- * conditional's guard would have been satisfied. mem_size is a small 2048 --
+/* Drives flash_5v_page_write_init through the dispatched pointer, with
+ * FLAG_CAN_ERASE and FLAG_SKIP_BLANK_CHECK both clear (ctrl_flags = 0):
+ * is_flag_set(FLAG_SKIP_BLANK_CHECK) is false so the deleted conditional's
+ * guard would have been satisfied. mem_size is a small 2048 --
  * BLANK_CHECK_CHUNK_SIZE -- because mem_util_blank_check sets
  * is_operation_in_progress on its FIRST call regardless of mem_size, so the
  * oracle below does not depend on how large mem_size is. */
@@ -247,8 +240,8 @@ static firestarter_handle_t make_write_init_handle_blank_check_enabled(void) {
     h.mem_size   = 2048;
     h.address    = 0;
     h.data_size  = 0;
-    /* ctrl_flags = 0: FLAG_CAN_ERASE clear (no erase-on-write branch),
-     * FLAG_SKIP_BLANK_CHECK clear (the blank-check axis is live). */
+    /* ctrl_flags = 0: FLAG_CAN_ERASE clear, FLAG_SKIP_BLANK_CHECK clear
+     * (the blank-check axis is live). */
     return h;
 }
 
@@ -338,7 +331,7 @@ void test_5v_page_write_execute_no_vpp(void) {
  * FALSE result here strictly implies that branch never executed, which is
  * the single-shot-INIT proof, not an assumption of symmetry with the 0x0D
  * case (test_case30, test_eeprom28c_sdp.cpp). */
-void test_5v_page_write_init_no_blank_check_with_flag_clear_erase02(void) {
+void test_5v_page_write_init_no_blank_check_erase02(void) {
     firestarter_handle_t h = make_write_init_handle_blank_check_enabled();
     configure_memory(&h);
     clear_bus_recording();
@@ -366,9 +359,8 @@ void test_5v_page_write_init_no_blank_check_with_flag_clear_erase02(void) {
         "ERASE-02: the removed blank check can no longer fail a write on a "
         "non-blank part");
     assert_no_vpp_in_recording(
-        "ERASE-02: with FLAG_CAN_ERASE clear, flash_5v_page_write_init must "
-        "energise no VPP rail -- the erase-on-write branch above the deleted "
-        "conditional must not be entered by this INIT call");
+        "ERASE-02: on this blank-check-live configuration (FLAG_SKIP_BLANK_CHECK "
+        "clear), flash_5v_page_write_init must energise no VPP rail");
 }
 
 void test_5v_page_write_init_no_vpp_with_flag_can_erase_set(void) {
@@ -550,7 +542,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_5v_page_write_execute_no_vpp);
 
     /* (ERASE-02): write-INIT blank-check removal proof */
-    RUN_TEST(test_5v_page_write_init_no_blank_check_with_flag_clear_erase02);
+    RUN_TEST(test_5v_page_write_init_no_blank_check_erase02);
     RUN_TEST(test_5v_page_write_init_no_vpp_with_flag_can_erase_set);
 
     /* (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) */
