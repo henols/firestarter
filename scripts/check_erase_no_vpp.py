@@ -23,11 +23,14 @@ must never be cited as a VPP proof for this operation.** This module is the
 primary control instead: a brace-matched scan of the erase body's own
 source text.
 
-**Proximity, not absence, was the risk -- the copy source is now gone.** No
-source file in this tree implements a hardware 12V-on-OE erase path: nothing
-asserts `CTRL_VPE_ENABLE` and the VPP boost regulator around a
-`rurp_chip_enable()` / `rurp_chip_disable()` bracket anywhere in the codebase
-today. The gate stays armed regardless, because the hazardous shape is still
+**Proximity, not absence, was the risk -- the copy source is now gone.** The
+flash4 (`0x05`) handler no longer carries a bulk-erase routine to copy from:
+`flash_5v_page.cpp` asserts no control-register bit at all. A legitimate
+high-voltage erase does still exist elsewhere -- `eprom_internal_erase` in
+`src/proms/eprom.cpp` brackets `CTRL_VPP_REGULATOR_ENABLE | CTRL_VPE_ENABLE`
+with `rurp_chip_enable()` / `rurp_chip_disable()` for UV-EPROM parts that
+require it -- so this is not a claim that the shape is absent from the tree,
+only that the handler adjacent to `eeprom_28c.cpp` no longer models it. The gate stays armed regardless, because the hazardous shape is still
 describable and still reachable by anyone re-deriving it from the AT28C256
 datasheet's own hardware Chip Erase mode and copying it into
 `eeprom_28c.cpp`'s erase handler by mistake -- exactly the failure mode this
