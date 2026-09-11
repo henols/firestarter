@@ -8,9 +8,10 @@ This is the developer-facing document. The user-facing description of what each
 protocol is and which chips it is for lives on the wiki:
 https://github.com/henols/firestarter_prom/wiki/Programming-Protocols
 
-The claims region below is machine-read by `tools/wiki/dispatch_mirror.py` in
-the meta repository, which checks that the dispatch table here, the host tool
-and the firmware all agree. Keep its table shape intact when editing.
+No tool machine-reads this document — the `tools/wiki/` checkers in the meta repository that
+used to cross-check the dispatch table here, the host tool and the firmware were retired on
+2026-09-02 (`5426d7ef`), and **no automated dispatch guard exists now** — so the table below is
+maintained for human readers only.
 
 `datasheets/<hex>-<NAME>/` folder slug (col 1, phase-85 committed, not renamed) and a
 **3-field canonical name entry** — (1) a C-identifier-safe `PROTO_` token, (2) a short human
