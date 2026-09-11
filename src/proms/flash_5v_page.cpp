@@ -30,7 +30,6 @@ static uint32_t flash_5v_page_page_size(uint32_t mem_size) {
     return 256;
 }
 
-void flash_5v_page_erase_execute(firestarter_handle_t* handle);
 void flash_5v_page_write_init(firestarter_handle_t* handle);
 void flash_5v_page_write_execute(firestarter_handle_t* handle);
 void flash_5v_page_check_chip_id_execute(firestarter_handle_t* handle);
@@ -44,9 +43,6 @@ void configure_flash_5v_page(firestarter_handle_t* handle) {
         case CMD_WRITE:
             handle->firestarter_operation_init = flash_5v_page_write_init;
             handle->firestarter_operation_main = flash_5v_page_write_execute;
-            break;
-        case CMD_ERASE:
-            handle->firestarter_operation_main = flash_5v_page_erase_execute;
             break;
         case CMD_BLANK_CHECK:
             handle->firestarter_operation_main = mem_util_blank_check;
@@ -75,25 +71,11 @@ void flash_5v_page_write_init(firestarter_handle_t* handle) {
         if (handle->response_code == RESPONSE_CODE_ERROR) {
             return;
         }
-
-        if (is_flag_set(FLAG_CAN_ERASE)) {
-            if (!is_flag_set(FLAG_SKIP_ERASE)) {
-                flash_5v_page_erase_execute(handle);
-            } else {
-                LOG_INFO_ID(MSG_INFO_SKIPPING_ERASE);
-            }
-        }
     }
     // No pre-write blank check: flash4 auto-erases per page during the write loop,
     // so it was a false precondition, not a safety net. FLAG_SKIP_BLANK_CHECK is
     // consequently unread on this protocol -- do not restore the conditional
     // because the bit looks orphaned.
-    //
-    // The erase-enable block above is a DIFFERENT thing and stays: the host clears
-    // that flag for algorithm 5 because setting it routes a 12 V bulk erase onto a
-    // 5 V-only part. That hazard is live.
-    //
-    // Do NOT copy this erase-on-write shape into eeprom28c_write_init.
 }
 
 void flash_5v_page_write_execute(firestarter_handle_t* handle) {
@@ -188,38 +170,4 @@ void flash_5v_page_read_protection_execute(firestarter_handle_t* handle) {
 
 uint16_t flash_5v_page_get_chip_id(firestarter_handle_t* handle) {
     return flash_util_get_chip_id(handle);
-}
-
-void flash_5v_page_erase_execute(firestarter_handle_t* handle) {
-    uint32_t address;
-
-    // Intial state:
-    address = mem_util_remap_address_bus(handle, 0, READ_FLAG);
-    handle->firestarter_set_address(handle, address);
-    rurp_chip_disable();
-    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE | CTRL_VPE_ENABLE, 0);
-
-    delay(2);
-
-    //^CE -> LOW
-    rurp_chip_enable();
-
-    //^OE -> 12v
-    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE | CTRL_VPE_ENABLE, 1);
-
-    delay(2);
-    //^WE -> LOW
-    address = mem_util_remap_address_bus(handle, 0, WRITE_FLAG);
-    handle->firestarter_set_address(handle, address);
-    delay(20);
-    //^WE -> HIGH
-    address = mem_util_remap_address_bus(handle, 0, READ_FLAG);
-    handle->firestarter_set_address(handle, address);
-    delay(2);
-
-    //^CE -> LOW
-    rurp_chip_disable();
-
-    //^OE -> 12v
-    handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE | CTRL_VPE_ENABLE, 0);
 }

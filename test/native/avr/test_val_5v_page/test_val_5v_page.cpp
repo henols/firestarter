@@ -90,6 +90,7 @@ void setUp(void) {
      * the operation-phase tests (test_5v_page_write_execute_*, and Phase 151's
      * CMD_LOCK_STATUS legs below) don't abort on an unmocked call. */
     When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
+    When(Method(ArduinoFake(), delay)).AlwaysReturn();
     clear_bus_recording();
 }
 
@@ -251,6 +252,19 @@ static firestarter_handle_t make_write_init_handle_blank_check_enabled(void) {
     return h;
 }
 
+static firestarter_handle_t make_write_init_handle_can_erase_set(void) {
+    firestarter_handle_t h = {};
+    h.protocol   = 0x05;
+    h.cmd        = CMD_WRITE;
+    h.response_code = RESPONSE_CODE_OK;
+    h.chip_id    = 0;
+    h.mem_size   = 2048;
+    h.address    = 0;
+    h.data_size  = 0;
+    h.ctrl_flags = FLAG_CAN_ERASE;
+    return h;
+}
+
 /* Helper: scan recording for FLASH_ENABLE_WRITE address signature.
  * FLASH_ENABLE_WRITE addresses: 0x5555, 0x2AAA, 0x5555.
  * fu_flash_fast_address writes (LSB=addr&0xFF, MSB=(addr>>8)&0xFF).
@@ -355,6 +369,23 @@ void test_5v_page_write_init_no_blank_check_with_flag_clear_erase02(void) {
         "ERASE-02: with FLAG_CAN_ERASE clear, flash_5v_page_write_init must "
         "energise no VPP rail -- the erase-on-write branch above the deleted "
         "conditional must not be entered by this INIT call");
+}
+
+void test_5v_page_write_init_no_vpp_with_flag_can_erase_set(void) {
+    firestarter_handle_t h = make_write_init_handle_can_erase_set();
+    configure_memory(&h);
+    clear_bus_recording();
+
+    h.firestarter_operation_init(&h);
+
+    TEST_ASSERT_FALSE_MESSAGE(is_operation_in_progress(&h),
+        "flash_5v_page_write_init must leave is_operation_in_progress FALSE "
+        "after exactly one call, even with FLAG_CAN_ERASE set");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+        "flash_5v_page_write_init must not error with FLAG_CAN_ERASE set");
+    assert_no_vpp_in_recording(
+        "flash_5v_page_write_init must energise no VPP rail even when "
+        "FLAG_CAN_ERASE is set");
 }
 
 /* ─── Phase 151 (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) ─────────── */
@@ -520,6 +551,7 @@ int main(int argc, char** argv) {
 
     /* (ERASE-02): write-INIT blank-check removal proof */
     RUN_TEST(test_5v_page_write_init_no_blank_check_with_flag_clear_erase02);
+    RUN_TEST(test_5v_page_write_init_no_vpp_with_flag_can_erase_set);
 
     /* (LOCK-02): CMD_LOCK_STATUS legs (protocol 0x05) */
     RUN_TEST(test_5v_page_lock_status_dispatch);
