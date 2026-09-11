@@ -521,33 +521,39 @@ def _run_checker(argv=None, env_overrides=None):
 
 
 def test_clean_avr_all_three_envs_pass():
-    """Coverage 1 — each captured_build_v158_*.log exits 0 against the LIVE
+    """Coverage 1 — each captured_build_v185_*.log exits 0 against the LIVE
     default baseline, and its PASS: line names the env.
 
-    SEVERED again by Plan 158-04 (LAND-01): Phase 158 re-recorded
-    scripts/baseline/size_baseline.json's avr_targets.*.flash_used/.ram_used to the
-    cold post-narrowing figures (uno 22952/1434, uno328pb 23000/1440, leonardo
-    25098/1875 -- plan 158-02's jsmntok_t narrowing, the only src/ change landed
-    this phase; plan 158-03's proposed change was DECLINED and landed no source
-    edit), which the *_v153* family no longer matches (it still carries the
-    pre-narrowing, higher figures) -- feeding it here would have made this leg
-    permanently RED. The *_v153* family itself is NOT touched: it is retired, not
-    repointed (see the module docstring's disposition table; OD-8). This leg
-    instead reads a new fixture family, captured_build_v158_{uno,uno328pb,
-    leonardo}.log, committed byte-for-byte from a cold `rm -rf .pio/build/<env>` +
-    single `pio run -e <env>` invocation per env, never re-derived warm and never
-    read from `--rebuild`.
+    SEVERED by Plan 185-01 (CLAIM-04/CLAIM-05): the live baseline was already
+    +16 B stale on every target before Phase 183 began, and Phase 183 then shrank
+    AVR flash on all three targets (uno/uno328pb/leonardo: -234/-238/-284 B,
+    measured against 183-01's pre-deletion figures, not against this file's live
+    figures) without size_baseline.json ever being re-recorded, so the prior
+    captured_build_v158_*.log family no longer matches the live default baseline
+    (which now reads uno 22734, uno328pb 22778, leonardo 24830) -- feeding it here
+    would have made this leg permanently RED. The v158 family itself is NOT
+    touched: it is retired, not repointed (frozen, proven byte-unchanged in plan
+    185-02's Task 2 diff against the pre-plan base commit). This leg instead reads
+    a new fixture family, captured_build_v185_{uno,uno328pb,leonardo}.log,
+    committed byte-for-byte from a cold `rm -rf .pio/build/<env>` + single
+    `pio run -e <env>` invocation per env, never re-derived warm and never read
+    from `--rebuild`.
 
-    SEVERANCE, this generation: unlike prior generations' reconciliation
-    surprises, this leg was correctly anticipated as reddening by
-    `158-before-figures.md` §6 before the re-record happened -- the four legs
-    named there (this one, the native leg, the planted-regression leg and the
-    default-mode leg below) are the exhaustive set that couples to a baseline
-    value move, and no fifth leg was found red at this generation's start."""
+    RECONCILIATION: this leg's reddening was PREDICTED before it was observed --
+    the exhaustive set of four legs that couple to a live baseline value move
+    (this one, the native leg, the planted-regression leg, and the default-mode
+    leg below) was named in the plan before Task 1 Step 4 ran the scoped suite
+    against the moved JSON and the un-severed fixtures, and the observed failing
+    set matched the predicted four exactly -- no fifth leg went red at this
+    generation's start.
+    `test_baseline_seam_precedence_flips_clean_log_to_fail` remains on
+    `captured_build_v153_leonardo.log`, stale-but-green, deliberately left as
+    Phase 158 left it -- so the account reads 4 red + 1 deliberately untouched,
+    not 5 red."""
     for env_name, fixture in (
-        ("uno", "captured_build_v158_uno.log"),
-        ("uno328pb", "captured_build_v158_uno328pb.log"),
-        ("leonardo", "captured_build_v158_leonardo.log"),
+        ("uno", "captured_build_v185_uno.log"),
+        ("uno328pb", "captured_build_v185_uno328pb.log"),
+        ("leonardo", "captured_build_v185_leonardo.log"),
     ):
         result = _run_checker(["--avr-log", f"{env_name}={_FIXTURES / fixture}"])
         assert result.returncode == 0, (
@@ -563,33 +569,25 @@ def test_clean_avr_all_three_envs_pass():
 
 
 def test_clean_native_both_envs_pass():
-    """Coverage 2 — both captured_test_native*.log files exit 0 with 184 and 17 in PASS:.
+    """Coverage 2 — both captured_test_native*.log files exit 0 with 185 and 17 in PASS:.
 
-    Plan 158-04 (LAND-01) updated captured_test_native_summary.log and
-    captured_test_native_nodevtools_summary.log IN PLACE again, 172 -> 184
+    Plan 185-01 (CLAIM-04/CLAIM-05) updated captured_test_native_summary.log and
+    captured_test_native_nodevtools_summary.log IN PLACE again, 184 -> 185
     cases/succeeded (suites unchanged at 17) -- both were genuinely RE-CAPTURED
-    from real `pio test -e native` / `-e native_nodevtools` runs at this phase's
-    final tree position, following the same in-place convention Phase 149 Plan 07,
-    Plan 151-10 and Plan 153-15 all used. The 172 the *_v153* generation recorded
-    was itself STALE, not a true prior measurement: `158-before-figures.md` §3
-    established that the true count at the pre-158 tree (785e644) was already 184
-    -- Phases 155-157 each added native cases without re-recording
-    size_baseline.json's live native_envs block, the same staleness LAND-01 as a
-    whole exists to correct. Plan 158-02's jsmntok_t narrowing (a src/ layout
-    change) and plan 158-03's declined change (zero source edit) both leave the
-    count at 184, unmoved from before either landed. No severance needed here,
-    unlike the AVR captured_build_*.log family: this is the ONLY leg in this
-    module that consumes either native summary fixture, so nothing else depends on
-    184 staying frozen -- planted_size_baseline_suites_errored.log (Coverage 5) is
-    its own independent, statically-planted fixture, not derived from these two at
-    test time.
+    from real `pio test -e native` / `-e native_nodevtools` runs at this plan's
+    tree position, following the same in-place convention Phases 149, 151, 153 and
+    158 all used (D-09: these two fixtures are never severed). No severance
+    needed here, unlike the AVR captured_build_*.log family: this is the ONLY leg
+    in this module that consumes either native summary fixture, so nothing else
+    depends on 185 staying frozen -- planted_size_baseline_suites_errored.log
+    (Coverage 5) is its own independent, statically-planted fixture, not derived
+    from these two at test time.
 
-    RECONCILIATION: this leg was correctly anticipated in `158-before-figures.md`
-    §6 as one of the four legs that couple to size_baseline.json's live figures;
-    no case-count movement was observed at this phase's own re-measurement (D-04:
-    both this plan's own runs and plan 158-02's prior runs report 184/184/17), so
-    this leg's assertion changes only in that it is now read against a freshly
-    re-captured (not merely re-transcribed) fixture pair."""
+    RECONCILIATION: this leg was correctly anticipated (before observation) as
+    one of the exhaustive four legs that couple to size_baseline.json's live
+    figures moving; the observed case-count movement (184 -> 185) matches Phase
+    183's own measurement, confirming no further drift occurred between 183-05
+    and this plan's own re-capture."""
     for env_name, fixture in (
         ("native", "captured_test_native_summary.log"),
         ("native_nodevtools", "captured_test_native_nodevtools_summary.log"),
@@ -600,47 +598,48 @@ def test_clean_native_both_envs_pass():
             f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
         assert "PASS:" in result.stdout
-        # Case count re-verified unchanged at 184 (Phase 158 Plan 04's own
-        # re-measurement); the assertion's meaning is unchanged -- the checker's
-        # PASS line must name the recorded case count. Suites still 17.
-        assert "184" in result.stdout, f"Expected '184' in output. Got:\n{result.stdout}"
+        assert "185" in result.stdout, f"Expected '185' in output. Got:\n{result.stdout}"
         assert "17" in result.stdout, f"Expected '17' in output. Got:\n{result.stdout}"
 
 
 def test_planted_flash_regression_flips_checker_to_failure():
     """Coverage 3 — the planted +512 B Leonardo flash figure exits non-zero and names
-    both the baseline (25098, the post-narrowing live figure) and observed (25610)
+    both the baseline (24830, the post-Phase-183 live figure) and observed (25342)
     figures -- the message must name both numbers, not merely fail on flash_total too.
 
-    SEVERED again by Plan 158-04 (LAND-01), for the same reason as
+    SEVERED by Plan 185-01 (CLAIM-04/CLAIM-05), for the same reason as
     test_clean_avr_all_three_envs_pass above: planted_size_baseline_flash_regression_
-    v153.log is derived from captured_build_v153_leonardo.log, which still carries
-    the pre-narrowing 27630 B figure, so feeding it here after the live baseline moved
-    to 25098 would make the checker fail for TWO reasons (flash_used has already
+    v158.log is derived from captured_build_v158_leonardo.log, which still carries
+    the pre-Phase-183 25098 B figure, so feeding it here after the live baseline moved
+    to 24830 would make the checker fail for TWO reasons (flash_used has already
     diverged before the plant is even applied) instead of the one this leg names --
     exactly the false-green/false-cause pattern this project's own fixture-severance
     precedent exists to avoid. This leg instead reads a new plant,
-    planted_size_baseline_flash_regression_v158.log, derived from
-    captured_build_v158_leonardo.log with the same +512 B offset every prior version of
-    this fixture has used since Phase 123 (25098 + 512 = 25610), against the
-    now-current live default baseline (flash_used 25098, unaffected by the plant).
+    planted_size_baseline_flash_regression_v185.log, derived from
+    captured_build_v185_leonardo.log with the same +512 B offset every prior version of
+    this fixture has used since Phase 123 (24830 + 512 = 25342), against the
+    now-current live default baseline (flash_used 24830, unaffected by the plant).
     Diffed against its own capture: exactly one changed line, the Flash: line, with
-    the RAM: line and every other byte identical.
+    the RAM: line and every other byte identical (verified with
+    `diff | grep -c '^[<>]'` == 2). The prior v158 plant,
+    planted_size_baseline_flash_regression_v158.log, is NOT touched -- it is
+    retired, not repointed, and its byte-unchanged survival is proven in plan
+    185-02's Task 2.
 
-    RECONCILIATION: this leg was correctly anticipated in `158-before-figures.md`
-    §6 as one of the four legs coupled to the live baseline's value; no
-    false-cause surprise was observed at this generation, since the severance was
-    planned before the re-record landed, not discovered after."""
+    RECONCILIATION: this leg's reddening was PREDICTED before it was observed, as
+    one of the exhaustive four legs that couple to a live baseline value move; no
+    false-cause surprise occurred, since the severance was planned before the
+    re-record landed, not discovered after."""
     result = _run_checker(
-        ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression_v158.log'}"]
+        ["--avr-log", f"leonardo={_FIXTURES / 'planted_size_baseline_flash_regression_v185.log'}"]
     )
     assert result.returncode != 0, (
         f"expected non-zero exit on a planted flash regression.\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     assert "FAIL:" in result.stdout, f"Expected FAIL: in output. Got:\n{result.stdout}"
-    assert "25098" in result.stdout, f"Expected baseline figure 25098. Got:\n{result.stdout}"
-    assert "25610" in result.stdout, f"Expected observed figure 25610. Got:\n{result.stdout}"
+    assert "24830" in result.stdout, f"Expected baseline figure 24830. Got:\n{result.stdout}"
+    assert "25342" in result.stdout, f"Expected observed figure 25342. Got:\n{result.stdout}"
 
 
 def test_planted_unparseable_log_exits_exactly_2():
@@ -1362,35 +1361,27 @@ def test_default_mode_is_unchanged_by_the_new_flag():
     unchanged by the new flag's addition. All three captured logs still exit 0 and
     the output never contains the band-mode `<=64` substring.
 
-    SEVERED again by quick task 260820-a7w, for the same reason as
-    test_clean_avr_all_three_envs_pass above: this leg exercises DEFAULT mode
-    against whatever the live default baseline currently is, so it must track
-    260820-a7w's flash_total move rather than the now-retired
-    captured_build_v132_*.log family, which still carries the pre-260820-a7w
-    ceilings.
+    SEVERED by Plan 185-01 (CLAIM-04/CLAIM-05) for the same reason as
+    test_clean_avr_all_three_envs_pass above: the live default baseline moved to
+    the post-Phase-183 cold figures (uno 22734, uno328pb 22778, leonardo 24830 --
+    Phase 183's flash shrink, confirmed unchanged since 183-04), so this leg now
+    reads captured_build_v185_{uno,uno328pb,leonardo}.log -- the fixture, never
+    the assertion, moved once more; the `<=64` substring check is exactly as it
+    was. The v158 family is retired in place and kept, per the same convention
+    prior generations used.
 
-    SEVERED again by Plan 151-10 for the identical reason: the live default
-    baseline moved to the post-151 figures, so this leg now reads
-    captured_build_v151_{uno,uno328pb,leonardo}.log -- the fixture, never the
-    assertion, moved; the `<=64` substring check is exactly as it was.
-
-    SEVERED again by Plan 153-15 for the identical reason: the live default
-    baseline moved to the post-erase figures (uno 25548, uno328pb 25598, leonardo
-    27630), so this leg now reads captured_build_v153_{uno,uno328pb,leonardo}.log
-    -- the fixture, never the assertion, moved once more; the `<=64` substring
-    check is exactly as it was.
-
-    SEVERED again by Plan 158-04 (LAND-01) for the identical reason: the live
-    default baseline moved to the post-narrowing cold figures (uno 22952,
-    uno328pb 23000, leonardo 25098 -- plan 158-02's jsmntok_t narrowing; plan
-    158-03 landed no source change), so this leg now reads
-    captured_build_v158_{uno,uno328pb,leonardo}.log -- the fixture, never the
-    assertion, moved once more; the `<=64` substring check is exactly as it was.
-    The *_v153* family is retired in place and kept, per OD-8."""
+    RECONCILIATION: this leg's reddening was PREDICTED before it was observed, as
+    one of the exhaustive four legs that couple to a live baseline value move
+    (this one, the clean-AVR leg, the native leg, and the planted-regression leg
+    above); the observed failing set at Task 1 Step 4 matched the predicted four
+    exactly -- no fifth leg went red. `test_baseline_seam_precedence_flips_
+    clean_log_to_fail` remains on `captured_build_v153_leonardo.log`,
+    stale-but-green, deliberately left untouched as Phase 158 left it -- 4 red + 1
+    deliberately untouched, not 5 red."""
     for env_name, fixture in (
-        ("uno", "captured_build_v158_uno.log"),
-        ("uno328pb", "captured_build_v158_uno328pb.log"),
-        ("leonardo", "captured_build_v158_leonardo.log"),
+        ("uno", "captured_build_v185_uno.log"),
+        ("uno328pb", "captured_build_v185_uno328pb.log"),
+        ("leonardo", "captured_build_v185_leonardo.log"),
     ):
         result = _run_checker(["--avr-log", f"{env_name}={_FIXTURES / fixture}"])
         assert result.returncode == 0, (
