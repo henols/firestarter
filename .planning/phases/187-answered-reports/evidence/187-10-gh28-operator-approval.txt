@@ -1,0 +1,76 @@
+APPROVED-FOR-POST: gh28
+
+Operator: Henrik Olsson <henrik@predictly.se>
+Date: 2026-09-12
+
+DELEGATION RECORD — read this section before the decision below.
+
+This gate was NOT answered by the operator selecting one of the three menu options
+(`approve` / `amend` / `hold`) offered at Task 1. The operator instead delegated the
+decision itself, in their own words, verbatim:
+
+    "you decide"
+
+That is the full extent of the operator's direct input to this specific gate. Everything
+that follows — the body decision, the label decision, and the no-close decision — was
+SELECTED BY THE ORCHESTRATOR under that delegation, not by the operator. No menu option
+was chosen by the operator's own hand, and this file does not claim otherwise. The
+delegation itself is legitimate: the operator had already read the full gh#28 body
+verbatim when Plan 187-06 drafted it, and had personally answered four prior
+blocking-human gates in this phase (the meta merge, the app merge, the firmware merge,
+and gh#60's post/label/close). The orchestrator told the operator, at the point of
+delegation, that it would carry the delegation forward into this gate and into gh#31's,
+and invited them to pull either back; the operator did not. Delegating this sixth,
+structurally identical gate is a considered choice by the operator, not an absence of
+one — but the selection that follows is the orchestrator's, made under that delegation,
+and is recorded as such.
+
+Harness: invoked as `/gsd-execute-phase 187` with no flags; `_auto_chain_active: false`;
+`auto_advance: false`; Claude Code harness auto mode OFF. This gate was not auto-approved
+by any automation — it was answered by the delegation above.
+
+ORCHESTRATOR'S SELECTION AND REASONING, under the operator's delegation:
+
+1. Body: approve as drafted — post byte-for-byte, NO amendment.
+   Reasoning: the body concedes the attribution dispute in its opening, names the
+   shipped harness fix and states plainly that it does not touch the M27C512 defect,
+   carries the write-shortcut caveat in its own section BEFORE the re-run ask under a
+   heading that says so, and explains in its own words why `fix:released` is being
+   withheld rather than letting an absent label speak for itself.
+
+2. Labels: add `needs:report`. WITHHOLD `fix:released`. Do not remove or alter the
+   pre-existing `dev-test` and `cause:harness`. Final label set must be exactly:
+   `dev-test`, `cause:harness`, `needs:report`.
+   Reasoning: D-14 fixes this decision rather than leaving it open — `needs:report`
+   because the thread genuinely waits on a fresh run, and `fix:released` withheld
+   because only the harness and reporting fix shipped while the chip defect did not,
+   so the label would read as "fixed" when it is not.
+
+3. NO close. gh#28 stays OPEN until the reporter confirms or a superseding PASS exists.
+   Reasoning: a close requires the reporter's confirmation or a superseding PASS, and
+   neither exists.
+
+SCOPE: gh#28 ONLY. Nothing here approves anything for gh#31 or gh#9. gh#60, gh#62 and
+gh#23 are already posted by plans 187-07, 187-08 and 187-09 and are not touched by this
+approval.
+
+NOT IN SCOPE, deliberately — noted but not acted on: the orchestrator observed that
+gh#28 carries `cause:harness` but not `cause:database`, while the body asserts an unfixed
+M27C512 database defect, and that gh#31 already carries `cause:database`. D-14
+enumerates this plan's label change as `needs:report` only, so adding `cause:database`
+here would widen the plan rather than execute it. This observation is carried forward
+as a note for Plan 187-12; the label is deliberately not applied by this plan.
+
+APPROVED LABEL LIST (verbatim, final set): dev-test, cause:harness, needs:report
+
+`fix:released` is explicitly named as WITHHELD — only the harness and reporting fix
+shipped in this release; the M27C512 database defect (the asserted but never-delivered
+6.5V programming supply) remains open and unfixed, so applying `fix:released` would
+misrepresent the issue as resolved.
+
+NO CLOSE approved — gh#28 stays OPEN.
+
+No amendment was requested — the body is posted exactly as drafted by Plan 187-06, so
+the sha256 below is that plan's unchanged hash, not recomputed by this gate.
+
+sha256(evidence/bodies/187-gh28.md) = f861d85399b508321080ee69b49ccfef66894916b35673b00a8cdc4152f644d1
