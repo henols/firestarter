@@ -518,7 +518,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 187-02-PLAN.md — Tracer: the meta merge to `beta`, one pinned permalink SHA, both linked documents proven to resolve at it
+- [x] 187-02-PLAN.md — Tracer: the meta merge to `beta`, one pinned permalink SHA, both linked documents proven to resolve at it
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
