@@ -615,7 +615,7 @@ cross-repo catalog sync, then the ledger.
 
 **Wave 1** *(meta alone — nothing downstream may delete `diff_db.py` before this lands)*
 
-- [ ] 188-01-PLAN.md — TOOLS-04 (D-05, D-21): `diff_db.py` relocates into `.claude/skills/devtest-rootcause/scripts/` with a repo-root path seam proven end to end from two cwds; the skill's four retired-gate references dropped and its five `diff_db.py` references re-pointed
+- [x] 188-01-PLAN.md — TOOLS-04 (D-05, D-21): `diff_db.py` relocates into `.claude/skills/devtest-rootcause/scripts/` with a repo-root path seam proven end to end from two cwds; the skill's four retired-gate references dropped and its five `diff_db.py` references re-pointed
 
 **Wave 2** *(host decision gate ∥ firmware lane — file-disjoint, no shared path)*
 
