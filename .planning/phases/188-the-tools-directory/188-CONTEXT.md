@@ -58,6 +58,65 @@ repo. **All three repositories are in scope.** The planner must not treat this a
 <decisions>
 ## Implementation Decisions
 
+### The four orphaned library symbols — consumers deleted, surgically
+
+- **D-25:** **The four orphaned symbols do not relocate. Their consuming tests are deleted — and only
+  those tests.** This decision has two halves, taken by the operator on 2026-09-12 at two separate gates,
+  and it **supersedes orchestrator ruling OD-1** (which had ruled the symbols relocate into the test tier).
+
+  **Half one — the basis (188-02 Task 2, `blocking-human`).** Shown a live `pytest --co` census of all four
+  symbols' consumers and told the gate half of all four files is deleted either way, the operator answered
+  verbatim: **"Delete the consumers."** That is the plan's un-offered alternative, chosen deliberately over
+  the relocate ruling, with the six `test_val_wire_*` wire-contract suites (BLOCKER-2 SRAM/VPP
+  electrical-safety invariant) named as casualties before the answer was given.
+
+  **Half two — the granularity (this replanning pass).** Re-measurement for the replan found the 188-02
+  gate's own framing understated the blast radius: **eleven** modules consume the four symbols, not eight,
+  and **four of the eleven are mixed** — they carry tests that have nothing to do with any retired gate.
+  Whole-module deletion of all eleven costs **247** collected tests, not the **~105** the operator was
+  priced at. The 157-test difference includes **68 tests in `tests/test_blast_radius_invariance.py`**, which
+  is the **v1.36 Phase 174 blast-radius oracle** (GATE-01, GATE-02, GATE-03, D-07, D-10) — the milestone's
+  hard-ordered, first-and-alone gate against a silent `dedup_fingerprint` re-key. It was never named at the
+  188-02 gate. Shown that, the operator chose **surgical**:
+
+  | Module | Collected | Consuming | Disposition |
+  |---|---:|---:|---|
+  | `test_val_wire_5v_page.py` | 14 | 14 | **delete whole** |
+  | `test_val_wire_sram.py` | 6 | 6 | **delete whole** |
+  | `test_val_wire_eeprom28c.py` | 6 | 6 | **delete whole** |
+  | `test_val_wire_eprom.py` | 4 | 4 | **delete whole** |
+  | `test_val_wire_flash_intel.py` | 4 | 4 | **delete whole** |
+  | `test_val_wire_nor_unlock.py` | 4 | 4 | **delete whole** |
+  | `test_op_registration_parity.py` | 7 | 7 | **delete whole** |
+  | `test_decoder.py` | 37 | 5 | **trim** — delete `TestDispatchGate02` only; 32 tests stay |
+  | `test_build_db_inclusion.py` | 30 | 1 | **trim** — delete `test_non_supported_chips_are_non_dispatchable` only; 29 stay |
+  | `test_blast_radius_invariance.py` | 106 | 38 | **trim** — delete the two `render_shape` sites only (`test_committed_snapshot_matches_a_fresh_regeneration` / WR-01, and `test_composing_a_db_diff_never_leaks_onto_a_cached_build_shape` / CR-01's second aliasing path); 68 stay, GATE-01/02/03 and D-07/D-10 intact |
+  | `test_parse_devtest_issue.py` | 29 | 1 | **trim** — delete `test_parser_marker_strings_trip_no_forbidden_claim_pattern` only; 28 stay |
+
+  **Total deleted: 90 tests — exactly the census's broken set. Collateral: zero.** No test that does not
+  import one of the four symbols is deleted. Baseline before: 2373 collected, 0 errors. Expected after:
+  2283 collected, 0 errors — and that arithmetic is a prediction to be **measured**, never asserted.
+
+  **Three consequences the plans must carry, not infer:**
+  1. **No relocation helper module is created.** `tests/dispatch_model.py`, `tests/report_claim_patterns.py`,
+     `tests/report_shape_renderer.py` and `tests/devtest_handler_names.py` must **not** exist when this phase
+     ends. Any plan that creates one is written on the superseded OD-1 basis.
+  2. **`tests/fixtures/reports/` (19 snapshots) STAYS.** A *surviving* test —
+     `test_shape_ids_frozen_hashes_ladder_pins_and_snapshots_agree` (D-10's four-way closure) — asserts
+     `SHAPE_IDS == {p.stem for p in fixtures/reports/*.json}`. Deleting the snapshots reddens a test this
+     decision keeps. They lose their regenerator (`snapshot_report_shapes.py`, deleted by D-04/188-05) but
+     not their consumer; D-08's "no quiet fragment" does not reach them, because their consumer is named
+     here and in a live assertion. GATE-06's RPT-E3 anchor is those 19 snapshots and survives with them.
+  3. **WR-01 dies with its regenerator.** Snapshot-drift coverage (every committed snapshot byte-compared
+     against a fresh regeneration, 19 shape IDs) has no replacement and none is to be authored — D-01 and
+     D-04 delete the tool that produced it. This is a named, accepted loss for 188-09's verdict note, not an
+     oversight.
+
+  — **Reversibility:** costly. The 90 deleted tests are recoverable from git, but the six `test_val_wire_*`
+  suites carry the BLOCKER-2 electrical-safety invariant (each chip family's wire dict routes to the
+  electrically-correct handler, never `configure_eprom` for a 5 V SRAM part) and nothing replaces that
+  coverage; any drift while they are absent is not retroactively detectable.
+
 ### The checker family — retired whole
 
 - **D-01:** All ten `check_*.py` gates are deleted, **no exceptions**, together with their test files. The

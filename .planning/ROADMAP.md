@@ -619,16 +619,16 @@ cross-repo catalog sync, then the ledger.
 
 **Wave 2** *(host decision gate ∥ firmware lane — file-disjoint, no shared path)*
 
-- [x] 188-02-PLAN.md — TOOLS-03/04 (OD-1): live census of the four orphaned library symbols and a `blocking-human` gate confirming they relocate into the test tier rather than the eight consuming test modules being deleted
+- [x] 188-02-PLAN.md — TOOLS-03/04 (OD-1 → **D-25**): live census of the four orphaned library symbols and a `blocking-human` gate on whether they relocate into the test tier or their consumers are deleted. **Outcome INVERTED the plan's own premise:** the operator answered "Delete the consumers", superseding orchestrator ruling OD-1. A replanning pass then re-measured the blast radius (eleven consuming modules, not eight; 247 tests whole-module, not the ~105 priced) and the operator chose **surgical** deletion — 90 consuming tests, zero collateral. Both halves are D-25 in `188-CONTEXT.md`. Plans 188-03, 188-04 and 188-09 were rewritten on that basis before any of them ran
 - [ ] 188-06-PLAN.md — TOOLS-06 (D-08, D-09, D-20, D-21b): the firmware half of the frame-vector apparatus deleted whole with its four platformio registrations and four CI steps across two workflows, and the native size baseline plus both summary fixtures re-recorded from one cold capture in the same commit; the twelve AVR figures proven unmoved
 
 **Wave 3** *(host — the tracer: one complete deletion-plus-repair cycle before ~15,000 lines follow it)*
 
-- [ ] 188-03-PLAN.md — TOOLS-03 (D-01): `check_diagnostic_report_claims.py` retired end to end with its test, its fixture and its orphaned symbol; then the dispatch model relocated to `tests/dispatch_model.py` and all eight consumers repaired while the gate file still exists, proven behaviourally identical by execution
+- [ ] 188-03-PLAN.md — TOOLS-03 (D-01, **D-25**): `check_diagnostic_report_claims.py` retired end to end with its test, its fixture, its orphaned symbol and its one consuming test; then `check_dispatch.py` retired with the six `test_val_wire_*` suites deleted whole and `test_decoder.py` / `test_build_db_inclusion.py` trimmed of their dispatch tests alone — the deletion recipe proven on one gate, with the collected count measured against the 2373 baseline at both commit boundaries
 
 **Wave 4** *(host)*
 
-- [ ] 188-04-PLAN.md — TOOLS-03 (D-01, D-02, D-03, D-13): the report-shape renderer and handler allow-list relocated and the nineteen snapshots re-bannered; then the nine remaining gates, their nine tests, seven planted fixtures, the mypy CI step, the fail-closed scan-path pair and the stale regression-guard prose retired in one commit — the 12 V hazard description kept
+- [ ] 188-04-PLAN.md — TOOLS-03 (D-01, D-02, D-03, D-13, **D-25**): `test_op_registration_parity.py` deleted whole and `test_blast_radius_invariance.py` trimmed of its two `render_shape` sites alone — the v1.36 GATE-01/02/03 oracle and the nineteen snapshots kept, because a surviving D-10 test asserts against them; then the nine remaining gates, their nine tests, seven planted fixtures, the mypy CI step, the fail-closed scan-path pair and the stale regression-guard prose retired in one commit — the 12 V hazard description kept
 
 **Wave 5** *(host)*
 
