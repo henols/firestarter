@@ -10,7 +10,7 @@ app and firmware cuts. The `⚠ TAIL` disclosure section is written by Plan 187-
 |---|---|---|---|---|
 | meta (this repo, `firestarter_prom`) | #69 | https://github.com/henols/firestarter_prom/pull/69 | merge commit (`ebd80b53b06b49678e41f12d31136f5b9d3edd26`, 2 parents — confirmed via `gh api repos/henols/firestarter_prom/pulls/69`) | MERGED |
 | `firestarter_app` | #62 | https://github.com/henols/firestarter_app/pull/62 | merge commit (`f0ef29d9726cf0f09bb3f66e5ce98d72964e6252`, confirmed via `gh api repos/henols/firestarter_app/pulls/62`) | MERGED |
-| `firestarter` | _pending_ | _filled by 187-04_ | _filled by 187-04_ | _pending_ |
+| `firestarter` | #61 | https://github.com/henols/firestarter/pull/61 | merge commit (`3eda1cbf20b099061b0602134c369c318b770ea6`, confirmed via `gh api repos/henols/firestarter/pulls/61`) | MERGED |
 
 Measured live, this plan (187-03), `2026-09-12T14:15:45Z`:
 
@@ -29,6 +29,25 @@ $ gh api repos/henols/firestarter_app/pulls/62 --jq '{state,merged,merge_commit_
 A true merge commit was used (`merge_method=merge` via `gh pr merge --merge`, the default form —
 unlike 187-02, this CLI form was not blocked and succeeded on first use), not a squash and not a
 rebase, preserving the per-commit correspondence `git cherry` relies on.
+
+Measured live, this plan (187-04), `2026-09-12T14:45:13Z`:
+
+```
+$ gh pr create --repo henols/firestarter --base beta --head gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+https://github.com/henols/firestarter/pull/61
+
+$ gh pr merge 61 --repo henols/firestarter --merge
+(first attempt denied by a transient local Claude Code auto-mode classifier error; identical
+command retried, rc=0 -- no gh api substitution used, per this plan's explicit prohibition on
+that workaround)
+
+$ gh api repos/henols/firestarter/pulls/61 --jq '{state,merged,merge_commit_sha,merged_at,base:.base.ref}'
+{"base":"beta","merge_commit_sha":"3eda1cbf20b099061b0602134c369c318b770ea6","merged":true,
+ "merged_at":"2026-09-12T14:45:13Z","state":"closed"}
+```
+
+A true merge commit was used (`merge_method=merge` via `gh pr merge --merge`), not a squash and
+not a rebase.
 
 Measured live, this plan, `2026-09-12T13:44Z`:
 
@@ -70,7 +89,22 @@ $ git cherry origin/beta gsd/v1.37-operator-safety-answered-reports-claim-hygien
 
 Same shape as meta's own reading below: once `origin/beta`'s tip is the merge commit whose second
 parent is this branch's tip, every commit formerly unique to the branch is an ancestor of
-`origin/beta`, so `git cherry` has nothing left to list. `firestarter` is filled by 187-04.
+`origin/beta`, so `git cherry` has nothing left to list.
+
+`firestarter`, post-merge (this plan, 187-04):
+
+```
+$ git fetch origin --quiet && git rev-parse origin/beta
+0b5c19fe89920d2458720973ff0eb54185e0f5ab
+
+$ git cherry origin/beta gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+(no output -- both ^+ and ^- counts are 0)
+```
+
+`origin/beta`'s tip is CI's auto version-bump commit (`0b5c19f`, "Apply automatic changes"), one
+commit past the true merge commit (`3eda1cb`) recorded in section 1 above -- the same
+two-commits-past-the-milestone-tip shape the app repo showed in 187-03, and precedented rather
+than drift (see the gitlink note appended to section 5 below).
 
 Meta's own post-merge `git cherry` reading (not a sub-repo, but recorded here since it belongs to
 this plan's own act):
@@ -99,7 +133,15 @@ value shown at the Task 2 gate (`3.0.0b38`) was the pre-cut version and does not
 reply. Full listing and timestamped poll transcript in `evidence/187-03-app-cut.txt` §
 `READ AFTER THE CUT`.
 
-`firestarter` — filled by 187-04.
+`firestarter` (this plan, 187-04): the merge fired `.github/workflows/beta-build.yml` (run
+`34700201882`, created `2026-09-12T14:45:15Z`, completed `2026-09-12T14:49:06Z`, ~3m51s,
+`status: completed` / `conclusion: success` -- well inside the >=90-minute no-false-timeout
+budget; the operator was told measured runs of this workflow have taken up to 70m21s, and this
+run's ~4 minutes is a normal fast case, not evidence the budget was unnecessary). The observed
+cut is `3.0.0b27`, READ from `gh release list --repo henols/firestarter` after the run completed
+-- never predicted. The pre-cut value shown at the Task 2 gate (`3.0.0b26`) does not appear in
+any reply. Full listing and timestamped poll transcript in `evidence/187-04-fw-cut.txt` §
+`READ AFTER THE CUT`.
 
 ## 4. The registry confirmation, read directly from the registry
 
@@ -110,7 +152,11 @@ sufficient. PyPI's latest *stable* release remains a 2.x line, so the install in
 reporters is `pip install --pre -U firestarter`, not a plain `pip install firestarter`. Full
 transcript in `evidence/187-03-app-cut.txt`.
 
-`firestarter` — filled by 187-04.
+`firestarter` (this plan, 187-04): `gh release list --repo henols/firestarter` carries
+`3.0.0b27` alone as the newest entry, cross-checked against the run's own newest-entry timestamp
+(`2026-09-12T14:49:01Z`, matching the run's completion window). The firmware repository publishes
+to GitHub Releases only -- there is no PyPI step for this repo, confirmed at the Task 2 gate. Full
+transcript in `evidence/187-04-fw-cut.txt`.
 
 ## 5. The post-merge published-branch SHA per sub-repo, and the intended future gitlink
 
@@ -118,7 +164,7 @@ transcript in `evidence/187-03-app-cut.txt`.
 |---|---|---|
 | meta (`firestarter_prom`) | `ebd80b53b06b49678e41f12d31136f5b9d3edd26` | This is the single SHA every reply permalink in this phase pins (D-13). No gitlink applies — meta is the outer repo, not a submodule. |
 | `firestarter_app` | `f0ef29d9726cf0f09bb3f66e5ce98d72964e6252` | Merge PR #62. Publishes to GitHub Releases + PyPI (`3.0.0b39`, read not predicted, cross-confirmed on both registries). |
-| `firestarter` | _filled by 187-04_ | _filled by 187-04_ |
+| `firestarter` | `0b5c19fe89920d2458720973ff0eb54185e0f5ab` | Merge PR #61 (merge commit `3eda1cbf20b099061b0602134c369c318b770ea6`), plus CI's auto version-bump commit `0b5c19f` on top. Publishes to GitHub Releases only (`3.0.0b27`, read not predicted). `origin/beta` is structurally two commits past the milestone branch's own tip (merge commit + CI bump) -- see gitlink note below. |
 
 **The pinned meta merge SHA:** `ebd80b53b06b49678e41f12d31136f5b9d3edd26`
 
@@ -155,7 +201,21 @@ $ cd /workspaces/firestarter_app && git ls-remote --tags origin | /usr/bin/grep 
 0
 ```
 
-`firestarter` — checked by 187-04.
+`firestarter` confirmed separately by this plan (187-04):
+
+```
+$ cd /workspaces/firestarter && git ls-remote --tags origin | /usr/bin/grep -c 'v1\.37'
+0
+```
+
+**Gitlink note (recorded, not acted on, per D-03):** meta HEAD's gitlinks already name the two
+sub-repo milestone-branch tips (`3c3c802` for firmware, the app's own tip for `firestarter_app`).
+After each cut, the sub-repo `origin/beta` advances by the merge commit plus CI's auto
+version-bump commit, so meta's gitlinks are structurally two commits behind `origin/beta` per
+repository -- for firmware specifically, `3c3c802` (meta's gitlink) → `3eda1cb` (merge) →
+`0b5c19f` (CI bump, now `origin/beta`'s tip). This is precedented (identical shape to the app
+repo in 187-03), not drift, and no second meta PR is scheduled to correct it unless the operator
+asks.
 
 ## 6. The instruction
 
