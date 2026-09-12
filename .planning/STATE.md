@@ -4,11 +4,11 @@ milestone: v1.37
 milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 2026-09-10)
 current_phase: 188
 current_phase_name: The Tools Directory
-status: executing
-stopped_at: "Phase 188 execution started — 9 plans across 8 waves"
+status: blocked
+stopped_at: "Phase 188 HALTED after 188-02 — operator inverted OD-1; plans 188-03/04/05 (and 188-09's wording) need replanning"
 last_updated: "2026-09-12T20:54:45.617Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 188 execution started — 9 plans across 8 waves spanning all three repositories. Research measured the deletion set live at 46 paths / ~16,500 lines and found 93 surviving tests broken by it (45 at collection time), plus four firmware codegen_vectors CI steps no decision names. Orchestrator ruled RESEARCH Q1 as option (a): check_dispatch's gate half dies, its dispatch model plus render_shape, _HANDLER_FUNCTION_NAMES and FORBIDDEN_PATTERNS relocate into the test tier, behind one blocking-human gate (188-02). Plan checker PASSED. 7/7 requirements and 24/24 decisions covered; 108/108 verify commands resolve and state a failing direction."
+last_activity_desc: "Phase 188 halted after plan 188-02. Wave 1 complete: 188-01 relocated diff_db.py into .claude/skills/devtest-rootcause/scripts/, proven cwd-invariant from two cwds (stdout sha256 4c778f69, 923 lines), host original byte-unchanged. 188-02 measured the live orphan census — 4 symbols, 8 consuming test modules, 90 tests broken unrepaired (45 at collection), against a healthy 2373-collected/0-error baseline — and put the blocking-human gate to the operator. OPERATOR ANSWERED 'Delete the consumers', INVERTING orchestrator ruling OD-1. Plans 188-03, 188-04 and 188-05 are written on the relocate-and-repair basis and are now invalid; 188-09 and the ROADMAP 188-02 line carry stale OD-1 wording. 188-06 held unrun though independent. Nothing deleted; firestarter/ and firestarter_app/ untouched by the phase so far. D-24 reads ok=3/3."
 progress:
   total_phases: 7
   completed_phases: 6
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 188 (The Tools Directory) — EXECUTING
-Plan: 1 of 9
-Status: Executing Phase 188
-Last activity: 2026-09-12 — Phase 188 execution started
+Phase: 188 (The Tools Directory) — HALTED (awaiting replan)
+Plan: 2 of 9 complete (188-01, 188-02); 188-03/04/05 invalidated by the 188-02 decision
+Status: Blocked — operator inverted OD-1 at the 188-02 gate; replan required before 188-03
+Last activity: 2026-09-12 — Phase 188 halted after the 188-02 decision gate
 
 ## Roadmap Summary (v1.37)
 
