@@ -1,0 +1,66 @@
+# 187-07 — gh#60 post transcript
+# Gate: evidence/187-07-gh60-operator-approval.txt (APPROVED-FOR-POST: gh60)
+# Window start (pre-post UTC timestamp): see evidence/187-07-window-start.txt = 2026-09-12T15:32:19Z
+
+## Pre-post gate re-assertion
+
+Command: sha256sum evidence/bodies/187-gh60.md | cut -d' ' -f1
+Compared against the sha256 line in evidence/187-07-gh60-operator-approval.txt.
+Result: MATCH (5e4d9b57f5f2259ab575683b9272733189256fec95fd17019d70457ecca0ca3d) — proceeded to post.
+
+## Post
+
+Command: gh issue comment 60 --repo henols/firestarter_prom --body-file evidence/bodies/187-gh60.md
+Exit code: 0
+Returned URL: https://github.com/henols/firestarter_prom/issues/60#issuecomment-5646849372
+Comment id (from URL trailing fragment): 5646849372 (recorded alone in evidence/187-07-comment-id.txt)
+
+## Byte-identity round trip (API read-back vs. disk file)
+
+Command:
+  gh api "repos/henols/firestarter_prom/issues/comments/5646849372" > /tmp/c187gh60.json
+  python3 -c "import json,hashlib,sys; b=json.load(open('/tmp/c187gh60.json'))['body'].encode(); d=open('evidence/bodies/187-gh60.md','rb').read(); print('api',len(b),hashlib.sha256(b).hexdigest()); print('disk',len(d),hashlib.sha256(d).hexdigest()); print('BYTE-IDENTICAL' if b==d else 'MISMATCH'); sys.exit(0 if b==d else 1)"
+
+Output:
+  api 2284 5e4d9b57f5f2259ab575683b9272733189256fec95fd17019d70457ecca0ca3d
+  disk 2284 5e4d9b57f5f2259ab575683b9272733189256fec95fd17019d70457ecca0ca3d
+  BYTE-IDENTICAL
+
+Exit code: 0
+
+Note: this round trip deliberately does NOT use `gh api --jq '.body'` piped into `diff` — that
+form appends jq's own trailing newline and reports a spurious mismatch on a byte-identical
+comment. The python JSON round trip above compares raw bytes and is the only method this plan
+permits.
+
+## Label edit
+
+Command: gh issue edit 60 --repo henols/firestarter_prom --add-label "fix:released" --remove-label "enhancement"
+Exit code: 0
+Returned URL: https://github.com/henols/firestarter_prom/issues/60
+Resulting label set (re-read): ["fix:released"]
+
+## Close
+
+Command: gh issue close 60 --repo henols/firestarter_prom --reason completed
+Exit code: 0
+Output: Closed issue henols/firestarter_prom#60 ([Feature Request] Warning about JP5 for 8MBit EPROMs)
+
+## Post-close re-read
+
+Command: gh issue view 60 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:[.labels[].name],comments:(.comments|length)}'
+Output: {"state":"CLOSED","stateReason":"COMPLETED","labels":["fix:released"],"comments":1}
+
+Matches the approval file exactly: state CLOSED, stateReason COMPLETED (approved reason
+`completed`), label set exactly `fix:released` (enhancement removed, nothing else added), one
+comment total.
+
+## Collateral-untouched proof (gh#23, gh#28, gh#31, gh#62)
+
+Command: gh issue view 23 --repo henols/firestarter_prom --json state --jq .state  -> OPEN
+Command: gh issue view 28 --repo henols/firestarter_prom --json state --jq .state  -> OPEN
+Command: gh issue view 31 --repo henols/firestarter_prom --json state --jq .state  -> OPEN
+Command: gh issue view 62 --repo henols/firestarter_prom --json comments --jq '.comments | length' -> 0
+
+All four unchanged by this plan; no comment, label or state change was made to gh#23, gh#28,
+gh#31, gh#62 or gh#9 (gh#9 not queried — this plan never referenced it, matching the prohibition).

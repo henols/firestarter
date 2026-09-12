@@ -17,7 +17,7 @@ posted.
 **Status — gh#23:** PENDING OPERATOR REVIEW
 **Status — gh#28:** PENDING OPERATOR REVIEW
 **Status — gh#31:** PENDING OPERATOR REVIEW
-**Status — gh#60:** PENDING OPERATOR REVIEW
+**Status — gh#60:** POSTED — approved 2026-09-12 (evidence/187-07-gh60-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/60#issuecomment-5646849372, closed COMPLETED at 2026-09-12T15:32:51Z
 **Status — gh#62:** PENDING OPERATOR REVIEW
 
 ## Operator Review
@@ -106,6 +106,7 @@ re-run ask (immediately adjacent, never in a later section):
 ## gh#60 — `[Feature Request] Warning about JP5 for 8MBit EPROMs`
 
 **Body file:** `evidence/bodies/187-gh60.md`
+**Posted line:** https://github.com/henols/firestarter_prom/issues/60#issuecomment-5646849372 — closed COMPLETED at 2026-09-12T15:32:51Z. Amended at the 187-07 operator gate: the quoted hazard text's literal `{operation}` was replaced with `write or erase` (see `evidence/bodies/187-gh60.amendment.diff`); the body below and its file are byte-identical post-amendment (sha256 `5e4d9b57f5f2259ab575683b9272733189256fec95fd17019d70457ecca0ca3d`).
 **Posted:**
 
 ```
