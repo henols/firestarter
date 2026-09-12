@@ -1,0 +1,48 @@
+APPROVED-FOR-MERGE: firmware
+
+Operator: Henrik Olsson <henrik@predictly.se>
+Date: 2026-09-12
+
+The following is the orchestrator's rendering of the operator's menu selection at the Task 2
+gate — it is NOT a verbatim operator quotation. The operator was presented with three named
+options (merge / hold / stop) and pros/cons for each, and selected one by option id. They did
+not dictate the rationale prose below; the prose is the orchestrator's summary of what was shown
+and what was chosen.
+
+The orchestrator presented the verbatim `PRE-MERGE MEASUREMENT (firmware)` block from
+evidence/187-04-fw-cut.txt, including both SHAs:
+
+  origin/beta:  3e26c1bb23e351954227ad48ad6e8f27663914f1
+  HEAD:         3c3c802c18896ad8d498fd8a829b11d2300a72f4
+
+and the `git cherry origin/beta <branch>` counts: 9 ahead (^+), 0 behind (^-).
+
+The orchestrator stated explicitly, before the operator answered:
+
+1. That `.github/workflows/beta-build.yml` fires on the merge, and that `beta-release.yml` does
+   NOT exist in this repository (confirmed live: `ls -1 .github/workflows/` lists
+   beta-build.yml, build.yml, py32f071.yml only). It publishes a pre-release with uno,
+   uno328pb and leonardo `.hex` assets to GitHub Releases only — no PyPI step.
+2. That reversibility is one-way, in D-02's own words: a published GitHub pre-release cannot be
+   unpublished.
+3. That this is NOT a docs-only merge: `src/proms/flash_5v_page.cpp` loses 52 lines with zero
+   added (the SAFE-08 unreachable 12V bulk-erase arm) — behaviour-neutral because the host
+   already clears `FLAG_CAN_ERASE` for every protocol `0x05` part, but it ships as a code edit.
+4. That measured runs of this workflow are 3m31s, 11m48s and 70m21s against a >=90-minute
+   polling deadline in Task 3.
+5. That `firestarter#54` is an unrelated external OLED contribution (state OPEN, head `beta`,
+   base `beta`, 0 comments, open since 2026-08-22) that will not be touched by this plan.
+
+The pre-cut published version (3.0.0b26) was shown to the operator labelled explicitly as the
+value that must NOT appear in any reply — the post-cut version is read fresh from the API in
+Task 3, never predicted.
+
+Harness mode, disclosed to the operator before the question and left uncontradicted in their
+answer: invoked as `/gsd-execute-phase 187` with no flags; `workflow._auto_chain_active: false`;
+`workflow.auto_advance: false`; `check auto-mode` measured `false`; Claude Code harness auto mode
+OFF. The operator did not contradict this disclosure.
+
+The operator selected: merge — "Open the PR and merge it to `beta`."
+
+Scope of this approval: the FIRMWARE merge only (Task 3 of plan 187-04). It approves nothing
+about any reply posting (plans 187-07 through 187-11). Those remain separately gated.
