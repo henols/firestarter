@@ -65,3 +65,73 @@ $ gh release list --repo henols/firestarter_app --limit 3
 3.0.0b38	Pre-release	3.0.0b38	2026-09-09T18:59:10Z
 3.0.0b37	Pre-release	3.0.0b37	2026-09-09T12:23:04Z
 3.0.0b36	Pre-release	3.0.0b36	2026-09-02T16:14:37Z
+
+READ AFTER THE CUT
+===================
+Poll started: 2026-09-12T14:17:17Z
+2026-09-12T14:17:17Z  [{"conclusion":"","createdAt":"2026-09-12T14:15:48Z","databaseId":34698771255,"status":"in_progress"}]
+2026-09-12T14:17:48Z  [{"conclusion":"","createdAt":"2026-09-12T14:15:48Z","databaseId":34698771255,"status":"in_progress"}]
+2026-09-12T14:18:19Z  [{"conclusion":"","createdAt":"2026-09-12T14:15:48Z","databaseId":34698771255,"status":"in_progress"}]
+2026-09-12T14:18:50Z  [{"conclusion":"","createdAt":"2026-09-12T14:15:48Z","databaseId":34698771255,"status":"in_progress"}]
+2026-09-12T14:19:20Z  [{"conclusion":"","createdAt":"2026-09-12T14:15:48Z","databaseId":34698771255,"status":"in_progress"}]
+2026-09-12T14:19:51Z  [{"conclusion":"","createdAt":"2026-09-12T14:15:48Z","databaseId":34698771255,"status":"in_progress"}]
+2026-09-12T14:20:22Z  [{"conclusion":"","createdAt":"2026-09-12T14:15:48Z","databaseId":34698771255,"status":"in_progress"}]
+2026-09-12T14:20:52Z  [{"conclusion":"","createdAt":"2026-09-12T14:15:48Z","databaseId":34698771255,"status":"in_progress"}]
+2026-09-12T14:21:23Z  [{"conclusion":"success","createdAt":"2026-09-12T14:15:48Z","databaseId":34698771255,"status":"completed"}]
+POLL COMPLETE: run reached status=completed at 2026-09-12T14:21:23Z
+Poll ended: 2026-09-12T14:21:24Z
+
+PR and merge (Task 3):
+$ gh pr create --repo henols/firestarter_app --base beta --head gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+https://github.com/henols/firestarter_app/pull/62
+
+$ gh pr merge 62 --repo henols/firestarter_app --merge
+(no output, rc=0)
+
+$ gh api repos/henols/firestarter_app/pulls/62 --jq '{state,merged,merge_commit_sha,merged_at,base:.base.ref}'
+{"base":"beta","merge_commit_sha":"f0ef29d9726cf0f09bb3f66e5ce98d72964e6252","merged":true,"merged_at":"2026-09-12T14:15:45Z","state":"closed"}
+
+READ (versioning):
+$ gh release list --repo henols/firestarter_app --limit 5
+3.0.0b39	Pre-release	3.0.0b39	2026-09-12T14:20:34Z
+3.0.0b38	Pre-release	3.0.0b38	2026-09-09T18:59:10Z
+3.0.0b37	Pre-release	3.0.0b37	2026-09-09T12:23:04Z
+3.0.0b36	Pre-release	3.0.0b36	2026-09-02T16:14:37Z
+3.0.0b35	Pre-release	3.0.0b35	2026-08-31T22:39:03Z
+
+Version read (never computed): 3.0.0b39 — recorded alone on line 1 of evidence/187-03-app-version.txt.
+
+Independent PyPI confirmation (T-187-13; GitHub has previously carried a beta past PyPI, so a
+GitHub-only reading is not sufficient):
+$ curl -sf https://pypi.org/pypi/firestarter/json | python3 -c "..." (most recent release keys)
+3.0.0b36
+3.0.0b37
+3.0.0b38
+3.0.0b39
+3.0.0b7
+3.0.0b8
+PyPI carries 3.0.0b39 — confirmed as firestarter-3.0.0b39-py3-none-any.whl. PyPI's latest STABLE is
+still a 2.x release, which is why the reply install instruction is `pip install --pre -U firestarter`
+and not a plain `pip install firestarter`.
+
+Gate-file presence proof (post-merge, baseline was the two `git cat-file -e` failures recorded above):
+$ git cat-file -e origin/beta:firestarter/jp5_gate.py && echo PRESENT
+PRESENT
+$ git cat-file -e origin/beta:firestarter/flash4_erase_gate.py && echo PRESENT
+PRESENT
+
+Tag check (D-04):
+$ git ls-remote --tags origin | /usr/bin/grep -c 'v1\.37'
+0
+
+Datasheet check post-merge (same DRIFT-4 discrepancy documented in the pre-merge measurement above —
+the app repo's `datasheets/` directory has carried 7 pre-existing tracked files since before this
+phase; the scoped check on the two NEW PDFs is the one that proves this plan's actual prohibition):
+$ git ls-files -- datasheets/MBM27C1001.pdf datasheets/MX27C4000.pdf
+(empty output, rc=0)
+$ git ls-files -- datasheets/ | wc -l
+7   # pre-existing count, unchanged by this plan; NOT the two new PDFs
+
+Workflow run: databaseId 34698771255, created 2026-09-12T14:15:48Z, completed 2026-09-12T14:21:10Z
+(status=completed, conclusion=success) — duration approximately 5m22s, within the >=90 minute
+polling budget used (no false-timeout risk).
