@@ -5,16 +5,16 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 188
 current_phase_name: The Tools Directory
 status: executing
-stopped_at: "Phase 188 executing — replan on the D-25 basis landed (948a8a67…d97c2b36); waves 2–8 dispatching from 188-06"
-last_updated: "2026-09-12T22:57:13.000Z"
+stopped_at: "Phase 188 executing — 188-06 complete (firmware frame-vector apparatus deleted, native baseline re-recorded 185/17->179/16, AVR figures proven unmoved); waves 3–8 dispatching from 188-03"
+last_updated: "2026-09-12T23:12:07.000Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 188 resumed after the D-25 replan. 188-01 and 188-02 complete; the 188-02 gate inverted OD-1 so the four orphaned symbols are not relocated — their 90 consuming tests are deleted (D-25). 188-03/04/05/07/09 were replanned on that basis; 188-06 and 188-08 were unaffected. Executing waves 2–8 sequentially (use_worktrees=false, parallelization=false): 188-06, 188-03, 188-04, 188-05, 188-07, 188-08, 188-09."
+last_activity_desc: "Phase 188 resumed after the D-25 replan. 188-01, 188-02 and 188-06 complete; the 188-02 gate inverted OD-1 so the four orphaned symbols are not relocated — their 90 consuming tests are deleted (D-25). 188-03/04/05/07/09 were replanned on that basis; 188-06 and 188-08 were unaffected. 188-06 (D-08 firmware half) deleted the frame-vector apparatus whole, re-recorded the native baseline from one cold capture in the same commit (firestarter ffa62f1), and proved the twelve AVR figures unmoved. Executing remaining waves sequentially (use_worktrees=false, parallelization=false): 188-03, 188-04, 188-05, 188-07, 188-08, 188-09."
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 49
-  completed_plans: 40
-  percent: 85
+  completed_plans: 41
+  percent: 84
 ---
 
 # Project State
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 188 (The Tools Directory) — EXECUTING
-Plan: 2 of 9 complete (188-01, 188-02); 188-03/04/05/07/09 replanned on the D-25 delete-the-consumers basis
-Status: Executing — waves 2–8 dispatch sequentially, starting at 188-06
-Last activity: 2026-09-12 — Phase 188 execution resumed after the D-25 replan
+Plan: 3 of 9 complete (188-01, 188-02, 188-06); 188-03/04/05/07/09 replanned on the D-25 delete-the-consumers basis
+Status: Executing — waves 3–8 dispatch sequentially, starting at 188-03
+Last activity: 2026-09-12 — 188-06 complete: firmware half of D-08 (frame-vector apparatus) deleted whole, native baseline re-recorded from one cold capture (185/17 -> 179/16, both pinned envs), AVR figures proven unmoved
 
 ## Roadmap Summary (v1.37)
 
@@ -2006,6 +2006,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 188 Plan 06]: D-08's firmware half executed — the frame-vector generator, catalog, generated header and 3-file native suite deleted whole, with all four platformio.ini registrations and all four CI steps (build.yml + beta-build.yml) removed in the same commit as D-21(b) requires. The native baseline moved from {cases:185, suites:17} to {cases:179, suites:16} on both pinned envs, transcribed from one cold `pio test` capture per env, never computed by arithmetic. D-20's go/no-go was checked first: `git grep frame_vectors -- src/` empty, then a cold `pio run -e uno` reproduced flash_used=22734 byte-identical to the pin, so no AVR figure was edited. Two plan-check discrepancies documented in 188-06-SUMMARY.md rather than forced to a literal match: the re-captured fixtures are the natural 20-line summary block (not the plan's literal 21, which assumed the suite table would keep all 17 rows), and the repo-wide sweep finds 4 hits that are historical narration (the baseline's own meta note, its envs_agree_note, and a test docstring explaining the same figure move) or a pre-existing unrelated fixture, not a surviving functional fragment. `tests/test_check_size_baseline.py`'s hardcoded 185/17 assertion was updated to 179/16 (not in the plan's files_modified, but required for the mandatory "firmware python suite passes" criterion) — 360 passed / 0 failed on the final tree.
 - [Phase 187 UAT]: The operator ruled PASS on the phase's one open judgment call: informed, disclosed real-time delegation ("you decide") DOES satisfy success criterion 5's "approved by the operator first" for gh#23, gh#28 and gh#31, whose body/label/close selections were made by the orchestrator under that delegation rather than by an operator menu choice. This refines D-5 ("every outward-facing reply stays behind operator wording review") for future phases: review may be delegated in real time by an operator who has already read the drafted body, provided the delegation and the orchestrator's resulting selection are disclosed in the approval file rather than written up as a menu selection the operator never made — which is what plans 187-09, 187-10 and 187-11 each did. Recorded in 187-UAT.md test 1; 187-VERIFICATION.md truth 10 moves from judgment-call to verified, making the phase 10/10.
 - [Phase 187 Plan 11]: Task 1's blocking-human gate was answered by operator delegation ("you decide"), not a menu selection, for a third and final issue in this phase. The orchestrator, acting under that delegation, selected: post the gh#31 body byte-for-byte as drafted by 187-06 (no amendment, sha256 unchanged); add `needs:report`; explicitly withhold `fix:released` because only the harness and reporting fix shipped while the M27C1001 pin-30 database defect did not; keep `cause:database` because the pin-map defect it names is real and unfixed; and leave the issue open (a close requires the reporter's confirmation or a superseding PASS, and neither exists). This is the fifth and last of the five owed replies — zero pending status lines remain in `187-UPSTREAM-REPLIES.md`.
 - [Phase 187 Plan 10]: Task 1's blocking-human gate was answered by operator delegation ("you decide"), not a menu selection, for a second issue in this phase. The orchestrator, acting under that delegation, selected: post the gh#28 body byte-for-byte as drafted by 187-06 (no amendment, sha256 unchanged); add `needs:report`; explicitly withhold `fix:released` because only the harness and reporting fix shipped while the M27C512 database defect did not; and leave the issue open (a close requires the reporter's confirmation or a superseding PASS, and neither exists). The approval file records the delegation verbatim and attributes the selection to the orchestrator, never to a menu choice the operator did not make.
@@ -2962,6 +2963,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
+| Phase 188 P06 | 2 tasks | ~12min | Firmware frame-vector apparatus deleted whole (generator, catalog, header, 3-file native suite); native baseline re-recorded from one cold capture, 185/17->179/16 both pinned envs; AVR figures proven unmoved (uno flash_used 22734, unchanged); firestarter@ffa62f1 |
 | Phase 187 P11 | 2 tasks | ~4min | gh#31 posted under a third operator-delegated gate; `needs:report` added, `fix:released` explicitly withheld, `cause:database` retained; byte-identical (2792 bytes); left OPEN — last of the five owed replies |
 | Phase 187 P10 | 2 tasks | ~4min | gh#28 posted under a second operator-delegated gate; `needs:report` added, `fix:released` explicitly withheld; byte-identical (2840 bytes); left OPEN |
 | Phase 187 P05 | 3 tasks | ~22min | gh#60/gh#62 bodies drafted to disk, review doc opened, every link resolved at the pinned SHA, both bodies hash-bound; nothing posted |
@@ -3384,8 +3386,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-12T18:50:13.807Z
-**Stopped at:** Phase 188 context gathered
+**Last session:** 2026-09-12T23:12:07.000Z
+**Stopped at:** Completed 188-06-PLAN.md — firmware frame-vector apparatus deleted, native baseline re-recorded from one cold capture (179/179/16 both pinned envs), AVR figures proven unmoved (uno flash_used 22734, unchanged); firestarter@ffa62f1
+**Was (superseded, retained for continuity):** Phase 188 context gathered
 **Was (superseded, retained for continuity):** Completed 187-11-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-10-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-09-PLAN.md

@@ -197,6 +197,15 @@ None - no external service configuration required.
 - This plan is file-disjoint from the host lane (188-02/188-05) and required no coordination; the host-side D-08 deletion is a separate plan's work.
 - No blockers for the remaining phase-188 plans.
 
+## Self-Check: PASSED
+
+- `FOUND: 188-06-SUMMARY.md` — `.planning/phases/188-the-tools-directory/188-06-SUMMARY.md` exists on disk.
+- `FOUND: suite dir gone` / `FOUND: generator gone` / `FOUND: header gone` — `firestarter/test/native/avr/test_frame_vectors/`, `firestarter/tools/catalog/codegen_vectors.py`, `firestarter/include/frame_vectors.h` all confirmed absent from the working tree.
+- `git log --oneline --all --grep="188-06"` returns this SUMMARY's meta commit `ac6d8627`.
+- `firestarter`'s `HEAD` is `ffa62f1` (Task 1's commit); `git status --short` in `firestarter` is clean.
+- All Task 1 `<verify>` legs re-run and passing except the plan's literal "21 lines" fixture assertion (documented as a plan-check discrepancy above — both fixtures are the correct, natural 20-line summary block).
+- All Task 2 `<verify>` legs re-run and passing except the literal "0 sweep hits" count (documented as a plan-check discrepancy above — 4 hits, all historical narration or a pre-existing unrelated fixture, none a surviving functional fragment).
+
 ---
 *Phase: 188-the-tools-directory*
 *Completed: 2026-09-12*
