@@ -115,9 +115,12 @@ It requires **12 V on OE (pin 22)** of `DIP28_28C256`, which is a hardware-damag
 hazard on a 5 V part. `scripts/check_erase_no_vpp.py` is the gate that enforces
 this: a brace-matched negative scan of `eeprom28c_erase_execute`'s body asserting
 zero control-register high-voltage writes. Do not "optimise" the erase by
-reaching for `flash_5v_page_erase_execute` in `flash_5v_page.cpp` — that IS the
-12 V path, and it belongs only to algorithm 5, which keeps its `FLAG_CAN_ERASE`
-exclusion for exactly that reason.
+re-deriving that hardware 12 V path from the datasheet and splicing it into
+this handler — `scripts/check_erase_no_vpp.py` is the gate that enforces its
+absence from `eeprom28c_erase_execute`'s body. Algorithm 5 keeps its
+`FLAG_CAN_ERASE` exclusion permanently, for exactly the same reason: no
+firmware routine implements that 12 V path today, and setting the flag would
+be reaching for a capability that does not exist.
 
 Separately, `write` performs **no blank check at all** on this protocol
 (ERASE-01): each page write auto-erases internally, so the pre-write check was a

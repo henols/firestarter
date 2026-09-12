@@ -23,18 +23,22 @@ must never be cited as a VPP proof for this operation.** This module is the
 primary control instead: a brace-matched scan of the erase body's own
 source text.
 
-**Proximity, not absence, is the risk.** The hardware 12V-on-OE erase path
-already exists in this tree today, at `firestarter/src/proms/flash_5v_page.cpp`
-lines 196-231 (`flash_5v_page_erase_execute`, which asserts
-`CTRL_VPE_ENABLE` and the VPP boost regulator around a `rurp_chip_enable()`
-/ `rurp_chip_disable()` bracket) -- in the very file an executor also edits
-during this phase (ERASE-02). Copying that shape into `eeprom_28c.cpp`'s
-erase handler by mistake is exactly the failure mode this checker exists to
-catch, which is why the scan is body-scoped rather than a whole-file
-zero-occurrence grep: `eeprom_28c.cpp` legitimately contains the same
-tokens in `eeprom28c_check_chip_id` (the A9-12V chip-identification path),
-so a file-wide scan would be RED on arrival against a function this checker
-is not meant to guard.
+**Proximity, not absence, was the risk -- the copy source is now gone.** The
+flash4 (`0x05`) handler no longer carries a bulk-erase routine to copy from:
+`flash_5v_page.cpp` asserts no control-register bit at all. A legitimate
+high-voltage erase does still exist elsewhere -- `eprom_internal_erase` in
+`src/proms/eprom.cpp` brackets `CTRL_VPP_REGULATOR_ENABLE | CTRL_VPE_ENABLE`
+with `rurp_chip_enable()` / `rurp_chip_disable()` for UV-EPROM parts that
+require it -- so this is not a claim that the shape is absent from the tree,
+only that the handler adjacent to `eeprom_28c.cpp` no longer models it. The gate stays armed regardless, because the hazardous shape is still
+describable and still reachable by anyone re-deriving it from the AT28C256
+datasheet's own hardware Chip Erase mode and copying it into
+`eeprom_28c.cpp`'s erase handler by mistake -- exactly the failure mode this
+checker exists to catch, which is why the scan is body-scoped rather than a
+whole-file zero-occurrence grep: `eeprom_28c.cpp` legitimately contains the
+same tokens in `eeprom28c_check_chip_id` (the A9-12V chip-identification
+path), so a file-wide scan would be RED on arrival against a function this
+checker is not meant to guard.
 
 **Body-scoped, not file-wide.** `--function` (default
 `eeprom28c_erase_execute`) is located by its definition (signature followed

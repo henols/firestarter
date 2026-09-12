@@ -198,8 +198,7 @@ struct protocol_family_row_t {
 };
 
 /* Walks configure_memory's protocol chain (memory.cpp:70-113) literally,
- * one row per KNOWN_PROTOCOLS entry -- table-driven so adding a protocol is
- * one row, not one function. */
+ * table-driven so adding a protocol is one row, not one function. */
 static const protocol_family_row_t kAllProtocolFamilies[] = {
     {0x07, "eprom (0x07/0x08/0x0B)"},
     {0x08, "eprom (0x07/0x08/0x0B)"},
