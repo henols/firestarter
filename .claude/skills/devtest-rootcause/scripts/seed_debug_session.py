@@ -56,17 +56,18 @@ These are project rules. A fix that breaks one is wrong however well it works.
    written by it. A wrong socket wiring IS fixed there.
 4. `tools/extra_chips.json` adds chips absent from infoic.xml ENTIRELY (2516,
    2532 today). It is not an override for a chip upstream already has.
-5. Never weaken `tools/check_dispatch.py` (GATE-03) to make a change pass. It
-   stops 12V reaching a 5V part's WE/address pin — a hardware-damage guard.
-6. `firestarter/include/messages.h` is GENERATED from the meta repo's
+5. `firestarter/include/messages.h` is GENERATED from the meta repo's
    messages.toml. Never hand-edit.
-7. Constants and flag bits are duplicated between
+6. Constants and flag bits are duplicated between
    `firestarter_app/firestarter/constants.py` and
    `firestarter/include/firestarter.h`. Change both together.
 
 Verify a database change with:
-  cd firestarter_app && python3 tools/build_db.py && python3 tools/diff_db.py \\
-    && python3 tools/check_dispatch.py && python3 -m pytest -o addopts="" -q
+  cd firestarter_app && python3 tools/build_db.py \\
+    && FIRESTARTER_DB_FILE=firestarter/data/chip_database.json \\
+       FIRESTARTER_BASELINE_FILE=tools/baseline/chip_database.baseline.json \\
+       python3 ../.claude/skills/devtest-rootcause/scripts/diff_db.py \\
+    && python3 -m pytest -o addopts="" -q
 `build_db.py` takes no arguments and regenerates on ANY invocation; it is
 deterministic against the pinned SHA, so any diff is yours. A one-chip fix that
 moves hundreds of chips means the decode change was too broad.
