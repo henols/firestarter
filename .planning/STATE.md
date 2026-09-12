@@ -5,15 +5,15 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 187
 current_phase_name: Answered Reports
 status: executing
-stopped_at: "Completed 187-08-PLAN.md"
-last_updated: "2026-09-12T15:52:00.000Z"
+stopped_at: "Completed 187-09-PLAN.md"
+last_updated: "2026-09-12T16:07:00.000Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 187 Plan 08 complete: REPLY-03 delivered to gh#62 under a blocking-human operator gate that had already been answered before the executor started. Operator approved the drafted body byte-for-byte (no amendment; sha256 7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065 carried unchanged from the 187-05 draft), selected the cause:firmware label over both no-label and the unoffered needs:report, and confirmed the gh#65/gh#66 acknowledgement line stands as drafted with the issue staying OPEN. Approval file committed before anything public. Posted via gh issue comment --body-file, proven byte-identical by a Python JSON round trip (3939 bytes both sides, identical sha256) — not the prohibited jq/diff form. cause:firmware applied to an issue that previously carried zero labels; no close performed. gh#60 confirmed still CLOSED/COMPLETED/[fix:released]/1 comment; gh#23 (3 comments) and gh#31 (2 comments) confirmed unchanged; gh#9 untouched. 4 of 12 plans remain (187-09 through 187-12)."
+last_activity_desc: "Phase 187 Plan 09 complete: REPLY-01 delivered to gh#23 under a blocking-human operator gate the operator answered by delegation ('you decide') rather than a menu selection. The approval file records that delegation verbatim, attributes the resulting selection (approve body as drafted, no amendment; sha256 c9cf850628ed9fcaa2e168d98868707c235a10b844442ab1cbc25520c2fe2596 carried unchanged from the 187-06 draft; add cause:rig and needs:report; keep cause:database and dev-test; no close) to the orchestrator acting under that delegation, and gives the reasoning for each element. Approval file committed before anything public. Posted via gh issue comment --body-file, proven byte-identical by a Python JSON round trip (3694 bytes both sides, identical sha256) — not the prohibited jq/diff form. cause:rig and needs:report applied additively; cause:database and dev-test both survived. No close performed; state confirmed OPEN, stateReason empty. gh#28 (4 comments), gh#31 (2 comments) and gh#9 (1 comment) confirmed unchanged; gh#60/gh#62 confirmed undisturbed. 3 of 12 plans remain (187-10 through 187-12)."
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 40
-  completed_plans: 36
+  completed_plans: 37
   percent: 83
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 187 (Answered Reports) — EXECUTING
-Plan: 5 of 12 COMPLETE (Task 1 issue-state 101c4120; Task 2 bodies+review-doc d2d0a8de; Task 3 link-check+hashes de590fb6)
-Status: gh#60 (REPLY-04) and gh#62 (REPLY-03) reply bodies drafted to disk as bare markdown posting payloads — nothing posted, labelled or closed. Both pin the one meta merge SHA (`ebd80b53b06b49678e41f12d31136f5b9d3edd26`) and name the read app version (`3.0.0b39`). gh#60 answers the reporter's own question (writing and erasing energize socket pin 1; reading/verifying/blank-checking/id do not) and quotes the shipped hazard text plus the JP5 silkscreen. gh#62 states both halves of the AE29F2008 equivalence verdict at once and carries the classification verdict's four load-bearing claims, cross-linking gh#68 without widening into gh#67's scope. `187-UPSTREAM-REPLIES.md` opened with a per-issue `PENDING OPERATOR REVIEW` gate (D-16) and a five-issue dispositions table. Re-verified gh#65/#66 are OPEN with a 2026-09-10 maintainer cross-check (not unanswered), gh#68 OPEN naming AE29F2008, gh#61 CLOSED/`chip:validated`. Both candidate labels (`fix:released` for gh#60, `cause:firmware` for gh#62) and the gh#65/#66 rewording are flagged in the review document for the operator to confirm at the 187-07/187-08 gates, not chosen silently. Every link resolved at the pinned SHA (`evidence/187-05-draft-link-check.txt`); both bodies hash-bound (`evidence/187-05-body-hashes.txt`). Plans 187-06 through 187-12 remain, all outward-facing reply-drafting/posting work; each must still avoid `--auto`/`--chain` per D-16.
-Last activity: 2026-09-12 — Phase 187 waves 1-5 of 12 complete. 187-01 repaired the five D-07 gh#9 sites and the REPLY-01 D-11 amendment; 187-02 merged the meta record to public beta (prom#69, pinned permalink SHA ebd80b53b06b49678e41f12d31136f5b9d3edd26); 187-03 merged the app to beta (app#62, 3.0.0b39 cross-confirmed on PyPI); 187-04 merged the firmware to beta (firestarter#61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6, 3.0.0b27 read from `gh release list`, the 52-line flash_5v_page.cpp deletion confirmed landed, firestarter#54 confirmed untouched); 187-05 drafted gh#60/gh#62 reply bodies to disk, opened the review document, resolved every link and hash-bound both bodies — nothing public changed. No v1.37 tag exists in any repository. Plans 187-06 through 187-12 remain outward-facing; phase must NOT be dispatched under --auto/--chain (D-16), and the Claude Code harness auto mode must stay off for them.
+Plan: 9 of 12 COMPLETE
+Status: REPLY-01 delivered to gh#23. Task 1's blocking-human gate was answered by operator delegation ("you decide") rather than a menu selection; the approval file records the delegation verbatim and attributes the resulting selection (post the 187-06 body unamended, add `cause:rig` + `needs:report`, keep `cause:database` + `dev-test`, no close) to the orchestrator acting under it, with reasoning for each element. Posted via `gh issue comment --body-file`, proven byte-identical by a Python JSON round trip (3694 bytes both sides, identical sha256) — not the prohibited jq/diff form. Labels applied additively only; gh#23 confirmed OPEN, stateReason empty, comment count 3→4. gh#28 (4 comments), gh#31 (2 comments) and gh#9 (1 comment) confirmed unchanged from the 187-05 before-capture; gh#60/gh#62 confirmed undisturbed. `187-UPSTREAM-REPLIES.md`'s gh#23 status/Posted lines flipped; gh#28/gh#31 remain `PENDING OPERATOR REVIEW`. Plans 187-10 through 187-12 remain, all outward-facing reply-posting/verification work; each must still avoid `--auto`/`--chain` per D-16.
+Last activity: 2026-09-12 — Phase 187 waves 1-9 of 12 complete. 187-01 repaired the five D-07 gh#9 sites and the REPLY-01 D-11 amendment; 187-02 merged the meta record to public beta (prom#69, pinned permalink SHA ebd80b53b06b49678e41f12d31136f5b9d3edd26); 187-03 merged the app to beta (app#62, 3.0.0b39 cross-confirmed on PyPI); 187-04 merged the firmware to beta (firestarter#61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6, 3.0.0b27 read from `gh release list`, the 52-line flash_5v_page.cpp deletion confirmed landed, firestarter#54 confirmed untouched); 187-05 drafted gh#60/gh#62 reply bodies to disk, opened the review document, resolved every link and hash-bound both bodies; 187-06 drafted gh#23/gh#28/gh#31 reply bodies and hash-bound them; 187-07 posted gh#60 (closed COMPLETED, `fix:released`); 187-08 posted gh#62 (`cause:firmware`, left OPEN); 187-09 posted gh#23 (`cause:rig`+`needs:report` added, `cause:database` retained, left OPEN) under an operator-delegated (not menu-selected) gate. No v1.37 tag exists in any repository. Plans 187-10 through 187-12 remain outward-facing; phase must NOT be dispatched under --auto/--chain (D-16), and the Claude Code harness auto mode must stay off for them.
 
 ## Roadmap Summary (v1.37)
 
@@ -3371,11 +3371,13 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 187 P06 | 16min | 3 tasks | 6 files |
 | Phase 187 P07 | 6min | 2 tasks | 8 files |
 | Phase 187 P08 | 9min | 2 tasks | 4 files |
+| Phase 187 P09 | 12min | 2 tasks | 4 files |
 
 ## Session
 
-**Last session:** 2026-09-12T15:52:00.000Z
-**Stopped at:** Completed 187-08-PLAN.md
+**Last session:** 2026-09-12T16:07:00.000Z
+**Stopped at:** Completed 187-09-PLAN.md
+**Was (superseded, retained for continuity):** Completed 187-08-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-07-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-06-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-05-PLAN.md
