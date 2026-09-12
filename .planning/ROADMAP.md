@@ -245,7 +245,7 @@ of use.
 - [x] **Phase 184: Guards That Exist** - Stop three repositories naming a checker that was deleted, and make a guard that does not exist impossible to declare silently. (completed 2026-09-11)
 - [x] **Phase 185: Records and Checks That Are Current** - The size baseline, the citation, the dead symbol and the red workflow — four records that describe a tree that no longer exists. (completed 2026-09-11)
 - [x] **Phase 186: The Python Floor, Before the EOL** - Settle the advertised floor against the type-checker while there is still slack before 2026-10-31. (completed 2026-09-12)
-- [ ] **Phase 187: Answered Reports** *(runs last outward-facing phase — describes what shipped)* - Reply to every reporter this milestone owes, ask for the re-runs that would settle the disputes, and close nothing unilaterally.
+- [x] **Phase 187: Answered Reports** *(runs last outward-facing phase — describes what shipped)* - Reply to every reporter this milestone owes, ask for the re-runs that would settle the disputes, and close nothing unilaterally. (completed 2026-09-12)
 - [ ] **Phase 188: The Tools Directory** *(added 2026-09-12 — inward-facing, posts nothing)* - Answer what each script in `firestarter_app/tools/` is for, close the escape-guard residual, and decide every gate and process-tool by name — "retire it" is a valid answer, "unaddressed" is not.
 
 ## Phase Details

@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.37
 milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 2026-09-10)
-current_phase: 187
-current_phase_name: Answered Reports
-status: executing
-stopped_at: "Completed 187-12-PLAN.md"
-last_updated: "2026-09-12T16:35:00.000Z"
+current_phase: 188
+current_phase_name: The Tools Directory
+status: planning
+stopped_at: Phase 187 complete, ready to plan Phase 188
+last_updated: "2026-09-12T17:47:03.301Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 187 Plan 12 complete (phase's closing audit, autonomous, no public act): reconciled the after-state of all six tracked issues field-by-field against the 187-05 before-capture — every difference traced to its own posting plan's approval file, none unexplained; proved the collateral-comment sweep against the 2026-09-12T15:32:19Z window start finds exactly five comments in the whole repository, one each on gh#23/28/31/60/62; confirmed gh#9 unchanged in every respect (OPEN, pinned, one comment, id 5511487546, created==updated — never edited) and no v1.37 tag in any of the three repositories. Wrote .planning/notes/v137-upstream-reply-ledger.md carrying the gh#9 staleness finding (REPLY-07 filed eight days after it was already discharged) and the six-row per-issue reply ledger, stating explicitly that this phase files zero backlog items. Completed 187-MERGE-RECORD.md's instruction and TAIL-disclosure sections, measuring the tail honestly: 41 commits in the naive post-merge range, 38 this phase's own, 3 named as a concurrent /gsd-explore + /gsd-quick session (9faf0852, b3e216f0, 061e6426) untouched by this plan. Finalized 187-UPSTREAM-REPLIES.md and flipped REPLY-01 through REPLY-06 to Complete in REQUIREMENTS.md with their comment URLs and plan traces (REPLY-07 already Complete since 187-01). All 12 plans of Phase 187 are now complete; phase verification and close are the orchestrator's next step, not this plan's."
+last_activity_desc: Phase 187 complete, transitioned to Phase 188
 progress:
-  total_phases: 6
-  completed_phases: 5
+  total_phases: 7
+  completed_phases: 6
   total_plans: 40
   completed_plans: 40
-  percent: 83
+  percent: 85
 ---
 
 # Project State
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 187 — Answered Reports
+**Current focus:** Phase 188 — The Tools Directory
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 187 (Answered Reports) — all 12 plans COMPLETE, awaiting orchestrator phase verification/close
-Plan: 12 of 12 COMPLETE
-Status: Phase 187's closing audit (187-12, autonomous, no public act) reconciled the phase's actual public footprint against what its records claim, and the two agree. After-state of gh#9/23/28/31/60/62 reconciled field-by-field against the 187-05 before-capture — every difference traced to its own posting plan's approval file. Collateral sweep against the 2026-09-12T15:32:19Z window start: exactly five comments in the whole repository, one each on the five target issues, none anywhere else. gh#9 unchanged in every respect (OPEN, pinned, one comment, never edited). No `v1.37` tag in any of the three repositories. `.planning/notes/v137-upstream-reply-ledger.md` records the gh#9 staleness finding (REPLY-07 was filed 2026-09-10, eight days after Phase 173's 2026-09-02 comment had already discharged it) and the six-row per-issue reply ledger, stating explicitly that zero backlog items are filed. `187-MERGE-RECORD.md` completed with its instruction and TAIL-disclosure sections — the tail measured, not narrated: 41 commits in the naive post-merge range, 38 this phase's own, 3 named as a concurrent `/gsd-explore`+`/gsd-quick` session untouched by this plan. `187-UPSTREAM-REPLIES.md` finalized; REPLY-01 through REPLY-06 flipped Complete in REQUIREMENTS.md with comment URLs and plan traces (REPLY-07 already Complete since 187-01). No second meta pull request opened, per D-03.
-Last activity: 2026-09-12 — Phase 187 all 12 plans complete. 187-01 repaired the five D-07 gh#9 sites and the REPLY-01 D-11 amendment; 187-02 merged the meta record to public beta (prom#69, pinned permalink SHA ebd80b53b06b49678e41f12d31136f5b9d3edd26); 187-03 merged the app to beta (app#62, 3.0.0b39 cross-confirmed on PyPI); 187-04 merged the firmware to beta (firestarter#61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6, 3.0.0b27 read from `gh release list`); 187-05/187-06 drafted and hash-bound all five reply bodies; 187-07 posted gh#60 (closed COMPLETED, `fix:released`); 187-08 posted gh#62 (`cause:firmware`, left OPEN); 187-09 posted gh#23 (`cause:rig`+`needs:report`, left OPEN); 187-10 posted gh#28 (`needs:report`, `fix:released` withheld, left OPEN); 187-11 posted gh#31 (`needs:report`, `fix:released` withheld, left OPEN) — the fifth and last owed reply; 187-12 reconciled the after-state, proved no collateral post, wrote the D-09 ledger, and completed the phase's records. No v1.37 tag exists in any repository. Phase verification and close are the orchestrator's next step.
+Phase: 188 — The Tools Directory
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-12 — Phase 187 complete, transitioned to Phase 188
 
 ## Roadmap Summary (v1.37)
 
@@ -2006,6 +2006,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 187 UAT]: The operator ruled PASS on the phase's one open judgment call: informed, disclosed real-time delegation ("you decide") DOES satisfy success criterion 5's "approved by the operator first" for gh#23, gh#28 and gh#31, whose body/label/close selections were made by the orchestrator under that delegation rather than by an operator menu choice. This refines D-5 ("every outward-facing reply stays behind operator wording review") for future phases: review may be delegated in real time by an operator who has already read the drafted body, provided the delegation and the orchestrator's resulting selection are disclosed in the approval file rather than written up as a menu selection the operator never made — which is what plans 187-09, 187-10 and 187-11 each did. Recorded in 187-UAT.md test 1; 187-VERIFICATION.md truth 10 moves from judgment-call to verified, making the phase 10/10.
 - [Phase 187 Plan 11]: Task 1's blocking-human gate was answered by operator delegation ("you decide"), not a menu selection, for a third and final issue in this phase. The orchestrator, acting under that delegation, selected: post the gh#31 body byte-for-byte as drafted by 187-06 (no amendment, sha256 unchanged); add `needs:report`; explicitly withhold `fix:released` because only the harness and reporting fix shipped while the M27C1001 pin-30 database defect did not; keep `cause:database` because the pin-map defect it names is real and unfixed; and leave the issue open (a close requires the reporter's confirmation or a superseding PASS, and neither exists). This is the fifth and last of the five owed replies — zero pending status lines remain in `187-UPSTREAM-REPLIES.md`.
 - [Phase 187 Plan 10]: Task 1's blocking-human gate was answered by operator delegation ("you decide"), not a menu selection, for a second issue in this phase. The orchestrator, acting under that delegation, selected: post the gh#28 body byte-for-byte as drafted by 187-06 (no amendment, sha256 unchanged); add `needs:report`; explicitly withhold `fix:released` because only the harness and reporting fix shipped while the M27C512 database defect did not; and leave the issue open (a close requires the reporter's confirmation or a superseding PASS, and neither exists). The approval file records the delegation verbatim and attributes the selection to the orchestrator, never to a menu choice the operator did not make.
 - [Phase 187 Plan 10]: An out-of-scope observation — gh#28 carries `cause:harness` but not `cause:database`, even though its posted body asserts an unfixed M27C512 database defect, while gh#31 already carries `cause:database` — was recorded but deliberately NOT acted on. D-14 fixes this plan's label change as `needs:report` only; adding `cause:database` here would have widened the plan rather than executed it. Carried forward as a note for Plan 187-12.
@@ -3383,8 +3384,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-12T16:35:00.000Z
-**Stopped at:** Completed 187-12-PLAN.md
+**Last session:** 2026-09-12T17:47:03.301Z
+**Stopped at:** Phase 187 complete, ready to plan Phase 188
 **Was (superseded, retained for continuity):** Completed 187-11-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-10-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-09-PLAN.md
