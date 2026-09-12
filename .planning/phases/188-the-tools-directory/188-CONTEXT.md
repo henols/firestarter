@@ -93,9 +93,26 @@ repo. **All three repositories are in scope.** The planner must not treat this a
   | `test_blast_radius_invariance.py` | 106 | 38 | **trim** — delete the two `render_shape` sites only (`test_committed_snapshot_matches_a_fresh_regeneration` / WR-01, and `test_composing_a_db_diff_never_leaks_onto_a_cached_build_shape` / CR-01's second aliasing path); 68 stay, GATE-01/02/03 and D-07/D-10 intact |
   | `test_parse_devtest_issue.py` | 29 | 1 | **trim** — delete `test_parser_marker_strings_trip_no_forbidden_claim_pattern` only; 28 stay |
 
-  **Total deleted: 90 tests — exactly the census's broken set. Collateral: zero.** No test that does not
-  import one of the four symbols is deleted. Baseline before: 2373 collected, 0 errors. Expected after:
-  2283 collected, 0 errors — and that arithmetic is a prediction to be **measured**, never asserted.
+  **Total deleted by D-25: 90 tests — exactly the census's broken set. Collateral: zero.** No test that
+  does not import one of the four symbols is deleted.
+
+  **Do not read 90 as the phase's whole subtraction, and do not expect the suite to sit at 2373 − 90 =
+  2283 at any point.** 2283 is a state the phase never occupies: D-01 and D-04 retire the ten gates' and
+  six tools' *own* test modules as well, and those land in the same commits as the consumer deletions
+  they accompany. The two subtractions are separate decisions that arrive together.
+
+  | Boundary | Collected | D-25 consumers | D-01/D-04 own tests |
+  |---|---:|---:|---:|
+  | baseline | 2373 | — | — |
+  | 188-03 Task 1 | 2368 | 1 | 4 |
+  | 188-03 Task 2 | 2307 | 44 | 17 |
+  | 188-04 Task 1 | 2262 | 45 | 0 |
+  | 188-04 Task 2 | 2175 | 0 | 87 |
+  | **end state** | **2175** | **90** | **108** |
+
+  Every figure in that table is a **prediction to be measured at the boundary it names, never asserted** —
+  and measured as a *collected* count, never a passed count, because a module that stops collecting
+  reports zero results and disappears without failing anything.
 
   **Three consequences the plans must carry, not infer:**
   1. **No relocation helper module is created.** `tests/dispatch_model.py`, `tests/report_claim_patterns.py`,
