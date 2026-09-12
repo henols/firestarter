@@ -5,10 +5,10 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 188
 current_phase_name: The Tools Directory
 status: planning
-stopped_at: Phase 187 complete, ready to plan Phase 188
-last_updated: "2026-09-12T17:47:03.301Z"
+stopped_at: Phase 188 context gathered
+last_updated: "2026-09-12T18:50:13.970Z"
 last_activity: 2026-09-12
-last_activity_desc: Phase 187 complete, transitioned to Phase 188
+last_activity_desc: Phase 188 context gathered — tools directory retirement decided
 progress:
   total_phases: 7
   completed_phases: 6
@@ -3384,8 +3384,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-12T17:47:03.301Z
-**Stopped at:** Phase 187 complete, ready to plan Phase 188
+**Last session:** 2026-09-12T18:50:13.807Z
+**Stopped at:** Phase 188 context gathered
 **Was (superseded, retained for continuity):** Completed 187-11-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-10-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-09-PLAN.md
@@ -3458,7 +3458,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/v1.33/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** None
+**Resume file:** .planning/phases/188-the-tools-directory/188-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
