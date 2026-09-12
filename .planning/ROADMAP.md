@@ -508,7 +508,7 @@ is closed on our own reading.
 
 **Depends on:** Phase 182, Phase 183 (the replies describe what those shipped)
 
-**Plans:** 11/12 plans complete
+**Plans:** 12/12 plans complete
 
 Plans:
 
@@ -558,7 +558,7 @@ Plans:
 
 **Wave 12** *(blocked on Wave 11 completion)*
 
-- [ ] 187-12-PLAN.md — After-state reconciliation, no-collateral-post proof, the D-09 ledger, and the merge-record tail
+- [x] 187-12-PLAN.md — After-state reconciliation, no-collateral-post proof, the D-09 ledger, and the merge-record tail
 
 ## v1.36 — `dev test` Fidelity (CLOSED 2026-09-09 — 46/46 requirements; merged to `beta` in all three repos, NOT tagged by operator decision)
 

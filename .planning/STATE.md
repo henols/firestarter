@@ -5,15 +5,15 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 187
 current_phase_name: Answered Reports
 status: executing
-stopped_at: "Completed 187-11-PLAN.md"
-last_updated: "2026-09-12T16:20:33.000Z"
+stopped_at: "Completed 187-12-PLAN.md"
+last_updated: "2026-09-12T16:35:00.000Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 187 Plan 11 complete: REPLY-02 delivered to gh#31 under a blocking-human operator gate the operator answered by delegation ('you decide') rather than a menu selection. The approval file records that delegation verbatim, attributes the resulting selection (approve body as drafted, no amendment; sha256 1a5dd90037db7806a75169982179cbd139ddb0c95fd94f731b418c89d765eda9 carried unchanged from the 187-06 draft; add needs:report; explicitly withhold fix:released with the reason recorded; keep cause:database; no close) to the orchestrator acting under that delegation, and gives the reasoning for each element. Approval file committed before anything public. Posted via gh issue comment --body-file, proven byte-identical by a Python JSON round trip (2792 bytes both sides, identical sha256) — not the prohibited jq/diff form. needs:report applied additively; dev-test, cause:harness and cause:database all survived; fix:released never applied. No close performed; state confirmed OPEN, stateReason empty. gh#60/gh#62/gh#23/gh#28/gh#9 confirmed unchanged. All five owed replies are now posted; zero pending status lines remain in 187-UPSTREAM-REPLIES.md. 1 of 12 plans remains (187-12)."
+last_activity_desc: "Phase 187 Plan 12 complete (phase's closing audit, autonomous, no public act): reconciled the after-state of all six tracked issues field-by-field against the 187-05 before-capture — every difference traced to its own posting plan's approval file, none unexplained; proved the collateral-comment sweep against the 2026-09-12T15:32:19Z window start finds exactly five comments in the whole repository, one each on gh#23/28/31/60/62; confirmed gh#9 unchanged in every respect (OPEN, pinned, one comment, id 5511487546, created==updated — never edited) and no v1.37 tag in any of the three repositories. Wrote .planning/notes/v137-upstream-reply-ledger.md carrying the gh#9 staleness finding (REPLY-07 filed eight days after it was already discharged) and the six-row per-issue reply ledger, stating explicitly that this phase files zero backlog items. Completed 187-MERGE-RECORD.md's instruction and TAIL-disclosure sections, measuring the tail honestly: 41 commits in the naive post-merge range, 38 this phase's own, 3 named as a concurrent /gsd-explore + /gsd-quick session (9faf0852, b3e216f0, 061e6426) untouched by this plan. Finalized 187-UPSTREAM-REPLIES.md and flipped REPLY-01 through REPLY-06 to Complete in REQUIREMENTS.md with their comment URLs and plan traces (REPLY-07 already Complete since 187-01). All 12 plans of Phase 187 are now complete; phase verification and close are the orchestrator's next step, not this plan's."
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 40
-  completed_plans: 39
+  completed_plans: 40
   percent: 83
 ---
 
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 187 (Answered Reports) — EXECUTING
-Plan: 10 of 12 COMPLETE
-Status: REPLY-02 delivered to gh#28. Task 1's blocking-human gate was answered by operator delegation ("you decide") rather than a menu selection; the approval file records the delegation verbatim and attributes the resulting selection (post the 187-06 body unamended, add `needs:report`, explicitly withhold `fix:released` with the reason recorded, no close) to the orchestrator acting under it, with reasoning for each element. Posted via `gh issue comment --body-file`, proven byte-identical by a Python JSON round trip (2840 bytes both sides, identical sha256) — not the prohibited jq/diff form. `needs:report` applied additively only; `fix:released` never applied; gh#28 confirmed OPEN, stateReason empty, comment count 4→5. gh#31 (2 comments) and gh#9 (1 comment) confirmed unchanged from the 187-05 before-capture; gh#60/gh#62/gh#23 confirmed undisturbed. `187-UPSTREAM-REPLIES.md`'s gh#28 status/Posted lines flipped; gh#31 remains `PENDING OPERATOR REVIEW`. An out-of-scope observation (gh#28 lacks `cause:database` despite the body asserting an unfixed database defect, while gh#31 already carries it) was recorded but not acted on, as a carry-forward for 187-12. Plans 187-11 and 187-12 remain, all outward-facing reply-posting/verification work; each must still avoid `--auto`/`--chain` per D-16.
-Last activity: 2026-09-12 — Phase 187 waves 1-10 of 12 complete. 187-01 repaired the five D-07 gh#9 sites and the REPLY-01 D-11 amendment; 187-02 merged the meta record to public beta (prom#69, pinned permalink SHA ebd80b53b06b49678e41f12d31136f5b9d3edd26); 187-03 merged the app to beta (app#62, 3.0.0b39 cross-confirmed on PyPI); 187-04 merged the firmware to beta (firestarter#61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6, 3.0.0b27 read from `gh release list`, the 52-line flash_5v_page.cpp deletion confirmed landed, firestarter#54 confirmed untouched); 187-05 drafted gh#60/gh#62 reply bodies to disk, opened the review document, resolved every link and hash-bound both bodies; 187-06 drafted gh#23/gh#28/gh#31 reply bodies and hash-bound them; 187-07 posted gh#60 (closed COMPLETED, `fix:released`); 187-08 posted gh#62 (`cause:firmware`, left OPEN); 187-09 posted gh#23 (`cause:rig`+`needs:report` added, `cause:database` retained, left OPEN) under an operator-delegated (not menu-selected) gate; 187-10 posted gh#28 (`needs:report` added, `fix:released` explicitly withheld, left OPEN) under a second operator-delegated gate. No v1.37 tag exists in any repository. Plans 187-11 and 187-12 remain outward-facing; phase must NOT be dispatched under --auto/--chain (D-16), and the Claude Code harness auto mode must stay off for them.
+Phase: 187 (Answered Reports) — all 12 plans COMPLETE, awaiting orchestrator phase verification/close
+Plan: 12 of 12 COMPLETE
+Status: Phase 187's closing audit (187-12, autonomous, no public act) reconciled the phase's actual public footprint against what its records claim, and the two agree. After-state of gh#9/23/28/31/60/62 reconciled field-by-field against the 187-05 before-capture — every difference traced to its own posting plan's approval file. Collateral sweep against the 2026-09-12T15:32:19Z window start: exactly five comments in the whole repository, one each on the five target issues, none anywhere else. gh#9 unchanged in every respect (OPEN, pinned, one comment, never edited). No `v1.37` tag in any of the three repositories. `.planning/notes/v137-upstream-reply-ledger.md` records the gh#9 staleness finding (REPLY-07 was filed 2026-09-10, eight days after Phase 173's 2026-09-02 comment had already discharged it) and the six-row per-issue reply ledger, stating explicitly that zero backlog items are filed. `187-MERGE-RECORD.md` completed with its instruction and TAIL-disclosure sections — the tail measured, not narrated: 41 commits in the naive post-merge range, 38 this phase's own, 3 named as a concurrent `/gsd-explore`+`/gsd-quick` session untouched by this plan. `187-UPSTREAM-REPLIES.md` finalized; REPLY-01 through REPLY-06 flipped Complete in REQUIREMENTS.md with comment URLs and plan traces (REPLY-07 already Complete since 187-01). No second meta pull request opened, per D-03.
+Last activity: 2026-09-12 — Phase 187 all 12 plans complete. 187-01 repaired the five D-07 gh#9 sites and the REPLY-01 D-11 amendment; 187-02 merged the meta record to public beta (prom#69, pinned permalink SHA ebd80b53b06b49678e41f12d31136f5b9d3edd26); 187-03 merged the app to beta (app#62, 3.0.0b39 cross-confirmed on PyPI); 187-04 merged the firmware to beta (firestarter#61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6, 3.0.0b27 read from `gh release list`); 187-05/187-06 drafted and hash-bound all five reply bodies; 187-07 posted gh#60 (closed COMPLETED, `fix:released`); 187-08 posted gh#62 (`cause:firmware`, left OPEN); 187-09 posted gh#23 (`cause:rig`+`needs:report`, left OPEN); 187-10 posted gh#28 (`needs:report`, `fix:released` withheld, left OPEN); 187-11 posted gh#31 (`needs:report`, `fix:released` withheld, left OPEN) — the fifth and last owed reply; 187-12 reconciled the after-state, proved no collateral post, wrote the D-09 ledger, and completed the phase's records. No v1.37 tag exists in any repository. Phase verification and close are the orchestrator's next step.
 
 ## Roadmap Summary (v1.37)
 
@@ -2954,6 +2954,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 187]: Repaired the five D-07 live sites (3 in ROADMAP.md, 2 in REQUIREMENTS.md) claiming gh#9 owes a closing reply, citing the pre-existing comment 5511487546; left the two explicitly-excluded ROADMAP sites and all .planning/milestones/ citations untouched.
 - [Phase 187]: Amended REPLY-01 wording per D-11 to state the chip_test.py:2599 status-axis measurement honestly, without flipping its checkbox — only REPLY-07 is discharged by this plan.
 - [Phase 187]: Merged meta PR #69 to beta via 'gh api -X PUT .../merge -f merge_method=merge' (true merge commit ebd80b53b) after 'gh pr merge --merge' was blocked twice by a local tool-permission classifier; same GitHub action, verified identical by merge_commit_sha and MERGED state read-back. — Operator had already approved this exact merge at the Task 2 gate; the classifier block was a harness-side control unrelated to GitHub or authorization.
+- [Phase 187 Plan 12]: The phase's closing audit reconciled its actual public footprint against its own records and found them to agree — no unapproved act on any of the six tracked issues, exactly five comments created anywhere in the repository during the posting window, gh#9 provably unedited. Measured the post-meta-merge commit tail honestly rather than attributing it wholesale to the phase: 41 commits in the naive range, 38 this phase's own, 3 named as a concurrent `/gsd-explore`+`/gsd-quick` session (9faf0852, b3e216f0, 061e6426) that touches no phase-187 file and was neither reverted nor amended. Per D-08's "name it, file nothing" branch, zero backlog items were filed against the gh#9 staleness finding; per D-03, no second meta pull request was opened for the phase's own tail.
 
 ## Performance Metrics
 
@@ -3377,11 +3378,13 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 187 P07 | 6min | 2 tasks | 8 files |
 | Phase 187 P08 | 9min | 2 tasks | 4 files |
 | Phase 187 P09 | 12min | 2 tasks | 4 files |
+| Phase 187 P12 | ~15min | 3 tasks | 6 files |
 
 ## Session
 
-**Last session:** 2026-09-12T16:20:33.000Z
-**Stopped at:** Completed 187-11-PLAN.md
+**Last session:** 2026-09-12T16:35:00.000Z
+**Stopped at:** Completed 187-12-PLAN.md
+**Was (superseded, retained for continuity):** Completed 187-11-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-10-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-09-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-08-PLAN.md
