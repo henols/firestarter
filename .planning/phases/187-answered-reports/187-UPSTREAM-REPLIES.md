@@ -16,7 +16,7 @@ posted.
 
 **Status — gh#23:** POSTED — approved 2026-09-12 (evidence/187-09-gh23-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/23#issuecomment-5647009393, labelled `cause:rig` and `needs:report` (`cause:database` retained), deliberately left OPEN
 **Status — gh#28:** POSTED — approved 2026-09-12 (evidence/187-10-gh28-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/28#issuecomment-5647056983, labelled `needs:report` (`fix:released` deliberately withheld — the M27C512 database defect is unfixed), deliberately left OPEN
-**Status — gh#31:** PENDING OPERATOR REVIEW
+**Status — gh#31:** POSTED — approved 2026-09-12 (evidence/187-11-gh31-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/31#issuecomment-5647114539, labelled `needs:report` (`fix:released` deliberately withheld — the M27C1001 pin-30 database defect is unfixed; `cause:database` retained), deliberately left OPEN
 **Status — gh#60:** POSTED — approved 2026-09-12 (evidence/187-07-gh60-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/60#issuecomment-5646849372, closed COMPLETED at 2026-09-12T15:32:51Z
 **Status — gh#62:** POSTED — approved 2026-09-12 (evidence/187-08-gh62-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/62#issuecomment-5646897010, labelled `cause:firmware`, deliberately left OPEN
 
@@ -225,6 +225,7 @@ This issue stays open — I'm not closing it on my own reading, only on your res
 ## gh#31 — `[dev test] m27c1001 — INCONCLUSIVE (d8771536cb43)`
 
 **Body file:** `evidence/bodies/187-gh31.md`
+**Posted line:** https://github.com/henols/firestarter_prom/issues/31#issuecomment-5647114539 — posted as drafted, no amendment (sha256 `1a5dd90037db7806a75169982179cbd139ddb0c95fd94f731b418c89d765eda9`, unchanged from the 187-06 draft). Labelled `needs:report`; `dev-test`, `cause:harness` and `cause:database` all retained. `fix:released` deliberately withheld — only the harness and reporting fix shipped, the M27C1001 pin-30 database defect did not. Deliberately left OPEN — a close requires the reporter's confirmation or a superseding PASS, and neither exists.
 **Posted:**
 
 ```

@@ -1,0 +1,88 @@
+# 187-11 — Post transcript for gh#31
+
+## Precondition re-assert (before posting)
+$ head -1 evidence/187-11-gh31-operator-approval.txt
+APPROVED-FOR-POST: gh31
+
+$ sha256sum evidence/bodies/187-gh31.md
+1a5dd90037db7806a75169982179cbd139ddb0c95fd94f731b418c89d765eda9  evidence/bodies/187-gh31.md
+
+Approval file's recorded hash: 1a5dd90037db7806a75169982179cbd139ddb0c95fd94f731b418c89d765eda9
+MATCH — precondition holds, proceeded to post.
+
+## Pre-post baseline (from evidence/187-05-issue-state-before.json, captured 2026-09-12T14:59:04Z)
+gh#31: state=OPEN, stateReason="", labels=[dev-test, cause:harness, cause:database], comment_count=2
+
+## Live re-check immediately before posting (this plan)
+$ gh issue view 31 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":2,"labels":["dev-test","cause:harness","cause:database"],"state":"OPEN","stateReason":""}
+Matches the 187-05 before-capture exactly — confirmed unchanged since baseline.
+
+## Post
+$ gh issue comment 31 --repo henols/firestarter_prom --body-file evidence/bodies/187-gh31.md
+exit=0
+URL: https://github.com/henols/firestarter_prom/issues/31#issuecomment-5647114539
+
+Comment id (from URL): 5647114539
+Written alone to evidence/187-11-comment-id.txt.
+
+## Byte-identity proof (Python JSON round trip — never `gh api --jq '.body'` piped into `diff`)
+$ gh api "repos/henols/firestarter_prom/issues/comments/5647114539" > /tmp/c187gh31.json
+$ python3 -c "
+import json,hashlib,sys
+b=json.load(open('/tmp/c187gh31.json'))['body'].encode()
+d=open('evidence/bodies/187-gh31.md','rb').read()
+print('api',len(b),hashlib.sha256(b).hexdigest())
+print('disk',len(d),hashlib.sha256(d).hexdigest())
+print('BYTE-IDENTICAL' if b==d else 'MISMATCH')
+sys.exit(0 if b==d else 1)
+"
+api 2792 1a5dd90037db7806a75169982179cbd139ddb0c95fd94f731b418c89d765eda9
+disk 2792 1a5dd90037db7806a75169982179cbd139ddb0c95fd94f731b418c89d765eda9
+BYTE-IDENTICAL
+exit=0
+
+## Label edit (additive only — --add-label, never --remove-label)
+$ gh issue edit 31 --repo henols/firestarter_prom --add-label "needs:report"
+https://github.com/henols/firestarter_prom/issues/31
+exit=0
+
+`fix:released` was never passed in any form. No `--remove-label` was used.
+
+## Post-edit re-read
+$ gh issue view 31 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:([.labels[].name]|sort),comments:(.comments|length)}'
+{"comments":3,"labels":["cause:database","cause:harness","dev-test","needs:report"],"state":"OPEN","stateReason":""}
+
+Reconciliation against 187-05 before-capture:
+- state: OPEN -> OPEN (unchanged)
+- stateReason: "" -> "" (unchanged, never closed)
+- comments: 2 -> 3 (exactly +1, this post)
+- labels: [dev-test, cause:harness, cause:database] -> [cause:database, cause:harness, dev-test, needs:report] (additive: +needs:report only; cause:database and cause:harness both retained; fix:released absent)
+
+Issue was NOT closed.
+
+## Collateral-undisturbed proof (gh#60, gh#62, gh#23, gh#28, gh#9)
+$ gh issue view 60 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:([.labels[].name]|sort),comments:(.comments|length)}'
+{"comments":1,"labels":["fix:released"],"state":"CLOSED","stateReason":"COMPLETED"}
+-- matches the already-established post-187-07 state (unchanged by this plan).
+
+$ gh issue view 62 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:([.labels[].name]|sort),comments:(.comments|length)}'
+{"comments":1,"labels":["cause:firmware"],"state":"OPEN"}
+-- matches the already-established post-187-08 state (unchanged by this plan).
+
+$ gh issue view 23 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:([.labels[].name]|sort),comments:(.comments|length)}'
+{"comments":4,"labels":["cause:database","cause:rig","dev-test","needs:report"],"state":"OPEN"}
+-- matches the already-established post-187-09 state (unchanged by this plan).
+
+$ gh issue view 28 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:([.labels[].name]|sort),comments:(.comments|length)}'
+{"comments":5,"labels":["cause:harness","dev-test","needs:report"],"state":"OPEN"}
+-- matches the already-established post-187-10 state (unchanged by this plan).
+
+$ gh issue view 9 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+1
+-- unchanged from the 187-05 before-capture; gh#9 untouched.
+
+## Summary
+gh#31: OPEN, 3 comments (was 2, +1 this post), labels [cause:database, cause:harness, dev-test, needs:report],
+fix:released absent, not closed. All five other tracked issues (gh#60, gh#62, gh#23, gh#28, gh#9) confirmed
+undisturbed at their already-established states. This is the fifth and last of the five owed replies.
