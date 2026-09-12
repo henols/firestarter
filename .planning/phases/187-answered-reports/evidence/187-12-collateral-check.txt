@@ -1,0 +1,31 @@
+# 187-12 — Collateral-comment sweep
+#
+# Corrected form per 187-RESEARCH.md §6.5: Phase 173's own version of this leg asserted zero comments
+# on every non-target issue, which was never true of this repository (39 of 53 issues already carried
+# comments before this phase began). The correct proof is: list every comment created in the
+# repository at or after the phase's window start, across ALL issues, and show the set of issues it
+# touches is exactly the five target issues — not that other issues carry zero comments overall.
+
+Window start (evidence/187-07-window-start.txt, captured before the first post): 2026-09-12T15:32:19Z
+
+Command:
+$ gh api repos/henols/firestarter_prom/issues/comments --paginate \
+    --jq ".[] | select(.created_at >= \"2026-09-12T15:32:19Z\") | {issue:(.issue_url|split(\"/\")|last), created_at, id}"
+
+Result — every comment created in the repository at or after the window start:
+
+{"issue":"60","created_at":"2026-09-12T15:32:28Z","id":5646849372}
+{"issue":"62","created_at":"2026-09-12T15:41:06Z","id":5646897010}
+{"issue":"23","created_at":"2026-09-12T16:00:57Z","id":5647009393}
+{"issue":"28","created_at":"2026-09-12T16:09:25Z","id":5647056983}
+{"issue":"31","created_at":"2026-09-12T16:19:04Z","id":5647114539}
+
+Exactly five rows. Sorted issue-number set: 23 28 31 60 62 — matching the plan's `<verify>` leg
+exactly (`sort | tr '\n' ' '` over the issue numbers gives that same set).
+
+Each row's comment id matches the id recorded in that issue's own posting plan (187-07: 5646849372;
+187-08: 5646897010; 187-09: 5647009393; 187-10: 5647056983; 187-11: 5647114539) — no unexplained id,
+no comment on any issue outside the five, and no more than one comment per target issue in this
+window.
+
+No collateral post occurred anywhere in the repository during this phase's posting window.
