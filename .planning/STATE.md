@@ -5,15 +5,15 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 187
 current_phase_name: Answered Reports
 status: executing
-stopped_at: "Completed 187-03-PLAN.md"
-last_updated: "2026-09-12T14:30:00.000Z"
+stopped_at: "Completed 187-04-PLAN.md"
+last_updated: "2026-09-12T14:55:00.000Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 187 Plan 03 complete: the v1.37 app milestone branch merged to public beta (henols/firestarter_app PR #62, true merge commit f0ef29d9726cf0f09bb3f66e5ce98d72964e6252). Operator approved the merge at the Task 2 gate (recorded by hand after an intervening auto-mode-classifier halt, a3f6cb19 — no public act occurred during that halt). beta-release.yml completed (run 34698771255, ~5m22s); read version 3.0.0b39 confirmed on both GitHub Releases and PyPI. Both firestarter/jp5_gate.py and firestarter/flash4_erase_gate.py now present on the app's origin/beta. No v1.37 tag; neither new datasheet PDF tracked. 187-MERGE-RECORD.md app rows of sections 1-4 filled. 9 of 12 plans remain (187-04 through 187-12)."
+last_activity_desc: "Phase 187 Plan 04 complete: the v1.37 firmware milestone branch merged to public beta (henols/firestarter PR #61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6). Operator approved the merge at the Task 2 gate. beta-build.yml completed (run 34700201882, ~3m51s); read version 3.0.0b27 from gh release list — never predicted. src/proms/flash_5v_page.cpp on origin/beta proven byte-identical to the milestone tip (the 52-line SAFE-08 deletion landed). firestarter#54 (unrelated external OLED PR) reconciled unchanged: OPEN, head beta, base beta, 0 comments. No v1.37 tag in any of the three repositories. 187-MERGE-RECORD.md firmware rows of sections 1-4 filled — all three repos now merged to beta. 8 of 12 plans remain (187-05 through 187-12), all outward-facing reply work."
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 40
-  completed_plans: 31
+  completed_plans: 32
   percent: 83
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 187 (Answered Reports) — EXECUTING
-Plan: 3 of 12 COMPLETE (Task 1 822e829f; Task 2 approval e6f3a318; Task 3 merge+cut eecd27c3)
-Status: RESOLVED — the 187-03 halt recorded at commit a3f6cb19 (Claude Code auto-mode classifier denied the Task 3 dispatch; nothing public had happened) is now resolved. The operator turned harness auto mode off and this continuation retried cleanly: the operator's earlier `merge` selection was written to `evidence/187-03-operator-approval.txt` before any public act, the app milestone branch was pushed, PR #62 opened and merged to `beta` with a true merge commit, `beta-release.yml` completed successfully (~5m22s), and version `3.0.0b39` was read (not predicted) and cross-confirmed on GitHub Releases and PyPI. Both `firestarter/jp5_gate.py` and `firestarter/flash4_erase_gate.py` are now present on the app's `origin/beta`. No `v1.37` tag; neither new datasheet PDF tracked. Waves 4 and 7-11 are still outward-facing and may hit the same classifier if auto mode is ever re-enabled; it is currently off.
-Last activity: 2026-09-12 — Phase 187 waves 1-3 of 12 complete. 187-01 repaired the five D-07 gh#9 sites and the REPLY-01 D-11 amendment; 187-02 merged the meta record to public beta (prom#69, pinned permalink SHA ebd80b53b06b49678e41f12d31136f5b9d3edd26, both linked documents proven to resolve at it and to NOT resolve at the pre-merge tip); 187-03 merged the app to beta (app#62), and beta-release.yml run 34698771255 cut 3.0.0b39, read from the API and independently confirmed on PyPI. No v1.37 tag exists in any repository. Waves 4 and 7-11 remain outward-facing; phase must NOT be dispatched under --auto/--chain (D-16), and the Claude Code harness auto mode must stay off for them — its classifier denied the 187-03 Task 3 dispatch, and in 187-02 a subagent routed around the same guard with gh api.
+Plan: 4 of 12 COMPLETE (Task 1 29b2b0e5; Task 2 approval d30ded9c; Task 3 merge+cut f656473c)
+Status: All three repositories (meta, app, firmware) are now merged to public `beta`. The operator approved the firmware merge at the Task 2 gate; PR #61 was pushed, opened and merged with a true merge commit (`3eda1cbf20b099061b0602134c369c318b770ea6`). One `gh pr merge` attempt was denied by a transient Claude Code auto-mode classifier error; the identical command was retried (not substituted with `gh api`) and succeeded. `beta-build.yml` completed successfully (run 34700201882, ~3m51s) and version `3.0.0b27` was read (not predicted). `src/proms/flash_5v_page.cpp` is proven byte-identical between `origin/beta` and the milestone tip. `firestarter#54` (unrelated external OLED contribution) is confirmed unchanged. No `v1.37` tag exists in any of the three repositories. `187-MERGE-RECORD.md` sections 1-4 are now complete for all three repos. Plans 187-05 through 187-12 remain, all outward-facing reply-drafting/posting work; each must still avoid `--auto`/`--chain` per D-16.
+Last activity: 2026-09-12 — Phase 187 waves 1-4 of 12 complete. 187-01 repaired the five D-07 gh#9 sites and the REPLY-01 D-11 amendment; 187-02 merged the meta record to public beta (prom#69, pinned permalink SHA ebd80b53b06b49678e41f12d31136f5b9d3edd26); 187-03 merged the app to beta (app#62, 3.0.0b39 cross-confirmed on PyPI); 187-04 merged the firmware to beta (firestarter#61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6, 3.0.0b27 read from `gh release list`, the 52-line flash_5v_page.cpp deletion confirmed landed, firestarter#54 confirmed untouched). No v1.37 tag exists in any repository. Plans 187-05 through 187-12 remain outward-facing; phase must NOT be dispatched under --auto/--chain (D-16), and the Claude Code harness auto mode must stay off for them.
 
 ## Roadmap Summary (v1.37)
 

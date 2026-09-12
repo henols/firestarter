@@ -526,7 +526,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 187-04-PLAN.md — Firmware merge and cut via `beta-build.yml`; the pre-release version read from the API
+- [x] 187-04-PLAN.md — Firmware merge and cut via `beta-build.yml`; the pre-release version read from the API
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
