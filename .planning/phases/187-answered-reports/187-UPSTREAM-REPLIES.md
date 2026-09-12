@@ -18,7 +18,7 @@ posted.
 **Status — gh#28:** PENDING OPERATOR REVIEW
 **Status — gh#31:** PENDING OPERATOR REVIEW
 **Status — gh#60:** POSTED — approved 2026-09-12 (evidence/187-07-gh60-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/60#issuecomment-5646849372, closed COMPLETED at 2026-09-12T15:32:51Z
-**Status — gh#62:** PENDING OPERATOR REVIEW
+**Status — gh#62:** POSTED — approved 2026-09-12 (evidence/187-08-gh62-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/62#issuecomment-5646897010, labelled `cause:firmware`, deliberately left OPEN
 
 ## Operator Review
 
@@ -136,6 +136,7 @@ The full trace behind the "writing and erasing only" answer — which operations
 ## gh#62 — `Unable to erase AE29F2008`
 
 **Body file:** `evidence/bodies/187-gh62.md`
+**Posted line:** https://github.com/henols/firestarter_prom/issues/62#issuecomment-5646897010 — posted as drafted, no amendment (sha256 `7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065`, unchanged from the 187-05 draft). Labelled `cause:firmware` (the issue carried zero labels before this plan). Deliberately left OPEN — the refusal is correct behaviour, but the software chip-erase capability the reporter wants (backlog 999.63) is real, undelivered work.
 **Posted:**
 
 ```

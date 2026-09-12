@@ -1,0 +1,82 @@
+# 187-08 — gh#62 post transcript
+
+## Gate re-assertion (mechanical, immediately before posting)
+
+Command: sha256sum evidence/bodies/187-gh62.md | cut -d' ' -f1
+Recorded (evidence/187-08-gh62-operator-approval.txt): 7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065
+Actual (disk, at post time):                          7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065
+Result: MATCH — proceeded to post.
+
+## Pre-post baseline (read before any act this task performed)
+
+Command: gh issue view 62 --repo henols/firestarter_prom --json state,labels,comments
+Result: {"comments":0,"labels":[],"state":"OPEN"}
+
+Command: gh issue view 60 --repo henols/firestarter_prom --json state,stateReason,labels,comments
+Result: {"comments":1,"labels":["fix:released"],"state":"CLOSED","stateReason":"COMPLETED"}
+
+Command: gh issue view 23 --repo henols/firestarter_prom --json state,comments
+Result: {"comments":3,"state":"OPEN"}
+
+Command: gh issue view 28 --repo henols/firestarter_prom --json state,comments
+Result: {"comments":4,"state":"OPEN"}
+
+Command: gh issue view 31 --repo henols/firestarter_prom --json state,comments
+Result: {"comments":2,"state":"OPEN"}
+
+## Post
+
+Command: gh issue comment 62 --repo henols/firestarter_prom --body-file evidence/bodies/187-gh62.md
+Exit code: 0
+Returned URL: https://github.com/henols/firestarter_prom/issues/62#issuecomment-5646897010
+Comment id (from URL fragment): 5646897010
+
+## Byte-identity round trip (Python JSON decode — NOT `gh api --jq '.body'` piped into `diff`)
+
+Command:
+  gh api repos/henols/firestarter_prom/issues/comments/5646897010 > /tmp/c187gh62.json
+  python3 -c "import json,hashlib,sys; b=json.load(open('/tmp/c187gh62.json'))['body'].encode(); \
+    d=open('evidence/bodies/187-gh62.md','rb').read(); \
+    print('api',len(b),hashlib.sha256(b).hexdigest()); print('disk',len(d),hashlib.sha256(d).hexdigest()); \
+    print('BYTE-IDENTICAL' if b==d else 'MISMATCH'); sys.exit(0 if b==d else 1)"
+
+Output:
+  api 3939 7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065
+  disk 3939 7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065
+  BYTE-IDENTICAL
+
+Exit code: 0
+
+## Label edit
+
+Command: gh issue edit 62 --repo henols/firestarter_prom --add-label "cause:firmware"
+Exit code: 0
+Result URL: https://github.com/henols/firestarter_prom/issues/62
+
+Read-back: gh issue view 62 --repo henols/firestarter_prom --json labels --jq '[.labels[].name]'
+Output: ["cause:firmware"]
+
+## Post-act state (gh#62)
+
+Command: gh issue view 62 --repo henols/firestarter_prom --json state,stateReason,labels,comments
+Output: {"state":"OPEN","stateReason":"","labels":["cause:firmware"],"comments":1}
+
+No close was performed or attempted. gh#62 remains OPEN with exactly one comment and exactly one
+label (cause:firmware), matching the approval file's approved label list.
+
+## Collateral-untouched proof (post-act re-read)
+
+Command: gh issue view 60 --repo henols/firestarter_prom --json state,stateReason,labels,comments
+Output: {"state":"CLOSED","stateReason":"COMPLETED","labels":["fix:released"],"comments":1}
+— unchanged from pre-post baseline above; undisturbed by this plan.
+
+Command: gh issue view 23 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+Output: 3 — unchanged.
+
+Command: gh issue view 28 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+Output: 4 — unchanged.
+
+Command: gh issue view 31 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+Output: 2 — unchanged.
+
+gh#9 was not read, commented on, or edited by this plan.
