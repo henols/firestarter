@@ -5,15 +5,15 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 187
 current_phase_name: Answered Reports
 status: executing
-stopped_at: "Completed 187-05-PLAN.md"
-last_updated: "2026-09-12T15:14:00.000Z"
+stopped_at: "Completed 187-06-PLAN.md"
+last_updated: "2026-09-12T15:36:00.000Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 187 Plan 05 complete: drafted the two reply bodies whose issues carry no prior comment — gh#60 (REPLY-04, JP5 hazard) and gh#62 (REPLY-03, AE29F2008 erase) — as bare markdown posting payloads to disk, posting nothing. Both pin the one meta merge SHA (ebd80b53b06b49678e41f12d31136f5b9d3edd26) and name the read app version (3.0.0b39). gh#60 answers the reporter's own question and confirms their JP5-detection limit by quoting the shipped hazard text and the silkscreen. gh#62 states both halves of the equivalence verdict at once and carries the classification verdict's four load-bearing claims, crosslinking gh#68 without widening into gh#67. Opened 187-UPSTREAM-REPLIES.md with a per-issue PENDING OPERATOR REVIEW gate and a five-issue dispositions table. Re-verified gh#65/#66 are open (not unanswered), gh#68 open naming AE29F2008, gh#61 closed/validated. Every link resolved at the pinned SHA; both bodies hash-bound. Nothing posted, labelled or closed. 7 of 12 plans remain (187-06 through 187-12)."
+last_activity_desc: "Phase 187 Plan 06 complete: drafted the three remaining disputed-triage replies — gh#23 (REPLY-01, W27E257), gh#28 and gh#31 (REPLY-02, M27C512/M27C1001) — as bare markdown posting payloads to disk, posting nothing. gh#23 concedes the rig-fault-reported-as-chip-verdict diagnosis in full and states separately that the tool did not and cannot become able to see an unhooked VPP, quoting the shipped rail_reading_disclosure sentence verbatim; restates the W27E257 13.5V-vs-12V defect as unfixed. gh#28/gh#31 are two distinct bodies (verified distinct sha256), each naming only its own chip's still-unfixed defect and carrying the D-12 write-shortcut caveat before the re-run ask, each withholding fix:released with a stated reason. All three name cause labels and needs:report, carry the REPLY-05 schema_version/dedup_fingerprint sentence with their re-run ask, name both cut versions (3.0.0b39 app, 3.0.0b27 firmware) byte-exactly, and state the issue stays open. Zero URLs in any of the three (no notes document exists for this material); reason recorded. 187-UPSTREAM-REPLIES.md extended with all three sections, byte-identical to their files; stale annotations corrected. Nothing posted, labelled or closed. 6 of 12 plans remain (187-07 through 187-12)."
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 40
-  completed_plans: 33
+  completed_plans: 34
   percent: 83
 ---
 
@@ -3368,11 +3368,13 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 186 P03 | 34min | 3 tasks | 3 files |
 | Phase 186 P04 | 24min | 3 tasks | 5 files |
 | Phase 187 P01 | 20 min | 2 tasks | 4 files |
+| Phase 187 P06 | 16min | 3 tasks | 6 files |
 
 ## Session
 
-**Last session:** 2026-09-12T15:14:00.000Z
-**Stopped at:** Completed 187-05-PLAN.md
+**Last session:** 2026-09-12T15:36:00.000Z
+**Stopped at:** Completed 187-06-PLAN.md
+**Was (superseded, retained for continuity):** Completed 187-05-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-02-PLAN.md
 **Was (superseded, retained for continuity):** Completed 186-01-PLAN.md
 **Was (superseded, retained for continuity):** Phase 186 context gathered

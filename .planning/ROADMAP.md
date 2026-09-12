@@ -508,7 +508,7 @@ is closed on our own reading.
 
 **Depends on:** Phase 182, Phase 183 (the replies describe what those shipped)
 
-**Plans:** 12 plans
+**Plans:** 6/12 plans complete
 
 Plans:
 
@@ -534,7 +534,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 187-06-PLAN.md — Draft gh#23, gh#28 and gh#31 bodies with both caveats and the re-run asks
+- [x] 187-06-PLAN.md — Draft gh#23, gh#28 and gh#31 bodies with both caveats and the re-run asks
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
