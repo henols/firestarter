@@ -620,7 +620,7 @@ cross-repo catalog sync, then the ledger.
 **Wave 2** *(host decision gate ∥ firmware lane — file-disjoint, no shared path)*
 
 - [x] 188-02-PLAN.md — TOOLS-03/04 (OD-1 → **D-25**): live census of the four orphaned library symbols and a `blocking-human` gate on whether they relocate into the test tier or their consumers are deleted. **Outcome INVERTED the plan's own premise:** the operator answered "Delete the consumers", superseding orchestrator ruling OD-1. A replanning pass then re-measured the blast radius (eleven consuming modules, not eight; 247 tests whole-module, not the ~105 priced) and the operator chose **surgical** deletion — 90 consuming tests, zero collateral. Both halves are D-25 in `188-CONTEXT.md`. Plans 188-03, 188-04 and 188-09 were rewritten on that basis before any of them ran
-- [ ] 188-06-PLAN.md — TOOLS-06 (D-08, D-09, D-20, D-21b): the firmware half of the frame-vector apparatus deleted whole with its four platformio registrations and four CI steps across two workflows, and the native size baseline plus both summary fixtures re-recorded from one cold capture in the same commit; the twelve AVR figures proven unmoved
+- [x] 188-06-PLAN.md — TOOLS-06 (D-08, D-09, D-20, D-21b): the firmware half of the frame-vector apparatus deleted whole with its four platformio registrations and four CI steps across two workflows, and the native size baseline plus both summary fixtures re-recorded from one cold capture in the same commit; the twelve AVR figures proven unmoved
 
 **Wave 3** *(host — the tracer: one complete deletion-plus-repair cycle before ~15,000 lines follow it)*
 
