@@ -5,15 +5,15 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 187
 current_phase_name: Answered Reports
 status: executing
-stopped_at: "Completed 187-10-PLAN.md"
-last_updated: "2026-09-12T16:11:21.000Z"
+stopped_at: "Completed 187-11-PLAN.md"
+last_updated: "2026-09-12T16:20:33.000Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 187 Plan 10 complete: REPLY-02 delivered to gh#28 under a blocking-human operator gate the operator answered by delegation ('you decide') rather than a menu selection. The approval file records that delegation verbatim, attributes the resulting selection (approve body as drafted, no amendment; sha256 f861d85399b508321080ee69b49ccfef66894916b35673b00a8cdc4152f644d1 carried unchanged from the 187-06 draft; add needs:report; explicitly withhold fix:released with the reason recorded; no close) to the orchestrator acting under that delegation, and gives the reasoning for each element. Approval file committed before anything public. Posted via gh issue comment --body-file, proven byte-identical by a Python JSON round trip (2840 bytes both sides, identical sha256) — not the prohibited jq/diff form. needs:report applied additively; dev-test and cause:harness both survived; fix:released never applied. No close performed; state confirmed OPEN, stateReason empty. gh#31 (2 comments) and gh#9 (1 comment) confirmed unchanged; gh#60/gh#62/gh#23 confirmed undisturbed. An out-of-scope gh#28/gh#31 cause:database label asymmetry was noted, not acted on, as a carry-forward for 187-12. 2 of 12 plans remain (187-11, 187-12)."
+last_activity_desc: "Phase 187 Plan 11 complete: REPLY-02 delivered to gh#31 under a blocking-human operator gate the operator answered by delegation ('you decide') rather than a menu selection. The approval file records that delegation verbatim, attributes the resulting selection (approve body as drafted, no amendment; sha256 1a5dd90037db7806a75169982179cbd139ddb0c95fd94f731b418c89d765eda9 carried unchanged from the 187-06 draft; add needs:report; explicitly withhold fix:released with the reason recorded; keep cause:database; no close) to the orchestrator acting under that delegation, and gives the reasoning for each element. Approval file committed before anything public. Posted via gh issue comment --body-file, proven byte-identical by a Python JSON round trip (2792 bytes both sides, identical sha256) — not the prohibited jq/diff form. needs:report applied additively; dev-test, cause:harness and cause:database all survived; fix:released never applied. No close performed; state confirmed OPEN, stateReason empty. gh#60/gh#62/gh#23/gh#28/gh#9 confirmed unchanged. All five owed replies are now posted; zero pending status lines remain in 187-UPSTREAM-REPLIES.md. 1 of 12 plans remains (187-12)."
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 40
-  completed_plans: 38
+  completed_plans: 39
   percent: 83
 ---
 
@@ -2005,6 +2005,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 187 Plan 11]: Task 1's blocking-human gate was answered by operator delegation ("you decide"), not a menu selection, for a third and final issue in this phase. The orchestrator, acting under that delegation, selected: post the gh#31 body byte-for-byte as drafted by 187-06 (no amendment, sha256 unchanged); add `needs:report`; explicitly withhold `fix:released` because only the harness and reporting fix shipped while the M27C1001 pin-30 database defect did not; keep `cause:database` because the pin-map defect it names is real and unfixed; and leave the issue open (a close requires the reporter's confirmation or a superseding PASS, and neither exists). This is the fifth and last of the five owed replies — zero pending status lines remain in `187-UPSTREAM-REPLIES.md`.
 - [Phase 187 Plan 10]: Task 1's blocking-human gate was answered by operator delegation ("you decide"), not a menu selection, for a second issue in this phase. The orchestrator, acting under that delegation, selected: post the gh#28 body byte-for-byte as drafted by 187-06 (no amendment, sha256 unchanged); add `needs:report`; explicitly withhold `fix:released` because only the harness and reporting fix shipped while the M27C512 database defect did not; and leave the issue open (a close requires the reporter's confirmation or a superseding PASS, and neither exists). The approval file records the delegation verbatim and attributes the selection to the orchestrator, never to a menu choice the operator did not make.
 - [Phase 187 Plan 10]: An out-of-scope observation — gh#28 carries `cause:harness` but not `cause:database`, even though its posted body asserts an unfixed M27C512 database defect, while gh#31 already carries `cause:database` — was recorded but deliberately NOT acted on. D-14 fixes this plan's label change as `needs:report` only; adding `cause:database` here would have widened the plan rather than executed it. Carried forward as a note for Plan 187-12.
 - [Phase 187 Plan 05]: Named `fix:released` (gh#60) and `cause:firmware` (gh#62) as candidate labels inside each drafted reply body, per RESEARCH's analysis of the only defensible taxonomy fits — but flagged both explicitly in `187-UPSTREAM-REPLIES.md`'s Operator Review section as candidates for the operator to confirm or change at the 187-07/187-08 gates. No label edit was made; neither issue's live label set changed.
@@ -2958,6 +2959,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
+| Phase 187 P11 | 2 tasks | ~4min | gh#31 posted under a third operator-delegated gate; `needs:report` added, `fix:released` explicitly withheld, `cause:database` retained; byte-identical (2792 bytes); left OPEN — last of the five owed replies |
 | Phase 187 P10 | 2 tasks | ~4min | gh#28 posted under a second operator-delegated gate; `needs:report` added, `fix:released` explicitly withheld; byte-identical (2840 bytes); left OPEN |
 | Phase 187 P05 | 3 tasks | ~22min | gh#60/gh#62 bodies drafted to disk, review doc opened, every link resolved at the pinned SHA, both bodies hash-bound; nothing posted |
 | Phase 186 P02 | 2 tasks | ~24min | 182-finding py311 ruff sweep absorbed (D-09), 16 files, 2 commits; CAP-03 regex repaired, 2359 passed / 0 failed, coverage 84.76% |
@@ -3378,8 +3380,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-12T16:11:21.000Z
-**Stopped at:** Completed 187-10-PLAN.md
+**Last session:** 2026-09-12T16:20:33.000Z
+**Stopped at:** Completed 187-11-PLAN.md
+**Was (superseded, retained for continuity):** Completed 187-10-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-09-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-08-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-07-PLAN.md
