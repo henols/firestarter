@@ -2,5 +2,11 @@
 # These are the values the per-issue approval gates in Plans 187-07 and 187-08 bind against.
 # If a body is amended at its gate, the hash is recomputed after the amendment and before the post.
 
-sha256(evidence/bodies/187-gh60.md) = 0bd11b1d18d605a89b7595dfc2f37faeb8be89a0f2a72018f9a266460e2a1cf1
+# AMENDED at the 187-07 operator gate (2026-09-12): the quoted hazard text's literal
+# `{operation}` (faithful to the f-string source at firestarter_app/firestarter/jp5_gate.py:79,
+# but rendering as an unsubstituted placeholder to a reporter) was replaced with the literal
+# runtime substitution `write or erase`. The line below is STALE — it no longer matches the file
+# on disk. See evidence/bodies/187-gh60.amendment.diff for the exact change and
+# evidence/187-07-gh60-operator-approval.txt for the post-amendment hash that supersedes it.
+# sha256(evidence/bodies/187-gh60.md) = 0bd11b1d18d605a89b7595dfc2f37faeb8be89a0f2a72018f9a266460e2a1cf1 [STALE — pre-amendment]
 sha256(evidence/bodies/187-gh62.md) = 7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065
