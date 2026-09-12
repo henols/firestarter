@@ -508,7 +508,7 @@ is closed on our own reading.
 
 **Depends on:** Phase 182, Phase 183 (the replies describe what those shipped)
 
-**Plans:** 7/12 plans complete
+**Plans:** 8/12 plans complete
 
 Plans:
 
@@ -542,7 +542,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 187-08-PLAN.md — Post REPLY-03 to gh#62, label, leave open (operator-gated)
+- [x] 187-08-PLAN.md — Post REPLY-03 to gh#62, label, leave open (operator-gated)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 

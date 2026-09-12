@@ -5,15 +5,15 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 187
 current_phase_name: Answered Reports
 status: executing
-stopped_at: "Completed 187-07-PLAN.md"
-last_updated: "2026-09-12T15:38:00.000Z"
+stopped_at: "Completed 187-08-PLAN.md"
+last_updated: "2026-09-12T15:52:00.000Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 187 Plan 07 complete: REPLY-04 delivered to gh#60 under a blocking-human operator gate. The operator amended the drafted body (quoted hazard text's literal {operation} replaced with the concrete write or erase, matching the f-string's own runtime substitution) before approving; the amendment was applied to both the standalone body and its inline copy in 187-UPSTREAM-REPLIES.md, a unified diff saved beside the body, and the sha256 recomputed post-amendment before the approval file was written and committed. The approved body was then posted to gh#60 via gh issue comment --body-file, proven byte-identical to the file on disk by a Python JSON round trip (not the prohibited jq/diff form); fix:released applied in place of enhancement; issue closed with reason completed. Re-read confirms CLOSED/COMPLETED/[fix:released]/1 comment. gh#23, gh#28, gh#31 confirmed still OPEN and gh#62 still at zero comments — no collateral touch. Window-start timestamp captured before the first post for 187-12's collateral proof. 5 of 12 plans remain (187-08 through 187-12)."
+last_activity_desc: "Phase 187 Plan 08 complete: REPLY-03 delivered to gh#62 under a blocking-human operator gate that had already been answered before the executor started. Operator approved the drafted body byte-for-byte (no amendment; sha256 7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065 carried unchanged from the 187-05 draft), selected the cause:firmware label over both no-label and the unoffered needs:report, and confirmed the gh#65/gh#66 acknowledgement line stands as drafted with the issue staying OPEN. Approval file committed before anything public. Posted via gh issue comment --body-file, proven byte-identical by a Python JSON round trip (3939 bytes both sides, identical sha256) — not the prohibited jq/diff form. cause:firmware applied to an issue that previously carried zero labels; no close performed. gh#60 confirmed still CLOSED/COMPLETED/[fix:released]/1 comment; gh#23 (3 comments) and gh#31 (2 comments) confirmed unchanged; gh#9 untouched. 4 of 12 plans remain (187-09 through 187-12)."
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 40
-  completed_plans: 35
+  completed_plans: 36
   percent: 83
 ---
 
@@ -3370,11 +3370,13 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 187 P01 | 20 min | 2 tasks | 4 files |
 | Phase 187 P06 | 16min | 3 tasks | 6 files |
 | Phase 187 P07 | 6min | 2 tasks | 8 files |
+| Phase 187 P08 | 9min | 2 tasks | 4 files |
 
 ## Session
 
-**Last session:** 2026-09-12T15:38:00.000Z
-**Stopped at:** Completed 187-07-PLAN.md
+**Last session:** 2026-09-12T15:52:00.000Z
+**Stopped at:** Completed 187-08-PLAN.md
+**Was (superseded, retained for continuity):** Completed 187-07-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-06-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-05-PLAN.md
 **Was (superseded, retained for continuity):** Completed 187-02-PLAN.md
