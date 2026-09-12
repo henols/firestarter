@@ -610,7 +610,41 @@ code. Criterion 2 exists to make that evidence trustworthy; no deletion may prec
 **Depends on:** Phase 187 (this phase was scoped from an audit run during it). No outward-facing work, so no
 dependency on the reply ledger.
 
-**Plans:** not yet planned
+**Plans:** 9 plans across 8 waves — meta first (D-21), then host and firmware in parallel, then the
+cross-repo catalog sync, then the ledger.
+
+**Wave 1** *(meta alone — nothing downstream may delete `diff_db.py` before this lands)*
+
+- [ ] 188-01-PLAN.md — TOOLS-04 (D-05, D-21): `diff_db.py` relocates into `.claude/skills/devtest-rootcause/scripts/` with a repo-root path seam proven end to end from two cwds; the skill's four retired-gate references dropped and its five `diff_db.py` references re-pointed
+
+**Wave 2** *(host decision gate ∥ firmware lane — file-disjoint, no shared path)*
+
+- [ ] 188-02-PLAN.md — TOOLS-03/04 (OD-1): live census of the four orphaned library symbols and a `blocking-human` gate confirming they relocate into the test tier rather than the eight consuming test modules being deleted
+- [ ] 188-06-PLAN.md — TOOLS-06 (D-08, D-09, D-20, D-21b): the firmware half of the frame-vector apparatus deleted whole with its four platformio registrations and four CI steps across two workflows, and the native size baseline plus both summary fixtures re-recorded from one cold capture in the same commit; the twelve AVR figures proven unmoved
+
+**Wave 3** *(host — the tracer: one complete deletion-plus-repair cycle before ~15,000 lines follow it)*
+
+- [ ] 188-03-PLAN.md — TOOLS-03 (D-01): `check_diagnostic_report_claims.py` retired end to end with its test, its fixture and its orphaned symbol; then the dispatch model relocated to `tests/dispatch_model.py` and all eight consumers repaired while the gate file still exists, proven behaviourally identical by execution
+
+**Wave 4** *(host)*
+
+- [ ] 188-04-PLAN.md — TOOLS-03 (D-01, D-02, D-03, D-13): the report-shape renderer and handler allow-list relocated and the nineteen snapshots re-bannered; then the nine remaining gates, their nine tests, seven planted fixtures, the mypy CI step, the fail-closed scan-path pair and the stale regression-guard prose retired in one commit — the 12 V hazard description kept
+
+**Wave 5** *(host)*
+
+- [ ] 188-05-PLAN.md — TOOLS-01/04/06/07 (D-04, D-06, D-07, D-08, D-09, D-15): the six GSD-process tools, their five tests, two orphaned data artifacts, both CI mirrors, the one orphan and the host half of the frame-vector apparatus retired with the two vector CI steps in the same commit; `tools/` left at exactly six scripts
+
+**Wave 6** *(host)*
+
+- [ ] 188-07-PLAN.md — TOOLS-05 (D-16, D-18, D-19): the five in-repo survivors swept by hand, datasheet citations and the hostile-input contract intact, asserted with a positive control; the three-repo dangling-reference sweep and the CI-faithful Python 3.11 acceptance battery
+
+**Wave 7** *(all three repos — the catalog sync)*
+
+- [ ] 188-08-PLAN.md — TOOLS-05 (D-11, D-17): the catalog code generator's five citations stripped at the meta canonical copy and synced to both sub-repos, with `messages.h` and `messages.py` proven byte-unchanged by a real diff after the sync and the second sync proven a no-op
+
+**Wave 8** *(meta — the record)*
+
+- [ ] 188-09-PLAN.md — TOOLS-01…07 (D-22, D-23): the verdict note at `.planning/notes/host-tools-retirement.md`, the seven traceability rows amended by hand with RETIRED carrying its cause and no checkbox flipped, all seven success criteria and the not-in-scope paragraph amended in place with the conflict quoted, and the three folded planning items settled — no successor guard, no backlog item
 
 **Key context:** `.planning/notes/host-tools-checker-apparatus-audit.md` (the audit, its two corrections, and
 the measurements); `.planning/research/questions.md` §"Host `tools/` checker apparatus" and §"Which host tools
