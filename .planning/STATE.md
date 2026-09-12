@@ -5,15 +5,15 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 187
 current_phase_name: Answered Reports
 status: executing
-stopped_at: "Completed 187-04-PLAN.md"
-last_updated: "2026-09-12T14:55:00.000Z"
+stopped_at: "Completed 187-05-PLAN.md"
+last_updated: "2026-09-12T15:14:00.000Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 187 Plan 04 complete: the v1.37 firmware milestone branch merged to public beta (henols/firestarter PR #61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6). Operator approved the merge at the Task 2 gate. beta-build.yml completed (run 34700201882, ~3m51s); read version 3.0.0b27 from gh release list — never predicted. src/proms/flash_5v_page.cpp on origin/beta proven byte-identical to the milestone tip (the 52-line SAFE-08 deletion landed). firestarter#54 (unrelated external OLED PR) reconciled unchanged: OPEN, head beta, base beta, 0 comments. No v1.37 tag in any of the three repositories. 187-MERGE-RECORD.md firmware rows of sections 1-4 filled — all three repos now merged to beta. 8 of 12 plans remain (187-05 through 187-12), all outward-facing reply work."
+last_activity_desc: "Phase 187 Plan 05 complete: drafted the two reply bodies whose issues carry no prior comment — gh#60 (REPLY-04, JP5 hazard) and gh#62 (REPLY-03, AE29F2008 erase) — as bare markdown posting payloads to disk, posting nothing. Both pin the one meta merge SHA (ebd80b53b06b49678e41f12d31136f5b9d3edd26) and name the read app version (3.0.0b39). gh#60 answers the reporter's own question and confirms their JP5-detection limit by quoting the shipped hazard text and the silkscreen. gh#62 states both halves of the equivalence verdict at once and carries the classification verdict's four load-bearing claims, crosslinking gh#68 without widening into gh#67. Opened 187-UPSTREAM-REPLIES.md with a per-issue PENDING OPERATOR REVIEW gate and a five-issue dispositions table. Re-verified gh#65/#66 are open (not unanswered), gh#68 open naming AE29F2008, gh#61 closed/validated. Every link resolved at the pinned SHA; both bodies hash-bound. Nothing posted, labelled or closed. 7 of 12 plans remain (187-06 through 187-12)."
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 40
-  completed_plans: 32
+  completed_plans: 33
   percent: 83
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 187 (Answered Reports) — EXECUTING
-Plan: 4 of 12 COMPLETE (Task 1 29b2b0e5; Task 2 approval d30ded9c; Task 3 merge+cut f656473c)
-Status: All three repositories (meta, app, firmware) are now merged to public `beta`. The operator approved the firmware merge at the Task 2 gate; PR #61 was pushed, opened and merged with a true merge commit (`3eda1cbf20b099061b0602134c369c318b770ea6`). One `gh pr merge` attempt was denied by a transient Claude Code auto-mode classifier error; the identical command was retried (not substituted with `gh api`) and succeeded. `beta-build.yml` completed successfully (run 34700201882, ~3m51s) and version `3.0.0b27` was read (not predicted). `src/proms/flash_5v_page.cpp` is proven byte-identical between `origin/beta` and the milestone tip. `firestarter#54` (unrelated external OLED contribution) is confirmed unchanged. No `v1.37` tag exists in any of the three repositories. `187-MERGE-RECORD.md` sections 1-4 are now complete for all three repos. Plans 187-05 through 187-12 remain, all outward-facing reply-drafting/posting work; each must still avoid `--auto`/`--chain` per D-16.
-Last activity: 2026-09-12 — Phase 187 waves 1-4 of 12 complete. 187-01 repaired the five D-07 gh#9 sites and the REPLY-01 D-11 amendment; 187-02 merged the meta record to public beta (prom#69, pinned permalink SHA ebd80b53b06b49678e41f12d31136f5b9d3edd26); 187-03 merged the app to beta (app#62, 3.0.0b39 cross-confirmed on PyPI); 187-04 merged the firmware to beta (firestarter#61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6, 3.0.0b27 read from `gh release list`, the 52-line flash_5v_page.cpp deletion confirmed landed, firestarter#54 confirmed untouched). No v1.37 tag exists in any repository. Plans 187-05 through 187-12 remain outward-facing; phase must NOT be dispatched under --auto/--chain (D-16), and the Claude Code harness auto mode must stay off for them.
+Plan: 5 of 12 COMPLETE (Task 1 issue-state 101c4120; Task 2 bodies+review-doc d2d0a8de; Task 3 link-check+hashes de590fb6)
+Status: gh#60 (REPLY-04) and gh#62 (REPLY-03) reply bodies drafted to disk as bare markdown posting payloads — nothing posted, labelled or closed. Both pin the one meta merge SHA (`ebd80b53b06b49678e41f12d31136f5b9d3edd26`) and name the read app version (`3.0.0b39`). gh#60 answers the reporter's own question (writing and erasing energize socket pin 1; reading/verifying/blank-checking/id do not) and quotes the shipped hazard text plus the JP5 silkscreen. gh#62 states both halves of the AE29F2008 equivalence verdict at once and carries the classification verdict's four load-bearing claims, cross-linking gh#68 without widening into gh#67's scope. `187-UPSTREAM-REPLIES.md` opened with a per-issue `PENDING OPERATOR REVIEW` gate (D-16) and a five-issue dispositions table. Re-verified gh#65/#66 are OPEN with a 2026-09-10 maintainer cross-check (not unanswered), gh#68 OPEN naming AE29F2008, gh#61 CLOSED/`chip:validated`. Both candidate labels (`fix:released` for gh#60, `cause:firmware` for gh#62) and the gh#65/#66 rewording are flagged in the review document for the operator to confirm at the 187-07/187-08 gates, not chosen silently. Every link resolved at the pinned SHA (`evidence/187-05-draft-link-check.txt`); both bodies hash-bound (`evidence/187-05-body-hashes.txt`). Plans 187-06 through 187-12 remain, all outward-facing reply-drafting/posting work; each must still avoid `--auto`/`--chain` per D-16.
+Last activity: 2026-09-12 — Phase 187 waves 1-5 of 12 complete. 187-01 repaired the five D-07 gh#9 sites and the REPLY-01 D-11 amendment; 187-02 merged the meta record to public beta (prom#69, pinned permalink SHA ebd80b53b06b49678e41f12d31136f5b9d3edd26); 187-03 merged the app to beta (app#62, 3.0.0b39 cross-confirmed on PyPI); 187-04 merged the firmware to beta (firestarter#61, true merge commit 3eda1cbf20b099061b0602134c369c318b770ea6, 3.0.0b27 read from `gh release list`, the 52-line flash_5v_page.cpp deletion confirmed landed, firestarter#54 confirmed untouched); 187-05 drafted gh#60/gh#62 reply bodies to disk, opened the review document, resolved every link and hash-bound both bodies — nothing public changed. No v1.37 tag exists in any repository. Plans 187-06 through 187-12 remain outward-facing; phase must NOT be dispatched under --auto/--chain (D-16), and the Claude Code harness auto mode must stay off for them.
 
 ## Roadmap Summary (v1.37)
 
@@ -2005,6 +2005,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 187 Plan 05]: Named `fix:released` (gh#60) and `cause:firmware` (gh#62) as candidate labels inside each drafted reply body, per RESEARCH's analysis of the only defensible taxonomy fits — but flagged both explicitly in `187-UPSTREAM-REPLIES.md`'s Operator Review section as candidates for the operator to confirm or change at the 187-07/187-08 gates. No label edit was made; neither issue's live label set changed.
+- [Phase 187 Plan 05]: Worded gh#62's acknowledgement of gh#65/gh#66 as "open" (with the 2026-09-10 maintainer cross-check date), never "unanswered" — the word CONTEXT.md's Deferred Ideas block used before the drift was discovered — and flagged the reword explicitly in the review document so the operator can decide at the gate whether the acknowledgement survives at all.
 - [Phase 154 Plan 12]: SWEEP-13 is DELIBERATELY LEFT UNTICKED, and that is the decision. Three of its four clauses are mechanically proven -- one commit per sub-repo (`rev-list --count <PRE_SHA>..HEAD` == 1 in both, anchored to the plan-01 shas and never to `HEAD~1`), both landing BEFORE the host suite, and the archived-`milestones/` clause discharged as a verified absence with cause. The fourth, one meta commit, is measurably NOT met: `git log --oneline <meta-pre-sweep>..HEAD -- .planning/v1.33` was already **8** before this plan committed, because plans 02, 04 and 05 committed those artifacts (plan 04 on the orchestrator's explicit instruction that D-11's one-commit rule constrains the SUB-REPOS, not meta). Threat T-154-53 dispositioned rewriting meta history to force a single commit as ACCEPT/declined -- meta history carries GSD's own doc commits and rewriting it in a chained run is the larger risk -- so the count is recorded with its cause rather than manufactured. A false tick is worse than an open box.
 - [Phase 154 Plan 12]: The D-08 retarget subset's `target_line` is deliberately NOT advanced. The plan's action text says to set the new target, i.e. to rewrite `target_line`; that was declined and the hand-chosen target recorded in `retarget_new_line` instead, for two measured reasons. (1) Every one of the manifest's 13,692 rows records its PRE-sweep target -- the header's stated invariant -- and Phase 159 maps a COMPOSITE pre-154 -> post-158 diff whose old side is pre-154, so a row advanced to its post-154 value while its 12,877 siblings stayed pre-154 would be silently mis-mapped by the very tool this phase built. (2) D-08 requires `source_text` be preserved unchanged, and preserving the text while moving the line makes the pair internally inconsistent. Nothing is lost: the choice is recorded, named, reviewable and carries a per-row reason.
 - [Phase 154 Plan 12]: SWEEP-03's literal criterion (`--assert-tokens-zero D-#` exiting 0 over `fw-src`+`fw-include`) is UNSATISFIABLE together with this phase's own Ruling B exemption, and that is reported rather than reinterpreted. The leg exits 1 with exactly 4 violations, all inside `src/proms/eprom.cpp`, the blob-sha-pinned path the phase is forbidden to edit; the tool has no exclusion flag. The requirement is discharged by the strictly stronger, TOTAL measurement instead: `D-#` hit lines in `firestarter/{src,include}` go 34 across 9 files -> 4 across 1 file, `git diff --quiet` proves that one file byte-identical, so all 30 in permitted files are gone (30 of 30) and the 4 survivors are provably the same 4 lines it carried pre-sweep.
@@ -2954,6 +2956,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
+| Phase 187 P05 | 3 tasks | ~22min | gh#60/gh#62 bodies drafted to disk, review doc opened, every link resolved at the pinned SHA, both bodies hash-bound; nothing posted |
 | Phase 186 P02 | 2 tasks | ~24min | 182-finding py311 ruff sweep absorbed (D-09), 16 files, 2 commits; CAP-03 regex repaired, 2359 passed / 0 failed, coverage 84.76% |
 | Phase 182 P06 | 1 task (Task 3 only) | ~15min | A1 CONFIRMED at 4.9V, gate scope unchanged, 2 record files folded |
 | Phase 154 P06 | 2 tasks | ~35min | 1 source file swept (34 comment blocks, 33->0 hits), 4 meta files |
@@ -3368,8 +3371,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-12T13:53:10.758Z
-**Stopped at:** Completed 187-02-PLAN.md
+**Last session:** 2026-09-12T15:14:00.000Z
+**Stopped at:** Completed 187-05-PLAN.md
+**Was (superseded, retained for continuity):** Completed 187-02-PLAN.md
 **Was (superseded, retained for continuity):** Completed 186-01-PLAN.md
 **Was (superseded, retained for continuity):** Phase 186 context gathered
 **Was (superseded, retained for continuity):** Phase 182 complete, ready to plan Phase 183

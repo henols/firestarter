@@ -530,7 +530,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 187-05-PLAN.md — Draft gh#60 and gh#62 bodies, capture the pre-post issue state, resolve every link
+- [x] 187-05-PLAN.md — Draft gh#60 and gh#62 bodies, capture the pre-post issue state, resolve every link
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
