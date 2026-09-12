@@ -1,0 +1,67 @@
+PRE-MERGE MEASUREMENT (app)
+============================
+Measured: 2026-09-12 (immediately before the Task 2 operator gate)
+Repo: /workspaces/firestarter_app (henols/firestarter_app)
+
+$ git fetch origin   # rc=0
+
+$ git rev-parse origin/beta
+1efdc5769ab4c78f9237b70c6826d217673cc164
+
+$ git rev-parse HEAD
+612aa6983e781d0d9437071da1d3daaba5e71aae
+
+$ git rev-parse --abbrev-ref HEAD
+gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+
+$ git cherry origin/beta gsd/v1.37-operator-safety-answered-reports-claim-hygiene | grep -c '^+'
+33
+
+$ git cherry origin/beta gsd/v1.37-operator-safety-answered-reports-claim-hygiene | grep -c '^-'
+0
+
+$ git status --short
+?? datasheets/MBM27C1001.pdf
+?? datasheets/MX27C4000.pdf
+
+Absence proofs (both expected to fail before the merge — the baseline Task 3's proof is measured
+against):
+
+$ git cat-file -e origin/beta:firestarter/jp5_gate.py
+fatal: path 'firestarter/jp5_gate.py' exists on disk, but not in 'origin/beta'
+rc=128
+
+$ git cat-file -e origin/beta:firestarter/flash4_erase_gate.py
+fatal: path 'firestarter/flash4_erase_gate.py' exists on disk, but not in 'origin/beta'
+rc=128
+
+Datasheet disposition (DRIFT-4 / Pitfall 5): datasheets/MBM27C1001.pdf and datasheets/MX27C4000.pdf
+are untracked and unstaged (gh#65/gh#66 research material for deferred work). They must not enter
+the PR. NOTE (documented discrepancy, see SUMMARY "Deviations from Plan"): the app repo's
+`datasheets/` directory already carries 7 PRE-EXISTING tracked files on `origin/beta` itself
+(AT28C256.pdf, M27C1001.pdf, M27C512.pdf, SST39SF0x0A.pdf, W27C020.pdf, W27C512.pdf, W27E257.pdf —
+oldest tracked commit d3be93a, unrelated to this phase), so a bare `git ls-files -- datasheets/`
+always returns 7 lines regardless of this plan's actions. The corrected, scoped check is:
+
+$ git ls-files -- datasheets/MBM27C1001.pdf datasheets/MX27C4000.pdf
+(empty output, rc=0)
+
+— confirming neither of the two NEW PDFs is tracked, which is the actual intent of the plan's
+must_haves.truths and prohibitions.
+
+Open PRs (henols/firestarter_app):
+
+$ gh pr list --repo henols/firestarter_app --state open --json number,title,headRefName,baseRefName
+[{"baseRefName":"main","headRefName":"snyk-fix-1d78d006b68faf0f6332471bf4909f12","number":36,"title":"[Snyk] Security upgrade zipp from 3.15.0 to 3.19.1"}]
+
+firestarter_app#36 is a stale Snyk PR with base `main`, head `snyk-fix-1d78d006b68faf0f6332471bf4909f12`.
+It is unrelated to this milestone branch and must not be touched. No open PR has this milestone
+branch (gsd/v1.37-operator-safety-answered-reports-claim-hygiene) as its head.
+
+Pre-cut published state (ORIENTATION ONLY — this is the version that must NOT be named in any
+reply; the real version is read after the cut, in Task 3):
+
+$ gh release list --repo henols/firestarter_app --limit 3
+3.0.0b38	Pre-release	3.0.0b38	2026-09-09T18:59:10Z
+3.0.0b37	Pre-release	3.0.0b37	2026-09-09T12:23:04Z
+3.0.0b36	Pre-release	3.0.0b36	2026-09-02T16:14:37Z
