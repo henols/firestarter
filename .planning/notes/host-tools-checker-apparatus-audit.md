@@ -120,8 +120,27 @@ the published pip-package repo climbs out of its own submodule to write
 
 The consequence for anyone who is not this operator: in a standalone clone of
 `henols/firestarter_app`, the same three-hop arithmetic resolves to the **parent of the clone
-directory**, and the tool writes a `.planning/` tree outside the repository entirely. The tool
-is only correct under one person's submodule layout.
+directory**. The tool is only correct under one person's submodule layout.
+
+**Corrected characterisation (measured 2026-09-12 while fixing it).** This note first said the
+tool "writes a `.planning/` tree outside the repository entirely". That overstates it. The tool
+never creates directories — there is no `makedirs`, `mkdir` or `parents=True` anywhere in it —
+so the two cases are:
+
+| Parent directory | Pre-fix behaviour |
+|---|---|
+| has no `.planning/` | unhandled `FileNotFoundError` traceback, exit **1** — colliding with the drift/DB-parse exit code |
+| has a foreign `.planning/` (e.g. the clone sits inside another GSD project) | writes into **that** project's planning directory |
+
+The first case is the common one and is a usability and exit-code defect, not a data-integrity
+one. The second is the genuinely harmful case and is rarer.
+
+Quick task `260912-mo6` fixed the first: `resolve_default_paths()` now exits 2 with an
+actionable message naming `--output`/`--ledger`, and writes nothing. **It does not fix the
+second** — its oracle is "a `.planning/` directory exists at the resolved root", which is true
+for the operator and true for a foreign GSD project alike. Closing that would need a stronger
+oracle (for example, confirming the root's `.gitmodules` actually registers this submodule).
+Recorded as an open residual rather than claimed as closed.
 
 ### It also breaks the project's own hard rule
 
