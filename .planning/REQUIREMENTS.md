@@ -215,6 +215,18 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
       a retirement condition, or retired. Retiring is a valid outcome; leaving one unanswered is not.
       Reachability is established by reading each gate's tests, never by reference-counting. (Generalises
       CLAIM-03, which asked exactly this of one invariant.)
+      **Plan 188-02 (decision gate — no gate, test or library file touched):** D-01 already decides all ten
+      gates retired. This plan resolved the one open sub-question blocking that retirement: three of the ten
+      — `check_dispatch.py`, `check_devtest_orchestrator.py`, `check_diagnostic_report_claims.py` — export
+      library symbols (`dispatch`/`_ALGO_MEM_TYPE`/`_SRAM_PROTOCOLS`/`KNOWN_PROTOCOLS`,
+      `_HANDLER_FUNCTION_NAMES`, `FORBIDDEN_PATTERNS`) that eight surviving test modules import as their
+      oracle (90 tests measured live via `pytest --co`, 45 of them breaking at collection time). The
+      orchestrator's prior ruling (OD-1) was to relocate these symbols into the test tier; this plan put
+      that ruling to the operator against the live census, alongside the un-offered alternative — deleting
+      the eight consuming test modules, six of them the `test_val_wire_*` wire-contract suites carrying the
+      BLOCKER-2 SRAM/VPP electrical-safety invariant. The operator's verbatim answer was **"Delete the
+      consumers."** This **inverts OD-1**. Plans 188-03 and 188-04, both written on the relocate basis, must
+      be replanned on the delete-the-consumers basis before either runs. See `188-02-SUMMARY.md`.
 - [ ] **TOOLS-04**: Each GSD-process tool — `audit_coverage_matrix.py`, `diff_db.py`,
       `measure_plan_shapes.py`, `measure_part_number_delta.py`, `snapshot_report_shapes.py`,
       `build_devtest_issue_corpus.py` — is placed by name: stays with a product-facing rationale, moves to
@@ -225,6 +237,14 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
       cross-repo import. The skill's procedure re-points at it and drops all four references to the
       `check_dispatch.py` gate D-01 retires. The other five tools' placement is not this plan's work; the
       requirement stays open until they are also placed.
+      **Plan 188-02 (decision gate — no tool placed, edited or deleted):** Resolved the disposition question
+      for `snapshot_report_shapes.py`'s `render_shape` symbol, whose sole consumer is
+      `test_blast_radius_invariance.py` (38 tests, measured live). OD-1's ruling was relocation into the
+      test tier; the operator was shown that ruling against the live census plus the un-offered alternative
+      of deleting the consuming test module, and answered verbatim **"Delete the consumers,"** which
+      **inverts OD-1**. `snapshot_report_shapes.py` itself remains unplaced — 188-05 and 188-09 must be
+      replanned to delete `test_blast_radius_invariance.py` rather than relocate `render_shape` into it,
+      before either plan runs. See `188-02-SUMMARY.md`.
 - [ ] **TOOLS-05**: No file under `firestarter_app/tools/` cites a phase number, plan number, decision ID,
       or `.planning/` path. This is `CLAUDE.md`'s non-overridable rule applied to the directory where the
       host-side remainder is concentrated. Asserted across the tree with a positive control.
@@ -282,8 +302,8 @@ Deferred, tracked, not in this roadmap.
 | FLOOR-03 | Phase 186 | Complete — `.planning/notes/python-floor-decision.md` records the decision, its three rejected alternatives with measured grounds, the evidence transcribed from `186-RESEARCH.md`, the standing rule and its enforcing gate (`test_python_floor_agreement.py`), and successor backlog 999.67 carrying 2027-10-31; `firestarter_app/.planning/codebase/STACK.md` (186-03) points an app-repo-only reader at it (186-04) |
 | TOOLS-01 | Phase 188 | Pending — quick-260912-mo6 closed the no-planning-dir case; the foreign-planning-dir case is open |
 | TOOLS-02 | Phase 188 | Pending — blocks every deletion in this phase |
-| TOOLS-03 | Phase 188 | Pending |
-| TOOLS-04 | Phase 188 | Pending — `diff_db.py` placed by relocation (188-01); five tools remain |
+| TOOLS-03 | Phase 188 | Pending — 188-02 decision recorded (delete-the-consumers, inverts OD-1); 188-03/188-04 need replanning |
+| TOOLS-04 | Phase 188 | Pending — `diff_db.py` placed by relocation (188-01); 188-02 decided render_shape's fate (delete-the-consumers, inverts OD-1); four tools remain |
 | TOOLS-05 | Phase 188 | Pending |
 | TOOLS-06 | Phase 188 | Pending |
 | TOOLS-07 | Phase 188 | Pending |
