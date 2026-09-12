@@ -619,7 +619,7 @@ cross-repo catalog sync, then the ledger.
 
 **Wave 2** *(host decision gate ∥ firmware lane — file-disjoint, no shared path)*
 
-- [ ] 188-02-PLAN.md — TOOLS-03/04 (OD-1): live census of the four orphaned library symbols and a `blocking-human` gate confirming they relocate into the test tier rather than the eight consuming test modules being deleted
+- [x] 188-02-PLAN.md — TOOLS-03/04 (OD-1): live census of the four orphaned library symbols and a `blocking-human` gate confirming they relocate into the test tier rather than the eight consuming test modules being deleted
 - [ ] 188-06-PLAN.md — TOOLS-06 (D-08, D-09, D-20, D-21b): the firmware half of the frame-vector apparatus deleted whole with its four platformio registrations and four CI steps across two workflows, and the native size baseline plus both summary fixtures re-recorded from one cold capture in the same commit; the twelve AVR figures proven unmoved
 
 **Wave 3** *(host — the tracer: one complete deletion-plus-repair cycle before ~15,000 lines follow it)*
