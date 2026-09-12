@@ -254,3 +254,67 @@ for the full design and the 999.15 stub rewrite in `ROADMAP.md`.
    gap, but it leaves `DIP24_2532` (no external counterpart) and any newly-added family
    unguarded. Is a datasheet-citation requirement per family (a `comment` field with a
    sourced claim, as `DIP32_27C020` already carries) worth making mandatory?
+
+## Host `tools/` checker apparatus — retire or keep? — added 2026-09-12
+
+Source: `/gsd-explore` session 2026-09-12 (operator reading through `firestarter_app/tools/`,
+suspecting over-engineering). See `notes/host-tools-checker-apparatus-audit.md` and
+`seeds/phase-gate-expiry-discipline.md`. Measured: ten `check_*.py` gates, 3,984 lines plus
+3,537 lines of their own tests, guarding a 21,153-line product. All ten report zero findings on
+every run. Each locks in one decision from one phase; none has ever been retired.
+
+1. **Is each gate actually reachable from CI?** Only `check_mypy_watermark.py` is named in
+   `ci.yml`. The other nine reach CI solely through `pytest tests/`, and only where their test
+   file invokes them against the **real tree** rather than a fixture. A static grep cannot
+   settle this — a test file mentioning a checker is not the same as a clean-tree control test.
+   Must be read per gate; a gate reachable from nothing is already dead.
+
+2. **Is the invariant already covered by a unit test on the guarded module?** If
+   `sdp_capability.py`'s own tests already assert the allow-set is not widenable, the 612-line
+   AST gate guarding a 246-line file is redundant. Answer per gate, against the guarded
+   module's test file — not in aggregate.
+
+3. **Is the risk still live?** A gate preventing a mistake the code's current shape makes
+   impossible is archaeology, not defence. Note that "it passes" is not a reason to keep one —
+   all ten pass, which is the finding rather than a defence.
+
+4. **For each survivor, what is its retirement condition?** Record it in the gate itself, per
+   the `phase-gate-expiry-discipline` seed, so the next reader is not re-deriving this audit.
+
+Non-goal: re-litigating gate quality. These are well built — each reports its scan surface
+(none is a silent zero-scan), each carries planted-violation fixtures, and
+`check_mypy_watermark` deliberately fails closed on mypy's rc=2. The question is whether they
+still earn their mass.
+
+## Which host tools are doing GSD's work? — added 2026-09-12
+
+Source: same session, raised by the operator. See `notes/host-tools-checker-apparatus-audit.md`
+§"tools doing GSD's work, inside the product repo". Several `firestarter_app/tools/` scripts
+exist to produce evidence for GSD phase records rather than to serve the product — their
+docstrings cite phases, plan numbers and `D-NN` decisions directly (`measure_plan_shapes.py`:
+*"the frozen half of D-10's no-drop proof (Phase 175, plan 175-03)"*).
+
+1. **Who is each candidate's real consumer?** For `audit_coverage_matrix.py`, `diff_db.py`,
+   `measure_plan_shapes.py`, `measure_part_number_delta.py`, `snapshot_report_shapes.py`,
+   `build_devtest_issue_corpus.py`: a phase record or GSD gate → process; the CLI, the database
+   build, or a user-facing command → product. Some are genuinely mixed (`diff_db.py` plausibly
+   serves DB regeneration *and* phase evidence), and the mixed ones are the interesting cases.
+
+2. **Does it write outside its own repo?** `audit_coverage_matrix.py` resolves `_REPO_ROOT`
+   three `dirname()` hops up — to the **meta** repo — and writes
+   `.planning/v1.3-COVERAGE-MATRIX.md` plus a mutated `.planning/v1.3-defect-coverage-ids.json`
+   there. In a standalone clone of `henols/firestarter_app` the same arithmetic writes a
+   `.planning/` tree into the parent of the clone, outside the repository. That is a defect to
+   fix whatever the answer to (1) — audit the other candidates for the same shape.
+
+3. **Where does each belong instead?** Candidates: the meta repo's `tools/` (today only
+   `catalog/`), a GSD skill owning its own copy, or deletion once the phase it served is closed
+   and its artifact frozen. Constraint: a skill must own its scripts rather than importing from
+   `firestarter_app/tools/`, so relocation must not create a cross-repo import. Tools importing
+   `firestarter.*` need the package installed — a meta-repo home must account for that.
+
+4. **Second-order — the citations.** These docstrings violate `CLAUDE.md`'s non-overridable
+   no-comments rule for anything under `firestarter_app/`. Stripping them is not the fix on its
+   own: a tool whose only rationale is "the frozen half of D-10's no-drop proof" cannot be
+   given a product-facing docstring, and that inability is itself the placement signal. Resolve
+   placement first.
