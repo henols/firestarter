@@ -220,6 +220,11 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
       `build_devtest_issue_corpus.py` — is placed by name: stays with a product-facing rationale, moves to
       the meta repo, or is retired. A tool that cannot be given a product-facing docstring does not stay.
       Relocation must not create a cross-repo import; a skill that needs one must own its copy.
+      **Plan 188-01 (of 4 contributing plans — 188-01, 188-02, 188-05, 188-09):** `diff_db.py` placed —
+      relocated to `.claude/skills/devtest-rootcause/scripts/diff_db.py` as a skill-owned copy (D-05), no
+      cross-repo import. The skill's procedure re-points at it and drops all four references to the
+      `check_dispatch.py` gate D-01 retires. The other five tools' placement is not this plan's work; the
+      requirement stays open until they are also placed.
 - [ ] **TOOLS-05**: No file under `firestarter_app/tools/` cites a phase number, plan number, decision ID,
       or `.planning/` path. This is `CLAUDE.md`'s non-overridable rule applied to the directory where the
       host-side remainder is concentrated. Asserted across the tree with a positive control.
@@ -278,7 +283,7 @@ Deferred, tracked, not in this roadmap.
 | TOOLS-01 | Phase 188 | Pending — quick-260912-mo6 closed the no-planning-dir case; the foreign-planning-dir case is open |
 | TOOLS-02 | Phase 188 | Pending — blocks every deletion in this phase |
 | TOOLS-03 | Phase 188 | Pending |
-| TOOLS-04 | Phase 188 | Pending |
+| TOOLS-04 | Phase 188 | Pending — `diff_db.py` placed by relocation (188-01); five tools remain |
 | TOOLS-05 | Phase 188 | Pending |
 | TOOLS-06 | Phase 188 | Pending |
 | TOOLS-07 | Phase 188 | Pending |
