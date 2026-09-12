@@ -1,48 +1,64 @@
 ---
 created: 2026-09-12T16:30:00Z
-title: Retire two orphaned firestarter_app/tools scripts — ci_replica_venv.sh and derive_sdp_partition.py
+revised: 2026-09-12T17:10:00Z
+title: Host tools/ have no declared consumer — a code-level scan cannot tell a live operator tool from a dead one
 area: tooling
 found_in_phase: 187
 files:
-  - firestarter_app/tools/ci_replica_venv.sh (363 lines — referenced by no workflow, no test, no other script)
-  - firestarter_app/tools/derive_sdp_partition.py (263 lines — zero test files, one stray mention)
+  - firestarter_app/tools/ (all 24 scripts — the missing invocation contract)
+  - firestarter_app/tools/ci_replica_venv.sh (live operator tool, misread as an orphan — see below)
+  - firestarter_app/tools/derive_sdp_partition.py (live operator tool, misread as an orphan)
 ---
 
-## Problem
+## CORRECTION — this todo originally said the wrong thing
 
-Two scripts in `firestarter_app/tools/` have no live caller. Measured 2026-09-12 against the
-working tree:
+As first written on 2026-09-12 this item proposed **deleting** `ci_replica_venv.sh` (363 lines)
+and `derive_sdp_partition.py` (263 lines) as unambiguous dead weight, on the evidence that no
+workflow, test or script references either. **That conclusion was wrong and acting on it would
+have destroyed two working verification tools.**
 
-| script | lines | workflows naming it | test files naming it | other scripts naming it |
-|---|---|---|---|---|
-| `ci_replica_venv.sh` | 363 | 0 | 0 | 0 |
-| `derive_sdp_partition.py` | 263 | 0 | 0 | 1 |
+Both are live and operator-invoked, recorded in `.planning/STATE.md`:
 
-`ci_replica_venv.sh` is referenced by nothing at all. `derive_sdp_partition.py` has a single
-stray mention and no test coverage.
+- `ci_replica_venv.sh` — `STATE.md:579-582`: run as a whole-milestone verification leg beside
+  `ci_parity.sh`, reporting `CI-REPLICA: PASS`, `mypy 33/35` with the watermark explicitly not
+  moved, `129` source files checked. It is the tool that reproduces CI's Python 3.11 locally,
+  against a devcontainer that is 3.12 — a known masking hazard.
+- `derive_sdp_partition.py` — `STATE.md:768-770`: *"Re-ran against the cached pinned-commit XML:
+  PASS, 43/41/84, zero disagreement"*, checked against `sdp_capability_for_entry` and the
+  committed partition. `STATE.md:2482` records a deliberate design decision that it duplicates
+  `_select_0x0d_chips` locally rather than importing from `tests/`, *"the script must stay fully
+  standalone"* — a tool nobody intends to keep would not have earned that decision.
 
-Both sit in `firestarter_app/tools/`, which is outside every CI gate — no mypy, no `ruff check`,
-no `ruff format`. So they are unexecuted, unlinted, untyped, and untested, while still reading
-as part of the project's tooling surface to anyone browsing the directory.
+## The real problem, which the error demonstrates
 
-## Why it is worth doing
+A tool invoked by a human from a procedure recorded only in `.planning/` prose is, to **any**
+code-level scan, indistinguishable from a dead one. Reference counts over workflows, tests and
+scripts return zero for both a genuinely orphaned script and a load-bearing operator tool.
 
-626 lines removed for no behavioural change, and one less pair of scripts a future reader has to
-understand before concluding they do nothing. This is the unambiguous slice of the wider
-checker-apparatus question — it needs no per-gate analysis, unlike the ten `check_*.py` gates.
+That is not a hypothetical failure mode. It is the mistake this todo made on its first write,
+using exactly the scan a future cleanup pass would use — and the cleanup would have deleted the
+operator's CI-parity harness.
 
-## Before deleting
+## What to do instead of deleting
 
-1. Confirm the single `derive_sdp_partition.py` mention is not a live invocation path —
-   locate it and read it, do not trust the count alone.
-2. Confirm `ci_replica_venv.sh` is not referenced from the firmware sub-repo or from
-   `.planning/` runbooks that an operator still follows by hand. A script invoked only by a
-   human from a documented procedure is not an orphan, and the reference scan above covered
-   code and workflows, not prose.
-3. Check whether `ci_parity.sh` (162 lines, also CI=0/tests=0) is the surviving half of the
-   same pair — if the two were built together, decide them together rather than leaving one.
+Give every script in `firestarter_app/tools/` a declared consumer, so the question "is this
+live?" is answerable from the file itself rather than by grepping a 52k-line `STATE.md`:
+
+1. **Each tool states who runs it and when** — CI (naming the workflow step), the test suite
+   (naming the test), an operator procedure (naming the procedure), or a closed phase (in which
+   case it is a retirement candidate).
+2. **Operator-run tools are the priority**, since they are exactly the class that scans
+   misclassify. `ci_replica_venv.sh`, `ci_parity.sh` and `derive_sdp_partition.py` are the
+   known members; there are likely others among the 24.
+3. **Only then** is a deletion pass safe, and its criterion becomes "declares no consumer, and
+   none can be found" rather than "no code references it".
+
+Constraint: whatever form the declaration takes must respect `CLAUDE.md`'s non-overridable
+no-comments rule for anything under `firestarter_app/`. A `--help` string or an `argparse`
+description is user-facing text, not commentary, and is the natural carrier; a comment block is
+not available. This needs settling before the pass, not during it.
 
 ## Context
 
-Full measurements, per-gate ratios and the wider diagnosis:
-`.planning/notes/host-tools-checker-apparatus-audit.md`.
+`.planning/notes/host-tools-checker-apparatus-audit.md` — and note that the audit's own
+"unambiguous dead weight" section has been corrected for the same error.

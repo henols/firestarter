@@ -138,11 +138,36 @@ because without them the tools are unexplainable — a generator whose only reas
 inability to write a product-facing docstring is the diagnostic: the tool does not belong in the
 product repo at all.
 
-## Unambiguous dead weight (no analysis needed)
+## CORRECTED — there is no "unambiguous dead weight" section
 
-- `tools/ci_replica_venv.sh` — 363 lines, referenced by **nothing**: no workflow, no test, no
-  other script.
-- `tools/derive_sdp_partition.py` — 263 lines, zero test files, one stray mention.
+This note first claimed `tools/ci_replica_venv.sh` (363 lines) and
+`tools/derive_sdp_partition.py` (263 lines) were unambiguous dead weight, deletable without
+analysis, on the evidence that no workflow, test or script references either. **That was wrong.**
+Both are live, operator-invoked verification tools:
+
+- `ci_replica_venv.sh` — `STATE.md:579-582`: a whole-milestone verification leg run beside
+  `ci_parity.sh` (`CI-REPLICA: PASS`, `mypy 33/35`, 129 source files). It reproduces CI's
+  Python 3.11 against a 3.12 devcontainer — a known masking hazard.
+- `derive_sdp_partition.py` — `STATE.md:768-770`: re-run against the cached pinned-commit XML,
+  `PASS, 43/41/84, zero disagreement`. `STATE.md:2482` records a deliberate decision that it
+  stay fully standalone rather than import from `tests/`.
+
+### Why the error matters more than the two files
+
+The scan that produced the wrong answer — reference counts over workflows, tests and scripts —
+is precisely the scan a future cleanup pass would run. It returns **zero for a load-bearing
+operator tool and zero for a genuinely dead one**, because an invocation contract that lives
+only in `.planning/` prose is invisible to code.
+
+So the third finding of this audit is the one with the clearest fix: **no script in
+`firestarter_app/tools/` declares its consumer.** Until each does, "is this still used?" is
+unanswerable except by grepping a 52,000-line `STATE.md`, and every cleanup attempt carries a
+live risk of deleting working tooling. See
+`todos/pending/2026-09-12-retire-two-orphaned-host-tools.md`, rewritten around this.
+
+This also revises finding 1: the ten `check_*.py` gates cannot be assessed for retirement by
+reference-counting either. Their reachability question (research Q1) must be answered by
+reading each test, not by scanning.
 
 ## Adjacent finding, out of scope here
 
