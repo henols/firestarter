@@ -121,6 +121,18 @@ from .fake_chip import FakeChip  # noqa: E402                # tests/test_chip_t
 Measured spread: 18 `from tests.X import` sites vs 3 relative `from .X import` sites. **Use the
 `from tests.<module> import ...` form.**
 
+> **SUPERSEDED BY D-25 — do not follow the repair prescribed in this subsection.** It was written on
+> orchestrator ruling OD-1, which said the four orphaned library symbols relocate into the test tier and
+> their consumers get repaired. The operator inverted that at the 188-02 blocking-human gate
+> ("Delete the consumers") and refined it to surgical granularity at a second gate; both halves are
+> **D-25** in `188-CONTEXT.md`, which is the authority. Under D-25 **nothing is relocated**: the six
+> `test_val_wire_*` modules are deleted whole, `tests/test_decoder.py` and
+> `tests/test_build_db_inclusion.py` are trimmed of one named class each, and
+> `tests/dispatch_model.py` **must never be created**. The two paragraphs below are kept as the record of
+> what the repair would have been, and for their still-accurate measurement of the current import shape —
+> which is useful when reading those modules before deleting them. Plans 188-03 and 188-04 were rewritten
+> on the D-25 basis and are the instructions to follow.
+
 **What must be replaced.** The six `test_val_wire_*` modules currently do a `sys.path` prepend of `tools/`
 (`tests/test_val_wire_sram.py:28-33`):
 
