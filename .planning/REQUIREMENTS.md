@@ -100,7 +100,7 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 
 ### REPLY — answer the reporters
 
-- [ ] **REPLY-01**: gh#23 receives a reply naming what v1.36's fault-attribution work changed and what a
+- [x] **REPLY-01**: gh#23 receives a reply naming what v1.36's fault-attribution work changed and what a
       fresh run would now show, and acknowledging that the reporter's diagnosis — a rig fault reported as a
       chip verdict — was correct. **AMENDED by Phase 187 (D-11):** the literal wording above, read as "a
       fresh run would now show" a passing result, would be an overclaim. Measured: `chip_test.py:2599` fires
@@ -112,19 +112,37 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
       `vpe_mv` from the report, and Phase 178 added `rail_reading_disclosure`, naming the exact trap the
       reporter hit. The reply concedes the reporter's diagnosis in full and states this limit plainly, but
       does not imply a PASS the tracker does not carry. Precedent for amending in the same phase as the
-      work: Phase 183's D-08, Phase 184's D-03, Phase 185's D-02.
-- [ ] **REPLY-02**: gh#28 and gh#31 each receive a reply naming the v1.36 changes that bear on them and
-      requesting an attributable re-run.
-- [ ] **REPLY-03**: gh#62 receives the answer this milestone produces: why the refusal exists, what changed,
+      work: Phase 183's D-08, Phase 184's D-03, Phase 185's D-02. **Complete:** posted as
+      `#issuecomment-5647009393`, labelled `cause:rig` + `needs:report` (`cause:database` retained),
+      left OPEN. Trace: `187-09-SUMMARY.md`.
+- [x] **REPLY-02**: gh#28 and gh#31 each receive a reply naming the v1.36 changes that bear on them and
+      requesting an attributable re-run. **Complete:** gh#28 posted as `#issuecomment-5647056983`
+      (labelled `needs:report`, `fix:released` deliberately withheld); gh#31 posted as
+      `#issuecomment-5647114539` (labelled `needs:report`, `fix:released` deliberately withheld,
+      `cause:database` retained); both left OPEN. Trace: `187-10-SUMMARY.md`, `187-11-SUMMARY.md`.
+- [x] **REPLY-03**: gh#62 receives the answer this milestone produces: why the refusal exists, what changed,
       and — explicitly — that re-running under another chip's identity with `--force` is not a safe
-      workaround.
-- [ ] **REPLY-04**: gh#60 receives a reply confirming the hazard from the project's own schematic record and
-      stating what the gate does and does not do (it warns; it cannot detect the jumper).
-- [ ] **REPLY-05**: Every reply that asks for a re-run states that reports are now `schema_version` 2.0 and
+      workaround. **Complete:** posted as `#issuecomment-5646897010`, labelled `cause:firmware`, left
+      OPEN (the `0x05` software chip-erase the reporter wants is real, undelivered work, backlog
+      999.63). Trace: `187-08-SUMMARY.md`.
+- [x] **REPLY-04**: gh#60 receives a reply confirming the hazard from the project's own schematic record and
+      stating what the gate does and does not do (it warns; it cannot detect the jumper). **Complete:**
+      posted as `#issuecomment-5646849372`, closed `COMPLETED`, labelled `fix:released` (replacing
+      `enhancement`) — the feature request shipped in released app version `3.0.0b39`. Trace:
+      `187-07-SUMMARY.md`.
+- [x] **REPLY-05**: Every reply that asks for a re-run states that reports are now `schema_version` 2.0 and
       that v1.36 deliberately re-keyed `dedup_fingerprint`, so a fresh run will not group with the old one.
-      A reporter must not read an intended re-key as a new defect.
-- [ ] **REPLY-06**: No issue is closed on our own reading. gh#23, #28 and #31 stay open pending the
-      reporters' response; a close requires their confirmation or a superseding PASS.
+      A reporter must not read an intended re-key as a new defect. **Complete:** the three replies that
+      ask for a re-run (gh#23, gh#28, gh#31) each carry this statement in the same section as their
+      re-run ask; gh#60 and gh#62 do not ask for a re-run, so the sentence is correctly absent from
+      both (187-UPSTREAM-REPLIES.md § REPLY-05 applicability, per body). Trace: `187-05-SUMMARY.md`,
+      `187-06-SUMMARY.md`.
+- [x] **REPLY-06**: No issue is closed on our own reading. gh#23, #28 and #31 stay open pending the
+      reporters' response; a close requires their confirmation or a superseding PASS. **Complete:**
+      re-verified live in Plan 187-12 — gh#23, gh#28 and gh#31 are all OPEN, each carrying exactly one
+      more comment than the pre-phase before-capture and no state or `stateReason` change. gh#60 was
+      the one issue this phase closed, and only because its feature shipped (REPLY-04/D-15) — not on a
+      disputed `dev test` reading. Trace: `evidence/187-12-issue-state-after.json`, `187-12-SUMMARY.md`.
 - [x] **REPLY-07**: gh#9 (`Repository Structure and Contribution Guide`) receives a closing reply or a
       close-as-done — the end-state it describes has been configured since v1.35 Phase 172.
       **AMENDED by Phase 187 (D-06/D-07):** this requirement was already discharged when it was written.
@@ -226,12 +244,12 @@ Deferred, tracked, not in this roadmap.
 | FLOOR-01 | Phase 186 | Complete — all four statements raised to 3.11 together (186-01), the sweep absorbed (186-02), and a fail-closed agreement gate now asserts it (186-03) |
 | FLOOR-02 | Phase 186 | Complete — applied 2026-09-12, well ahead of the 2026-10-31 deadline; proven at the floor in the py3.11 CI-replica (186-03) |
 | FLOOR-03 | Phase 186 | Complete — `.planning/notes/python-floor-decision.md` records the decision, its three rejected alternatives with measured grounds, the evidence transcribed from `186-RESEARCH.md`, the standing rule and its enforcing gate (`test_python_floor_agreement.py`), and successor backlog 999.67 carrying 2027-10-31; `firestarter_app/.planning/codebase/STACK.md` (186-03) points an app-repo-only reader at it (186-04) |
-| REPLY-01 | Phase 187 | Pending |
-| REPLY-02 | Phase 187 | Pending |
-| REPLY-03 | Phase 187 | Pending |
-| REPLY-04 | Phase 187 | Pending |
-| REPLY-05 | Phase 187 | Pending |
-| REPLY-06 | Phase 187 | Pending |
+| REPLY-01 | Phase 187 | Complete — posted #issuecomment-5647009393, amended by D-11 (187-09) |
+| REPLY-02 | Phase 187 | Complete — gh#28 posted #issuecomment-5647056983 (187-10), gh#31 posted #issuecomment-5647114539 (187-11), both left open |
+| REPLY-03 | Phase 187 | Complete — posted #issuecomment-5646897010, left open (187-08) |
+| REPLY-04 | Phase 187 | Complete — posted #issuecomment-5646849372, closed COMPLETED (187-07) |
+| REPLY-05 | Phase 187 | Complete — re-run sentence present in all three re-run-asking replies (187-05, 187-06) |
+| REPLY-06 | Phase 187 | Complete — gh#23/#28/#31 verified OPEN, no unauthorized close (187-12) |
 | REPLY-07 | Phase 187 | Complete — discharged by #issuecomment-5511487546 (2026-09-02, Phase 173-07); amended by D-06/D-07 (187-01) |
 
 **Coverage:**

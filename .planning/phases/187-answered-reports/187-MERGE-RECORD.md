@@ -219,8 +219,15 @@ asks.
 
 ## 6. The instruction
 
-_Filled by Plan 187-12 after all three merges land, per the 152 analog's shape — this section states
-the do-not-re-merge instruction once the full set of merges (meta, app, firmware) is known._
+**All three beta merges for this milestone are complete (meta #69, app #62, firmware #61); do not
+re-merge any of them; verify with `git cherry`, never with ancestry (v1.30's squashed PR #44 already
+produced one `--is-ancestor` false negative in this project's own history).**
+
+Unlike the 152 analog's instruction, this phase's tail is **not** pushed onto `beta` at this close.
+D-03 is explicit: the phase's own tail (posting record, ledger, SUMMARYs, verification) lands on the
+milestone branch, and a second meta pull request to carry it onto `beta` is the operator's call to
+make, not something a plan schedules unilaterally. See the ⚠ TAIL section below for the disclosure
+and RESEARCH §6.6 for the measured precedent this instruction deliberately does not overstate.
 
 ## Notes for the milestone close
 
@@ -241,4 +248,58 @@ Carried forward verbatim from the 152 analog, unchanged in applicability:
 
 ## ⚠ TAIL — commits made to the meta repository AFTER PR #69 merged, which are NOT on `beta`
 
-_Filled by Plan 187-12, per D-03's disclosure requirement, once the full phase's tail is known._
+PR #69 merged at `2026-09-12T13:44:35Z`. Everything committed to `/workspaces` after that moment is
+on the milestone branch **only**, per D-03's accepted outcome. As of this record the tail is, by
+category:
+
+- **The entire posting record.** `187-UPSTREAM-REPLIES.md`'s five per-issue status flips and this
+  plan's closing note; the five `evidence/187-{07..11}-gh{N}-operator-approval.txt`,
+  `*-post-transcript.txt` and `*-comment-id.txt` files; `evidence/187-12-issue-state-after.json` and
+  `evidence/187-12-collateral-check.txt`.
+- **The D-09 ledger.** `.planning/notes/v137-upstream-reply-ledger.md`.
+- **Every `187-NN-SUMMARY.md` in this phase**, plans 187-01 through 187-12, none of which could exist
+  before its own plan finished.
+- **This file itself** — `187-MERGE-RECORD.md`'s § 6 and this ⚠ TAIL section, both completed by
+  Plan 187-12 after the full set of merges was known.
+- **`.planning/REQUIREMENTS.md` and `.planning/ROADMAP.md`** — the REPLY-01…06 traceability flips
+  (this plan) and whatever ordinary per-plan STATE/ROADMAP bookkeeping the phase's twelve plans wrote
+  along the way.
+
+**Measured, not assumed: the naive commit-range count and the phase's own count disagree, and both
+are reported rather than picking the flattering one.** `git rev-list --count
+ebd80b53b06b49678e41f12d31136f5b9d3edd26..HEAD` (the meta merge SHA through this plan's own commits,
+taken while writing this section) measures **41** commits. Of those, **38** carry a `(187-…)` or
+`(187)` scope in their subject line and belong to this phase's own twelve plans. The remaining
+**3** are a concurrent `/gsd-explore` and `/gsd-quick` session, interleaved with this phase's work on
+the same branch, and belong to neither this phase nor `beta`:
+
+- `9faf0852` — `docs: capture exploration — host tools/ audit (checker mass + GSD-work-in-product-repo)`
+- `b3e216f0` — `docs: correct the tools/ audit — both "orphans" are live operator tools` (a same-session
+  correction to `9faf0852`'s own files)
+- `061e6426` — `docs(quick-260912-mo6): plan fail-closed guard for repo-escaping default output paths`
+
+All three touch only `.planning/notes/`, `.planning/research/`, `.planning/seeds/`, `.planning/todos/`
+and `.planning/quick/` paths outside this phase's directory and outside `REQUIREMENTS.md`/
+`ROADMAP.md` — confirmed by `git show --stat` on each, re-checked in this plan. They are named here
+truthfully rather than silently folded into "the phase's commits," and this plan neither reverts,
+amends nor tidies them — they are simply not this phase's work, landing on the same shared branch.
+
+**How the close must handle this — read literally, per D-03:**
+
+1. **Do not schedule or open a second meta pull request for this tail.** Unlike the 152 analog's own
+   instruction (push the tail onto `beta` immediately), D-03 reserves that action for the operator to
+   ask for. RESEARCH §6.6 measured that both v1.35 and v1.36 *did* eventually get a second meta PR for
+   their own close tails (`prom#59`, `prom#64`) — so this instruction does not claim landing the tail
+   on the milestone branch is the project's invariable pattern, only that this phase does not
+   unilaterally act to change it.
+2. **Do not re-merge `firestarter`, `firestarter_app` or `firestarter_prom`.** All three are already
+   fully on `beta` (`git cherry origin/beta <branch-tip>` is empty in all three, confirmed in § 2
+   above). Re-merging would cut a fresh pair of pre-releases announcing nothing new.
+3. **Verify with `git cherry`, never `git merge-base --is-ancestor`.** All three merges in this
+   milestone are two-parent merge commits, so ancestry happens to work today — but a squash anywhere
+   in the history makes `--is-ancestor` a false negative, and this project has already been bitten by
+   that once (v1.30's PR #44).
+4. **The concurrent-writer commits named above are not this phase's tail and are not this phase's to
+   dispose of.** They land or do not land on `beta` on whatever schedule their own session's work
+   follows; this record exists so a later reader does not mistake them for phase 187 output when
+   counting what the phase actually shipped.

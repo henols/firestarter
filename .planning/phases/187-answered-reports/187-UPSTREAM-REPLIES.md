@@ -243,3 +243,24 @@ Hi @AndersBNielsen — resuming the thread from 2026-08-09, same as the other tw
 
 This issue stays open — I'm not closing it on my own reading, only on your response.
 ```
+
+---
+
+## Closing note (Plan 187-12)
+
+All five bodies above were approved on disk before posting, each behind its own per-issue blocking
+operator gate (D-16) — never a document-level approval carrying across issues. The five approval
+files, one per issue, each with its own `APPROVED-FOR-POST:` literal on line 1:
+
+- `evidence/187-07-gh60-operator-approval.txt`
+- `evidence/187-08-gh62-operator-approval.txt`
+- `evidence/187-09-gh23-operator-approval.txt`
+- `evidence/187-10-gh28-operator-approval.txt`
+- `evidence/187-11-gh31-operator-approval.txt`
+
+All five status lines above read `POSTED` with their own comment URL; re-verified in Plan 187-12
+against the live API (`evidence/187-12-issue-state-after.json`) — zero pending, and each inline body
+copy in this document is byte-identical to its file under `evidence/bodies/` (re-hashed in this
+plan; gh60's post-amendment sha256 matches the amended file, the other four match their unamended
+187-05/187-06 drafts exactly).
+
