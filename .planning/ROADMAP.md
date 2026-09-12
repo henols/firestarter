@@ -522,7 +522,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 187-03-PLAN.md — App merge and cut; the pre-release version read from the API and confirmed on PyPI
+- [x] 187-03-PLAN.md — App merge and cut; the pre-release version read from the API and confirmed on PyPI
 
 **Wave 4** *(blocked on Wave 3 completion)*
 

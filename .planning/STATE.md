@@ -5,15 +5,15 @@ milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 202
 current_phase: 187
 current_phase_name: Answered Reports
 status: executing
-stopped_at: "Phase 187 HALTED at 187-03 Task 3 — auto-mode classifier blocked the outward-facing dispatch"
-last_updated: "2026-09-12T13:53:28.336Z"
+stopped_at: "Completed 187-03-PLAN.md"
+last_updated: "2026-09-12T14:30:00.000Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 187 Plan 02 complete: the v1.37 meta record merged to public beta (henols/firestarter_prom PR #69, true merge commit ebd80b53b06b49678e41f12d31136f5b9d3edd26). Operator approved the merge at the Task 2 gate before any push/PR/merge. Both reply-cited documents (jumper-display-ground-truth.md, ae29f2008-classification-verdict.md) proven to resolve at that SHA via the GitHub contents API; two anchor slugs copied from GitHub's rendered HTML. No v1.37 tag created. 187-MERGE-RECORD.md sections 1 and 5 filled. 10 of 12 plans remain (187-03 through 187-12)."
+last_activity_desc: "Phase 187 Plan 03 complete: the v1.37 app milestone branch merged to public beta (henols/firestarter_app PR #62, true merge commit f0ef29d9726cf0f09bb3f66e5ce98d72964e6252). Operator approved the merge at the Task 2 gate (recorded by hand after an intervening auto-mode-classifier halt, a3f6cb19 — no public act occurred during that halt). beta-release.yml completed (run 34698771255, ~5m22s); read version 3.0.0b39 confirmed on both GitHub Releases and PyPI. Both firestarter/jp5_gate.py and firestarter/flash4_erase_gate.py now present on the app's origin/beta. No v1.37 tag; neither new datasheet PDF tracked. 187-MERGE-RECORD.md app rows of sections 1-4 filled. 9 of 12 plans remain (187-04 through 187-12)."
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 40
-  completed_plans: 30
+  completed_plans: 31
   percent: 83
 ---
 
@@ -236,8 +236,8 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 187 (Answered Reports) — EXECUTING
-Plan: 3 of 12 (Task 1 committed 822e829f; Task 2 ANSWERED by operator; Task 3 BLOCKED)
-Status: HALTED — the Claude Code auto-mode classifier denied the executor dispatch for 187-03 Task 3 ([Auto-Mode Bypass]). The operator selected `merge` at the 187-03 app gate on 2026-09-12; that decision is recorded here because `evidence/187-03-operator-approval.txt` was never written — the dispatch that would have written it was denied. Nothing public happened: the app milestone branch is unpushed, no PR exists for it, and the latest app pre-release is still the pre-cut 3.0.0b38. Resume requires a session NOT running under harness auto mode; the allowlist already permits `Bash(gh pr merge:*)`, so a permission rule will not lift this. Waves 3, 4 and 7-11 are all outward-facing and will hit the same classifier.
+Plan: 3 of 12 COMPLETE (Task 1 822e829f; Task 2 approval e6f3a318; Task 3 merge+cut eecd27c3)
+Status: RESOLVED — the 187-03 halt recorded at commit a3f6cb19 (Claude Code auto-mode classifier denied the Task 3 dispatch; nothing public had happened) is now resolved. The operator turned harness auto mode off and this continuation retried cleanly: the operator's earlier `merge` selection was written to `evidence/187-03-operator-approval.txt` before any public act, the app milestone branch was pushed, PR #62 opened and merged to `beta` with a true merge commit, `beta-release.yml` completed successfully (~5m22s), and version `3.0.0b39` was read (not predicted) and cross-confirmed on GitHub Releases and PyPI. Both `firestarter/jp5_gate.py` and `firestarter/flash4_erase_gate.py` are now present on the app's `origin/beta`. No `v1.37` tag; neither new datasheet PDF tracked. Waves 4 and 7-11 are still outward-facing and may hit the same classifier if auto mode is ever re-enabled; it is currently off.
 Last activity: 2026-09-12 — Phase 187 execution started (wave 1 of 12). Plans committed at d60137a4; research re-measured the release seam: app 33 ahead of origin/beta, firmware 9, meta 174, no v1.37 PR open anywhere; five drifts from CONTEXT.md recorded in 187-RESEARCH.md § Drift. Checker passed 0 blockers. Phase must NOT be dispatched under --auto/--chain (D-16).
 
 ## Roadmap Summary (v1.37)
