@@ -202,6 +202,13 @@ does not expire; 999.43 stays shortlisted for v1.38.
 **The one hard ordering constraint.** **Phase 187 (Answered Reports) runs last**, because every reply
 describes what Phases 182–183 actually shipped. A reply written earlier would describe an intention.
 
+**AMENDED 2026-09-12 (operator decision, after Phase 187 completed 12/12):** Phase 188 is appended
+after Phase 187. This does not weaken the constraint above — it was about **replies**, which must
+describe shipped work, and Phase 188 posts no replies and touches no issue. Phase 187 remains the
+last outward-facing phase of this milestone; Phase 188 is inward-facing tooling hygiene, added when
+an audit of `firestarter_app/tools/` during Phase 187 surfaced findings the operator judged
+important enough to finalize inside v1.37 rather than defer.
+
 **Bench: none.** No phase needs a board. CLAIM-04's re-record needs a cold `pio run` (a build, not a flash),
 and SAFE-03's answer comes from the shield schematics and the firmware VPP path, not from measurement. This
 is the first milestone since v1.33 with no hardware-gated leg.
@@ -238,7 +245,8 @@ of use.
 - [x] **Phase 184: Guards That Exist** - Stop three repositories naming a checker that was deleted, and make a guard that does not exist impossible to declare silently. (completed 2026-09-11)
 - [x] **Phase 185: Records and Checks That Are Current** - The size baseline, the citation, the dead symbol and the red workflow — four records that describe a tree that no longer exists. (completed 2026-09-11)
 - [x] **Phase 186: The Python Floor, Before the EOL** - Settle the advertised floor against the type-checker while there is still slack before 2026-10-31. (completed 2026-09-12)
-- [ ] **Phase 187: Answered Reports** *(runs last — describes what shipped)* - Reply to every reporter this milestone owes, ask for the re-runs that would settle the disputes, and close nothing unilaterally.
+- [ ] **Phase 187: Answered Reports** *(runs last outward-facing phase — describes what shipped)* - Reply to every reporter this milestone owes, ask for the re-runs that would settle the disputes, and close nothing unilaterally.
+- [ ] **Phase 188: The Tools Directory** *(added 2026-09-12 — inward-facing, posts nothing)* - Answer what each script in `firestarter_app/tools/` is for, close the escape-guard residual, and decide every gate and process-tool by name — "retire it" is a valid answer, "unaddressed" is not.
 
 ## Phase Details
 
@@ -559,6 +567,57 @@ Plans:
 **Wave 12** *(blocked on Wave 11 completion)*
 
 - [x] 187-12-PLAN.md — After-state reconciliation, no-collateral-post proof, the D-09 ledger, and the merge-record tail
+
+### Phase 188: The Tools Directory
+
+**Goal**: Every script in `firestarter_app/tools/` can answer what it is for and who runs it, and no tool
+that serves GSD rather than the product is left sitting in the published package repo claiming otherwise.
+
+**Requirements**: TOOLS-01, TOOLS-02, TOOLS-03, TOOLS-04, TOOLS-05, TOOLS-06, TOOLS-07
+
+**Success criteria**:
+
+1. `audit_coverage_matrix.py` refuses a default output path outside a checkout that is demonstrably THIS
+   project — not merely one where some `.planning/` happens to exist. Proven by a test in `tests/` that
+   plants a foreign `.planning/` at the resolved root and observes the refusal; observed RED against the
+   quick-260912-mo6 guard, which permits exactly that case.
+2. Every script in `firestarter_app/tools/` declares its consumer, in a form a reader can check without
+   grepping `.planning/`: the CI step that runs it, the test that runs it, the operator procedure that runs
+   it, or the closed phase it served. A fail-closed check asserts the declaration exists for every script,
+   and is observed RED against a planted undeclared script.
+3. Each of the ten `check_*.py` gates is decided by name — kept with a recorded reason and a retirement
+   condition, or retired. Retiring is a valid outcome; leaving one unanswered is not. Reachability is
+   established by reading each gate's tests, never by reference-counting.
+4. Each GSD-process tool (`audit_coverage_matrix.py`, `diff_db.py`, `measure_plan_shapes.py`,
+   `measure_part_number_delta.py`, `snapshot_report_shapes.py`, `build_devtest_issue_corpus.py`) is placed by
+   name: stays with a product-facing rationale, moves to the meta repo, or is retired. A tool that cannot be
+   given a product-facing docstring does not stay.
+5. No file under `firestarter_app/tools/` cites a phase number, plan number, decision ID, or `.planning/`
+   path — the `CLAUDE.md` rule applied to the directory where the host-side remainder is concentrated.
+   Asserted across the tree, with a positive control.
+6. `frame-vectors.toml` and `codegen_vectors.py` are covered by the same meta-canonical sync that already
+   holds `messages.toml` and `codegen.py`, so their cross-repo byte-identity is enforced by the existing
+   mechanism rather than by a comment asking for it. No new CI gate is authored — that route was tried and
+   retired in Phase 185.
+7. `audit_coverage_matrix.py --check` exits 0 against the committed matrix, or the staleness is recorded as
+   a decision with its cause. "Still red, unexplained" is not an acceptable end state.
+
+**Explicitly NOT in scope**: deleting a tool on reference-count evidence alone. The audit that opened this
+phase misclassified two live operator tools (`ci_replica_venv.sh`, `derive_sdp_partition.py`) as orphans on
+exactly that evidence, because an invocation contract recorded only in `.planning/` prose is invisible to
+code. Criterion 2 exists to make that evidence trustworthy; no deletion may precede it.
+
+**Depends on:** Phase 187 (this phase was scoped from an audit run during it). No outward-facing work, so no
+dependency on the reply ledger.
+
+**Plans:** not yet planned
+
+**Key context:** `.planning/notes/host-tools-checker-apparatus-audit.md` (the audit, its two corrections, and
+the measurements); `.planning/research/questions.md` §"Host `tools/` checker apparatus" and §"Which host tools
+are doing GSD's work?" (criteria 3 and 4 are those questions); `.planning/seeds/phase-gate-expiry-discipline.md`
+(criterion 3's forward half); `.planning/quick/260912-mo6-fail-closed-on-repo-escaping-default-out/`
+(criterion 1's starting point and its disclosed residual);
+`.planning/notes/catalog-sync-check-retirement.md` (why criterion 6 must not be a CI gate).
 
 ## v1.36 — `dev test` Fidelity (CLOSED 2026-09-09 — 46/46 requirements; merged to `beta` in all three repos, NOT tagged by operator decision)
 

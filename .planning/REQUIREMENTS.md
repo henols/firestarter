@@ -199,6 +199,37 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 
 ---
 
+### TOOLS — what the host `tools/` directory is for
+
+- [ ] **TOOLS-01**: `audit_coverage_matrix.py` refuses a default output path outside a checkout that is
+      demonstrably this project. Quick task 260912-mo6 closed the case where no `.planning/` exists at the
+      resolved root (exit 2, nothing written); it did NOT close the case where a FOREIGN `.planning/` exists
+      there, because its oracle is only "a planning directory is present". A clone sitting inside another
+      GSD project still writes into that project. The stronger oracle closes it.
+- [ ] **TOOLS-02**: Every script in `firestarter_app/tools/` declares its consumer — the CI step, the test,
+      the operator procedure, or the closed phase it served — in a form checkable without reading
+      `.planning/`. A fail-closed check asserts the declaration exists, observed RED against a planted
+      undeclared script. This is the requirement the rest depends on: reference-counting misclassified two
+      live operator tools as orphans, so no deletion may precede it.
+- [ ] **TOOLS-03**: Each of the ten `check_*.py` gates is decided by name — kept with a recorded reason and
+      a retirement condition, or retired. Retiring is a valid outcome; leaving one unanswered is not.
+      Reachability is established by reading each gate's tests, never by reference-counting. (Generalises
+      CLAIM-03, which asked exactly this of one invariant.)
+- [ ] **TOOLS-04**: Each GSD-process tool — `audit_coverage_matrix.py`, `diff_db.py`,
+      `measure_plan_shapes.py`, `measure_part_number_delta.py`, `snapshot_report_shapes.py`,
+      `build_devtest_issue_corpus.py` — is placed by name: stays with a product-facing rationale, moves to
+      the meta repo, or is retired. A tool that cannot be given a product-facing docstring does not stay.
+      Relocation must not create a cross-repo import; a skill that needs one must own its copy.
+- [ ] **TOOLS-05**: No file under `firestarter_app/tools/` cites a phase number, plan number, decision ID,
+      or `.planning/` path. This is `CLAUDE.md`'s non-overridable rule applied to the directory where the
+      host-side remainder is concentrated. Asserted across the tree with a positive control.
+- [ ] **TOOLS-06**: `frame-vectors.toml` and `codegen_vectors.py` are covered by the meta-canonical sync
+      that already holds `messages.toml` and `codegen.py`. Measured 2026-09-12: the two synced files are
+      byte-identical across all three repos while the unsynced `codegen_vectors.py` has already drifted
+      between the sub-repos. No new CI gate is authored — Phase 185 retired that route as unworkable.
+- [ ] **TOOLS-07**: `audit_coverage_matrix.py --check` exits 0 against the committed matrix, or the
+      staleness is recorded as a decision with its cause. "Still red, unexplained" is not an end state.
+
 ## Future Requirements
 
 Deferred, tracked, not in this roadmap.
@@ -244,6 +275,13 @@ Deferred, tracked, not in this roadmap.
 | FLOOR-01 | Phase 186 | Complete — all four statements raised to 3.11 together (186-01), the sweep absorbed (186-02), and a fail-closed agreement gate now asserts it (186-03) |
 | FLOOR-02 | Phase 186 | Complete — applied 2026-09-12, well ahead of the 2026-10-31 deadline; proven at the floor in the py3.11 CI-replica (186-03) |
 | FLOOR-03 | Phase 186 | Complete — `.planning/notes/python-floor-decision.md` records the decision, its three rejected alternatives with measured grounds, the evidence transcribed from `186-RESEARCH.md`, the standing rule and its enforcing gate (`test_python_floor_agreement.py`), and successor backlog 999.67 carrying 2027-10-31; `firestarter_app/.planning/codebase/STACK.md` (186-03) points an app-repo-only reader at it (186-04) |
+| TOOLS-01 | Phase 188 | Pending — quick-260912-mo6 closed the no-planning-dir case; the foreign-planning-dir case is open |
+| TOOLS-02 | Phase 188 | Pending — blocks every deletion in this phase |
+| TOOLS-03 | Phase 188 | Pending |
+| TOOLS-04 | Phase 188 | Pending |
+| TOOLS-05 | Phase 188 | Pending |
+| TOOLS-06 | Phase 188 | Pending |
+| TOOLS-07 | Phase 188 | Pending |
 | REPLY-01 | Phase 187 | Complete — posted #issuecomment-5647009393, amended by D-11 (187-09) |
 | REPLY-02 | Phase 187 | Complete — gh#28 posted #issuecomment-5647056983 (187-10), gh#31 posted #issuecomment-5647114539 (187-11), both left open |
 | REPLY-03 | Phase 187 | Complete — posted #issuecomment-5646897010, left open (187-08) |
