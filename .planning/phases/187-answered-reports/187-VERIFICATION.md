@@ -1,8 +1,8 @@
 ---
 phase: 187-answered-reports
 verified: 2026-09-12T16:45:00Z
-status: human_needed
-score: 8/9 must-haves verified
+status: passed
+score: 10/10 truths verified
 covered_files:
   - ".planning/REQUIREMENTS.md"
   - ".planning/config.json"
@@ -74,11 +74,33 @@ covered_files:
   - ".planning/phases/187-answered-reports/evidence/bodies/187-gh60.amendment.diff"
   - ".planning/phases/187-answered-reports/evidence/bodies/187-gh60.md"
   - ".planning/phases/187-answered-reports/evidence/bodies/187-gh62.md"
-covered_digest: "v1:sha256:3576fde63e2d4256b73d2c97d9689f217dc39dc8772b991b345c5519b351f0eb"
+covered_digest: "v1:sha256:83a0c54401001eb278d497d539c66150a491a19618e57eb522b7be1438a89809"
+covered_digest_rebaked:
+  at: "2026-09-12T17:30:00Z"
+  by: "/gsd-verify-work 187"
+  previous: "v1:sha256:3576fde63e2d4256b73d2c97d9689f217dc39dc8772b991b345c5519b351f0eb"
+  cause: "Commit aa17f0a3 (full aa17f0a331fbcc30f80a0419ea364e8e1789b860; 2026-09-12T17:16:16Z, 'docs: add Phase 188 (The Tools Directory)
+    to v1.37 with the TOOLS requirements') appended a TOOLS section and seven traceability
+    rows to .planning/REQUIREMENTS.md, which is one of this report's 70 covered_files. That
+    flipped the content fingerprint and the phase read status=stale."
+  justification: "False positive with respect to Phase 187. The commit diff on
+    .planning/REQUIREMENTS.md is purely additive (98 insertions, 1 deletion across two files;
+    zero lines removed from REQUIREMENTS.md) and introduces only Phase 188 scope (TOOLS-01..07).
+    No Phase 187 requirement, checkbox, or traceability row was altered. Verified by reading
+    the diff, not by assertion. Re-baked against the working tree with .planning/config.json
+    restored to its committed state, so the new digest describes committed content."
+  caveat: "Re-reading this digest can report stale again without any real drift: several GSD
+    verbs (query init.verify-work, loop render-hooks) rewrite .planning/config.json in place,
+    pruning sub_repos entries whose directories are not cloned (firestarter_app_py32,
+    firestarter_py32_ci). config.json is a covered file, so that rewrite alone flips the
+    fingerprint. Restore it with git checkout -- .planning/config.json before trusting a
+    staleness verdict."
 behavior_unverified: 0
 overrides_applied: 0
+human_verification_resolved: true
 human_verification:
-  - test: "Confirm whether operator delegation ('you decide') satisfies success criterion 5 for gh#23, gh#28, gh#31"
+  - resolved: "PASS — operator ruled 2026-09-12 at the /gsd-verify-work 187 checkpoint that informed, disclosed delegation satisfies criterion 5. Recorded in 187-UAT.md test 1."
+    test: "Confirm whether operator delegation ('you decide') satisfies success criterion 5 for gh#23, gh#28, gh#31"
     expected: "Operator states whether real-time delegation of the body/label/close decision to the orchestrator — after having read the drafted body verbatim during Plan 187-06, and after personally answering four prior blocking-human gates in the same session — counts as 'approved by the operator first' for these three issues, or whether that phrase requires the operator to review the specific final wording/label/close selection itself before it posts."
     why_human: "This is a policy judgment about what 'operator approval' means, not a fact grep or the API can resolve. The evidence is complete and honestly disclosed (three approval files state plainly that the orchestrator, not the operator, made the specific selection under delegation) — what's missing is the operator's own ruling on whether that satisfies the phase's own gate contract. My reading: the phase did NOT run under --auto/--chain (confirmed live via each approval file's harness disclosure, and by the fact that a true --auto/--chain run would have auto-approved every gate silently, which did not happen here — five separate real-time gates were held, and three were resolved by an explicit operator utterance rather than by automation bypassing the gate). But 'approved... first' most naturally reads as review of the specific content that ships, and for gh#23/28/31 the operator's own hand chose to delegate that specific review rather than perform it — a materially weaker act than the explicit `amend`/`approve`/`completed` selections recorded for the meta/app/firmware merges and for gh#60/gh#62. Both readings are defensible; I am not resolving it silently either way."
 ---
@@ -111,9 +133,11 @@ without an independent live check.
 | 7 | Every permalink resolves to the right content at the pinned SHA `ebd80b53b0...`, not the pre-merge stub | ✓ VERIFIED | Both permalinks (gh#60, gh#62 bodies only — 23/28/31 carry none) fetched live via GitHub contents API at the pinned SHA: `jumper-display-ground-truth.md` is 279 lines and contains the heading `## Which operations energize socket pin 1 — the answer to gh#60` matching the anchor used; `ae29f2008-classification-verdict.md` is 220 lines and contains `## WHY THE REPORTER'S...`. Confirmed the failure mode is real, not hypothetical: fetching the same file at the pre-merge tip `0629e4ad3...` returns the 76-line stub. |
 | 8 | No `v1.37` tag exists in any of the three repositories | ✓ VERIFIED | Live `gh api repos/henols/{firestarter_prom,firestarter,firestarter_app}/tags`, grepped for `v1.37`: 0 in all three. |
 | 9 | `.planning/config.json` carries all four `sub_repos` entries | ✓ VERIFIED | Live file read: `firestarter`, `firestarter_app`, `firestarter_app_py32`, `firestarter_py32_ci` all present; `git diff --stat -- .planning/config.json` is empty (no uncommitted drift). |
-| 10 | Every posted wording was approved by the operator first; phase did not run under `--auto`/`--chain` | ⚠️ Judgment call — see Human Verification | For the 3 merge gates + gh#60 + gh#62: the operator selected an explicit named menu option (`amend`/`approve`/`completed`) recorded verbatim in the approval file, and each approval file's commit timestamp precedes its post's `created_at` (e.g. gh#60 approval committed 15:32:11Z, comment posted 15:32:28Z). For gh#23/#28/#31: the operator's own recorded input was the single delegation phrase `"you decide"`; the specific body/label/close selection that followed was made by the orchestrator under that delegation, not chosen by the operator's own hand — this is disclosed honestly in all three approval files and in `STATE.md`'s decision log, not concealed. No `--auto`/`--chain` bypass occurred (confirmed: harness disclosure in every approval file states `auto_advance: false`/`_auto_chain_active: false`, and five separate gates actually held rather than auto-approving). Whether delegation-then-orchestrator-selection satisfies "approved by the operator first" for the specific posted content is a policy question I am not resolving unilaterally — see `human_verification`. |
+| 10 | Every posted wording was approved by the operator first; phase did not run under `--auto`/`--chain` | ✓ VERIFIED (operator ruled 2026-09-12) | For the 3 merge gates + gh#60 + gh#62: the operator selected an explicit named menu option (`amend`/`approve`/`completed`) recorded verbatim in the approval file, and each approval file's commit timestamp precedes its post's `created_at` (e.g. gh#60 approval committed 15:32:11Z, comment posted 15:32:28Z). For gh#23/#28/#31: the operator's own recorded input was the single delegation phrase `"you decide"`; the specific body/label/close selection that followed was made by the orchestrator under that delegation, not chosen by the operator's own hand — this is disclosed honestly in all three approval files and in `STATE.md`'s decision log, not concealed. No `--auto`/`--chain` bypass occurred (confirmed: harness disclosure in every approval file states `auto_advance: false`/`_auto_chain_active: false`, and five separate gates actually held rather than auto-approving). Whether delegation-then-orchestrator-selection satisfies "approved by the operator first" for the specific posted content is a policy question I am not resolving unilaterally — see `human_verification`. |
 
-**Score:** 9/10 truths independently verified live; 1 flagged for human policy decision (not failed, not silently passed).
+**Score:** 10/10 truths verified — 9 independently verified live, and truth 10 resolved on
+2026-09-12 by the operator's explicit ruling at the `/gsd-verify-work 187` checkpoint that
+informed, disclosed delegation ("you decide") satisfies "approved by the operator first".
 
 ### Required Artifacts
 
@@ -177,9 +201,17 @@ None. Scanned `187-UPSTREAM-REPLIES.md`, `187-MERGE-RECORD.md`, and all 5 posted
 `TBD|FIXME|XXX|TODO|HACK|PLACEHOLDER` and similar markers. One incidental substring hit
 (`.planning/todos/` contains the literal substring `todo`) is not a debt marker.
 
-### Human Verification Required
+### Human Verification — RESOLVED 2026-09-12
 
 ### 1. Does operator delegation ("you decide") satisfy success criterion 5 for gh#23/#28/#31?
+
+**RULING: PASS.** At the `/gsd-verify-work 187` checkpoint on 2026-09-12, the operator
+(Henrik Olsson — the same person who issued the delegation) read the question with both
+readings laid out and ruled that informed, disclosed real-time delegation satisfies
+"approved by the operator first" for gh#23, gh#28 and gh#31. Success criterion 5 is
+therefore met in both halves, and truth 10 moves from judgment-call to verified. The
+ruling is recorded in `187-UAT.md` test 1. The analysis below is retained unchanged as
+the record of what was put to the operator.
 
 **Test:** Read `evidence/187-09-gh23-operator-approval.txt`, `187-10-gh28-operator-approval.txt`,
 and `187-11-gh31-operator-approval.txt` in full — each discloses, in its own "DELEGATION RECORD"
@@ -212,9 +244,10 @@ comment is live, byte-identical to its approved file, and correctly labeled; eve
 required state; gh#9 is provably untouched; the collateral sweep is clean; no version drift or
 stale-content permalinks exist; no `v1.37` tag exists anywhere; `config.json` carries all four
 `sub_repos` entries; all 7 REPLY-* requirements trace cleanly with no orphans. The single open
-item is not a gap in the code or the record — it is a judgment call about whether an honestly
+item was not a gap in the code or the record — it was a judgment call about whether an honestly
 disclosed delegation ("you decide") meets the phase's own bar for "approved by the operator first"
-on 3 of the 5 posted replies. That call belongs to the operator, not to this verifier.
+on 3 of the 5 posted replies. That call belonged to the operator, not to this verifier, and the
+operator ruled PASS on 2026-09-12. No gaps remain open.
 
 ---
 
