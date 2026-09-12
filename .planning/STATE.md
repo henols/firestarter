@@ -4,11 +4,11 @@ milestone: v1.37
 milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 2026-09-10)
 current_phase: 188
 current_phase_name: The Tools Directory
-status: planned
-stopped_at: "Phase 188 planned — 9 plans"
-last_updated: "2026-09-12T20:48:44.243Z"
+status: executing
+stopped_at: "Phase 188 execution started — 9 plans across 8 waves"
+last_updated: "2026-09-12T20:54:45.617Z"
 last_activity: 2026-09-12
-last_activity_desc: "Phase 188 planned — 9 plans across 8 waves spanning all three repositories. Research measured the deletion set live at 46 paths / ~16,500 lines and found 93 surviving tests broken by it (45 at collection time), plus four firmware codegen_vectors CI steps no decision names. Orchestrator ruled RESEARCH Q1 as option (a): check_dispatch's gate half dies, its dispatch model plus render_shape, _HANDLER_FUNCTION_NAMES and FORBIDDEN_PATTERNS relocate into the test tier, behind one blocking-human gate (188-02). Plan checker PASSED. 7/7 requirements and 24/24 decisions covered; 108/108 verify commands resolve and state a failing direction."
+last_activity_desc: "Phase 188 execution started — 9 plans across 8 waves spanning all three repositories. Research measured the deletion set live at 46 paths / ~16,500 lines and found 93 surviving tests broken by it (45 at collection time), plus four firmware codegen_vectors CI steps no decision names. Orchestrator ruled RESEARCH Q1 as option (a): check_dispatch's gate half dies, its dispatch model plus render_shape, _HANDLER_FUNCTION_NAMES and FORBIDDEN_PATTERNS relocate into the test tier, behind one blocking-human gate (188-02). Plan checker PASSED. 7/7 requirements and 24/24 decisions covered; 108/108 verify commands resolve and state a failing direction."
 progress:
   total_phases: 7
   completed_phases: 6
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 188 (The Tools Directory) — READY TO EXECUTE
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-09-12 — Phase 187 complete, transitioned to Phase 188
+Phase: 188 (The Tools Directory) — EXECUTING
+Plan: 1 of 9
+Status: Executing Phase 188
+Last activity: 2026-09-12 — Phase 188 execution started
 
 ## Roadmap Summary (v1.37)
 
