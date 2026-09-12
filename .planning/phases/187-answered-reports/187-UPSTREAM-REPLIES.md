@@ -14,7 +14,7 @@ own file under `evidence/bodies/187-gh<n>.md` — that is the file its posting p
 `gh issue comment --body-file` unmodified, so what the operator approves here is exactly what gets
 posted.
 
-**Status — gh#23:** PENDING OPERATOR REVIEW
+**Status — gh#23:** POSTED — approved 2026-09-12 (evidence/187-09-gh23-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/23#issuecomment-5647009393, labelled `cause:rig` and `needs:report` (`cause:database` retained), deliberately left OPEN
 **Status — gh#28:** PENDING OPERATOR REVIEW
 **Status — gh#31:** PENDING OPERATOR REVIEW
 **Status — gh#60:** POSTED — approved 2026-09-12 (evidence/187-07-gh60-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/60#issuecomment-5646849372, closed COMPLETED at 2026-09-12T15:32:51Z
@@ -168,6 +168,7 @@ One more thing, since you filed several reports the same day: #65 and #66 are st
 ## gh#23 — `[dev test] w27e257 — FAIL (7a89fcea856a)`
 
 **Body file:** `evidence/bodies/187-gh23.md`
+**Posted line:** https://github.com/henols/firestarter_prom/issues/23#issuecomment-5647009393 — posted as drafted, no amendment (sha256 `c9cf850628ed9fcaa2e168d98868707c235a10b844442ab1cbc25520c2fe2596`, unchanged from the 187-06 draft). Labelled `cause:rig` and `needs:report`; `cause:database` retained. Deliberately left OPEN — a close requires the reporter's confirmation or a superseding PASS, and neither exists.
 **Posted:**
 
 ```

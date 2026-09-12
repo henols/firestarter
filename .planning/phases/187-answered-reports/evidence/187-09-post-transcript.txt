@@ -1,0 +1,96 @@
+Plan 187-09 — Task 2 post transcript: gh#23
+
+=== Gate re-assertion (mechanical, before any public act) ===
+
+$ sha256sum evidence/bodies/187-gh23.md
+c9cf850628ed9fcaa2e168d98868707c235a10b844442ab1cbc25520c2fe2596  evidence/bodies/187-gh23.md
+
+Matches the hash recorded in evidence/187-09-gh23-operator-approval.txt. Proceeded.
+
+=== Pre-post baseline (re-confirmed live, matches evidence/187-05-issue-state-before.json) ===
+
+$ gh issue view 23 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":3,"labels":["dev-test","cause:database"],"state":"OPEN"}
+
+$ gh issue view 28 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+4
+
+$ gh issue view 31 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+2
+
+$ gh issue view 9 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+1
+
+$ gh issue view 60 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":1,"labels":["fix:released"],"state":"CLOSED","stateReason":"COMPLETED"}
+
+$ gh issue view 62 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":1,"labels":["cause:firmware"],"state":"OPEN"}
+
+=== Post ===
+
+$ gh issue comment 23 --repo henols/firestarter_prom --body-file evidence/bodies/187-gh23.md
+https://github.com/henols/firestarter_prom/issues/23#issuecomment-5647009393
+EXIT: 0
+
+Comment id (trailing fragment): 5647009393
+Written alone to evidence/187-09-comment-id.txt.
+
+=== Byte-identity proof (Python JSON round trip — NOT gh api --jq '.body' | diff) ===
+
+$ gh api "repos/henols/firestarter_prom/issues/comments/5647009393" > /tmp/c187gh23.json
+$ python3 -c "
+import json,hashlib,sys
+b=json.load(open('/tmp/c187gh23.json'))['body'].encode()
+d=open('evidence/bodies/187-gh23.md','rb').read()
+print('api', len(b), hashlib.sha256(b).hexdigest())
+print('disk', len(d), hashlib.sha256(d).hexdigest())
+print('BYTE-IDENTICAL' if b==d else 'MISMATCH')
+sys.exit(0 if b==d else 1)
+"
+api 3694 c9cf850628ed9fcaa2e168d98868707c235a10b844442ab1cbc25520c2fe2596
+disk 3694 c9cf850628ed9fcaa2e168d98868707c235a10b844442ab1cbc25520c2fe2596
+BYTE-IDENTICAL
+EXIT: 0
+
+=== Label edits (add-only, cause:database must survive) ===
+
+$ gh issue edit 23 --repo henols/firestarter_prom --add-label "cause:rig"
+https://github.com/henols/firestarter_prom/issues/23
+EXIT: 0
+
+$ gh issue edit 23 --repo henols/firestarter_prom --add-label "needs:report"
+https://github.com/henols/firestarter_prom/issues/23
+EXIT: 0
+
+No --remove-label was used at any point.
+
+=== Post-edit state (re-read, reconciled field by field against the before-capture) ===
+
+$ gh issue view 23 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:([.labels[].name]|sort),comments:(.comments|length)}'
+{"state":"OPEN","stateReason":"","labels":["cause:database","cause:rig","dev-test","needs:report"],"comments":4}
+
+Reconciliation: pre-phase set was {dev-test, cause:database} with 3 comments. Post-edit set is
+{cause:database, cause:rig, dev-test, needs:report} with 4 comments — exactly the pre-phase set
+plus the two approved additions (cause:rig, needs:report) and one additional comment (the post).
+cause:database survived the edit. state is OPEN, stateReason is empty (never closed).
+
+=== Collateral proof: gh#28, gh#31, gh#9 untouched; gh#60, gh#62 undisturbed ===
+
+$ gh issue view 28 --repo henols/firestarter_prom --json comments,labels --jq '{comments:(.comments|length),labels:[.labels[].name]}'
+{"comments":4,"labels":["dev-test","cause:harness"]}
+
+$ gh issue view 31 --repo henols/firestarter_prom --json comments,labels --jq '{comments:(.comments|length),labels:[.labels[].name]}'
+{"comments":2,"labels":["dev-test","cause:harness","cause:database"]}
+
+$ gh issue view 9 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+1
+
+$ gh issue view 60 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":1,"labels":["fix:released"],"state":"CLOSED","stateReason":"COMPLETED"}
+
+$ gh issue view 62 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":1,"labels":["cause:firmware"],"state":"OPEN"}
+
+All five match their pre-post baselines exactly (or, for gh#60/gh#62, their already-established
+post-187-07/187-08 states). No collateral act performed on any issue this gate did not approve.
