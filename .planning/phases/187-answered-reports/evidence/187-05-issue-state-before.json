@@ -1,0 +1,137 @@
+# 187-05 — Live pre-post state of all six issues plus the pinnedIssues read
+# Captured 2026-09-12T14:59:04Z from the henols/firestarter_prom API, before any body is posted.
+
+## Six target issues (number, state, stateReason, labels, comment_count)
+
+```json
+[
+  {
+    "number": 9,
+    "state": "OPEN",
+    "stateReason": "",
+    "labels": [],
+    "comment_count": 1
+  },
+  {
+    "number": 23,
+    "state": "OPEN",
+    "stateReason": "",
+    "labels": [
+      "dev-test",
+      "cause:database"
+    ],
+    "comment_count": 3
+  },
+  {
+    "number": 28,
+    "state": "OPEN",
+    "stateReason": "",
+    "labels": [
+      "dev-test",
+      "cause:harness"
+    ],
+    "comment_count": 4
+  },
+  {
+    "number": 31,
+    "state": "OPEN",
+    "stateReason": "",
+    "labels": [
+      "dev-test",
+      "cause:harness",
+      "cause:database"
+    ],
+    "comment_count": 2
+  },
+  {
+    "number": 60,
+    "state": "OPEN",
+    "stateReason": "",
+    "labels": [
+      "enhancement"
+    ],
+    "comment_count": 0
+  },
+  {
+    "number": 62,
+    "state": "OPEN",
+    "stateReason": "",
+    "labels": [],
+    "comment_count": 0
+  }
+]
+```
+
+## pinnedIssues GraphQL read (D-06 verification — this phase never calls pinIssue)
+
+```bash
+$ gh api graphql -f query='{ repository(owner:"henols", name:"firestarter_prom"){ pinnedIssues(first:10){ totalCount nodes { issue { number title state } } } } }'
+{"data":{"repository":{"pinnedIssues":{"totalCount":1,"nodes":[{"issue":{"number":9,"title":"Repository Structure and Contribution Guide","state":"OPEN"}}]}}}}
+```
+
+## Three facts re-verified rather than inherited from CONTEXT.md
+
+### gh#65 and gh#66 — CONTEXT.md's Deferred Ideas block calls them unanswered; that is stale.
+
+```bash
+$ gh issue view 65 --repo henols/firestarter_prom --json number,state,comments --jq '{number,state,ncomments:(.comments|length),last:(.comments[-1]|{author:.author.login,at:.createdAt})}'
+{"number": 65, "state": "OPEN", "ncomments": 1, "last": {"author": "henols", "at": "2026-09-10T17:41:27Z"}}
+$ gh issue view 66 --repo henols/firestarter_prom --json number,state,comments --jq '{number,state,ncomments:(.comments|length),last:(.comments[-1]|{author:.author.login,at:.createdAt})}'
+{"number": 66, "state": "OPEN", "ncomments": 1, "last": {"author": "henols", "at": "2026-09-10T17:41:30Z"}}
+```
+
+**Result: gh#65 and gh#66 each carry exactly one comment, both dated 2026-09-10T17:41:2xZ, authored by
+henols (the maintainer datasheet cross-check). Both are OPEN. Neither is unanswered.** Any reply body
+acknowledging them must say 'open', never 'unanswered'.
+
+### gh#68 — must be OPEN and must name AE29F2008, so the D-12 cross-link points at a live, on-topic issue.
+
+```bash
+$ gh issue view 68 --repo henols/firestarter_prom --json number,state,title --jq '{number,state,title}'
+{"number": 68, "state": "OPEN", "title": "Protocol 0x05: partial or unaligned writes silently erase the rest of the touched page and report success"}
+```
+
+Result: OPEN. Body names AE29F2008 explicitly (line 12 of the body, `/usr/bin/grep -n -i AE29F2008`
+against the live body):
+
+```
+This affects all 27 protocol-`0x05` parts, including the validated ones (w29c020, w29c040,
+sst39sf020, AE29F2008). It is independent of #67, which is about the page size being
+```
+
+and again at line 77, cross-referencing gh#62 by name:
+
+```
+#62 ("Unable to erase AE29F2008") is the same family of behaviour seen from the other side:
+```
+
+gh#68 is independent of gh#67 (firmware-derived page size on 9 parts) — gh#62's reply must not
+describe gh#68's scope as covering the page-size defect too.
+
+### gh#67 — exists as gh#68's sibling defect, distinct scope. Recorded so no body conflates the two.
+
+```bash
+$ gh issue view 67 --repo henols/firestarter_prom --json number,state,title --jq '{number,state,title}'
+{"number": 67, "state": "OPEN", "title": "Protocol 0x05: firmware-derived page size is smaller than the physical page on 9 parts \u2014 contiguous writes lose every other 64-byte run"}
+```
+
+### gh#61 — the reporter's own PASS report on the same part (AE29F2008), useful context for gh#62's body.
+
+```bash
+$ gh issue view 61 --repo henols/firestarter_prom --json number,state,stateReason,labels --jq '{number,state,stateReason,labels:[.labels[].name]}'
+{"number": 61, "state": "CLOSED", "stateReason": "COMPLETED", "labels": ["dev-test", "chip:validated"]}
+```
+
+Result: CLOSED, stateReason COMPLETED, labels dev-test + chip:validated.
+
+## Label sets, exact, right now
+
+- gh#9: none
+- gh#23: dev-test, cause:database
+- gh#28: dev-test, cause:harness
+- gh#31: dev-test, cause:harness, cause:database
+- gh#60: enhancement
+- gh#62: none
+
+gh#62 carries **zero** labels — D-14's instruction to label it to match its disposition means
+adding the first labels this issue has ever had, not moving one.
