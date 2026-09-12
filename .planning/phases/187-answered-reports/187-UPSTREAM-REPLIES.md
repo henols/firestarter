@@ -15,7 +15,7 @@ own file under `evidence/bodies/187-gh<n>.md` — that is the file its posting p
 posted.
 
 **Status — gh#23:** POSTED — approved 2026-09-12 (evidence/187-09-gh23-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/23#issuecomment-5647009393, labelled `cause:rig` and `needs:report` (`cause:database` retained), deliberately left OPEN
-**Status — gh#28:** PENDING OPERATOR REVIEW
+**Status — gh#28:** POSTED — approved 2026-09-12 (evidence/187-10-gh28-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/28#issuecomment-5647056983, labelled `needs:report` (`fix:released` deliberately withheld — the M27C512 database defect is unfixed), deliberately left OPEN
 **Status — gh#31:** PENDING OPERATOR REVIEW
 **Status — gh#60:** POSTED — approved 2026-09-12 (evidence/187-07-gh60-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/60#issuecomment-5646849372, closed COMPLETED at 2026-09-12T15:32:51Z
 **Status — gh#62:** POSTED — approved 2026-09-12 (evidence/187-08-gh62-operator-approval.txt), comment https://github.com/henols/firestarter_prom/issues/62#issuecomment-5646897010, labelled `cause:firmware`, deliberately left OPEN
@@ -201,6 +201,7 @@ This issue stays open — I'm not closing it on my own reading, only on your res
 ## gh#28 — `[dev test] m27c512 — FAIL (31547956e56b)`
 
 **Body file:** `evidence/bodies/187-gh28.md`
+**Posted line:** https://github.com/henols/firestarter_prom/issues/28#issuecomment-5647056983 — posted as drafted, no amendment (sha256 `f861d85399b508321080ee69b49ccfef66894916b35673b00a8cdc4152f644d1`, unchanged from the 187-06 draft). Labelled `needs:report`; `dev-test` and `cause:harness` retained. `fix:released` deliberately withheld — only the harness and reporting fix shipped, the M27C512 database defect did not. Deliberately left OPEN — a close requires the reporter's confirmation or a superseding PASS, and neither exists.
 **Posted:**
 
 ```
