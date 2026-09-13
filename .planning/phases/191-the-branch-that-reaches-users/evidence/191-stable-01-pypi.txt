@@ -119,3 +119,44 @@ All three commit-sha readings agree. The live PyPI index independently
 confirms the published version. This evidence file, together with
 191-stable-02-fixture-published.txt, is the phase's verification -- not the
 operator's report and not the publish run's own conclusion.
+
+--- Addendum: a propagation-lag finding, distinct from the JSON API reading above ---
+
+The `pypi.org/pypi/firestarter/json` JSON API (section 4 above) reported
+`info.version: 2.0.9` cleanly on its first read, ~2 minutes after the
+publish run completed. That API is backed by a different path than the
+package index `pip` itself resolves against.
+
+The FIRST attempted fixture run (EXPECT_VERSION=2.0.9, before this addendum
+was written) failed at Check 0 with `installed_version: 2.0.7` -- `pip`
+resolved the previous stable even though the JSON API and a direct
+`curl https://pypi.org/simple/firestarter/` both already listed 2.0.9. This
+is recorded as a genuine propagation-lag observation, not hidden: `pip`'s
+resolution path evidently hit a CDN edge that had not yet caught up, one
+edge among several fronting the same index that the JSON API and a fresh
+`curl` to the same simple-index URL (run moments later) already reflected.
+
+Three fixture invocations were run in total, and all three are disclosed
+here rather than only the clean one:
+
+1. First invocation: `pip` resolved `installed_version: 2.0.7` -- a
+   propagation-lag read, discarded as a fixture-level failure but recorded
+   here as the lag finding it actually is. Not saved as evidence.
+2. Second invocation, run after independently confirming
+   `curl https://pypi.org/simple/firestarter/` already listed 2.0.9: `pip`
+   now resolved `installed_version: 2.0.9` and Checks 0-3 all passed
+   (`control_redirects: 1`, `subject_redirects: 0`). This run then failed
+   Check 4 (the porcelain guard) for an unrelated, non-propagation reason:
+   this very evidence file (`191-stable-01-pypi.txt`) was on disk but not
+   yet committed at that moment, so the fixture's own guard -- which only
+   allow-lists the fixture script and its baseline transcript -- correctly
+   flagged it as an unexpected untracked file in the phase directory. Not
+   saved as evidence; this is a housekeeping-ordering artifact, not a
+   version-propagation one.
+3. Third invocation, run immediately after committing this file: passed
+   all five checks cleanly, exit 0. This is the transcript saved to
+   191-stable-02-fixture-published.txt.
+
+So the version-propagation lag itself resolved within one retry (invocation
+1 to invocation 2); the additional invocation 2-to-3 retry was needed only
+because of commit ordering, not because PyPI's index lagged further.
