@@ -4,11 +4,11 @@ milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 189
 current_phase_name: Free the Name
-status: planned
-stopped_at: "Phase 189 planned - 4 plans"
-last_updated: "2026-09-13T13:24:36.877Z"
+status: executing
+stopped_at: "Phase 189 execution halted at 189-01 Task 1 - blocking-human GitHub rename gate"
+last_updated: "2026-09-13T13:38:29.017Z"
 last_activity: 2026-09-13
-last_activity_desc: "Phase 189 planned - 4 plans across 3 waves. Research skipped by operator choice; CONTEXT.md's measured-facts block is the substitute. Pattern mapper mapped 5 files (1 new - the D-06 fresh-clone fixture - with an exact analog in v1.4's lockstep-dryrun-fixture.sh). Spec-less probe fallback active (no SPEC): 6 edge rows surfaced, 6 = 5 authored into must_haves + 1 flagged assumption (RENAME-03/unclassified stays unresolved per #1110). Plan checker PASSED on the first pass - no revision loop. 3/3 requirements and 12/12 decisions covered; 51/51 verify commands resolve and state a failing direction. D-11's operator-performed GitHub rename is a blocking-human gate in 189-01, scripted nowhere; D-05's clone-demo-before-gitlink-advance ordering is encoded as a depends_on edge (189-02 -> 189-03), not prose."
+last_activity_desc: "Phase 189 planned - 4 plans across 3 waves. Research skipped by operator choice; CONTEXT.md's measured-facts block is the substitute. Pattern mapper mapped 5 files (1 new - the D-06 fresh-clone fixture - with an exact analog in v1.4's lockstep-dryrun-fixture.sh). Spec-less probe fallback active (no SPEC): 6 edge rows surfaced, 6 = 5 authored into must_haves + 1 flagged assumption (RENAME-03/unclassified stays unresolved per #1110). Plan checker PASSED on the first pass - no revision loop. 3/3 requirements and 12/12 decisions covered; 51/51 verify commands resolve and state a failing direction. D-11's operator-performed GitHub rename is a blocking-human gate in 189-01, scripted nowhere; D-05's clone-demo-before-gitlink-advance ordering is encoded as a depends_on edge (189-02 -> 189-03), not prose. Phase 189 execution started 2026-09-13: halted immediately at 189-01 Task 1, the blocking-human GitHub-rename gate (D-11/D-7), which --auto must not auto-approve. Pre-rename reading captured: gh api repos/henols/firestarter .full_name = henols/firestarter (id 810276812); henols/firestarter_fw 404s. No plan work dispatched - the whole phase depends on 189-01."
 progress:
   total_phases: 5
   completed_phases: 0
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 189 — Free the Name (v1.38 Repository Rename; context gathered, ready for planning)
+**Current focus:** Phase 189 — Free the Name
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 189 (Free the Name) — READY TO EXECUTE
-Plan: —
-Status: Ready to execute
-Last activity: 2026-09-13 — Milestone v1.38 started
+Phase: 189 (Free the Name) — EXECUTING (halted at gate)
+Plan: 1 of 4 (189-01 Task 1 — blocking-human GitHub rename gate, awaiting operator)
+Status: Awaiting operator — rename henols/firestarter to henols/firestarter_fw on GitHub, then resume
+Last activity: 2026-09-13 — Phase 189 execution started; halted at 189-01 Task 1
 
 ## Roadmap Summary (v1.38)
 
