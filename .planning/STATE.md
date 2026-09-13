@@ -4,16 +4,16 @@ milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 191
 current_phase_name: The Branch That Reaches Users
-status: planned
-stopped_at: Phase 191 planned
-last_updated: "2026-09-13T20:12:16.437Z"
+status: executing
+stopped_at: Completed 191-01-PLAN.md
+last_updated: "2026-09-13T20:37:16.872Z"
 last_activity: 2026-09-13
-last_activity_desc: "Phase 191 The Branch That Reaches Users PLANNED 2026-09-13 - 5 plans in 5 strictly sequential waves covering URL-02/STABLE-01/STABLE-02. Research skipped by operator decision (191-CONTEXT.md already carried the live-measured ruleset read, release.yml/publish.yml run histories and the 301-vs-200 redirect table). Pattern mapper corrected two CONTEXT.md file facts: constants.py:8-10 is a parenthesised assignment with the slug on line 9, and HOME_PATH lives in firmware.py:33 not constants.py. Planner corrected a third: main's fw --install arm does not prompt, so D-09's predicted downgrade transcript comes from the no-flag invocation. Tracer is the instrument, not the edit - 191-01 writes the board-free clean-install fixture and proves it RED against today's published 2.0.7 before anything irreversible happens. Plan checker passed first iteration, 0 blockers; both deterministic probes clean (79/79 automated legs carry a bound fails_when). Requirements 3/3, decision coverage 10/10. Nothing pushed; 191-03 and 191-04 are autonomous:false operator gates and the phase must not run under --auto/--chain."
+last_activity_desc: "Phase 191 The Branch That Reaches Users PLANNED 2026-09-13 - 5 plans in 5 strictly sequential waves covering URL-02/STABLE-01/STABLE-02. Research skipped by operator decision (191-CONTEXT.md already carried the live-measured ruleset read, release.yml/publish.yml run histories and the 301-vs-200 redirect table). Pattern mapper corrected two CONTEXT.md file facts: constants.py:8-10 is a parenthesised assignment with the slug on line 9, and HOME_PATH lives in firmware.py:33 not constants.py. Planner corrected a third: main's fw --install arm does not prompt, so D-09's predicted downgrade transcript comes from the no-flag invocation. Tracer is the instrument, not the edit - 191-01 writes the board-free clean-install fixture and proves it RED against today's published 2.0.7 before anything irreversible happens. Plan checker passed first iteration, 0 blockers; both deterministic probes clean (79/79 automated legs carry a bound fails_when). Requirements 3/3, decision coverage 10/10. Nothing pushed; 191-03 and 191-04 are autonomous:false operator gates and the phase must not run under --auto/--chain. EXECUTION STARTED 2026-09-13."
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 13
-  completed_plans: 8
+  completed_plans: 9
   percent: 40
 ---
 
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 190 — Endpoints That Do Not Depend on a Redirect
+**Current focus:** Phase 191 — The Branch That Reaches Users
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 191 (The Branch That Reaches Users) — READY TO EXECUTE
-Plan: Not started
+Phase: 191 (The Branch That Reaches Users) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-09-13 — Phase 191 planned, 5 plans in 5 waves
+Last activity: 2026-09-13 — Phase 191 execution started
 
 ## Roadmap Summary (v1.38)
 
@@ -3008,6 +3008,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 188 Plan 04]: Reverted an in-progress edit that would have scrubbed two still-accurate render_shape/snapshot_report_shapes.py prose mentions from tests/test_blast_radius_invariance.py, because the edit produced added=2 in that file's numstat diff, violating the plan's own explicitly threat-modeled invariant (T-188-13: the diff over this file must be deletions-only) and its explicit instruction to leave _to_dict_with_db_diff exactly as it is. Kept the file's diff strictly deletions-only (added=0, deleted=47); the plan's own "grep -c render_shape/snapshot_report_shapes == 0" acceptance criterion is therefore measured at 2, not 0 -- a deliberate, logged choice (WINDOWS.md entry 7) favoring the stronger, safety-critical invariant over a literal-but-conflicting textual check. render_shape itself is not deleted until plan 188-05, which can settle these two remaining mentions then.
 - [Phase 188]: Plan 04: Repaired three stale references to files this plan deletes, all outside this plan's own files_modified list (tests/fixtures/synthetic_nonzero_chip_id.py's aside naming planted_permit_by_default.py; tests/test_sdp_db_invariant.py's sentence naming check_sdp_capability_invariants.py + planted_widenable_allowset.py; tests/test_voltage_field_census.py's check_devtest_orchestrator.py entry, explicitly handed off by 188-03's own SUMMARY). All three are deletion-only clause/entry removals, confirmed non-breaking (collected counts unchanged: 4, 9, 4).
 - [Phase 188]: 188-08: reordered the idempotency verify leg to run after committing both sub-repos' synced codegen.py, since git status --porcelain against the last commit cannot prove a sync is a no-op until that commit exists — The literal acceptance criterion (zero-line git status after a second sync run) can only be true when the working tree already matches the committed baseline; running it before any sub-repo commit always shows the first sync's uncommitted diff, which looks like a false failure of the determinism contract but is really just an ordering artifact
+- [Phase 191]: 191-01: board-free STABLE-02 clean-install fixture drives origin/main's real API (firestarter.config.ConfigManager, FirmwareManager positional) rather than Phase 190's click/channel surface, and is proven red against today's published 2.0.7 (bare slug) before any repointing happens.
 
 ## Performance Metrics
 
@@ -3443,8 +3444,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-13T19:15:34.908Z
-**Stopped at:** Phase 191 context gathered
+**Last session:** 2026-09-13T20:37:16.763Z
+**Stopped at:** Completed 191-01-PLAN.md
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
 **Was (superseded, retained for continuity):** Completed 188-04-PLAN.md — parity module deleted, blast-radius oracle trimmed to its two render_shape sites (68/106 tests, GATE-01/02/03 and D-07/D-10 intact, 19 snapshots byte-unchanged), all eight remaining check_*.py gates retired with their tests/fixtures, mypy CI step and CLAUDE.md guard prose removed; suite measured 2307->2262->2175, 0 errors (firestarter_app@0f251f0)
@@ -3523,7 +3524,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/v1.33/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/191-the-branch-that-reaches-users/191-CONTEXT.md
+**Resume file:** None
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing

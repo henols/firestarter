@@ -374,7 +374,7 @@ claim is verified by installing it rather than by reading the diff.
 Plans:
 **Wave 1**
 
-- [ ] 191-01-PLAN.md — Tracer: write the board-free clean-install fixture and prove it red against the stable published today
+- [x] 191-01-PLAN.md — Tracer: write the board-free clean-install fixture and prove it red against the stable published today
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
