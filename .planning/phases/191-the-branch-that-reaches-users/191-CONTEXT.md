@@ -359,12 +359,22 @@ offers a downgrade to `2.0.6`.
 - Anything under `.planning/milestones/` — D-5; Phase 192 must prove a diff over that path is empty.
 - The firmware repository — renamed and repointed in Phase 189; untouched here.
 
-### One housekeeping observation, not this phase's job
+### One housekeeping hazard a planner must know about
 
-`.planning/config.json` no longer carries a `sub_repos` block (last set at `0f2539e4`, "chore(36):
-configure sub_repos for submodule commit routing"). GSD verbs are known to prune it. This phase commits
-inside `firestarter_app`, so a planner should be aware the routing config is absent rather than assume it
-is present.
+`.planning/config.json` **does** carry submodule routing — at `planning.sub_repos`, not at the top level —
+listing `firestarter`, `firestarter_app`, `firestarter_app_py32`, `firestarter_py32_ci`.
+
+**The hazard is that GSD verbs silently prune it.** Writing this context did exactly that: a
+`state.record-session` / `commit` run dropped `firestarter_app_py32` and `firestarter_py32_ci`, leaving two
+entries. It was restored by hand. Two consequences for this phase, which commits inside `firestarter_app`:
+
+- **Check `git status -- .planning/config.json` after any `gsd-tools query` call that writes state**, and
+  restore the block rather than committing the prune.
+- `config.json` is a VERIFICATION-covered file, so an unnoticed prune reads as `stale` and blocks the phase
+  transition.
+
+The same run also under-wrote `STATE.md`'s `progress.completed_phases` (2 → 0) and `progress.percent`
+(40 → 0); both were repaired by hand in commit `b019c706`. Expect to repair both files again.
 
 </code_context>
 
@@ -410,7 +420,7 @@ is present.
   development branch again rather than a release branch, revisit.
 - **Resolving the PyPI/GitHub name incoherence** — after the eventual claim, PyPI `firestarter` is the app
   while GitHub `firestarter` is the meta repository. Already in the milestone's Out of Scope table.
-- **`.planning/config.json`'s pruned `sub_repos` block.** Repo-hygiene, not this phase's scope.
+- **A standing guard against GSD verbs pruning `planning.sub_repos` from `.planning/config.json`.** Repo-hygiene, not this phase's scope — but see the hazard note in `<code_context>`; it fired during this discussion.
 
 ### Reviewed Todos (not folded)
 
