@@ -263,7 +263,7 @@ as a phase-level question in [`research/questions.md`](research/questions.md) an
 
 - [x] **Phase 189: Free the Name** *(runs first — nothing can point at a repository that does not exist)* - Rename the firmware repository to `firestarter_fw`, leave `henols/firestarter` unclaimed, and make the submodule resolve the new URL without relying on the redirect. (RENAME-01, RENAME-02, RENAME-03) (completed 2026-09-13)
 - [x] **Phase 190: Endpoints That Do Not Depend on a Redirect** - Repoint the three firmware release endpoints on `beta`, derive the test fixtures from them so a future retarget cannot pass silently, and make an unreachable endpoint say so. (URL-01, URL-03, URL-04) (completed 2026-09-13)
-- [ ] **Phase 191: The Branch That Reaches Users** *(outward-facing — operator-gated publish)* - Repoint the same endpoints on `main` as a separate change, cut a stable carrying it, and run 999.9's clean-environment validation against that stable rather than against a prerelease. (URL-02, STABLE-01, STABLE-02)
+- [x] **Phase 191: The Branch That Reaches Users** *(outward-facing — operator-gated publish)* - Repoint the same endpoints on `main` as a separate change, cut a stable carrying it, and run 999.9's clean-environment validation against that stable rather than against a prerelease. (URL-02, STABLE-01, STABLE-02) (completed 2026-09-13)
 - [ ] **Phase 192: Live References Only** - Correct every live tracked reference across the three repositories, prove the archived ones were left alone, and fix a codebase document describing a workflow that does not exist. (SWEEP-01, SWEEP-02, SWEEP-03)
 - [ ] **Phase 193: The Deferred Claim, Made Measurable** - Turn the seed's trigger into a number with a stated threshold, record the rule that keeps the eventual failure loud, and document the trap history cannot be fixed out of. (GATE-01, GATE-02, GATE-03)
 
@@ -369,7 +369,7 @@ claim is verified by installing it rather than by reading the diff.
 **Depends on:** Phase 190 (the `beta` repoint should be exercised before the same change is made on a
 948-commit-stale branch and shipped to the default install)
 
-**Plans:** 5 plans
+**Plans:** 5/5 plans complete
 
 Plans:
 **Wave 1**

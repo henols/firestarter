@@ -27,7 +27,7 @@ covered_files:
   - .planning/phases/191-the-branch-that-reaches-users/evidence/191-url-02-prepared-branch.txt
   - .planning/todos/pending/2026-09-13-publish-yml-release-published-never-fires.md
   - .planning/todos/pending/2026-09-13-release-yml-autocommit-vs-ruleset.md
-covered_digest: "v1:sha256:6db0e0c1bc18445f0951e30af1977651462e2d3a798cad5cf14ed594f4ee3dbb"  # STALE BY DESIGN: computed before the UAT resolution edited two covered files (evidence/191-stable-disposition.md, todos/pending/2026-09-13-publish-yml-release-published-never-fires.md). Not recomputed rather than fabricated — see 191-UAT.md for what changed and why.
+covered_digest: "v1:sha256:9526d4ed793c1ff54ba6b5d7c9a98fbc404ab2cd814220d3d4a38f3ad242ce20"
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
@@ -42,6 +42,11 @@ human_verification:
 `firestarter_fw`, and that claim is verified by installing it rather than by reading the diff.
 **Verified:** 2026-09-13T23:10:00Z
 **Status:** passed (human verification item resolved 2026-09-13 — see `191-UAT.md`)
+**Re-fingerprinted:** 2026-09-13 — resolving the human-verification item edited two covered files
+(`evidence/191-stable-disposition.md`, `todos/pending/2026-09-13-publish-yml-release-published-never-fires.md`),
+so `covered_digest` was recomputed via `gsd-tools query verification.fingerprint` over the same
+`covered_files` list. Prior digest: `v1:sha256:6db0e0c1…`. No verified finding changed — the edits
+are the correction this report itself asked for.
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
