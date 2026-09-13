@@ -640,7 +640,7 @@ cross-repo catalog sync, then the ledger.
 
 **Wave 7** *(all three repos — the catalog sync)*
 
-- [ ] 188-08-PLAN.md — TOOLS-05 (D-11, D-17): the catalog code generator's five citations stripped at the meta canonical copy and synced to both sub-repos, with `messages.h` and `messages.py` proven byte-unchanged by a real diff after the sync and the second sync proven a no-op
+- [x] 188-08-PLAN.md — TOOLS-05 (D-11, D-17): the catalog code generator's five citations stripped at the meta canonical copy and synced to both sub-repos, with `messages.h` and `messages.py` proven byte-unchanged by a real diff after the sync and the second sync proven a no-op
 
 **Wave 8** *(meta — the record)*
 
