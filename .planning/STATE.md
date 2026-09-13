@@ -1,10 +1,14 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.38
-milestone_name: Repository Rename
+milestone_name: "Repository Rename"
+current_phase: 189
+current_phase_name: "Free the Name"
 status: planning
-last_updated: "2026-09-13T12:03:21.259Z"
+stopped_at: Phase 189 context gathered
+last_updated: "2026-09-13T12:43:32.136Z"
 last_activity: 2026-09-13
+last_activity_desc: "Phase 189 (Free the Name) context gathered - 9 gray-area decisions locked across submodule scope, RENAME-03 proof method, meta-main PR routing and the 189/192 boundary"
 progress:
   total_phases: 5
   completed_phases: 0
@@ -23,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 188 — The Tools Directory
+**Current focus:** Phase 189 — Free the Name (v1.38 Repository Rename; context gathered, ready for planning)
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -3439,8 +3443,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-13T02:17:48.000Z
-**Stopped at:** Phase 188 complete — all phases complete
+**Last session:** 2026-09-13T12:43:32.054Z
+**Stopped at:** Phase 189 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
 **Was (superseded, retained for continuity):** Completed 188-04-PLAN.md — parity module deleted, blast-radius oracle trimmed to its two render_shape sites (68/106 tests, GATE-01/02/03 and D-07/D-10 intact, 19 snapshots byte-unchanged), all eight remaining check_*.py gates retired with their tests/fixtures, mypy CI step and CLAUDE.md guard prose removed; suite measured 2307->2262->2175, 0 errors (firestarter_app@0f251f0)
@@ -3519,7 +3523,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/v1.33/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/188-the-tools-directory/188-CONTEXT.md
+**Resume file:** .planning/phases/189-free-the-name/189-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
