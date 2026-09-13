@@ -636,7 +636,7 @@ cross-repo catalog sync, then the ledger.
 
 **Wave 6** *(host)*
 
-- [ ] 188-07-PLAN.md — TOOLS-05 (D-16, D-18, D-19): the five in-repo survivors swept by hand, datasheet citations and the hostile-input contract intact, asserted with a positive control; the three-repo dangling-reference sweep and the CI-faithful Python 3.11 acceptance battery
+- [x] 188-07-PLAN.md — TOOLS-05 (D-16, D-18, D-19): the five in-repo survivors swept by hand, datasheet citations and the hostile-input contract intact, asserted with a positive control; the three-repo dangling-reference sweep and the CI-faithful Python 3.11 acceptance battery
 
 **Wave 7** *(all three repos — the catalog sync)*
 
