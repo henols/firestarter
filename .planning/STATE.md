@@ -5,8 +5,8 @@ milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 190
 current_phase_name: Endpoints That Do Not Depend on a Redirect
 status: planning
-stopped_at: "Phase 189 complete, ready to plan Phase 190"
-last_updated: "2026-09-13T14:39:17.257Z"
+stopped_at: Phase 190 context gathered
+last_updated: "2026-09-13T15:33:37.273Z"
 last_activity: 2026-09-13
 last_activity_desc: "Phase 189 Free the Name COMPLETE 2026-09-13 - 4/4 plans, verification passed 7/7, code review clean (0 findings). The operator renamed henols/firestarter to henols/firestarter_fw at a blocking-human gate (D-11/D-7); the old slug is deliberately left vacant and redirecting, asserted by numeric id 810276812 on BOTH slugs so a live redirect is distinguishable from a re-occupied slug (D-12), and shown NOT to resolve to the meta repo's id 1232995399 (D-1). .gitmodules repointed to git@github.com:henols/firestarter_fw.git on the milestone branch, propagated to all three D-03 observables by git submodule sync --recursive; the same one-line change landed on protected meta main via operator-pushed PR prom#79 (merge sha 6b518c74), verified by reading .gitmodules back from GitHub at ref=main. The beta half of ROADMAP criterion 2 is close-carried by design (D-08) - it lands at milestone merge; merging early would fire a pre-release cut in both sub-repos and publish the host one to PyPI. Firmware README:47 and tests/meta_presence.py:22 repointed (one line each, no comments added per the non-overridable rule); repo-wide bare-slug sweep = 0 with a firestarter_prom positive control proving non-vacuity. Firmware gitlink advanced to c67a3301 AFTER the fresh-clone demonstration was captured (D-05 ordering, verified independently from commit timestamps), so it now names an UNPUSHED firmware commit - the re-runnable fixture reports exactly that with exit 3 and names the sha; it resolves at milestone push. Firmware pytest 316 passed. Nothing pushed except prom#79."
 progress:
@@ -3443,8 +3443,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-13T12:43:32.054Z
-**Stopped at:** Phase 189 complete, ready to plan Phase 190
+**Last session:** 2026-09-13T15:33:37.123Z
+**Stopped at:** Phase 190 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
 **Was (superseded, retained for continuity):** Completed 188-04-PLAN.md — parity module deleted, blast-radius oracle trimmed to its two render_shape sites (68/106 tests, GATE-01/02/03 and D-07/D-10 intact, 19 snapshots byte-unchanged), all eight remaining check_*.py gates retired with their tests/fixtures, mypy CI step and CLAUDE.md guard prose removed; suite measured 2307->2262->2175, 0 errors (firestarter_app@0f251f0)
@@ -3523,7 +3523,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/v1.33/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/189-free-the-name/189-CONTEXT.md
+**Resume file:** .planning/phases/190-endpoints-that-do-not-depend-on-a-redirect/190-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
