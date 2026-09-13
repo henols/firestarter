@@ -64,6 +64,14 @@ the full suite after each.
   asserted with a positive control (a planted citation on a scratch copy, detected), not merely
   observed. See `188-07-SUMMARY.md`, `188-08-SUMMARY.md`, and
   `.planning/notes/host-tools-retirement.md` §1 for the per-file disposition.
+  **Carry-over 2026-09-13 (quick task `260913-e7t`, WR-01):** that measurement covered `.planning/`
+  citations only (0 hits) and does not discharge every comment under `tools/`.
+  `tools/parse_devtest_issue.py:215` still carries a comment block whose enforcement claim died
+  with the `check_*` family — it names an enforcer (`check_diagnostic_report_claims.py` and a test
+  that no longer references it) that no longer exists. Under the broadened hard rule this comment's
+  disposition is **deletion**, not a reword, and it is tracked as WR-01 of
+  `.planning/todos/pending/2026-09-13-close-six-stale-claims-wr01-wr06.md` until this sweep reaches
+  it.
 - **`firestarter_app/tests/`** — ~1774 hits. **Still open, untouched by Phase 188.** A separate
   decision, not more of the same work: test files use phase identifiers as gate anchors and
   several tests *assert* on them, so stripping them changes gate behaviour rather than just

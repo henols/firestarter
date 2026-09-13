@@ -49,6 +49,31 @@ CI-enforced — so a later reader who trusts CLAUDE.md is misled with nothing in
 to correct them. Fixing WR-06 means **both** editing CLAUDE.md line 127 **and** adding that fact to
 the retirement note.
 
+## Disposition 2026-09-13
+
+Executed by quick task `260913-e7t`.
+
+- **WR-02, WR-03, WR-04, WR-06a** — corrected in `firestarter_app` commit
+  `71cc762bc9c5e95dd3b3e8e303fa10597020dc2a`.
+- **WR-05** — corrected in `firestarter` commit `447b73e235f533c3ae1be9e054534b937ca21ca6`.
+- **WR-06b** — recorded in `.planning/notes/host-tools-retirement.md` §1, appended to the
+  `**The mypy CI leg (D-02) — retired, no replacement:**` paragraph.
+- **WR-01 — NOT fixed here, and deliberately so.** WR-01 is a source comment at
+  `firestarter_app/tools/parse_devtest_issue.py:215`. The operator's hard rule (see
+  `firestarter_app/CLAUDE.md`, "Source code comments — hard rule") forbids any comment in product
+  source, including a corrected one — rewording it to name a different enforcer would manufacture
+  exactly the kind of provenance-laden prose the rule exists to remove. Its correct disposition is
+  **deletion** of the comment block, folded into the existing sweep tracked by
+  `.planning/todos/pending/2026-08-27-strip-gsd-provenance-comments-from-source.md`, not a reword in
+  this task. A carry-over line was added to that todo's `firestarter_app/tools/` bullet so its
+  "DISCHARGED 2026-09-13 (Phase 188)" measurement — which covered only `.planning/` citations — is
+  not misread as covering WR-01 too.
+
+**Five of six resolved (WR-02 through WR-06); WR-01 remains open by design.** This file stays under
+`pending/`, not `completed/`, because its own "Done when" block requires all six, and filing a
+five-of-six todo as `completed/` in a milestone named Claim Hygiene would be the same species of
+over-claim this task exists to remove.
+
 ## Note on line numbers
 
 `188-REVIEW.md` cites each finding as a **range** covering the whole comment block (212-215,
@@ -59,8 +84,13 @@ WR-05 and WR-06 were already exact in both records.
 
 ## Done when
 
-- All six claims are corrected in place (WR-05 by rewording the back-reference, not by deleting the
-  step it annotates).
-- WR-06's CLAUDE.md correction is accompanied by a matching entry in
-  `.planning/notes/host-tools-retirement.md`.
-- The four app suites and the firmware native gate stay green.
+- ~~All six claims are corrected in place (WR-05 by rewording the back-reference, not by deleting
+  the step it annotates).~~ **WR-02..WR-06 corrected 2026-09-13 — see Disposition above.** WR-01
+  remains: the sole open condition is that the comment block at
+  `firestarter_app/tools/parse_devtest_issue.py:215` is **deleted** (not reworded) by the
+  provenance-strip sweep tracked in
+  `.planning/todos/pending/2026-08-27-strip-gsd-provenance-comments-from-source.md`.
+- ~~WR-06's CLAUDE.md correction is accompanied by a matching entry in
+  `.planning/notes/host-tools-retirement.md`.~~ **Done 2026-09-13 — see Disposition above.**
+- The four app suites and the firmware native gate stay green. **Confirmed 2026-09-13: 2129 passed
+  (`firestarter_app`), 316 passed (`firestarter`).**
