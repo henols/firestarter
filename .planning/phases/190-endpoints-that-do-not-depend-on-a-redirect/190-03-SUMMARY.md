@@ -172,3 +172,11 @@ None - no external service configuration required.
 ---
 *Phase: 190-endpoints-that-do-not-depend-on-a-redirect*
 *Completed: 2026-09-13*
+
+## Self-Check: PASSED
+
+- FOUND: `firestarter_app/firestarter/firmware.py`
+- FOUND: `firestarter_app/tests/test_fw_update_dead_endpoint.py`
+- FOUND: submodule commit `6f8ed57` (Task 1)
+- FOUND: submodule commit `560ec24` (Task 2)
+- FOUND: meta-repo commit `f6326f89` (SUMMARY)
