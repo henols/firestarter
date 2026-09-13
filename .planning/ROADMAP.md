@@ -290,7 +290,7 @@ through GitHub's redirect.
 
 **Depends on:** — (first phase; every other phase depends on this one)
 
-**Plans:** 4 plans across 3 waves (1/4 complete)
+**Plans:** 4 plans across 3 waves (2/4 complete)
 
 - **Wave 1** — `189-01` halt at the operator-performed GitHub rename (D-11), then assert it landed on
   both `.id` and `.full_name` (D-12). Blocking-human gate; `autonomous: false`.
