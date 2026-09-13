@@ -326,7 +326,7 @@ and a broken endpoint is distinguishable in the output from an up-to-date firmwa
 
 **Depends on:** Phase 189
 
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 - **Wave 1** — `190-01` **tracer**: repoint all three `FIRESTARTER_*_URL` constants (URL-01), split
   `list_releases` into `None` for a failed fetch and `[]` for a genuine empty (D-10), guard the

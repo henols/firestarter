@@ -5,7 +5,7 @@ milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 190
 current_phase_name: Endpoints That Do Not Depend on a Redirect
 status: executing
-stopped_at: Phase 190 planned
+stopped_at: Phase 190 executed (4/4 plans)
 last_updated: "2026-09-13T16:59:15.897Z"
 last_activity: 2026-09-13
 last_activity_desc: "Phase 190 Endpoints That Do Not Depend on a Redirect EXECUTING 2026-09-13 - 4 plans in 3 waves (190-01 tracer, 190-02 + 190-03 same wave, 190-04 evidence), all autonomous, covering URL-01/URL-03/URL-04. Planning closed with plan-checker 0 blockers, decision coverage 17/17, requirements 3/3, post-planning gaps 20/20. Executing sequentially on the main working tree (use_worktrees false, parallelization false) on branch v1.38-repository-rename; the init-computed gsd/ branch name was NOT used, since it would have forked off origin/beta and stranded 32 commits of v1.38 work."
@@ -13,7 +13,7 @@ progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 8
-  completed_plans: 4
+  completed_plans: 8
   percent: 20
 ---
 
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 190 (Endpoints That Do Not Depend on a Redirect) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 190
-Last activity: 2026-09-13 — Phase 190 execution started
+Phase: 190 (Endpoints That Do Not Depend on a Redirect) — EXECUTED, AWAITING VERIFICATION
+Plan: 4 of 4
+Status: Phase 190 executed — 4/4 plans, awaiting verification
+Last activity: 2026-09-13 — Phase 190 executed: 4/4 plans, 2145 tests green on py3.11
 
 ## Roadmap Summary (v1.38)
 
