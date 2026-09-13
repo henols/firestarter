@@ -246,7 +246,7 @@ of use.
 - [x] **Phase 185: Records and Checks That Are Current** - The size baseline, the citation, the dead symbol and the red workflow — four records that describe a tree that no longer exists. (completed 2026-09-11)
 - [x] **Phase 186: The Python Floor, Before the EOL** - Settle the advertised floor against the type-checker while there is still slack before 2026-10-31. (completed 2026-09-12)
 - [x] **Phase 187: Answered Reports** *(runs last outward-facing phase — describes what shipped)* - Reply to every reporter this milestone owes, ask for the re-runs that would settle the disputes, and close nothing unilaterally. (completed 2026-09-12)
-- [ ] **Phase 188: The Tools Directory** *(added 2026-09-12 — inward-facing, posts nothing)* - Answer what each script in `firestarter_app/tools/` is for, close the escape-guard residual, and decide every gate and process-tool by name — "retire it" is a valid answer, "unaddressed" is not.
+- [x] **Phase 188: The Tools Directory** *(added 2026-09-12 — inward-facing, posts nothing)* - Answer what each script in `firestarter_app/tools/` is for, close the escape-guard residual, and decide every gate and process-tool by name — "retire it" is a valid answer, "unaddressed" is not. (completed 2026-09-13)
 
 ## Phase Details
 
@@ -641,7 +641,7 @@ recorded, not smoothed over: see `.planning/notes/host-tools-retirement.md` §2 
 **Depends on:** Phase 187 (this phase was scoped from an audit run during it). No outward-facing work, so no
 dependency on the reply ledger.
 
-**Plans:** 9 plans across 8 waves — meta first (D-21), then host and firmware in parallel, then the
+**Plans:** 9/9 plans complete — meta first (D-21), then host and firmware in parallel, then the
 cross-repo catalog sync, then the ledger.
 
 **Wave 1** *(meta alone — nothing downstream may delete `diff_db.py` before this lands)*
