@@ -4,9 +4,9 @@ milestone: v1.37
 milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 2026-09-10)
 current_phase: 188
 current_phase_name: The Tools Directory
-status: executing
-stopped_at: "Phase 188 executing — 188-09 complete (verdict note at .planning/notes/host-tools-retirement.md; REQUIREMENTS.md's seven TOOLS rows amended per D-22; ROADMAP.md's Phase 188 section amended in place, plan checklist 9/9; three folded planning items settled). All nine Phase 188 plans complete; phase-complete transition pending orchestrator verification."
-last_updated: "2026-09-13T02:20:00.000Z"
+status: blocked
+stopped_at: "Phase 188 all 9 plans complete and verified 7/7; awaiting ONE operator decision in 188-UAT.md — whether the six stale-claim warnings WR-01..WR-06 close inside this phase or are filed as follow-on debt. Not marked complete."
+last_updated: "2026-09-13T02:47:17.000Z"
 last_activity: 2026-09-13
 last_activity_desc: "Phase 188 resumed after the D-25 replan. 188-01 through 188-09 complete; the 188-02 gate inverted OD-1 so the four orphaned symbols are not relocated — their 90 consuming tests are deleted (D-25). 188-03 retired the diagnostic-claims and dispatch gates end to end (2373->2368->2307 collected, 0 errors). 188-04 finished the D-25 consumer deletions and retired the eight remaining check_*.py gates whole (2307->2262->2175 collected, 0 errors at both boundaries). tools/ then held zero check_*.py gates. 188-05 retired the six GSD-process tools (diff_db.py placed by 188-01's relocation), the two CI mirrors, the derive_sdp_partition.py orphan, and the host half of the frame-vector apparatus with its two CI steps in one commit (2175->2142->2129 collected, 0 errors; coverage 5871/896/84.74%, floor holds); tools/ now holds exactly the six D-14 survivors. 188-06 retired the firmware half of the frame-vector apparatus and re-recorded the native size baseline from one cold capture. 188-07 swept firestarter_app/tools/ citation-free (D-16/D-18) across build_db.py, gen_test_image.py, parse_devtest_issue.py and gen_sdp_bus_config.py (gen_validation_header.py byte-unchanged), proved both positive controls, and closed the three-repo dangling-reference sweep at zero breaking sites (2129 collected, 0 errors both under devcontainer py3.12 and CI-faithful py3.11, coverage 84.74%). 188-08 stripped catalog/codegen.py's five citations at the meta canonical copy (D-17), synced to both sub-repos (all three copies hash-identical, zero citations), and proved messages.h/messages.py byte-unchanged by a real git diff plus an idempotent second sync (firmware 360 passed, host 2129 passed) — TOOLS-05 now fully discharged across all six D-16 survivors. 188-09 wrote the verdict note (host-tools-retirement.md), amended REQUIREMENTS.md's seven TOOLS rows per D-22 (five RETIRED, one satisfied by family retirement, one Complete with only TOOLS-05's box checked), amended ROADMAP.md's Phase 188 section (all seven criteria + not-in-scope paragraph AMENDED, plan checklist 9/9), and settled the three folded planning items (orphaned-host-tools todo closed, provenance todo's tools-half figure corrected to 0, gate-expiry seed resolved). Measured deleted-line total across firestarter_app + firestarter: -21,281 net, against CONTEXT.md's ~16,700 estimate (gap reconciled in 188-09-SUMMARY.md). All nine plans complete; phase-complete transition is the orchestrator's next move, not this plan's."
 progress:
@@ -235,9 +235,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 188 (The Tools Directory) — EXECUTING
-Plan: 8 of 9 complete (188-01, 188-02, 188-03, 188-04, 188-05, 188-06, 188-07); 188-08/09 remain
-Status: Executing — waves 6–8 dispatch sequentially, 188-07 done, next is 188-08
+Phase: 188 (The Tools Directory) — PLANS COMPLETE, VERIFIED, AWAITING UAT
+Plan: 9 of 9 complete (188-01 … 188-09)
+Status: Awaiting UAT — 188-VERIFICATION.md passed 7/7 must-haves with status human_needed; 188-UAT.md holds the single open item (disposition of code-review warnings WR-01..WR-06). Phase checkbox NOT flipped; run /gsd-verify-work 188.
 Last activity: 2026-09-13 — 188-07 complete: firestarter_app/tools/ swept citation-free (build_db.py 13 + 3 RESEARCH-ref follow-ons + a _PHASE84_RELABEL rename, gen_test_image.py 3, parse_devtest_issue.py 6, gen_sdp_bus_config.py 3; gen_validation_header.py confirmed byte-unchanged); datasheet [CITED:] markers unchanged (3/3); hostile-input contract and all three rewritten user-facing strings intact; both positive controls (planted citation, planted AST break) detected; three-repo dangling-reference sweep scoped to breaking sites returned zero, with test_voltage_field_census.py's two target frozenset entries found already removed by 188-04/188-05 (a plan-check discrepancy, no edit needed); suite 2129 passed both under devcontainer 3.12 and CI-faithful Python 3.11 (coverage 84.74%, floor holds); tools/ holds exactly 6 scripts
 
 ## Roadmap Summary (v1.37)
