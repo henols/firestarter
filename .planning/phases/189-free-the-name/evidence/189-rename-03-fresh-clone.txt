@@ -1,0 +1,13 @@
+FRESH CLONE FIXTURE (RENAME-03)
+================================
+meta_source: file:///workspaces
+meta_ref: v1.38-repository-rename
+meta_commit: 5aba9dbc8d760e530638931d19ede0a227dd1a60
+gitmodules_url(firestarter): git@github.com:henols/firestarter_fw.git
+config_url(firestarter): git@github.com:henols/firestarter_fw.git
+remote_origin(firestarter): git@github.com:henols/firestarter_fw.git
+remote_origin(firestarter_app): git@github.com:henols/firestarter_app.git
+firestarter_head: 10ec1b0e24d98f04c3b4aa076b9d84231ac5da04
+firestarter_app_head: f926e36262c368633b50245a225478ef36aed885
+
+FRESH CLONE OK
