@@ -238,3 +238,30 @@ appears among the passing tests in the 2145-passed count). Step 4 above
 therefore DOES exercise the one test this phase touches; `ci-py32`'s own
 two steps genuinely were not run and are noted here rather than silently
 omitted.
+
+==========================================================================
+Disposition — the firestarter_app gitlink advance (Task 3)
+==========================================================================
+The meta repository's `firestarter_app` gitlink now names commit
+560ec24523eb2f8c643c9db3dd302efecf57e2e1 -- the tip of all six commits
+190-01 through 190-03 made inside the submodule on
+`v1.38-repository-rename` (a134a91, cf872a6, 3d2a367, 3d1ab18, 6f8ed57,
+560ec24). This is the same commit `git -C firestarter_app rev-parse HEAD`
+reports as of this reading, confirmed reachable from
+`v1.38-repository-rename` in the app repository.
+
+That commit is NOT on origin. Until the milestone is pushed, a fresh
+clone of the meta repository at this tip cannot fetch it -- exactly the
+state Phase 189 left the firmware submodule's gitlink in (189-03), and
+for the same reason: gitlinks are advanced per phase (the norm since
+v1.36) as soon as every commit belonging to that phase is in, which is
+necessarily before the milestone as a whole is pushed.
+
+This resolves at the milestone push, which is operator-gated per the
+standing push-at-ship-time policy; nothing in this phase pushes. Phase
+189's fresh-clone fixture (`.planning/phases/189-free-the-name/
+fresh-clone-fixture.sh`) is expected to report the unfetchable-gitlink
+case (its documented exit code 3) rather than a URL regression while
+this is true -- and as of this phase, BOTH submodule gitlinks (firmware
+and host) are in that state, not only the firmware one Phase 189 left
+behind.
