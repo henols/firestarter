@@ -81,7 +81,17 @@ including the one guard against a firmware rename silently flipping host test mo
 (two lines: name + run) deleted in the same commit as `check_mypy_watermark.py`, along with three
 comment-mentions of "mypy" elsewhere in the same file (the D-07 gate-steps header enumeration, a
 CI-runs-on-every-branch historical note, and the `ci-py32` job's own "runs no ruff/ruff-format/mypy/..."
-comment). Zero occurrences of "mypy" remain anywhere in `ci.yml`.
+comment). Zero occurrences of "mypy" remain anywhere in `ci.yml`. What this record did not carry until
+now: `firestarter_app/CLAUDE.md`'s "Tooling gate (v1.8)" line went on advertising `mypy` as one of the
+checks "all enforced by `.github/workflows/ci.yml` on every PR" for the whole interval between the
+step's deletion and this correction, so a reader who trusted CLAUDE.md rather than `ci.yml` itself was
+misled with nothing in this note to catch the drift. That claim was corrected on **2026-09-13** by
+quick task `260913-e7t` (WR-06), `firestarter_app` commit `71cc762bc9c5e95dd3b3e8e303fa10597020dc2a`.
+The correction is not a flat deletion of the word: `mypy` was never removed from the project, only
+from CI — `.pre-commit-config.yaml` still wires `ruff-check` → `ruff-format` → `mypy` as a local hook —
+so the accurate statement is "local pre-commit hook, not a CI gate," and simply deleting `mypy` from
+the CLAUDE.md line would have produced a second false claim (that pre-commit and CI run the same
+checks) rather than fixed the first.
 
 ## 2. The eight disclosed costs, each stated as a loss
 
