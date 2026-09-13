@@ -1222,7 +1222,13 @@ security surface is narrow but not empty.
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> **All three were open at research time and were decided during planning**, each matching the
+> recommendation recorded below. The question text and reasoning are left intact so a future reader can
+> see what was open and why; the `**RESOLVED**` lines are additive. All three are settled in
+> `190-04-PLAN.md` § *"Planner assumptions carried forward, stated so a reviewer can reject them"*
+> (lines 539–563). **Question 3 carries a caveat that outlives this phase** — Phase 191 inherits it.
 
 1. **Does `logger.error`'s stdout routing undermine D-11 in practice?**
    - What we know: after D-11, production stdout still carries `Failed to fetch releases for list: ...`
@@ -1233,6 +1239,11 @@ security surface is narrow but not empty.
      it needs no `SingleLineStatusHandler` change. **Record the residue explicitly in `SUMMARY.md`** so
      a future JSON-schema decision (a Deferred Idea) inherits the measurement rather than rediscovering
      it.
+   - **RESOLVED — as recommended.** D-11 is implemented as *"no JSON document"*, not *"empty stdout"*.
+     The residue — that `fw --list --json` stdout is still not clean JSON whenever any log line fires, a
+     pre-existing defect this phase narrows but does not resolve — is recorded explicitly in
+     `190-01-SUMMARY.md`; `190-01-PLAN.md` carries it as a must-have (`190-01-PLAN.md:244`, *"record
+     that residue in the SUMMARY"*). Settled in `190-04-PLAN.md` § Planner assumptions, item 1.
 
 2. **Should the D-16 script assert redirect-freedom, given D-05 declines a standing guard?**
    - What we know: Finding 1 shows it is the only observable that distinguishes URL-01 done from
@@ -1242,6 +1253,11 @@ security surface is narrow but not empty.
    - Recommendation: it does not. D-05 defers a **repository-wide source-scanning regression guard**;
      a live network assertion inside an on-demand, non-CI evidence script is a different instrument
      with a different failure mode, and D-16 already establishes that such scripts live here. Include it.
+   - **RESOLVED — as recommended.** The fixture's redirect assertion is **included**, and it is **not**
+     the standing guard D-05 defers: D-05 defers a repository-wide *source-scanning* regression check,
+     whereas this is a live network assertion inside an on-demand, non-CI evidence script — a different
+     instrument with a different failure mode, and one D-16 already establishes belongs here. Settled in
+     `190-04-PLAN.md` § Planner assumptions, item 2.
 
 3. **Is `test_endpoint_constants.py` portable to `main` (Phase 191)?**
    - What we know: the Discretion note prefers a standalone module precisely so Phase 191 can port it
@@ -1251,6 +1267,15 @@ security surface is narrow but not empty.
      out; doing so is Phase 191's scope).
    - Recommendation: write the pin so it iterates over constants imported individually, and let
      Phase 191 drop any constant `main` lacks. Do not write it as a directory scan.
+   - **RESOLVED — as recommended.** The pin imports the three constants **individually by name**, so
+     Phase 191 can delete the line for any constant `main` lacks. It is deliberately **not** a directory
+     scan or an attribute walk — either would pass **vacuously** on a branch carrying fewer constants,
+     which is the precise failure this shape exists to prevent. Settled in `190-04-PLAN.md` § Planner
+     assumptions, item 3.
+   - ⚠ **Caveat that outlives this phase — Phase 191 inherits it.** Whether `main` carries
+     `FIRESTARTER_RELEASE_BY_TAG_URL` at all is **still unmeasured**: `main` was not checked out in this
+     session and is 948 commits behind, so the pinned-channel constant may post-date that fork point.
+     Confirming it is **Phase 191's to check**, not something this phase settled.
 
 ---
 
