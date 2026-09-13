@@ -52,7 +52,7 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 - [x] **URL-01**: On `beta`, all three `FIRESTARTER_*_URL` constants in
       `firestarter_app/firestarter/constants.py` address `henols/firestarter_fw`. No code path depends on
       GitHub's rename redirect.
-- [ ] **URL-02**: On `main`, the same three constants address `henols/firestarter_fw`. This is a **separate
+- [x] **URL-02**: On `main`, the same three constants address `henols/firestarter_fw`. This is a **separate
       change from URL-01** against a branch 948 commits behind `beta`, and it is the one that reaches the
       default install (D-3).
 - [x] **URL-03**: The two hardcoded API URLs in `firestarter_app/tests/test_firmware_install.py` are derived
@@ -127,7 +127,7 @@ Which phases cover which requirements. Populated at roadmap creation.
 | RENAME-02 | Phase 189 | Complete |
 | RENAME-03 | Phase 189 | Complete |
 | URL-01 | Phase 190 | Complete |
-| URL-02 | Phase 191 | Pending |
+| URL-02 | Phase 191 | Complete |
 | URL-03 | Phase 190 | Complete |
 | URL-04 | Phase 190 | Complete |
 | STABLE-01 | Phase 191 | Pending |

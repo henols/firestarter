@@ -382,7 +382,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 191-03-PLAN.md — Operator gate 1: push/PR/merge, then read the merged `main` and the `release.yml` run live
+- [x] 191-03-PLAN.md — Operator gate 1: push/PR/merge, then read the merged `main` and the `release.yml` run live
 
 **Wave 4** *(blocked on Wave 3 completion)*
 

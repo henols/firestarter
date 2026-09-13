@@ -5,15 +5,15 @@ milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 191
 current_phase_name: The Branch That Reaches Users
 status: executing
-stopped_at: Completed 191-02-PLAN.md
-last_updated: "2026-09-13T20:46:06.177Z"
+stopped_at: Completed 191-03-PLAN.md
+last_updated: "2026-09-13T21:46:58.235Z"
 last_activity: 2026-09-13
 last_activity_desc: "Phase 191 The Branch That Reaches Users PLANNED 2026-09-13 - 5 plans in 5 strictly sequential waves covering URL-02/STABLE-01/STABLE-02. Research skipped by operator decision (191-CONTEXT.md already carried the live-measured ruleset read, release.yml/publish.yml run histories and the 301-vs-200 redirect table). Pattern mapper corrected two CONTEXT.md file facts: constants.py:8-10 is a parenthesised assignment with the slug on line 9, and HOME_PATH lives in firmware.py:33 not constants.py. Planner corrected a third: main's fw --install arm does not prompt, so D-09's predicted downgrade transcript comes from the no-flag invocation. Tracer is the instrument, not the edit - 191-01 writes the board-free clean-install fixture and proves it RED against today's published 2.0.7 before anything irreversible happens. Plan checker passed first iteration, 0 blockers; both deterministic probes clean (79/79 automated legs carry a bound fails_when). Requirements 3/3, decision coverage 10/10. Nothing pushed; 191-03 and 191-04 are autonomous:false operator gates and the phase must not run under --auto/--chain. EXECUTION STARTED 2026-09-13."
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 11
   percent: 40
 ---
 
@@ -236,7 +236,7 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 191 (The Branch That Reaches Users) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-09-13 — Phase 191 execution started
 
@@ -3011,6 +3011,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 191]: 191-01: board-free STABLE-02 clean-install fixture drives origin/main's real API (firestarter.config.ConfigManager, FirmwareManager positional) rather than Phase 190's click/channel surface, and is proven red against today's published 2.0.7 (bare slug) before any repointing happens.
 - [Phase 191]: D-01 applied literally on the prepared main branch: repointed the one FIRESTARTER_RELEASE_URL constant, did not backport the two beta-only names. — Adding module-level constants no code on main imports would ship dead surface to every default install and enlarge the diff on a 951-commit-stale protected branch.
 - [Phase 191]: Filed release.yml (ruleset 22046179 rejects the auto-commit push) and publish.yml (release:published never fires, 8/8 runs workflow_dispatch) as backlog items instead of fixing them. — Both name beta-release.yml's pypi job as the proven fix; porting it here would be inert because D-04 leaves the push blocker unresolved, so the job that would call publish.yml still never runs.
+- [Phase 191]: 191-03: Verified operator's merge report (PR #66, sha 1d526ea) against the live GitHub PR object before trusting it -- matched exactly. Read release.yml's live run for the merge and confirmed D-04's predicted failure (GH013 ruleset rejection of the auto-commit push); D-06 Branch A taken. No tag/release exists for 2.0.9/2.0.10, checked not inferred. URL-02 marked Complete via the shared-ID requirements gate; STABLE-01 correctly stays Pending until 191-04 runs.
 
 ## Performance Metrics
 
@@ -3444,11 +3445,12 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 188 P08 | 20min | 2 tasks | 3 files |
 | Phase 188 P09 | ~50min | 3 tasks | 6 files |
 | Phase 191 P02 | 6 min | 2 tasks | 6 files |
+| Phase 191 P03 | 8min | 2 tasks | 2 files |
 
 ## Session
 
-**Last session:** 2026-09-13T20:46:06.071Z
-**Stopped at:** Completed 191-02-PLAN.md
+**Last session:** 2026-09-13T21:46:10.712Z
+**Stopped at:** Completed 191-03-PLAN.md
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
 **Was (superseded, retained for continuity):** Completed 188-04-PLAN.md — parity module deleted, blast-radius oracle trimmed to its two render_shape sites (68/106 tests, GATE-01/02/03 and D-07/D-10 intact, 19 snapshots byte-unchanged), all eight remaining check_*.py gates retired with their tests/fixtures, mypy CI step and CLAUDE.md guard prose removed; suite measured 2307->2262->2175, 0 errors (firestarter_app@0f251f0)
