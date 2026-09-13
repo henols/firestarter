@@ -580,32 +580,59 @@ that serves GSD rather than the product is left sitting in the published package
 1. `audit_coverage_matrix.py` refuses a default output path outside a checkout that is demonstrably THIS
    project — not merely one where some `.planning/` happens to exist. Proven by a test in `tests/` that
    plants a foreign `.planning/` at the resolved root and observes the refusal; observed RED against the
-   quick-260912-mo6 guard, which permits exactly that case.
+   quick-260912-mo6 guard, which permits exactly that case. **AMENDED by Phase 188 (D-06):**
+   `audit_coverage_matrix.py` is deleted in its entirety (188-05); the repo-escaping default-path defect
+   and the stronger-oracle test this criterion asked for both dissolve, because the tool that would
+   exhibit the defect no longer exists. TOOLS-01 is RETIRED, not fixed.
 2. Every script in `firestarter_app/tools/` declares its consumer, in a form a reader can check without
    grepping `.planning/`: the CI step that runs it, the test that runs it, the operator procedure that runs
    it, or the closed phase it served. A fail-closed check asserts the declaration exists for every script,
-   and is observed RED against a planted undeclared script.
+   and is observed RED against a planted undeclared script. **AMENDED by Phase 188 (D-12):** the
+   declaration layer and its fail-closed check were both dropped on operator decision, with the audit's
+   central finding — a code-level scan cannot distinguish a live operator tool from a dead one — carried
+   forward rather than closed. This criterion's own text says "no deletion may precede it"; every deletion
+   in this phase proceeded without it. That conflict is quoted, not smoothed over: see
+   `.planning/notes/host-tools-retirement.md` §2 cost 2.
 3. Each of the ten `check_*.py` gates is decided by name — kept with a recorded reason and a retirement
    condition, or retired. Retiring is a valid outcome; leaving one unanswered is not. Reachability is
-   established by reading each gate's tests, never by reference-counting.
+   established by reading each gate's tests, never by reference-counting. **AMENDED by Phase 188 (D-01,
+   D-25):** all ten gates were decided by name and retired, satisfying this criterion's letter;
+   reachability was established by reading tests and by a live `pytest --co` census (188-02), not by
+   reference-counting. REQUIREMENTS.md records TOOLS-03 as "satisfied by family retirement."
 4. Each GSD-process tool (`audit_coverage_matrix.py`, `diff_db.py`, `measure_plan_shapes.py`,
    `measure_part_number_delta.py`, `snapshot_report_shapes.py`, `build_devtest_issue_corpus.py`) is placed by
    name: stays with a product-facing rationale, moves to the meta repo, or is retired. A tool that cannot be
-   given a product-facing docstring does not stay.
+   given a product-facing docstring does not stay. **AMENDED by Phase 188 (D-04, D-05, D-22):** all six
+   were placed by name — five deleted, `diff_db.py` relocated into the devtest-rootcause skill it serves
+   (188-01). D-22 records the whole requirement RETIRED rather than Complete, even though this criterion's
+   own wording reads as satisfied; the tension is stated, not resolved silently, in
+   `.planning/notes/host-tools-retirement.md` §5.
 5. No file under `firestarter_app/tools/` cites a phase number, plan number, decision ID, or `.planning/`
    path — the `CLAUDE.md` rule applied to the directory where the host-side remainder is concentrated.
-   Asserted across the tree, with a positive control.
+   Asserted across the tree, with a positive control. **AMENDED by Phase 188 (D-16):** satisfied as
+   written, but across the six scripts that survive this phase's other deletions, not across the original
+   twenty-four — asserted with a positive control (188-07, 188-08).
 6. `frame-vectors.toml` and `codegen_vectors.py` are covered by the same meta-canonical sync that already
    holds `messages.toml` and `codegen.py`, so their cross-repo byte-identity is enforced by the existing
    mechanism rather than by a comment asking for it. No new CI gate is authored — that route was tried and
-   retired in Phase 185.
+   retired in Phase 185. **AMENDED by Phase 188 (D-08, D-11):** both files are deleted whole, on both
+   sides, rather than folded into the sync — there is nothing left to sync. The "no new CI gate" half of
+   this criterion is honored in a stronger form than it asked for: not a new gate withheld, but the two
+   existing vector CI steps removed along with the files they checked (188-05, 188-06).
 7. `audit_coverage_matrix.py --check` exits 0 against the committed matrix, or the staleness is recorded as
    a decision with its cause. "Still red, unexplained" is not an acceptable end state.
+   **AMENDED by Phase 188 (D-06):** dissolved by tool deletion (188-05); the tool's last measured
+   behaviour before deletion — exit 1, zero bytes on both stdout and stderr — is recorded rather than
+   fixed, per `.planning/notes/host-tools-retirement.md` §6.
 
 **Explicitly NOT in scope**: deleting a tool on reference-count evidence alone. The audit that opened this
 phase misclassified two live operator tools (`ci_replica_venv.sh`, `derive_sdp_partition.py`) as orphans on
 exactly that evidence, because an invocation contract recorded only in `.planning/` prose is invisible to
 code. Criterion 2 exists to make that evidence trustworthy; no deletion may precede it.
+**AMENDED by Phase 188 (D-15):** `derive_sdp_partition.py`, the tool this paragraph names as protected
+from reference-count-only deletion, was deleted anyway in this phase — but on the operator's judgment
+about its value, not on the reference-count evidence this paragraph forbids. That distinction is
+recorded, not smoothed over: see `.planning/notes/host-tools-retirement.md` §2 cost 4.
 
 **Depends on:** Phase 187 (this phase was scoped from an audit run during it). No outward-facing work, so no
 dependency on the reply ledger.
@@ -644,7 +671,7 @@ cross-repo catalog sync, then the ledger.
 
 **Wave 8** *(meta — the record)*
 
-- [ ] 188-09-PLAN.md — TOOLS-01…07 (D-22, D-23): the verdict note at `.planning/notes/host-tools-retirement.md`, the seven traceability rows amended by hand with RETIRED carrying its cause and no checkbox flipped, all seven success criteria and the not-in-scope paragraph amended in place with the conflict quoted, and the three folded planning items settled — no successor guard, no backlog item
+- [x] 188-09-PLAN.md — TOOLS-01…07 (D-22, D-23): the verdict note at `.planning/notes/host-tools-retirement.md`, the seven traceability rows amended by hand with RETIRED carrying its cause and no checkbox flipped, all seven success criteria and the not-in-scope paragraph amended in place with the conflict quoted, and the three folded planning items settled — no successor guard, no backlog item
 
 **Key context:** `.planning/notes/host-tools-checker-apparatus-audit.md` (the audit, its two corrections, and
 the measurements); `.planning/research/questions.md` §"Host `tools/` checker apparatus" and §"Which host tools

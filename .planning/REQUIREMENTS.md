@@ -245,7 +245,7 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
       **inverts OD-1**. `snapshot_report_shapes.py` itself remains unplaced — 188-05 and 188-09 must be
       replanned to delete `test_blast_radius_invariance.py` rather than relocate `render_shape` into it,
       before either plan runs. See `188-02-SUMMARY.md`.
-- [ ] **TOOLS-05**: No file under `firestarter_app/tools/` cites a phase number, plan number, decision ID,
+- [x] **TOOLS-05**: No file under `firestarter_app/tools/` cites a phase number, plan number, decision ID,
       or `.planning/` path. This is `CLAUDE.md`'s non-overridable rule applied to the directory where the
       host-side remainder is concentrated. Asserted across the tree with a positive control.
 - [ ] **TOOLS-06**: `frame-vectors.toml` and `codegen_vectors.py` are covered by the meta-canonical sync
@@ -300,13 +300,13 @@ Deferred, tracked, not in this roadmap.
 | FLOOR-01 | Phase 186 | Complete — all four statements raised to 3.11 together (186-01), the sweep absorbed (186-02), and a fail-closed agreement gate now asserts it (186-03) |
 | FLOOR-02 | Phase 186 | Complete — applied 2026-09-12, well ahead of the 2026-10-31 deadline; proven at the floor in the py3.11 CI-replica (186-03) |
 | FLOOR-03 | Phase 186 | Complete — `.planning/notes/python-floor-decision.md` records the decision, its three rejected alternatives with measured grounds, the evidence transcribed from `186-RESEARCH.md`, the standing rule and its enforcing gate (`test_python_floor_agreement.py`), and successor backlog 999.67 carrying 2027-10-31; `firestarter_app/.planning/codebase/STACK.md` (186-03) points an app-repo-only reader at it (186-04) |
-| TOOLS-01 | Phase 188 | Pending — quick-260912-mo6 closed the no-planning-dir case; the foreign-planning-dir case is open |
-| TOOLS-02 | Phase 188 | Pending — blocks every deletion in this phase |
-| TOOLS-03 | Phase 188 | Pending — 188-02 decision recorded (delete-the-consumers, inverts OD-1); 188-03/188-04 need replanning |
-| TOOLS-04 | Phase 188 | Pending — `diff_db.py` placed by relocation (188-01); 188-02 decided render_shape's fate (delete-the-consumers, inverts OD-1); four tools remain |
-| TOOLS-05 | Phase 188 | Pending |
-| TOOLS-06 | Phase 188 | Pending |
-| TOOLS-07 | Phase 188 | Pending |
+| TOOLS-01 | Phase 188 | RETIRED — dissolved by tool deletion; the repo-escaping default path it guarded can no longer occur since `audit_coverage_matrix.py` does not exist (188-05) |
+| TOOLS-02 | Phase 188 | RETIRED — per D-12: the declaration layer and its check were both dropped on operator decision; the audit's blind spot is carried forward, not closed (188-09) |
+| TOOLS-03 | Phase 188 | Satisfied by family retirement — all ten `check_*.py` gates decided by name and retired (D-01); the four orphaned library symbols were NOT relocated (OD-1 superseded by D-25) — 90 consuming tests deleted instead, zero collateral, one repaired (188-02, 188-03, 188-04) |
+| TOOLS-04 | Phase 188 | RETIRED — all six GSD-process tools placed by name: five deleted, `diff_db.py` relocated into the skill that owns it (D-05); D-22 lists this requirement RETIRED despite its own wording reading as satisfied — see `host-tools-retirement.md` §5 (188-01, 188-02, 188-05) |
+| TOOLS-05 | Phase 188 | Complete — the six surviving scripts swept by hand of every planning citation, asserted across the directory with a positive control (188-07, 188-08) |
+| TOOLS-06 | Phase 188 | RETIRED — `frame-vectors.toml` and `codegen_vectors.py` deleted whole on both sides (D-08); there is nothing left to sync (188-05, 188-06) |
+| TOOLS-07 | Phase 188 | RETIRED — dissolved by tool deletion (D-06); the checker's last measured behaviour (exit 1, zero output on both stdout/stderr) is recorded in `host-tools-retirement.md` §6 (188-05) |
 | REPLY-01 | Phase 187 | Complete — posted #issuecomment-5647009393, amended by D-11 (187-09) |
 | REPLY-02 | Phase 187 | Complete — gh#28 posted #issuecomment-5647056983 (187-10), gh#31 posted #issuecomment-5647114539 (187-11), both left open |
 | REPLY-03 | Phase 187 | Complete — posted #issuecomment-5646897010, left open (187-08) |
