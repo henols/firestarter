@@ -386,7 +386,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 191-04-PLAN.md — Operator gate 2: cut and publish the stable, then verify PyPI and re-run the fixture green
+- [x] 191-04-PLAN.md — Operator gate 2: cut and publish the stable, then verify PyPI and re-run the fixture green
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
