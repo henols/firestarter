@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
-current_phase: 190
-current_phase_name: Endpoints That Do Not Depend on a Redirect
-status: executing
-stopped_at: Phase 190 executed (4/4 plans)
-last_updated: "2026-09-13T16:59:15.897Z"
+current_phase: 191
+current_phase_name: The Branch That Reaches Users
+status: planning
+stopped_at: Phase 190 complete, ready to plan Phase 191
+last_updated: "2026-09-13T18:22:23.033Z"
 last_activity: 2026-09-13
-last_activity_desc: "Phase 190 Endpoints That Do Not Depend on a Redirect EXECUTING 2026-09-13 - 4 plans in 3 waves (190-01 tracer, 190-02 + 190-03 same wave, 190-04 evidence), all autonomous, covering URL-01/URL-03/URL-04. Planning closed with plan-checker 0 blockers, decision coverage 17/17, requirements 3/3, post-planning gaps 20/20. Executing sequentially on the main working tree (use_worktrees false, parallelization false) on branch v1.38-repository-rename; the init-computed gsd/ branch name was NOT used, since it would have forked off origin/beta and stranded 32 commits of v1.38 work."
+last_activity_desc: "Phase 190 Endpoints That Do Not Depend on a Redirect COMPLETE 2026-09-13 - 4/4 plans, verification passed 4/4 must-haves, code review 0 critical / 2 warnings (WR-01 disputed as a misreading of D-07/D-08, WR-02 confirmed narrow). All three FIRESTARTER_*_URL constants now address henols/firestarter_fw; list_releases discriminates None (fetch failed) from [] (genuinely empty) by identity; fw exits 1 with a message naming the endpoint and board instead of silently returning True. Proof rests on redirect count, not success: the bare slug answered with a transparent 301 and byte-identical data, so the live fixture asserts redirects 0 on both API endpoints. Host CI equivalent reproduced locally on py3.11 (2145 passed, 84.91% coverage, ruff clean, mypy at its 33-error watermark) - the real Actions run happens when the operator pushes at ship. Nothing pushed; firestarter_app gitlink advanced to 560ec24."
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
   completed_plans: 8
-  percent: 20
+  percent: 40
 ---
 
 # Project State
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 190 (Endpoints That Do Not Depend on a Redirect) — EXECUTED, AWAITING VERIFICATION
-Plan: 4 of 4
-Status: Phase 190 executed — 4/4 plans, awaiting verification
-Last activity: 2026-09-13 — Phase 190 executed: 4/4 plans, 2145 tests green on py3.11
+Phase: 191 — The Branch That Reaches Users
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-13 — Phase 190 complete, transitioned to Phase 191
 
 ## Roadmap Summary (v1.38)
 
@@ -3444,7 +3444,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-13T15:33:37.123Z
-**Stopped at:** Phase 190 context gathered
+**Stopped at:** Phase 190 complete, ready to plan Phase 191
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
 **Was (superseded, retained for continuity):** Completed 188-04-PLAN.md — parity module deleted, blast-radius oracle trimmed to its two render_shape sites (68/106 tests, GATE-01/02/03 and D-07/D-10 intact, 19 snapshots byte-unchanged), all eight remaining check_*.py gates retired with their tests/fixtures, mypy CI step and CLAUDE.md guard prose removed; suite measured 2307->2262->2175, 0 errors (firestarter_app@0f251f0)

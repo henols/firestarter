@@ -49,16 +49,16 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 
 ### URL — endpoints that must not depend on a redirect
 
-- [ ] **URL-01**: On `beta`, all three `FIRESTARTER_*_URL` constants in
+- [x] **URL-01**: On `beta`, all three `FIRESTARTER_*_URL` constants in
       `firestarter_app/firestarter/constants.py` address `henols/firestarter_fw`. No code path depends on
       GitHub's rename redirect.
 - [ ] **URL-02**: On `main`, the same three constants address `henols/firestarter_fw`. This is a **separate
       change from URL-01** against a branch 948 commits behind `beta`, and it is the one that reaches the
       default install (D-3).
-- [ ] **URL-03**: The two hardcoded API URLs in `firestarter_app/tests/test_firmware_install.py` are derived
+- [x] **URL-03**: The two hardcoded API URLs in `firestarter_app/tests/test_firmware_install.py` are derived
       from the constants rather than repeated as literals, so a future retarget cannot leave tests green
       while the shipped endpoint is stale.
-- [ ] **URL-04**: `fw` reports a clear, actionable error when the firmware release endpoint is unreachable
+- [x] **URL-04**: `fw` reports a clear, actionable error when the firmware release endpoint is unreachable
       or returns no asset matching the board — and that state is distinguishable in the output from
       "already up to date". 999.9's goal text requires this; it is also what makes a mistaken retarget
       visible instead of silent.
@@ -126,10 +126,10 @@ Which phases cover which requirements. Populated at roadmap creation.
 | RENAME-01 | Phase 189 | Complete |
 | RENAME-02 | Phase 189 | Complete |
 | RENAME-03 | Phase 189 | Complete |
-| URL-01 | Phase 190 | Pending |
+| URL-01 | Phase 190 | Complete |
 | URL-02 | Phase 191 | Pending |
-| URL-03 | Phase 190 | Pending |
-| URL-04 | Phase 190 | Pending |
+| URL-03 | Phase 190 | Complete |
+| URL-04 | Phase 190 | Complete |
 | STABLE-01 | Phase 191 | Pending |
 | STABLE-02 | Phase 191 | Pending |
 | SWEEP-01 | Phase 192 | Pending |
