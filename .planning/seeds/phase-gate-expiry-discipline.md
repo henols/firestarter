@@ -2,8 +2,22 @@
 title: Phase-gate expiry discipline — make every new gate answer "when does this stop earning its keep?"
 trigger_condition: a tooling/hygiene milestone is scoped, OR the per-gate retirement research question is answered, OR the next time a phase plan proposes a new check_*.py gate
 planted_date: 2026-09-12
-status: dormant
+status: resolved
+resolved: 2026-09-13
+resolved_by: Phase 188
 ---
+
+## RESOLVED (2026-09-13, Phase 188)
+
+Answered by deletion, not by discipline. Phase 188 examined all ten `check_*.py` gates this seed
+names (D-01) and retired every one of them, no exceptions — there is no gate family left in
+`firestarter_app/tools/` for an expiry question to apply to. The premise this seed was planted
+against (accumulation with no retirement mechanism) is moot because the accumulated population is
+gone. This does not mean the *idea* — that a new gate should carry a stated retirement condition —
+is wrong; it means there is currently nothing in `firestarter_app/tools/` for the idea to govern.
+If a `check_*.py`-shaped gate is ever proposed again, this seed's trigger condition still applies
+and the discipline it describes is still worth reading before authoring one. See
+`.planning/notes/host-tools-retirement.md` for the full retirement record.
 
 # Phase-gate expiry discipline
 

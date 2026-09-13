@@ -56,10 +56,18 @@ the full suite after each.
 
 ## STILL OPEN
 
-- **`firestarter_app/tools/`** — ~296 hits. Does not ship in the pip package, but is source.
-- **`firestarter_app/tests/`** — ~1774 hits. **A separate decision, not more of the same work:**
-  test files use phase identifiers as gate anchors and several tests *assert* on them, so
-  stripping them changes gate behaviour rather than just hygiene.
+- **`firestarter_app/tools/`** — **DISCHARGED 2026-09-13 (Phase 188).** The stale ~296-hit figure
+  above no longer applies: mostly by deletion (twenty of the directory's twenty-six scripts are
+  retired outright, D-01/D-04/D-07/D-08/D-15), and for the six survivors by a hand sweep in plan
+  188-07 (five in-repo files) and 188-08 (`catalog/codegen.py`, stripped at its meta canonical
+  copy and synced to both sub-repos). **Measured live count for `firestarter_app/tools/`: 0** —
+  asserted with a positive control (a planted citation on a scratch copy, detected), not merely
+  observed. See `188-07-SUMMARY.md`, `188-08-SUMMARY.md`, and
+  `.planning/notes/host-tools-retirement.md` §1 for the per-file disposition.
+- **`firestarter_app/tests/`** — ~1774 hits. **Still open, untouched by Phase 188.** A separate
+  decision, not more of the same work: test files use phase identifiers as gate anchors and
+  several tests *assert* on them, so stripping them changes gate behaviour rather than just
+  hygiene.
 
 ## ⚠ RE-HOMED 2026-08-29 — the routing below is SUPERSEDED, the rule is not
 
