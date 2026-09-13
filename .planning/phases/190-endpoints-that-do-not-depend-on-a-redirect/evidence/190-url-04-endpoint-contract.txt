@@ -1,0 +1,118 @@
+ENDPOINT CONTRACT EVIDENCE (URL-01 / URL-03 / URL-04, D-14/D-15/D-16)
+======================================================================
+capture_date: 2026-09-13T17:48:30Z
+capture_commit: meta=d8585fbac673091e2c8a846cad0387b8dec4aa2e app=560ec24523eb2f8c643c9db3dd302efecf57e2e1
+
+command: bash .planning/phases/190-endpoints-that-do-not-depend-on-a-redirect/endpoint-contract-fixture.sh
+
+ENDPOINT CONTRACT FIXTURE (URL-01 / URL-03 / URL-04)
+=====================================================
+python_bin: /workspaces/firestarter_app/.venv311/bin/python
+app_root: /workspaces/firestarter_app
+nope_slug: firestarter-does-not-exist-190
+
+--- Check 1: stable channel ---
+channel: stable
+board: uno
+version: 2.0.6
+asset_url: https://github.com/henols/firestarter_fw/releases/download/2.0.6/firestarter_uno.hex
+requested: https://api.github.com/repos/henols/firestarter_fw/releases/latest
+resolved: https://api.github.com/repos/henols/firestarter_fw/releases/latest
+status: 200
+redirects: 0
+requested: https://api.github.com/repos/henols/firestarter_fw/releases
+resolved: https://api.github.com/repos/henols/firestarter_fw/releases
+status: 200
+redirects: 0
+CHECK1 OK
+
+--- Check 2: pre channel ---
+channel: pre
+board: uno328pb
+version: 3.0.0b29
+asset_url: https://github.com/henols/firestarter_fw/releases/download/3.0.0b29/firestarter_uno328pb.hex
+CHECK2 OK
+
+--- Check 3: real asset download ---
+hex_path: /home/vscode/.firestarter/firestarter_uno.hex
+hex_bytes: 60768
+hex_first_line: :100000000C94C9020C94F1020C94F1020C94F102CC
+hex_eof: :00000001FF
+CHECK3 OK
+removed_download: /home/vscode/.firestarter/firestarter_uno.hex
+
+--- Check 4a: asset-less failure (fw --board uno328pb --stable) ---
+simulated: board identity (uno328pb) only -- no programmer is attached and the milestone states Bench: none. Release resolution below is LIVE against henols/firestarter_fw.
+case: asset-less
+exit_code: 1
+message: Could not find firmware version or URL for board 'uno328pb' in the latest release. | Could not resolve a firmware release for uno328pb from https://api.github.com/repos/henols/firestarter_fw/releases/latest. The installed firmware version was not compared against any release.
+CHECK4A OK
+
+--- Check 4b: unreachable endpoint (fw --list) ---
+case: unreachable
+nope_url: https://api.github.com/repos/henols/firestarter-does-not-exist-190/releases
+exit_code: 1
+stdout: Failed to fetch releases for list: 404 Client Error: Not Found for url: https://api.github.com/repos/henols/firestarter-does-not-exist-190/releases
+message: Could not list firmware releases for board uno: the release endpoint https://api.github.com/repos/henols/firestarter-does-not-exist-190/releases could not be read. No release information was retrieved.
+CHECK4B OK
+
+--- Cross-check: the two failure messages differ ---
+case_4a_message differs from case_4b_message: yes
+app_repo_porcelain: clean
+
+ENDPOINT CONTRACT OK
+
+exit_code_of_fixture: 0
+
+---
+
+What this transcript proves and what it does not
+==================================================
+
+Proves:
+- Both the stable and pre release channels resolve directly against
+  henols/firestarter_fw with `redirects: 0` on both API endpoints
+  (FIRESTARTER_RELEASE_URL and FIRESTARTER_RELEASES_URL) -- the one
+  observable that distinguishes this from the pre-change state, in which
+  the bare slug answers with a transparent 301 and byte-identical data
+  (RESEARCH Finding 1). Success alone would prove nothing; the zero-redirect
+  reading is the evidence.
+- A real firestarter_uno.hex asset (60768 bytes) was downloaded through the
+  package's own `_download_firmware_file` helper and confirmed to be Intel
+  HEX: every non-empty line begins with ':' and the final record is the
+  ':00000001FF' EOF record. This download's own redirect (to
+  release-assets.githubusercontent.com) is legitimate and was deliberately
+  not asserted against, per Finding 1 consequence 3.
+- Both URL-04 failure modes were produced for real and both exit 1 with
+  distinct, named messages, neither of which is mistakable for the
+  "already up to date" wording:
+    - the asset-less case (fw --board uno328pb --stable) ran with the
+      board-identity seam simulated (no programmer is attached; the
+      milestone states Bench: none) while the release resolution itself
+      ran live against the real, correctly-named endpoint, and stable
+      2.0.6 genuinely carries no uno328pb asset -- this needed no mock on
+      the network side (D-15);
+    - the unreachable case ran the release-fetch path against a
+      genuinely nonexistent repository slug (a real live 404), produced by
+      rebinding the endpoint constant on both `firestarter.firmware` and
+      `firestarter.cli_handlers` -- not on `firestarter.constants`, which
+      has no effect on names already imported by value into those two
+      modules (RESEARCH Pitfall 7).
+
+Does not prove:
+- Anything about `main` in either repository -- this transcript is taken
+  entirely on `v1.38-repository-rename`.
+- Anything about the stable channel PyPI ships -- no wheel was built or
+  installed from a distribution; this fixture drives the editable working
+  tree directly.
+- Anything about any board's real hardware behaviour -- no bench, no
+  avrdude, and no serial port was opened. The only simulated element in
+  the entire transcript is the board-identity triple in check 4a; every
+  network reading above it is live.
+
+The live findings above are volatile: the 301 on henols/firestarter
+persists only until the deferred claim (SEED-claim-firestarter-slug.md)
+fires, at which point it becomes a 404 or, worse, a 200 from the meta
+repository. Re-probe with this same script before relying on these
+readings in any later milestone -- that volatility is exactly why this
+fixture is committed and re-runnable rather than a one-off transcript.
