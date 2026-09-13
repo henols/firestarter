@@ -52,6 +52,7 @@ graphify-out/
 
 # Researcher fetch cache (web/Context7 responses). Regenerable, and not evidence.
 .planning/research/.cache/
+.planning/milestones/*-research/.cache/
 
 # Extra git worktrees of the two sub-repos, checked out alongside the tracked
 # gitlinks for parallel branch work. Temporary by nature — never gitlinked.
