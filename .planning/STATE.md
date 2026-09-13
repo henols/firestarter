@@ -4,15 +4,15 @@ milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 190
 current_phase_name: Endpoints That Do Not Depend on a Redirect
-status: planning
-stopped_at: Phase 190 context gathered
-last_updated: "2026-09-13T15:33:37.273Z"
+status: planned
+stopped_at: Phase 190 planned
+last_updated: "2026-09-13T16:54:06.808Z"
 last_activity: 2026-09-13
-last_activity_desc: "Phase 189 Free the Name COMPLETE 2026-09-13 - 4/4 plans, verification passed 7/7, code review clean (0 findings). The operator renamed henols/firestarter to henols/firestarter_fw at a blocking-human gate (D-11/D-7); the old slug is deliberately left vacant and redirecting, asserted by numeric id 810276812 on BOTH slugs so a live redirect is distinguishable from a re-occupied slug (D-12), and shown NOT to resolve to the meta repo's id 1232995399 (D-1). .gitmodules repointed to git@github.com:henols/firestarter_fw.git on the milestone branch, propagated to all three D-03 observables by git submodule sync --recursive; the same one-line change landed on protected meta main via operator-pushed PR prom#79 (merge sha 6b518c74), verified by reading .gitmodules back from GitHub at ref=main. The beta half of ROADMAP criterion 2 is close-carried by design (D-08) - it lands at milestone merge; merging early would fire a pre-release cut in both sub-repos and publish the host one to PyPI. Firmware README:47 and tests/meta_presence.py:22 repointed (one line each, no comments added per the non-overridable rule); repo-wide bare-slug sweep = 0 with a firestarter_prom positive control proving non-vacuity. Firmware gitlink advanced to c67a3301 AFTER the fresh-clone demonstration was captured (D-05 ordering, verified independently from commit timestamps), so it now names an UNPUSHED firmware commit - the re-runnable fixture reports exactly that with exit 3 and names the sha; it resolves at milestone push. Firmware pytest 316 passed. Nothing pushed except prom#79."
+last_activity_desc: "Phase 190 Endpoints That Do Not Depend on a Redirect PLANNED 2026-09-13 - 4 plans in 3 waves (190-01 tracer, 190-02 + 190-03 parallel, 190-04 evidence), all autonomous, covering URL-01/URL-03/URL-04. Research corrected a load-bearing premise: henols/firestarter still answers with HTTP 301 and requests follows it, so the bare-slug constants work today, no test can go red before the change, and a before/after CLI transcript is byte-identical - response.history (redirect count 0) is the only non-vacuous observable, and it is now a required verify leg. Plan-checker returned 0 blockers / 1 warning; the warning was against 190-RESEARCH.md's unmarked Open Questions, not any plan, and was closed at source in 4c3b6aea. Decision coverage 17/17 (skipped:false), requirements 3/3, 85/85 verify commands carry a stated failing direction."
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 4
+  total_plans: 8
   completed_plans: 4
   percent: 20
 ---
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 190 — Endpoints That Do Not Depend on a Redirect
+Phase: 190 (Endpoints That Do Not Depend on a Redirect) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-13 — Phase 189 complete, transitioned to Phase 190
+Status: Ready to execute
+Last activity: 2026-09-13 — Phase 190 planned: 4 plans, 3 waves, plan-checker 0 blockers
 
 ## Roadmap Summary (v1.38)
 
