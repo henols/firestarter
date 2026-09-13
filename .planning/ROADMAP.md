@@ -290,7 +290,17 @@ through GitHub's redirect.
 
 **Depends on:** — (first phase; every other phase depends on this one)
 
-**Plans:** TBD
+**Plans:** 4 plans across 3 waves (0/4 complete)
+
+- **Wave 1** — `189-01` halt at the operator-performed GitHub rename (D-11), then assert it landed on
+  both `.id` and `.full_name` (D-12). Blocking-human gate; `autonomous: false`.
+- **Wave 2** *(blocked on Wave 1 completion)* — `189-02` **tracer**: repoint the submodule URL,
+  `git submodule sync --recursive`, and demonstrate a fresh clone resolving `firestarter_fw` by running
+  one. Covers all three D-03 observables.
+- **Wave 3** *(blocked on Wave 2 completion)* — `189-03` the firmware repository's own two slug
+  references, the sweep proving cleanliness, then the gitlink advance last (D-05 ordering); `189-04` the
+  same one-line change on meta `main` through the only route protection allows (D-07), plus the
+  branch-disposition record (D-08). `189-04` is `autonomous: false`.
 
 > **Operator-gated:** the GitHub rename is performed by the operator (D-7). Every other criterion here is
 > agent-executable once the rename has landed.
