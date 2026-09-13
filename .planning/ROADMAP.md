@@ -369,7 +369,28 @@ claim is verified by installing it rather than by reading the diff.
 **Depends on:** Phase 190 (the `beta` repoint should be exercised before the same change is made on a
 948-commit-stale branch and shipped to the default install)
 
-**Plans:** TBD
+**Plans:** 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 191-01-PLAN.md — Tracer: write the board-free clean-install fixture and prove it red against the stable published today
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 191-02-PLAN.md — Prepare `v1.38-url-02-main` (three files, one commit, off `origin/main`) and file the two pipeline defects
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 191-03-PLAN.md — Operator gate 1: push/PR/merge, then read the merged `main` and the `release.yml` run live
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 191-04-PLAN.md — Operator gate 2: cut and publish the stable, then verify PyPI and re-run the fixture green
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 191-05-PLAN.md — Bench leg on the Leonardo, and the phase disposition record
 
 > **Outward-facing.** The stable cut and the PyPI publish are operator-gated (D-7) and must not run under
 > `--auto`/`--chain`, which auto-approve human-verify gates.

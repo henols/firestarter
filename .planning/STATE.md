@@ -4,15 +4,15 @@ milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 191
 current_phase_name: The Branch That Reaches Users
-status: planning
-stopped_at: Phase 191 context gathered
-last_updated: "2026-09-13T19:15:35.012Z"
+status: planned
+stopped_at: Phase 191 planned
+last_updated: "2026-09-13T20:12:16.437Z"
 last_activity: 2026-09-13
-last_activity_desc: "Phase 190 Endpoints That Do Not Depend on a Redirect COMPLETE 2026-09-13 - 4/4 plans, verification passed 4/4 must-haves, code review 0 critical / 2 warnings (WR-01 disputed as a misreading of D-07/D-08, WR-02 confirmed narrow). All three FIRESTARTER_*_URL constants now address henols/firestarter_fw; list_releases discriminates None (fetch failed) from [] (genuinely empty) by identity; fw exits 1 with a message naming the endpoint and board instead of silently returning True. Proof rests on redirect count, not success: the bare slug answered with a transparent 301 and byte-identical data, so the live fixture asserts redirects 0 on both API endpoints. Host CI equivalent reproduced locally on py3.11 (2145 passed, 84.91% coverage, ruff clean, mypy at its 33-error watermark) - the real Actions run happens when the operator pushes at ship. Nothing pushed; firestarter_app gitlink advanced to 560ec24."
+last_activity_desc: "Phase 191 The Branch That Reaches Users PLANNED 2026-09-13 - 5 plans in 5 strictly sequential waves covering URL-02/STABLE-01/STABLE-02. Research skipped by operator decision (191-CONTEXT.md already carried the live-measured ruleset read, release.yml/publish.yml run histories and the 301-vs-200 redirect table). Pattern mapper corrected two CONTEXT.md file facts: constants.py:8-10 is a parenthesised assignment with the slug on line 9, and HOME_PATH lives in firmware.py:33 not constants.py. Planner corrected a third: main's fw --install arm does not prompt, so D-09's predicted downgrade transcript comes from the no-flag invocation. Tracer is the instrument, not the edit - 191-01 writes the board-free clean-install fixture and proves it RED against today's published 2.0.7 before anything irreversible happens. Plan checker passed first iteration, 0 blockers; both deterministic probes clean (79/79 automated legs carry a bound fails_when). Requirements 3/3, decision coverage 10/10. Nothing pushed; 191-03 and 191-04 are autonomous:false operator gates and the phase must not run under --auto/--chain."
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 8
+  total_plans: 13
   completed_plans: 8
   percent: 40
 ---
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 191 — The Branch That Reaches Users
+Phase: 191 (The Branch That Reaches Users) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-13 — Phase 190 complete, transitioned to Phase 191
+Status: Ready to execute
+Last activity: 2026-09-13 — Phase 191 planned, 5 plans in 5 waves
 
 ## Roadmap Summary (v1.38)
 
