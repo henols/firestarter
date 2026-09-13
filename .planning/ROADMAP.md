@@ -261,7 +261,7 @@ as a phase-level question in [`research/questions.md`](research/questions.md) an
 
 ### Phases
 
-- [ ] **Phase 189: Free the Name** *(runs first — nothing can point at a repository that does not exist)* - Rename the firmware repository to `firestarter_fw`, leave `henols/firestarter` unclaimed, and make the submodule resolve the new URL without relying on the redirect. (RENAME-01, RENAME-02, RENAME-03)
+- [x] **Phase 189: Free the Name** *(runs first — nothing can point at a repository that does not exist)* - Rename the firmware repository to `firestarter_fw`, leave `henols/firestarter` unclaimed, and make the submodule resolve the new URL without relying on the redirect. (RENAME-01, RENAME-02, RENAME-03) (completed 2026-09-13)
 - [ ] **Phase 190: Endpoints That Do Not Depend on a Redirect** - Repoint the three firmware release endpoints on `beta`, derive the test fixtures from them so a future retarget cannot pass silently, and make an unreachable endpoint say so. (URL-01, URL-03, URL-04)
 - [ ] **Phase 191: The Branch That Reaches Users** *(outward-facing — operator-gated publish)* - Repoint the same endpoints on `main` as a separate change, cut a stable carrying it, and run 999.9's clean-environment validation against that stable rather than against a prerelease. (URL-02, STABLE-01, STABLE-02)
 - [ ] **Phase 192: Live References Only** - Correct every live tracked reference across the three repositories, prove the archived ones were left alone, and fix a codebase document describing a workflow that does not exist. (SWEEP-01, SWEEP-02, SWEEP-03)
@@ -290,7 +290,7 @@ through GitHub's redirect.
 
 **Depends on:** — (first phase; every other phase depends on this one)
 
-**Plans:** 4 plans across 3 waves (4/4 complete)
+**Plans:** 4/4 plans complete
 
 - **Wave 1** — `189-01` halt at the operator-performed GitHub rename (D-11), then assert it landed on
   both `.id` and `.full_name` (D-12). Blocking-human gate; `autonomous: false`.

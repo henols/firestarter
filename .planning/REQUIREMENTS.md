@@ -38,13 +38,13 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 
 ### RENAME — free the name
 
-- [ ] **RENAME-01**: The firmware repository is named `henols/firestarter_fw` on GitHub, and
+- [x] **RENAME-01**: The firmware repository is named `henols/firestarter_fw` on GitHub, and
       `henols/firestarter` is left **unclaimed** — verified by an API call showing the old slug still
       redirecting to the new one rather than resolving to a different repository.
 - [x] **RENAME-02**: `.gitmodules` names `firestarter_fw` on both `beta` and `main`, and
       `git submodule sync --recursive` has been run so an existing clone resolves the new URL without
       relying on the redirect.
-- [ ] **RENAME-03**: A fresh clone of the meta repository at the milestone tip initialises **both**
+- [x] **RENAME-03**: A fresh clone of the meta repository at the milestone tip initialises **both**
       submodules successfully from the URLs recorded at that tip — demonstrated, not reasoned about.
 
 ### URL — endpoints that must not depend on a redirect
@@ -123,9 +123,9 @@ Which phases cover which requirements. Populated at roadmap creation.
 
 | Requirement | Phase | Status |
 |---|---|---|
-| RENAME-01 | Phase 189 | Pending |
+| RENAME-01 | Phase 189 | Complete |
 | RENAME-02 | Phase 189 | Complete |
-| RENAME-03 | Phase 189 | Pending |
+| RENAME-03 | Phase 189 | Complete |
 | URL-01 | Phase 190 | Pending |
 | URL-02 | Phase 191 | Pending |
 | URL-03 | Phase 190 | Pending |
