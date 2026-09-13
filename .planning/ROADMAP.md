@@ -590,8 +590,8 @@ that serves GSD rather than the product is left sitting in the published package
    and is observed RED against a planted undeclared script. **AMENDED by Phase 188 (D-12):** the
    declaration layer and its fail-closed check were both dropped on operator decision, with the audit's
    central finding — a code-level scan cannot distinguish a live operator tool from a dead one — carried
-   forward rather than closed. This criterion's own text says "no deletion may precede it"; every deletion
-   in this phase proceeded without it. That conflict is quoted, not smoothed over: see
+   forward rather than closed. The "Explicitly NOT in scope" paragraph below says of this criterion that
+   "no deletion may precede it"; every deletion in this phase proceeded without it. That conflict is quoted, not smoothed over: see
    `.planning/notes/host-tools-retirement.md` §2 cost 2.
 3. Each of the ten `check_*.py` gates is decided by name — kept with a recorded reason and a retirement
    condition, or retired. Retiring is a valid outcome; leaving one unanswered is not. Reachability is
@@ -609,9 +609,13 @@ that serves GSD rather than the product is left sitting in the published package
    `.planning/notes/host-tools-retirement.md` §5.
 5. No file under `firestarter_app/tools/` cites a phase number, plan number, decision ID, or `.planning/`
    path — the `CLAUDE.md` rule applied to the directory where the host-side remainder is concentrated.
-   Asserted across the tree, with a positive control. **AMENDED by Phase 188 (D-16):** satisfied as
-   written, but across the six scripts that survive this phase's other deletions, not across the original
-   twenty-four — asserted with a positive control (188-07, 188-08).
+   Asserted across the tree, with a positive control. **AMENDED by Phase 188 (D-14, D-16):** NOT satisfied
+   as written, and deliberately so. The sweep ran across the six scripts that survive this phase's other
+   deletions, not the original twenty-four, and D-14 puts non-script data under this directory out of
+   scope — so `tools/DECODE-NOTES.md`, `tools/catalog/messages.toml` and both `tools/baseline/*.json` still
+   cite phase numbers, decision IDs and `.planning/` paths. Read as "no *script*" the criterion holds, and
+   is asserted with a positive control (188-07, 188-08); read as written — "no *file*" — it does not. The
+   decisions are narrower than the criterion: that is the conflict, and it is not resolved, only recorded.
 6. `frame-vectors.toml` and `codegen_vectors.py` are covered by the same meta-canonical sync that already
    holds `messages.toml` and `codegen.py`, so their cross-repo byte-identity is enforced by the existing
    mechanism rather than by a comment asking for it. No new CI gate is authored — that route was tried and
