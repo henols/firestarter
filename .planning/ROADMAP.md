@@ -415,7 +415,22 @@ that records history still says what it said.
 
 **Depends on:** Phase 189
 
-**Plans:** TBD
+**Plans:** 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 192-01-PLAN.md — Tracer: repoint one live reference end-to-end, then the 13 runnable-artefact sites and the D-01 enumeration
+- [ ] 192-02-PLAN.md — Capture the preserved history, then remap `STACK.md`, `INTEGRATIONS.md`, `ARCHITECTURE.md` and `STRUCTURE.md`
+- [ ] 192-04-PLAN.md — Amend SWEEP-03 to all seven documents, and re-verify both sub-repositories with controls
+
+**Wave 2** *(blocked on 192-02)*
+
+- [ ] 192-03-PLAN.md — Remap `CONVENTIONS.md`, `TESTING.md` and `CONCERNS.md`, then gate all seven documents
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 192-05-PLAN.md — Prove `.planning/milestones/` untouched over a recomputed merge-base range, and write the disposition record
 
 ### Phase 193: The Deferred Claim, Made Measurable
 
