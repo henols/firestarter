@@ -1,10 +1,10 @@
 ---
 phase: 188-the-tools-directory
 verified: 2026-09-13T12:00:00Z
-status: human_needed
+status: passed
 score: 7/7 must-haves verified
 covered_files: [".planning/REQUIREMENTS.md", ".planning/ROADMAP.md", ".planning/notes/host-tools-retirement.md", ".planning/phases/188-the-tools-directory/188-01-PLAN.md", ".planning/phases/188-the-tools-directory/188-01-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-02-PLAN.md", ".planning/phases/188-the-tools-directory/188-02-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-03-PLAN.md", ".planning/phases/188-the-tools-directory/188-03-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-04-PLAN.md", ".planning/phases/188-the-tools-directory/188-04-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-05-PLAN.md", ".planning/phases/188-the-tools-directory/188-05-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-06-PLAN.md", ".planning/phases/188-the-tools-directory/188-06-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-07-PLAN.md", ".planning/phases/188-the-tools-directory/188-07-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-08-PLAN.md", ".planning/phases/188-the-tools-directory/188-08-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-09-PLAN.md", ".planning/phases/188-the-tools-directory/188-09-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-CONTEXT.md", ".planning/phases/188-the-tools-directory/188-REVIEW.md", ".planning/seeds/phase-gate-expiry-discipline.md", ".planning/todos/completed/2026-09-12-retire-two-orphaned-host-tools.md", ".planning/todos/pending/2026-08-27-strip-gsd-provenance-comments-from-source.md"]
-covered_digest: "v1:sha256:ee22edc07ed32911764007c6051f1e5d23865784afa337c447a9e3b06ef90285"
+covered_digest: "v1:sha256:7712dd9bb14094cec91dc68677613474d45a7b79fa11ffa9814ce894e3cf0906"
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
@@ -19,7 +19,7 @@ human_verification:
 tool that serves GSD rather than the product is left sitting in the published package repo claiming
 otherwise.
 **Verified:** 2026-09-13
-**Status:** human_needed
+**Status:** passed (human item resolved at UAT 2026-09-13)
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
@@ -152,5 +152,34 @@ rather than silently passed or silently blocked.
 
 ---
 
+## UAT Resolution (2026-09-13)
+
+The single human-verification item was resolved at `/gsd-verify-work 188`. The operator chose the
+second branch: **all six warnings accepted as disclosed follow-on debt**, rather than expanding
+Phase 188 beyond its nine plans. The todo required by that branch is filed at
+`.planning/todos/pending/2026-09-13-close-six-stale-claims-wr01-wr06.md`, naming all six by ID with
+measured locations, and carrying WR-06's second obligation (the `host-tools-retirement.md` entry
+188-04 promised and 188-09 did not deliver) as an explicit done-when condition. All six were
+re-measured present in the tree at UAT time, and every retired enforcer they name was confirmed
+deleted. `188-UAT.md` records the outcome; status is `complete`, 1/1 passed, 0 issues.
+
+## Correction: `covered_digest` was fabricated, not stale
+
+The `covered_digest` originally written into this report's frontmatter
+(`v1:sha256:ee22edc0…`) **never matched the files it claimed to cover.** Recomputing over the
+declared 26 `covered_files` yields `v1:sha256:7712dd9b…` — both at commit `070f6b46` (where this
+report was committed) and at HEAD, which are byte-identical for every covered file. The declared
+value matched neither, so it was not drift: it was written by hand rather than by
+`gsd-tools query verification fingerprint`, which this file's own source comments note is the
+verb that exists precisely because "the verifier is an LLM agent, not a hashing engine."
+
+Consequence: `verification.status` returned `stale` unconditionally, which would have blocked phase
+transition forever with no real drift to fix. The frontmatter now carries the digest emitted by that
+verb. Because the covered contents are provably unchanged between the verification commit and HEAD,
+re-anchoring loses no detection power — any future edit to a covered file will still trip the gate.
+
+---
+
 _Verified: 2026-09-13_
 _Verifier: Claude (gsd-verifier)_
+_UAT-resolved and digest-corrected: 2026-09-13_
