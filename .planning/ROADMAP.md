@@ -326,7 +326,26 @@ and a broken endpoint is distinguishable in the output from an up-to-date firmwa
 
 **Depends on:** Phase 189
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+- **Wave 1** — `190-01` **tracer**: repoint all three `FIRESTARTER_*_URL` constants (URL-01), split
+  `list_releases` into `None` for a failed fetch and `[]` for a genuine empty (D-10), guard the
+  `fw --list` handler before its JSON branch with a named error on stderr and exit 1 (D-09/D-11/D-12),
+  and adapt the one existing test the change breaks. Proved end to end against the live renamed
+  endpoint with a redirect-count assertion, which is the only reading that distinguishes URL-01 done
+  from URL-01 undone.
+- **Wave 2** *(both blocked on `190-01`; no file overlap with each other)* — `190-02` the URL-03 pin in
+  a new standalone module plus the derivation of both duplicated fixtures, falsified by reverting one
+  constant and capturing the red run, plus D-04's last two slug sites in the host repository;
+  `190-03` the D-06 update-path guard so a plain `fw` against an unresolvable release exits 1 with a
+  named message instead of silently exiting 0, with the no-double-emit property pinned by counting
+  error records.
+- **Wave 3** *(blocked on all three)* — `190-04` criterion 4's evidence: a committed, re-runnable live
+  fixture covering all four D-14 checks, the five `ci.yml` gate steps run verbatim on Python 3.11, the
+  boundary-aware slug sweep with its non-vacuity control, and the `firestarter_app` gitlink advance.
+
+> **No push, no PR, no bench.** D-16 and D-17 were chosen so this phase proves criterion 4 without an
+> outward-facing step; the real Actions run happens when the operator pushes at ship.
 
 ### Phase 191: The Branch That Reaches Users
 
