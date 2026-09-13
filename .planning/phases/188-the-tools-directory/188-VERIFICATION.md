@@ -4,7 +4,7 @@ verified: 2026-09-13T12:00:00Z
 status: passed
 score: 7/7 must-haves verified
 covered_files: [".planning/REQUIREMENTS.md", ".planning/ROADMAP.md", ".planning/notes/host-tools-retirement.md", ".planning/phases/188-the-tools-directory/188-01-PLAN.md", ".planning/phases/188-the-tools-directory/188-01-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-02-PLAN.md", ".planning/phases/188-the-tools-directory/188-02-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-03-PLAN.md", ".planning/phases/188-the-tools-directory/188-03-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-04-PLAN.md", ".planning/phases/188-the-tools-directory/188-04-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-05-PLAN.md", ".planning/phases/188-the-tools-directory/188-05-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-06-PLAN.md", ".planning/phases/188-the-tools-directory/188-06-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-07-PLAN.md", ".planning/phases/188-the-tools-directory/188-07-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-08-PLAN.md", ".planning/phases/188-the-tools-directory/188-08-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-09-PLAN.md", ".planning/phases/188-the-tools-directory/188-09-SUMMARY.md", ".planning/phases/188-the-tools-directory/188-CONTEXT.md", ".planning/phases/188-the-tools-directory/188-REVIEW.md", ".planning/seeds/phase-gate-expiry-discipline.md", ".planning/todos/completed/2026-09-12-retire-two-orphaned-host-tools.md", ".planning/todos/pending/2026-08-27-strip-gsd-provenance-comments-from-source.md"]
-covered_digest: "v1:sha256:7712dd9bb14094cec91dc68677613474d45a7b79fa11ffa9814ce894e3cf0906"
+covered_digest: "v1:sha256:12a63c6187a6399d74ca31b576d2cff79692a305a892c3e4517605f51f307f1b"
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
@@ -163,20 +163,28 @@ measured locations, and carrying WR-06's second obligation (the `host-tools-reti
 re-measured present in the tree at UAT time, and every retired enforcer they name was confirmed
 deleted. `188-UAT.md` records the outcome; status is `complete`, 1/1 passed, 0 issues.
 
-## Correction: `covered_digest` was fabricated, not stale
+## Correction: `covered_digest` was computed before its own covered files settled
 
-The `covered_digest` originally written into this report's frontmatter
-(`v1:sha256:ee22edc0…`) **never matched the files it claimed to cover.** Recomputing over the
-declared 26 `covered_files` yields `v1:sha256:7712dd9b…` — both at commit `070f6b46` (where this
-report was committed) and at HEAD, which are byte-identical for every covered file. The declared
-value matched neither, so it was not drift: it was written by hand rather than by
-`gsd-tools query verification fingerprint`, which this file's own source comments note is the
-verb that exists precisely because "the verifier is an LLM agent, not a hashing engine."
+The `covered_digest` originally in this report's frontmatter (`v1:sha256:ee22edc0…`) matched neither
+the covered files at the verification commit `070f6b46` nor at HEAD, so `verification.status`
+returned `stale` unconditionally.
 
-Consequence: `verification.status` returned `stale` unconditionally, which would have blocked phase
-transition forever with no real drift to fix. The frontmatter now carries the digest emitted by that
-verb. Because the covered contents are provably unchanged between the verification commit and HEAD,
-re-anchoring loses no detection power — any future edit to a covered file will still trip the gate.
+**It was not fabricated.** Sweeping historical revisions of the covered files shows `ee22edc0…` is
+exactly the digest of the declared 26 files with `.planning/ROADMAP.md` at revision `cccfb7aa` — an
+honest computation, taken before this phase's own close amendments rewrote ROADMAP.md and before the
+report was committed. The digest was therefore already stale at the moment it landed.
+
+This is a **systemic write-ordering issue, not a one-off**: the same reconstruction explains
+`183` (ROADMAP at `dc309bf8`), `184` (ROADMAP at `25304374`) and `187` (REQUIREMENTS at `aa17f0a3`).
+Five of v1.37's seven phases committed a digest that could never verify, because the fingerprint is
+taken before the close sequence's own ROADMAP/REQUIREMENTS edits. `186` is unexplained by a
+single-file sweep and may involve more than one covered file moving.
+
+The frontmatter now carries `v1:sha256:12a63c61…`, emitted by
+`gsd-tools query verification fingerprint` against the current tree — which includes the ROADMAP
+`**Plans:**` repair made during this phase's transition. Detection power is unchanged: any later
+edit to a covered file still trips the gate. An earlier note in this file called the original value
+fabricated; that was wrong and is retracted here.
 
 ---
 
