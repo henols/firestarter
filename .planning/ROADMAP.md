@@ -378,7 +378,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 191-02-PLAN.md — Prepare `v1.38-url-02-main` (three files, one commit, off `origin/main`) and file the two pipeline defects
+- [x] 191-02-PLAN.md — Prepare `v1.38-url-02-main` (three files, one commit, off `origin/main`) and file the two pipeline defects
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
