@@ -174,3 +174,12 @@ None — no external service configuration required.
 ---
 *Phase: 190-endpoints-that-do-not-depend-on-a-redirect*
 *Completed: 2026-09-13*
+
+## Self-Check: PASSED
+
+All claimed files and commits verified present:
+- `.planning/phases/190-endpoints-that-do-not-depend-on-a-redirect/190-02-SUMMARY.md` — found
+- `.planning/phases/190-endpoints-that-do-not-depend-on-a-redirect/evidence/190-url-03-pin-falsification.txt` — found
+- `firestarter_app/tests/test_endpoint_constants.py` — found
+- Meta-repo commits `8999e070` (transcript), `c79d86af` (this SUMMARY) — found in `git log --oneline --all`
+- App-repo commits `3d2a367` (pin), `3d1ab18` (derivation + slug clear) — found in `git log --oneline --all`
