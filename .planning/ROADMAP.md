@@ -628,7 +628,7 @@ cross-repo catalog sync, then the ledger.
 
 **Wave 4** *(host)*
 
-- [ ] 188-04-PLAN.md — TOOLS-03 (D-01, D-02, D-03, D-13, **D-25**): `test_op_registration_parity.py` deleted whole and `test_blast_radius_invariance.py` trimmed of its two `render_shape` sites alone — the v1.36 GATE-01/02/03 oracle and the nineteen snapshots kept, because a surviving D-10 test asserts against them; plus `tests/test_chip_test.py` repaired rather than deleted, the one collateral no decision or research table named; then the **eight** remaining gates (188-03 took two), their eight tests, seven planted fixtures, the mypy CI step and the stale regression-guard prose retired in one commit — the 12 V hazard description kept. The fail-closed scan-path pair moved to 188-03, where the tool it indexes is deleted
+- [x] 188-04-PLAN.md — TOOLS-03 (D-01, D-02, D-03, D-13, **D-25**): `test_op_registration_parity.py` deleted whole and `test_blast_radius_invariance.py` trimmed of its two `render_shape` sites alone — the v1.36 GATE-01/02/03 oracle and the nineteen snapshots kept, because a surviving D-10 test asserts against them; plus `tests/test_chip_test.py` repaired rather than deleted, the one collateral no decision or research table named; then the **eight** remaining gates (188-03 took two), their eight tests, seven planted fixtures, the mypy CI step and the stale regression-guard prose retired in one commit — the 12 V hazard description kept. The fail-closed scan-path pair moved to 188-03, where the tool it indexes is deleted
 
 **Wave 5** *(host)*
 

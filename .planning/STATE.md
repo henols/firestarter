@@ -3387,7 +3387,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 187 P09 | 12min | 2 tasks | 4 files |
 | Phase 187 P12 | ~15min | 3 tasks | 6 files |
 | Phase 188 P03 | 2 tasks | ~55min | Diagnostic-claims and dispatch gates retired end to end; 66 collected tests removed across 2373 -> 2368 -> 2307 with zero collateral; both fail-closed literal indexes settled in-commit; coverage floor measured unmoved at 5878/896/85% at all three boundaries; firestarter_app@b9ede20, @7ebdef8 |
-| Phase 188 P04 | ~50min | 2 tasks | 32 files |
+| Phase 188 P04 | 2 tasks | ~50min | Op-registration parity module deleted whole and the blast-radius oracle trimmed to its two render_shape sites (68/106 survive; GATE-01/02/03, D-07, D-10 and all 19 snapshots intact); the eight remaining check_*.py gates, their tests, seven planted fixtures, the mypy CI step and the guard prose retired; 2307 -> 2262 -> 2175 collected; firestarter_app@a163dd9, @0f251f0 |
 
 ## Session
 
@@ -3468,7 +3468,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/v1.33/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** None
+**Resume file:** .planning/phases/188-the-tools-directory/188-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
