@@ -41,7 +41,7 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 - [ ] **RENAME-01**: The firmware repository is named `henols/firestarter_fw` on GitHub, and
       `henols/firestarter` is left **unclaimed** — verified by an API call showing the old slug still
       redirecting to the new one rather than resolving to a different repository.
-- [ ] **RENAME-02**: `.gitmodules` names `firestarter_fw` on both `beta` and `main`, and
+- [x] **RENAME-02**: `.gitmodules` names `firestarter_fw` on both `beta` and `main`, and
       `git submodule sync --recursive` has been run so an existing clone resolves the new URL without
       relying on the redirect.
 - [ ] **RENAME-03**: A fresh clone of the meta repository at the milestone tip initialises **both**
@@ -124,7 +124,7 @@ Which phases cover which requirements. Populated at roadmap creation.
 | Requirement | Phase | Status |
 |---|---|---|
 | RENAME-01 | Phase 189 | Pending |
-| RENAME-02 | Phase 189 | Pending |
+| RENAME-02 | Phase 189 | Complete |
 | RENAME-03 | Phase 189 | Pending |
 | URL-01 | Phase 190 | Pending |
 | URL-02 | Phase 191 | Pending |
@@ -140,6 +140,7 @@ Which phases cover which requirements. Populated at roadmap creation.
 | GATE-03 | Phase 193 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 15 total
 - Mapped to phases: 15
 - Unmapped: 0 ✓
