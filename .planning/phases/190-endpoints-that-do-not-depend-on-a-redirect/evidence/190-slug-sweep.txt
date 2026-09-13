@@ -1,0 +1,61 @@
+BOUNDARY-AWARE BARE-SLUG SWEEP (D-05)
+======================================
+capture_date: 2026-09-13T18:03:00Z
+capture_commit: app=560ec24523eb2f8c643c9db3dd302efecf57e2e1
+
+Scope: the firestarter_app working tree only (tracked files), from its own
+root. The naive sweep `grep -rn "henols/firestarter" | grep -v
+"firestarter_fw\|firestarter_app\|firestarter_prom"` under-reports: it
+filters whole LINES, not matches, so a line naming both the bare slug and
+one of the renamed forms in the same sentence is silently dropped
+(RESEARCH Pitfall 1 -- measured 6 of 7 real sites with the naive pipeline
+before this phase). The pattern below is boundary-aware instead: it
+requires the bare slug be followed by a non-identifier character or the
+end of the line, so it cannot match `firestarter_fw`, `firestarter_app` or
+`firestarter_prom`, all of which extend the slug with `_`.
+
+Reading 1: the bare-slug sweep
+-------------------------------
+command: git grep -lE 'henols/firestarter([^_a-zA-Z0-9]|$)' -- .
+matching files: (none)
+result: 0
+
+Reading 2: the non-vacuity positive control
+--------------------------------------------
+command: git grep -lE 'henols/firestarter_prom' -- . | wc -l
+matching files:
+  .github/CONTRIBUTING.md
+  .planning/codebase/STACK.md
+  README.md
+  firestarter/submit.py
+  tests/fixtures/devtest_issue_corpus.json
+  tests/fixtures/report_shapes.py
+  tests/test_devtest_firmware_error_propagation.py
+  tests/test_submit.py
+result: 8
+
+A zero bare-slug reading paired with a zero control would be a failed gate,
+not a pass -- it would mean the pattern itself matched nothing, which is
+indistinguishable from a clean tree without the control. Here the control
+returns its expected non-zero count (8, matching 190-02's own measurement
+of the same pairing), so the zero bare-slug reading is a genuine clean
+result: URL-01's constants (190-01), URL-03's derivation and pin (190-02),
+and D-04's two remaining prose sites (submit.py's comment and the app
+repo's own .planning/codebase/INTEGRATIONS.md, both cleared in 190-02) are
+all confirmed clear as of this commit.
+
+What this sweep deliberately does NOT cover
+---------------------------------------------
+- The meta repository (/workspaces, outside firestarter_app). That sweep is
+  Phase 192's (SWEEP-01/02): the meta repository's README.md and its five
+  .planning/codebase/ documents are explicitly out of this phase's scope
+  (190-CONTEXT.md "Out of scope").
+- Anything under .planning/milestones/ in any repository. That path is
+  historical-by-intent (D-5) and Phase 192 must prove a diff over it is
+  empty, not this phase.
+- firestarter/submit.py's SUBMIT_REPO constant itself, which correctly
+  targets henols/firestarter_prom and whose GitHub redirect is permanent --
+  it is not a bare-slug site and was never touched by this phase.
+- `firestarter_app/build/lib/`, an untracked, gitignored directory carrying
+  stale copies of constants.py; `git grep` does not see it because it is
+  untracked, and it is explicitly out of scope per 190-CONTEXT.md.
