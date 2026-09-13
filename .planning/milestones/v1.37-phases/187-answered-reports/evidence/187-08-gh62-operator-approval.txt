@@ -1,0 +1,58 @@
+APPROVED-FOR-POST: gh62
+
+Operator: Henrik Olsson <henrik@predictly.se>
+Date: 2026-09-12
+
+Harness mode disclosed and confirmed uncontradicted before the decision below: invoked as
+`/gsd-execute-phase 187` with no flags; `_auto_chain_active: false`; `auto_advance: false`;
+`check auto-mode` measured `false`; Claude Code harness auto mode OFF. This gate carries
+`gate="blocking-human"` and was not auto-approved.
+
+--- Decision prose ---
+
+The prose below is the orchestrator's rendering of the operator's menu selections at this gate,
+plus each selected option's own description, as required by this task's `<context>` (D-16). It is
+NOT a verbatim operator quotation — the operator chose among presented options; they did not
+dictate this prose.
+
+1. Body: the operator selected option `approve` — "Approve as drafted, with the presented label
+   set and the re-worded acknowledgement." The orchestrator had presented the full verbatim
+   contents of `evidence/bodies/187-gh62.md` together with its recorded sha256
+   `7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065` from
+   `evidence/187-05-body-hashes.txt`. The operator had already read the full body verbatim when it
+   was drafted in Plan 187-05. No amendment was requested. The body posts byte-for-byte as drafted;
+   the recorded hash is unchanged from the pre-gate value and binds unchanged.
+
+2. Labels: the operator selected `cause:firmware` — exactly the presented candidate's own
+   description: the reading that the missing chip-erase capability is a firmware gap, which is
+   also exactly what the body's own closing paragraph announces in its own words ("I'm adding the
+   `cause:firmware` label to reflect that this is a real, tracked capability gap rather than a bug
+   in the refusal"). The other presented candidate, no label at all (the reading that the refusal
+   is correct behaviour and not a defect), was NOT chosen. `needs:report` was not among the
+   presented candidates and was separately and explicitly not chosen, on the reasoning that the
+   body asks @dim20 for nothing, so applying it would claim a wait that is not real. gh#62 carried
+   zero labels before this plan; `cause:firmware` is the entire resulting set.
+
+3. Acknowledgement of gh#65/gh#66: the drafted line stands as written — it already says both
+   issues are open, each with a maintainer datasheet cross-check dated 2026-09-10, correcting the
+   "unanswered" framing carried over from CONTEXT.md's Deferred Ideas block (DRIFT-2). The operator
+   did not ask for further rewording or removal of this line.
+
+4. Close: the operator confirmed gh#62 is NOT being closed by this plan. The refusal the tool gives
+   today is correct behaviour, but the software chip-erase capability the reporter actually wants
+   (backlog 999.63) has not been built. Closing would file a correct refusal as the end of the
+   story; the issue stays OPEN.
+
+--- Approved label list (verbatim) ---
+
+Add: cause:firmware
+Resulting label set: cause:firmware
+
+--- Acknowledgement decision (verbatim) ---
+
+The gh#65/gh#66 acknowledgement line in evidence/bodies/187-gh62.md is approved as drafted, with
+no wording change. The issue remains OPEN; no close of any kind was approved.
+
+--- Hash binding ---
+
+sha256(evidence/bodies/187-gh62.md) = 7edb9aa6e9a2fa366f51771497b67fceba255d0ec6442d27ae0c24dc264bd065

@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.37 Operator Safety, Answered Reports & Claim Hygiene (Shipped: 2026-09-13)
+
+**7 phases (182-188) · 49 plans · 35/35 requirements · merged to `beta` in all three repositories. Not tagged — stable release stays operator-gated.**
+
+Full close record: [`v1.37/CLOSE-RECORD.md`](v1.37/CLOSE-RECORD.md).
+
+The goal was to stop the project withholding what it already knew — from the operator about to destroy a chip, from the reporter who had waited a month, and from the maintainer reading a guard that no longer existed. Three signals arrived inside a week and were the same defect wearing three coats: a user **destroyed chips** (gh#60) for want of a warning the repo could already have given, the hardware fact having sat in-tree since 2026-07-10; a user was **taught to bypass a safety gate** (gh#62) because a correct refusal said only `Not supported`, and re-ran the operation under a different chip's identity with `--force`; and **three reporters were still waiting** on machinery v1.36 had already shipped. All three are closed, and the internal half with them.
+
+**"Retire it" was a valid answer, and is recorded as one.** Six of TOOLS' seven requirements resolve to a decision not to build rather than a build. Phase 188 was a subtraction measured as one: **−21,281 net lines**, ten `check_*.py` gates retired by name, the frame-vector apparatus gone from both repos, and `firestarter_app/tools/` reduced to exactly six declared survivors, all swept citation-free. The suite came down 2373 → 2129 with zero errors at every boundary and coverage held at 84.74% against a 70% floor.
+
+**What the close cost, recorded rather than absorbed.** Six stale enforcement claims that Phase 188's own deletions created (WR-01…WR-06) were **accepted as disclosed follow-on debt**, not fixed — filed by ID with measured locations rather than dropped. TOOLS-05's literal text is broader than what shipped, and the ROADMAP amendment names the narrowing instead of hiding it. `derive_sdp_partition.py` was deleted despite a not-in-scope paragraph protecting it, and the amendment states plainly that it went on the operator's judgment, not on the evidence class that paragraph forbids.
+
+**A verification defect found at close, and a wrong first diagnosis corrected.** `188-VERIFICATION.md`'s `covered_digest` matched its covered files at neither the verification commit nor HEAD, forcing `verification.status` to `stale` permanently. The first conclusion — that it was hand-written and never valid — was **wrong and is retracted**: sweeping historical revisions showed it is the honest digest of those 26 files with `ROADMAP.md` at `cccfb7aa`, taken before the phase's own close amendments landed. It is systemic — the same reconstruction explains 183, 184 and 187, so **five of seven phases committed a digest that could never verify**. Only 188 was re-anchored, because only its content was independently re-verified at UAT; re-anchoring 182–187 would assert a check nobody performed.
+
+**Transition-writer damage, caught by snapshot.** `phase.complete` reported clean while deleting `current_phase_name` and setting `completed_phases` **6 → 1** with `percent` **85 → 14** — on the call completing the last phase of a 7/7 milestone — and overwriting ROADMAP's multi-line `**Plans:**` entry, orphaning its continuation. All repaired against a pre-write snapshot and reconciled with `query progress`, which recomputes from disk.
+
+**Not claimed:** no hardware was involved — this is the first milestone since v1.33 with no bench-gated leg, so nothing here is validated against a board. `milestone.complete` was not run; the close is hand-archived, as v1.35 and v1.36 were.
+
 ## v1.36 `dev test` Fidelity (Shipped: 2026-09-09)
 
 **8 phases (174-181) · 42 plans · 46/46 requirements · app `3.0.0b38`, firmware `3.0.0b26` on `beta`. Not tagged, by operator decision.**

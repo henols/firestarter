@@ -1,0 +1,152 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/firestarter_app
+configfile: pyproject.toml
+plugins: syrupy-6.0.0, cov-7.1.0, anyio-4.14.2
+collecting ... collected 7 items
+
+tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_no_planning_dir[plain] FAILED [ 14%]
+tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_no_planning_dir[all-algorithms] FAILED [ 28%]
+tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_no_planning_dir[check] FAILED [ 42%]
+tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_only_one_path_is_explicit[only-output] FAILED [ 57%]
+tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_only_one_path_is_explicit[only-ledger] FAILED [ 71%]
+tests/test_audit_coverage_matrix_default_paths.py::test_defaults_resolve_when_planning_dir_exists PASSED [ 85%]
+tests/test_audit_coverage_matrix_default_paths.py::test_explicit_paths_bypass_the_guard PASSED [100%]
+
+=================================== FAILURES ===================================
+_____________ test_guard_fails_closed_when_no_planning_dir[plain] ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0')
+extra_args = []
+
+    @pytest.mark.parametrize(
+        "extra_args",
+        [[], ["--all-algorithms"], ["--check"]],
+        ids=["plain", "all-algorithms", "check"],
+    )
+    def test_guard_fails_closed_when_no_planning_dir(
+        tmp_path: Path, extra_args: list[str]
+    ) -> None:
+        scratch_root = _make_scratch_repo(tmp_path, with_planning_dir=False)
+    
+        result = _run_tool(scratch_root, extra_args)
+    
+>       assert result.returncode == 2, (
+            f"expected exit 2, got {result.returncode}; "
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+E       AssertionError: expected exit 2, got 1; stdout='' stderr='Traceback (most recent call last):\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1924, in <module>\n    main()\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1919, in main\n    rc = generate_matrix(output, ledger, check=args.check)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1539, in generate_matrix\n    Path(output).write_text(content, encoding="utf-8", newline="\\n")\n  File "/usr/local/lib/python3.12/pathlib.py", line 1047, in write_text\n    with self.open(mode=\'w\', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: \'/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0/scratch-repo/.planning/v1.3-COVERAGE-MATRIX.md\'\n'
+E       assert 1 == 2
+E        +  where 1 = CompletedProcess(args=['/usr/local/bin/python', '/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py'], returncode=1, stdout='', stderr='Traceback (most recent call last):\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1924, in <module>\n    main()\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1919, in main\n    rc = generate_matrix(output, ledger, check=args.check)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1539, in generate_matrix\n    Path(output).write_text(content, encoding="utf-8", newline="\\n")\n  File "/usr/local/lib/python3.12/pathlib.py", line 1047, in write_text\n    with self.open(mode=\'w\', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: \'/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n0/scratch-repo/.planning/v1.3-COVERAGE-MATRIX.md\'\n').returncode
+
+tests/test_audit_coverage_matrix_default_paths.py:87: AssertionError
+_________ test_guard_fails_closed_when_no_planning_dir[all-algorithms] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1')
+extra_args = ['--all-algorithms']
+
+    @pytest.mark.parametrize(
+        "extra_args",
+        [[], ["--all-algorithms"], ["--check"]],
+        ids=["plain", "all-algorithms", "check"],
+    )
+    def test_guard_fails_closed_when_no_planning_dir(
+        tmp_path: Path, extra_args: list[str]
+    ) -> None:
+        scratch_root = _make_scratch_repo(tmp_path, with_planning_dir=False)
+    
+        result = _run_tool(scratch_root, extra_args)
+    
+>       assert result.returncode == 2, (
+            f"expected exit 2, got {result.returncode}; "
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+E       AssertionError: expected exit 2, got 1; stdout='' stderr='Traceback (most recent call last):\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1924, in <module>\n    main()\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1915, in main\n    rc = generate_matrix_all(output, ledger, check=args.check)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1855, in generate_matrix_all\n    Path(output).write_text(content, encoding="utf-8", newline="\\n")\n  File "/usr/local/lib/python3.12/pathlib.py", line 1047, in write_text\n    with self.open(mode=\'w\', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: \'/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1/scratch-repo/.planning/v1.3-COVERAGE-MATRIX-ALL.md\'\n'
+E       assert 1 == 2
+E        +  where 1 = CompletedProcess(args=['/usr/local/bin/python', '/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py', '--all-algorithms'], returncode=1, stdout='', stderr='Traceback (most recent call last):\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1924, in <module>\n    main()\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1915, in main\n    rc = generate_matrix_all(output, ledger, check=args.check)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1855, in generate_matrix_all\n    Path(output).write_text(content, encoding="utf-8", newline="\\n")\n  File "/usr/local/lib/python3.12/pathlib.py", line 1047, in write_text\n    with self.open(mode=\'w\', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: \'/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n1/scratch-repo/.planning/v1.3-COVERAGE-MATRIX-ALL.md\'\n').returncode
+
+tests/test_audit_coverage_matrix_default_paths.py:87: AssertionError
+_____________ test_guard_fails_closed_when_no_planning_dir[check] ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n2')
+extra_args = ['--check']
+
+    @pytest.mark.parametrize(
+        "extra_args",
+        [[], ["--all-algorithms"], ["--check"]],
+        ids=["plain", "all-algorithms", "check"],
+    )
+    def test_guard_fails_closed_when_no_planning_dir(
+        tmp_path: Path, extra_args: list[str]
+    ) -> None:
+        scratch_root = _make_scratch_repo(tmp_path, with_planning_dir=False)
+    
+        result = _run_tool(scratch_root, extra_args)
+    
+>       assert result.returncode == 2, (
+            f"expected exit 2, got {result.returncode}; "
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+E       AssertionError: expected exit 2, got 1; stdout='' stderr=''
+E       assert 1 == 2
+E        +  where 1 = CompletedProcess(args=['/usr/local/bin/python', '/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_n2/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py', '--check'], returncode=1, stdout='', stderr='').returncode
+
+tests/test_audit_coverage_matrix_default_paths.py:87: AssertionError
+_____ test_guard_fails_closed_when_only_one_path_is_explicit[only-output] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0')
+only_flag = '--output'
+
+    @pytest.mark.parametrize(
+        "only_flag", ["--output", "--ledger"], ids=["only-output", "only-ledger"]
+    )
+    def test_guard_fails_closed_when_only_one_path_is_explicit(
+        tmp_path: Path, only_flag: str
+    ) -> None:
+        scratch_root = _make_scratch_repo(tmp_path, with_planning_dir=False)
+        explicit_path = tmp_path / "explicit-target"
+    
+        result = _run_tool(scratch_root, [only_flag, str(explicit_path)])
+    
+>       assert result.returncode == 2, (
+            f"expected exit 2, got {result.returncode}; "
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+E       AssertionError: expected exit 2, got 1; stdout='' stderr='Traceback (most recent call last):\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1924, in <module>\n    main()\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1919, in main\n    rc = generate_matrix(output, ledger, check=args.check)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1542, in generate_matrix\n    save_ledger(ledger, ledger_path)\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 721, in save_ledger\n    Path(ledger_path).write_text(blob, encoding="utf-8", newline="\\n")\n  File "/usr/local/lib/python3.12/pathlib.py", line 1047, in write_text\n    with self.open(mode=\'w\', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: \'/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/.planning/v1.3-defect-coverage-ids.json\'\n'
+E       assert 1 == 2
+E        +  where 1 = CompletedProcess(args=['/usr/local/bin/python', '/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py', '--output', '/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/explicit-target'], returncode=1, stdout='', stderr='Traceback (most recent call last):\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1924, in <module>\n    main()\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1919, in main\n    rc = generate_matrix(output, ledger, check=args.check)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1542, in generate_matrix\n    save_ledger(ledger, ledger_path)\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 721, in save_ledger\n    Path(ledger_path).write_text(blob, encoding="utf-8", newline="\\n")\n  File "/usr/local/lib/python3.12/pathlib.py", line 1047, in write_text\n    with self.open(mode=\'w\', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: \'/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o0/scratch-repo/.planning/v1.3-defect-coverage-ids.json\'\n').returncode
+
+tests/test_audit_coverage_matrix_default_paths.py:110: AssertionError
+_____ test_guard_fails_closed_when_only_one_path_is_explicit[only-ledger] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1')
+only_flag = '--ledger'
+
+    @pytest.mark.parametrize(
+        "only_flag", ["--output", "--ledger"], ids=["only-output", "only-ledger"]
+    )
+    def test_guard_fails_closed_when_only_one_path_is_explicit(
+        tmp_path: Path, only_flag: str
+    ) -> None:
+        scratch_root = _make_scratch_repo(tmp_path, with_planning_dir=False)
+        explicit_path = tmp_path / "explicit-target"
+    
+        result = _run_tool(scratch_root, [only_flag, str(explicit_path)])
+    
+>       assert result.returncode == 2, (
+            f"expected exit 2, got {result.returncode}; "
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+E       AssertionError: expected exit 2, got 1; stdout='' stderr='Traceback (most recent call last):\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1924, in <module>\n    main()\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1919, in main\n    rc = generate_matrix(output, ledger, check=args.check)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1539, in generate_matrix\n    Path(output).write_text(content, encoding="utf-8", newline="\\n")\n  File "/usr/local/lib/python3.12/pathlib.py", line 1047, in write_text\n    with self.open(mode=\'w\', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: \'/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/scratch-repo/.planning/v1.3-COVERAGE-MATRIX.md\'\n'
+E       assert 1 == 2
+E        +  where 1 = CompletedProcess(args=['/usr/local/bin/python', '/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py', '--ledger', '/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/explicit-target'], returncode=1, stdout='', stderr='Traceback (most recent call last):\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1924, in <module>\n    main()\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1919, in main\n    rc = generate_matrix(output, ledger, check=args.check)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/scratch-repo/firestarter_app/tools/audit_coverage_matrix.py", line 1539, in generate_matrix\n    Path(output).write_text(content, encoding="utf-8", newline="\\n")\n  File "/usr/local/lib/python3.12/pathlib.py", line 1047, in write_text\n    with self.open(mode=\'w\', encoding=encoding, errors=errors, newline=newline) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: \'/tmp/pytest-of-vscode/pytest-610/test_guard_fails_closed_when_o1/scratch-repo/.planning/v1.3-COVERAGE-MATRIX.md\'\n').returncode
+
+tests/test_audit_coverage_matrix_default_paths.py:110: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_no_planning_dir[plain]
+FAILED tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_no_planning_dir[all-algorithms]
+FAILED tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_no_planning_dir[check]
+FAILED tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_only_one_path_is_explicit[only-output]
+FAILED tests/test_audit_coverage_matrix_default_paths.py::test_guard_fails_closed_when_only_one_path_is_explicit[only-ledger]
+========================= 5 failed, 2 passed in 0.55s ==========================

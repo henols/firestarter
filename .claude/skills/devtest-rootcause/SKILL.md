@@ -14,7 +14,7 @@ tables outright — it never imports `build_db.py`, so it works even with
 `firestarter_app` absent. `--check` guards against the copy drifting (see §1).
 
 That is distinct from the **regeneration commands** in §4 (`build_db.py`,
-`diff_db.py`, `check_dispatch.py`). Those are the project's own build and gate steps —
+`.claude/skills/devtest-rootcause/scripts/diff_db.py`). Those are the project's own build and gate steps —
 the thing being fixed — exactly like `pytest` or `pio run`. A skill must not
 reimplement or shadow them; regenerating the database means running the real generator.
 
@@ -269,8 +269,9 @@ Never edit the JSON. After changing the generator:
 ```bash
 cd $APP
 python3 tools/build_db.py            # fetches the pinned infoic.xml SHA, rewrites the DB
-python3 tools/diff_db.py             # per-chip diff vs tools/baseline/ — the review artifact
-python3 tools/check_dispatch.py      # GATE-03 safety: no 12V handler on a no-VPP-pin part
+FIRESTARTER_DB_FILE=$ROOT/firestarter_app/firestarter/data/chip_database.json \
+FIRESTARTER_BASELINE_FILE=$ROOT/firestarter_app/tools/baseline/chip_database.baseline.json \
+python3 $ROOT/.claude/skills/devtest-rootcause/scripts/diff_db.py  # per-chip diff vs tools/baseline/ — the review artifact
 git diff --stat firestarter/data/chip_database.json
 ```
 
@@ -278,7 +279,7 @@ git diff --stat firestarter/data/chip_database.json
 there is no `--help`. It is deterministic against the pinned SHA: on an unmodified
 tree it reproduces the shipped file byte for byte, so any diff is *yours*.
 
-Read `diff_db.py` output as the evidence for the change. A one-chip fix that moves
+Read `.claude/skills/devtest-rootcause/scripts/diff_db.py` output as the evidence for the change. A one-chip fix that moves
 hundreds of chips means the decode change was too broad — that is the signal this
 pipeline exists to give you.
 
@@ -350,7 +351,7 @@ involved" is itself a finding:
 | Host app | — | — (not involved) |
 | Chip database | — | — (not involved) |
 
-**Proof:** <the gate output that showed it works — diff_db.py, pytest, pio test>
+**Proof:** <the gate output that showed it works — .claude/skills/devtest-rootcause/scripts/diff_db.py, pytest, pio test>
 **Unproven:** <what needs a chip on the bench>
 
 **To re-test:** install firmware <version> and host <version>, then
@@ -389,8 +390,6 @@ references exist to close.
 - `chip_database.json` is generated. Editing it is always wrong.
 - No generator field without proof in `infoic.xml`. No per-chip guess tables.
 - `extra_chips.json` adds chips upstream lacks; it does not override chips upstream has.
-- Never weaken `check_dispatch.py` (GATE-03) to make a change pass. It exists to stop
-  12V reaching a 5V part's WE/address pin — a hardware-damage guard, not a lint.
 - Do not "fix" `PROTO_PHANTOM_0x35` / `0x39` spelling in `proto_constants.h`; those
   substrings are deliberate.
 - **Where GSD is installed**, file-changing work goes through it so it lands with atomic
@@ -417,9 +416,8 @@ references exist to close.
 |---|---|
 | Database edit vanished | You edited the generated JSON. Fix `build_db.py` or `pinouts.json`, regenerate |
 | `build_db.py` prints many `WARN: skipping … unknown protocol_id` | Normal. Upstream carries families firestarter has no handler for |
-| `diff_db.py` shows hundreds of changed chips | Decode change too broad. Narrow the condition |
+| `.claude/skills/devtest-rootcause/scripts/diff_db.py` shows hundreds of changed chips | Decode change too broad. Narrow the condition |
 | `WARN: resolved pinout key 'X' not in pinouts.json` | `resolve_pinout_key()` returned a key with no definition — add the wiring or fix the resolution |
-| `check_dispatch.py` reports violations | A 12V-handler chip has no `vpp-pin`. Fix the classification, never the gate |
 | Chip not found by `infoic_lookup.py` | Check the part really is absent, not just package-suffixed — the script already splits on `@`. If genuinely absent → `extra_chips.json` territory |
 | Fetch of infoic.xml is slow | 17.8 MB. It caches to `$TMPDIR/infoic-<sha>.xml`; reuse it |
 | Debugger edited `chip_database.json` | Its prompt lacked the fix-surface rules. Revert, reseed with `seed_debug_session.py`, respawn |

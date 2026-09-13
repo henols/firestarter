@@ -52,7 +52,7 @@
   **Known gaps carried, not hidden:** the evidence ceiling (accepted debt); **`leonardo` MERGE-05 flash headroom is 0 B** at `+724 B` against BASE-01, exactly the four-term allowance, and **separately the Caterina USB-bootloader cliff at 28672 B has 1042 B left and is UNGUARDED** — `board_upload.maximum_size` does not enforce it, so nothing in the build stops a future change silently overwriting the bootloader region (a split-or-trimmed-build phase was raised and deliberately deferred; it is on no roadmap); the protection-class counting ambiguity, stated rather than collapsed (Method A 664/82 vs Method B 665/81, with Phase 151's published 406/111/39 reproducing under neither — only 665/81 plus the method-invariant `no_mechanism` 405 / `not_implemented` 40 are citable); the 20 ms `t_EC` wait being an Atmel-family maximum applied to a multi-vendor 84-row bucket, with **no** native test able to prove the wall-clock wait is honoured (the stubs never stub `delay()`); and one already-published part-name misattribution (W29C020 vs W29C040) that this project's own discipline forbids editing in place. Seven todos were filed by this milestone's own work. Full detail in `.planning/MILESTONES.md` §v1.32 + [`.planning/milestones/v1.32-ROADMAP.md`](milestones/v1.32-ROADMAP.md); honesty ledger at [`152-LEDGER.md`](phases/152-outward-facing-close-operator-gated/152-LEDGER.md); erase-policy record at [`153-RECORD.md`](phases/153-write-path-erase-policy/153-RECORD.md); merge record at [`152-MERGE-RECORD.md`](phases/152-outward-facing-close-operator-gated/152-MERGE-RECORD.md).
   **Milestone-level non-claim, in this milestone's own canonical wording: no AT28C part was tested, at any point, by any phase — protocol `0x0D` stays UNVERIFIED in PROTOCOL-LEDGER exactly as it stood at the open, and every write-path change v1.32 shipped is software-proven and unvalidated on silicon.**
 
-- ◆ **v1.37 Operator Safety, Answered Reports & Claim Hygiene** — Phases 182–187 (**ACTIVATED 2026-09-10**; host-first, firmware touched only at the edges — one `.md`, one baseline JSON plus fixtures, and at most one generated message id). Stops the project withholding what it already knows: a JP5 destructive-operation gate for the hazard that cost a user real chips ([gh#60](https://github.com/henols/firestarter_prom/issues/60)); a flash4 erase refusal that names its cause instead of teaching users to forge a chip identity with `--force` ([gh#62](https://github.com/henols/firestarter_prom/issues/62)); the replies owed on gh#23/#28/#31 since 2026-08-09; and the repository's own false claims — a deleted guard still named as live, a three-milestone-stale size baseline, a citation pointing 49 lines off, two tests asserting coverage that no longer exists, and `Catalog sync check` red on `main`. Plus the one item with an external clock: the Python floor, before 3.10 EOLs 2026-10-31. **Deliberately excluded (D-1): 999.43 R4 session reuse**, against a measured 50–80 s/run payoff — see the milestone section for why.
+- ✅ **v1.37 Operator Safety, Answered Reports & Claim Hygiene** — Phases 182–188 (**CLOSED 2026-09-13** — 7 phases, 49 plans, 35/35 requirements; merged to `beta` in all three repos, **not tagged** — stable release stays operator-gated; host-first, firmware touched only at the edges — one `.md`, one baseline JSON plus fixtures, and at most one generated message id). Stops the project withholding what it already knows: a JP5 destructive-operation gate for the hazard that cost a user real chips ([gh#60](https://github.com/henols/firestarter_prom/issues/60)); a flash4 erase refusal that names its cause instead of teaching users to forge a chip identity with `--force` ([gh#62](https://github.com/henols/firestarter_prom/issues/62)); the replies owed on gh#23/#28/#31 since 2026-08-09; and the repository's own false claims — a deleted guard still named as live, a three-milestone-stale size baseline, a citation pointing 49 lines off, two tests asserting coverage that no longer exists, and `Catalog sync check` red on `main`. Plus the one item with an external clock: the Python floor, before 3.10 EOLs 2026-10-31. **Deliberately excluded (D-1): 999.43 R4 session reuse**, against a measured 50–80 s/run payoff — see the milestone section for why. **Closed with six stale enforcement claims (WR-01…WR-06) accepted as disclosed follow-on debt, not fixed**, and Phase 188 appended 2026-09-12 after 187 completed — inward-facing tooling hygiene, a **−21,281 net-line** subtraction. Full record: `.planning/v1.37/CLOSE-RECORD.md`.
 
 <details>
 <summary>✅ <b>v1.10 — Serial Transport Hardening (COBS)</b> — Phases 49–55 (SHIPPED 2026-06-07) · 27/27 plans · 14/14 reqs · beta-only</summary>
@@ -168,7 +168,7 @@ Full detail: [`.planning/milestones/v1.16-ROADMAP.md`](milestones/v1.16-ROADMAP.
 
 </details>
 
-## v1.37 — Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 2026-09-10)
+## v1.37 — Operator Safety, Answered Reports & Claim Hygiene (CLOSED 2026-09-13 — 35/35 requirements; merged to `beta` in all three repos, NOT tagged by operator decision)
 
 **Milestone goal:** Stop the project withholding what it already knows — from the operator about to destroy
 a chip, from the reporter who has been waiting a month for an answer, and from the maintainer reading a
@@ -201,6 +201,13 @@ does not expire; 999.43 stays shortlisted for v1.38.
 
 **The one hard ordering constraint.** **Phase 187 (Answered Reports) runs last**, because every reply
 describes what Phases 182–183 actually shipped. A reply written earlier would describe an intention.
+
+**AMENDED 2026-09-12 (operator decision, after Phase 187 completed 12/12):** Phase 188 is appended
+after Phase 187. This does not weaken the constraint above — it was about **replies**, which must
+describe shipped work, and Phase 188 posts no replies and touches no issue. Phase 187 remains the
+last outward-facing phase of this milestone; Phase 188 is inward-facing tooling hygiene, added when
+an audit of `firestarter_app/tools/` during Phase 187 surfaced findings the operator judged
+important enough to finalize inside v1.37 rather than defer.
 
 **Bench: none.** No phase needs a board. CLAIM-04's re-record needs a cold `pio run` (a build, not a flash),
 and SAFE-03's answer comes from the shield schematics and the firmware VPP path, not from measurement. This
@@ -238,7 +245,8 @@ of use.
 - [x] **Phase 184: Guards That Exist** - Stop three repositories naming a checker that was deleted, and make a guard that does not exist impossible to declare silently. (completed 2026-09-11)
 - [x] **Phase 185: Records and Checks That Are Current** - The size baseline, the citation, the dead symbol and the red workflow — four records that describe a tree that no longer exists. (completed 2026-09-11)
 - [x] **Phase 186: The Python Floor, Before the EOL** - Settle the advertised floor against the type-checker while there is still slack before 2026-10-31. (completed 2026-09-12)
-- [ ] **Phase 187: Answered Reports** *(runs last — describes what shipped)* - Reply to every reporter this milestone owes, ask for the re-runs that would settle the disputes, and close nothing unilaterally.
+- [x] **Phase 187: Answered Reports** *(runs last outward-facing phase — describes what shipped)* - Reply to every reporter this milestone owes, ask for the re-runs that would settle the disputes, and close nothing unilaterally. (completed 2026-09-12)
+- [x] **Phase 188: The Tools Directory** *(added 2026-09-12 — inward-facing, posts nothing)* - Answer what each script in `firestarter_app/tools/` is for, close the escape-guard residual, and decide every gate and process-tool by name — "retire it" is a valid answer, "unaddressed" is not. (completed 2026-09-13)
 
 ## Phase Details
 
@@ -508,7 +516,7 @@ is closed on our own reading.
 
 **Depends on:** Phase 182, Phase 183 (the replies describe what those shipped)
 
-**Plans:** 12 plans
+**Plans:** 12/12 plans complete
 
 Plans:
 
@@ -518,47 +526,163 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 187-02-PLAN.md — Tracer: the meta merge to `beta`, one pinned permalink SHA, both linked documents proven to resolve at it
+- [x] 187-02-PLAN.md — Tracer: the meta merge to `beta`, one pinned permalink SHA, both linked documents proven to resolve at it
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 187-03-PLAN.md — App merge and cut; the pre-release version read from the API and confirmed on PyPI
+- [x] 187-03-PLAN.md — App merge and cut; the pre-release version read from the API and confirmed on PyPI
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 187-04-PLAN.md — Firmware merge and cut via `beta-build.yml`; the pre-release version read from the API
+- [x] 187-04-PLAN.md — Firmware merge and cut via `beta-build.yml`; the pre-release version read from the API
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 187-05-PLAN.md — Draft gh#60 and gh#62 bodies, capture the pre-post issue state, resolve every link
+- [x] 187-05-PLAN.md — Draft gh#60 and gh#62 bodies, capture the pre-post issue state, resolve every link
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 187-06-PLAN.md — Draft gh#23, gh#28 and gh#31 bodies with both caveats and the re-run asks
+- [x] 187-06-PLAN.md — Draft gh#23, gh#28 and gh#31 bodies with both caveats and the re-run asks
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 187-07-PLAN.md — Post REPLY-04 to gh#60, label, close as done (operator-gated)
+- [x] 187-07-PLAN.md — Post REPLY-04 to gh#60, label, close as done (operator-gated)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 187-08-PLAN.md — Post REPLY-03 to gh#62, label, leave open (operator-gated)
+- [x] 187-08-PLAN.md — Post REPLY-03 to gh#62, label, leave open (operator-gated)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
-- [ ] 187-09-PLAN.md — Post REPLY-01 to gh#23, add `cause:rig` and `needs:report`, leave open (operator-gated)
+- [x] 187-09-PLAN.md — Post REPLY-01 to gh#23, add `cause:rig` and `needs:report`, leave open (operator-gated)
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
-- [ ] 187-10-PLAN.md — Post REPLY-02 to gh#28, add `needs:report`, withhold `fix:released`, leave open (operator-gated)
+- [x] 187-10-PLAN.md — Post REPLY-02 to gh#28, add `needs:report`, withhold `fix:released`, leave open (operator-gated)
 
 **Wave 11** *(blocked on Wave 10 completion)*
 
-- [ ] 187-11-PLAN.md — Post REPLY-02 to gh#31, add `needs:report`, withhold `fix:released`, leave open (operator-gated)
+- [x] 187-11-PLAN.md — Post REPLY-02 to gh#31, add `needs:report`, withhold `fix:released`, leave open (operator-gated)
 
 **Wave 12** *(blocked on Wave 11 completion)*
 
-- [ ] 187-12-PLAN.md — After-state reconciliation, no-collateral-post proof, the D-09 ledger, and the merge-record tail
+- [x] 187-12-PLAN.md — After-state reconciliation, no-collateral-post proof, the D-09 ledger, and the merge-record tail
+
+### Phase 188: The Tools Directory
+
+**Goal**: Every script in `firestarter_app/tools/` can answer what it is for and who runs it, and no tool
+that serves GSD rather than the product is left sitting in the published package repo claiming otherwise.
+
+**Requirements**: TOOLS-01, TOOLS-02, TOOLS-03, TOOLS-04, TOOLS-05, TOOLS-06, TOOLS-07
+
+**Success criteria**:
+
+1. `audit_coverage_matrix.py` refuses a default output path outside a checkout that is demonstrably THIS
+   project — not merely one where some `.planning/` happens to exist. Proven by a test in `tests/` that
+   plants a foreign `.planning/` at the resolved root and observes the refusal; observed RED against the
+   quick-260912-mo6 guard, which permits exactly that case. **AMENDED by Phase 188 (D-06):**
+   `audit_coverage_matrix.py` is deleted in its entirety (188-05); the repo-escaping default-path defect
+   and the stronger-oracle test this criterion asked for both dissolve, because the tool that would
+   exhibit the defect no longer exists. TOOLS-01 is RETIRED, not fixed.
+2. Every script in `firestarter_app/tools/` declares its consumer, in a form a reader can check without
+   grepping `.planning/`: the CI step that runs it, the test that runs it, the operator procedure that runs
+   it, or the closed phase it served. A fail-closed check asserts the declaration exists for every script,
+   and is observed RED against a planted undeclared script. **AMENDED by Phase 188 (D-12):** the
+   declaration layer and its fail-closed check were both dropped on operator decision, with the audit's
+   central finding — a code-level scan cannot distinguish a live operator tool from a dead one — carried
+   forward rather than closed. The "Explicitly NOT in scope" paragraph below says of this criterion that
+   "no deletion may precede it"; every deletion in this phase proceeded without it. That conflict is quoted, not smoothed over: see
+   `.planning/notes/host-tools-retirement.md` §2 cost 2.
+3. Each of the ten `check_*.py` gates is decided by name — kept with a recorded reason and a retirement
+   condition, or retired. Retiring is a valid outcome; leaving one unanswered is not. Reachability is
+   established by reading each gate's tests, never by reference-counting. **AMENDED by Phase 188 (D-01,
+   D-25):** all ten gates were decided by name and retired, satisfying this criterion's letter;
+   reachability was established by reading tests and by a live `pytest --co` census (188-02), not by
+   reference-counting. REQUIREMENTS.md records TOOLS-03 as "satisfied by family retirement."
+4. Each GSD-process tool (`audit_coverage_matrix.py`, `diff_db.py`, `measure_plan_shapes.py`,
+   `measure_part_number_delta.py`, `snapshot_report_shapes.py`, `build_devtest_issue_corpus.py`) is placed by
+   name: stays with a product-facing rationale, moves to the meta repo, or is retired. A tool that cannot be
+   given a product-facing docstring does not stay. **AMENDED by Phase 188 (D-04, D-05, D-22):** all six
+   were placed by name — five deleted, `diff_db.py` relocated into the devtest-rootcause skill it serves
+   (188-01). D-22 records the whole requirement RETIRED rather than Complete, even though this criterion's
+   own wording reads as satisfied; the tension is stated, not resolved silently, in
+   `.planning/notes/host-tools-retirement.md` §5.
+5. No file under `firestarter_app/tools/` cites a phase number, plan number, decision ID, or `.planning/`
+   path — the `CLAUDE.md` rule applied to the directory where the host-side remainder is concentrated.
+   Asserted across the tree, with a positive control. **AMENDED by Phase 188 (D-14, D-16):** NOT satisfied
+   as written, and deliberately so. The sweep ran across the six scripts that survive this phase's other
+   deletions, not the original twenty-four, and D-14 puts non-script data under this directory out of
+   scope — so `tools/DECODE-NOTES.md`, `tools/catalog/messages.toml` and both `tools/baseline/*.json` still
+   cite phase numbers, decision IDs and `.planning/` paths. Read as "no *script*" the criterion holds, and
+   is asserted with a positive control (188-07, 188-08); read as written — "no *file*" — it does not. The
+   decisions are narrower than the criterion: that is the conflict, and it is not resolved, only recorded.
+6. `frame-vectors.toml` and `codegen_vectors.py` are covered by the same meta-canonical sync that already
+   holds `messages.toml` and `codegen.py`, so their cross-repo byte-identity is enforced by the existing
+   mechanism rather than by a comment asking for it. No new CI gate is authored — that route was tried and
+   retired in Phase 185. **AMENDED by Phase 188 (D-08, D-11):** both files are deleted whole, on both
+   sides, rather than folded into the sync — there is nothing left to sync. The "no new CI gate" half of
+   this criterion is honored in a stronger form than it asked for: not a new gate withheld, but the two
+   existing vector CI steps removed along with the files they checked (188-05, 188-06).
+7. `audit_coverage_matrix.py --check` exits 0 against the committed matrix, or the staleness is recorded as
+   a decision with its cause. "Still red, unexplained" is not an acceptable end state.
+   **AMENDED by Phase 188 (D-06):** dissolved by tool deletion (188-05); the tool's last measured
+   behaviour before deletion — exit 1, zero bytes on both stdout and stderr — is recorded rather than
+   fixed, per `.planning/notes/host-tools-retirement.md` §6.
+
+**Explicitly NOT in scope**: deleting a tool on reference-count evidence alone. The audit that opened this
+phase misclassified two live operator tools (`ci_replica_venv.sh`, `derive_sdp_partition.py`) as orphans on
+exactly that evidence, because an invocation contract recorded only in `.planning/` prose is invisible to
+code. Criterion 2 exists to make that evidence trustworthy; no deletion may precede it.
+**AMENDED by Phase 188 (D-15):** `derive_sdp_partition.py`, the tool this paragraph names as protected
+from reference-count-only deletion, was deleted anyway in this phase — but on the operator's judgment
+about its value, not on the reference-count evidence this paragraph forbids. That distinction is
+recorded, not smoothed over: see `.planning/notes/host-tools-retirement.md` §2 cost 4.
+
+**Depends on:** Phase 187 (this phase was scoped from an audit run during it). No outward-facing work, so no
+dependency on the reply ledger.
+
+**Plans:** 9/9 plans complete — meta first (D-21), then host and firmware in parallel, then the
+cross-repo catalog sync, then the ledger.
+
+**Wave 1** *(meta alone — nothing downstream may delete `diff_db.py` before this lands)*
+
+- [x] 188-01-PLAN.md — TOOLS-04 (D-05, D-21): `diff_db.py` relocates into `.claude/skills/devtest-rootcause/scripts/` with a repo-root path seam proven end to end from two cwds; the skill's four retired-gate references dropped and its five `diff_db.py` references re-pointed
+
+**Wave 2** *(host decision gate ∥ firmware lane — file-disjoint, no shared path)*
+
+- [x] 188-02-PLAN.md — TOOLS-03/04 (OD-1 → **D-25**): live census of the four orphaned library symbols and a `blocking-human` gate on whether they relocate into the test tier or their consumers are deleted. **Outcome INVERTED the plan's own premise:** the operator answered "Delete the consumers", superseding orchestrator ruling OD-1. A replanning pass then re-measured the blast radius (eleven consuming modules, not eight; 247 tests whole-module, not the ~105 priced) and the operator chose **surgical** deletion — 90 consuming tests, zero collateral. Both halves are D-25 in `188-CONTEXT.md`. Plans 188-03, 188-04 and 188-09 were rewritten on that basis before any of them ran
+- [x] 188-06-PLAN.md — TOOLS-06 (D-08, D-09, D-20, D-21b): the firmware half of the frame-vector apparatus deleted whole with its four platformio registrations and four CI steps across two workflows, and the native size baseline plus both summary fixtures re-recorded from one cold capture in the same commit; the twelve AVR figures proven unmoved
+
+**Wave 3** *(host — the tracer: one complete deletion-plus-repair cycle before ~15,000 lines follow it)*
+
+- [x] 188-03-PLAN.md — TOOLS-03 (D-01, D-13, **D-25**): `check_diagnostic_report_claims.py` retired end to end with its test, its fixture, its orphaned symbol and its one consuming test; then `check_dispatch.py` retired with the six `test_val_wire_*` suites deleted whole and `test_decoder.py` / `test_build_db_inclusion.py` trimmed of their dispatch tests alone — **two gates, not one**, because deleting the dispatch gate's consumers strands the gate. Both fail-closed indexes that name the deleted files are settled in the same commits: the scan-path resolver pair deleted outright per D-13 (its eleven-tool leg reddens the instant the dispatch gate goes), and nine entries removed from `check_no_exists_proxy.py`'s literal target enumeration. 66 collected tests leave, zero collateral, measured against the 2373 baseline at both commit boundaries; the `--cov-fail-under=70` risk is owned here with a measured before and after
+
+**Wave 4** *(host)*
+
+- [x] 188-04-PLAN.md — TOOLS-03 (D-01, D-02, D-03, D-13, **D-25**): `test_op_registration_parity.py` deleted whole and `test_blast_radius_invariance.py` trimmed of its two `render_shape` sites alone — the v1.36 GATE-01/02/03 oracle and the nineteen snapshots kept, because a surviving D-10 test asserts against them; plus `tests/test_chip_test.py` repaired rather than deleted, the one collateral no decision or research table named; then the **eight** remaining gates (188-03 took two), their eight tests, seven planted fixtures, the mypy CI step and the stale regression-guard prose retired in one commit — the 12 V hazard description kept. The fail-closed scan-path pair moved to 188-03, where the tool it indexes is deleted
+
+**Wave 5** *(host)*
+
+- [x] 188-05-PLAN.md — TOOLS-01/04/06/07 (D-04, D-06, D-07, D-08, D-09, D-15): the six GSD-process tools, their five tests, two orphaned data artifacts, both CI mirrors, the one orphan and the host half of the frame-vector apparatus retired with the two vector CI steps in the same commit; `tools/` left at exactly six scripts
+
+**Wave 6** *(host)*
+
+- [x] 188-07-PLAN.md — TOOLS-05 (D-16, D-18, D-19): the five in-repo survivors swept by hand, datasheet citations and the hostile-input contract intact, asserted with a positive control; the three-repo dangling-reference sweep and the CI-faithful Python 3.11 acceptance battery
+
+**Wave 7** *(all three repos — the catalog sync)*
+
+- [x] 188-08-PLAN.md — TOOLS-05 (D-11, D-17): the catalog code generator's five citations stripped at the meta canonical copy and synced to both sub-repos, with `messages.h` and `messages.py` proven byte-unchanged by a real diff after the sync and the second sync proven a no-op
+
+**Wave 8** *(meta — the record)*
+
+- [x] 188-09-PLAN.md — TOOLS-01…07 (D-22, D-23): the verdict note at `.planning/notes/host-tools-retirement.md`, the seven traceability rows amended by hand with RETIRED carrying its cause and no checkbox flipped, all seven success criteria and the not-in-scope paragraph amended in place with the conflict quoted, and the three folded planning items settled — no successor guard, no backlog item
+
+**Key context:** `.planning/notes/host-tools-checker-apparatus-audit.md` (the audit, its two corrections, and
+the measurements); `.planning/research/questions.md` §"Host `tools/` checker apparatus" and §"Which host tools
+are doing GSD's work?" (criteria 3 and 4 are those questions); `.planning/seeds/phase-gate-expiry-discipline.md`
+(criterion 3's forward half); `.planning/quick/260912-mo6-fail-closed-on-repo-escaping-default-out/`
+(criterion 1's starting point and its disclosed residual);
+`.planning/notes/catalog-sync-check-retirement.md` (why criterion 6 must not be a CI gate).
 
 ## v1.36 — `dev test` Fidelity (CLOSED 2026-09-09 — 46/46 requirements; merged to `beta` in all three repos, NOT tagged by operator decision)
 
