@@ -4,11 +4,11 @@ milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 190
 current_phase_name: Endpoints That Do Not Depend on a Redirect
-status: planned
+status: executing
 stopped_at: Phase 190 planned
-last_updated: "2026-09-13T16:54:06.808Z"
+last_updated: "2026-09-13T16:59:15.897Z"
 last_activity: 2026-09-13
-last_activity_desc: "Phase 190 Endpoints That Do Not Depend on a Redirect PLANNED 2026-09-13 - 4 plans in 3 waves (190-01 tracer, 190-02 + 190-03 parallel, 190-04 evidence), all autonomous, covering URL-01/URL-03/URL-04. Research corrected a load-bearing premise: henols/firestarter still answers with HTTP 301 and requests follows it, so the bare-slug constants work today, no test can go red before the change, and a before/after CLI transcript is byte-identical - response.history (redirect count 0) is the only non-vacuous observable, and it is now a required verify leg. Plan-checker returned 0 blockers / 1 warning; the warning was against 190-RESEARCH.md's unmarked Open Questions, not any plan, and was closed at source in 4c3b6aea. Decision coverage 17/17 (skipped:false), requirements 3/3, 85/85 verify commands carry a stated failing direction."
+last_activity_desc: "Phase 190 Endpoints That Do Not Depend on a Redirect EXECUTING 2026-09-13 - 4 plans in 3 waves (190-01 tracer, 190-02 + 190-03 same wave, 190-04 evidence), all autonomous, covering URL-01/URL-03/URL-04. Planning closed with plan-checker 0 blockers, decision coverage 17/17, requirements 3/3, post-planning gaps 20/20. Executing sequentially on the main working tree (use_worktrees false, parallelization false) on branch v1.38-repository-rename; the init-computed gsd/ branch name was NOT used, since it would have forked off origin/beta and stranded 32 commits of v1.38 work."
 progress:
   total_phases: 5
   completed_phases: 1
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 189 — Free the Name
+**Current focus:** Phase 190 — Endpoints That Do Not Depend on a Redirect
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 190 (Endpoints That Do Not Depend on a Redirect) — READY TO EXECUTE
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-09-13 — Phase 190 planned: 4 plans, 3 waves, plan-checker 0 blockers
+Phase: 190 (Endpoints That Do Not Depend on a Redirect) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 190
+Last activity: 2026-09-13 — Phase 190 execution started
 
 ## Roadmap Summary (v1.38)
 
