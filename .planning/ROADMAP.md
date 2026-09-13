@@ -632,7 +632,7 @@ cross-repo catalog sync, then the ledger.
 
 **Wave 5** *(host)*
 
-- [ ] 188-05-PLAN.md — TOOLS-01/04/06/07 (D-04, D-06, D-07, D-08, D-09, D-15): the six GSD-process tools, their five tests, two orphaned data artifacts, both CI mirrors, the one orphan and the host half of the frame-vector apparatus retired with the two vector CI steps in the same commit; `tools/` left at exactly six scripts
+- [x] 188-05-PLAN.md — TOOLS-01/04/06/07 (D-04, D-06, D-07, D-08, D-09, D-15): the six GSD-process tools, their five tests, two orphaned data artifacts, both CI mirrors, the one orphan and the host half of the frame-vector apparatus retired with the two vector CI steps in the same commit; `tools/` left at exactly six scripts
 
 **Wave 6** *(host)*
 
