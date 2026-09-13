@@ -1,14 +1,14 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.37
-milestone_name: Operator Safety, Answered Reports & Claim Hygiene (ACTIVATED 2026-09-10)
+milestone_name: Operator Safety, Answered Reports & Claim Hygiene (CLOSED 2026-09-13)
 current_phase: 188
 current_phase_name: The Tools Directory
-status: completed
-stopped_at: Phase 188 complete — all phases complete
+status: complete
+stopped_at: "v1.37 CLOSED 2026-09-13 — 7 phases, 49 plans, 35/35 requirements, hand-archived; merged to beta in all three repos, not tagged."
 last_updated: "2026-09-13T07:05:19.247Z"
 last_activity: 2026-09-13
-last_activity_desc: Phase 188 complete
+last_activity_desc: "v1.37 closed and hand-archived — CLOSE-RECORD.md written, ROADMAP/REQUIREMENTS snapshotted to .planning/milestones/, MILESTONES.md entry added, ROADMAP heading flipped to CLOSED. milestone.complete NOT run."
 progress:
   total_phases: 7
   completed_phases: 7
@@ -235,7 +235,7 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 188 (The Tools Directory) — COMPLETE
+Phase: 188 (The Tools Directory) — COMPLETE · MILESTONE v1.37 CLOSED 2026-09-13
 Plan: 9 of 9 complete (188-01 … 188-09)
 Status: Phase complete — 188-VERIFICATION.md passed 7/7 must-haves, 188-UAT.md 1/1 passed with 0 issues. All 7 phases of v1.37 are now complete; the milestone is ready for hand-archived close.
 Last activity: 2026-09-13 — Phase 188 closed. UAT resolved: the six stale-claim warnings WR-01..WR-06 accepted as disclosed follow-on debt, todo filed at .planning/todos/pending/2026-09-13-close-six-stale-claims-wr01-wr06.md naming all six by ID. Also corrected 188-VERIFICATION.md's covered_digest, which was fabricated rather than stale (declared ee22edc0 matched the 26 covered files at neither the verification commit nor HEAD; true value v1:sha256:7712dd9b from `query verification fingerprint`) — it had been forcing verification.status to `stale` unconditionally and would have blocked transition permanently.
