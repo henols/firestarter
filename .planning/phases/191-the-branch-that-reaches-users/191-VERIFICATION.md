@@ -1,8 +1,8 @@
 ---
 phase: 191-the-branch-that-reaches-users
 verified: 2026-09-13T23:10:00Z
-status: human_needed
-score: 4/4 must-haves verified (roadmap success criteria); 1 advisory finding requires human decision
+status: passed
+score: 4/4 must-haves verified (roadmap success criteria); 1 advisory finding raised and resolved
 covered_files:
   - .planning/REQUIREMENTS.md
   - .planning/phases/191-the-branch-that-reaches-users/191-01-PLAN.md
@@ -27,7 +27,7 @@ covered_files:
   - .planning/phases/191-the-branch-that-reaches-users/evidence/191-url-02-prepared-branch.txt
   - .planning/todos/pending/2026-09-13-publish-yml-release-published-never-fires.md
   - .planning/todos/pending/2026-09-13-release-yml-autocommit-vs-ruleset.md
-covered_digest: "v1:sha256:6db0e0c1bc18445f0951e30af1977651462e2d3a798cad5cf14ed594f4ee3dbb"
+covered_digest: "v1:sha256:6db0e0c1bc18445f0951e30af1977651462e2d3a798cad5cf14ed594f4ee3dbb"  # STALE BY DESIGN: computed before the UAT resolution edited two covered files (evidence/191-stable-disposition.md, todos/pending/2026-09-13-publish-yml-release-published-never-fires.md). Not recomputed rather than fabricated — see 191-UAT.md for what changed and why.
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
@@ -41,7 +41,7 @@ human_verification:
 **Phase Goal:** The version a person gets from `pip install firestarter` addresses
 `firestarter_fw`, and that claim is verified by installing it rather than by reading the diff.
 **Verified:** 2026-09-13T23:10:00Z
-**Status:** human_needed
+**Status:** passed (human verification item resolved 2026-09-13 — see `191-UAT.md`)
 **Re-verification:** No — initial verification
 
 ## Goal Achievement

@@ -178,3 +178,57 @@ code path that raises it, because the handshake never produced two version strin
 | 2 — stable cut published to PyPI | `2.0.9` | `191-stable-01-pypi.txt`, `191-stable-01-release-run.txt` |
 | 3 — 999.9 validated against that stable | `2.0.9` (fixture + bench) | `191-stable-02-fixture-published.txt`, `191-stable-02-bench-leonardo.txt` |
 | 4 — three unachieved items named | stranded users; no `main` regression guard (D-02); pipeline broken in two places (D-05) | this record, both backlog items |
+
+---
+
+## Correction, appended 2026-09-13 after phase verification
+
+The record above is left as written, because it is what this phase measured and believed. This
+section corrects one factual claim inside it. Nothing here changes any of the four success
+criteria: `2.0.9` is published and was verified live, independently, twice.
+
+**The claim that is wrong.** Item 3 of the "what this does not achieve" list states that
+`publish.yml`'s `release: published` trigger "has never fired in 8 of 8 recorded runs (all
+`workflow_dispatch`)". Re-read live during verification with `gh run list --workflow publish.yml
+--limit 30`: the repository has **13 runs, and two of them are `release` events**, not zero.
+
+**Why the original measurement was wrong.** It was taken with `--limit 10`. Eleven `publish.yml`
+runs existed before this phase, so a ten-row listing drops exactly one — the oldest — and the
+oldest was the single counterexample. The truncation removed the one row that would have inverted
+the conclusion.
+
+**What is actually true, and it is a sharper defect rather than no defect.** The trigger fires for
+human-created releases and is suppressed for releases created by a workflow:
+
+| tag | release created by | `publish.yml` run | reached PyPI? |
+|---|---|---|---|
+| `2.0.7` | `henols` (User) | `20956549620`, `event: release`, success | yes |
+| `2.0.8` | `github-actions[bot]` (Bot) | none — never fired | **no** |
+| `2.0.9` | `henols` (User) | `34785081535`, `event: release` | yes |
+
+`20956549620` is how `2.0.7` reached PyPI unaided — the same `2.0.7` this phase measured its
+fail-first baseline against in `191-stable-02-fixture-baseline.txt`.
+
+The mechanism is documented GitHub behaviour, and `publish.yml`'s own comment block already named
+it: a workflow run authenticated with the default `GITHUB_TOKEN` does not create new workflow
+runs, so the `release: published` event `release.yml` raises is never delivered. This makes both
+filed defects the **same** root cause — the default token cannot bypass the ruleset to push, and
+cannot cascade an event to another workflow — and it makes `beta-release.yml`'s `pypi`-job pattern
+(a direct reusable-workflow call, not an event) the right fix for exactly the reason that pattern
+works.
+
+**One further observation from this phase's own run.** The manual
+`gh workflow run publish.yml --field tag=2.0.9` step was probably unnecessary: creating the
+release fired `34785081535` automatically in the same second, the two raced on the upload, the
+manual run won, and the automatic one failed with a PyPI "File already exists" collision on the
+sdist. It failed because it was redundant, not because it was suppressed. For a hand-cut release,
+create the tag and release and then watch whether the release-event run publishes on its own
+before dispatching manually.
+
+`.planning/todos/pending/2026-09-13-publish-yml-release-published-never-fires.md` has been
+rewritten to carry this corrected diagnosis. Its proposed fix is unchanged — it was correct on the
+original, wrong diagnosis and remains correct on this one.
+
+**Standing lesson:** this phase was built end to end on reading live state rather than trusting a
+prior measurement, and this is the one prior measurement it carried forward without re-reading.
+Bound listings generously (`--limit 30`+) before asserting "never" about a workflow's history.
