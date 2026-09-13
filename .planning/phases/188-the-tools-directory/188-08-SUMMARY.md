@@ -208,6 +208,13 @@ None - no external service configuration required.
 - `REQUIREMENTS.md` and `ROADMAP.md` deliberately left untouched by this plan — the whole-phase RETIRED-ledger amendment (D-22) and the verdict note (D-23) are 188-09's responsibility. `roadmap.update-plan-progress` was not run against this phase.
 - Both sub-repos' working trees are clean apart from the pre-existing untracked scratch (`firestarter_app/datasheets/*.pdf`), left alone per instructions. The meta repo shows only the two gitlink advances (`firestarter`, `firestarter_app`) pending the orchestrator's wave-boundary commit, plus the pre-existing untracked `anything.txt`/`tmp/` scratch, also left alone.
 
+## Self-Check: PASSED
+
+- `.planning/phases/188-the-tools-directory/188-08-SUMMARY.md` exists on disk.
+- Meta commits `b1db45f5` (citation strip), `bdcec1a6` (SUMMARY), `3783311f` (STATE.md) all found in `git log --oneline --all`.
+- firestarter commit `6c4d2e2` and firestarter_app commit `f36113b` both found in their respective repos' `git log --oneline --all`.
+- All task-level acceptance criteria and verify legs re-run and passed as documented above.
+
 ---
 *Phase: 188-the-tools-directory*
 *Completed: 2026-09-13*
