@@ -38,7 +38,79 @@
 **v1.30 shipped:** 2026-08-05 (SDP Surface Retirement & Behavioral Lock Proof — 7 phases (131–134, 136, 136.1, 137), 48 plans, 125 tasks; **55/56 requirements, CLOSE-06 held open by design**; host-only, no firmware change. Retired v1.22's unverifiable standalone `dev sdp <chip> enable|disable` and moved the proof into a six-step `dev test` leg whose oracle is read-back equality against a baseline pattern, never an exit code; hardened `check_mypy_watermark.py` from fail-open to fail-closed and certified `firestarter_app`'s primary `ci` job GREEN for the first time in two months (run `30856059940`, mypy 32 against an unratcheted watermark of 35); landed gh#8's stable-channel `dev` narrowing. **Phase 135 (`write --sdp-relock`) deferred out to Backlog 999.28** by operator decision, number not reused — so v1.30 ships the deletion and the behavioral proof and **withdraws** the deliberate-protection surface with **no replacement** (RELOCK-01…06 left v1 scope, 56 → 50 reqs; RELOCK-07 re-homed to Phase 137). Evidence ceiling honoured throughout: **no AT28C part in inventory, no hardware ran** — emission, plan-derivation and read-back-comparison logic are proven; the causal claim "the lock inhibited the write" is not, and did not gate the close. Seventh consecutive `override_closeout`. **⚠ `firestarter_app`'s `gsd/v1.30-sdp-surface-retirement` was never merged to `origin/beta`** — the PR was staged but not opened; v1.31 Phase 138 lands it. See `.planning/MILESTONES.md` §v1.30.)
 
 **v1.31 shipped:** 2026-08-18 (27C Programming-Algorithm Fidelity — 9 phases (138–146), 74 plans, 164 tasks; **45/45 v1 requirements**; firmware-touching, dual-repo lockstep. Implements [gh#15](https://github.com/henols/firestarter_prom/issues/15) **as corrected, not as filed** — two wrong numbers and one inverted premise, all three corrected *publicly and before implementation* (comment `#5233463320`): `0x0B`'s pulse is **500 µs**, not `50000 us`; pulse width is a **database datum**, not a per-protocol constant (re-derived live through the production parser — 170/127/32 chips); and the safe 32-bit delay helper is for the overprogram pulse, not any bare pulse. Delivered: **one shared per-byte pulse-to-verify loop** driven by a `const` PROGMEM `eprom_params_t` table keyed on `protocol_id` (**D-01** — protocol owns *shape*, the database owns the *pulse*), **not** gh#15's three state machines; fixed-width pulses that never grow between attempts; hard-fail at `max_pulses` reporting the failing **address and pulse count**; one shared `eprom_hv_route_mask()` with every **error** exit disabling every HV route through a single-exit wrapper; `write --pulse-us N` bounded 1..65535 and pre-validated before a serial byte, riding the existing wire field with **no new DB field and no second algorithm selector**; plus a host long-write timeout fix and intra-block progress, scoped to the `leonardo` class only — on `SERIAL_ON_IO` boards the emission is compiled out **structurally**, because a buffered progress frame there could displace a later `MSG_ERR_MAX_PULSES` and convert a program failure into a transport timeout. **Bench-validated on real silicon:** three full 65536-byte write→read→verify cycles on a Winbond **W27C512** (`0xda08`), **Leonardo**, shield **Rev 2.0** — three distinct images, nine clean oracle cells, read stability N=3 at one SHA each, write timing consistent to **0.37 s**. A firmware defect this milestone itself introduced (Phase 141 deleted the only `CTRL_VPE_ENABLE` assert) failed the **first** bench cycle on byte 0; it was root-caused by a debug session, fixed, and **stands in the record with its cause** rather than being counted out. **Evidence Ceiling stands: the ~6.25 V program-VCC rail all four vendor algorithms assume is unreachable on every shield revision this project owns** — so this milestone claims **fidelity, not improvement**, with no comparative claim, no control run, and no datasheet-conformance claim in either direction. `0x08` (AM27C020) and `0x0B` (M2716/M2732) are **skipped-with-reason** with the missing parts named, never inferred from `0x07`. Twelve items carry forward with the literal phrase `no v1.31 owner`; **MERGE-05's +96 B leonardo band breach is open and un-adjudicated** with the operator as its named owner. Eighth consecutive `override_closeout` (9 carry-forward items, none originating in v1.31). Closed via **PRs to `beta` in all three repos, not direct merges**, per operator decision — meta tagged `v1.31`, gitlinks re-pinned; **no beta cut yet**, and stable stays operator-gated. See `.planning/MILESTONES.md` §v1.31.)
-## Current Milestone: v1.37 Operator Safety, Answered Reports & Claim Hygiene
+## Current Milestone: v1.38 Repository Rename
+
+**Activated:** 2026-09-13 · **Phases continue at 189** (v1.37 ran 182–188; the vacated **150** slot and
+the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving)
+
+**Goal:** Give the project a front door people can find, and a firmware repository that does not own the
+unqualified name — without breaking firmware updates for anyone already installed.
+
+**Why now.** Backlog **999.9** (gh#2) has been the highest-blast-radius item since the 2026-07-27 import,
+and v1.35 shipped the wiki front door while *accepting* that this rename would invalidate every link it
+wrote — recorded in `ROADMAP.md` as a "known sequencing hazard — accepted at activation, not solved", with
+phases 169, 170 and 172 named as the ones needing a re-sweep. Backlog 999.13's own triage note says the
+contribution-guide text "must be written *after* — or jointly with — 999.9."
+
+The discovery failure is now measured rather than asserted (`gh api repos/henols/<repo>`, 2026-09-13):
+
+| repo | role | stars | forks | watchers |
+|---|---|---|---|---|
+| `firestarter_prom` | front door since v1.35 | **0** | **0** | **0** |
+| `firestarter` | firmware | 27 | 11 | 3 |
+| `firestarter_app` | host CLI | 48 | 6 | 4 |
+
+Six weeks after v1.35 made it the documented entry point, nobody has found it, while 75 stars sit on the
+two components. That is the case for doing this at all, and it is stronger than a naming-aesthetics
+argument.
+
+**The shape of the risk, stated once so no phase re-derives it.** Both renames are individually covered by
+permanent GitHub redirects — and `firestarter_prom`'s would survive forever, because nothing will ever
+claim that slug. The single destructive act in 999.9 is **claiming** `henols/firestarter` for the meta
+repository, which is what deletes the firmware repository's redirect. **v1.38 does not perform that claim**
+(D-1). Everything else in 999.9 is safe to ship now, and is what this milestone ships.
+
+Blast radius is measured, not estimated: the three hardcoded endpoints in
+`firestarter_app/firestarter/constants.py` are consumed only by `firmware.py`, so what breaks is the `fw`
+command alone — read, write, verify, erase and `dev test` are untouched. Full analysis in
+[`notes/999.9-repo-rename-impact-analysis.md`](notes/999.9-repo-rename-impact-analysis.md).
+
+### Five strands
+
+| Strand | Scope | Origin |
+|---|---|---|
+| **RENAME** — free the name | `firestarter` → `firestarter_fw`; `.gitmodules` on both branches; `git submodule sync --recursive` | 999.9 |
+| **URL** — endpoints that must not depend on a redirect | the three `FIRESTARTER_*_URL` constants plus the two hardcoded fixtures in `tests/test_firmware_install.py`, on `beta` **and** `main` as separate changes | 999.9 |
+| **STABLE** — reach the default install | a 2.0.x stable cut off `main` carrying the URL fix, because `pip install firestarter` resolves to **2.0.7**, not to the `3.0.0bNN` line | 999.9 |
+| **SWEEP** — live references only | ~12 tracked files: `README.md`, both sub-repo READMEs, and five `.planning/codebase/` documents | 999.9 |
+| **GATE** — make the deferred claim measurable | a PyPI version-share instrument for the adoption gate, and the standing no-Releases rule | [`seeds/SEED-claim-firestarter-slug.md`](seeds/SEED-claim-firestarter-slug.md) |
+
+### Decisions taken at activation (operator, 2026-09-13)
+
+| ID | Decision | Consequence |
+|---|---|---|
+| **D-1** | **v1.38 stops before the claim.** Renaming `firestarter_prom` → `firestarter` is out of scope. | The milestone closes with the front door still named `firestarter_prom`. The claim is deferred to a seed whose trigger is *adoption*, not a date. |
+| **D-2** | **Firmware releases stay in the firmware repository.** No mirroring onto the meta repo, not even for a bounded sunset window. | Rules out the one continuity mechanism that would have let the claim happen immediately, and therefore implies D-1 rather than merely accompanying it. |
+| **D-3** | **`main` and `beta` are separate changes**, and `main` is the one that reaches users. | `pip install firestarter` resolves to **2.0.7**; `origin/main` is that code, 948 commits behind `beta`, carrying `FIRESTARTER_RELEASE_URL` but no `submit.py`. Repointing `beta` alone would leave the default install broken *while passing 999.9's own stated clean-environment validation*. |
+| **D-4** | **The meta repository must never publish a GitHub Release.** Bare milestone tags only, as today. | It has **0** Releases, which is exactly what makes a post-claim failure a clean 404. Publishing one arms `_compare_versions` to parse `v1.36` as PEP 440 `1.36`, judge `3.0.0b29` newer, and report firmware as current forever — silent and permanent, where today it is loud. |
+| **D-5** | **The 672 archived references under `.planning/milestones/` are not swept.** | `.planning/`→`.planning/` citations are historical-by-intent: they record what the repository was called when the record was written. Repairing them destroys the evidence they exist to preserve. |
+| **D-6** | **The `.gitmodules` history trap is documented, not solved.** | Fixing `.gitmodules` on `beta` and `main` does not fix history, so any pre-rename checkout plus `submodule update --init` resolves to the meta repository and clones the parent into its own `firestarter/` child. Unfixable by construction; the deliverable is a documented workaround. |
+| **D-7** | **Every outward-facing step stays operator-gated** — the GitHub rename itself, the stable cut, and every push. | Standing posture since v1.21. A merge to `beta` cuts a pre-release in both sub-repos and publishes the host one to PyPI, so no agent performs one. |
+
+### What this milestone does NOT do
+
+- **It does not claim `henols/firestarter`.** D-1. The deferral is the design, not an unfinished edge.
+- **It does not rename `firestarter_app`.** 999.9's prose says "all three repositories" but names only two
+  mappings; the host repository keeps its name, and the incoherence that PyPI `firestarter` is the app while
+  GitHub `firestarter` will be the meta repo is noted rather than resolved.
+- **It does not eliminate stranding.** Nothing reaches users who never upgrade. The sequencing shrinks that
+  set; it cannot empty it. What bounds the damage is the narrow blast radius, not the sequencing.
+- **It does not change firmware behaviour.** The firmware repository is renamed and its README repointed;
+  no source, no protocol, no dual-repo behavioural lockstep.
+- **It does not repair v1.35's wiki and README links.** Those become wrong only when the claim fires, which
+  is deferred — so the re-sweep of phases 169/170/172 travels with the claim, not with this milestone.
+
+## v1.37 Archive: Operator Safety, Answered Reports & Claim Hygiene — Shipped 2026-09-13
 
 **Activated:** 2026-09-10 · **Phases continue at 182** (v1.36 ran 174–181; the vacated **150** slot and
 the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving)
@@ -2085,6 +2157,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+
+*Last updated: 2026-09-13 — **v1.38 (Repository Rename) ACTIVATED**, phases continue at **189** (v1.37 ran 182–188; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused). Promotes Backlog **999.9** (gh#2), the highest-blast-radius item in the 2026-07-27 import and a hazard v1.35 explicitly accepted rather than solved. **Renames `firestarter` → `firestarter_fw` and stops there:** claiming `henols/firestarter` for the meta repo is the one destructive act in 999.9 — it is what deletes the firmware repo's redirect — and it is deferred to [`seeds/SEED-claim-firestarter-slug.md`](seeds/SEED-claim-firestarter-slug.md) behind an *adoption* trigger rather than a date. **Scoped from measurement, not estimate** (2026-09-13): the front door has **0 stars / 0 forks / 0 watchers** six weeks after v1.35 made it the documented entry point, while 75 sit on the two components; `pip install firestarter` resolves to **2.0.7**, so `origin/main` — 948 commits behind `beta` — is the branch that reaches users and 999.9's own clean-environment validation would have tested it while only `beta` got fixed; the three hardcoded endpoints are consumed **only** by `firmware.py`, so the blast radius is the `fw` command alone; no workflow in any of the three repos hardcodes a repo slug, making 999.9's "CI/release workflows" clause a no-op; and **672 of the 778** firmware-slug references sit in `.planning/milestones/`, historical-by-intent and deliberately not swept. **Standing rule this milestone establishes:** the meta repo must never publish a GitHub Release — it has 0 today, which is what keeps a post-claim failure a clean 404 instead of `_compare_versions` reading `v1.36` as `1.36` and reporting firmware current forever. Full analysis in [`notes/999.9-repo-rename-impact-analysis.md`](notes/999.9-repo-rename-impact-analysis.md). Prior footer retained below.*
 
 *Last updated: 2026-09-02 — **v1.36 `dev test` Fidelity ACTIVATED**, phases continue at 174. Host-app-only milestone against the `dev test` harness: stop running operations whose result is empty by construction (four measured cases, enforced by a structural test over `derive_plan` output, not a comment), stop failing UV parts for the tool's own whole-device blank check (Backlog 999.44 host half), stop filing a tool or rig fault as a chip verdict, and make the report state what the run already knows (Backlog 999.36's 13 drafted requirements, schema → 1.8) under a `dedup_fingerprint` byte-identity gate. Motivated by three community rebuttals of our own triage on gh#23/#28/#31. **999.44's firmware half — and the product-level `firestarter write -a` refusal it fixes — is knowingly OUT of scope and stays a defect.***
 

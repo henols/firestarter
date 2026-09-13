@@ -1,20 +1,16 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.37
-milestone_name: Operator Safety, Answered Reports & Claim Hygiene (CLOSED 2026-09-13)
-current_phase: 188
-current_phase_name: The Tools Directory
-status: complete
-stopped_at: "v1.37 CLOSED 2026-09-13 — 7 phases, 49 plans, 35/35 requirements, hand-archived; merged to beta in all three repos, not tagged."
-last_updated: "2026-09-13T07:05:19.247Z"
+milestone: v1.38
+milestone_name: Repository Rename
+status: planning
+last_updated: "2026-09-13T12:03:21.259Z"
 last_activity: 2026-09-13
-last_activity_desc: "v1.37 closed and hand-archived — CLOSE-RECORD.md written, ROADMAP/REQUIREMENTS snapshotted to .planning/milestones/, MILESTONES.md entry added, ROADMAP heading flipped to CLOSED. milestone.complete NOT run."
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 49
-  completed_plans: 49
-  percent: 100
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -235,10 +231,49 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 188 (The Tools Directory) — COMPLETE · MILESTONE v1.37 CLOSED 2026-09-13
-Plan: 9 of 9 complete (188-01 … 188-09)
-Status: Phase complete — 188-VERIFICATION.md passed 7/7 must-haves, 188-UAT.md 1/1 passed with 0 issues. All 7 phases of v1.37 are now complete; the milestone is ready for hand-archived close.
-Last activity: 2026-09-13 — Completed quick task 260913-e7t: closed stale enforcement claims WR-02..WR-06; WR-01 left open by design for the provenance sweep
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-09-13 — Milestone v1.38 started
+
+## Roadmap Summary (v1.38)
+
+**Created:** 2026-09-13, hand-authored against `.planning/REQUIREMENTS.md` (15 v1 requirements, 5
+categories, D-1…D-7). **No roadmapper subagent and no research phase were run**, deliberately and for the
+same two reasons v1.37 recorded: `ROADMAP.md` is a ~7,600-line hand-authored file carrying the entire
+`999.x` Backlog and every archived milestone, which the roadmap verbs would reformat wholesale; and every
+fact this milestone rests on was measured directly against the three live working trees and the live
+GitHub/PyPI APIs during the 2026-09-13 `/gsd-explore` session, with each figure cited at the point of use.
+The v1.38 section was spliced immediately after the `## Milestones` summary list and before the v1.37
+section. `phases.clear` was **skipped** — `phase_dir_count` was 0 (v1.37's directories were archived at its
+close), and this repo's phase history is preserved rather than cleared.
+
+**Phases:** 5 (**189–193**). Numbering continues from v1.37's 188; the vacated **150** slot and the
+v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving.
+**Coverage:** 15 requirements, all mapped, 0 orphans, 0 duplicates.
+
+| # | Phase | Requirements | Depends on |
+|---|-------|--------------|------------|
+| 189 | Free the Name | RENAME-01…03 (3) | — (first phase) |
+| 190 | Endpoints That Do Not Depend on a Redirect | URL-01, URL-03, URL-04 (3) | 189 |
+| 191 | The Branch That Reaches Users | URL-02, STABLE-01…02 (3) | 190 |
+| 192 | Live References Only | SWEEP-01…03 (3) | 189 |
+| 193 | The Deferred Claim, Made Measurable | GATE-01…03 (3) | 191 |
+
+**The one hard ordering constraint:** Phase 189 runs first — nothing can point at `firestarter_fw` until
+the name exists. Phases 190 and 192 are then independent of each other; 191 follows 190 so the repoint is
+exercised on `beta` before the same change ships to the default install; 193 follows 191 because its
+adoption instrument has nothing to measure until a stable carrying the new URL exists.
+
+**Deliberately excluded (D-1):** claiming `henols/firestarter` for the meta repository — the single
+destructive act in Backlog 999.9, and the one that deletes the firmware repo's redirect. Deferred to
+`seeds/SEED-claim-firestarter-slug.md` behind an adoption trigger. **Also excluded:** mirroring firmware
+releases onto the meta repo (D-2), renaming `firestarter_app`, and repairing the 672 archived
+firmware-slug references under `.planning/milestones/` (D-5).
+
+**Outward-facing and operator-gated (D-7):** the GitHub rename (189), the stable cut and its PyPI publish
+(191), and every push. A merge to `beta` cuts a pre-release in both sub-repos and publishes the host one to
+PyPI, so no agent performs one.
 
 ## Roadmap Summary (v1.37)
 
