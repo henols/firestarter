@@ -68,7 +68,7 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 - [x] **STABLE-01**: A stable release cut from `main` and carrying URL-02 is published to PyPI, so that
       `pip install firestarter` — which resolves to the stable channel, today **2.0.7** — yields a version
       addressing `firestarter_fw`.
-- [ ] **STABLE-02**: The clean-environment validation named in 999.9 is run **against that stable**, not
+- [x] **STABLE-02**: The clean-environment validation named in 999.9 is run **against that stable**, not
       against `beta`: install → query → locate release → download asset → update-check. Running it against
       a prerelease would reproduce the blindness D-3 identifies.
 
@@ -131,7 +131,7 @@ Which phases cover which requirements. Populated at roadmap creation.
 | URL-03 | Phase 190 | Complete |
 | URL-04 | Phase 190 | Complete |
 | STABLE-01 | Phase 191 | Complete |
-| STABLE-02 | Phase 191 | Pending |
+| STABLE-02 | Phase 191 | Complete |
 | SWEEP-01 | Phase 192 | Pending |
 | SWEEP-02 | Phase 192 | Pending |
 | SWEEP-03 | Phase 192 | Pending |

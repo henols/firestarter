@@ -390,7 +390,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 191-05-PLAN.md — Bench leg on the Leonardo, and the phase disposition record
+- [x] 191-05-PLAN.md — Bench leg on the Leonardo, and the phase disposition record
 
 > **Outward-facing.** The stable cut and the PyPI publish are operator-gated (D-7) and must not run under
 > `--auto`/`--chain`, which auto-approve human-verify gates.
