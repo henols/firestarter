@@ -139,7 +139,7 @@ fi
 # ---------------------------------------------------------------------------
 echo "[Step 2] Checking firmware GitHub Release for $BETA_VERSION ..."
 FW_RELEASE_CACHE="/tmp/firestarter-fw-release.json"
-if gh release view "$BETA_VERSION" -R henols/firestarter \
+if gh release view "$BETA_VERSION" -R henols/firestarter_fw \
        --json isPrerelease,assets \
        > "$FW_RELEASE_CACHE" 2>/dev/null; then
 
@@ -154,7 +154,7 @@ if gh release view "$BETA_VERSION" -R henols/firestarter \
     # the REST API (repos/.../releases/latest) and compare tag_name. If the
     # "latest" release equals BETA_VERSION, then make_latest is incorrectly
     # set (Pre-release must not be the Latest marker).
-    LATEST_TAG="$(gh api "repos/henols/firestarter/releases/latest" --jq '.tag_name' 2>/dev/null || true)"
+    LATEST_TAG="$(gh api "repos/henols/firestarter_fw/releases/latest" --jq '.tag_name' 2>/dev/null || true)"
     if [ "$LATEST_TAG" = "$BETA_VERSION" ]; then
         STEP2_ISSUES+=("  Latest release tag equals $BETA_VERSION -- Pre-release must NOT be marked Latest.")
     fi
@@ -181,9 +181,9 @@ if gh release view "$BETA_VERSION" -R henols/firestarter \
         STEP2_RESULT="[FAIL]"
     fi
 else
-    echo "  [FAIL] 'gh release view $BETA_VERSION -R henols/firestarter' failed -- release may not exist yet." >&2
+    echo "  [FAIL] 'gh release view $BETA_VERSION -R henols/firestarter_fw' failed -- release may not exist yet." >&2
     STEP2_RESULT="[FAIL]"
-    FAILURES+=("Step 2: gh release view $BETA_VERSION -R henols/firestarter failed (release not found or network error).")
+    FAILURES+=("Step 2: gh release view $BETA_VERSION -R henols/firestarter_fw failed (release not found or network error).")
 fi
 
 # ---------------------------------------------------------------------------
@@ -202,10 +202,10 @@ if [ -z "$APP_TAG" ]; then
     APP_OK=0
 fi
 
-FW_TAG="$(gh release view "$BETA_VERSION" -R henols/firestarter --json tagName -q .tagName 2>/dev/null || true)"
+FW_TAG="$(gh release view "$BETA_VERSION" -R henols/firestarter_fw --json tagName -q .tagName 2>/dev/null || true)"
 if [ -z "$FW_TAG" ]; then
-    echo "  [FAIL] gh release view $BETA_VERSION -R henols/firestarter: not found or empty tagName." >&2
-    FAILURES+=("Step 3: release $BETA_VERSION not found in henols/firestarter.")
+    echo "  [FAIL] gh release view $BETA_VERSION -R henols/firestarter_fw: not found or empty tagName." >&2
+    FAILURES+=("Step 3: release $BETA_VERSION not found in henols/firestarter_fw.")
     FW_OK=0
 fi
 
