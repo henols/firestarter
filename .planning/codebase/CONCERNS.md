@@ -12,9 +12,9 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 > **Scope note.** The 2026-08-26 and 2026-09-14 remaps each covered ONLY the meta-repo shell:
 > `.claude/`, `.devcontainer/`, `.github/`, `.gitignore`, `.gitmodules`, `.vscode/`, `CLAUDE.md`.
 > The two submodules (`firestarter/` firmware, `firestarter_app/` host CLI) were NOT scanned by
-> either. All findings in the "Submodule Findings (2026-05-08)" section below are preserved verbatim
-> and individually marked `[unverified in 2026-08-26 and 2026-09-14 scoped remaps — may since be
-> fixed]`. Treat them as leads, not confirmed-current defects. The "Meta-Repo / Dev-Environment / CI
+> either. All findings in the "Submodule Findings (2026-05-08)" section below are preserved verbatim and
+> individually marked `[unverified in 2026-08-26 and 2026-09-14 scoped remaps — may since be fixed]`.
+> Treat them as leads, not confirmed-current defects. The "Meta-Repo / Dev-Environment / CI
 > Concerns" section is freshly re-verified as of 2026-09-14.
 
 ---
