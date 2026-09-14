@@ -1,40 +1,29 @@
 ---
-last_mapped_commit: 3e2f7d89
-last_mapped_at: 2026-08-26T20:42:40.949Z
+last_mapped_commit: b1311abd
+last_mapped_at: 2026-09-14T04:59:59.314Z
 mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUDE.md
 ---
 # External Integrations
 
-**Analysis Date:** 2026-08-26 (meta-repo / dev-environment layer)
+**Analysis Date:** 2026-09-14 (meta-repo / dev-environment layer)
 **Prior analysis:** 2026-05-08 (submodule layer — preserved below, not re-verified this run)
 
 ---
 
-# Part 1 — Meta-repo integrations (verified 2026-08-26)
+# Part 1 — Meta-repo integrations (verified 2026-09-14)
 
 ## Git remotes & submodules
 
 `.gitmodules` declares two SSH submodule remotes:
-- `firestarter` → `git@github.com:henols/firestarter.git`
+- `firestarter` → `git@github.com:henols/firestarter_fw.git` (submodule name and path both
+  remain `firestarter`; only the remote was repointed at the v1.38 rename)
 - `firestarter_app` → `git@github.com:henols/firestarter_app.git`
 
-SSH (not HTTPS) means local submodule operations require an SSH key/agent. CI does **not**
-use the submodule remotes — `.github/workflows/catalog-sync-check.yml` checks the sub-repos
-out over HTTPS by repo name instead.
+SSH (not HTTPS) means local submodule operations require an SSH key/agent.
 
-## GitHub Actions (meta-repo CI)
-
-**Workflow:** `.github/workflows/catalog-sync-check.yml` (the only one in this repo)
-
-- Runner: `ubuntu-latest`
-- Actions consumed: `actions/checkout@v4` (three times — meta plus both sub-repos)
-- Cross-repo reads: `henols/firestarter` and `henols/firestarter_app`, at a ref resolved
-  by `git ls-remote --exit-code --heads https://github.com/henols/<repo>.git <branch>`,
-  falling back to `beta`
-- Auth: the default `GITHUB_TOKEN` only; **no repository secrets are referenced**
-- Publishes nothing. It only asserts `tools/catalog/messages.toml` byte-identity across
-  meta and both sub-repos.
-- `workflow_dispatch` is enabled, with no inputs.
+The meta repository has **no `.github/workflows/` directory at all** — `.github/` holds only
+`CONTRIBUTING.md` and an `ISSUE_TEMPLATE/` directory of four files (`bug-report.yml`,
+`config.yml`, `dev-test-report.md`, `feature-request.yml`). There is no meta-repo CI.
 
 ## GitHub API / `gh` CLI (agent tooling)
 
@@ -115,7 +104,8 @@ Residual, outside this repo and NOT yet removed:
   gitignored).
 - **GSD core update check** — `.claude/gsd-core/bin/check-latest-version.cjs` and the
   `.claude/hooks/gsd-check-update*.js` hooks perform a version lookup for the vendored GSD
-  runtime (`.claude/gsd-core/VERSION` = `1.6.1`).
+  runtime (`.claude/gsd-core/VERSION` = `1.13.0`, installed project-locally and pinned by
+  `.devcontainer/post-create.sh`).
 - **Researcher fetch cache** — `.planning/research/.cache/` (gitignored) holds
   web/Context7 responses, implying outbound web + Context7 documentation lookups during
   GSD research phases.
@@ -127,23 +117,24 @@ Residual, outside this repo and NOT yet removed:
 | Discord bot token | ~~`.claude/channels/discord/.env`~~ — deleted 2026-08-26 | a copy survives at `~/.claude/channels/discord/.env`, outside the repo; **not revoked** |
 | GitHub credential | `gh` CLI store under `~/.config` (named volume) | not in repo |
 | Claude Code auth | `~/.claude` (named volume `firestarter-claude`) | not in repo |
-| CI secrets | none referenced by `.github/workflows/catalog-sync-check.yml` | uses default `GITHUB_TOKEN` |
+| CI secrets | none — this repo has no `.github/workflows/` | N/A |
 
 `.claude/settings.json` declares only `permissions`, `remoteControlAtStartup` and
 `autoMode` — no `env` block and no inline keys.
 
 ## Webhooks & callbacks (meta-repo)
 
-**Incoming:** none. GitHub Actions triggers are `push`, `pull_request`, and
-`workflow_dispatch` — not webhooks the repo receives directly.
+**Incoming:** none. There is no CI in this repo to receive `push`/`pull_request` triggers.
 **Outgoing:** none. (The Discord gateway client was removed 2026-08-26; it was never a webhook emitter.)
 
 ---
 
 # Part 2 — Submodule integrations (from 2026-05-08 analysis; not re-verified this run)
 
-All statements in this part are carried forward verbatim and are
-`[unverified in 2026-08-26 scoped remap]`.
+All statements in this part are carried forward verbatim, with one documented exception —
+the firmware repository slug in the GitHub Releases endpoint below, corrected to
+`firestarter_fw` for the v1.38 rename — and are
+`[unverified in 2026-08-26 and 2026-09-14 scoped remaps]`.
 
 ## APIs & External Services
 
@@ -151,7 +142,7 @@ All statements in this part are carried forward verbatim and are
 - GitHub REST API - Fetches latest firmware release metadata and binary download
   - SDK/Client: `requests` (Python HTTP library)
   - Auth: None (public API, unauthenticated)
-  - Endpoint: `https://api.github.com/repos/henols/firestarter/releases/latest`
+  - Endpoint: `https://api.github.com/repos/henols/firestarter_fw/releases/latest`
 
 ## Data Storage
 
@@ -222,4 +213,4 @@ All statements in this part are carried forward verbatim and are
 
 ---
 
-*Meta-repo integration audit: 2026-08-26. Submodule integration audit: 2026-05-08.*
+*Meta-repo integration audit: 2026-09-14. Submodule integration audit: 2026-05-08.*

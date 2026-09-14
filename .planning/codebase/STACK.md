@@ -1,11 +1,11 @@
 ---
-last_mapped_commit: 3e2f7d89
-last_mapped_at: 2026-08-26T20:42:40.949Z
+last_mapped_commit: b1311abd
+last_mapped_at: 2026-09-14T04:59:59.314Z
 mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUDE.md
 ---
 # Technology Stack
 
-**Analysis Date:** 2026-08-26 (meta-repo / dev-environment layer)
+**Analysis Date:** 2026-09-14 (meta-repo / dev-environment layer)
 **Prior analysis:** 2026-05-08 (submodule layer — preserved below, not re-verified this run)
 
 ## Repository Shape
@@ -16,10 +16,12 @@ declared in `.gitmodules`:
 
 | Submodule path | Remote | Contents |
 |----------------|--------|----------|
-| `firestarter/` | `git@github.com:henols/firestarter.git` | Arduino/AVR C++ firmware (PlatformIO) |
+| `firestarter/` | `git@github.com:henols/firestarter_fw.git` | Arduino/AVR C++ firmware (PlatformIO) |
 | `firestarter_app/` | `git@github.com:henols/firestarter_app.git` | Python host CLI (pip package) |
 
-Guidance for both is in `CLAUDE.md` (48 lines) plus each submodule's own `CLAUDE.md`.
+The submodule's own name and path are still `firestarter` — only the remote was repointed at the
+`firestarter_fw` rename (v1.38). Guidance for both is in `CLAUDE.md` (77 lines) plus each
+submodule's own `CLAUDE.md`.
 
 ---
 
@@ -81,7 +83,7 @@ installable on demand but is not part of the provisioned stack.)
 
 ## Post-create provisioning
 
-`.devcontainer/post-create.sh` (run via `postCreateCommand`) performs, in order:
+`.devcontainer/post-create.sh` (run via `postCreateCommand`, 22 lines) performs, in order:
 
 1. `python3 .devcontainer/gen-platformio-ini.py` — generates the repo-root
    `platformio.ini` wrapper (gitignored) that redirects `src_dir`/`include_dir`/`lib_dir`/
@@ -89,34 +91,39 @@ installable on demand but is not part of the provisioned stack.)
 2. `pip install -e /workspaces/firestarter_app` — editable install of the host CLI.
 3. `cd /workspaces/firestarter && pio pkg install` — firmware library deps.
 4. `graphify install` — installs the graphify skill/references into the `~/.claude` volume.
-Steps 5-7 (Discord state dir, `enabledPlugins`/`extraKnownMarketplaces` config-as-code,
-and repointing the plugin's `.mcp.json` at `discord-singleton.sh`) were **removed
-2026-08-26, commit `3e2f7d89`**. `post-create.sh` is now 19 lines, down from 91.
+5. `npx -y --package=@opengsd/gsd-core@1.13.0 -- gsd-core --claude --local` — installs GSD
+   project-locally, pinned to a fixed version. GSD is deliberately **not** installed globally;
+   a prior global 1.1.0 install was removed.
+
+Steps that previously provisioned the Discord channel plugin (state dir,
+`enabledPlugins`/`extraKnownMarketplaces` config-as-code, and repointing the plugin's
+`.mcp.json` at `discord-singleton.sh`) were **removed 2026-08-26, commit `3e2f7d89`**.
 
 ## Agent tooling runtime (`.claude/`)
 
 **Tracked vs local — this split matters.** `.gitignore` ignores `.claude/*` with a single
-un-ignore for `!.claude/skills/`. Only **7 files** are tracked under `.claude/`:
+un-ignore for `!.claude/skills/`. Only **9 files** are tracked under `.claude/`:
 
-- `.claude/skills/devtest-triage/` — `SKILL.md`, `fixtures/*.md`,
-  `scripts/devtest_issues.py`
+- `.claude/skills/devtest-triage/` — `SKILL.md`, `fixtures/*.md` (2 files),
+  `scripts/devtest_issues.py`, `scripts/test_supersede.py`
 - `.claude/skills/devtest-rootcause/` — `SKILL.md`, `scripts/infoic_lookup.py`,
-  `scripts/seed_debug_session.py`
+  `scripts/seed_debug_session.py`, `scripts/diff_db.py`
 
 Everything else under `.claude/` is **local runtime state** and is not reproducible from
 this repo alone:
-- `.claude/gsd-core/` — vendored GSD runtime, VERSION `1.6.1`; entry points
-  `.claude/gsd-core/bin/gsd-tools.cjs`, `check-latest-version.cjs`,
+- `.claude/gsd-core/` — vendored GSD runtime, VERSION `1.13.0` (project-local install,
+  pinned by `.devcontainer/post-create.sh`; global installs are deliberately not used);
+  entry points `.claude/gsd-core/bin/gsd-tools.cjs`, `check-latest-version.cjs`,
   `verify-reapply-patches.cjs`, plus `workflows/`, `templates/`, `contexts/`, `references/`
-- `.claude/agents/` — 33 GSD subagent definitions (`gsd-planner.md`, `gsd-executor.md`,
+- `.claude/agents/` — 35 GSD subagent definitions (`gsd-planner.md`, `gsd-executor.md`,
   `gsd-codebase-mapper.md`, …)
-- `.claude/hooks/` — ~20 Node (`.js`/`.cjs`) and Bash hook scripts
+- `.claude/hooks/` — 30 Node (`.js`/`.cjs`) and Bash hook scripts
   (`gsd-workflow-guard.js`, `gsd-validate-commit.sh`, `gsd-statusline.js`, …)
 - `.claude/commands/`, `.claude/scripts/changeset`, `.claude/worktrees/`
 - `.claude/package.json` — `{"type":"commonjs"}`, which is what lets the `.js` hooks load
 - `.claude/settings.json` — keys: `permissions`, `remoteControlAtStartup`, `autoMode`
 - `.claude/settings.local.json` — keys: `permissions`, `hooks` (SessionStart, PostToolUse,
-  PreToolUse, SubagentStop, Stop, PreCompact, FileChanged), `worktree`, `enabledPlugins`,
+  PreToolUse, SubagentStop, Stop, PreCompact, FileChanged), `worktree`,
   `extraKnownMarketplaces`
 - ~~`.claude/channels/discord/`~~ — Discord bridge state, **deleted 2026-08-26** (commit
   `3e2f7d89`) along with `.claude/channels/`. One copy of the bot token survives at
@@ -133,19 +140,6 @@ this repo alone:
 **Tracked skill script dependencies:** stdlib only (`subprocess`, `json`, `urllib`, `ast`,
 `xml`, `pathlib`, `argparse`, …) — no third-party imports. `devtest_issues.py` shells out
 to `gh` with a fixed argv list (never a shell).
-
-## CI (meta-repo)
-
-`.github/workflows/catalog-sync-check.yml` is the **only** workflow in this repo.
-
-- **Runner:** `ubuntu-latest`
-- **Triggers:** `push` and `pull_request` on `main`, path-filtered to
-  `tools/catalog/**` and the workflow file itself; plus `workflow_dispatch`
-- **Steps:** checks out meta into `meta/`, resolves each sub-repo ref to the *same branch
-  name* (falling back to `beta`), checks out `henols/firestarter` and
-  `henols/firestarter_app` via `actions/checkout@v4`, then asserts with `cmp`/`diff` that
-  `tools/catalog/messages.toml` is byte-identical across meta and both sub-repos
-- **No language runtimes, no build, no publish** — it is a pure byte-identity gate
 
 ## VS Code configuration
 
@@ -265,4 +259,4 @@ All statements in this part are carried forward verbatim from the prior mapping 
 
 ---
 
-*Meta-repo / dev-environment analysis: 2026-08-26. Submodule stack analysis: 2026-05-08.*
+*Meta-repo / dev-environment analysis: 2026-09-14. Submodule stack analysis: 2026-05-08.*
