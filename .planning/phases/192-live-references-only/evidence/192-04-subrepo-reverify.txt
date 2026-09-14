@@ -1,0 +1,97 @@
+SUB-REPOSITORY RE-VERIFICATION (192-04, Task 2)
+=================================================
+capture_date: 2026-09-14T05:14:42Z
+capture_commit: firestarter=c67a3301d507bccea89281c08af75f3a7bb76edb (branch v1.38-repository-rename)
+capture_commit: firestarter_app=560ec24523eb2f8c643c9db3dd302efecf57e2e1 (branch v1.38-repository-rename)
+
+This transcript re-verifies, it does not repair. Both sub-repositories were
+corrected by earlier phases -- the firmware repository by Phase 189, the host
+repository by Phase 190 -- and this plan's only job is to confirm, on a live
+reading taken today, that neither regressed and that this phase wrote nothing
+into either working tree.
+
+Every command below is driven by `git -C`, never by a bare `git` at the meta
+root and never by `cd` into either submodule, because each submodule is a
+separate repository with its own tracked-file set.
+
+Reading 1: fw_bare_slug_matches
+-------------------------------
+command: git -C /workspaces/firestarter grep -lE 'henols/firestarter([^_a-zA-Z0-9]|$)' -- .
+matching files: (none)
+fw_bare_slug_matches: 0
+
+Reading 2: fw_control_prom_matches
+----------------------------------
+command: git -C /workspaces/firestarter grep -lE 'henols/firestarter_prom' -- .
+matching files:
+  .github/CONTRIBUTING.md
+  PINOUTS.md
+  PROTOCOLS.md
+  README.md
+fw_control_prom_matches: 4
+
+Reading 3: app_bare_slug_matches
+--------------------------------
+command: git -C /workspaces/firestarter_app grep -lE 'henols/firestarter([^_a-zA-Z0-9]|$)' -- .
+matching files: (none)
+app_bare_slug_matches: 0
+
+Reading 4: app_control_prom_matches
+-----------------------------------
+command: git -C /workspaces/firestarter_app grep -lE 'henols/firestarter_prom' -- .
+matching files:
+  .github/CONTRIBUTING.md
+  .planning/codebase/STACK.md
+  README.md
+  firestarter/submit.py
+  tests/fixtures/devtest_issue_corpus.json
+  tests/fixtures/report_shapes.py
+  tests/test_devtest_firmware_error_propagation.py
+  tests/test_submit.py
+app_control_prom_matches: 8
+
+Anchoring: branch and HEAD each reading was taken on
+-----------------------------------------------------
+command: git -C /workspaces/firestarter branch --show-current
+firestarter branch: v1.38-repository-rename
+command: git -C /workspaces/firestarter rev-parse HEAD
+firestarter HEAD: c67a3301d507bccea89281c08af75f3a7bb76edb
+
+command: git -C /workspaces/firestarter_app branch --show-current
+firestarter_app branch: v1.38-repository-rename
+command: git -C /workspaces/firestarter_app rev-parse HEAD
+firestarter_app HEAD: 560ec24523eb2f8c643c9db3dd302efecf57e2e1
+
+Interpretation
+--------------
+A zero bare-slug reading paired with a zero control would be a failed gate,
+not a pass, because it is indistinguishable from a pattern that matched
+nothing. The controls are expected non-zero and their measured values are
+the evidence that the zeros above them are real: fw_control_prom_matches is
+4, matching Phase 189's own measurement of the same pairing; and
+app_control_prom_matches is 8, matching Phase 190's own measurement.
+
+Proof of no write to either sub-repository
+-------------------------------------------
+command: git -C /workspaces/firestarter status --porcelain
+(no output)
+fw_status_rc=0
+
+command: git -C /workspaces/firestarter_app status --porcelain
+(no output)
+app_status_rc=0
+
+What this re-verification deliberately does NOT cover
+-------------------------------------------------------
+- Either repository's `main` branch. Both readings above cover only the
+  `v1.38-repository-rename` branch's working tree in each sub-repository.
+  This transcript says nothing about `main` in either `firestarter` or
+  `firestarter_app`.
+- Repairing either sub-repository's own slug references. The firmware
+  repository's references were corrected by Phase 189
+  (evidence/189-firmware-slug-sweep.txt); the host repository's were
+  corrected by Phase 190 (evidence/190-slug-sweep.txt). This phase
+  re-verifies both, it does not repair them.
+- Any write into either sub-repository. No file in either repository was
+  modified by this phase, as recorded by the two porcelain readings above,
+  both of which printed no path.
