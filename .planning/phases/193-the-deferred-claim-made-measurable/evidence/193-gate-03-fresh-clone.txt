@@ -1,0 +1,168 @@
+FRESH CLONE WORKAROUND (GATE-03)
+=================================
+capture_date: 2026-09-14T10:42:00Z
+capture_host_commit: 7f32120532cbb993ec9b1f97cfd56d4ce0cc36db
+
+Captured by: `git clone`, `git checkout`, `git config`, `git submodule init/update`, `git -C
+firestarter <cmd>`, all run inside a directory created by `mktemp -d`. Observables read with
+`/usr/bin/grep` and shell builtins, never PATH `grep` (ugrep, honours .gitignore, silently
+under-scans).
+
+Why `v1.35` and not the commit that actually landed the repoint. The commit that landed RENAME-02
+is 5aba9dbc8d760e530638931d19ede0a227dd1a60. Its parent 9ccf0414d7a2d86e5e97b6cf1db2da01737bfc81
+still carries the old firmware URL in .gitmodules. That parent is unusable here: it lives only on
+the unpushed milestone branch gsd/v1.38-repository-rename-activated-2026-09-13 (GSD pushes at ship
+time, never ad hoc), and `git cat-file -t` on it fails in a fresh clone of origin. v1.35 is a
+published, immutable tag (6e84030bb526da7bde603b94c4d899c0b80adc30, 2026-09-02) whose .gitmodules
+still names the old slug, and it is the very ref
+.planning/notes/999.9-repo-rename-impact-analysis.md names when it describes the trap. Using it
+keeps this transcript reproducible by anyone with network access to github.com, and keeps the ref
+from being "improved" back into unreachability.
+
+====================================================================
+READING 1 -- the workaround, in order
+====================================================================
+capture_date: 2026-09-14T10:42:15Z
+
+Fresh temp directory, clone without submodules:
+
+  $ git clone --no-recurse-submodules https://github.com/henols/firestarter_prom.git fresh
+  Cloning into 'fresh'...
+
+  $ git checkout v1.35
+  HEAD is now at 6e84030b Merge pull request #56: v1.35 close (Phases 171-173 remainder, beta
+  lockstep cut)
+
+meta_source: https://github.com/henols/firestarter_prom.git
+meta_ref: v1.35
+meta_commit: 6e84030bb526da7bde603b94c4d899c0b80adc30
+
+.gitmodules at this ref, verbatim:
+
+  [submodule "firestarter"]
+  	path = firestarter
+  	url = git@github.com:henols/firestarter.git
+  [submodule "firestarter_app"]
+  	path = firestarter_app
+  	url = git@github.com:henols/firestarter_app.git
+
+gitmodules_url(firestarter): git@github.com:henols/firestarter.git
+
+config_url(firestarter) BEFORE override: (unset -- `git config --get submodule.firestarter.url`
+exits 1, prints nothing)
+
+clean_state_proof: firestarter/ exists as the empty placeholder directory `--no-recurse-submodules`
+creates for every submodule path (0 entries -- `ls -A firestarter | wc -l` prints 0), never
+populated by any prior command in this session. .git/modules/firestarter is absent. This is the
+genuinely clean starting state of a fresh clone, not a leftover from a previous run in this
+directory.
+
+Set the override BEFORE `submodule update --init`. This order is the point: `git submodule init`
+preserves an existing `submodule.<name>.url` in .git/config instead of re-copying it from
+.gitmodules. Setting the override first means the update honours it. Setting it after `init` (or
+after `update`) would already have cloned the wrong repository.
+
+  $ git config submodule.firestarter.url git@github.com:henols/firestarter_fw.git
+
+config_url(firestarter) AFTER override: git@github.com:henols/firestarter_fw.git
+
+  $ git submodule init firestarter
+  (no output)
+  $ git config --get submodule.firestarter.url
+  git@github.com:henols/firestarter_fw.git
+
+`submodule init` did not clobber the override -- it preserved the value already in .git/config
+rather than re-reading .gitmodules. This is the mechanism the workaround depends on.
+
+  $ git submodule update --init --depth 1 firestarter
+  Cloning into '/.../fresh/firestarter'...
+  From github.com:henols/firestarter_fw
+   * branch            4f73c80cfa2915fb22812dde55b2923a86120c5f -> FETCH_HEAD
+  Submodule path 'firestarter': checked out '4f73c80cfa2915fb22812dde55b2923a86120c5f'
+
+Child directory confirmed non-empty before reading its remote (an empty firestarter/ would cause
+`git -C firestarter <cmd>` to silently walk up and answer for the parent repository instead):
+
+  $ [ -n "$(ls -A firestarter)" ] && echo non-empty
+  non-empty
+
+  $ git -C firestarter remote get-url origin
+  git@github.com:henols/firestarter_fw.git
+  $ git -C firestarter rev-parse HEAD
+  4f73c80cfa2915fb22812dde55b2923a86120c5f
+
+remote_origin(firestarter): git@github.com:henols/firestarter_fw.git
+firestarter_head: 4f73c80cfa2915fb22812dde55b2923a86120c5f
+head(firestarter): 4f73c80cfa2915fb22812dde55b2923a86120c5f
+
+Discriminator: the checked-out ref's own .gitmodules names the OLD slug
+(git@github.com:henols/firestarter.git), and the child ended up cloned from the NEW one
+(git@github.com:henols/firestarter_fw.git) purely because the .git/config override was set before
+the update ran. That gap between what the ref declares and what actually got fetched is the entire
+workaround.
+
+====================================================================
+READING 2 -- today's behaviour with no override, labelled
+====================================================================
+capture_date: 2026-09-14T10:42:45Z
+
+Second, separate temp directory, clone without submodules, same ref, NO override set:
+
+  $ git clone --no-recurse-submodules https://github.com/henols/firestarter_prom.git fresh2
+  Cloning into 'fresh2'...
+  $ git checkout v1.35
+  HEAD is now at 6e84030b Merge pull request #56: v1.35 close (Phases 171-173 remainder, beta
+  lockstep cut)
+
+meta_ref: v1.35
+meta_commit: 6e84030bb526da7bde603b94c4d899c0b80adc30
+
+  $ git config --get submodule.firestarter.url
+  (unset -- exits 1, prints nothing. Confirms no override is in effect for this reading.)
+
+clean_state_proof: firestarter/ is the empty placeholder directory from clone (0 entries).
+.git/modules/firestarter is absent.
+
+  $ git submodule update --init --depth 1 firestarter
+  Submodule 'firestarter' (git@github.com:henols/firestarter.git) registered for path
+  'firestarter'
+  Cloning into '/.../fresh2/firestarter'...
+  From github.com:henols/firestarter
+   * branch            4f73c80cfa2915fb22812dde55b2923a86120c5f -> FETCH_HEAD
+  Submodule path 'firestarter': checked out '4f73c80cfa2915fb22812dde55b2923a86120c5f'
+
+  $ [ -n "$(ls -A firestarter)" ] && echo non-empty
+  non-empty
+  $ git -C firestarter remote get-url origin
+  git@github.com:henols/firestarter.git
+  $ git -C firestarter rev-parse HEAD
+  4f73c80cfa2915fb22812dde55b2923a86120c5f
+
+remote_origin(firestarter): git@github.com:henols/firestarter.git
+firestarter_head: 4f73c80cfa2915fb22812dde55b2923a86120c5f
+head(firestarter): 4f73c80cfa2915fb22812dde55b2923a86120c5f
+
+LABEL -- read this reading as a statement about today's world, not as a demonstration of a
+failure: this succeeded. It fetched from the OLD slug (git@github.com:henols/firestarter.git)
+with no override at all, because GitHub's rename redirect is live -- `gh api repos/henols/
+firestarter` still resolves to the same repository as `gh api repos/henols/firestarter_fw`. No
+command in this reading errored, and none should be read as having errored. The workaround shown
+in READING 1 exists for a state that has not arrived: it protects against the day the
+`henols/firestarter` slug is claimed for the meta repository, at which point the redirect dies
+and this same sequence would resolve to the wrong repository entirely (a projection recorded in
+.planning/notes/999.9-repo-rename-impact-analysis.md, not something this session observed or can
+observe, because that claim has deliberately not been made -- see D-1 and D-7). Until that day,
+a plain `git submodule update --init` at a pre-rename ref works exactly as it always has.
+
+====================================================================
+Working-clone integrity confirmation (both readings)
+====================================================================
+Both temp clones were created under directories from `mktemp -d` and removed after this transcript
+was captured. No command in this file ran against /workspaces.
+
+  $ git -C /workspaces config --get submodule.firestarter.url
+  git@github.com:henols/firestarter_fw.git
+
+Same value as before this task ran.
+
+FRESH CLONE WORKAROUND OK
