@@ -144,9 +144,17 @@ None. No external service configuration required.
 
 ## Next Phase Readiness
 
-- Phase 193 is now feature-complete. All five plans (193-01 through 193-05) have committed SUMMARY.md files. GATE-01 was marked Complete at 193-02. GATE-02 and GATE-03 are marked Complete by this plan — both were solely declared by this plan, so no shared-ID gate applies.
+- Phase 193 is now feature-complete. All five plans (193-01 through 193-05) have committed SUMMARY.md files. GATE-01 was marked Complete at 193-02. GATE-02 and GATE-03 are marked Complete by this plan. GATE-02 was declared only by this plan. GATE-03 is a shared ID also declared by 193-03 and 193-04. `requirements.ready-ids` confirmed all three declaring plans have a SUMMARY.md before this plan marked it Complete.
 - No blockers. `evidence/193-disposition.md`'s own honest-limits paragraph names the two things that remain deliberately unverified by construction: the instrument's figures move daily, and the post-claim failure shape cannot be tested without performing the destructive claim this milestone declines to perform.
 - The milestone's next step is whatever `/gsd-verify-work` and `/gsd-complete-milestone` require for v1.38. This plan does not perform either.
+
+## Self-Check: PASSED
+
+- `CLAUDE.md` exists on disk with both edits present.
+- `.planning/phases/193-the-deferred-claim-made-measurable/evidence/193-disposition.md` exists on disk.
+- `.planning/phases/193-the-deferred-claim-made-measurable/193-05-SUMMARY.md` (this file) exists on disk.
+- `git log --oneline --all --grep="193-05"` returns three commits: `9e357ec2` (plan creation, prior step), `e594466d` (production commit — CLAUDE.md and the disposition record), and `eb8bd3ff` (metadata commit — this SUMMARY, STATE.md, ROADMAP.md, REQUIREMENTS.md).
+- All acceptance criteria in the plan's three tasks were independently re-verified after the two documented plan-verify-command defects (see Deviations above), using `grep -o` in place of the miscounting `grep -c` legs, and by inspecting the heading list directly for the heading-count leg.
 
 ---
 *Phase: 193-the-deferred-claim-made-measurable*
