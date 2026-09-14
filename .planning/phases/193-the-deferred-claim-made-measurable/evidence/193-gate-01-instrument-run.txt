@@ -1,0 +1,37 @@
+GATE-01 ADOPTION INSTRUMENT — EXECUTED READINGS
+=================================================
+
+capture_date: 2026-09-14T10:25:10Z
+capture_commit: 73b0ae16cf6d6cf69fae0a3f21ab5bd056ac45c6
+Captured by: `tools/adoption/pypi_version_share.sh` run with no arguments from `/workspaces`,
+then `/usr/bin/grep` (never PATH `grep`, which is ugrep here and honours `.gitignore`) used to
+assert on the output below.
+
+READING 1 -- the live verdict
+------------------------------
+
+command: /workspaces/tools/adoption/pypi_version_share.sh
+
+output:
+window: 2026-06-16 .. 2026-09-13 (rolling 90 days ending at the table's latest date, UTC, stable channel, installer pip and uv)
+fixed_downloads_ge_2_0_9: 17
+at_risk_downloads_2_0_7: 116
+fixed_share_pct: 12.8
+threshold: fixed share >= 90% AND at-risk (2.0.7) downloads <= 10, both over the window above
+TRIGGER: NOT MET
+WHAT THIS DOES NOT MEASURE
+  - Installed base is not observable. Download share is a proxy for it, not a census of it.
+  - A download of a stranded version today is a NEW ACQUISITION of an old version — a pin,
+    a cache, or a stale tutorial someone is following right now.
+  - A user who installed 2.0.7 and never reinstalls generates zero downloads and is invisible
+    to every instrument considered, including this one.
+  - This threshold therefore certifies that new acquisition of stranded versions has
+    effectively stopped — a necessary condition, never a sufficient one.
+  - The pre-2.0.7 population is outside the instrument's reach entirely: down there, a
+    stranded human and an automated scanner cannot be told apart.
+
+The discriminator line is `TRIGGER: NOT MET`. Everything above it is the measured pair: 17
+fixed, 116 at-risk, a 12.8% fixed share against a 90% threshold with an 11-download floor
+breach on top. Everything below it is the caveat that must travel with the number on every
+run. Both integers move daily as new downloads land. A reader who meets this file a month from
+now must re-run the script rather than trust the figures on this page.
