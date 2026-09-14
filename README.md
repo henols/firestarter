@@ -24,7 +24,7 @@ every supported chip family.
 | Repository | What it is |
 |---|---|
 | **firestarter_prom** (this one) | The project hub — the wiki, and the shared issue tracker |
-| [firestarter](https://github.com/henols/firestarter) | The AVR firmware that runs on the Arduino and drives the chip |
+| [firestarter_fw](https://github.com/henols/firestarter_fw) | The AVR firmware that runs on the Arduino and drives the chip |
 | [firestarter_app](https://github.com/henols/firestarter_app) | The `firestarter` command you run on your computer |
 
 The firmware and the CLI are used together, and the CLI installs the matching
