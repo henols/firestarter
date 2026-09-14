@@ -96,11 +96,11 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
       package, so the seed's trigger is a number with a stated threshold rather than a judgement call. It
       must state plainly what it does **not** measure — installed base is not observable, and users who
       never upgrade are unreachable by any threshold.
-- [ ] **GATE-02**: The standing rule — the meta repository never publishes a GitHub Release — is recorded
+- [x] **GATE-02**: The standing rule — the meta repository never publishes a GitHub Release — is recorded
       where a future milestone will encounter it before acting, together with the `_compare_versions`
       mechanism that makes violating it silent: a `v1.36` tag parses as PEP 440 `1.36`, so
       `3.0.0b29 >= 1.36` reads true and the firmware is reported current forever.
-- [ ] **GATE-03**: The `.gitmodules` history trap is documented with a workaround demonstrated for **both**
+- [x] **GATE-03**: The `.gitmodules` history trap is documented with a workaround demonstrated for **both**
       cases: an existing clone (`git config submodule.firestarter.url`) and a fresh clone at a pre-rename
       ref (`--no-recurse-submodules` plus a manual URL set).
 
@@ -140,8 +140,8 @@ Which phases cover which requirements. Populated at roadmap creation.
 | SWEEP-02 | Phase 192 | Complete |
 | SWEEP-03 | Phase 192 | Complete |
 | GATE-01 | Phase 193 | Complete |
-| GATE-02 | Phase 193 | Pending |
-| GATE-03 | Phase 193 | Pending |
+| GATE-02 | Phase 193 | Complete |
+| GATE-03 | Phase 193 | Complete |
 
 **Coverage:**
 

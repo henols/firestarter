@@ -4,17 +4,17 @@ milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 193
 current_phase_name: The Deferred Claim, Made Measurable
-status: executing
-stopped_at: Completed 193-04-PLAN.md
-last_updated: "2026-09-14T11:22:54.854Z"
+status: ready_for_verification
+stopped_at: Completed 193-05-PLAN.md — Phase 193 complete, all 5 plans done
+last_updated: "2026-09-14T11:36:18.720Z"
 last_activity: 2026-09-14
-last_activity_desc: Phase 193 Plan 04 COMPLETE 2026-09-14 — new note .planning/notes/gitmodules-archaeology-trap.md carrying the .gitmodules history trap, both GATE-03 workarounds (existing clone, fresh clone at v1.35) as ordered literal-command procedures citing plan 193-03's transcripts, a supplementary one-shot idiom, the undocumented git submodule sync hazard with its two-command repair and durability check, a banked-evidence section naming all three transcripts, and an Honest limits section labelling the post-claim failure a projection, not an observation. No YAML frontmatter, matching sibling notes. commits 1d296c4c, 16ac3cf2. GATE-03 stays Pending in REQUIREMENTS.md — correctly, since sibling plan 193-05 also declares it and has not yet produced a SUMMARY. STATE.md progress block hand-repaired twice more (state.advance-plan then state.record-session both re-fabricated completed_phases 4->0 and percent 80->0) — same corruption class as the prior repairs noted in earlier entries.
+last_activity_desc: Phase 193 Plan 05 COMPLETE 2026-09-14 — CLAUDE.md gained the GATE-02 no-Releases rule (mechanism cited by section heading in 999.9-repo-rename-impact-analysis.md, not restated) and the GATE-03 .gitmodules archaeology pointer, plus the corrected tools/ inventory the phase's own tools/adoption/ addition had falsified. evidence/193-disposition.md answers all four ROADMAP Phase 193 success criteria against named artefacts. Commit e594466d. GATE-02 and GATE-03 marked Complete in REQUIREMENTS.md. Phase 193 is now feature-complete — all 5 plans have SUMMARY.md. STATE.md progress block hand-repaired three more times this plan (state.record-metric, state.add-decision x3, state.record-session all re-fabricated completed_phases/percent to 0) — same corruption class as prior entries. Two plan-authored `<verify>` automated legs (CLAUDE.md grep -c multi-pattern counts, and a heading-count expecting 5 vs the file's true pre-existing 6) were documented as plan defects in 193-05-SUMMARY.md rather than acted on, since the underlying acceptance criteria were independently confirmed satisfied via grep -o.
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 23
-  completed_plans: 22
-  percent: 80
+  completed_plans: 23
+  percent: 100
 ---
 
 # Project State
@@ -3022,6 +3022,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 193]: Seed trigger_condition rewritten as a YAML folded block scalar starting with a word. It carries D-09's threshold, window, instrument path and re-examination date verbatim. — A leading backtick makes GSD's frontmatter parser return an empty object. That drops status: dormant and unhooks the seed from audit.cjs's scanSeeds. The parse was proved directly against extractFrontmatter after the rewrite.
 - [Phase 193]: Seed prose corrected to 2.0.9 in the past tense. The .gitmodules readiness leg is scoped to origin/main vs origin/beta rather than an unqualified claim. — origin/beta's .gitmodules still names the old firmware slug until the v1.38 milestone merges. A reader could falsify an unscoped claim with one git show.
 - [Phase 193]: Wrote the .gitmodules archaeology-trap note with no YAML frontmatter, matching sibling notes; cited both GATE-03 workarounds' transcripts by filename/READING, never by line number; and kept the deliberate "repair, not fix" word contrast the plan's own action text requires. — Matches the two sibling notes' register and satisfies GATE-03's demonstrated-not-reasoned requirement while labelling the unverifiable post-claim failure a projection, per D-16's honesty constraint.
+- [Phase 193]: GATE-02's mechanism is cited in CLAUDE.md by path and section heading (999.9-repo-rename-impact-analysis.md, "Standing rule this must produce"), not restated in full, so there is one source of truth for the PEP 440 version-parsing argument.
+- [Phase 193]: GATE-03's .gitmodules archaeology pointer lives in CLAUDE.md's repository-structure area, not the close section, because that is where an archaeology session actually starts. The pointer names the note and states the trap does not bite today.
+- [Phase 193]: The repository-structure paragraph's tools/ inventory sentence, falsified by this phase's own tools/adoption/ addition, was corrected in the same edit that added the archaeology pointer depending on it, rather than deferred.
 
 ## Performance Metrics
 
@@ -3462,11 +3465,12 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 191 P05 | 12min | 2 tasks | 2 files |
 | Phase 193 P03 | 12min | 3 tasks | 4 files |
 | Phase 193 P02 | 7min | 2 tasks | 1 files |
+| Phase 193 P05 | 20min | 3 tasks | 2 files |
 
 ## Session
 
-**Last session:** 2026-09-14T11:22:00.935Z
-**Stopped at:** Completed 193-04-PLAN.md
+**Last session:** 2026-09-14T11:36:18.261Z
+**Stopped at:** Completed 193-05-PLAN.md — Phase 193 complete, all 5 plans done
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)

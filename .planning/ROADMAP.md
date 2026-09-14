@@ -469,7 +469,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 193-05-PLAN.md — The no-Releases rule and the archaeology pointer into `CLAUDE.md`, and the phase disposition record
+- [x] 193-05-PLAN.md — The no-Releases rule and the archaeology pointer into `CLAUDE.md`, and the phase disposition record (SUMMARY committed)
 
 ## v1.37 — Operator Safety, Answered Reports & Claim Hygiene (CLOSED 2026-09-13 — 35/35 requirements; merged to `beta` in all three repos, NOT tagged by operator decision)
 
