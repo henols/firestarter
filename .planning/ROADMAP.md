@@ -420,9 +420,9 @@ that records history still says what it said.
 Plans:
 **Wave 1**
 
-- [ ] 192-01-PLAN.md — Tracer: repoint one live reference end-to-end, then the 13 runnable-artefact sites and the D-01 enumeration
-- [ ] 192-02-PLAN.md — Capture the preserved history, then remap `STACK.md`, `INTEGRATIONS.md`, `ARCHITECTURE.md` and `STRUCTURE.md`
-- [ ] 192-04-PLAN.md — Amend SWEEP-03 to all seven documents, and re-verify both sub-repositories with controls
+- [x] 192-01-PLAN.md — Tracer: repoint one live reference end-to-end, then the 13 runnable-artefact sites and the D-01 enumeration
+- [x] 192-02-PLAN.md — Capture the preserved history, then remap `STACK.md`, `INTEGRATIONS.md`, `ARCHITECTURE.md` and `STRUCTURE.md`
+- [x] 192-04-PLAN.md — Amend SWEEP-03 to all seven documents, and re-verify both sub-repositories with controls
 
 **Wave 2** *(blocked on 192-02)*
 
