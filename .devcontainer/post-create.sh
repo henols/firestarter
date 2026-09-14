@@ -8,7 +8,7 @@ echo "=== Installing Python CLI (dev mode) ==="
 pip install -e /workspaces/firestarter_app
 
 echo "=== Initialising PlatformIO project dependencies ==="
-cd /workspaces/firestarter && pio pkg install
+cd /workspaces/firestarter_fw && pio pkg install
 
 echo "=== Installing graphify skill (writes into ~/.claude volume) ==="
 # graphify itself is installed in the image (Dockerfile); this step installs the

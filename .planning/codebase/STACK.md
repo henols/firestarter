@@ -16,7 +16,7 @@ declared in `.gitmodules`:
 
 | Submodule path | Remote | Contents |
 |----------------|--------|----------|
-| `firestarter/` | `git@github.com:henols/firestarter_fw.git` | Arduino/AVR C++ firmware (PlatformIO) |
+| `firestarter_fw/` | `git@github.com:henols/firestarter_fw.git` | Arduino/AVR C++ firmware (PlatformIO) |
 | `firestarter_app/` | `git@github.com:henols/firestarter_app.git` | Python host CLI (pip package) |
 
 The submodule's own name and path are still `firestarter` — only the remote was repointed at the
@@ -75,7 +75,7 @@ possible from inside the container.
   `firestarter` entry point)
 
 **Workspace layout:** `workspaceMount` binds the repo root at `/workspaces` and
-`workspaceFolder` is `/workspaces`, so `firestarter/`, `firestarter_app/` and `.planning/`
+`workspaceFolder` is `/workspaces`, so `firestarter_fw/`, `firestarter_app/` and `.planning/`
 are all top-level.
 
 **ARM toolchain:** not installed in the image. (`arm-none-eabi` is absent; it is
@@ -87,7 +87,7 @@ installable on demand but is not part of the provisioned stack.)
 
 1. `python3 .devcontainer/gen-platformio-ini.py` — generates the repo-root
    `platformio.ini` wrapper (gitignored) that redirects `src_dir`/`include_dir`/`lib_dir`/
-   `test_dir`/`build_dir` into `firestarter/`, so PlatformIO IDE works from the root.
+   `test_dir`/`build_dir` into `firestarter_fw/`, so PlatformIO IDE works from the root.
 2. `pip install -e /workspaces/firestarter_app` — editable install of the host CLI.
 3. `cd /workspaces/firestarter && pio pkg install` — firmware library deps.
 4. `graphify install` — installs the graphify skill/references into the `~/.claude` volume.
@@ -185,7 +185,7 @@ All statements in this part are carried forward verbatim from the prior mapping 
 
 **Primary:**
 - Python 3.11+ - Host application (CLI tool, `firestarter_app/`)
-- C/C++ (Arduino/AVR) - Firmware (`firestarter/src/`)
+- C/C++ (Arduino/AVR) - Firmware (`firestarter_fw/src/`)
 
 **Secondary:**
 - Bash - Integration/test scripts (`firestarter_test.sh`, `write_test.sh`)
@@ -226,7 +226,7 @@ All statements in this part are carried forward verbatim from the prior mapping 
 - rich >= 14.0 - Rich terminal output (confirmation prompts via `rich.prompt.Confirm`)
 
 **Infrastructure:**
-- jsmn (vendored C lib, `firestarter/lib/`) - Lightweight JSON parser used in firmware
+- jsmn (vendored C lib, `firestarter_fw/lib/`) - Lightweight JSON parser used in firmware
 - avrdude (external system tool) - Required at runtime for flashing firmware to Arduino
   (provisioned in the devcontainer image — verified 2026-08-26)
 - Arduino standard library (`<Arduino.h>`) - Firmware hardware abstraction
@@ -241,7 +241,7 @@ All statements in this part are carried forward verbatim from the prior mapping 
 
 **Build:**
 - `firestarter_app/pyproject.toml` - Python package metadata, dependencies, entry points
-- `firestarter/platformio.ini` - Firmware build environments and flags
+- `firestarter_fw/platformio.ini` - Firmware build environments and flags
 - Build flags: `MONITOR_SPEED`, `HARDWARE_REVISION`, `DEV_TOOLS`, `SERIAL_DEBUG` (opt-in), `DATA_BUFFER_SIZE`
 
 ## Platform Requirements

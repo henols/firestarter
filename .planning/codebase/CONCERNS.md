@@ -11,7 +11,7 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 
 > **Scope note.** The 2026-08-26 and 2026-09-14 remaps each covered ONLY the meta-repo shell:
 > `.claude/`, `.devcontainer/`, `.github/`, `.gitignore`, `.gitmodules`, `.vscode/`, `CLAUDE.md`.
-> The two submodules (`firestarter/` firmware, `firestarter_app/` host CLI) were NOT scanned by
+> The two submodules (`firestarter_fw/` firmware, `firestarter_app/` host CLI) were NOT scanned by
 > either. All findings in the "Submodule Findings (2026-05-08)" section below are preserved verbatim and
 > individually marked `[unverified in 2026-08-26 and 2026-09-14 scoped remaps — may since be fixed]`.
 > Treat them as leads, not confirmed-current defects. The "Meta-Repo / Dev-Environment / CI
@@ -91,14 +91,14 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 ## Fragile Areas
 
 **Duplicated source of truth across the two submodules (documented, unenforced):**
-- Files: `CLAUDE.md` ("Key Architecture Points"), pointing at `firestarter_app/firestarter/constants.py` ↔ `firestarter/include/firestarter.h`, and `firestarter_app/firestarter/serial_comm.py` ↔ `firestarter/src/firestarter.cpp`
+- Files: `CLAUDE.md` ("Key Architecture Points"), pointing at `firestarter_app/firestarter/constants.py` ↔ `firestarter_fw/include/firestarter.h`, and `firestarter_app/firestarter/serial_comm.py` ↔ `firestarter_fw/src/firestarter.cpp`
 - Why fragile: Protocol constants and flag bits are physically duplicated in two independently-versioned repos, and `CLAUDE.md` can only *ask* that they be changed together. No workflow in this repository enforces any of it — the repo has no CI at all (above) — and the codegen tooling that could enforce a slice of it (`messages.toml`) covers that file only, not `constants.py`/`firestarter.h`.
 - Safe modification: Change both files in the same milestone branch triple; regenerate from `tools/catalog/` where the value is catalog-derived.
 - Test coverage: Parity tests exist inside the submodules but at least one is known to be a tautology (a `@requires_fw` test asserting a `#define` that does not exist), so a green parity suite is not evidence.
 
 **Any meta-repo gate that inspects submodule files under-detects in a worktree:**
 - Files: `.gitmodules`
-- Why fragile: `git worktree add` leaves submodule directories **empty**. A gate that globs `firestarter/...` or `firestarter_app/...` from the meta-repo then finds nothing to scan and exits 0 — a textbook fail-open. This repository has no workflow of any kind today (above), so nothing currently walks into this trap, but any future gate that does the obvious thing — checking out submodules recursively and globbing their tracked files — would inherit it.
+- Why fragile: `git worktree add` leaves submodule directories **empty**. A gate that globs `firestarter_fw/...` or `firestarter_app/...` from the meta-repo then finds nothing to scan and exits 0 — a textbook fail-open. This repository has no workflow of any kind today (above), so nothing currently walks into this trap, but any future gate that does the obvious thing — checking out submodules recursively and globbing their tracked files — would inherit it.
 - Related: gates that grep *submodule source* from the meta-repo also fail open on a plain **rename** in the submodule.
 - Safe modification: Every submodule-inspecting gate must assert a non-zero file count before asserting on content, and fail if the count is zero.
 - Test coverage: None — no test proves any gate goes RED.
@@ -135,8 +135,8 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 - Fix approach: Track `skills-lock.json` (it is a manifest, not an artifact) even while the skill bodies stay ignored.
 
 **`platformio.ini` is generated, ignored, and only regenerated at container create:**
-- Problem: `.gitignore:19-20` ignores the root `platformio.ini`, which `.devcontainer/gen-platformio-ini.py` derives from `firestarter/platformio.ini`. `post-create.sh:4-5` runs the generator once, at create time only.
-- Blocks: After the firmware's `platformio.ini` changes (a new env, changed build flags), the root wrapper is stale until someone manually re-runs the generator — the script's own docstring says "Run manually after updating the firmware platformio.ini". PlatformIO IDE then builds against stale config from the repo root while `pio run -e ...` inside `firestarter/` is correct, producing divergent results from the two invocation paths.
+- Problem: `.gitignore:19-20` ignores the root `platformio.ini`, which `.devcontainer/gen-platformio-ini.py` derives from `firestarter_fw/platformio.ini`. `post-create.sh:4-5` runs the generator once, at create time only.
+- Blocks: After the firmware's `platformio.ini` changes (a new env, changed build flags), the root wrapper is stale until someone manually re-runs the generator — the script's own docstring says "Run manually after updating the firmware platformio.ini". PlatformIO IDE then builds against stale config from the repo root while `pio run -e ...` inside `firestarter_fw/` is correct, producing divergent results from the two invocation paths.
 - Fix approach: Regenerate on session start (a `SessionStart` hook) or check freshness and warn.
 
 ## Test Coverage Gaps

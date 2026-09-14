@@ -1,5 +1,5 @@
-[submodule "firestarter"]
-	path = firestarter
+[submodule "firestarter_fw"]
+	path = firestarter_fw
 	url = git@github.com:henols/firestarter_fw.git
 [submodule "firestarter_app"]
 	path = firestarter_app

@@ -10,7 +10,7 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 > **Scope note.** The 2026-08-26 and 2026-09-14 remaps were scoped to the meta-repo's own
 > tracked infrastructure (`.claude`, `.devcontainer`, `.github`, `.vscode`, `.gitignore`,
 > `.gitmodules`, `CLAUDE.md`). Sections describing the two submodules
-> (`firestarter/`, `firestarter_app/`) date from 2026-05-08 and were not re-verified;
+> (`firestarter_fw/`, `firestarter_app/`) date from 2026-05-08 and were not re-verified;
 > they are marked `[unverified in 2026-08-26 and 2026-09-14 scoped remaps]`.
 
 ## Pattern Overview
@@ -19,7 +19,7 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 
 The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a monorepo. The meta-repo itself tracks only planning and agent-tooling artifacts; both code sub-projects are gitlinks pointing at independent GitHub repos:
 1. `firestarter_app/` - Python host-side CLI application (pip package)
-2. `firestarter/` - Arduino C++ firmware for the RURP shield (PlatformIO project)
+2. `firestarter_fw/` - Arduino C++ firmware for the RURP shield (PlatformIO project)
 
 **Key Characteristics:**
 - Singleton pattern for shared services (EpromDatabase, ConfigManager)
@@ -57,7 +57,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 - Contains:
   - `EpromDatabase` (`database.py`) - singleton, loads/merges JSON databases, translates pinouts to RURP bus config
   - `ConfigManager` (`config.py`) - singleton, persists app config to `~/.firestarter/config.json`
-- Depends on: JSON data files in `firestarter/data/`, `~/.firestarter/` user overrides
+- Depends on: JSON data files in `firestarter_fw/data/`, `~/.firestarter/` user overrides
 - Used by: All manager classes and CLI layer
 
 **Communication Layer:**
@@ -69,7 +69,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 
 **Firmware Layer (Embedded C++):**
 - Purpose: Direct hardware control of the RURP shield; processes JSON commands and drives address/data bus
-- Location: `firestarter/src/`
+- Location: `firestarter_fw/src/`
 - Contains: `firestarter.cpp` (main loop + state machine), `eprom_operations.cpp`, `hardware_operations.cpp`, `json_parser.c`, board-specific HAL in `src/boards/`, device handlers in `src/proms/`
 - Depends on: Arduino framework, PlatformIO build system
 - Used by: Python host via serial port
@@ -138,7 +138,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 
 **firestarter_handle_t (Firmware central state):**
 - Purpose: Central state struct holding all operation context on the firmware side
-- Examples: `firestarter/include/firestarter.h`
+- Examples: `firestarter_fw/include/firestarter.h`
 - Pattern: Struct with function pointers for device-specific operations (polymorphic behavior without C++ vtables in C context)
 
 ## Entry Points
@@ -151,7 +151,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 - Responsibilities: Argument parsing, logging setup, service instantiation, command dispatch
 
 **Arduino Firmware Main Loop:**
-- Location: `firestarter/src/firestarter.cpp`
+- Location: `firestarter_fw/src/firestarter.cpp`
 - Triggers: Arduino `setup()` / `loop()` framework calls
 - Responsibilities: JSON command parsing, state machine dispatch, timeout management, serial I/O
 
@@ -247,7 +247,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 | Install bookkeeping | Which GSD files are managed, at which version | `.claude/gsd-file-manifest.json`, `.claude/gsd-install-state.json`, `.claude/gsd-core/VERSION` |
 | Permission/hook config | Allowlists, hook wiring, plugin enablement | `.claude/settings.json`, `.claude/settings.local.json` |
 | Dev environment | Container image, mounts, features, post-create provisioning | `.devcontainer/devcontainer.json`, `.devcontainer/Dockerfile`, `.devcontainer/post-create.sh` |
-| PlatformIO root wrapper generator | Emits the gitignored root `platformio.ini` mapping IDE paths into `firestarter/` | `.devcontainer/gen-platformio-ini.py` |
+| PlatformIO root wrapper generator | Emits the gitignored root `platformio.ini` mapping IDE paths into `firestarter_fw/` | `.devcontainer/gen-platformio-ini.py` |
 | Editor/debug config | PlatformIO IntelliSense + debug launch targets | `.vscode/c_cpp_properties.json`, `.vscode/launch.json` |
 
 ## Pattern Overview
@@ -331,7 +331,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 3. `postCreateCommand` runs `.devcontainer/post-create.sh` (22 lines), which:
    - generates the root `platformio.ini` via `gen-platformio-ini.py`
    - `pip install -e /workspaces/firestarter_app`
-   - `pio pkg install` inside `firestarter/`
+   - `pio pkg install` inside `firestarter_fw/`
    - `graphify install` (writes into the `~/.claude` volume, which only exists at runtime)
    - installs GSD project-locally, pinned to a fixed version, via `npx -y --package=@opengsd/gsd-core@1.13.0 -- gsd-core --claude --local`
    - (steps that provisioned the Discord state dir, force-wrote `enabledPlugins`/`extraKnownMarketplaces`, and repointed the plugin's `.mcp.json` at `discord-singleton.sh` were removed 2026-08-26, commit `3e2f7d89`)
@@ -384,14 +384,14 @@ There is **no** build, test, or release workflow in this repo — firmware and h
 
 **Container provisioning:** `.devcontainer/post-create.sh`, via `postCreateCommand`.
 
-**Firmware debug:** `.vscode/launch.json` — three `platformio-debug` configurations, all targeting `firestarter/.pio/build/uno/firestarter_uno.elf` for the `uno` env.
+**Firmware debug:** `.vscode/launch.json` — three `platformio-debug` configurations, all targeting `firestarter_fw/.pio/build/uno/firestarter_uno.elf` for the `uno` env.
 
 **Discord DM:** **REMOVED 2026-08-26** (commit `3e2f7d89`) — was the channel plugin's MCP server, launched through `.devcontainer/discord-singleton.sh`. No longer an entry point.
 
 ## Architectural Constraints
 
 - **Submodules, not subtrees.** `.gitmodules` gitlinks `firestarter` → `git@github.com:henols/firestarter_fw.git` (name and path both stay `firestarter`; only the remote was repointed for the v1.38 rename) and `firestarter_app` → `git@github.com:henols/firestarter_app.git`. Work destined for a sub-repo must be committed *inside* it; a meta-repo commit only re-pins the gitlink.
-- **Worktrees leave submodules empty.** A fresh git worktree of the meta-repo has empty `firestarter/` and `firestarter_app/`.
+- **Worktrees leave submodules empty.** A fresh git worktree of the meta-repo has empty `firestarter_fw/` and `firestarter_app/`.
 - **Manual cross-repo sync pairs.** `CLAUDE.md` records two: `serial_comm.py` ↔ `firestarter.cpp` (protocol) and `constants.py` ↔ `firestarter.h` (flag bits). Neither is CI-enforced.
 - **`.claude/` is gitignored but must stay reproducible.** Anything required for a fresh clone to work has to be regenerated by tracked code (`post-create.sh`), not left in local state.
 - **Hardware coupling.** `--privileged` plus a `/dev` bind mount are required for serial access; without them only builds work.
@@ -405,7 +405,7 @@ There is **no** build, test, or release workflow in this repo — firmware and h
 
 **What happens:** editing the root `platformio.ini`, or `.vscode/c_cpp_properties.json` / `launch.json`.
 **Why it's wrong:** all three carry explicit "AUTO-GENERATED — do not modify" headers; the root `platformio.ini` is additionally gitignored, so edits are silently lost on the next `post-create.sh`.
-**Do this instead:** change `firestarter/platformio.ini` and re-run `python3 .devcontainer/gen-platformio-ini.py`; regenerate the `.vscode` files from PlatformIO.
+**Do this instead:** change `firestarter_fw/platformio.ini` and re-run `python3 .devcontainer/gen-platformio-ini.py`; regenerate the `.vscode` files from PlatformIO.
 
 ### Vendoring a marketplace skill
 

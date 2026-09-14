@@ -9,7 +9,7 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 
 > **Scope note.** The 2026-08-26 and 2026-09-14 remaps covered only the meta-repo's own
 > tracked infrastructure (`.claude`, `.devcontainer`, `.github`, `.vscode`, `.gitignore`,
-> `.gitmodules`, `CLAUDE.md`). The `firestarter/` and `firestarter_app/` sections
+> `.gitmodules`, `CLAUDE.md`). The `firestarter_fw/` and `firestarter_app/` sections
 > below date from 2026-05-08 and were not re-verified —
 > `[unverified in 2026-08-26 and 2026-09-14 scoped remaps]`. `tools/` is outside this
 > remap's scope by decision, so it is not described here either.
@@ -76,7 +76,7 @@ directories empty.
 ├── CLAUDE.md                         # TRACKED — agent onboarding brief (77 lines)
 ├── .gitmodules                       # TRACKED
 ├── .gitignore                        # TRACKED
-├── firestarter/                      # SUBMODULE (gitlink) — Arduino firmware
+├── firestarter_fw/                      # SUBMODULE (gitlink) — Arduino firmware
 ├── firestarter_app/                  # SUBMODULE (gitlink) — Python host CLI
 │
 │   ── everything below is GITIGNORED local state ──
@@ -190,7 +190,7 @@ path — node is not on `PATH`.
 out only what the job reads; do not add `submodules: recursive`; resolve sub-repo refs by
 branch name with a `beta` fallback rather than hardcoding `main`.
 
-**Firmware/host-app code:** not here. Commit inside `firestarter/` or `firestarter_app/`
+**Firmware/host-app code:** not here. Commit inside `firestarter_fw/` or `firestarter_app/`
 on the milestone branch; the meta-repo only re-pins the gitlink.
 
 ---
@@ -211,7 +211,7 @@ firestarter_app/
 ├── firestarter_test.sh              # Comprehensive hardware test suite (bash)
 ├── write_test.sh                    # Write/verify focused test script (bash)
 │
-├── firestarter/                     # Main Python package
+├── firestarter_fw/                     # Main Python package
 │   ├── __init__.py                  # Version string: __version__ = "2.0.7_dev"
 │   ├── main.py                      # CLI entry point; argparse + command dispatch
 │   ├── eprom_operations.py          # EpromOperator: read/write/verify/erase/blank/id
@@ -272,12 +272,12 @@ firestarter_app/
 
 ---
 
-## Arduino Firmware: `firestarter/`
+## Arduino Firmware: `firestarter_fw/`
 
 *[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule contents, out of scope]*
 
 ```
-firestarter/
+firestarter_fw/
 ├── platformio.ini               # Build environments: uno, leonardo
 ├── name_firmware.py             # Pre-build script: names .hex by board
 ├── CLAUDE.md                    # AI development guidance
@@ -375,15 +375,15 @@ firestarter/
 |------|----------|
 | Add a new CLI command | `firestarter_app/firestarter/main.py` — add `create_*_args()` and dispatch in `main()` |
 | Add a new EPROM operation | `firestarter_app/firestarter/eprom_operations.py` + corresponding firmware op |
-| Change serial protocol | `firestarter_app/firestarter/serial_comm.py` + `firestarter/src/firestarter.cpp` |
+| Change serial protocol | `firestarter_app/firestarter/serial_comm.py` + `firestarter_fw/src/firestarter.cpp` |
 | Add an EPROM to the database | `firestarter_app/firestarter/data/minipro_complete_db.json` or `~/.firestarter/database.json` |
 | Change pin-map / bus config | `firestarter_app/firestarter/data/pinouts.json` or `database.py::pin_conversions` |
-| Modify firmware main loop | `firestarter/src/firestarter.cpp` |
-| Add a new memory device type | `firestarter/src/proms/` (new .cpp + header) |
-| Change board HAL | `firestarter/src/boards/` |
+| Modify firmware main loop | `firestarter_fw/src/firestarter.cpp` |
+| Add a new memory device type | `firestarter_fw/src/proms/` (new .cpp + header) |
+| Change board HAL | `firestarter_fw/src/boards/` |
 | Adjust user config persistence | `firestarter_app/firestarter/config.py` |
 | Modify firmware flash/install | `firestarter_app/firestarter/firmware.py` + `avr_tool.py` |
-| Change constants/flags | `firestarter_app/firestarter/constants.py` + `firestarter/include/firestarter.h` |
+| Change constants/flags | `firestarter_app/firestarter/constants.py` + `firestarter_fw/include/firestarter.h` |
 
 ---
 

@@ -9,7 +9,7 @@
 # never regenerate for themselves.
 #
 # Authoritative source: tools/catalog/{messages.toml,codegen.py}
-# Generated firmware artifact: firestarter/include/messages.h
+# Generated firmware artifact: firestarter_fw/include/messages.h
 # Generated host artifact:     firestarter_app/firestarter/messages.py
 #
 # Idempotent: re-running with no upstream change is a no-op.
@@ -21,7 +21,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 META_REPO_CATALOG="$SCRIPT_DIR"
-FS_ROOT="$META_REPO_CATALOG/../../firestarter"
+FS_ROOT="$META_REPO_CATALOG/../../firestarter_fw"
 FA_ROOT="$META_REPO_CATALOG/../../firestarter_app"
 
 for f in messages.toml codegen.py; do
@@ -32,9 +32,9 @@ for f in messages.toml codegen.py; do
 done
 
 # ---------------------------------------------------------------------------
-# Firmware artifact: firestarter/include/messages.h
+# Firmware artifact: firestarter_fw/include/messages.h
 # ---------------------------------------------------------------------------
-echo "Regenerating firestarter/include/messages.h ..."
+echo "Regenerating firestarter_fw/include/messages.h ..."
 tmp_h="$(mktemp)"
 trap 'rm -f "$tmp_h" "${tmp_py:-}"' EXIT
 python3 "$META_REPO_CATALOG/codegen.py" \
@@ -44,7 +44,7 @@ python3 "$META_REPO_CATALOG/codegen.py" \
 cp "$tmp_h" "$FS_ROOT/include/messages.h"
 
 if diff -q "$tmp_h" "$FS_ROOT/include/messages.h" >/dev/null 2>&1; then
-    echo "  OK: firestarter/include/messages.h regenerated."
+    echo "  OK: firestarter_fw/include/messages.h regenerated."
 else
     echo "ERROR: regenerated messages.h did not land at $FS_ROOT/include/messages.h" >&2
     exit 1

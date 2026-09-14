@@ -149,9 +149,9 @@ the firmware repository slug in the GitHub Releases endpoint below, corrected to
 **Databases:**
 - None (no SQL/NoSQL database)
 - EPROM definitions stored as JSON flat files bundled with the package:
-  - `firestarter/data/database_generated.json` - Main EPROM definitions
-  - `firestarter/data/database_overrides.json` - Default overrides
-  - `firestarter/data/pin-maps.json` - Pin mapping configurations
+  - `firestarter_fw/data/database_generated.json` - Main EPROM definitions
+  - `firestarter_fw/data/database_overrides.json` - Default overrides
+  - `firestarter_fw/data/pin-maps.json` - Pin mapping configurations
 
 **File Storage:**
 - Local filesystem only

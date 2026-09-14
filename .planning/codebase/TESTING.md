@@ -7,7 +7,7 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 
 **Analysis Date:** 2026-09-14
 
-**Source (this pass):** meta-repo tracked paths only — `.github/`, `.devcontainer/`, `.vscode/`, `.claude/skills/`, `.gitignore`, `.gitmodules`, `CLAUDE.md`. The firmware (`firestarter/`) and host app (`firestarter_app/`) are git submodules and were **not** scanned in this pass; their internal test layout is marked below.
+**Source (this pass):** meta-repo tracked paths only — `.github/`, `.devcontainer/`, `.vscode/`, `.claude/skills/`, `.gitignore`, `.gitmodules`, `CLAUDE.md`. The firmware (`firestarter_fw/`) and host app (`firestarter_app/`) are git submodules and were **not** scanned in this pass; their internal test layout is marked below.
 
 ## Summary — corrects the 2026-05-08 claim
 
@@ -23,7 +23,7 @@ What is true of the layer this pass can see:
 |-------|-------------------|-------------------|
 | Meta repo (this repo) | No `.github/workflows/` directory at all. No automated check of any kind. | Yes |
 | Host app `firestarter_app/` | pytest suite, mypy watermark gate, ruff (`select = [E,F,I,UP]`), run on Python 3.11 | No — submodule out of scope |
-| Firmware `firestarter/` | `pio test` (PlatformIO), native + native_nodevtools environments | Partly — `CLAUDE.md` documents `pio test` |
+| Firmware `firestarter_fw/` | `pio test` (PlatformIO), native + native_nodevtools environments | Partly — `CLAUDE.md` documents `pio test` |
 | `.claude/skills/*/scripts/*.py` | **Nothing.** No tests, no type checking, no lint in any CI. | Yes |
 
 ## Meta-repo CI — none exists
@@ -110,7 +110,7 @@ the entry points:
 ./firestarter_test.sh [EPROM]     # full hardware integration test
 ./write_test.sh [EPROM]           # write/verify test
 
-# firmware (run from firestarter/)
+# firmware (run from firestarter_fw/)
 pio run -e uno                    # build for Arduino Uno
 pio run -e leonardo               # build for Arduino Leonardo
 pio run -t upload -e uno          # flash
