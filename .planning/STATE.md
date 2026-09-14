@@ -5,16 +5,16 @@ milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 193
 current_phase_name: The Deferred Claim, Made Measurable
 status: executing
-stopped_at: Completed 193-01-PLAN.md
-last_updated: "2026-09-14T10:37:02Z"
+stopped_at: Completed 193-03-PLAN.md
+last_updated: "2026-09-14T10:55:54.952Z"
 last_activity: 2026-09-14
 last_activity_desc: "Phase 193 Plan 01 (tracer) COMPLETE 2026-09-14 — tools/adoption/pypi_version_share.sh built, run live against sql-clickhouse.clickhouse.com (17 fixed / 116 at-risk / 12.8% share, TRIGGER: NOT MET), and its threshold-boundary, empty-window and server-error paths each proven; commits 352841a9, 9c94669b. STATE.md progress block hand-repaired again after state.advance-plan re-fabricated completed_phases 4->1 and percent 80->20 — same corruption class as the two prior repairs noted above. state.record-metric and roadmap.update-plan-progress both silently no-op'd against this project's hand-authored table shapes, so the metrics row and the ROADMAP checkbox were hand-edited instead."
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 1
   total_plans: 23
-  completed_plans: 19
-  percent: 80
+  completed_plans: 20
+  percent: 20
 ---
 
 # Project State
@@ -236,7 +236,7 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 193 (The Deferred Claim, Made Measurable) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: 193-01 complete, ready to execute 193-03
 Last activity: 2026-09-14 — 193-01-PLAN.md complete (GATE-01 adoption instrument built and proven live)
 
@@ -3017,6 +3017,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 191]: Verified operator's tag/release/publish.yml dispatch against three independent live API reads (tag peel, release target_commitish, publish run status) rather than trusting the report; all three sha readings agreed with 191-03's merge commit.
 - [Phase 191]: Disclosed a genuine PyPI propagation-lag finding: pip briefly resolved 2.0.7 while the JSON API already reported 2.0.9; resolved on retry after confirming the simple index. All three fixture invocations recorded in evidence rather than only the final clean one.
 - [Phase 191]: Bench leg's no-flag path could not complete a version handshake against firmware 3.0.0b22; took the plan's named fallback (fw --install), recording the reason rather than retrying into a cleaner-looking transcript. — Honesty requirement: report what the board actually did, not a smoothed-over retry.
+- [Phase 193]: Used v1.35 as the pre-rename ref in all three GATE-03 transcripts, not the Phase 189 parent commit (unreachable in a fresh clone). — v1.35 is a published, immutable tag whose .gitmodules still names the old firmware slug, satisfying D-16.
+- [Phase 193]: Reproduced and repaired the git submodule sync hazard: sync at a pre-rename ref clobbers both the .git/config override and the child's own origin remote. — 999.9's own ordered procedure names submodule sync --recursive as routine hygiene, so an operator following it would silently undo the GATE-03 workaround; plan 193-04 will fold this into the archaeology-trap note.
 
 ## Performance Metrics
 
@@ -3454,11 +3456,12 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 191 P03 | 8min | 2 tasks | 2 files |
 | Phase 191-the-branch-that-reaches-users P04 | 22min | 1 tasks | 2 files |
 | Phase 191 P05 | 12min | 2 tasks | 2 files |
+| Phase 193 P03 | 12min | 3 tasks | 4 files |
 
 ## Session
 
-**Last session:** 2026-09-14T07:22:34.696Z
-**Stopped at:** Phase 193 planned
+**Last session:** 2026-09-14T10:55:54.682Z
+**Stopped at:** Completed 193-03-PLAN.md
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
@@ -3538,7 +3541,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/v1.33/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/193-the-deferred-claim-made-measurable/193-CONTEXT.md
+**Resume file:** None
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing

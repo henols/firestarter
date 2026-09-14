@@ -460,7 +460,7 @@ Plans:
 **Wave 1**
 
 - [x] 193-01-PLAN.md — Tracer: the adoption instrument built, run live against the ClickHouse playground, and its three unmeasured paths proven (SUMMARY committed)
-- [ ] 193-03-PLAN.md — Both `.gitmodules` workarounds executed at the published pre-rename ref, plus the `submodule sync` hazard and its repair
+- [x] 193-03-PLAN.md — Both `.gitmodules` workarounds executed at the published pre-rename ref, plus the `submodule sync` hazard and its repair (SUMMARY committed)
 
 **Wave 2** *(193-02 blocked on 193-01; 193-04 blocked on 193-03)*
 
