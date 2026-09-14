@@ -464,7 +464,7 @@ Plans:
 
 **Wave 2** *(193-02 blocked on 193-01; 193-04 blocked on 193-03)*
 
-- [ ] 193-02-PLAN.md — The seed's trigger becomes a threshold with a window, and the frontmatter is proved to still parse
+- [x] 193-02-PLAN.md — The seed's trigger becomes a threshold with a window, and the frontmatter is proved to still parse
 - [ ] 193-04-PLAN.md — The `.gitmodules` archaeology note: both workarounds as ordered procedures, the hazard, the banked transcripts and the honest limits
 
 **Wave 3** *(blocked on Wave 2 completion)*

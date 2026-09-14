@@ -92,7 +92,7 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 
 ### GATE — make the deferred claim measurable
 
-- [ ] **GATE-01**: An adoption instrument reports per-version download share for the `firestarter` PyPI
+- [x] **GATE-01**: An adoption instrument reports per-version download share for the `firestarter` PyPI
       package, so the seed's trigger is a number with a stated threshold rather than a judgement call. It
       must state plainly what it does **not** measure — installed base is not observable, and users who
       never upgrade are unreachable by any threshold.
@@ -139,7 +139,7 @@ Which phases cover which requirements. Populated at roadmap creation.
 | SWEEP-01 | Phase 192 | Complete |
 | SWEEP-02 | Phase 192 | Complete |
 | SWEEP-03 | Phase 192 | Complete |
-| GATE-01 | Phase 193 | Pending |
+| GATE-01 | Phase 193 | Complete |
 | GATE-02 | Phase 193 | Pending |
 | GATE-03 | Phase 193 | Pending |
 
