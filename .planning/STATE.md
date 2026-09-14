@@ -4,15 +4,15 @@ milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 193
 current_phase_name: The Deferred Claim, Made Measurable
-status: planning
-stopped_at: Phase 193 context gathered
-last_updated: "2026-09-14T07:22:35.212Z"
+status: planned
+stopped_at: Phase 193 planned
+last_updated: "2026-09-14T08:18:22.185Z"
 last_activity: 2026-09-14
-last_activity_desc: "Phase 193 The Deferred Claim Made Measurable CONTEXT gathered 2026-09-14 — 18 decisions (D-01..D-18) across 4 discussed areas, 12 operator questions, all recommended options taken. GATE-01 instrument settled as a committed shell script at tools/adoption/ (not a recorded query, not a scheduled job — meta has no .github/workflows/), printing its own caveat block every run. Data source measured live, not researched: pypistats.org has NO per-version endpoint and cannot satisfy GATE-01; the ClickHouse public playground (sql-clickhouse.clickhouse.com, user=play, no credentials, table pypi.pypi_downloads_per_day_by_version_by_installer_by_type, current to 2026-09-13) does per-version AND per-installer; GitHub release-asset counts answer research Q4 NO (cumulative only, no time series, no client-version dimension). Installer filter is load-bearing: over 90 days pip is 740 of 23121 downloads (3.2 pct) against bandersnatch 11672 — an unfiltered gate would measure mirror re-scan timing. THE NUMBER (D-09): fixed share of (>=2.0.9)/((>=2.0.9)+2.0.7) >= 90 pct AND 2.0.7 <= 10 pip+uv downloads, both over a rolling 90-day stable-channel window; baseline at authoring 12.8 pct and 116, nowhere near firing. Grounded on the 2.0.6->2.0.7 natural experiment (70/94/100 pct across Jan-Mar 2026) and on the finding that the pre-2.0.7 tail is AUTOMATION not stranded humans (398/254/320/265/52 by quarter, present before 2.0.7 existed) — so the gate keys on 2.0.7 alone and the record must say the pre-2.0.7 population is outside the instrument's reach. 90-day window chosen because scraper spikes (Jan 342, May 312 vs a 34-75 baseline) swamp 30 days. Re-examine date 2027-09-13, never an auto-fire. GATE-02 and GATE-03 both land in CLAUDE.md with mechanisms in cited notes; GATE-02 points at the existing 999.9 impact-analysis section rather than restating _compare_versions (one source of truth). GATE-03 demonstration is EXECUTED with committed transcripts per the RENAME-03 precedent. 37 todos reviewed, none folded. Verified live: SEED-claim-firestarter-slug.md is the ONLY seed matching new-milestone.md's SEED-*.md glob, so the surfacing path GATE-01 depends on actually works. STATE.md progress block hand-repaired after state.record-session fabricated completed_phases 4->1 and percent 80->20."
+last_activity_desc: "Phase 193 The Deferred Claim Made Measurable PLANNED 2026-09-14 — 5 plans in 3 waves, committed 9e357ec2; plan-checker VERIFICATION PASSED with zero blockers and zero warnings. Research and pattern-mapping both run and committed. Research falsified three CONTEXT.md assumptions and the orchestrator verified the load-bearing one directly: the firestarter_fw URL in .gitmodules exists ONLY on the milestone branch — origin/beta, origin/main and v1.35 all still carry git@github.com:henols/firestarter.git — so D-12's seed checklist must be scoped to a named ref rather than claiming all three legs satisfied, and v1.35 (not the unpushed 9ccf0414) is the pre-rename ref for the fresh-clone transcript. Also settled: a trigger_condition scalar starting with a backtick makes GSD's frontmatter parser return {} and silently unhooks the seed from audit.cjs scanSeeds, so D-12's rewrite uses a folded scalar plus a real parse assertion; CLAUDE.md's 'tools/ holds catalog/ alone' line is falsified by creating tools/adoption/ and is corrected in the same edit; git submodule sync clobbers the existing-clone workaround and the 999.9 note's own Phase A step 2 tells operators to run it, so the new note carries that hazard. Planner grounding caught two real defects in the researched query form: float rounding could flip the verdict at 89.96 pct, and 0 >= 0 on an empty window would have read trigger MET on no data — both closed by exact integer arithmetic plus an in-query row-count gate. Spec-less probe fallback fired (no SPEC.md): 7 edges surfaced, 6 authored into must_haves, GATE-02's unclassified row carried as a flagged unresolved assumption; no silent drops. Requirements coverage 3/3, decision coverage 15/15. STATE.md hand-repaired after state.planned-phase set status=executing before any executor ran and re-fabricated progress.percent 80->20."
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 18
+  total_plans: 23
   completed_plans: 18
   percent: 80
 ---
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 193 — The Deferred Claim, Made Measurable
+Phase: 193 (The Deferred Claim, Made Measurable) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-14 — Phase 192 complete, transitioned to Phase 193
+Status: Ready to execute
+Last activity: 2026-09-14 — Phase 193 planned: 5 plans in 3 waves, plan-checker passed clean
 
 ## Roadmap Summary (v1.38)
 
@@ -3455,7 +3455,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-14T07:22:34.696Z
-**Stopped at:** Phase 193 context gathered
+**Stopped at:** Phase 193 planned
+**Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
 **Was (superseded, retained for continuity):** Completed 188-04-PLAN.md — parity module deleted, blast-radius oracle trimmed to its two render_shape sites (68/106 tests, GATE-01/02/03 and D-07/D-10 intact, 19 snapshots byte-unchanged), all eight remaining check_*.py gates retired with their tests/fixtures, mypy CI step and CLAUDE.md guard prose removed; suite measured 2307->2262->2175, 0 errors (firestarter_app@0f251f0)
