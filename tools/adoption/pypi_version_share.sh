@@ -70,6 +70,25 @@ data_line="$(printf '%s\n' "$body" | tail -n +2)"
 
 IFS=$'\t' read -r ch_today window_start window_end rows_matched fixed at_risk fixed_share_pct trigger_met <<< "$data_line"
 
+case "$rows_matched" in
+    ''|*[!0-9]*)
+        echo "ERROR: the response did not carry a usable data row — no verdict printed:" >&2
+        echo "$body" >&2
+        print_fallbacks
+        exit 1
+        ;;
+esac
+
+case "$trigger_met" in
+    0|1) ;;
+    *)
+        echo "ERROR: the response did not carry a usable trigger value — no verdict printed:" >&2
+        echo "$body" >&2
+        print_fallbacks
+        exit 1
+        ;;
+esac
+
 if [ "$rows_matched" = "0" ]; then
     echo "ERROR: the query succeeded and matched no rows in the window — no verdict printed" >&2
     exit 2
