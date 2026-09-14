@@ -430,7 +430,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 192-05-PLAN.md — Prove `.planning/milestones/` untouched over a recomputed merge-base range, and write the disposition record
+- [x] 192-05-PLAN.md — Prove `.planning/milestones/` untouched over a recomputed merge-base range, and write the disposition record
 
 ### Phase 193: The Deferred Claim, Made Measurable
 

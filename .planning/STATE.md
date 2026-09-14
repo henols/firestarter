@@ -5,15 +5,15 @@ milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 192
 current_phase_name: Live References Only
 status: executing
-stopped_at: Phase 192 wave 2 complete — 192-03 landed, all seven codebase documents gated; wave 3 (192-05) next
-last_updated: "2026-09-14T05:36:03.000Z"
+stopped_at: Phase 192 all 5 plans executed — phase gates and verification next
+last_updated: "2026-09-14T05:42:54.000Z"
 last_activity: 2026-09-14
-last_activity_desc: "Phase 192 wave 1 complete — 192-01 repointed README + the 13 bare-slug sites in the two runnable v1.4 artefacts; 192-02 remapped STACK/INTEGRATIONS/ARCHITECTURE/STRUCTURE at the D-04 scope, killing the retired-CI claims by removal; 192-04 hand-widened SWEEP-03 to all seven codebase documents and re-verified both sub-repos clean with controls. Wave 2 complete: 192-03 remapped CONVENTIONS/TESTING/CONCERNS and gated all seven documents at bare_slug 0 / retired_ci 0, each zero paired with a non-zero same-file control. Wave 3 (192-05) pending."
+last_activity_desc: "Phase 192 wave 1 complete — 192-01 repointed README + the 13 bare-slug sites in the two runnable v1.4 artefacts; 192-02 remapped STACK/INTEGRATIONS/ARCHITECTURE/STRUCTURE at the D-04 scope, killing the retired-CI claims by removal; 192-04 hand-widened SWEEP-03 to all seven codebase documents and re-verified both sub-repos clean with controls. Wave 2 complete: 192-03 remapped CONVENTIONS/TESTING/CONCERNS and gated all seven documents at bare_slug 0 / retired_ci 0, each zero paired with a non-zero same-file control. Wave 3 complete: 192-05 proved .planning/milestones/ untouched over the recomputed f0307ac8..HEAD range (90 commits) with two non-vacuity controls, and wrote evidence/192-disposition.md answering all four ROADMAP criteria and stating the D-08 regression-guard debt plainly. SWEEP-01/02/03 flipped Complete."
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
   percent: 60
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 192 (Live References Only) — EXECUTING
-Plan: 4 of 5
-Status: Wave 2 complete (192-03) — wave 3 (192-05) next
-Last activity: 2026-09-14 — Phase 192 wave 2 complete, 4/5 plans
+Plan: 5 of 5
+Status: All 5 plans executed — phase gates and verification next
+Last activity: 2026-09-14 — Phase 192 all plans executed, 5/5
 
 ## Roadmap Summary (v1.38)
 
