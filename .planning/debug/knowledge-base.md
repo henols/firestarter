@@ -67,3 +67,46 @@ of new investigations.
   and a live A/B/C(/D) matrix through the seam is strictly better evidence than either a
   `_FakeSerial`-only test or a natural-conditions non-reproduction.
 ---
+
+## auto-mode-permission-blocks — blanket Bash wildcards pre-empt the classifier, and a bare `cd` segment always defers to it
+- **Date:** 2026-09-14
+- **Error patterns:** Permission for this action was denied by the Claude Code auto mode
+  classifier, [Self-Modification], [Auto-Mode Bypass], denied in this session (external system
+  write), cd in a compound command can trigger a permission prompt, gh release create, git push
+  denial, wiki push denial
+- **Root cause(s):** Claude Code resolves a Bash action deterministically only when every
+  shell-control-operator-separated segment of the command matches a `permissions.allow` entry. A
+  bare `cd` segment matched no entry in either settings file, so any `cd X && verb args` command
+  always deferred to the auto-mode classifier, no matter how well the trailing verb was covered.
+  This caused the reported friction. Separately, `permissions.allow` in settings.json carried
+  blanket single-verb wildcards (`Bash(git *)`, `Bash(gh *)`, `Bash(gh pr *)`, `Bash(gh api *)`),
+  and settings.local.json separately carried `Bash(gh release:*)`, `Bash(gh release edit:*)`, and
+  `Bash(gh pr merge:*)`. These wildcards deterministically pre-approved bare invocations of the
+  exact dangerous sub-verbs the classifier's own `hard_deny`/`soft_deny` arrays exist to gate,
+  before those arrays were ever consulted. This was the more serious, safety-relevant half of the
+  root cause. Both causes needed a fix together, one in the config-scope category and one in the
+  usage-pattern category (AND-gate: the missing `cd` rule alone only explains friction, the
+  blanket wildcards alone only explain the safety gap).
+- **Fix:** In `/workspaces/.claude/settings.json`, removed the four blanket wildcards, added
+  scoped read-only sub-verb entries (`gh issue list/view`, `gh pr list/view/diff/checks`, `gh run
+  list/view`, `gh release list/view`, `gh label list`, `gh search`, `gh repo view`, `gh api -X
+  GET`), and merged a full `autoMode` block (environment 9, allow 13, soft_deny 7, hard_deny 6
+  entries) naming the project's actual safety boundary, including a rule that lets a `cd` into a
+  known project directory followed by an already-permitted command clear the classifier instead
+  of tripping on the bare `cd` segment. In `/workspaces/.claude/settings.local.json`, removed the
+  three dangerous entries named above. `git push` was kept allowed, on the operator's call, because
+  GitHub branch protection with `current_user_can_bypass: never` already rejects the catastrophic
+  case server-side.
+- **Files changed:** `/workspaces/.claude/settings.json`, `/workspaces/.claude/settings.local.json`.
+  Both are gitignored and not tracked by git. No source files changed.
+- **Why not caught:** No gate existed for this class. This is a Claude Code harness
+  permission-configuration gap, not a defect in project source or tests. Nothing in CI, code
+  review, or any existing GSD gate audits `.claude/settings*.json` for allow-rule scope or for
+  compound-command segment coverage.
+- **Recurrence guard:** The narrowed `permissions.allow` lists and the populated `autoMode`
+  `hard_deny`/`soft_deny` arrays are now the durable artifact. This knowledge base entry is the
+  detection guard for a future session that reports the same friction or the same self-modification
+  denial. There is no automated test for this class. A future audit of either settings file should
+  check for a reintroduced single-verb blanket wildcard (`Bash(git *)`, `Bash(gh *)`, or similar)
+  before assuming a new allow entry is safe.
+---
