@@ -18,7 +18,8 @@ affects: []
 actuals:
   tokens: 2829
   tasks: 3
-  commits: 1
+  commits: 3
+plan_head_before: 4b7e70c43de36b53ae34be95ae93adabb272c95b
 
 # Tech tracking
 tech-stack:
@@ -153,7 +154,7 @@ None. No external service configuration required.
 - `CLAUDE.md` exists on disk with both edits present.
 - `.planning/phases/193-the-deferred-claim-made-measurable/evidence/193-disposition.md` exists on disk.
 - `.planning/phases/193-the-deferred-claim-made-measurable/193-05-SUMMARY.md` (this file) exists on disk.
-- `git log --oneline --all --grep="193-05"` returns three commits: `9e357ec2` (plan creation, prior step), `e594466d` (production commit — CLAUDE.md and the disposition record), and `eb8bd3ff` (metadata commit — this SUMMARY, STATE.md, ROADMAP.md, REQUIREMENTS.md).
+- `git rev-list --count 4b7e70c4..HEAD` measures 3 commits for this plan: `e594466d` (production commit — CLAUDE.md and the disposition record), `eb8bd3ff` (metadata commit — SUMMARY, STATE.md, ROADMAP.md, REQUIREMENTS.md), and `ebf74dc6` (this self-check correction).
 - All acceptance criteria in the plan's three tasks were independently re-verified after the two documented plan-verify-command defects (see Deviations above), using `grep -o` in place of the miscounting `grep -c` legs, and by inspecting the heading list directly for the heading-count leg.
 
 ---
