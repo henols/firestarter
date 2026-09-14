@@ -48,3 +48,53 @@ git -c submodule.firestarter.url=git@github.com:henols/firestarter_fw.git \
 ```
 
 Verified clean, in a fresh clone at `v1.35` with no prior override. It checks out the child from `firestarter_fw`. It leaves `git config --get submodule.firestarter.url` unset afterward — the override lives only in that one command's environment. This is a **convenience** for a single checkout, offered **beside** Workaround A and Workaround B, not a replacement for either. Those two are the workarounds `.planning/notes/999.9-repo-rename-impact-analysis.md` prescribes and the ones this phase actually executed and banked as transcripts.
+
+## The sync hazard
+
+Running `git submodule sync` while HEAD is at a pre-rename ref **silently destroys** the workaround set up by Workaround A or Workaround B. This is not a corner case. `.planning/notes/999.9-repo-rename-impact-analysis.md` § "Ordered procedure", Phase A step 2, names it as routine hygiene. That step tells an operator to run `git submodule sync --recursive` after repointing `.gitmodules`. An operator who has learned that step will undo the GATE-03 workaround. No warning appears. No error appears. It happens the moment `sync` runs at a pre-rename ref.
+
+Captured reproduction, `evidence/193-gate-03-submodule-sync-hazard.txt` READING 1 and READING 2:
+
+```
+$ git config --get submodule.firestarter.url
+git@github.com:henols/firestarter_fw.git
+$ git -C firestarter remote get-url origin
+git@github.com:henols/firestarter_fw.git
+
+$ git submodule sync firestarter
+Synchronizing submodule url for 'firestarter'
+
+$ git config --get submodule.firestarter.url
+git@github.com:henols/firestarter.git
+$ git -C firestarter remote get-url origin
+git@github.com:henols/firestarter.git
+```
+
+The discriminating lines are the two `git config --get` and `git -C firestarter remote get-url origin` pairs, read before and after `sync`. Both read `firestarter_fw` before. Both read the old `firestarter` slug after. The `Synchronizing submodule url for 'firestarter'` line proves nothing by itself. It is `sync`'s routine, silent-success message, not a warning. It names no URL.
+
+`sync` re-reads `.gitmodules` **at the current HEAD**. At a pre-rename ref, that HEAD's `.gitmodules` still names the old slug, so `sync` overwrites the override with it. It clobbers **two places, not one**: `.git/config`'s `submodule.firestarter.url` override, and the child's own `origin` remote (`git -C firestarter remote get-url origin`). A repair that touches only the `.git/config` override would look complete. It would not be. The child would still fetch from the old slug on its next `git -C firestarter fetch`.
+
+The repair for this hazard is two literal commands, run in this order:
+
+```
+git config submodule.firestarter.url git@github.com:henols/firestarter_fw.git
+git -C firestarter remote set-url origin git@github.com:henols/firestarter_fw.git
+```
+
+`evidence/193-gate-03-submodule-sync-hazard.txt` READING 3 runs both and reads both values back to `firestarter_fw`. The same transcript then re-runs `sync` at the same HEAD as a durability check. Both values are immediately re-clobbered again. **This is a repair, not a fix.** It undoes one run of `sync`. Any further `sync` at the same pre-rename ref undoes it again. The durable answer is not to run `git submodule sync` while HEAD sits at a pre-rename ref at all.
+
+## Banked evidence — the executed transcripts
+
+Each transcript carries its own capture dates and the literal commands that produced it. Re-run them rather than trust this note's prose.
+
+- `evidence/193-gate-03-fresh-clone.txt` — Workaround B, executed at `v1.35` in a clean, no-override clone. READING 1 proves the workaround. The override survives `submodule init`, and the child is cloned from `firestarter_fw` despite the ref's own `.gitmodules` naming the old slug. READING 2 proves the trap does not bite today. A plain, no-override `submodule update --init` at the same ref still succeeds, through the live redirect. That reading is labelled explicitly as a statement about today's world.
+- `evidence/193-gate-03-existing-clone.txt` — Workaround A, executed by taking a maintained, post-rename clone back to `v1.35`. READING 1 captures the invisible agreement state. READING 2 forces the divergence by checking out `v1.35`, and shows the override outliving the checkout and being honoured by the subsequent update.
+- `evidence/193-gate-03-submodule-sync-hazard.txt` — the hazard reproduced and repaired. READING 1 is the pre-`sync` baseline, both values on `firestarter_fw`. READING 2 is the clobber, both values reverted to the old slug. READING 3 is the two-command repair, plus the durability check proving a second `sync` re-clobbers both.
+
+## Honest limits
+
+**(a) The trap does not bite today.** The old firmware slug `henols/firestarter` still redirects to `henols/firestarter_fw`. A plain `git submodule update --init` at a pre-rename ref succeeds through that redirect (`evidence/193-gate-03-fresh-clone.txt` READING 2). The workarounds above are for the state that arrives once the freed slug is claimed for the meta repository. That state has not arrived, and nothing in this note or its transcripts claims otherwise.
+
+**(b) The post-claim failure shape is a projection, not an observation.** `.planning/notes/999.9-repo-rename-impact-analysis.md` § "The `.gitmodules` archaeology trap" reasons that after the claim, `git submodule update --init` resolves the old URL to the **meta** repository itself. It reasons the parent then clones into its own `firestarter/` child directory. That reasoning follows from how the redirect and the URL resolve today. It is **unverified and unverifiable while the redirect is live**. It is deliberately not tested here. Testing it would require performing the destructive claim this milestone declines to perform (`.planning/REQUIREMENTS.md` § "Decisions taken at activation" D-1, D-7). This note presents it as a projection, and labels it one. No reading in any transcript banked here shows a post-claim failure, because none could.
+
+**(c) History cannot be repaired.** Fixing `.gitmodules` on `beta` and `main` does not change what any past commit records. The trap is a property of history, not of the current tip. Rewriting history across a repository with published tags and two submodules is not on the table. The trap is documented and worked around here, not solved. `.planning/notes/999.9-repo-rename-impact-analysis.md` reaches the same verdict, and this note does not revise it.
