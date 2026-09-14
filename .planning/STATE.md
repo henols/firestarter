@@ -4,11 +4,11 @@ milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 193
 current_phase_name: The Deferred Claim, Made Measurable
-status: ready_for_verification
-stopped_at: Completed 193-05-PLAN.md — Phase 193 complete, all 5 plans done
-last_updated: "2026-09-14T11:36:18.720Z"
+status: completed
+stopped_at: Phase 193 complete — all phases complete
+last_updated: "2026-09-14T11:59:31.768Z"
 last_activity: 2026-09-14
-last_activity_desc: Phase 193 Plan 05 COMPLETE 2026-09-14 — CLAUDE.md gained the GATE-02 no-Releases rule (mechanism cited by section heading in 999.9-repo-rename-impact-analysis.md, not restated) and the GATE-03 .gitmodules archaeology pointer, plus the corrected tools/ inventory the phase's own tools/adoption/ addition had falsified. evidence/193-disposition.md answers all four ROADMAP Phase 193 success criteria against named artefacts. Commit e594466d. GATE-02 and GATE-03 marked Complete in REQUIREMENTS.md. Phase 193 is now feature-complete — all 5 plans have SUMMARY.md. STATE.md progress block hand-repaired three more times this plan (state.record-metric, state.add-decision x3, state.record-session all re-fabricated completed_phases/percent to 0) — same corruption class as prior entries. Two plan-authored `<verify>` automated legs (CLAUDE.md grep -c multi-pattern counts, and a heading-count expecting 5 vs the file's true pre-existing 6) were documented as plan defects in 193-05-SUMMARY.md rather than acted on, since the underlying acceptance criteria were independently confirmed satisfied via grep -o.
+last_activity_desc: Phase 193 complete
 progress:
   total_phases: 5
   completed_phases: 5
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 193 (The Deferred Claim, Made Measurable) — EXECUTING
+Phase: 193 (The Deferred Claim, Made Measurable) — COMPLETE
 Plan: 5 of 5
-Status: 193-04 complete, ready to execute 193-05
-Last activity: 2026-09-14 — 193-04-PLAN.md complete (gitmodules-archaeology-trap.md note: both GATE-03 workarounds, the sync hazard, and Honest limits)
+Status: All v1.38 phases complete — verification passed 4/4, ready for milestone close
+Last activity: 2026-09-14 — Phase 193 complete
 
 ## Roadmap Summary (v1.38)
 
@@ -3470,7 +3470,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-14T11:36:18.261Z
-**Stopped at:** Completed 193-05-PLAN.md — Phase 193 complete, all 5 plans done
+**Stopped at:** Phase 193 complete — all phases complete
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
