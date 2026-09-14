@@ -426,7 +426,7 @@ Plans:
 
 **Wave 2** *(blocked on 192-02)*
 
-- [ ] 192-03-PLAN.md — Remap `CONVENTIONS.md`, `TESTING.md` and `CONCERNS.md`, then gate all seven documents
+- [x] 192-03-PLAN.md — Remap `CONVENTIONS.md`, `TESTING.md` and `CONCERNS.md`, then gate all seven documents
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
