@@ -5,15 +5,15 @@ milestone_name: Repository Rename (ACTIVATED 2026-09-13)
 current_phase: 193
 current_phase_name: The Deferred Claim, Made Measurable
 status: executing
-stopped_at: Completed 193-02-PLAN.md
-last_updated: "2026-09-14T11:08:55.362Z"
+stopped_at: Completed 193-04-PLAN.md
+last_updated: "2026-09-14T11:22:54.854Z"
 last_activity: 2026-09-14
-last_activity_desc: "Phase 193 Plan 02 COMPLETE 2026-09-14 — SEED-claim-firestarter-slug.md's trigger_condition rewritten as a parse-safe folded scalar carrying D-09's threshold (fixed share >= 90% AND 2.0.7 downloads <= 10, 90-day window), the instrument path, and the 2027-09-13 review date. Prose corrected to 2.0.9, past tense, no 2.0.8. .gitmodules checklist leg scoped to origin/main vs origin/beta. extractFrontmatter confirms 4 keys, status: dormant. GATE-01 marked complete (both declaring plans, 193-01 and 193-02, now have SUMMARYs). commits ac30e68b, 4a0c8dbd. STATE.md progress block hand-repaired again after a state-write verb re-fabricated completed_phases 4->1 and percent 80->20 — same corruption class as the prior repairs noted in earlier entries. state.record-metric and roadmap.update-plan-progress both silently no-op'd (metrics row) or partially applied (checkbox only, verified clean by diff) against this project's hand-authored table shapes."
+last_activity_desc: Phase 193 Plan 04 COMPLETE 2026-09-14 — new note .planning/notes/gitmodules-archaeology-trap.md carrying the .gitmodules history trap, both GATE-03 workarounds (existing clone, fresh clone at v1.35) as ordered literal-command procedures citing plan 193-03's transcripts, a supplementary one-shot idiom, the undocumented git submodule sync hazard with its two-command repair and durability check, a banked-evidence section naming all three transcripts, and an Honest limits section labelling the post-claim failure a projection, not an observation. No YAML frontmatter, matching sibling notes. commits 1d296c4c, 16ac3cf2. GATE-03 stays Pending in REQUIREMENTS.md — correctly, since sibling plan 193-05 also declares it and has not yet produced a SUMMARY. STATE.md progress block hand-repaired twice more (state.advance-plan then state.record-session both re-fabricated completed_phases 4->0 and percent 80->0) — same corruption class as the prior repairs noted in earlier entries.
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 23
-  completed_plans: 21
+  completed_plans: 22
   percent: 80
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 193 (The Deferred Claim, Made Measurable) — EXECUTING
-Plan: 4 of 5
-Status: 193-01 complete, ready to execute 193-03
-Last activity: 2026-09-14 — 193-01-PLAN.md complete (GATE-01 adoption instrument built and proven live)
+Plan: 5 of 5
+Status: 193-04 complete, ready to execute 193-05
+Last activity: 2026-09-14 — 193-04-PLAN.md complete (gitmodules-archaeology-trap.md note: both GATE-03 workarounds, the sync hazard, and Honest limits)
 
 ## Roadmap Summary (v1.38)
 
@@ -3021,6 +3021,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 193]: Reproduced and repaired the git submodule sync hazard: sync at a pre-rename ref clobbers both the .git/config override and the child's own origin remote. — 999.9's own ordered procedure names submodule sync --recursive as routine hygiene, so an operator following it would silently undo the GATE-03 workaround; plan 193-04 will fold this into the archaeology-trap note.
 - [Phase 193]: Seed trigger_condition rewritten as a YAML folded block scalar starting with a word. It carries D-09's threshold, window, instrument path and re-examination date verbatim. — A leading backtick makes GSD's frontmatter parser return an empty object. That drops status: dormant and unhooks the seed from audit.cjs's scanSeeds. The parse was proved directly against extractFrontmatter after the rewrite.
 - [Phase 193]: Seed prose corrected to 2.0.9 in the past tense. The .gitmodules readiness leg is scoped to origin/main vs origin/beta rather than an unqualified claim. — origin/beta's .gitmodules still names the old firmware slug until the v1.38 milestone merges. A reader could falsify an unscoped claim with one git show.
+- [Phase 193]: Wrote the .gitmodules archaeology-trap note with no YAML frontmatter, matching sibling notes; cited both GATE-03 workarounds' transcripts by filename/READING, never by line number; and kept the deliberate "repair, not fix" word contrast the plan's own action text requires. — Matches the two sibling notes' register and satisfies GATE-03's demonstrated-not-reasoned requirement while labelling the unverifiable post-claim failure a projection, per D-16's honesty constraint.
 
 ## Performance Metrics
 
@@ -3464,8 +3465,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-14T11:08:55.123Z
-**Stopped at:** Completed 193-02-PLAN.md
+**Last session:** 2026-09-14T11:22:00.935Z
+**Stopped at:** Completed 193-04-PLAN.md
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
