@@ -1,6 +1,12 @@
 ---
 title: Claim henols/firestarter for the meta repo (the destructive half of 999.9)
-trigger_condition: A stable release of the app carrying the firestarter_fw firmware URLs has shipped AND has displaced 2.0.7 as the dominant PyPI version
+trigger_condition: >-
+  Fixed share of `(>= 2.0.9) / ((>= 2.0.9) + 2.0.7)` is at or above 90%, AND `2.0.7`
+  draws 10 or fewer `pip` plus `uv` downloads, both measured over a rolling 90-day
+  window on the stable channel. A single reading from
+  `tools/adoption/pypi_version_share.sh` is the evidence. No second consecutive
+  reading is required. Re-examine the premise on 2027-09-13 if this has not fired by
+  then. That date re-opens the question. It never fires the act itself.
 planted_date: 2026-09-13
 status: dormant
 ---
