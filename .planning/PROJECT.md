@@ -56,8 +56,8 @@ The discovery failure is now measured rather than asserted (`gh api repos/henols
 
 | repo | role | stars | forks | watchers |
 |---|---|---|---|---|
-| `firestarter_prom` | front door since v1.35 | **0** | **0** | **0** |
-| `firestarter` | firmware | 27 | 11 | 3 |
+| `firestarter` (was `firestarter_prom`) | front door since v1.35; claimed the short slug 2026-09-14 | **0** | **0** | **0** |
+| `firestarter_fw` (was `firestarter`) | firmware | 27 | 11 | 3 |
 | `firestarter_app` | host CLI | 48 | 6 | 4 |
 
 Six weeks after v1.35 made it the documented entry point, nobody has found it, while 75 stars sit on the
@@ -89,7 +89,7 @@ command alone — read, write, verify, erase and `dev test` are untouched. Full 
 
 | ID | Decision | Consequence |
 |---|---|---|
-| **D-1** | **v1.38 stops before the claim.** Renaming `firestarter_prom` → `firestarter` is out of scope. | The milestone closes with the front door still named `firestarter_prom`. The claim is deferred to a seed whose trigger is *adoption*, not a date. |
+| **D-1** | **v1.38 stops before the claim.** Renaming `firestarter_prom` → `firestarter` is out of scope. **SUPERSEDED 2026-09-14 — the operator directed the rename after the milestone's phases closed, with the adoption trigger unmet.** | The milestone closes with the front door still named `firestarter_prom`. The claim is deferred to a seed whose trigger is *adoption*, not a date. |
 | **D-2** | **Firmware releases stay in the firmware repository.** No mirroring onto the meta repo, not even for a bounded sunset window. | Rules out the one continuity mechanism that would have let the claim happen immediately, and therefore implies D-1 rather than merely accompanying it. |
 | **D-3** | **`main` and `beta` are separate changes**, and `main` is the one that reaches users. | `pip install firestarter` resolves to **2.0.7**; `origin/main` is that code, 948 commits behind `beta`, carrying `FIRESTARTER_RELEASE_URL` but no `submit.py`. Repointing `beta` alone would leave the default install broken *while passing 999.9's own stated clean-environment validation*. |
 | **D-4** | **The meta repository must never publish a GitHub Release.** Bare milestone tags only, as today. | It has **0** Releases, which is exactly what makes a post-claim failure a clean 404. Publishing one arms `_compare_versions` to parse `v1.36` as PEP 440 `1.36`, judge `3.0.0b29` newer, and report firmware as current forever — silent and permanent, where today it is loud. |

@@ -8,10 +8,36 @@ trigger_condition: >-
   reading is required. Re-examine the premise on 2027-09-13 if this has not fired by
   then. That date re-opens the question. It never fires the act itself.
 planted_date: 2026-09-13
-status: dormant
+status: fired
+fired_date: 2026-09-14
 ---
 
 # Claim `henols/firestarter` for the meta repo
+
+> **FIRED 2026-09-14, BY OPERATOR DECISION, AHEAD OF THIS TRIGGER.**
+>
+> `henols/firestarter_prom` was renamed to `henols/firestarter` (repo id `1232995399`).
+> The trigger below was **NOT met** at the time: the reading taken minutes before the
+> rename was fixed-share **12.8%** against a 90% threshold, and **116** at-risk `2.0.7`
+> downloads against a ceiling of 10 — both over the 90-day stable-channel window ending
+> 2026-09-13. The operator was shown those figures and the consequence, and directed the
+> act regardless. It was not a threshold breach and it was not an accident.
+>
+> **What this destroyed:** the redirect `henols/firestarter` → `henols/firestarter_fw`.
+> Every CLI at 2.0.7 or older resolves its three firmware endpoints at
+> `henols/firestarter`, which is now this repository and carries **0 releases**. Measured
+> immediately after: `repos/henols/firestarter/releases` returns `[]` and
+> `/releases/latest` returns **404**. Per the impact analysis that 404 is caught in
+> `firmware.py` and degrades to a logged error with no firmware found — those users get a
+> failure, not a crash, and `fw` stays broken for them until they upgrade.
+>
+> `henols/firestarter_prom` now redirects here, permanently, because nothing will ever
+> claim that slug. So `SUBMIT_REPO` and every recorded issue URL keep working.
+>
+> Evidence: `.planning/phases/193-the-deferred-claim-made-measurable/evidence/`.
+> The trigger text below is retained unchanged as the record of the bar that was set and
+> not cleared — it is history now, not a gate.
+
 
 The deferred, destructive half of Backlog **999.9** (gh#2). The firmware rename
 (`firestarter` → `firestarter_fw`) and every URL repoint are safe to do at any time and

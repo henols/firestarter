@@ -110,7 +110,7 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 
 | Item | Reason |
 |---|---|
-| Claiming `henols/firestarter` for the meta repository | D-1. The single destructive act in 999.9; deferred to a seed behind an adoption trigger, not a date. |
+| Claiming `henols/firestarter` for the meta repository | D-1 scoped this out, and it held for the whole milestone. **Superseded 2026-09-14: the operator directed the rename after Phase 193 closed, with the trigger unmet (12.8% share, 116 at-risk downloads).** Recorded in `.planning/seeds/SEED-claim-firestarter-slug.md`. |
 | Renaming `firestarter_app` | 999.9's prose says "all three repositories" but names only two mappings. The host repository keeps its name. |
 | Mirroring firmware releases onto the meta repository | D-2. Would split the release surface permanently to solve a temporary problem. |
 | Repairing the 672 archived `.planning/milestones/` references | D-5. Historical-by-intent; repairing them destroys the evidence. |

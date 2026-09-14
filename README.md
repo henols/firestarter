@@ -14,7 +14,7 @@ that chip, keep a copy, and put a new one back.
 
 ## Documentation
 
-**→ [The Firestarter wiki](https://github.com/henols/firestarter_prom/wiki)**
+**→ [The Firestarter wiki](https://github.com/henols/firestarter/wiki)**
 
 How to install it, how to read your first chip, and the reference material for
 every supported chip family.
@@ -23,7 +23,7 @@ every supported chip family.
 
 | Repository | What it is |
 |---|---|
-| **firestarter_prom** (this one) | The project hub — the wiki, and the shared issue tracker |
+| **firestarter** (this one) | The project hub — the wiki, and the shared issue tracker |
 | [firestarter_fw](https://github.com/henols/firestarter_fw) | The AVR firmware that runs on the Arduino and drives the chip |
 | [firestarter_app](https://github.com/henols/firestarter_app) | The `firestarter` command you run on your computer |
 
@@ -32,4 +32,4 @@ firmware for you.
 
 ## Reporting a problem
 
-See the [Contributing](https://github.com/henols/firestarter_prom/wiki/Contributing) wiki page for where to report a problem and where to open a pull request.
+See the [Contributing](https://github.com/henols/firestarter/wiki/Contributing) wiki page for where to report a problem and where to open a pull request.

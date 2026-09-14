@@ -1,0 +1,46 @@
+SLUG CLAIM FIRED — henols/firestarter_prom -> henols/firestarter
+================================================================
+
+capture_date: 2026-09-14T12:37:38Z
+directed_by: operator, explicitly, after being shown the unmet trigger and the consequence
+trigger_state_at_fire: NOT MET
+
+READING 1 -- the gate, minutes before the act
+----------------------------------------------------------------
+-- adoption at time of the act (90-day, pip+uv, stable channel) --
+window: 2026-06-16 .. 2026-09-13 (rolling 90 days ending at the table's latest date, UTC, stable channel, installer pip and uv)
+fixed_downloads_ge_2_0_9: 17
+at_risk_downloads_2_0_7: 116
+fixed_share_pct: 12.8
+threshold: fixed share >= 90% AND at-risk (2.0.7) downloads <= 10, both over the window above
+TRIGGER: NOT MET
+
+READING 2 -- slug ownership before and after
+----------------------------------------------------------------
+before:  henols/firestarter -> id 810276812 (firestarter_fw, the firmware repo)
+after:   henols/firestarter -> id 1232995399 (the meta repo)
+after:   henols/firestarter_prom -> henols/firestarter (redirect, permanent)
+after:   henols/firestarter_fw   -> henols/firestarter_fw (id 810276812)
+
+READING 3 -- the destroyed redirect, measured
+----------------------------------------------------------------
+releases_on_new_firestarter: 0
+releases_on_firestarter_fw:  30
+latest_on_new_firestarter:   HTTP 404
+
+This is the predicted degradation, not a surprise: the impact analysis records
+/releases/latest -> 404 -> raise_for_status() -> caught in firmware.py -> logged error,
+(None, None). Users on 2.0.7 and older get a failure to find firmware, not a crash.
+
+READING 4 -- consumer links re-pointed and verified live
+----------------------------------------------------------------
+new wiki   https://github.com/henols/firestarter/wiki       HTTP 200
+old wiki   https://github.com/henols/firestarter_prom/wiki  HTTP 200 (redirect)
+
+LABEL -- what this transcript is and is not
+----------------------------------------------------------------
+This records a deliberate operator decision to fire a gated act with the gate unmet.
+It is not a threshold breach, not an accident, and not a claim that the instrument was
+wrong. The instrument reported NOT MET, correctly, and was overridden with the numbers
+on the table. The seed retains its trigger text unchanged as the record of the bar that
+was set and not cleared.
