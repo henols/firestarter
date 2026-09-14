@@ -1,0 +1,108 @@
+PHASE 192 D-5 / SWEEP-02 PROOF: `.planning/milestones/` UNTOUCHED
+====================================================================
+capture_date: 2026-09-14T06:00:00Z
+range_base: f0307ac811f65490fb8745bb4f91bdb1c2b8162a
+head_commit: 1830bb1c59fa16538363c21d279be0df60b8345a
+
+The anchor is recomputed rather than reused. `range_base:` above is the live output of
+`git -C /workspaces merge-base beta HEAD`, taken now, after all four prior plans (192-01
+through 192-04) have landed — this proof deliberately runs last, because this phase itself
+must not be the thing that breaks the property it is proving (D-09). The value measured at
+discussion time (2026-09-13), `f0307ac8`, is recorded here as a cross-check and matches the
+recomputed value exactly (`f0307ac811f65490fb8745bb4f91bdb1c2b8162a` starts with `f0307ac8`)
+— local `beta` has not gone stale between discussion and this reading, but a divergence
+would have been information, not a failure, since local `beta` is known to go stale in this
+project (which is exactly why the milestone-close procedure recreates it from `origin/beta`
+before shipping, and exactly why this proof recomputes the anchor instead of hardcoding it).
+
+Nothing here is anchored on `HEAD~1`: a commit count taken against it is always 1 by
+construction (it names exactly one commit, the parent of HEAD) and would prove nothing about
+the milestone's actual range.
+
+Reading 1: range_base is an ancestor of HEAD
+---------------------------------------------
+command: git -C /workspaces merge-base --is-ancestor f0307ac811f65490fb8745bb4f91bdb1c2b8162a HEAD
+exit code: 0
+ancestor_rc: 0
+
+An ancestor check exiting 0 proves the recorded range_base genuinely precedes HEAD in this
+branch's history, so the range below describes real, ordered history rather than two
+unrelated commits.
+
+Reading 2: milestones_diff_lines
+---------------------------------
+command: git -C /workspaces diff --stat f0307ac811f65490fb8745bb4f91bdb1c2b8162a..HEAD -- .planning/milestones/
+output: (none)
+milestones_diff_lines: 0
+
+Reading 3: milestones_commits
+-------------------------------
+command: git -C /workspaces log --oneline f0307ac811f65490fb8745bb4f91bdb1c2b8162a..HEAD -- .planning/milestones/
+output: (none)
+milestones_commits: 0
+
+Reading 4: control_sibling_path_commits
+-----------------------------------------
+command: git -C /workspaces log --oneline f0307ac811f65490fb8745bb4f91bdb1c2b8162a..HEAD -- .planning/phases/
+output: 61 commits (this phase's own plan commits — 192-01 through 192-04 — plus the tracking
+  commits between them)
+control_sibling_path_commits: 61
+
+This control is what proves the range and the command form actually see commits over this
+milestone's real work: the same range, the same log command, restricted instead to
+`.planning/phases/`, returns 61 — non-zero. That is what makes the two zeros above
+(`milestones_diff_lines`, `milestones_commits`) a property of the protected path rather than
+of a broken range or an inert command form. The restriction is the directory
+`.planning/milestones/`, adjacent to but disjoint from `.planning/phases/`, where this
+milestone's own five-plan phase 192 lives — the sibling control is what demonstrates the two
+are being told apart, not merely both queried with the same (possibly broken) instrument.
+
+Reading 5: control_pathspec_tracked_files
+--------------------------------------------
+command: git -C /workspaces ls-files -- .planning/milestones/
+output: 3440 tracked files
+control_pathspec_tracked_files: 3440
+
+This control proves the pathspec `.planning/milestones/` resolves to real tracked files
+rather than to nothing — an empty diff over a pathspec matching zero files would mean
+nothing at all, indistinguishable from a typo'd or moved directory. 3440 is non-zero, so the
+empty diff and empty commit list above are readings over a real, populated directory.
+
+Interpretation
+---------------
+An empty diff and an empty commit list are never accepted alone. Paired here with two
+independent controls — a non-zero sibling-path commit count (61) and a non-zero
+pathspec-resolution count (3440 tracked files) — the two zeros above are a genuine clean
+result: over this milestone's whole range, from a freshly recomputed and ancestor-verified
+merge-base through the current HEAD, nothing touched `.planning/milestones/`, while the same
+range and the same command form plainly do see commits elsewhere in this milestone's own
+work, and the protected directory plainly does contain files that could have been touched.
+An empty diff paired with a zero control would be a failed gate, not a pass — it would mean
+the range or the command form saw nothing at all, which is indistinguishable from a clean
+tree without the controls recorded here.
+
+Reading 6: milestones_status_rc (working-tree / index)
+----------------------------------------------------------
+command: git -C /workspaces status --porcelain -- .planning/milestones/
+output: (none)
+milestones_status_rc: 0
+
+The property holds not only across the committed range but in the index and working tree at
+this instant: no staged, unstaged or untracked change exists anywhere under
+`.planning/milestones/` right now.
+
+Branch identity
+----------------
+command: git -C /workspaces branch --show-current
+result: gsd/v1.38-repository-rename-activated-2026-09-13
+
+What this reading deliberately does NOT prove
+------------------------------------------------
+- That `.planning/milestones/` will remain untouched after this plan's own SUMMARY.md and
+  metadata commit land. Those commits touch only `.planning/phases/192-live-references-only/`
+  and this plan's own SUMMARY — no `files_modified` in any of this phase's five plans names a
+  `.planning/milestones/` path, and every task in every plan carried a scoped porcelain leg
+  over that path before this one, so the property has held at every point in the phase, not
+  only at its measured end.
+- Anything about a different range. This reading is scoped to
+  `f0307ac811f65490fb8745bb4f91bdb1c2b8162a..1830bb1c59fa16538363c21d279be0df60b8345a` only.
