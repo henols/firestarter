@@ -454,7 +454,22 @@ that make the eventual failure survivable are written down where the person doin
 **Depends on:** Phase 191 (the adoption instrument has nothing to measure until a stable carrying the new
 URL exists)
 
-**Plans:** TBD
+**Plans:** 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 193-01-PLAN.md — Tracer: the adoption instrument built, run live against the ClickHouse playground, and its three unmeasured paths proven
+- [ ] 193-03-PLAN.md — Both `.gitmodules` workarounds executed at the published pre-rename ref, plus the `submodule sync` hazard and its repair
+
+**Wave 2** *(193-02 blocked on 193-01; 193-04 blocked on 193-03)*
+
+- [ ] 193-02-PLAN.md — The seed's trigger becomes a threshold with a window, and the frontmatter is proved to still parse
+- [ ] 193-04-PLAN.md — The `.gitmodules` archaeology note: both workarounds as ordered procedures, the hazard, the banked transcripts and the honest limits
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 193-05-PLAN.md — The no-Releases rule and the archaeology pointer into `CLAUDE.md`, and the phase disposition record
 
 ## v1.37 — Operator Safety, Answered Reports & Claim Hygiene (CLOSED 2026-09-13 — 35/35 requirements; merged to `beta` in all three repos, NOT tagged by operator decision)
 
