@@ -81,10 +81,14 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 - [ ] **SWEEP-02**: **No file under `.planning/milestones/` is modified** by this milestone — proved by a
       diff over that path returning empty, not by intent. Those 672 references record what the repository
       was called when the record was written (D-5).
-- [ ] **SWEEP-03**: `.planning/codebase/STACK.md` no longer describes a catalog-sync workflow that checks
-      out the sub-repos via `actions/checkout` — that workflow does not exist, and the meta repository has
-      no `.github/workflows/` at all. Found while measuring 999.9's "CI/release workflows" clause, which is
-      itself a no-op.
+- [ ] **SWEEP-03**: **All seven `.planning/codebase/` documents** — `STACK.md`, `ARCHITECTURE.md`,
+      `STRUCTURE.md`, `INTEGRATIONS.md`, `TESTING.md`, `CONCERNS.md` and `CONVENTIONS.md` — no longer
+      describe a catalog-sync workflow that checks out the sub-repos via `actions/checkout`, nor the
+      two retired wiki workflows, nor the removed wiki-tooling directory. None of them exists, and
+      the meta repository has no `.github/workflows/` at all. Found while measuring 999.9's
+      "CI/release workflows" clause, which is itself a no-op. Widened from `STACK.md` alone to all
+      seven during Phase 192, because `CONCERNS.md` and `CONVENTIONS.md` carried the same stale claim
+      and were named by neither the original requirement nor the ROADMAP's criterion 4.
 
 ### GATE — make the deferred claim measurable
 
