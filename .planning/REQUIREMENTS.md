@@ -74,14 +74,14 @@ Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.
 
 ### SWEEP — live references only
 
-- [ ] **SWEEP-01**: Every **live tracked** reference to `henols/firestarter` across the three repositories
+- [x] **SWEEP-01**: Every **live tracked** reference to `henols/firestarter` across the three repositories
       addresses `firestarter_fw` — the meta `README.md`, both sub-repo READMEs, and the five
       `.planning/codebase/` documents (`STRUCTURE.md`, `STACK.md`, `INTEGRATIONS.md`, `ARCHITECTURE.md`,
       `TESTING.md`).
-- [ ] **SWEEP-02**: **No file under `.planning/milestones/` is modified** by this milestone — proved by a
+- [x] **SWEEP-02**: **No file under `.planning/milestones/` is modified** by this milestone — proved by a
       diff over that path returning empty, not by intent. Those 672 references record what the repository
       was called when the record was written (D-5).
-- [ ] **SWEEP-03**: **All seven `.planning/codebase/` documents** — `STACK.md`, `ARCHITECTURE.md`,
+- [x] **SWEEP-03**: **All seven `.planning/codebase/` documents** — `STACK.md`, `ARCHITECTURE.md`,
       `STRUCTURE.md`, `INTEGRATIONS.md`, `TESTING.md`, `CONCERNS.md` and `CONVENTIONS.md` — no longer
       describe a catalog-sync workflow that checks out the sub-repos via `actions/checkout`, nor the
       two retired wiki workflows, nor the removed wiki-tooling directory. None of them exists, and
@@ -136,9 +136,9 @@ Which phases cover which requirements. Populated at roadmap creation.
 | URL-04 | Phase 190 | Complete |
 | STABLE-01 | Phase 191 | Complete |
 | STABLE-02 | Phase 191 | Complete |
-| SWEEP-01 | Phase 192 | Pending |
-| SWEEP-02 | Phase 192 | Pending |
-| SWEEP-03 | Phase 192 | Pending |
+| SWEEP-01 | Phase 192 | Complete |
+| SWEEP-02 | Phase 192 | Complete |
+| SWEEP-03 | Phase 192 | Complete |
 | GATE-01 | Phase 193 | Pending |
 | GATE-02 | Phase 193 | Pending |
 | GATE-03 | Phase 193 | Pending |
