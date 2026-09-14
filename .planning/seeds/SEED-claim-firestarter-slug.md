@@ -28,20 +28,69 @@ moment, every already-installed CLI keeps resolving
 
 ## Why the trigger is what it is
 
-`pip install firestarter` resolves to **2.0.7** — the whole `3.0.0bNN` line is prerelease
-and invisible to a default install. So the population that breaks is the default install,
-not a neglectful tail, and it only moves when a **stable** carrying the new URL ships.
-The app performs no self-version check, so a stranded user gets no in-band upgrade hint.
+`pip install firestarter` served **2.0.7** from 2026-01-13 to 2026-09-13. The whole
+`3.0.0bNN` line is prerelease and invisible to a default install, so the population that
+breaks is the default install, not a neglectful tail. That population moves only once a
+**stable** carrying the new URL ships. That stable **has** shipped: it is **2.0.9**,
+published to PyPI on 2026-09-13. The app performs no self-version check, so a stranded
+user gets no in-band upgrade hint.
+
+The pre-2.0.7 tail is automation, not stranded humans, and it sits outside the
+instrument's reach entirely. By quarter, `pip`+`uv` stable-channel downloads of
+pre-2.0.7 versions run **398 / 254 / 320 / 265 / 52** (2025-Q3 through 2026-Q3). That
+count holds at 250 to 400 even in quarters before 2.0.7 existed, spread thin across
+roughly thirty ancient `1.x` versions. No threshold can separate a stranded human down
+there from a scanner.
+
+The threshold is a share **AND** an absolute floor, never a share alone. A ratio says
+nothing about how many people sit behind it, and the thing that breaks is a count of
+humans.
+
+The window is 90 days, not 30. Monthly stable-channel totals show scraper spikes —
+**342** in January and **312** in May, against a **34**-to-**75** baseline. A 30-day
+window is swamped by one scraper pass.
+
+The values themselves come from the 2.0.6-to-2.0.7 transition, the one natural
+experiment this project has run. Share crossed 90% in about six weeks and then
+plateaued against a thin tail that never reached zero. This threshold would have fired
+roughly three months after that cut.
+
+The baseline at authoring time — 2026-09-14, 90-day window, `pip` plus `uv`, stable
+channel — reads: fixed **17**, `2.0.7` **116**, older-stable tail **52**. Fixed share of
+the at-risk pair is **12.8%**. Nowhere near firing.
+
+The instrument that produces the reading is `tools/adoption/pypi_version_share.sh`. One
+reading over the 90-day window is the evidence. A second consecutive reading is not
+required. The window already damps the spikes named above, and overlapping 90-day
+windows would make "consecutive" ambiguous anyway.
+
+The reading cannot establish everything. Installed base is not observable, and download
+share is a proxy for it. A download of a stranded version today is a **new acquisition**
+of an old version — a pin, a cache, a stale tutorial. A user who installed 2.0.7 and
+never reinstalls generates zero downloads and stays invisible to this instrument. The
+threshold therefore certifies that new acquisition of stranded versions has effectively
+stopped — a **necessary condition, never a sufficient one**.
 
 Gate on that stable having shipped and having displaced 2.0.7 — not on a calendar date.
+If the trigger has not fired by **2027-09-13** — twelve months from 2.0.9's publish —
+the **premise** is re-examined. That date never fires the act. It re-opens the question
+of whether the threshold was right, whether the front-door problem was solved another
+way, or whether 2.0.7 acquisition is structural.
 
 ## Do not fire this while any of these is untrue
 
 - The three `FIRESTARTER_*_URL` constants point at `firestarter_fw` on **both** `beta`
   **and** `main` — they are separate changes, and `main` is the one that reaches the
-  default install.
-- A stable carrying the `main` fix has been published to PyPI.
+  default install. **Satisfied.**
+- A stable carrying the `main` fix has been published to PyPI. **Satisfied** — it is
+  **2.0.9**.
 - `.gitmodules` points at `firestarter_fw` and `git submodule sync --recursive` has run.
+  **Satisfied on `origin/main`.**
+  **Not yet satisfied on `origin/beta`**, whose `.gitmodules` still names the old slug
+  until the v1.38 milestone merges.
+
+A met trigger is a measurement, not an authorisation. A human decides. This seed does
+not fire itself.
 
 ## Carry this rule forward when it fires
 
