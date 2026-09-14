@@ -1,17 +1,18 @@
 ---
-last_mapped_commit: 3e2f7d89
-last_mapped_at: 2026-08-26T20:42:40.949Z
+last_mapped_commit: b1311abd
+last_mapped_at: 2026-09-14T04:59:59.314Z
 mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUDE.md
 ---
 # Structure
 
-**Analysis Date:** 2026-05-08 (submodule sections) / 2026-08-26 (meta-repo sections)
+**Analysis Date:** 2026-05-08 (submodule sections) / 2026-09-14 (meta-repo sections)
 
-> **Scope note.** The 2026-08-26 remap covered only the meta-repo's own tracked
-> infrastructure (`.claude`, `.devcontainer`, `.github`, `.vscode`, `.gitignore`,
+> **Scope note.** The 2026-08-26 and 2026-09-14 remaps covered only the meta-repo's own
+> tracked infrastructure (`.claude`, `.devcontainer`, `.github`, `.vscode`, `.gitignore`,
 > `.gitmodules`, `CLAUDE.md`). The `firestarter/` and `firestarter_app/` sections
 > below date from 2026-05-08 and were not re-verified —
-> `[unverified in 2026-08-26 scoped remap]`.
+> `[unverified in 2026-08-26 and 2026-09-14 scoped remaps]`. `tools/` is outside this
+> remap's scope by decision, so it is not described here either.
 
 ## Repository Layout
 
@@ -19,14 +20,17 @@ This is **not a monorepo.** It is a **meta-repo with two git submodules**. `.git
 declares both code sub-projects as gitlinks pointing at independent GitHub repos:
 
 ```ini
-[submodule "firestarter"]      path = firestarter        url = git@github.com:henols/firestarter.git
+[submodule "firestarter"]      path = firestarter        url = git@github.com:henols/firestarter_fw.git
 [submodule "firestarter_app"]  path = firestarter_app    url = git@github.com:henols/firestarter_app.git
 ```
 
-The meta-repo itself tracks only planning and agent-tooling artifacts — `.planning/`,
-`.claude/skills/` (hand-authored skills only), `.devcontainer/`, `.github/`, `.vscode/`,
-`tools/`, `wiki/`, `CLAUDE.md`, `.gitignore`, `.gitmodules`. Everything else at the root is
-gitignored local state. Evidence: `.gitmodules` (the two gitlinks) and `.gitignore`
+The submodule's own name and path are still `firestarter` — only the remote was repointed at
+the `firestarter_fw` rename (v1.38).
+
+The meta-repo itself tracks only planning and agent-tooling artifacts within this remap's
+scope — `.planning/`, `.claude/skills/` (hand-authored skills only), `.devcontainer/`,
+`.github/`, `.vscode/`, `CLAUDE.md`, `.gitignore`, `.gitmodules`. Everything else at the root
+is gitignored local state. Evidence: `.gitmodules` (the two gitlinks) and `.gitignore`
 (`.claude/*` with `!.claude/skills/`, plus the generated `platformio.ini`, `.pio/`,
 `graphify-out/`, extra worktrees, and bench artifacts).
 
@@ -39,17 +43,17 @@ directories empty.
 ```text
 /workspaces/                          # meta-repo root (bind-mounted here in the devcontainer)
 ├── .claude/                          # GSD agent runtime — GITIGNORED except skills/
-│   ├── commands/                     #   [ignored] 69 gsd-*.md slash commands
-│   ├── agents/                       #   [ignored] 34 gsd-*.md subagent definitions
+│   ├── commands/                     #   [ignored] 72 gsd-*.md slash commands
+│   ├── agents/                       #   [ignored] 35 gsd-*.md subagent definitions
 │   ├── gsd-core/                     #   [ignored] workflows, references, templates, bin/
-│   ├── hooks/                        #   [ignored] 18 gsd-* hooks + lib/, registry
+│   ├── hooks/                        #   [ignored] 30 gsd-* hooks + lib/, registry
 │   ├── scripts/                      #   [ignored] changeset/, lib/, fix-slash-commands.cjs
 │   ├── worktrees/                    #   [ignored] parallel worktree area (empty)
 │   ├── skills/                       #   TRACKED (devtest-triage, devtest-rootcause only)
-│   ├── settings.json                 #   [ignored] shared permission allowlist (95) + autoMode
-│   ├── settings.local.json           #   [ignored] hook wiring, worktree, plugins
-│   ├── gsd-file-manifest.json        #   [ignored] 536 managed files @ 1.6.1, mode "full"
-│   ├── gsd-install-state.json        #   [ignored] schemaVersion 1, 4 migrations
+│   ├── settings.json                 #   [ignored] shared permission allowlist (110) + autoMode
+│   ├── settings.local.json           #   [ignored] hook wiring, worktree, marketplace registration
+│   ├── gsd-file-manifest.json        #   [ignored] 759 managed files @ 1.13.0, mode "full"
+│   ├── gsd-install-state.json        #   [ignored] schemaVersion 1, 5 migrations
 │   ├── gsd-migration-journal/        #   [ignored] one JSON per applied migration
 │   ├── .gsd-profile                  #   [ignored] "full"
 │   └── package.json                  #   [ignored] {"type":"commonjs"}
@@ -57,22 +61,19 @@ directories empty.
 │   ├── devcontainer.json             #   mounts, features, containerEnv, postCreateCommand
 │   ├── Dockerfile
 │   ├── devcontainer-lock.json        #   pins the devcontainer features
-│   ├── post-create.sh                #   provisioning: platformio.ini, pip -e, pio pkg, graphify
+│   ├── post-create.sh                #   provisioning: platformio.ini, pip -e, pio pkg, graphify, GSD install
 │   ├── gen-platformio-ini.py         #   emits the gitignored root platformio.ini
-├── .github/workflows/
-│   ├── catalog-sync-check.yml        # TRACKED — guards cross-sub-repo catalog identity
-│   ├── wiki-check.yml                # TRACKED — offline wiki source integrity + selftest
-│   └── wiki-publish.yml              # TRACKED — publishes wiki/ to the GitHub wiki on beta
+│   └── README.md                     #   using-the-container guide
+├── .github/                           # TRACKED — no workflows/ directory; no meta-repo CI
+│   ├── CONTRIBUTING.md
+│   └── ISSUE_TEMPLATE/                #   4 files: bug-report.yml, config.yml, dev-test-report.md, feature-request.yml
 ├── .vscode/                          # TRACKED — mostly PlatformIO-generated
 │   ├── c_cpp_properties.json         #   AUTO-GENERATED; /home/henrik/... host paths
 │   ├── launch.json                   #   AUTO-GENERATED; 3 platformio-debug configs (uno)
 │   ├── settings.json                 #   one clang-tidy path (host-specific)
 │   └── extensions.json               #   recommends platformio-ide; unwants cpptools pack
 ├── .planning/                        # TRACKED — the durable project record
-├── tools/catalog/messages.toml       # TRACKED — authoritative message catalog (CI-asserted)
-├── tools/wiki/                       # TRACKED — wiki publish/check tooling (wiki.py, selftest.sh)
-├── wiki/                             # TRACKED — in-repo source for the firestarter_prom wiki
-├── CLAUDE.md                         # TRACKED — agent onboarding brief (48 lines)
+├── CLAUDE.md                         # TRACKED — agent onboarding brief (77 lines)
 ├── .gitmodules                       # TRACKED
 ├── .gitignore                        # TRACKED
 ├── firestarter/                      # SUBMODULE (gitlink) — Arduino firmware
@@ -110,21 +111,20 @@ under `.planning/v1.7/**` except `*.md` (raw chat dumps and photo binaries stay 
 | Tracking policy (and why) | `.gitignore` — heavily commented |
 | Add/modify a slash command | `.claude/commands/gsd-<name>.md` + `.claude/gsd-core/workflows/<name>.md` |
 | Add/modify a subagent | `.claude/agents/gsd-<name>.md` |
-| Deep-dive guidance loaded on demand | `.claude/gsd-core/references/*.md` (94) |
-| Artifact skeletons | `.claude/gsd-core/templates/` (46) |
+| Deep-dive guidance loaded on demand | `.claude/gsd-core/references/*.md` (112) |
+| Artifact skeletons | `.claude/gsd-core/templates/` (34) |
 | Persona presets | `.claude/gsd-core/contexts/{dev,review,research}.md` |
 | GSD state/query CLI | `.claude/gsd-core/bin/gsd-tools.cjs` (+ `bin/lib/*.cjs`) |
-| Installed GSD version | `.claude/gsd-core/VERSION` (`1.6.1`) |
+| Installed GSD version | `.claude/gsd-core/VERSION` (`1.13.0`, project-local) |
 | Hook implementations | `.claude/hooks/gsd-*.{js,sh}` |
 | Hook wiring | `.claude/settings.local.json` → `hooks` |
-| Permission allowlist | `.claude/settings.json` → `permissions.allow` (95), `autoMode.allow` (3) |
+| Permission allowlist | `.claude/settings.json` → `permissions.allow` (110), `autoMode.allow` (3) |
 | Project-specific skills | `.claude/skills/devtest-triage/`, `.claude/skills/devtest-rootcause/` |
 | Release-note tooling | `.claude/scripts/changeset/cli.cjs` |
 | Discord bridge state | removed 2026-08-26 (commit `3e2f7d89`); a token copy remains at `~/.claude/channels/discord/.env`, outside the repo — **never quote it** |
 | Container definition | `.devcontainer/devcontainer.json`, `.devcontainer/Dockerfile` |
 | Provisioning steps | `.devcontainer/post-create.sh` |
 | Root PlatformIO wrapper generator | `.devcontainer/gen-platformio-ini.py` |
-| CI | `.github/workflows/catalog-sync-check.yml`, `.github/workflows/wiki-check.yml`, `.github/workflows/wiki-publish.yml` |
 | Firmware debug launch | `.vscode/launch.json` |
 | Firmware IntelliSense include paths | `.vscode/c_cpp_properties.json` |
 
@@ -167,9 +167,6 @@ by the consumer (`planner-*.md`, `execute-phase-*.md`, `thinking-models-*.md`).
 **Skills** — `.claude/skills/<kebab-case-name>/SKILL.md`, with owned code in
 `scripts/*.py` (snake_case) and test data in `fixtures/*.md`.
 
-**Workflows (CI)** — `.github/workflows/<kebab-case>.yml`; the `name:` is sentence case
-("Catalog sync check"), the job id kebab-case (`sync-check`).
-
 ---
 
 ## Where to Add New Meta-Repo Code
@@ -189,12 +186,9 @@ path — node is not on `PATH`.
 **A new provisioning step:** append to `.devcontainer/post-create.sh`, idempotently
 (it re-runs on every rebuild). Mounts, features, and env go in `.devcontainer/devcontainer.json`.
 
-**A new CI check:** `.github/workflows/<name>.yml`. Check out only what the job reads;
-do not add `submodules: recursive`; resolve sub-repo refs by branch name with a `beta`
-fallback rather than hardcoding `main`.
-
-**A cross-repo invariant:** the authoritative copy goes in `tools/`, the vendored copies
-in both submodules, and a CI assertion in `.github/workflows/`.
+**A new CI check:** `.github/workflows/<name>.yml` — this repo currently has none. Check
+out only what the job reads; do not add `submodules: recursive`; resolve sub-repo refs by
+branch name with a `beta` fallback rather than hardcoding `main`.
 
 **Firmware/host-app code:** not here. Commit inside `firestarter/` or `firestarter_app/`
 on the milestone branch; the meta-repo only re-pins the gitlink.
@@ -205,7 +199,7 @@ on the milestone branch; the meta-repo only re-pins the gitlink.
 
 ## Python Application: `firestarter_app/`
 
-*[unverified in 2026-08-26 scoped remap — submodule contents, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule contents, out of scope]*
 
 ```
 firestarter_app/
@@ -280,7 +274,7 @@ firestarter_app/
 
 ## Arduino Firmware: `firestarter/`
 
-*[unverified in 2026-08-26 scoped remap — submodule contents, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule contents, out of scope]*
 
 ```
 firestarter/
@@ -357,7 +351,7 @@ firestarter/
 
 ## Build Environments
 
-*[unverified in 2026-08-26 scoped remap — submodule contents, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule contents, out of scope]*
 
 ### Python Application
 - **Python:** 3.11+
@@ -375,7 +369,7 @@ firestarter/
 
 ## Where to Find Things
 
-*[unverified in 2026-08-26 scoped remap — submodule contents, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule contents, out of scope]*
 
 | Task | Location |
 |------|----------|
@@ -393,5 +387,5 @@ firestarter/
 
 ---
 
-*Meta-repo structure analysis: 2026-08-26 (scoped remap)*
+*Meta-repo structure analysis: 2026-09-14 (scoped remap)*
 *Submodule structure analysis: 2026-05-08*
