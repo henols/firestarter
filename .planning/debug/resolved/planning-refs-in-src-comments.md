@@ -1,8 +1,8 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "things like this 'But four of them carry .planning references in comments:' must be debugged  so it will not happend again and cleanedup"
 created: 2026-09-14T18:40:00Z
-updated: 2026-09-14T21:05:00Z
+updated: 2026-09-14T22:10:00Z
 ---
 
 ## Current Focus
@@ -48,6 +48,19 @@ reasoning_checkpoint:
       planning narration that this gate does not see."
     - "`.github/workflows/*.yml` comments carry planning citations in both
       sub-repositories. Not scanned -- a workflow file is not product source."
+    - "FOUND BY THE OPERATOR AFTER THIS AGENT RETURNED, and the more serious of
+      the two: firestarter_fw has TWO test trees, and this session reported on
+      one. `test/native/avr/` (23 C++ Unity suites) was swept and is clean.
+      `firestarter_fw/tests/` -- 30 `test_*.py` modules, 316 tests, of which 29
+      read a source file at runtime -- was scanned for COMMENTS only, and its
+      comments are clean. Its DOCSTRINGS are not: 530 planning-citation
+      docstring lines across 31 modules. Unlike the host suite's `@requires_fw`
+      legs these DO execute in CI (`pytest tests/` is a firmware CI leg), so
+      this is live, reachable narration, not dormant. Deliberately NOT swept:
+      the operator has not ruled on that suite, and it is a separate decision
+      with its own risk profile (29 of those modules are the source-text
+      contract scanners whose whole technique the operator has already retired
+      on the host side)."
     - "The requirement-id rule is a shape (`[A-Z]{2,12}-\d{2}`), not a list, so a
       future all-caps technical token of that shape needs a TECHNICAL_VOCABULARY
       entry. Seventeen are seeded; AA-55 and CRC-32 were found as real false
@@ -75,7 +88,7 @@ reasoning_checkpoint:
 hypothesis: CONFIRMED (see reasoning_checkpoint)
 test: complete
 expecting: complete
-next_action: await human confirmation that the gate and cleanup are acceptable
+next_action: none -- confirmed fixed by the operator, session archived
 bug_class: Bohrbug (fully deterministic; reproduces on every scan)
 tdd_checkpoint:
 
@@ -251,6 +264,31 @@ asserts "fw fully swept", which the measurement above contradicts.
   implication: the true corpus is 2.0x the marker-independent count taken at
     session open (620) and 8.9x what the Phase 154 detector can see (141).
 
+- timestamp: 2026-09-14T22:00:00Z
+  checked: the firestarter_app committed tree after the operator committed the
+    pending test-removal work as `088d2b7`, re-measured independently by this
+    agent with `git archive HEAD | gate`
+  found: gate exit 0 against the COMMITTED tree, not merely the working tree.
+    The 132 residual citation lines this session disclosed are gone with the 33
+    files that carried them. Meta commit `735ecb89` advances the firestarter_app
+    gitlink to `088d2b7`.
+  implication: the disclosed residual is closed. Both sub-repository tips are
+    gate-green, so the CI step added by this session is a real gate rather than
+    a step that lands red.
+
+- timestamp: 2026-09-14T22:05:00Z
+  checked: firestarter_fw/tests/ -- the SECOND firmware test tree, counted and
+    scanned directly rather than taken on report
+  found: 32 `.py` files (30 `test_*.py` modules plus `__init__.py` and
+    `meta_presence.py`); 316 tests collected; 29 of the 30 modules read a source
+    file at runtime. The gate passes over their COMMENTS. An AST walk over their
+    docstrings finds 530 planning-citation lines across 31 modules.
+  implication: "the firmware tests are clean" was true of `test/native/avr/` and
+    false of `firestarter_fw/tests/`. Recorded as a known uncovered surface, not
+    repaired -- the docstring class is out of this gate's scope by design, and
+    the suite's fate is an unmade decision. The next reader must not repeat the
+    one-tree check.
+
 ## Eliminated
 
 - hypothesis: "The sweep oracle is anchored at comment OPENER lines and cannot
@@ -390,3 +428,114 @@ files_changed:
   - firestarter_app: 86 source files cleaned; 1 ring-fence pin re-derived
   - tools/citations/code_digest.py (new -- the comment-blind invariance instrument)
   - .planning/milestones/v1.22-phases/117-.../117-RED-BASELINE.md (relocated)
+
+
+## Prevention
+
+blameless_5_whys (branching, per the candidate_causes recorded at Phase 2A):
+
+  BRANCH 1 -- code (the detector).
+    Why did citations survive a completed sweep?
+      -> The sweep's detector could not see 86% of them.
+    Why could it not see them?
+      -> Its token alternation was bound to the comment marker by `\s*`, and
+         `.planning` was not among its tokens.
+    Why did nobody notice the detector was blind?
+      -> Its count fell to near zero after the sweep, which reads identically to
+         success.
+    Why does a falling count read as success here?
+      -> Because the prescribed repair -- delete the marker-adjacent label --
+         is the same operation that removes a line from the detector's view.
+         The measurement and the remediation share a failure mode.
+    ACTIONABLE CONDITION: a detector whose own repair shrinks its input is
+    self-confirming. Detector and repair must not share an anchor.
+
+  BRANCH 2 -- config/process (the missing gate).
+    Why was the shortfall not caught for three weeks?
+      -> Nothing re-ran any detector after the sweep commit.
+    Why did nothing re-run it?
+      -> No CI step existed in any of the seven workflow files across the three
+         repositories; the meta repository has no workflows at all.
+    Why was no CI step added when the sweep landed?
+      -> The sweep was scoped as a one-time remediation. Its phase produced a
+         corpus survey, a remap tool and a sweep-outcome record -- but no
+         standing guard.
+    ACTIONABLE CONDITION: a one-time remediation with no standing guard decays
+    silently. 8 new citations arrived in the three weeks after the sweep and
+    nothing announced them.
+
+  BRANCH 3 -- process (contract narrower than the rule).
+    Why were 85 lines the detector COULD see left in place?
+      -> SWEEP-03 retains ids in test files; SWEEP-04 gives test files narrow
+         treatment only; Ruling B leaves four blob-sha-pinned paths un-swept.
+    Why did a phase adopt a narrower contract than CLAUDE.md states?
+      -> Four of those paths are pinned by blob sha, so editing them reddens a
+         gate until its golden is re-derived. The cost of touching them was real
+         and the phase declined it.
+    Why was that decline not visible as an outstanding gap?
+      -> It was recorded as SATISFIED against SWEEP-03/04, which it was. The
+         phase discharged its own requirements honestly; the requirements were
+         narrower than the rule they served.
+    ACTIONABLE CONDITION: "requirement satisfied" is not "rule satisfied" when
+    the requirement was written to be discharged rather than to state the rule.
+    This session paid the declined cost: both goldens were re-derived.
+
+  NOT A CAUSE: authoring behaviour. 612 of 620 lines predate the sweeps.
+  Treating this as "someone keeps writing citations" would have produced a
+  style reminder and fixed nothing.
+
+why_not_caught: |
+  No gate existed for this class, in any of the three repositories. The nearest
+  thing was Phase 154's one-shot corpus survey, which was an instrument for a
+  single remediation and was never wired to run again -- and which, as Branch 1
+  shows, could not have caught this even if it had been. Code review did not
+  catch it because the surviving lines look like ordinary prose once their
+  leading label is gone; the tell is a dangling sentence, not a keyword. The
+  firmware and host test suites did not catch it because comment content is not
+  something either asserts on. Build, typecheck and lint are all blind to
+  comments by construction.
+
+recurrence_guard: |
+  Verified present and exercised, not merely proposed:
+
+  1. `firestarter_fw/tools/planning_citation_gate.py` and
+     `firestarter_app/tools/planning_citation_gate.py` -- the replacement
+     detector. Matches anywhere inside comment TEXT and never binds a token to a
+     marker, so it does not share Branch 1's failure mode: the repair cannot
+     shrink its input. Exit 2 on a vacuous scan. Proven non-vacuous against six
+     planted controls, including the two exact classes that produced the 612
+     survivors, and proven silent on a C string literal and on a Click docstring
+     carrying the same words.
+  2. The CI steps that run it: `firestarter_fw/.github/workflows/build.yml` and
+     `beta-build.yml` (ahead of the build), `firestarter_app/.github/workflows/
+     ci.yml` (ahead of ruff), each naming its own paths explicitly. Both
+     workflows already trigger on every branch and every pull request, and
+     `main` is protected with pull-request-required in all three repositories,
+     so a red check blocks the merge. Both sub-repository tips are gate-green as
+     of firestarter_fw `876a223` and firestarter_app `088d2b7`, so the step is a
+     live gate rather than a step that lands red and gets ignored.
+  3. `tools/citations/code_digest.py` in the meta repository -- the comment-blind
+     invariance instrument, carrying a `--self-test` that must prove the digest
+     is blind to a comment-only edit AND sensitive to a one-token code edit
+     before any run of it is trusted. This is what makes a future sweep's "no
+     code changed" claim checkable instead of asserted.
+  4. This knowledge-base entry, so a future Phase-0 recall surfaces the
+     self-confirming-detector pattern on any symptom of the shape "a sweep was
+     recorded complete but instances remain".
+
+  DELIBERATELY NOT a pytest module in either suite: the operator has ruled that
+  tests must not scan source text, and the host suite's 24 source-scanning
+  modules were removed for that reason in firestarter_app `088d2b7`.
+
+known_uncovered_surfaces (stated so the next reader does not rediscover them):
+  - Python DOCSTRINGS are out of scope by design. Measured residue:
+    `firestarter_fw/tests/` carries 530 planning-citation docstring lines across
+    31 modules, and those modules DO execute in CI. Their comments are clean.
+  - `.github/workflows/*.yml` comments carry planning citations in both
+    sub-repositories. A workflow file is not product source, so the gate does
+    not scan it.
+  - Markdown under either sub-repository is not scanned.
+  - `firestarter_fw/tests/test_checker_convention.py::test_scope_is_firmware_only`
+    is red, and was red before this session: it asserts the repository directory
+    is named `firestarter`, which the v1.38 rename made `firestarter_fw`.
+    Untouched here because this session changed no assertion.
