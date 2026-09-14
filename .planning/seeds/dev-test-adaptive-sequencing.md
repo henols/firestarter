@@ -51,10 +51,13 @@ Gate the fingerprint read-back at
 
 The `ff_ratio` false-PASS check that motivated the unconditional form is
 preserved for free — a write that reports OK without driving the bus is caught by
-the verify step immediately following it in the same cycle. **This dependency is
-now asserted structurally**, not merely assumed, by Phase 175's sentinel
-(`tests/test_derive_plan_structural_sentinel.py`): if a future plan ever emits a
-write without a verify behind it, that sentinel fails first.
+the verify step immediately following it in the same cycle. **This dependency was
+asserted structurally** by Phase 175's sentinel
+(`tests/test_derive_plan_structural_sentinel.py`) until 2026-09-14, when the three legs that
+parsed `chip_test.py` with `ast` were removed by the source-introspection sweep (see
+`.planning/notes/test-suite-source-introspection-removal.md`). The module's data-driven
+verify-disposition coverage survives; the write-op selector claim is now **assumed, not
+asserted**, and needs a behavioural test if it is to be relied on.
 
 Note the pleasing asymmetry: because verify early-returns on first mismatch, the
 runs that now pay for a read-back are exactly the runs whose verify was cheapest.
