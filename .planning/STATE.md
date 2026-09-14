@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.38
 milestone_name: Repository Rename (ACTIVATED 2026-09-13)
-current_phase: 192
-current_phase_name: Live References Only
-status: executing
-stopped_at: Phase 192 all 5 plans executed — phase gates and verification next
-last_updated: "2026-09-14T05:42:54.000Z"
+current_phase: 193
+current_phase_name: The Deferred Claim, Made Measurable
+status: planning
+stopped_at: Phase 192 complete, ready to plan Phase 193
+last_updated: "2026-09-14T05:51:54.308Z"
 last_activity: 2026-09-14
-last_activity_desc: "Phase 192 wave 1 complete — 192-01 repointed README + the 13 bare-slug sites in the two runnable v1.4 artefacts; 192-02 remapped STACK/INTEGRATIONS/ARCHITECTURE/STRUCTURE at the D-04 scope, killing the retired-CI claims by removal; 192-04 hand-widened SWEEP-03 to all seven codebase documents and re-verified both sub-repos clean with controls. Wave 2 complete: 192-03 remapped CONVENTIONS/TESTING/CONCERNS and gated all seven documents at bare_slug 0 / retired_ci 0, each zero paired with a non-zero same-file control. Wave 3 complete: 192-05 proved .planning/milestones/ untouched over the recomputed f0307ac8..HEAD range (90 commits) with two non-vacuity controls, and wrote evidence/192-disposition.md answering all four ROADMAP criteria and stating the D-08 regression-guard debt plainly. SWEEP-01/02/03 flipped Complete."
+last_activity_desc: "Phase 192 Live References Only COMPLETE 2026-09-14 — 5/5 plans, SWEEP-01/02/03 all Complete, verifier 4/4 criteria independently re-measured. 192-01 repointed README (gh-api-confirmed direct, not a redirect) and all 13 bare-slug sites in the two runnable v1.4 artefacts incl. the destructive gh release delete line; 192-02 + 192-03 remapped all seven .planning/codebase/ documents at the D-04 scope, killing the retired catalog-sync-check.yml / wiki-check.yml / wiki-publish.yml / tools-wiki claims by removal and preserving the 2026-05-08 submodule sections with their not-re-verified caveats; 192-04 hand-widened SWEEP-03 to all seven documents and re-verified both sub-repos already clean (0 matches vs controls of 4 and 8, zero writes, gitlinks unadvanced); 192-05 proved .planning/milestones/ untouched over the recomputed f0307ac8..HEAD range with a sibling-path and a pathspec-resolution control. Code review clean (1 file — the gate excludes .planning/, so it saw almost none of the phase). D-08 debt stated and NOT paid: nothing now watches any of the three repositories for slug regression. phase.complete emitted 5 warnings, all verified false positives (4 path-resolution misses on files that exist; D-1..D-7 are milestone decisions, not REQ-IDs)."
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 18
   completed_plans: 18
-  percent: 60
+  percent: 80
 ---
 
 # Project State
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 192 (Live References Only) — EXECUTING
-Plan: 5 of 5
-Status: All 5 plans executed — phase gates and verification next
-Last activity: 2026-09-14 — Phase 192 all plans executed, 5/5
+Phase: 193 — The Deferred Claim, Made Measurable
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-14 — Phase 192 complete, transitioned to Phase 193
 
 ## Roadmap Summary (v1.38)
 
@@ -3455,7 +3455,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-13T23:02:30.573Z
-**Stopped at:** Phase 192 context gathered
+**Stopped at:** Phase 192 complete, ready to plan Phase 193
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
 **Was (superseded, retained for continuity):** Completed 188-04-PLAN.md — parity module deleted, blast-radius oracle trimmed to its two render_shape sites (68/106 tests, GATE-01/02/03 and D-07/D-10 intact, 19 snapshots byte-unchanged), all eight remaining check_*.py gates retired with their tests/fixtures, mypy CI step and CLAUDE.md guard prose removed; suite measured 2307->2262->2175, 0 errors (firestarter_app@0f251f0)
