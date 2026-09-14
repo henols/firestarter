@@ -35,3 +35,89 @@ fixed, 116 at-risk, a 12.8% fixed share against a 90% threshold with an 11-downl
 breach on top. Everything below it is the caveat that must travel with the number on every
 run. Both integers move daily as new downloads land. A reader who meets this file a month from
 now must re-run the script rather than trust the figures on this page.
+
+====
+
+READING 2 -- the threshold boundary
+------------------------------------
+
+capture_date: 2026-09-14T10:27:15Z
+command: curl -s --max-time 90 --fail-with-body -G 'https://sql-clickhouse.clickhouse.com/' --data-urlencode "user=play" --data-urlencode "query=SELECT (fixed + at_risk) > 0 AND fixed * 10 >= 9 * (fixed + at_risk) AND at_risk <= 10 AS trigger_met FROM values('fixed UInt64, at_risk UInt64', (90,10), (89,10), (99,11), (0,0)) FORMAT TSV" | paste -sd, -
+
+output: 1,0,0,0
+
+This predicate is character-identical to the trigger expression the script carries. The four
+tuples cover the boundary and one step either side.
+(90,10): exactly 90% share with the floor exactly at 10. Reads MET.
+(89,10): 89.0% share with the floor satisfied. Reads NOT MET.
+(99,11): the share leg satisfied, with the floor exceeded by one. Reads NOT MET.
+(0,0): the zero-denominator case. Reads NOT MET. The leading `(fixed + at_risk) > 0` conjunct
+stops it before any division happens.
+The boundary is inclusive on both legs. No result here depends on float rounding. Every
+comparison is exact integer arithmetic.
+
+====
+
+READING 3 -- the empty window
+--------------------------------
+
+capture_date: 2026-09-14T10:27:15Z
+command: curl -s --max-time 90 --fail-with-body -G 'https://sql-clickhouse.clickhouse.com/' --data-urlencode "user=play" --data-urlencode "query=SELECT count() AS rows_matched, round(100 * sumIf(count, version = '2.0.9') / nullIf(count(), 0), 1) AS share FROM pypi.pypi_downloads_per_day_by_version_by_installer_by_type WHERE project = 'no-such-project-xyzzy' AND date >= today() - 90 FORMAT TSV" | tr '\t' ' '
+
+output: 0 \N
+
+Supporting full-row capture, same substituted project name, showing the window fields
+degenerate under an empty set:
+
+command: curl -s --max-time 90 --fail-with-body -G 'https://sql-clickhouse.clickhouse.com/' --data-urlencode "user=play" --data-urlencode "query=SELECT today() AS ch_today, today() - 90 AS window_start, max(date) AS window_end, count() AS rows_matched, sumIf(count, arrayMap(x -> toUInt32OrZero(x), splitByChar('.', version)) >= [2, 0, 9]) AS fixed, sumIf(count, version = '2.0.7') AS at_risk, round(100 * fixed / nullIf(fixed + at_risk, 0), 1) AS fixed_share_pct, (fixed + at_risk) > 0 AND fixed * 10 >= 9 * (fixed + at_risk) AND at_risk <= 10 AS trigger_met FROM pypi.pypi_downloads_per_day_by_version_by_installer_by_type WHERE project = 'no-such-project-xyzzy' AND date >= today() - 90 AND installer IN ('pip', 'uv') AND NOT match(version, '(a|b|rc)[0-9]|dev') FORMAT TSVWithNames
+
+output:
+ch_today	window_start	window_end	rows_matched	fixed	at_risk	fixed_share_pct	trigger_met
+2026-09-14	2026-06-16	1970-01-01	0	0	0	\N	0
+
+`rows_matched` is 0. `fixed_share_pct` is the null marker `\N`. `trigger_met` is 0.
+`window_end` degenerates to the 1970-01-01 epoch — the result of `max(date)` over an empty set.
+
+An aggregate-only query always returns exactly one row. Counting output lines can therefore
+never detect an empty window on its own. The `rows_matched` column carried inside the query is
+what detects it instead.
+
+In the script, that column is read before any verdict line prints. On zero rows the script
+exits 2 and prints no verdict.
+
+This shell-side branch was proven by two things: the source of the script, and the line-order
+assertion in the plan's verify block, which shows the `rows_matched` guard appears in the file
+before the `TRIGGER:` line. It was not proven by running the script itself against a
+substituted project name — the script takes no argument and holds one fixed query, so that path
+cannot run through the committed tool directly. No claim is made here that this shell branch
+ran. Only the SQL-layer behaviour it depends on ran, and its result is recorded above.
+
+====
+
+READING 4 -- a server error
+------------------------------
+
+capture_date: 2026-09-14T10:27:15Z
+command: curl -s --max-time 30 --fail-with-body -G 'https://sql-clickhouse.clickhouse.com/' --data-urlencode "user=play" --data-urlencode "query=SELECT nonsense_fn(1) FORMAT TSV" > /dev/null 2>&1; echo "curl_error_rc=$?"
+
+server body: Code: 46. DB::Exception: Function with name `nonsense_fn` does not exist. In scope SELECT nonsense_fn(1). (UNKNOWN_FUNCTION) (version 26.9.1.36875 (official build))
+
+output: curl_error_rc=22
+
+`curl --fail-with-body` turns a ClickHouse server error into a non-zero exit status. It still
+prints the server's own message.
+
+This is why the script captures the call as `if ! body="$(curl ...)"; then`, rather than
+letting `set -e` abort silently. The failure branch reads `$body`. The server's own
+`UNKNOWN_FUNCTION` text, or any future error text, reaches whoever reads the terminal. The
+branch also names the two recorded fallbacks — PyPI's BigQuery public dataset and the raw
+`pypi.pypi_raw` table. A reader who meets a dead endpoint has a route instead of a dead end.
+
+As with READING 3, this error arm was proven by source inspection. The `if !` capture form and
+the fallback text are present in the file. It was not proven by forcing the committed script
+itself to fail — its query is fixed, so this probe used a deliberately broken query instead.
+
+All three readings agree with the script committed in task 1. No adjustment to the script was
+needed.
+
+GATE-01 INSTRUMENT PROVEN
