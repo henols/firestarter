@@ -28,7 +28,7 @@ import re
 import subprocess
 import sys
 
-REPO = "henols/firestarter_prom"
+REPO = "henols/firestarter"
 def _repo_root() -> str:
     """Locate the checkout from this file: <root>/.claude/skills/<s>/scripts/.
 

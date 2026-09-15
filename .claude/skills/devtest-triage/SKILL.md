@@ -1,6 +1,6 @@
 ---
 name: devtest-triage
-description: Triage community `dev test` chip-validation issues in henols/firestarter_prom against the chip's real datasheet — close PASS issues and log the chip, close failures a later PASS supersedes, and post a datasheet-grounded findings comment on the rest. Labels every issue by cause. Use when asked to triage dev test issues, go through the chip test reports, check an EPROM against its datasheet, verify the pin map or VPP for a chip, close passing validation issues, defer failures that later passed, or work an issue like "[dev test] at28c256 — FAIL".
+description: Triage community `dev test` chip-validation issues in henols/firestarter against the chip's real datasheet — close PASS issues and log the chip, close failures a later PASS supersedes, and post a datasheet-grounded findings comment on the rest. Labels every issue by cause. Use when asked to triage dev test issues, go through the chip test reports, check an EPROM against its datasheet, verify the pin map or VPP for a chip, close passing validation issues, defer failures that later passed, or work an issue like "[dev test] at28c256 — FAIL".
 ---
 
 # Triage `dev test` issues against the datasheet
@@ -233,9 +233,9 @@ Only when **every** step is `OK`/`NA`/`SKIPPED`.
 
 ```bash
 cd $APP && firestarter info w27e020 | head -12     # capture protocol + pinout for the row
-gh issue close 51 --repo henols/firestarter_prom \
+gh issue close 51 --repo henols/firestarter \
   --comment "Validated: all applicable steps OK/NA on host 3.0.0b33, firmware 3.0.0b22. Thanks for running the sweep."
-gh issue edit 51 --repo henols/firestarter_prom --add-label dev-test,chip:validated
+gh issue edit 51 --repo henols/firestarter --add-label dev-test,chip:validated
 ```
 
 **Say what was validated, not where you wrote it down.** The close comment names the
@@ -346,7 +346,7 @@ Write the body to a file and pass `--body-file`; never interpolate report text i
 the command line.
 
 ```bash
-gh issue comment 21 --repo henols/firestarter_prom --body-file /tmp/comment.md
+gh issue comment 21 --repo henols/firestarter --body-file /tmp/comment.md
 ```
 
 Template:
