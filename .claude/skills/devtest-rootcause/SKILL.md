@@ -334,7 +334,7 @@ git -C $APP log --oneline -3
 ### Post it
 
 ```bash
-gh issue comment 45 --repo henols/firestarter_prom --body-file /tmp/fix.md
+gh issue comment 45 --repo henols/firestarter --body-file /tmp/fix.md
 ```
 
 Template — keep the artefact table even when a row is empty, because "the host is not
@@ -366,14 +366,14 @@ involved" is itself a finding:
 | A released version carries the fix | `fix:released` | The reporter can act — re-running `dev test` on that build is what closes this |
 
 ```bash
-gh issue edit 45 --repo henols/firestarter_prom --add-label fix:committed
+gh issue edit 45 --repo henols/firestarter --add-label fix:committed
 ```
 
 Move the label from `fix:committed` to `fix:released` when the release lands — that
 transition is the signal to the reporter, so do not leave it stale:
 
 ```bash
-gh issue edit 45 --repo henols/firestarter_prom \
+gh issue edit 45 --repo henols/firestarter \
   --remove-label fix:committed --add-label fix:released
 ```
 
