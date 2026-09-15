@@ -38,7 +38,59 @@
 **v1.30 shipped:** 2026-08-05 (SDP Surface Retirement & Behavioral Lock Proof — 7 phases (131–134, 136, 136.1, 137), 48 plans, 125 tasks; **55/56 requirements, CLOSE-06 held open by design**; host-only, no firmware change. Retired v1.22's unverifiable standalone `dev sdp <chip> enable|disable` and moved the proof into a six-step `dev test` leg whose oracle is read-back equality against a baseline pattern, never an exit code; hardened `check_mypy_watermark.py` from fail-open to fail-closed and certified `firestarter_app`'s primary `ci` job GREEN for the first time in two months (run `30856059940`, mypy 32 against an unratcheted watermark of 35); landed gh#8's stable-channel `dev` narrowing. **Phase 135 (`write --sdp-relock`) deferred out to Backlog 999.28** by operator decision, number not reused — so v1.30 ships the deletion and the behavioral proof and **withdraws** the deliberate-protection surface with **no replacement** (RELOCK-01…06 left v1 scope, 56 → 50 reqs; RELOCK-07 re-homed to Phase 137). Evidence ceiling honoured throughout: **no AT28C part in inventory, no hardware ran** — emission, plan-derivation and read-back-comparison logic are proven; the causal claim "the lock inhibited the write" is not, and did not gate the close. Seventh consecutive `override_closeout`. **⚠ `firestarter_app`'s `gsd/v1.30-sdp-surface-retirement` was never merged to `origin/beta`** — the PR was staged but not opened; v1.31 Phase 138 lands it. See `.planning/MILESTONES.md` §v1.30.)
 
 **v1.31 shipped:** 2026-08-18 (27C Programming-Algorithm Fidelity — 9 phases (138–146), 74 plans, 164 tasks; **45/45 v1 requirements**; firmware-touching, dual-repo lockstep. Implements [gh#15](https://github.com/henols/firestarter_prom/issues/15) **as corrected, not as filed** — two wrong numbers and one inverted premise, all three corrected *publicly and before implementation* (comment `#5233463320`): `0x0B`'s pulse is **500 µs**, not `50000 us`; pulse width is a **database datum**, not a per-protocol constant (re-derived live through the production parser — 170/127/32 chips); and the safe 32-bit delay helper is for the overprogram pulse, not any bare pulse. Delivered: **one shared per-byte pulse-to-verify loop** driven by a `const` PROGMEM `eprom_params_t` table keyed on `protocol_id` (**D-01** — protocol owns *shape*, the database owns the *pulse*), **not** gh#15's three state machines; fixed-width pulses that never grow between attempts; hard-fail at `max_pulses` reporting the failing **address and pulse count**; one shared `eprom_hv_route_mask()` with every **error** exit disabling every HV route through a single-exit wrapper; `write --pulse-us N` bounded 1..65535 and pre-validated before a serial byte, riding the existing wire field with **no new DB field and no second algorithm selector**; plus a host long-write timeout fix and intra-block progress, scoped to the `leonardo` class only — on `SERIAL_ON_IO` boards the emission is compiled out **structurally**, because a buffered progress frame there could displace a later `MSG_ERR_MAX_PULSES` and convert a program failure into a transport timeout. **Bench-validated on real silicon:** three full 65536-byte write→read→verify cycles on a Winbond **W27C512** (`0xda08`), **Leonardo**, shield **Rev 2.0** — three distinct images, nine clean oracle cells, read stability N=3 at one SHA each, write timing consistent to **0.37 s**. A firmware defect this milestone itself introduced (Phase 141 deleted the only `CTRL_VPE_ENABLE` assert) failed the **first** bench cycle on byte 0; it was root-caused by a debug session, fixed, and **stands in the record with its cause** rather than being counted out. **Evidence Ceiling stands: the ~6.25 V program-VCC rail all four vendor algorithms assume is unreachable on every shield revision this project owns** — so this milestone claims **fidelity, not improvement**, with no comparative claim, no control run, and no datasheet-conformance claim in either direction. `0x08` (AM27C020) and `0x0B` (M2716/M2732) are **skipped-with-reason** with the missing parts named, never inferred from `0x07`. Twelve items carry forward with the literal phrase `no v1.31 owner`; **MERGE-05's +96 B leonardo band breach is open and un-adjudicated** with the operator as its named owner. Eighth consecutive `override_closeout` (9 carry-forward items, none originating in v1.31). Closed via **PRs to `beta` in all three repos, not direct merges**, per operator decision — meta tagged `v1.31`, gitlinks re-pinned; **no beta cut yet**, and stable stays operator-gated. See `.planning/MILESTONES.md` §v1.31.)
-## Current Milestone: v1.38 Repository Rename
+## Current Milestone: v1.39 Protocol 0x05 Write Correctness
+
+**Activated:** 2026-09-15 · **Phases continue at 194** (v1.38 ran 189–193; the vacated **150** slot and
+the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving)
+
+**Goal:** A write to a 5V page-write flash part either preserves the bytes it was not asked to change,
+or refuses — and never reports success while destroying data.
+
+**Why now.** Two firmware defects on protocol `0x05`, both filed 2026-09-11 with bench evidence, both
+still untracked by any milestone until this one. They are independent, and each one alone silently
+corrupts a user's chip while printing `successful`:
+
+- **gh#68** — the firmware writes only the bytes it was given and then commits the page. The device
+  erases the whole physical page and programs only the loaded bytes, so every byte of that page which
+  was not part of the write is erased to `0xFF` — **in both directions**, before the start address as
+  well as after the end. There is no read-modify-write anywhere on this path and no warning. This
+  affects **all 27** protocol-`0x05` parts, including the validated ones (w29c020, w29c040, sst39sf020,
+  AE29F2008).
+- **gh#67** — `flash_5v_page_page_size()` derives a page size from the device's total size instead of
+  reading the part's real page from the database. On **9 of the 27** parts the derivation is smaller
+  than the physical page, so a plain contiguous write performs two page-write cycles into the same
+  physical page and the second erases what the first programmed. Affects AT29C512/AT29LV512,
+  SST29EE512/SST29LE512/SST29VE512, W29C512/W29EE512, the AT29C020 family and the AT29C040 family.
+
+Both were reproduced on a **W29C020** (Leonardo, Rev 2.0-class shield, firmware `3.0.0b22`, host
+`3.0.0b38`) — a part whose derived page size is *correct*, which is what isolates gh#68 from gh#67.
+
+The third item is bookkeeping the v1.38 close left behind: `tools/adoption/pypi_version_share.sh`
+was built to measure whether it was safe to claim `henols/firestarter`. The operator claimed it on
+2026-09-14 with the trigger unmet, and the seed is `status: fired`. The instrument still runs and still
+reports, but it now answers a question with no consumer.
+
+### Decisions taken at activation (operator, 2026-09-15)
+
+| | Decision |
+|---|---|
+| **D-1** | **Silent corruption is the milestone.** Both defects report `successful` while destroying data. Whatever the fix shape, the non-negotiable outcome is that a write never claims success over bytes it erased. |
+| **D-2** | **Refusing is an acceptable fix.** Read-modify-write is not assumed. A firmware that declines an unsafe partial write with a clear error is a valid resolution of gh#68 — losing the operation is strictly better than losing the chip. |
+| **D-3** | **gh#67's page size comes from the database, not a second derivation.** The real page is already generated into the chip database as `programming.infoic_page_size_raw`. Replacing one wrong derivation with another is not the fix. |
+| **D-4** | **Bench validation on real silicon is required, not optional.** Both issues carry hardware evidence; the fixes must too. A green native test is not sufficient for a defect that was found on a bench. |
+| **D-5** | **The stable firmware channel is out of scope.** `/releases/latest` serves 2.0.6 while current firmware is `3.0.0b30`. That is a release decision, operator-gated, and not phase work. |
+
+### What this milestone does NOT do
+
+- **It does not cut a stable firmware release.** See D-5. Whether stable users move off 2.0.6 is a
+  separate, operator-gated call.
+- **It does not work the 999.x backlog.** 17 backlog phase directories stay untouched.
+- **It does not revisit the slug claim.** That is done, recorded, and its consequences are documented
+  in `.planning/notes/gitmodules-archaeology-trap.md`.
+- **It does not audit the other 12 protocols.** The scope is protocol `0x05`. If the same class of
+  defect exists elsewhere it is filed, not fixed here.
+
+## v1.38 Archive: Repository Rename — Shipped 2026-09-15
 
 **Activated:** 2026-09-13 · **Phases continue at 189** (v1.37 ran 182–188; the vacated **150** slot and
 the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving)
