@@ -63,7 +63,7 @@ Layout, per `devtest-triage` and `devtest-rootcause`:
 
 - Skill directory names are lowercase-hyphenated: `devtest-triage`, `devtest-rootcause`.
 - `SKILL.md` opens with `---` frontmatter containing exactly `name` and `description`; the description is trigger-phrase dense (it is what routes invocation).
-- **Skills own their scripts.** Both skills state this explicitly: scripts are stdlib-only and must not import or shell out to `firestarter_app/tools/`, so they keep working when the submodule is absent or renamed. Where a script duplicates submodule logic it ships a drift check (`infoic_lookup.py --check`).
+- **Skills own their scripts.** Both skills state this explicitly: scripts are stdlib-only and must not import or shell out to `firestarter_app/tools/`, so they keep working when the submodule is absent or renamed. A script that duplicates submodule logic carries no automated drift check, so keep the vendored copy in step with the generator by hand.
 - The inverse rule is also stated: a skill must **not** reimplement the project's real build/gate steps (`build_db.py`, `diff_db.py`, `check_dispatch.py`, `pytest`, `pio run`) — it invokes them.
 - Scripts use `#!/usr/bin/env python3`, a module docstring whose body doubles as usage text, `from __future__ import annotations`, then stdlib imports only.
 - Untrusted input is hardened and documented in the docstring: `devtest_issues.py` caps bodies at `MAX_BODY = 1_000_000` before parsing, never `eval`/`exec`s or shells out with interpolated input, and every extraction fails soft (returns `None`) rather than raising.
