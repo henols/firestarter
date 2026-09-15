@@ -2,7 +2,7 @@
 
 ## v1.38 Repository Rename (Shipped: 2026-09-15)
 
-**5 phases (189-193) · 23 plans · 15/15 requirements · app `3.0.0b42`, firmware `3.0.0b29` on `beta`. Not tagged — stable release stays operator-gated.**
+**5 phases (189-193) · 23 plans · 15/15 requirements · app `3.0.0b42`, firmware `3.0.0b29` on `beta` · tagged `v1.38` — a bare tag, never a GitHub Release.**
 
 Full close record: [`v1.38/CLOSE-RECORD.md`](v1.38/CLOSE-RECORD.md).
 

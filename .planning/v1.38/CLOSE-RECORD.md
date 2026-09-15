@@ -1,7 +1,14 @@
 # v1.38 — Close Record: Repository Rename
 
 **Closed 2026-09-15. 5 phases (189–193) · 23 plans · 15/15 requirements · merged to
-`beta` in all three repositories. Not tagged — stable release stays operator-gated.**
+`beta` in all three repositories · tagged `v1.38` on the meta repository.**
+
+The tag is **bare**. It must never become a GitHub Release: the meta repository now
+sits at `henols/firestarter`, the slug stranded CLIs still poll for firmware, and
+`v1.38` parses as PEP 440 `1.38` — a Release there would satisfy
+`Version("3.0.0b29") >= Version("1.38")` and report those CLIs permanently up to
+date. Verified after tagging: `repos/henols/firestarter/releases/latest` returns
+404, which is a visible failure rather than a false success.
 
 App `3.0.0b42`, firmware `3.0.0b29` on `beta`.
 

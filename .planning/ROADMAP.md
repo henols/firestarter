@@ -169,7 +169,7 @@ Full detail: [`.planning/milestones/v1.16-ROADMAP.md`](milestones/v1.16-ROADMAP.
 
 </details>
 
-## v1.38 — Repository Rename (CLOSED 2026-09-15 — 15/15 requirements; merged to `beta` in all three repos, NOT tagged by operator decision)
+## v1.38 — Repository Rename (CLOSED 2026-09-15 — 15/15 requirements; merged to `beta` in all three repos; tagged `v1.38` — bare tag, no GitHub Release)
 
 **Milestone goal:** Give the project a front door people can find, and a firmware repository that does not
 own the unqualified name — without breaking firmware updates for anyone already installed.
