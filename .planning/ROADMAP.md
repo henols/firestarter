@@ -223,6 +223,14 @@ from total device size, and that is true across all 27 parts rather than just th
 4. The record states which of the 9 parts were actually exercised on hardware and which rest on the
    database comparison alone — the two are not conflated.
 
+**Prior art — check before building a new seam.** Phase 149 (v1.32, PGSZ-01/PGSZ-02) already delivered
+a per-chip `page_size` from the database to the firmware, for `eeprom_28c.cpp` on the 28C path. If that
+wire field and its host-side plumbing still exist, PAGE-01 may be a matter of consuming what is already
+there from `flash_5v_page.cpp` rather than opening a second seam. Two pending todos carry the detail:
+`todos/pending/runtime-info-log-naming-the-effective-page-size.md` (tagged `resolves_phase: 194` — an
+INFO log naming the effective page size is also a direct way to measure PAGE-02 across all 27 parts) and
+`todos/pending/promoted-0x0d-rows-keep-the-64-byte-floor.md` (0x0D, not 0x05 — adjacent, not in scope).
+
 **Depends on:** nothing
 
 **Plans:** TBD

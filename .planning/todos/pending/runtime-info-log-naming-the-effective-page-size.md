@@ -2,7 +2,7 @@
 created: 2026-08-19T00:00:00Z
 title: "Runtime INFO log naming the effective page size firmware actually used"
 area: firmware
-resolves_phase: unassigned
+resolves_phase: 194
 files:
   - firestarter/src/proms/eeprom_28c.cpp
   - firestarter/tools/catalog/messages.toml
