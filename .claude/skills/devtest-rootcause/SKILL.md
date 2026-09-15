@@ -16,7 +16,7 @@ tables outright — it never imports `build_db.py`, so it works even with
 That is distinct from the **regeneration commands** in §4 (`build_db.py`,
 `.claude/skills/devtest-rootcause/scripts/diff_db.py`). Those are the project's own build and gate steps —
 the thing being fixed — exactly like `pytest` or `pio run`. A skill must not
-reimplement or shadow them; regenerating the database means running the real generator.
+reimplement or shadow them. Regenerating the database means running the real generator.
 
 The meta repository is also named `firestarter`. That name collision is why a
 firmware path without the `_fw` suffix looks plausible and is wrong.
@@ -47,8 +47,8 @@ grep __version__ $APP/firestarter/__init__.py   # host version, same
 | `$APP/firestarter/data/pinouts.json` | authored — input to the generator, never written by it | Yes. This is where a wrong socket wiring is really fixed |
 | `$APP/tools/extra_chips.json` | authored supplement | Only for chips **absent from infoic.xml entirely** (2516, 2532). Not an override for a chip upstream already has |
 | `$APP/firestarter/*.py` | authored host app | Yes — real bugs |
-| `$FW/src/`, `$FW/include/` | authored firmware | Yes — real bugs. Cannot be verified without bench hardware; say so |
-| `$FW/include/messages.h` | **GENERATED** from the meta repo's `messages.toml` | Never hand-edit; regenerate |
+| `$FW/src/`, `$FW/include/` | authored firmware | Yes — real bugs. Cannot be verified without bench hardware. Say so |
+| `$FW/include/messages.h` | **GENERATED** from the meta repo's `messages.toml` | Never hand-edit. Regenerate instead |
 
 ### The proof rule
 
@@ -89,7 +89,7 @@ Real output:
 ```
 
 The script owns its decode tables rather than importing the generator, so it stays
-usable standalone. The cost of a private copy is drift, so verify it after touching
+usable standalone. The cost of a private copy is drift, so check it after touching
 `build_db.py`:
 
 ```bash
@@ -103,12 +103,12 @@ ok: VPP table matches build_db.py:VPP_MV (16 entries, compared in mV)
 
 It reads the generator **as text** (`ast.literal_eval`, never importing or running it —
 running it would regenerate the database) and exits 1 naming any key that disagrees.
-With `firestarter_app` absent it prints `SKIP` and exits 0; the lookup still works.
+With `firestarter_app` absent, it prints `SKIP` and exits 0. The lookup still works.
 
 **It fails CLOSED on a rename.** A constant the check cannot find is a DRIFT, not a
 warning, and the message names every name it tried (`GENERATOR_VPP_NAMES`). The owned
 table is held in **millivolts** to match the generator exactly, so the comparison is a
-plain dict equality with no string round-trip; `format_vpp()` does the `12000 -> "12V"`
+plain dict equality with no string round-trip. `format_vpp()` does the `12000 -> "12V"`
 rendering at the print site.
 
 Never "improve" a table value from memory — transcribe it from the generator, then run
@@ -119,7 +119,7 @@ Never "improve" a table value from memory — transcribe it from the generator, 
 Three things this output will trip you on:
 
 - **Package suffixes.** Upstream names are qualified — `W27E257@DIP28`. Some parts
-  appear *only* suffixed. DIP is the package this project programs; a PLCC/SOIC row
+  appear *only* suffixed. DIP is the package this project programs. A PLCC/SOIC row
   legitimately carries a different `protocol_id` and pinout and is not evidence of a bug.
 - **A part appears once per upstream database** (`INFOICT76`, `INFOIC2PLUS`, `INFOIC`)
   and the rows can disagree — the legacy `INFOIC` row for AT28C256 says
@@ -144,16 +144,16 @@ for m,cs in d.items():
 **A difference is not automatically a bug.** `build_db.py` deliberately flips 5V
 parallel EEPROMs from upstream's `0x07` to `0x0D` so a 12V rail is never driven into a
 5V part — that is why AT28C256 ships as algorithm `13` despite upstream saying `0x07`.
-Read the rule and its comment before "correcting" it. Likewise the `vpp: "12V"` on that
-part is a faithful decode of VPP index `0x00`; protocol `0x0D` never routes it.
+Read the rule and its comment before "fixing" it. Likewise the `vpp: "12V"` on that
+part is a faithful decode of VPP index `0x00`. Protocol `0x0D` never routes it.
 
 ## 2. Decide which layer is at fault
 
 | Evidence from triage | Layer | Where |
 |---|---|---|
-| Pin map disagrees with the datasheet DIP view | pinout data | `pinouts.json` if the key's wiring is wrong; `resolve_pinout_key()` if the wrong key was chosen |
+| Pin map disagrees with the datasheet DIP view | pinout data | `pinouts.json` if the key's wiring is wrong. `resolve_pinout_key()` if the wrong key was chosen |
 | Wrong `electrical.type` / erase capability | decode | `classify()` — the `flags & 0x10` axis, not `protocol_id` |
-| Wrong VPP | decode | the VPP index table; mask `voltages & 0xF0`, never `& 0xFF` |
+| Wrong VPP | decode | the VPP index table. Mask `voltages & 0xF0`, never `& 0xFF` |
 | Wrong algorithm/protocol | decode | `classify()` and the safety-flip rules in `main()` |
 | Wrong pulse timing | decode | `interpret_timing()` |
 | Chip missing from the DB entirely | supplement | `extra_chips.json`, only if absent from `infoic.xml` |
@@ -168,7 +168,7 @@ Firmware protocol implementations map to the constants in `$FW/include/proto_con
 ## 3. Hand the fix to `gsd-debug`
 
 Once §2 says *which layer* is at fault but not *why*, stop reasoning in this context
-and run the fix through a GSD debug session. That gets the scientific-method loop,
+and run the fix through a GSD debug session. That gives the scientific-method loop,
 a persistent session file that survives a context reset, and atomic commits.
 
 Seed the session first — the whole point of the handoff is that the debugger inherits
@@ -196,7 +196,7 @@ row of the triage table pre-recorded under `Eliminated`:
 ```
 
 Rows that were *not* proven dead (a `LOW` or `represented` verdict) are deliberately
-left out — only a settled question gets eliminated. A PASS report is refused: that is
+left out. Only a settled question is eliminated. A PASS report is refused: that is
 `devtest-triage` territory, not a debug session.
 
 The script then prints the spawn prompt. **Spawn `gsd-debugger` directly:**
@@ -207,7 +207,7 @@ Agent(prompt=<the printed prompt>, subagent_type="gsd-debugger",
 ```
 
 **Do not spawn `gsd-debug-session-manager`, and do not invoke `/gsd-debug` for this.**
-In this devcontainer agents launch in the background and the manager's nested spawn
+In this devcontainer agents run in the background and the manager's nested spawn
 does not complete: it returns a bogus "waiting…" message with the session file
 untouched, while an orphaned debugger keeps running. Two debuggers then race the same
 serial port and confound every hardware reading. One level, directly, is the rule here.
@@ -302,8 +302,8 @@ For firmware:
 cd $FW && pio run -e uno && pio test
 ```
 
-A firmware protocol change cannot be validated without a chip on the bench. Say that
-explicitly rather than implying the fix is confirmed.
+A firmware protocol change cannot be checked without a chip on the bench. Say that
+explicitly rather than implying the fix is checked.
 
 ## 5. Report the fix on the issue
 
@@ -380,7 +380,7 @@ gh issue edit 45 --repo henols/firestarter \
   --remove-label fix:committed --add-label fix:released
 ```
 
-Both labels come from the shared taxonomy;
+Both labels come from the shared taxonomy.
 `python3 $ROOT/.claude/skills/devtest-triage/scripts/devtest_issues.py labels`
 creates it if the tracker does not have it yet.
 
@@ -392,20 +392,20 @@ references exist to close.
 
 - `chip_database.json` is generated. Editing it is always wrong.
 - No generator field without proof in `infoic.xml`. No per-chip guess tables.
-- `extra_chips.json` adds chips upstream lacks; it does not override chips upstream has.
-- Do not "fix" `PROTO_PHANTOM_0x35` / `0x39` spelling in `proto_constants.h`; those
+- `extra_chips.json` adds chips upstream lacks. It does not override chips upstream has.
+- Do not "fix" `PROTO_PHANTOM_0x35` / `0x39` spelling in `proto_constants.h`. Those
   substrings are deliberate.
 - **Where GSD is installed**, file-changing work goes through it so it lands with atomic
   commits and state tracking: an unexplained failure to a seeded debug session (§3), an
   already-diagnosed one-line fix to `/gsd-quick`. Route there rather than committing
   around the gate. Where it is not installed, that rule cannot apply — use the
-  standalone prompt and commit atomically on a branch. GSD is a convenience here; the
-  fix-surface rules are not, and hold either way.
+  standalone prompt and commit atomically on a branch. GSD is a convenience here. The
+  fix-surface rules are not a convenience. They hold either way.
 - Spawn `gsd-debugger` **directly**, one level. Never `gsd-debug-session-manager`, and
   never two debuggers at once — they race the serial port and confound the readings.
 - Any prompt handed to a debugger must carry the fix-surface rules. It has Write access
   and does not otherwise know the database is generated. `seed_debug_session.py`
-  includes them; if you hand-write a prompt, include them yourself.
+  includes them. If you hand-write a prompt, include them yourself.
 - **A fix is not reported until the artefact versions are on the issue** (§5). Name the
   firmware and host versions read from `version.h` and `__init__.py`, and label
   `fix:committed` or `fix:released`. Without them the reporter cannot know what to
@@ -422,12 +422,12 @@ references exist to close.
 | `.claude/skills/devtest-rootcause/scripts/diff_db.py` shows hundreds of changed chips | Decode change too broad. Narrow the condition |
 | `WARN: resolved pinout key 'X' not in pinouts.json` | `resolve_pinout_key()` returned a key with no definition — add the wiring or fix the resolution |
 | Chip not found by `infoic_lookup.py` | Check the part really is absent, not just package-suffixed — the script already splits on `@`. If genuinely absent → `extra_chips.json` territory |
-| Fetch of infoic.xml is slow | 17.8 MB. It caches to `$TMPDIR/infoic-<sha>.xml`; reuse it |
+| Fetch of infoic.xml is slow | 17.8 MB. It caches to `$TMPDIR/infoic-<sha>.xml`. Reuse it |
 | Debugger edited `chip_database.json` | Its prompt lacked the fix-surface rules. Revert, reseed with `seed_debug_session.py`, respawn |
 | Session manager returns "waiting…" and nothing changed | Known devcontainer failure. Spawn `gsd-debugger` directly instead (§3) |
-| `seed_debug_session.py` refuses a PASS issue | Correct — a PASS goes to `devtest-triage` to be closed and logged |
+| `seed_debug_session.py` refuses a PASS issue | Right — a PASS goes to `devtest-triage` to be closed and logged |
 | `gh: 'fix:committed' not found` | The shared taxonomy is not created on this tracker — run `devtest_issues.py labels` from `devtest-triage/scripts` |
 | A fix landed but the issue still says `fix:committed` | The release shipped and nobody moved the label. Swap it to `fix:released` and post the version that carries it (§5) |
 | Reporter asks "which version has the fix?" | §5's comment was skipped or omitted the artefact table. Read the versions from `version.h` and `__init__.py` — never from memory — and post it |
 | `--check` reports DRIFT | `build_db.py` changed. Update the table in `infoic_lookup.py` to match the generator — the generator is authoritative, not this script |
-| `--check` says "no VPP table found under any known name" | The generator renamed the table again. Find the new name, prepend it to `GENERATOR_VPP_NAMES`, then **re-verify every value** — a rename and a value change can arrive in the same commit |
+| `--check` says "no VPP table found under any known name" | The generator renamed the table again. Find the new name, prepend it to `GENERATOR_VPP_NAMES`, then **re-check every value** — a rename and a value change can arrive in the same commit |
