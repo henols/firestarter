@@ -18,13 +18,16 @@ That is distinct from the **regeneration commands** in §4 (`build_db.py`,
 the thing being fixed — exactly like `pytest` or `pio run`. A skill must not
 reimplement or shadow them; regenerating the database means running the real generator.
 
+The meta repository is also named `firestarter`. That name collision is why a
+firmware path without the `_fw` suffix looks plausible and is wrong.
+
 ```bash
 # ROOT works from anywhere in the checkout, including inside either submodule.
 ROOT=$(git rev-parse --show-superproject-working-tree 2>/dev/null)
 ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
 
 APP=$ROOT/firestarter_app
-FW=$ROOT/firestarter
+FW=$ROOT/firestarter_fw
 S=$ROOT/.claude/skills/devtest-rootcause/scripts
 
 python3 $S/infoic_lookup.py AT28C256        # what upstream actually says about the chip
@@ -334,7 +337,7 @@ git -C $APP log --oneline -3
 ### Post it
 
 ```bash
-gh issue comment 45 --repo henols/firestarter_prom --body-file /tmp/fix.md
+gh issue comment 45 --repo henols/firestarter --body-file /tmp/fix.md
 ```
 
 Template — keep the artefact table even when a row is empty, because "the host is not
@@ -366,14 +369,14 @@ involved" is itself a finding:
 | A released version carries the fix | `fix:released` | The reporter can act — re-running `dev test` on that build is what closes this |
 
 ```bash
-gh issue edit 45 --repo henols/firestarter_prom --add-label fix:committed
+gh issue edit 45 --repo henols/firestarter --add-label fix:committed
 ```
 
 Move the label from `fix:committed` to `fix:released` when the release lands — that
 transition is the signal to the reporter, so do not leave it stale:
 
 ```bash
-gh issue edit 45 --repo henols/firestarter_prom \
+gh issue edit 45 --repo henols/firestarter \
   --remove-label fix:committed --add-label fix:released
 ```
 
