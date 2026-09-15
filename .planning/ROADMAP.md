@@ -238,7 +238,7 @@ INFO log naming the effective page size is also a direct way to measure PAGE-02 
 Plans:
 **Wave 1**
 
-- [ ] 194-01-PLAN.md — Tracer: branches, the recorder non-vacuity fix, the `0xBF` refusal id, and the real page size reaching the firmware for `W29C512` end to end (wave 1)
+- [x] 194-01-PLAN.md — Tracer: branches, the recorder non-vacuity fix, the `0xBF` refusal id, and the real page size reaching the firmware for `W29C512` end to end (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
