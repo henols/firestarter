@@ -52,7 +52,8 @@
   **Known gaps carried, not hidden:** the evidence ceiling (accepted debt); **`leonardo` MERGE-05 flash headroom is 0 B** at `+724 B` against BASE-01, exactly the four-term allowance, and **separately the Caterina USB-bootloader cliff at 28672 B has 1042 B left and is UNGUARDED** — `board_upload.maximum_size` does not enforce it, so nothing in the build stops a future change silently overwriting the bootloader region (a split-or-trimmed-build phase was raised and deliberately deferred; it is on no roadmap); the protection-class counting ambiguity, stated rather than collapsed (Method A 664/82 vs Method B 665/81, with Phase 151's published 406/111/39 reproducing under neither — only 665/81 plus the method-invariant `no_mechanism` 405 / `not_implemented` 40 are citable); the 20 ms `t_EC` wait being an Atmel-family maximum applied to a multi-vendor 84-row bucket, with **no** native test able to prove the wall-clock wait is honoured (the stubs never stub `delay()`); and one already-published part-name misattribution (W29C020 vs W29C040) that this project's own discipline forbids editing in place. Seven todos were filed by this milestone's own work. Full detail in `.planning/MILESTONES.md` §v1.32 + [`.planning/milestones/v1.32-ROADMAP.md`](milestones/v1.32-ROADMAP.md); honesty ledger at [`152-LEDGER.md`](phases/152-outward-facing-close-operator-gated/152-LEDGER.md); erase-policy record at [`153-RECORD.md`](phases/153-write-path-erase-policy/153-RECORD.md); merge record at [`152-MERGE-RECORD.md`](phases/152-outward-facing-close-operator-gated/152-MERGE-RECORD.md).
   **Milestone-level non-claim, in this milestone's own canonical wording: no AT28C part was tested, at any point, by any phase — protocol `0x0D` stays UNVERIFIED in PROTOCOL-LEDGER exactly as it stood at the open, and every write-path change v1.32 shipped is software-proven and unvalidated on silicon.**
 
-- ◆ **v1.38 Repository Rename** — Phases 189–193 (**ACTIVATED 2026-09-13**; infrastructure only — no firmware source, no protocol, no dual-repo behavioural lockstep, no bench leg). Promotes Backlog **999.9** (gh#2), the highest-blast-radius item in the 2026-07-27 import and a hazard **v1.35 accepted rather than solved**. Renames `firestarter` → `firestarter_fw` and **stops there**: claiming `henols/firestarter` for the meta repo is the one destructive act in 999.9 — it is what deletes the firmware repo's redirect — and it is deferred to [`seeds/SEED-claim-firestarter-slug.md`](seeds/SEED-claim-firestarter-slug.md) behind an *adoption* trigger rather than a date (**D-1**). **Scoped from measurement, not estimate** (2026-09-13): the front door has **0 stars / 0 forks / 0 watchers** six weeks after v1.35 made it the documented entry point, against **75** on the two components; `pip install firestarter` resolves to **2.0.7**, so `origin/main` — **948 commits** behind `beta` — is the branch that reaches users, and 999.9's own clean-environment validation would have exercised it while only `beta` got fixed (**D-3**, and the sole reason the STABLE strand exists); the three hardcoded endpoints are consumed **only** by `firmware.py`, so a stranded CLI loses `fw` alone and keeps read/write/verify/erase/`dev test`; **no workflow in any of the three repos hardcodes a repo slug**, making 999.9's "CI/release workflows" clause a no-op; and **672 of 778** firmware-slug references sit in `.planning/milestones/`, historical-by-intent and deliberately not swept (**D-5**). **Standing rule established here:** the meta repo must never publish a GitHub Release — it has **0** today, which is what keeps a post-claim failure a clean 404 instead of `_compare_versions` parsing `v1.36` as PEP 440 `1.36`, judging `3.0.0b29` newer, and reporting firmware current forever (**D-4**). Full analysis: [`notes/999.9-repo-rename-impact-analysis.md`](notes/999.9-repo-rename-impact-analysis.md).
+- ◆ **v1.39 Protocol 0x05 Write Correctness** — Phases 194–196 (**ACTIVATED 2026-09-15**; firmware and host in dual-repo lockstep, plus one meta tidy). Promotes two untracked defects on protocol `0x05`, both filed by the operator on 2026-09-11 with bench evidence and covered by no milestone until now. [gh#68](https://github.com/henols/firestarter/issues/68): a partial or unaligned write erases every byte of the touched physical page that was not part of the write — **in both directions**, before the start address as well as after the end — and reports `successful`; there is no read-modify-write anywhere on the path, and it affects **all 27** protocol-`0x05` parts including the four validated ones. [gh#67](https://github.com/henols/firestarter/issues/67): `flash_5v_page_page_size()` derives a page size from total device size rather than reading the part's real page from the database, and on **9 of the 27** that derivation is undersized, so a contiguous write runs two page cycles into one physical page and the second erases the first. Both reproduced on a **W29C020** — a part whose derived page size is *correct*, which is what isolates the two. **Ordering inverts severity deliberately**: Phase 194 fixes gh#67 first, because a read-modify-write built on a derived page size would still corrupt those 9 parts. Refusing an unsafe write is an accepted fix shape (**D-2**) — the milestone fixes the outcome, not the mechanism. Bench validation on real silicon is required, not optional (**D-4**). The stable firmware channel — `/releases/latest` serving 2.0.6 against a current `3.0.0b30` — is **out of scope** (**D-5**), an operator-gated release decision.
+- ✅ **v1.38 Repository Rename** — Phases 189–193 (**CLOSED 2026-09-15** — 15/15 requirements; merged to `beta` in all three repos; tagged `v1.38`, a bare tag with no GitHub Release. **The deferred claim fired ahead of its own trigger**: the operator directed the `firestarter_prom` → `firestarter` rename on 2026-09-14 with the adoption gate reading 12.8% against a 90% threshold and 116 at-risk downloads against a ceiling of 10 — recorded in `seeds/SEED-claim-firestarter-slug.md`, which keeps its trigger text unchanged as the bar that was set and not cleared, and in `notes/gitmodules-archaeology-trap.md`, whose "does not bite today" limits that act retired. Originally activated 2026-09-13; infrastructure only — no firmware source, no protocol, no dual-repo behavioural lockstep, no bench leg). Promotes Backlog **999.9** (gh#2), the highest-blast-radius item in the 2026-07-27 import and a hazard **v1.35 accepted rather than solved**. Renames `firestarter` → `firestarter_fw` and **stops there**: claiming `henols/firestarter` for the meta repo is the one destructive act in 999.9 — it is what deletes the firmware repo's redirect — and it is deferred to [`seeds/SEED-claim-firestarter-slug.md`](seeds/SEED-claim-firestarter-slug.md) behind an *adoption* trigger rather than a date (**D-1**). **Scoped from measurement, not estimate** (2026-09-13): the front door has **0 stars / 0 forks / 0 watchers** six weeks after v1.35 made it the documented entry point, against **75** on the two components; `pip install firestarter` resolves to **2.0.7**, so `origin/main` — **948 commits** behind `beta` — is the branch that reaches users, and 999.9's own clean-environment validation would have exercised it while only `beta` got fixed (**D-3**, and the sole reason the STABLE strand exists); the three hardcoded endpoints are consumed **only** by `firmware.py`, so a stranded CLI loses `fw` alone and keeps read/write/verify/erase/`dev test`; **no workflow in any of the three repos hardcodes a repo slug**, making 999.9's "CI/release workflows" clause a no-op; and **672 of 778** firmware-slug references sit in `.planning/milestones/`, historical-by-intent and deliberately not swept (**D-5**). **Standing rule established here:** the meta repo must never publish a GitHub Release — it has **0** today, which is what keeps a post-claim failure a clean 404 instead of `_compare_versions` parsing `v1.36` as PEP 440 `1.36`, judging `3.0.0b29` newer, and reporting firmware current forever (**D-4**). Full analysis: [`notes/999.9-repo-rename-impact-analysis.md`](notes/999.9-repo-rename-impact-analysis.md).
 - ✅ **v1.37 Operator Safety, Answered Reports & Claim Hygiene** — Phases 182–188 (**CLOSED 2026-09-13** — 7 phases, 49 plans, 35/35 requirements; merged to `beta` in all three repos, **not tagged** — stable release stays operator-gated; host-first, firmware touched only at the edges — one `.md`, one baseline JSON plus fixtures, and at most one generated message id). Stops the project withholding what it already knows: a JP5 destructive-operation gate for the hazard that cost a user real chips ([gh#60](https://github.com/henols/firestarter_prom/issues/60)); a flash4 erase refusal that names its cause instead of teaching users to forge a chip identity with `--force` ([gh#62](https://github.com/henols/firestarter_prom/issues/62)); the replies owed on gh#23/#28/#31 since 2026-08-09; and the repository's own false claims — a deleted guard still named as live, a three-milestone-stale size baseline, a citation pointing 49 lines off, two tests asserting coverage that no longer exists, and `Catalog sync check` red on `main`. Plus the one item with an external clock: the Python floor, before 3.10 EOLs 2026-10-31. **Deliberately excluded (D-1): 999.43 R4 session reuse**, against a measured 50–80 s/run payoff — see the milestone section for why. **Closed with six stale enforcement claims (WR-01…WR-06) accepted as disclosed follow-on debt, not fixed**, and Phase 188 appended 2026-09-12 after 187 completed — inward-facing tooling hygiene, a **−21,281 net-line** subtraction. Full record: `.planning/v1.37/CLOSE-RECORD.md`.
 
 <details>
@@ -168,6 +169,110 @@ Full detail: [`.planning/milestones/v1.16-ROADMAP.md`](milestones/v1.16-ROADMAP.
 **Full phase detail:** [`.planning/milestones/v1.22-ROADMAP.md`](milestones/v1.22-ROADMAP.md) · **shipped record:** `.planning/MILESTONES.md` §v1.22 · **honesty ledger:** `.planning/phases/122-close-honesty-ledger-community-ask-release-decision/122-LEDGER.md`
 
 </details>
+
+## v1.39 — Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
+
+**Milestone goal:** A write to a 5V page-write flash part either preserves the bytes it was not asked to
+change, or refuses — and never reports success while destroying data.
+
+**Why now.** Two firmware defects on protocol `0x05`, both filed by the operator on 2026-09-11 with bench
+evidence, both tracked by no milestone until this one. They are independent, and each alone silently
+corrupts a user's chip while printing `successful`.
+
+[gh#68](https://github.com/henols/firestarter/issues/68) — the firmware writes only the bytes it was
+given and then commits the page. The device erases the whole physical page and programs only the loaded
+bytes, so every byte of that page which was not part of the write is erased to `0xFF`, **in both
+directions** — before the start address as well as after the end. No read-modify-write exists anywhere on
+this path and no warning is emitted. Affects **all 27** protocol-`0x05` parts, the validated ones
+included (`w29c020`, `w29c040`, `sst39sf020`, `AE29F2008`).
+
+[gh#67](https://github.com/henols/firestarter/issues/67) — `flash_5v_page_page_size()` derives a page
+size from the device's total size instead of reading the part's real page from the database. On **9 of
+the 27** parts that derivation is smaller than the physical page, so a plain contiguous write performs
+two page-write cycles into the same physical page and the second erases what the first programmed.
+Affects AT29C512, AT29LV512, SST29EE512, SST29LE512, SST29VE512, W29C512, W29EE512, the AT29C020 family
+and the AT29C040 family.
+
+Both were reproduced on a **W29C020** (Leonardo, Rev 2.0-class shield, firmware `3.0.0b22`, host
+`3.0.0b38`) — a part whose derived page size is *correct*, which is exactly what isolates gh#68 from
+gh#67.
+
+**Ordering, stated because it inverts severity.** gh#68 is the more severe defect (27 parts against 9),
+but Phase 194 fixes gh#67 first. A read-modify-write built on a derived page size would still corrupt the
+9 under-sized parts — the fix for gh#68 has to know what a physical page actually is. Correctness wins
+over severity here, deliberately.
+
+**Requirements:** 8 across three categories — see `.planning/REQUIREMENTS.md`.
+
+### Phase 194: Real Page Size Reaches the Firmware
+
+**Goal**: The protocol `0x05` write path uses each part's recorded page size instead of a value derived
+from total device size, and that is true across all 27 parts rather than just the 9 known to be wrong.
+
+**Requirements**: PAGE-01, PAGE-02, PAGE-03
+
+**Success criteria**:
+
+1. The page size used by `flash_5v_page_write_execute` originates in the chip database, not in
+   `flash_5v_page_page_size()`'s size-bracket derivation.
+2. For all 27 protocol-`0x05` parts, the page size the firmware uses equals the part's recorded real
+   page — measured across the whole set and recorded, not asserted for the 9 alone. A change that
+   corrects those 9 while altering any of the other 18 is a failure of this phase.
+3. A contiguous multi-page write to one of the 9 previously under-sized parts reads back byte-identical
+   on real silicon, with the transcript committed.
+4. The record states which of the 9 parts were actually exercised on hardware and which rest on the
+   database comparison alone — the two are not conflated.
+
+**Depends on:** nothing
+
+**Plans:** TBD
+
+### Phase 195: Partial Writes Stop Destroying the Page
+
+**Goal**: A partial or unaligned write either leaves the rest of the physical page intact, or refuses and
+changes nothing — and in no case reports success over bytes it erased.
+
+**Requirements**: WRITE-01, WRITE-02, WRITE-03
+
+**Success criteria**:
+
+1. A partial or unaligned write to a protocol `0x05` part preserves every byte of the touched physical
+   page that was not part of the write, **or** refuses the operation with a named error and leaves the
+   device unchanged. Either shape satisfies this; the milestone fixes the outcome, not the mechanism.
+2. No protocol `0x05` write reports `successful` when bytes outside the requested address range were
+   erased. Where the operation cannot guarantee that, it does not claim success.
+3. Both loss directions are demonstrated on real silicon — bytes before the start address and bytes
+   after the end — on a part whose page size is already correct, so the result isolates this defect from
+   Phase 194's.
+4. The four validated parts (`w29c020`, `w29c040`, `sst39sf020`, `AE29F2008`) are re-checked against
+   whatever behaviour this phase lands, so a fix does not silently regress a part the project claims to
+   support.
+
+**Depends on:** Phase 194 (a read-modify-write over a derived page size would still corrupt the 9
+under-sized parts)
+
+**Plans:** TBD
+
+### Phase 196: Adoption Instrument Disposition
+
+**Goal**: The instrument built to decide whether the slug claim was safe either measures a question that
+still has a consumer, or is retired with its reason recorded.
+
+**Requirements**: INSTR-01, INSTR-02
+
+**Success criteria**:
+
+1. `tools/adoption/pypi_version_share.sh` is either re-pointed at a question with a named consumer, or
+   removed. The disposition and its reason are recorded where a reader meets the decision, not only in
+   a commit message.
+2. No document describes the instrument as gating a claim that has already fired — the seed,
+   `CLAUDE.md` and any note pointing at it agree with the chosen disposition.
+3. If the instrument is retained, the record names who reads its output and when. "It might be useful"
+   is not a consumer.
+
+**Depends on:** nothing
+
+**Plans:** TBD
 
 ## v1.38 — Repository Rename (CLOSED 2026-09-15 — 15/15 requirements; merged to `beta` in all three repos; tagged `v1.38` — bare tag, no GitHub Release)
 

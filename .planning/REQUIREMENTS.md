@@ -1,154 +1,92 @@
-# Requirements: Firestarter — v1.38 Repository Rename
+# Requirements: Firestarter — v1.39 Protocol 0x05 Write Correctness
 
-**Defined:** 2026-09-13
-**Milestone:** v1.38 — "Free the name, don't claim it yet"
-**Core Value (this milestone):** The project gets a findable front door and a firmware repository that does
-not own the unqualified name, and no already-installed copy of the CLI stops being able to update its
-firmware as a result.
+**Defined:** 2026-09-15
+**Milestone:** v1.39 — "Never report success over bytes you erased"
+**Core Value (this milestone):** A write to a 5V page-write flash part either preserves the bytes it was
+not asked to change, or refuses — and never reports success while destroying data.
 
-**Scope:** All three repositories, but asymmetrically. `firestarter` is renamed. `firestarter_app` changes
-three constants on two branches and ships a stable. The meta repository changes `.gitmodules`, its README
-and five `.planning/codebase/` documents, and gains one standing rule. No firmware source, no protocol, no
-dual-repo behavioural lockstep.
+**Scope:** Firmware and host, dual-repo lockstep, plus one meta-repository tidy. The firmware's
+protocol `0x05` write path changes. The host changes only where it must carry the part's real page size
+or surface a refusal. The meta repository disposes of an instrument whose question has been answered.
+No other protocol is touched.
 
-**What this milestone deliberately leaves undone:** claiming `henols/firestarter` for the meta repository.
-That is the one destructive act in Backlog 999.9 — it deletes the firmware repository's redirect — and it is
-deferred to [`seeds/SEED-claim-firestarter-slug.md`](seeds/SEED-claim-firestarter-slug.md) behind an adoption
-trigger. Everything here is safe to ship without it.
+**Provenance:** Both defects were filed by the operator on 2026-09-11 with bench evidence
+([gh#67](https://github.com/henols/firestarter/issues/67),
+[gh#68](https://github.com/henols/firestarter/issues/68)) and were tracked by no milestone until this
+one. Both were reproduced on a **W29C020** — Leonardo, Rev 2.0-class shield, firmware `3.0.0b22`,
+host `3.0.0b38`. That part's derived page size is *correct*, which is what isolates WRITE from PAGE.
 
----
+## Decisions taken at activation (operator, 2026-09-15)
 
-## Decisions taken at activation (operator, 2026-09-13)
-
-Settled here so no phase re-litigates them. Full text and rationale in `PROJECT.md` § Current Milestone.
-
-| ID | Decision |
+| | Decision |
 |---|---|
-| **D-1** | **v1.38 stops before the claim.** The milestone may close with the front door still named `firestarter_prom`. |
-| **D-2** | **Firmware releases stay in the firmware repository** — no mirroring onto the meta repo, not even for a bounded window. This rules out the only continuity mechanism, and therefore implies D-1. |
-| **D-3** | **`main` and `beta` are separate changes**, and `main` is the one that reaches users: `pip install firestarter` resolves to **2.0.7**. |
-| **D-4** | **The meta repository must never publish a GitHub Release.** Bare milestone tags only. |
-| **D-5** | **The 672 archived references under `.planning/milestones/` are not swept** — historical-by-intent. |
-| **D-6** | **The `.gitmodules` history trap is documented, not solved** — history cannot be fixed. |
-| **D-7** | **Every outward-facing step stays operator-gated** — the GitHub rename, the stable cut, every push. |
-
----
+| **D-1** | **Silent corruption is the milestone.** Both defects report `successful` while destroying data. Whatever the fix shape, the non-negotiable outcome is that a write never claims success over bytes it erased. |
+| **D-2** | **Refusing is an acceptable fix.** Read-modify-write is not assumed. A firmware that declines an unsafe partial write with a clear error resolves WRITE-01 — losing the operation is strictly better than losing the chip. |
+| **D-3** | **The page size comes from the database, not a second derivation.** The real page is already generated as `programming.infoic_page_size_raw`. Replacing one wrong derivation with another is not a fix. |
+| **D-4** | **Bench validation on real silicon is required.** Both issues carry hardware evidence; the fixes must too. A green native test is not sufficient for a defect that was found on a bench. |
+| **D-5** | **The stable firmware channel is out of scope.** `/releases/latest` serves 2.0.6 while current firmware is `3.0.0b30`. That is an operator-gated release decision, not phase work. |
 
 ## v1 Requirements
 
-### RENAME — free the name
+### WRITE — a write never destroys what it was not asked to change (gh#68)
 
-- [x] **RENAME-01**: The firmware repository is named `henols/firestarter_fw` on GitHub, and
-      `henols/firestarter` is left **unclaimed** — verified by an API call showing the old slug still
-      redirecting to the new one rather than resolving to a different repository.
-- [x] **RENAME-02**: `.gitmodules` names `firestarter_fw` on both `beta` and `main`, and
-      `git submodule sync --recursive` has been run so an existing clone resolves the new URL without
-      relying on the redirect.
-- [x] **RENAME-03**: A fresh clone of the meta repository at the milestone tip initialises **both**
-      submodules successfully from the URLs recorded at that tip — demonstrated, not reasoned about.
+- [ ] **WRITE-01**: A partial or unaligned write to a protocol `0x05` part either preserves every byte
+      of the touched physical page that was not part of the write, or refuses the operation with a
+      named error and leaves the device unchanged. Which of the two is a design decision, not a
+      requirement — D-2 permits either.
+- [ ] **WRITE-02**: No protocol `0x05` write reports `successful` when bytes outside the requested
+      address range were erased. If the operation cannot guarantee that, it must not claim success.
+- [ ] **WRITE-03**: The behaviour is demonstrated on real silicon in **both** loss directions — bytes
+      before the start address and bytes after the end — on a part whose derived page size is already
+      correct, so the result isolates this defect from PAGE-01.
 
-### URL — endpoints that must not depend on a redirect
+### PAGE — the firmware uses the part's real page size (gh#67)
 
-- [x] **URL-01**: On `beta`, all three `FIRESTARTER_*_URL` constants in
-      `firestarter_app/firestarter/constants.py` address `henols/firestarter_fw`. No code path depends on
-      GitHub's rename redirect.
-- [x] **URL-02**: On `main`, the same three constants address `henols/firestarter_fw`. This is a **separate
-      change from URL-01** against a branch 948 commits behind `beta`, and it is the one that reaches the
-      default install (D-3).
-- [x] **URL-03**: The two hardcoded API URLs in `firestarter_app/tests/test_firmware_install.py` are derived
-      from the constants rather than repeated as literals, so a future retarget cannot leave tests green
-      while the shipped endpoint is stale.
-- [x] **URL-04**: `fw` reports a clear, actionable error when the firmware release endpoint is unreachable
-      or returns no asset matching the board — and that state is distinguishable in the output from
-      "already up to date". 999.9's goal text requires this; it is also what makes a mistaken retarget
-      visible instead of silent.
+- [ ] **PAGE-01**: The page size used by the protocol `0x05` write path is the part's recorded page
+      size from the chip database, not a value derived from the device's total size.
+- [ ] **PAGE-02**: For **all 27** protocol `0x05` parts, the page size the firmware uses equals the
+      part's recorded real page. This is measured across the whole set, not asserted for the 9 known
+      to be wrong — a fix that corrects those 9 while breaking one of the other 18 is not a fix.
+- [ ] **PAGE-03**: A contiguous multi-page write to one of the 9 previously under-sized parts reads
+      back byte-identical on real silicon.
 
-### STABLE — reach the default install
+### INSTR — the adoption instrument answers a live question, or is retired (v1.38 carry-over)
 
-- [x] **STABLE-01**: A stable release cut from `main` and carrying URL-02 is published to PyPI, so that
-      `pip install firestarter` — which resolves to the stable channel, today **2.0.7** — yields a version
-      addressing `firestarter_fw`.
-- [x] **STABLE-02**: The clean-environment validation named in 999.9 is run **against that stable**, not
-      against `beta`: install → query → locate release → download asset → update-check. Running it against
-      a prerelease would reproduce the blindness D-3 identifies.
-
-### SWEEP — live references only
-
-- [x] **SWEEP-01**: Every **live tracked** reference to `henols/firestarter` across the three repositories
-      addresses `firestarter_fw` — the meta `README.md`, both sub-repo READMEs, and the five
-      `.planning/codebase/` documents (`STRUCTURE.md`, `STACK.md`, `INTEGRATIONS.md`, `ARCHITECTURE.md`,
-      `TESTING.md`).
-- [x] **SWEEP-02**: **No file under `.planning/milestones/` is modified** by this milestone — proved by a
-      diff over that path returning empty, not by intent. Those 672 references record what the repository
-      was called when the record was written (D-5).
-- [x] **SWEEP-03**: **All seven `.planning/codebase/` documents** — `STACK.md`, `ARCHITECTURE.md`,
-      `STRUCTURE.md`, `INTEGRATIONS.md`, `TESTING.md`, `CONCERNS.md` and `CONVENTIONS.md` — no longer
-      describe a catalog-sync workflow that checks out the sub-repos via `actions/checkout`, nor the
-      two retired wiki workflows, nor the removed wiki-tooling directory. None of them exists, and
-      the meta repository has no `.github/workflows/` at all. Found while measuring 999.9's
-      "CI/release workflows" clause, which is itself a no-op. Widened from `STACK.md` alone to all
-      seven during Phase 192, because `CONCERNS.md` and `CONVENTIONS.md` carried the same stale claim
-      and were named by neither the original requirement nor the ROADMAP's criterion 4.
-
-### GATE — make the deferred claim measurable
-
-- [x] **GATE-01**: An adoption instrument reports per-version download share for the `firestarter` PyPI
-      package, so the seed's trigger is a number with a stated threshold rather than a judgement call. It
-      must state plainly what it does **not** measure — installed base is not observable, and users who
-      never upgrade are unreachable by any threshold.
-- [x] **GATE-02**: The standing rule — the meta repository never publishes a GitHub Release — is recorded
-      where a future milestone will encounter it before acting, together with the `_compare_versions`
-      mechanism that makes violating it silent: a `v1.36` tag parses as PEP 440 `1.36`, so
-      `3.0.0b29 >= 1.36` reads true and the firmware is reported current forever.
-- [x] **GATE-03**: The `.gitmodules` history trap is documented with a workaround demonstrated for **both**
-      cases: an existing clone (`git config submodule.firestarter.url`) and a fresh clone at a pre-rename
-      ref (`--no-recurse-submodules` plus a manual URL set).
-
----
+- [ ] **INSTR-01**: `tools/adoption/pypi_version_share.sh` either measures a question with a named
+      consumer, or is removed. Either way the disposition is recorded with its reason.
+- [ ] **INSTR-02**: No document describes the instrument as gating a claim that has already fired. The
+      seed, `CLAUDE.md` and any note pointing at it agree with the chosen disposition.
 
 ## Out of Scope
 
 | Item | Reason |
 |---|---|
-| Claiming `henols/firestarter` for the meta repository | D-1 scoped this out, and it held for the whole milestone. **Superseded 2026-09-14: the operator directed the rename after Phase 193 closed, with the trigger unmet (12.8% share, 116 at-risk downloads).** Recorded in `.planning/seeds/SEED-claim-firestarter-slug.md`. |
-| Renaming `firestarter_app` | 999.9's prose says "all three repositories" but names only two mappings. The host repository keeps its name. |
-| Mirroring firmware releases onto the meta repository | D-2. Would split the release surface permanently to solve a temporary problem. |
-| Repairing the 672 archived `.planning/milestones/` references | D-5. Historical-by-intent; repairing them destroys the evidence. |
-| Re-sweeping v1.35's wiki and README links (phases 169/170/172) | Those break only when the claim fires. The re-sweep travels with the claim. |
-| Eliminating stranding for users who never upgrade | Not achievable by any sequencing. Bounded instead by blast radius: the three endpoints are consumed only by `firmware.py`, so only `fw` breaks. |
-| Resolving the PyPI/GitHub name incoherence | After the eventual claim, PyPI `firestarter` is the app while GitHub `firestarter` is the meta repo. Noted, not resolved. |
-| Firmware source, protocol or behaviour | The firmware repository is renamed and its README repointed. Nothing else. |
-
----
+| Cutting a stable firmware release | D-5. Whether stable users move off 2.0.6 is an operator-gated release decision. |
+| Read-modify-write specifically | D-2. RMW is one possible shape for WRITE-01; refusing is another. The requirement fixes the outcome, not the mechanism. |
+| The other 12 protocols | Scope is `0x05`. If the same defect class exists elsewhere it is filed, not fixed here. |
+| The 999.x backlog | 17 backlog phase directories stay untouched. |
+| Re-auditing the slug claim | Done, recorded, and its consequences are documented in `.planning/notes/gitmodules-archaeology-trap.md`. |
 
 ## Traceability
 
-Which phases cover which requirements. Populated at roadmap creation.
-
 | Requirement | Phase | Status |
 |---|---|---|
-| RENAME-01 | Phase 189 | Complete |
-| RENAME-02 | Phase 189 | Complete |
-| RENAME-03 | Phase 189 | Complete |
-| URL-01 | Phase 190 | Complete |
-| URL-02 | Phase 191 | Complete |
-| URL-03 | Phase 190 | Complete |
-| URL-04 | Phase 190 | Complete |
-| STABLE-01 | Phase 191 | Complete |
-| STABLE-02 | Phase 191 | Complete |
-| SWEEP-01 | Phase 192 | Complete |
-| SWEEP-02 | Phase 192 | Complete |
-| SWEEP-03 | Phase 192 | Complete |
-| GATE-01 | Phase 193 | Complete |
-| GATE-02 | Phase 193 | Complete |
-| GATE-03 | Phase 193 | Complete |
+| WRITE-01 | Phase 195 | Pending |
+| WRITE-02 | Phase 195 | Pending |
+| WRITE-03 | Phase 195 | Pending |
+| PAGE-01 | Phase 194 | Pending |
+| PAGE-02 | Phase 194 | Pending |
+| PAGE-03 | Phase 194 | Pending |
+| INSTR-01 | Phase 196 | Pending |
+| INSTR-02 | Phase 196 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 15 total
-- Mapped to phases: 15
+- v1 requirements: 8 total
+- Mapped to phases: 8
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-09-13*
-*Last updated: 2026-09-13 at v1.38 activation*
+*Requirements defined: 2026-09-15*
+*v1.38's requirements are recoverable at `git show 77a60b53:.planning/REQUIREMENTS.md` — this file is
+replaced per milestone, the convention since v1.9.*
