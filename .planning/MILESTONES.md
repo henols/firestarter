@@ -1,5 +1,25 @@
 # Milestones
 
+## v1.38 Repository Rename (Shipped: 2026-09-15)
+
+**5 phases (189-193) · 23 plans · 15/15 requirements · app `3.0.0b42`, firmware `3.0.0b29` on `beta`. Not tagged — stable release stays operator-gated.**
+
+Full close record: [`v1.38/CLOSE-RECORD.md`](v1.38/CLOSE-RECORD.md).
+
+The firmware repository was `henols/firestarter` and the meta repository had no name of its own. This milestone gave the meta repository that name and moved the firmware to `henols/firestarter_fw`, on one rule: **nothing may depend on GitHub's redirect**, because a redirect is a courtesy that lasts only until someone claims the freed slug. The three firmware release endpoints address the new slug on both `beta` and `main`, the test fixtures are **derived from** those endpoint constants so a future retarget cannot pass silently, and every live tracked reference across the three repositories is correct.
+
+**The part that cannot be fixed is documented instead.** `.gitmodules` records a submodule URL per commit, so checking out a pre-rename ref — or bisecting firmware history — resurrects the old URL. Fixing the live branches does not fix history. `.planning/notes/gitmodules-archaeology-trap.md` carries both workarounds, their executed transcripts, and the `git submodule sync` hazard that silently undoes one. It does not bite today because the old slug still redirects; it arms the moment that slug is claimed.
+
+**Work that rode along, larger than the requirement count suggests.** An operator ruling retired source-text scanning as a testing technique, `ast`-based introspection included. The removal set was measured rather than guessed: regex classification of the test sources gave answers between 80 and 205 depending on the heuristic, so a pytest plugin recorded the resolved path of every file read per test nodeid across a full run instead — **129 tests read source or docs, 377 read data**. The 129 went, with 24 modules, a fixture repo and 11 `planted_*` fixtures. Host suite 2145 → 1886 with zero skips, coverage 84.91%.
+
+It surfaced *because* of the rename: the sibling checkout moved out from under `fw_presence.py`'s hardcoded `FW_ROOT`, so 71 `@requires_fw` legs began skipping — and no workflow in either repository had ever set `FIRESTARTER_FW_ROOT`, so they had never run in CI at all. Host-side source-scanning gates fail open, and nothing goes red when the coverage stops.
+
+**A planning-citation leak was root-caused after three weeks of false confidence.** 1254 comment lines across both sub-repositories, of which the v1.33 detector could see 141. Its regex bound the token group to the comment marker, so **deleting the marker-adjacent label — the normal repair — pushed the rest of the line out of its own view**. Its visibility fell across its own remediation, 48% → 26%, and it reported 73% removal against an actual 50%. A replacement gate now runs in CI in both sub-repositories and exits 2 on a vacuous scan.
+
+**Four silent build defects, all found by reading `platformio.ini`.** Leonardo built at 86.6% of its real ceiling while the size report said 75.8%, because every AVR env overrides `maximum_size` to 32768 and the linker no longer protects Caterina's 4096 B — a `bootloader_guard.py` post-build hook now refuses an image that would overwrite the bootloader. A suite quarantined four months earlier as "intermittently flaky" was failing **5 runs out of 5** for want of three mock lines. Nine build targets became five, carrying 98 test cases that ran nowhere. And `-D DEV_TOOLS`, compiled into every shipped binary, became a per-channel decision that fails closed to the stable configuration.
+
+**Not claimed:** no hardware was involved. The stable firmware configuration compiles and passes its native suite but has never been flashed to a board, and `PLATFORMIO_BUILD_FLAGS` reaching the compiler on `beta` is first tested by the build this close triggers. `milestone.complete` was not run — hand-archived, as v1.35, v1.36 and v1.37 were.
+
 ## v1.37 Operator Safety, Answered Reports & Claim Hygiene (Shipped: 2026-09-13)
 
 **7 phases (182-188) · 49 plans · 35/35 requirements · merged to `beta` in all three repositories. Not tagged — stable release stays operator-gated.**
