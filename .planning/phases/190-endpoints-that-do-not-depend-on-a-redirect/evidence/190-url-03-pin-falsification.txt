@@ -1,0 +1,105 @@
+URL-03 PIN FALSIFICATION (190-02, Task 1)
+==========================================
+capture_date: 2026-09-13T17:12:47Z
+capture_commit: cf872a66026be0b6b8a009f6ec4b20aee658b409 (firestarter_app, v1.38-repository-rename)
+
+Purpose: demonstrate that `tests/test_endpoint_constants.py` (the URL-03 pin) is
+reachable and non-vacuous -- that editing exactly one of the three
+FIRESTARTER_*_URL constants back to the bare, pre-rename slug turns the module
+red, and names the offending constant rather than merely reporting "one of
+three failed". The backup is taken outside both repositories (this session's
+scratch directory) precisely so an interruption mid-procedure cannot leave a
+reverted constant sitting in the committed tree.
+
+STEP 1 -- backup constants.py outside both repositories:
+
+  command: cp /workspaces/firestarter_app/firestarter/constants.py \
+    /tmp/claude-1000/-workspaces/ff55a169-3f2a-422b-a770-f65f69da2d11/scratchpad/constants.py.bak
+  result: backup written, 8008 bytes.
+
+STEP 2 -- revert exactly one constant (FIRESTARTER_RELEASES_URL, line 12) to the
+bare, pre-rename slug, in place:
+
+  command: sed -i '12s#henols/firestarter_fw/releases#henols/firestarter/releases#' \
+    firestarter/constants.py
+
+  before: FIRESTARTER_RELEASES_URL = "https://api.github.com/repos/henols/firestarter_fw/releases"
+  after:  FIRESTARTER_RELEASES_URL = "https://api.github.com/repos/henols/firestarter/releases"
+
+  The other two constants (FIRESTARTER_RELEASE_URL, FIRESTARTER_RELEASE_BY_TAG_URL)
+  were left untouched by this edit.
+
+STEP 3 -- run the pin alone and record the failure:
+
+  command: /workspaces/firestarter_app/.venv311/bin/pytest \
+    tests/test_endpoint_constants.py -o addopts= -q
+
+  captured output:
+
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+_____________ test_firestarter_releases_url_addresses_renamed_slug _____________
+
+    def test_firestarter_releases_url_addresses_renamed_slug():
+        """FIRESTARTER_RELEASES_URL must address henols/firestarter_fw/."""
+>       assert _RENAMED_SLUG in FIRESTARTER_RELEASES_URL, (
+            f"FIRESTARTER_RELEASES_URL does not address {_RENAMED_SLUG!r}: "
+            f"{FIRESTARTER_RELEASES_URL!r}"
+        )
+E       AssertionError: FIRESTARTER_RELEASES_URL does not address 'henols/firestarter_fw/': 'https://api.github.com/repos/henols/firestarter/releases'
+E       assert 'henols/firestarter_fw/' in 'https://api.github.com/repos/henols/firestarter/releases'
+
+tests/test_endpoint_constants.py:81: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_endpoint_constants.py::test_firestarter_releases_url_addresses_renamed_slug
+1 failed, 2 passed in 0.03s
+
+  pytest exit code: 1
+
+  result: NON-ZERO exit. The failed test's name --
+  test_firestarter_releases_url_addresses_renamed_slug -- and the assertion
+  message both name FIRESTARTER_RELEASES_URL specifically. The other two
+  constants' tests (test_firestarter_release_url_addresses_renamed_slug,
+  test_firestarter_release_by_tag_url_addresses_renamed_slug) still passed,
+  which is expected: only one constant was reverted.
+
+STEP 4 -- restore from the backup:
+
+  command: cp /tmp/claude-1000/-workspaces/ff55a169-3f2a-422b-a770-f65f69da2d11/scratchpad/constants.py.bak \
+    /workspaces/firestarter_app/firestarter/constants.py
+
+STEP 5 -- confirm the restore and re-run the pin:
+
+  command: git -C /workspaces/firestarter_app diff --quiet HEAD -- firestarter/constants.py
+  exit code: 0
+  result: clean -- constants.py is byte-identical to HEAD; no residue from the
+  falsification edit remains in the working tree.
+
+  command: /workspaces/firestarter_app/.venv311/bin/pytest \
+    tests/test_endpoint_constants.py -o addopts= -q
+
+  captured output:
+
+    ...                                                                      [100%]
+    3 passed in 0.02s
+
+  pytest exit code: 0
+  result: all three tests pass again after restore.
+
+WHAT THIS READING PROVES: the pin in tests/test_endpoint_constants.py is
+reachable (it can actually be made to fail) and non-vacuous (it fails for the
+right reason -- a stale slug in the constant it is asserting on -- and its
+failure output names the specific constant that regressed, not merely "one of
+three"). It also demonstrates the falsification procedure itself is safe: an
+in-place mutation of a tracked source file was fully reverted, verified via a
+clean `git diff` against HEAD, with the pin re-confirmed green afterward.
+
+WHAT THIS READING DOES NOT PROVE: it says nothing about the other two
+constants beyond the fact that they were green at capture time -- reverting
+FIRESTARTER_RELEASE_URL or FIRESTARTER_RELEASE_BY_TAG_URL was not separately
+exercised in this transcript, though the same assertion shape applies to each
+and each has its own independently-named test. This transcript is a one-time
+falsification proof captured at the commit named above, not a standing
+regression guard -- the standing guard the repository runs on every commit is
+the pin module itself, `pytest tests/test_endpoint_constants.py`, which is
+committed and green.

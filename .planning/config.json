@@ -24,10 +24,9 @@
   },
   "planning": {
     "sub_repos": [
-      "firestarter",
+      "firestarter.wiki",
       "firestarter_app",
-      "firestarter_app_py32",
-      "firestarter_py32_ci"
+      "firestarter_fw"
     ]
   },
   "model_profile": "balanced",

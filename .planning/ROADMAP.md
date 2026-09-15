@@ -52,6 +52,7 @@
   **Known gaps carried, not hidden:** the evidence ceiling (accepted debt); **`leonardo` MERGE-05 flash headroom is 0 B** at `+724 B` against BASE-01, exactly the four-term allowance, and **separately the Caterina USB-bootloader cliff at 28672 B has 1042 B left and is UNGUARDED** — `board_upload.maximum_size` does not enforce it, so nothing in the build stops a future change silently overwriting the bootloader region (a split-or-trimmed-build phase was raised and deliberately deferred; it is on no roadmap); the protection-class counting ambiguity, stated rather than collapsed (Method A 664/82 vs Method B 665/81, with Phase 151's published 406/111/39 reproducing under neither — only 665/81 plus the method-invariant `no_mechanism` 405 / `not_implemented` 40 are citable); the 20 ms `t_EC` wait being an Atmel-family maximum applied to a multi-vendor 84-row bucket, with **no** native test able to prove the wall-clock wait is honoured (the stubs never stub `delay()`); and one already-published part-name misattribution (W29C020 vs W29C040) that this project's own discipline forbids editing in place. Seven todos were filed by this milestone's own work. Full detail in `.planning/MILESTONES.md` §v1.32 + [`.planning/milestones/v1.32-ROADMAP.md`](milestones/v1.32-ROADMAP.md); honesty ledger at [`152-LEDGER.md`](phases/152-outward-facing-close-operator-gated/152-LEDGER.md); erase-policy record at [`153-RECORD.md`](phases/153-write-path-erase-policy/153-RECORD.md); merge record at [`152-MERGE-RECORD.md`](phases/152-outward-facing-close-operator-gated/152-MERGE-RECORD.md).
   **Milestone-level non-claim, in this milestone's own canonical wording: no AT28C part was tested, at any point, by any phase — protocol `0x0D` stays UNVERIFIED in PROTOCOL-LEDGER exactly as it stood at the open, and every write-path change v1.32 shipped is software-proven and unvalidated on silicon.**
 
+- ◆ **v1.38 Repository Rename** — Phases 189–193 (**ACTIVATED 2026-09-13**; infrastructure only — no firmware source, no protocol, no dual-repo behavioural lockstep, no bench leg). Promotes Backlog **999.9** (gh#2), the highest-blast-radius item in the 2026-07-27 import and a hazard **v1.35 accepted rather than solved**. Renames `firestarter` → `firestarter_fw` and **stops there**: claiming `henols/firestarter` for the meta repo is the one destructive act in 999.9 — it is what deletes the firmware repo's redirect — and it is deferred to [`seeds/SEED-claim-firestarter-slug.md`](seeds/SEED-claim-firestarter-slug.md) behind an *adoption* trigger rather than a date (**D-1**). **Scoped from measurement, not estimate** (2026-09-13): the front door has **0 stars / 0 forks / 0 watchers** six weeks after v1.35 made it the documented entry point, against **75** on the two components; `pip install firestarter` resolves to **2.0.7**, so `origin/main` — **948 commits** behind `beta` — is the branch that reaches users, and 999.9's own clean-environment validation would have exercised it while only `beta` got fixed (**D-3**, and the sole reason the STABLE strand exists); the three hardcoded endpoints are consumed **only** by `firmware.py`, so a stranded CLI loses `fw` alone and keeps read/write/verify/erase/`dev test`; **no workflow in any of the three repos hardcodes a repo slug**, making 999.9's "CI/release workflows" clause a no-op; and **672 of 778** firmware-slug references sit in `.planning/milestones/`, historical-by-intent and deliberately not swept (**D-5**). **Standing rule established here:** the meta repo must never publish a GitHub Release — it has **0** today, which is what keeps a post-claim failure a clean 404 instead of `_compare_versions` parsing `v1.36` as PEP 440 `1.36`, judging `3.0.0b29` newer, and reporting firmware current forever (**D-4**). Full analysis: [`notes/999.9-repo-rename-impact-analysis.md`](notes/999.9-repo-rename-impact-analysis.md).
 - ✅ **v1.37 Operator Safety, Answered Reports & Claim Hygiene** — Phases 182–188 (**CLOSED 2026-09-13** — 7 phases, 49 plans, 35/35 requirements; merged to `beta` in all three repos, **not tagged** — stable release stays operator-gated; host-first, firmware touched only at the edges — one `.md`, one baseline JSON plus fixtures, and at most one generated message id). Stops the project withholding what it already knows: a JP5 destructive-operation gate for the hazard that cost a user real chips ([gh#60](https://github.com/henols/firestarter_prom/issues/60)); a flash4 erase refusal that names its cause instead of teaching users to forge a chip identity with `--force` ([gh#62](https://github.com/henols/firestarter_prom/issues/62)); the replies owed on gh#23/#28/#31 since 2026-08-09; and the repository's own false claims — a deleted guard still named as live, a three-milestone-stale size baseline, a citation pointing 49 lines off, two tests asserting coverage that no longer exists, and `Catalog sync check` red on `main`. Plus the one item with an external clock: the Python floor, before 3.10 EOLs 2026-10-31. **Deliberately excluded (D-1): 999.43 R4 session reuse**, against a measured 50–80 s/run payoff — see the milestone section for why. **Closed with six stale enforcement claims (WR-01…WR-06) accepted as disclosed follow-on debt, not fixed**, and Phase 188 appended 2026-09-12 after 187 completed — inward-facing tooling hygiene, a **−21,281 net-line** subtraction. Full record: `.planning/v1.37/CLOSE-RECORD.md`.
 
 <details>
@@ -167,6 +168,308 @@ Full detail: [`.planning/milestones/v1.16-ROADMAP.md`](milestones/v1.16-ROADMAP.
 **Full phase detail:** [`.planning/milestones/v1.22-ROADMAP.md`](milestones/v1.22-ROADMAP.md) · **shipped record:** `.planning/MILESTONES.md` §v1.22 · **honesty ledger:** `.planning/phases/122-close-honesty-ledger-community-ask-release-decision/122-LEDGER.md`
 
 </details>
+
+## v1.38 — Repository Rename (ACTIVATED 2026-09-13)
+
+**Milestone goal:** Give the project a front door people can find, and a firmware repository that does not
+own the unqualified name — without breaking firmware updates for anyone already installed.
+
+**Why now.** Backlog **999.9** (gh#2) has been the highest-blast-radius item since the 2026-07-27 import,
+and v1.35 shipped the wiki front door while *accepting* that this rename would invalidate every link it
+wrote — recorded two sections below as a "known sequencing hazard — accepted at activation, not solved",
+naming phases 169, 170 and 172 as the ones needing a re-sweep. 999.13's triage note says the
+contribution-guide text "must be written *after* — or jointly with — 999.9." The hazard has been deferred
+four times; it does not get cheaper.
+
+What is new is that the premise is now **measured** rather than asserted (`gh api repos/henols/<repo>`,
+2026-09-13): `firestarter_prom` has **0 stars, 0 forks and 0 watchers** six weeks after v1.35 made it the
+documented entry point, while **75 stars** sit on the two components (`firestarter` 27, `firestarter_app`
+48). The front door is not being found. That is a discovery failure with a number on it, not a naming
+preference.
+
+**The shape of the risk, stated once so no phase re-derives it.** Both renames are individually covered by
+permanent GitHub redirects, and `firestarter_prom`'s would survive forever because nothing will ever claim
+that slug — so `SUBMIT_REPO` keeps working on already-installed CLIs indefinitely. The single destructive
+act in 999.9 is **claiming** `henols/firestarter` for the meta repository, which is what deletes the
+firmware repository's redirect. **This milestone does not perform that claim (D-1)**; it is deferred to
+[`seeds/SEED-claim-firestarter-slug.md`](seeds/SEED-claim-firestarter-slug.md) behind an *adoption*
+trigger. Everything else in 999.9 is safe to ship now, and is what ships here.
+
+**Blast radius is measured, and it is narrow.** The three hardcoded endpoints in
+`firestarter_app/firestarter/constants.py` are consumed **only** by `firmware.py` — so what a stranded CLI
+loses is the `fw` command alone. Read, write, verify, erase, blank-check and `dev test` are untouched.
+Full analysis: [`notes/999.9-repo-rename-impact-analysis.md`](notes/999.9-repo-rename-impact-analysis.md).
+
+**The finding that reshapes 999.9's own plan.** `pip install firestarter` resolves to **2.0.7** — the whole
+`3.0.0bNN` line is prerelease and invisible to a default install, and `origin/main` is that 2.0.7-era code,
+**948 commits** behind `beta`, carrying `FIRESTARTER_RELEASE_URL` but no `submit.py`. 999.9's stated
+validation ("full clean-environment install → … → update-check") therefore exercises `main`, not the branch
+being fixed: repointing `beta` alone would **pass that validation while leaving the default install
+broken**. Hence D-3, and hence the STABLE strand, which exists only because of this.
+
+**What this milestone deliberately does NOT take.** It does not claim `henols/firestarter` (D-1) — the
+deferral is the design. It does not mirror firmware releases onto the meta repository (D-2), which is what
+forecloses claiming the name immediately. It does not rename `firestarter_app`, despite 999.9's prose
+saying "all three repositories" while naming only two mappings. It does not repair the **672** archived
+firmware-slug references under `.planning/milestones/` (D-5) — those are historical-by-intent and
+repairing them destroys the evidence. And it does not eliminate stranding: nothing reaches users who never
+upgrade, and no sequencing can change that. What bounds the damage is the blast radius above, not the
+sequencing.
+
+**Two clauses of 999.9 that measurement retired.** "CI/release workflows" is a **no-op** — no workflow in
+any of the three repositories hardcodes a repo slug, and the meta repository has no `.github/workflows/` at
+all. And the `.gitmodules` fix cannot be complete: history keeps the old URL, so any pre-rename checkout
+plus `submodule update --init` resolves to the meta repository and clones the parent into its own
+`firestarter/` child. That is unfixable by construction (D-6); the deliverable is a documented workaround,
+and it matters here because this project does a great deal of firmware archaeology.
+
+**The one hard ordering constraint.** **Phase 189 runs first.** Nothing can point at `firestarter_fw` until
+the name exists — a repoint landed before the rename addresses a repository that is not there. Every other
+phase depends on 189 and on nothing else of each other, except that **Phase 193's adoption instrument is
+only meaningful after Phase 191 has published something to measure**.
+
+**Bench: none.** No phase needs a board. The firmware repository is renamed and its README repointed; no
+firmware source, no protocol, no dual-repo behavioural lockstep, no golden register traces.
+
+**Operator-gated steps, named so no phase assumes otherwise (D-7).** The GitHub rename itself (Phase 189),
+the stable cut and its PyPI publish (Phase 191), and every push. A merge to `beta` cuts a pre-release in
+both sub-repositories and publishes the host one to PyPI, so no agent performs one. This is the standing
+posture since v1.21.
+
+**Decisions settled at activation (D-1…D-7, operator, 2026-09-13) — not re-litigated by any phase.** The
+milestone stops before the claim (D-1); firmware releases stay in the firmware repository, with no
+mirroring (D-2); `main` and `beta` are separate changes and `main` is the one that reaches users (D-3); the
+meta repository must never publish a GitHub Release (D-4); the archived `.planning/milestones/` references
+are not swept (D-5); the `.gitmodules` history trap is documented, not solved (D-6); and every
+outward-facing step stays operator-gated (D-7). Full text: `.planning/REQUIREMENTS.md` § Decisions.
+
+**Phase numbering:** Continues from v1.37's Phase 188 → v1.38 starts at **Phase 189**. The vacated **150**
+slot and the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving.
+
+**Branch model:** Per standing policy (`.planning/config.json` `git.branching_strategy: milestone`,
+`git.base_branch: beta`) — forked off `beta` as `v1.38-repository-rename` in all three repositories on
+2026-09-13, closes back to `beta`, not `main`. Note that this milestone also writes to `main` in
+`firestarter_app` (URL-02, STABLE-01), which is the one deliberate exception and is protected — it must go
+through a pull request.
+
+**Key context:** Requirements `.planning/REQUIREMENTS.md` (15 v1 requirements, 5 categories, D-1…D-7). **No
+research phase was run**, and the omission is deliberate: this is an infrastructure rename inside a
+codebase whose relevant surface was measured directly against the live working trees and the live
+GitHub/PyPI APIs during the 2026-09-13 `/gsd-explore` session. Every figure in this section is cited at the
+point of use. The one genuine unknown — how to turn the deferred claim's trigger into a number — is filed
+as a phase-level question in [`research/questions.md`](research/questions.md) and is Phase 193's subject.
+
+### Phases
+
+- [x] **Phase 189: Free the Name** *(runs first — nothing can point at a repository that does not exist)* - Rename the firmware repository to `firestarter_fw`, leave `henols/firestarter` unclaimed, and make the submodule resolve the new URL without relying on the redirect. (RENAME-01, RENAME-02, RENAME-03) (completed 2026-09-13)
+- [x] **Phase 190: Endpoints That Do Not Depend on a Redirect** - Repoint the three firmware release endpoints on `beta`, derive the test fixtures from them so a future retarget cannot pass silently, and make an unreachable endpoint say so. (URL-01, URL-03, URL-04) (completed 2026-09-13)
+- [x] **Phase 191: The Branch That Reaches Users** *(outward-facing — operator-gated publish)* - Repoint the same endpoints on `main` as a separate change, cut a stable carrying it, and run 999.9's clean-environment validation against that stable rather than against a prerelease. (URL-02, STABLE-01, STABLE-02) (completed 2026-09-13)
+- [x] **Phase 192: Live References Only** - Correct every live tracked reference across the three repositories, prove the archived ones were left alone, and fix a codebase document describing a workflow that does not exist. (SWEEP-01, SWEEP-02, SWEEP-03) (completed 2026-09-14)
+- [x] **Phase 193: The Deferred Claim, Made Measurable** - Turn the seed's trigger into a number with a stated threshold, record the rule that keeps the eventual failure loud, and document the trap history cannot be fixed out of. (GATE-01, GATE-02, GATE-03) (completed 2026-09-14)
+
+## Phase Details
+
+### Phase 189: Free the Name
+
+**Goal**: `henols/firestarter_fw` is the firmware repository, `henols/firestarter` is vacant and still
+redirecting, and a clone of the meta repository resolves its submodules from the new URL rather than
+through GitHub's redirect.
+
+**Requirements**: RENAME-01, RENAME-02, RENAME-03
+
+**Success criteria**:
+
+1. `gh api repos/henols/firestarter` returns the firmware repository under its new name via redirect —
+   proving the slug is vacant, not re-occupied. If it ever resolves to a *different* repository, D-1 has
+   been violated.
+2. `.gitmodules` names `firestarter_fw` on both `beta` and `main`, and `git submodule sync --recursive` has
+   been run, so an existing clone resolves the new URL with no redirect in the path.
+3. A clone made fresh from the milestone tip initialises both submodules successfully — demonstrated by
+   running it, not by reading the file.
+4. The firmware repository's own README and release links address the new name.
+
+**Depends on:** — (first phase; every other phase depends on this one)
+
+**Plans:** 4/4 plans complete
+
+- **Wave 1** — `189-01` halt at the operator-performed GitHub rename (D-11), then assert it landed on
+  both `.id` and `.full_name` (D-12). Blocking-human gate; `autonomous: false`.
+- **Wave 2** *(blocked on Wave 1 completion)* — `189-02` **tracer**: repoint the submodule URL,
+  `git submodule sync --recursive`, and demonstrate a fresh clone resolving `firestarter_fw` by running
+  one. Covers all three D-03 observables.
+- **Wave 3** *(blocked on Wave 2 completion)* — `189-03` the firmware repository's own two slug
+  references, the sweep proving cleanliness, then the gitlink advance last (D-05 ordering); `189-04` the
+  same one-line change on meta `main` through the only route protection allows (D-07), plus the
+  branch-disposition record (D-08). `189-04` is `autonomous: false`.
+
+> **Operator-gated:** the GitHub rename is performed by the operator (D-7). Every other criterion here is
+> agent-executable once the rename has landed.
+
+### Phase 190: Endpoints That Do Not Depend on a Redirect
+
+**Goal**: On `beta`, nothing in the host application reaches the firmware repository through a redirect,
+and a broken endpoint is distinguishable in the output from an up-to-date firmware.
+
+**Requirements**: URL-01, URL-03, URL-04
+
+**Success criteria**:
+
+1. All three `FIRESTARTER_*_URL` constants address `henols/firestarter_fw`; no test, fixture or docstring
+   still names the bare `henols/firestarter` endpoint.
+2. The two hardcoded URLs in `tests/test_firmware_install.py` are derived from the constants, so changing a
+   constant without changing the test is impossible rather than merely discouraged — proved by a test that
+   fails when the constant is edited alone.
+3. `fw` against an unreachable or asset-less endpoint produces a message naming the failure, and that
+   message is not the same as, nor mistakable for, "already up to date".
+4. Host CI is green on the milestone branch, and `fw` resolves a real firmware release end-to-end against
+   the renamed repository.
+
+**Depends on:** Phase 189
+
+**Plans:** 4/4 plans complete
+
+- **Wave 1** — `190-01` **tracer**: repoint all three `FIRESTARTER_*_URL` constants (URL-01), split
+  `list_releases` into `None` for a failed fetch and `[]` for a genuine empty (D-10), guard the
+  `fw --list` handler before its JSON branch with a named error on stderr and exit 1 (D-09/D-11/D-12),
+  and adapt the one existing test the change breaks. Proved end to end against the live renamed
+  endpoint with a redirect-count assertion, which is the only reading that distinguishes URL-01 done
+  from URL-01 undone.
+- **Wave 2** *(both blocked on `190-01`; no file overlap with each other)* — `190-02` the URL-03 pin in
+  a new standalone module plus the derivation of both duplicated fixtures, falsified by reverting one
+  constant and capturing the red run, plus D-04's last two slug sites in the host repository;
+  `190-03` the D-06 update-path guard so a plain `fw` against an unresolvable release exits 1 with a
+  named message instead of silently exiting 0, with the no-double-emit property pinned by counting
+  error records.
+- **Wave 3** *(blocked on all three)* — `190-04` criterion 4's evidence: a committed, re-runnable live
+  fixture covering all four D-14 checks, the five `ci.yml` gate steps run verbatim on Python 3.11, the
+  boundary-aware slug sweep with its non-vacuity control, and the `firestarter_app` gitlink advance.
+
+> **No push, no PR, no bench.** D-16 and D-17 were chosen so this phase proves criterion 4 without an
+> outward-facing step; the real Actions run happens when the operator pushes at ship.
+
+### Phase 191: The Branch That Reaches Users
+
+**Goal**: The version a person gets from `pip install firestarter` addresses `firestarter_fw`, and that
+claim is verified by installing it rather than by reading the diff.
+
+**Requirements**: URL-02, STABLE-01, STABLE-02
+
+**Success criteria**:
+
+1. `origin/main` carries the three repointed constants, landed through a pull request, since `main` is
+   protected with `current_user_can_bypass: never`.
+2. A stable release cut from `main` is published to PyPI, and `pip install firestarter` in a clean
+   environment yields a version whose `FIRESTARTER_RELEASE_URL` names `firestarter_fw`.
+3. 999.9's full validation — install → query → locate release → download asset → update-check — is run
+   against **that stable**, and the phase record states the version it was run against. Running it against
+   a `3.0.0bNN` prerelease does not satisfy this criterion.
+4. The phase record states plainly what this does **not** achieve: users who never upgrade remain
+   unreachable, and the eventual claim will break `fw` for them.
+
+**Depends on:** Phase 190 (the `beta` repoint should be exercised before the same change is made on a
+948-commit-stale branch and shipped to the default install)
+
+**Plans:** 5/5 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 191-01-PLAN.md — Tracer: write the board-free clean-install fixture and prove it red against the stable published today
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 191-02-PLAN.md — Prepare `v1.38-url-02-main` (three files, one commit, off `origin/main`) and file the two pipeline defects
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 191-03-PLAN.md — Operator gate 1: push/PR/merge, then read the merged `main` and the `release.yml` run live
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 191-04-PLAN.md — Operator gate 2: cut and publish the stable, then verify PyPI and re-run the fixture green
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 191-05-PLAN.md — Bench leg on the Leonardo, and the phase disposition record
+
+> **Outward-facing.** The stable cut and the PyPI publish are operator-gated (D-7) and must not run under
+> `--auto`/`--chain`, which auto-approve human-verify gates.
+
+### Phase 192: Live References Only
+
+**Goal**: Every reference a reader could follow today points at the right repository, and every reference
+that records history still says what it said.
+
+**Requirements**: SWEEP-01, SWEEP-02, SWEEP-03
+
+**Success criteria**:
+
+1. No live tracked file in any of the three repositories addresses `henols/firestarter` as the firmware
+   repository — swept with `/usr/bin/grep`, not PATH `grep`, which is ugrep here and honours `.gitignore`.
+2. `git diff --stat -- .planning/milestones/` over the milestone's whole range is **empty**. D-5 is proved,
+   not asserted.
+3. `.planning/codebase/STACK.md` no longer describes a catalog-sync workflow checking out the sub-repos via
+   `actions/checkout` — no such workflow exists, and the meta repository has no workflows at all.
+4. The four other `.planning/codebase/` documents (`STRUCTURE.md`, `INTEGRATIONS.md`, `ARCHITECTURE.md`,
+   `TESTING.md`) agree with the renamed reality.
+
+**Depends on:** Phase 189
+
+**Plans:** 5/5 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 192-01-PLAN.md — Tracer: repoint one live reference end-to-end, then the 13 runnable-artefact sites and the D-01 enumeration
+- [x] 192-02-PLAN.md — Capture the preserved history, then remap `STACK.md`, `INTEGRATIONS.md`, `ARCHITECTURE.md` and `STRUCTURE.md`
+- [x] 192-04-PLAN.md — Amend SWEEP-03 to all seven documents, and re-verify both sub-repositories with controls
+
+**Wave 2** *(blocked on 192-02)*
+
+- [x] 192-03-PLAN.md — Remap `CONVENTIONS.md`, `TESTING.md` and `CONCERNS.md`, then gate all seven documents
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 192-05-PLAN.md — Prove `.planning/milestones/` untouched over a recomputed merge-base range, and write the disposition record
+
+### Phase 193: The Deferred Claim, Made Measurable
+
+**Goal**: The seed that carries the destructive act has a trigger someone can evaluate, and the two things
+that make the eventual failure survivable are written down where the person doing it will meet them.
+
+**Requirements**: GATE-01, GATE-02, GATE-03
+
+**Success criteria**:
+
+1. An instrument reports per-version download share for the `firestarter` PyPI package, and the seed's
+   trigger names a threshold and an observation window rather than "once adoption has moved".
+2. That instrument's record states what it cannot see: installed base is not observable, download share is
+   a proxy, and the residual — users who never upgrade — cannot be driven to zero by any threshold.
+3. The no-Releases-on-the-meta-repo rule is recorded with its mechanism, not just its instruction: a
+   `v1.36` tag parses as PEP 440 `1.36`, so `3.0.0b29 >= 1.36` reads true and `fw` reports firmware current
+   forever. A reader must be able to see *why* the rule exists without re-deriving it.
+4. The `.gitmodules` history trap carries a workaround demonstrated for both an existing clone and a fresh
+   clone at a pre-rename ref.
+
+**Depends on:** Phase 191 (the adoption instrument has nothing to measure until a stable carrying the new
+URL exists)
+
+**Plans:** 5/5 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 193-01-PLAN.md — Tracer: the adoption instrument built, run live against the ClickHouse playground, and its three unmeasured paths proven (SUMMARY committed)
+- [x] 193-03-PLAN.md — Both `.gitmodules` workarounds executed at the published pre-rename ref, plus the `submodule sync` hazard and its repair (SUMMARY committed)
+
+**Wave 2** *(193-02 blocked on 193-01; 193-04 blocked on 193-03)*
+
+- [x] 193-02-PLAN.md — The seed's trigger becomes a threshold with a window, and the frontmatter is proved to still parse
+- [x] 193-04-PLAN.md — The `.gitmodules` archaeology note: both workarounds as ordered procedures, the hazard, the banked transcripts and the honest limits (SUMMARY committed)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 193-05-PLAN.md — The no-Releases rule and the archaeology pointer into `CLAUDE.md`, and the phase disposition record (SUMMARY committed)
 
 ## v1.37 — Operator Safety, Answered Reports & Claim Hygiene (CLOSED 2026-09-13 — 35/35 requirements; merged to `beta` in all three repos, NOT tagged by operator decision)
 

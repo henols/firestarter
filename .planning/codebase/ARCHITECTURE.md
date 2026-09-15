@@ -1,17 +1,17 @@
 ---
-last_mapped_commit: 3e2f7d89
-last_mapped_at: 2026-08-26T20:42:40.949Z
+last_mapped_commit: b1311abd
+last_mapped_at: 2026-09-14T04:59:59.314Z
 mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUDE.md
 ---
 # Architecture
 
-**Analysis Date:** 2026-05-08 (submodule sections) / 2026-08-26 (meta-repo sections)
+**Analysis Date:** 2026-05-08 (submodule sections) / 2026-09-14 (meta-repo sections)
 
-> **Scope note.** The 2026-08-26 remap was scoped to the meta-repo's own tracked
-> infrastructure (`.claude`, `.devcontainer`, `.github`, `.vscode`, `.gitignore`,
+> **Scope note.** The 2026-08-26 and 2026-09-14 remaps were scoped to the meta-repo's own
+> tracked infrastructure (`.claude`, `.devcontainer`, `.github`, `.vscode`, `.gitignore`,
 > `.gitmodules`, `CLAUDE.md`). Sections describing the two submodules
-> (`firestarter/`, `firestarter_app/`) date from 2026-05-08 and were not re-verified;
-> they are marked `[unverified in 2026-08-26 scoped remap]`.
+> (`firestarter_fw/`, `firestarter_app/`) date from 2026-05-08 and were not re-verified;
+> they are marked `[unverified in 2026-08-26 and 2026-09-14 scoped remaps]`.
 
 ## Pattern Overview
 
@@ -19,7 +19,7 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 
 The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a monorepo. The meta-repo itself tracks only planning and agent-tooling artifacts; both code sub-projects are gitlinks pointing at independent GitHub repos:
 1. `firestarter_app/` - Python host-side CLI application (pip package)
-2. `firestarter/` - Arduino C++ firmware for the RURP shield (PlatformIO project)
+2. `firestarter_fw/` - Arduino C++ firmware for the RURP shield (PlatformIO project)
 
 **Key Characteristics:**
 - Singleton pattern for shared services (EpromDatabase, ConfigManager)
@@ -30,7 +30,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 
 ## Layers
 
-*[unverified in 2026-08-26 scoped remap — submodule internals, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule internals, out of scope]*
 
 **CLI / Entry Point Layer:**
 - Purpose: Argument parsing, user input validation, command routing, logging configuration
@@ -57,7 +57,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 - Contains:
   - `EpromDatabase` (`database.py`) - singleton, loads/merges JSON databases, translates pinouts to RURP bus config
   - `ConfigManager` (`config.py`) - singleton, persists app config to `~/.firestarter/config.json`
-- Depends on: JSON data files in `firestarter/data/`, `~/.firestarter/` user overrides
+- Depends on: JSON data files in `firestarter_fw/data/`, `~/.firestarter/` user overrides
 - Used by: All manager classes and CLI layer
 
 **Communication Layer:**
@@ -69,14 +69,14 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 
 **Firmware Layer (Embedded C++):**
 - Purpose: Direct hardware control of the RURP shield; processes JSON commands and drives address/data bus
-- Location: `firestarter/src/`
+- Location: `firestarter_fw/src/`
 - Contains: `firestarter.cpp` (main loop + state machine), `eprom_operations.cpp`, `hardware_operations.cpp`, `json_parser.c`, board-specific HAL in `src/boards/`, device handlers in `src/proms/`
 - Depends on: Arduino framework, PlatformIO build system
 - Used by: Python host via serial port
 
 ## Data Flow
 
-*[unverified in 2026-08-26 scoped remap — submodule internals, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule internals, out of scope]*
 
 **EPROM Write Operation:**
 
@@ -115,7 +115,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 
 ## Key Abstractions
 
-*[unverified in 2026-08-26 scoped remap — submodule internals, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule internals, out of scope]*
 
 **EpromOperator (context manager + state machine):**
 - Purpose: Encapsulates the full lifecycle of a hardware operation (connect, run state machine, disconnect)
@@ -138,12 +138,12 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 
 **firestarter_handle_t (Firmware central state):**
 - Purpose: Central state struct holding all operation context on the firmware side
-- Examples: `firestarter/include/firestarter.h`
+- Examples: `firestarter_fw/include/firestarter.h`
 - Pattern: Struct with function pointers for device-specific operations (polymorphic behavior without C++ vtables in C context)
 
 ## Entry Points
 
-*[unverified in 2026-08-26 scoped remap — submodule internals, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule internals, out of scope]*
 
 **Python CLI:**
 - Location: `firestarter_app/firestarter/main.py` — `main()` function
@@ -151,13 +151,13 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 - Responsibilities: Argument parsing, logging setup, service instantiation, command dispatch
 
 **Arduino Firmware Main Loop:**
-- Location: `firestarter/src/firestarter.cpp`
+- Location: `firestarter_fw/src/firestarter.cpp`
 - Triggers: Arduino `setup()` / `loop()` framework calls
 - Responsibilities: JSON command parsing, state machine dispatch, timeout management, serial I/O
 
 ## Error Handling
 
-*[unverified in 2026-08-26 scoped remap — submodule internals, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule internals, out of scope]*
 
 **Strategy:** Layered exception hierarchy in Python; error prefix responses from firmware
 
@@ -171,7 +171,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 
 ## Cross-Cutting Concerns
 
-*[unverified in 2026-08-26 scoped remap — submodule internals, out of scope]*
+*[unverified in 2026-08-26 and 2026-09-14 scoped remaps — submodule internals, out of scope]*
 
 **Logging:** Python standard `logging` module used throughout; custom `SingleLineStatusHandler` in `logging_utils.py` supports in-place status line updates (`status='start'`/`'end'` extras) for connection progress; verbose mode adds module/line info; `tqdm` progress bars used for data transfer with `logging_redirect_tqdm` integration
 
@@ -197,15 +197,15 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 │              Human operator (terminal / IDE)                 │
 ├─────────────────────────────────────────────────────────────┤
 │              Slash commands (thin dispatch shells)           │
-│   `.claude/commands/gsd-*.md`  (69 files)                    │
+│   `.claude/commands/gsd-*.md`  (72 files)                    │
 └────────────────────────┬────────────────────────────────────┘
                          │  `requires:` + frontmatter routing
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
 │        Orchestration specs (the actual workflow logic)       │
-│   `.claude/gsd-core/workflows/*.md`      (110 files)         │
-│   + `.claude/gsd-core/references/*.md`   (94, lazy-loaded)   │
-│   + `.claude/gsd-core/templates/`        (46 artifacts)      │
+│   `.claude/gsd-core/workflows/*.md`      (89 files)          │
+│   + `.claude/gsd-core/references/*.md`   (112, lazy-loaded)   │
+│   + `.claude/gsd-core/templates/`        (34 artifacts)       │
 │   + `.claude/gsd-core/contexts/`         (dev/review/research)│
 └──────────┬──────────────────────────────┬───────────────────┘
            │ Agent/Task delegation        │ shell out
@@ -213,7 +213,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 ┌────────────────────────────┐  ┌────────────────────────────┐
 │ Subagents (fresh context)  │  │ State CLI                  │
 │ `.claude/agents/gsd-*.md`  │  │ `.claude/gsd-core/bin/`    │
-│ (34: planner, executor,    │  │   `gsd-tools.cjs` (2971 ln)│
+│ (35: planner, executor,    │  │   `gsd-tools.cjs` (5070 ln)│
 │  verifier, mapper, …)      │  │   + `bin/lib/*.cjs`        │
 └────────────┬───────────────┘  └────────────┬───────────────┘
              │ write artifacts               │ read/write state
@@ -237,18 +237,17 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 | Submodule declaration | Pins the two code repos as gitlinks | `.gitmodules` |
 | Tracking policy | Excludes all of `.claude/` except hand-authored skills; excludes generated `platformio.ini`, graph payloads, worktrees, bench artifacts | `.gitignore` |
 | Agent onboarding brief | Repo layout, dev commands, cross-repo sync invariants | `CLAUDE.md` |
-| Slash commands | Entry points; frontmatter declares `allowed-tools`, `argument-hint`, `requires` | `.claude/commands/gsd-map-codebase.md` (and 68 siblings) |
+| Slash commands | Entry points; frontmatter declares `allowed-tools`, `argument-hint`, `requires` | `.claude/commands/gsd-map-codebase.md` (and 71 siblings) |
 | Workflow specs | Step-by-step orchestration each command executes | `.claude/gsd-core/workflows/map-codebase.md` |
 | Subagent definitions | Role prompt + output contract for each delegated worker | `.claude/agents/gsd-codebase-mapper.md` |
 | Project skills | Hand-authored domain tooling (the only tracked part of `.claude/`) | `.claude/skills/devtest-triage/SKILL.md`, `.claude/skills/devtest-rootcause/SKILL.md` |
 | State/query CLI | 40+ subcommands over `.planning/` (state, phase, roadmap, requirements, commit, validate…) | `.claude/gsd-core/bin/gsd-tools.cjs` |
-| Hooks | Enforce invariants at tool-call boundaries | `.claude/hooks/` (18 hooks + `lib/`, `managed-hooks-registry.cjs`) |
+| Hooks | Enforce invariants at tool-call boundaries | `.claude/hooks/` (30 hooks + `lib/`, `managed-hooks-registry.cjs`) |
 | Changeset tooling | Release-note authoring/linting/rendering | `.claude/scripts/changeset/cli.cjs` |
 | Install bookkeeping | Which GSD files are managed, at which version | `.claude/gsd-file-manifest.json`, `.claude/gsd-install-state.json`, `.claude/gsd-core/VERSION` |
 | Permission/hook config | Allowlists, hook wiring, plugin enablement | `.claude/settings.json`, `.claude/settings.local.json` |
 | Dev environment | Container image, mounts, features, post-create provisioning | `.devcontainer/devcontainer.json`, `.devcontainer/Dockerfile`, `.devcontainer/post-create.sh` |
-| PlatformIO root wrapper generator | Emits the gitignored root `platformio.ini` mapping IDE paths into `firestarter/` | `.devcontainer/gen-platformio-ini.py` |
-| CI | Cross-sub-repo catalog authority assertion | `.github/workflows/catalog-sync-check.yml` |
+| PlatformIO root wrapper generator | Emits the gitignored root `platformio.ini` mapping IDE paths into `firestarter_fw/` | `.devcontainer/gen-platformio-ini.py` |
 | Editor/debug config | PlatformIO IntelliSense + debug launch targets | `.vscode/c_cpp_properties.json`, `.vscode/launch.json` |
 
 ## Pattern Overview
@@ -262,7 +261,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 - **Deterministic operations are shelled out.** Anything that must be exact — frontmatter edits, phase lookup, commit construction, validation — goes through `gsd-tools.cjs` rather than model text generation.
 - **Guardrails as hooks, not instructions.** Invariants are enforced by process interception (`PreToolUse`), so they hold even when the model is wrong.
 - **Config-as-code for local runtime.** `.claude/` is gitignored yet reproducible: `.devcontainer/post-create.sh` idempotently regenerates the required `settings.local.json` entries on every rebuild.
-- **Two-tier settings.** `.claude/settings.json` holds the shared 95-entry permission allowlist plus `autoMode.allow`; `.claude/settings.local.json` holds machine-local hook wiring (absolute node paths), `worktree.baseRef`, and plugin enablement.
+- **Two-tier settings.** `.claude/settings.json` holds the shared 110-entry permission allowlist plus `autoMode.allow`; `.claude/settings.local.json` holds machine-local hook wiring (absolute node paths), `worktree.baseRef`, and the plugin marketplace registration.
 
 ## Layers
 
@@ -273,9 +272,9 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 - Used by: the human, via `/gsd-*`
 
 **Workflow layer:**
-- Location: `.claude/gsd-core/workflows/` (110 files; some commands have a sibling directory of split steps, e.g. `execute-phase.md` + `execute-phase/`)
+- Location: `.claude/gsd-core/workflows/` (89 files; some commands have a sibling directory of split steps, e.g. `execute-phase.md` + `execute-phase/`)
 - Contains: numbered orchestration steps, agent dispatch instructions, gate definitions
-- Depends on: `gsd-core/references/` (94 lazy-loaded deep-dive docs such as `gates.md`, `planner-antipatterns.md`, `agent-contracts.md`, `model-profile-resolution.md`), `gsd-core/templates/` (46 artifact skeletons), `gsd-core/contexts/{dev,review,research}.md`
+- Depends on: `gsd-core/references/` (112 lazy-loaded deep-dive docs such as `gates.md`, `planner-antipatterns.md`, `agent-contracts.md`, `model-profile-resolution.md`), `gsd-core/templates/` (34 artifact skeletons), `gsd-core/contexts/{dev,review,research}.md`
 - Used by: command layer
 
 **Agent layer:**
@@ -301,7 +300,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 - Not wired in this project: `gsd-cursor-*.js`, `gsd-ensure-canonical-path.js`, `gsd-check-update-worker.js`, `gsd-statusline.js`
 
 **Tooling layer:**
-- Location: `.claude/gsd-core/bin/` — `gsd-tools.cjs` (CLI entry, 2971 lines), `gsd_run`, `check-latest-version.cjs`, `verify-reapply-patches.cjs`, `bin/lib/*.cjs`, `bin/shared/`
+- Location: `.claude/gsd-core/bin/` — `gsd-tools.cjs` (CLI entry, 5070 lines), `gsd_run`, `check-latest-version.cjs`, `verify-reapply-patches.cjs`, `bin/lib/*.cjs`, `bin/shared/`
 - Contains: subcommand dispatch — `state`, `phase`, `phases`, `roadmap`, `requirements`, `milestone`, `find-phase`, `commit`, `check-commit`, `commit-to-subrepo`, `pr-subrepo`, `verify`, `verify-summary`, `verification`, `validate`, `template`, `frontmatter`, `task`, `eval`, `agent`, `agent-skills`, `skill-manifest`, `resolve-model`, `resolve-granularity`, `resolve-execution`, `config-*`, `migrate-config`, `gap-analysis`, `history-digest`, `generate-slug`, `current-timestamp`, `list-todos`, `list-seeds`, `verify-path-exists`, `project-instruction-file`
 - Note: node is not on `PATH` in the devcontainer; invoke via the absolute nvm node path (the same one the hook wiring hardcodes)
 - Sibling: `.claude/scripts/changeset/` (`cli.cjs`, `parse.cjs`, `render.cjs`, `serialize.cjs`, `lint.cjs`, `github-release-notes.cjs`, `new.cjs`), `.claude/scripts/fix-slash-commands.cjs`, `.claude/scripts/lib/allowlist-ratchet.cjs`
@@ -329,27 +328,19 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 
 1. `.devcontainer/devcontainer.json` builds `.devcontainer/Dockerfile`, binds the repo at `/workspaces` (not a nested folder, so both submodules sit top-level), runs `--privileged` with `/dev` bind-mounted for Arduino serial access
 2. Named volumes persist `~/.platformio`, `~/.config`, `~/.cache/pip`, `~/.claude`; features add GitHub CLI, Node 22, and Claude Code
-3. `postCreateCommand` runs `.devcontainer/post-create.sh`, which:
+3. `postCreateCommand` runs `.devcontainer/post-create.sh` (22 lines), which:
    - generates the root `platformio.ini` via `gen-platformio-ini.py`
    - `pip install -e /workspaces/firestarter_app`
-   - `pio pkg install` inside `firestarter/`
+   - `pio pkg install` inside `firestarter_fw/`
    - `graphify install` (writes into the `~/.claude` volume, which only exists at runtime)
-   - (removed 2026-08-26, commit `3e2f7d89`: three further steps provisioned the Discord state dir, force-wrote `enabledPlugins`/`extraKnownMarketplaces`, and repointed the plugin's `.mcp.json` at `discord-singleton.sh`. `post-create.sh` is now 19 lines, down from 91.)
-
-### CI: catalog authority
-
-`.github/workflows/catalog-sync-check.yml` — triggers on `push`/`pull_request` to `main` limited to `tools/catalog/**` or the workflow file itself, plus `workflow_dispatch`. Single job `sync-check` on `ubuntu-latest`, steps in sequence (no parallel jobs, no matrix):
-1. Check out the meta-repo at `meta/` — deliberately **without** `submodules: recursive`
-2. Resolve the sub-repo ref: same branch name as the meta ref under test if it exists on the remote, else `beta` (never `main`, which lags `beta`)
-3. Check out `henols/firestarter` and `henols/firestarter_app` at that ref
-4. Assert the two vendored `tools/catalog/messages.toml` copies are byte-identical to each other
-5. Assert both match the meta-repo's authoritative `tools/catalog/messages.toml`
+   - installs GSD project-locally, pinned to a fixed version, via `npx -y --package=@opengsd/gsd-core@1.13.0 -- gsd-core --claude --local`
+   - (steps that provisioned the Discord state dir, force-wrote `enabledPlugins`/`extraKnownMarketplaces`, and repointed the plugin's `.mcp.json` at `discord-singleton.sh` were removed 2026-08-26, commit `3e2f7d89`)
 
 There is **no** build, test, or release workflow in this repo — firmware and host-app CI live in the submodules.
 
 **State management:**
 - Durable workflow state is files under `.planning/`; nothing is held in memory across sessions
-- `.claude/gsd-install-state.json` (`schemaVersion: 1`, 4 applied migrations) and `.claude/gsd-file-manifest.json` (`version: 1.6.1`, `mode: full`, 536 managed files) track the GSD install; `.claude/gsd-core/VERSION` is `1.6.1`; `.claude/.gsd-profile` is `full`
+- `.claude/gsd-install-state.json` (`schemaVersion: 1`, 5 applied migrations) and `.claude/gsd-file-manifest.json` (`version: 1.13.0`, `mode: full`, 759 managed files) track the GSD install; `.claude/gsd-core/VERSION` is `1.13.0`; `.claude/.gsd-profile` is `full`
 - `.claude/gsd-migration-journal/` holds one JSON record per applied migration
 - `.claude/worktrees/` is the (currently empty) parallel-worktree area; `settings.local.json` sets `worktree.baseRef: head`
 
@@ -387,24 +378,21 @@ There is **no** build, test, or release workflow in this repo — firmware and h
 
 ## Entry Points
 
-**Slash commands:** `.claude/commands/gsd-*.md` — 69 operator-facing entry points.
+**Slash commands:** `.claude/commands/gsd-*.md` — 72 operator-facing entry points.
 
 **GSD CLI:** `.claude/gsd-core/bin/gsd-tools.cjs` — invoked from workflows/hooks with an absolute node path.
 
 **Container provisioning:** `.devcontainer/post-create.sh`, via `postCreateCommand`.
 
-**CI:** `.github/workflows/catalog-sync-check.yml`.
-
-**Firmware debug:** `.vscode/launch.json` — three `platformio-debug` configurations, all targeting `firestarter/.pio/build/uno/firestarter_uno.elf` for the `uno` env.
+**Firmware debug:** `.vscode/launch.json` — three `platformio-debug` configurations, all targeting `firestarter_fw/.pio/build/uno/firestarter_uno.elf` for the `uno` env.
 
 **Discord DM:** **REMOVED 2026-08-26** (commit `3e2f7d89`) — was the channel plugin's MCP server, launched through `.devcontainer/discord-singleton.sh`. No longer an entry point.
 
 ## Architectural Constraints
 
-- **Submodules, not subtrees.** `.gitmodules` gitlinks `firestarter` → `git@github.com:henols/firestarter.git` and `firestarter_app` → `git@github.com:henols/firestarter_app.git`. Work destined for a sub-repo must be committed *inside* it; a meta-repo commit only re-pins the gitlink.
-- **Worktrees leave submodules empty.** A fresh git worktree of the meta-repo has empty `firestarter/` and `firestarter_app/`.
-- **Cross-repo lockstep.** `tools/catalog/messages.toml` exists in all three repos; the meta copy is authoritative and CI asserts byte-identity. `CLAUDE.md` records two more manual-sync pairs: `serial_comm.py` ↔ `firestarter.cpp` (protocol) and `constants.py` ↔ `firestarter.h` (flag bits).
-- **Lockstep is per-branch.** The catalog workflow resolves sub-repo refs by matching branch name and falls back to `beta`, never `main` — `main` lags `beta` by ~224 commits in the firmware repo.
+- **Submodules, not subtrees.** `.gitmodules` gitlinks `firestarter` → `git@github.com:henols/firestarter_fw.git` (name and path both stay `firestarter`; only the remote was repointed for the v1.38 rename) and `firestarter_app` → `git@github.com:henols/firestarter_app.git`. Work destined for a sub-repo must be committed *inside* it; a meta-repo commit only re-pins the gitlink.
+- **Worktrees leave submodules empty.** A fresh git worktree of the meta-repo has empty `firestarter_fw/` and `firestarter_app/`.
+- **Manual cross-repo sync pairs.** `CLAUDE.md` records two: `serial_comm.py` ↔ `firestarter.cpp` (protocol) and `constants.py` ↔ `firestarter.h` (flag bits). Neither is CI-enforced.
 - **`.claude/` is gitignored but must stay reproducible.** Anything required for a fresh clone to work has to be regenerated by tracked code (`post-create.sh`), not left in local state.
 - **Hardware coupling.** `--privileged` plus a `/dev` bind mount are required for serial access; without them only builds work.
 - **Machine-local absolute paths leak into config.** `settings.local.json` hardcodes `/usr/local/share/nvm/versions/node/v24.15.0/bin/node`, and `.vscode/c_cpp_properties.json`, `launch.json`, `settings.json` all carry `/home/henrik/...` host paths that do not exist inside the container.
@@ -417,7 +405,7 @@ There is **no** build, test, or release workflow in this repo — firmware and h
 
 **What happens:** editing the root `platformio.ini`, or `.vscode/c_cpp_properties.json` / `launch.json`.
 **Why it's wrong:** all three carry explicit "AUTO-GENERATED — do not modify" headers; the root `platformio.ini` is additionally gitignored, so edits are silently lost on the next `post-create.sh`.
-**Do this instead:** change `firestarter/platformio.ini` and re-run `python3 .devcontainer/gen-platformio-ini.py`; regenerate the `.vscode` files from PlatformIO.
+**Do this instead:** change `firestarter_fw/platformio.ini` and re-run `python3 .devcontainer/gen-platformio-ini.py`; regenerate the `.vscode` files from PlatformIO.
 
 ### Vendoring a marketplace skill
 
@@ -431,18 +419,6 @@ There is **no** build, test, or release workflow in this repo — firmware and h
 **Why it's wrong:** the skill then breaks in any checkout where the submodule is uninitialized (worktrees, CI).
 **Do this instead:** copy the script into the skill directory and add an AST drift check, as `devtest-triage/scripts/devtest_issues.py` does.
 
-### Committing a nested clone as a gitlink
-
-**What happens:** a working clone left inside the tree gets committed as a submodule with no `.gitmodules` entry.
-**Why it's wrong:** it happened at `.planning/v1.7/upstream-rurp` in commit `c502fc39` and broke `actions/checkout` with `fatal: No url found for submodule path`. `.gitignore` now carries **both** the trailing-slash and bare forms because only the bare form matches a gitlink.
-**Do this instead:** ignore new nested clones in both forms; keep `submodules: recursive` off jobs that don't need them (as `catalog-sync-check.yml` documents).
-
-### Adding a broad `submodules: recursive` checkout
-
-**What happens:** a CI job fetches both sub-repos it does not read.
-**Why it's wrong:** duplicate work, and it re-arms the orphaned-gitlink failure class above.
-**Do this instead:** check out only what the job reads, at an explicitly resolved ref — see `.github/workflows/catalog-sync-check.yml`.
-
 ## Error Handling
 
 **Strategy:** fail-closed at the tool boundary; the model is not trusted to self-police.
@@ -452,7 +428,7 @@ There is **no** build, test, or release workflow in this repo — firmware and h
 - `gsd-read-injection-scanner.js` scans read content post-hoc for prompt injection
 - `.devcontainer/post-create.sh` runs `set -e`, but its two embedded Python blocks catch and log rather than abort (`FileNotFoundError`/`ValueError` on a missing `settings.local.json`; a bare `except` around the plugin `.mcp.json` patch, which no-ops when the plugin isn't installed yet)
 - `discord-singleton.sh` (deleted 2026-08-26) used `set -uo pipefail` (deliberately not `-e`) and exits **0** on lock failure — a non-zero exit would surface as an MCP error in every worker
-- CI has no soft failures: every assertion is `cmp`/`diff`, which aborts the job
+- There is no CI in this repo, so no in-repo error-handling pattern to describe there — firmware and host-app CI live in the submodules
 
 ## Cross-Cutting Concerns
 
@@ -466,4 +442,4 @@ There is **no** build, test, or release workflow in this repo — firmware and h
 
 ---
 
-*Meta-repo architecture analysis: 2026-08-26 (scoped remap)*
+*Meta-repo architecture analysis: 2026-09-14 (scoped remap)*

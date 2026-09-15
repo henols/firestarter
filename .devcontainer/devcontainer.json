@@ -5,7 +5,7 @@
   },
 
   // Mount the repo root directly at /workspaces (not /workspaces/firestarter_prom)
-  // so firestarter/ and firestarter_app/ are top-level in the container.
+  // so firestarter_fw/ and firestarter_app/ are top-level in the container.
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces,type=bind,consistency=cached",
 
   // Privileged + /dev mount needed for serial port access to Arduino hardware.
@@ -56,9 +56,9 @@
     "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
   },
 
-  // Opens the repo root so all of firestarter_prom is visible at the top level (firestarter/,
+  // Opens the repo root so all of firestarter_prom is visible at the top level (firestarter_fw/,
   // firestarter_app/, .planning/, etc). PlatformIO IDE finds platformio.ini at this root
-  // (the wrapper that maps into firestarter/).
+  // (the wrapper that maps into firestarter_fw/).
   "workspaceFolder": "/workspaces",
 
   "postCreateCommand": "bash /workspaces/.devcontainer/post-create.sh"

@@ -7,7 +7,6 @@ source: .planning/phases/188-the-tools-directory/188-REVIEW.md (WR-01..WR-06), a
 files:
   - firestarter_app/tools/parse_devtest_issue.py:215 (WR-01)
   - firestarter_app/tests/test_sdp_db_invariant.py:165 (WR-02)
-  - firestarter_app/tests/test_numeric_schema_source_scan.py:215,235 (WR-03)
   - firestarter_app/tests/test_build_db_inclusion.py:11 (WR-04)
   - firestarter/.github/workflows/beta-build.yml:107 (WR-05)
   - firestarter_app/CLAUDE.md:127 (WR-06)
@@ -33,7 +32,7 @@ All six were re-measured directly in the tree on 2026-09-13 and confirmed still 
 |----|----------|-----------------|
 | WR-01 | `firestarter_app/tools/parse_devtest_issue.py:215` | "No claim gate scans this file today (P-5); that test is the only enforcement." Both named enforcers are gone: `check_diagnostic_report_claims.py` is deleted (0 tracked files) and the only surviving mention of `test_parser_marker_strings_trip_no_forbidden_claim_pattern` anywhere in the repo is this comment itself. The claim-safety property now has **zero** enforcement, not one test. |
 | WR-02 | `firestarter_app/tests/test_sdp_db_invariant.py:165` | Says widening of the SDP allow-set is what "`tools/check_sdp_capability_invariants.py` already gates elsewhere." That checker is deleted (0 tracked files; 0 files match `tools/check_*.py`). The narrowing direction is still gated by this test; the widening direction is not gated at all. |
-| WR-03 | `firestarter_app/tests/test_numeric_schema_source_scan.py:215,235` | The non-vacuity test's docstring and its assertion message both still say "tests 1 and 2". The module docstring at line 43 was correctly repaired to "test 1" — these two were missed in the same sweep, so the file now contradicts itself. |
+| WR-03 | ~~`firestarter_app/tests/test_numeric_schema_source_scan.py:215,235`~~ **CLOSED 2026-09-14** — module deleted by the source-introspection sweep (see `.planning/notes/test-suite-source-introspection-removal.md`); the self-contradicting docstring no longer exists. | The non-vacuity test's docstring and its assertion message both still say "tests 1 and 2". The module docstring at line 43 was correctly repaired to "test 1" — these two were missed in the same sweep, so the file now contradicts itself. |
 | WR-04 | `firestarter_app/tests/test_build_db_inclusion.py:11` | "the SC#3 dispatch-safety invariant enforced by Plan 04." The enforcing test was deleted with the `check_*` family; the invariant is unenforced. |
 | WR-05 | `firestarter/.github/workflows/beta-build.yml:107` | "Same rationale as the vector gates above" — those vector-gate steps were deleted by 188-06, so the comment's antecedent no longer exists in the file. The step it annotates (`native_nodevtools`) is still correct and must stay; only the back-reference is stale. |
 | WR-06 | `firestarter_app/CLAUDE.md:127` | The "Tooling gate (v1.8)" line still lists `mypy` among the checks "all enforced by `.github/workflows/ci.yml` on every PR". 188-04 deleted that CI step under D-02. `ruff check`, `ruff format --check` and `pytest --cov-fail-under=70` remain true; only `mypy` is false. |

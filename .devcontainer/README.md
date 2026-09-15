@@ -55,7 +55,7 @@ firestarter fw              # which firmware is on the board
 
 ## If something is missing
 
-**The `firestarter/` or `firestarter_app/` folder is empty** — the submodules
+**The `firestarter_fw/` or `firestarter_app/` folder is empty** — the submodules
 did not check out:
 
 ```bash

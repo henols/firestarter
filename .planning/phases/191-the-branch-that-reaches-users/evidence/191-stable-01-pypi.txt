@@ -1,0 +1,162 @@
+# Captured 2026-09-13. STABLE-01 live verification, taken AFTER the operator's
+# reported tag/release/dispatch — read directly from the GitHub API and the
+# PyPI JSON API, never from the operator's report and never from the local
+# clone (per this plan's whole discipline and 189-04's precedent).
+#
+# The operator reported (verbatim):
+#   git tag -a 2.0.9 1d526ea30f0a00c23ad8198b4679ee9459f31a88 -m "2.0.9"
+#   git push origin 2.0.9
+#   gh release create 2.0.9 --repo henols/firestarter_app \
+#     --target 1d526ea30f0a00c23ad8198b4679ee9459f31a88 \
+#     --title "2.0.9" --notes "Repoint firmware release URL to firestarter_fw (URL-02)."
+#   gh workflow run publish.yml --repo henols/firestarter_app --field tag=2.0.9
+#     -> https://github.com/henols/firestarter_app/actions/runs/34785081751
+#
+# Every line below is a fresh read, run in this session, not a copy of the above.
+
+--- 1. Tag 2.0.9 resolves to the merge commit, read via the git refs API ---
+
+$ gh api repos/henols/firestarter_app/git/refs/tags/2.0.9
+{"ref":"refs/tags/2.0.9","node_id":"REF_kwDOMFI26K9yZWZzL3RhZ3MvMi4wLjk","url":"https://api.github.com/repos/henols/firestarter_app/git/refs/tags/2.0.9","object":{"sha":"a6ccb1fffc1f333713d580e7584960b70168ea50","type":"tag","url":"https://api.github.com/repos/henols/firestarter_app/git/tags/a6ccb1fffc1f333713d580e7584960b70168ea50"}}
+
+The ref object is type "tag" (an annotated tag), sha a6ccb1ff..., which is
+the tag object itself, not the commit. Peeled to the commit it points at:
+
+$ gh api repos/henols/firestarter_app/commits/2.0.9
+{"sha": "1d526ea30f0a00c23ad8198b4679ee9459f31a88", ...}
+
+RESULT: tag 2.0.9 peels to commit 1d526ea30f0a00c23ad8198b4679ee9459f31a88 --
+exact match to the merge commit sha recorded in
+191-url-02-merged-main.txt and 191-stable-01-release-run.txt. The operator's
+report is confirmed, not assumed.
+
+--- 2. GitHub release 2.0.9 exists, targets the same commit, is published (not draft/prerelease) ---
+
+$ gh api repos/henols/firestarter_app/releases/tags/2.0.9
+tag_name:          2.0.9
+target_commitish:  1d526ea30f0a00c23ad8198b4679ee9459f31a88
+html_url:          https://github.com/henols/firestarter_app/releases/tag/2.0.9
+draft:             false
+prerelease:         false
+immutable:          false
+created_at:         2026-09-13T21:51:50Z
+published_at:       2026-09-13T21:51:53Z
+id:                 388046336
+
+RESULT: target_commitish matches the tag's peeled commit exactly. The
+release is live (published_at is set, draft is false).
+
+--- 3. publish.yml run 34785081751, polled to a terminal status ---
+
+$ gh run view 34785081751 -R henols/firestarter_app --json status,conclusion,workflowName,headBranch,event,createdAt,url,jobs
+
+First (and only) read already returned a terminal status -- no polling loop
+was needed:
+
+status:       completed
+conclusion:   success
+workflowName: Publish to PyPI.org
+headBranch:   main
+event:        workflow_dispatch
+createdAt:    2026-09-13T21:51:55Z
+url:          https://github.com/henols/firestarter_app/actions/runs/34785081751
+
+Job "pypi" conclusion: success. Steps, all conclusion success:
+  1. Set up job
+  2. Checkout
+  3. Run python3 -m pip install --upgrade build && python3 -m build
+  4. Publish package
+  7. Post Publish package
+  8. Post Checkout
+  9. Complete job
+
+NOTE (per Task 3's instruction and the plan's own discipline): this run's
+green tick is recorded here as CONTEXT, not as the verification. The
+verification is the two independent readings below (PyPI's own JSON index,
+and the clean-room fixture re-run) -- exactly because publish.yml's own
+green tick has been trusted before (implicitly, by omission) and that is
+how GitHub release 2.0.8 ended up existing while PyPI stopped at 2.0.7.
+
+--- 4. Live PyPI JSON index read, independent of the operator's report ---
+
+Capture timestamp (UTC, date -u): 2026-09-13T21:54:10Z
+
+$ curl -s --max-time 20 https://pypi.org/pypi/firestarter/json | python3 -c "
+import json,sys
+d = json.load(sys.stdin)
+print('info.version:', d['info']['version'])
+print('homepage:', d['info']['project_urls'].get('Homepage'))
+for f in d['releases'][d['info']['version']]:
+    print('file:', f['filename'], f['packagetype'], f['size'], f['upload_time_iso_8601'])
+"
+
+info.version: 2.0.9
+homepage:     https://github.com/henols/firestarter_app
+file: firestarter-2.0.9-py3-none-any.whl bdist_wheel 68905 2026-09-13T21:52:13.223615Z
+file: firestarter-2.0.9.tar.gz      sdist      1101872 2026-09-13T21:52:14.349861Z
+
+READS NEEDED: 1. The index already reported 2.0.9 on the very first read
+(taken ~2 minutes after the publish.yml run completed at 21:52:17Z) -- no
+propagation lag was observed and no re-read was required. This is recorded
+explicitly per the plan's instruction to disclose lag rather than hide it:
+here the disclosure is "zero lag observed, single clean reading."
+
+RESULT: info.version equals 2.0.9, the confirmed version from Task 1/Task 2.
+info.project_urls.Homepage still reads https://github.com/henols/firestarter_app
+(unchanged -- URL-02 repointed the firmware release constant, not the
+project's own PyPI homepage metadata, which is correct and expected). Both
+the wheel and the sdist are present under the 2.0.9 release.
+
+--- Summary ---
+
+info.version (live PyPI):        2.0.9  -- matches the confirmed version
+tag 2.0.9 peeled commit:         1d526ea30f0a00c23ad8198b4679ee9459f31a88
+release 2.0.9 target_commitish:  1d526ea30f0a00c23ad8198b4679ee9459f31a88
+merge commit (191-03 evidence):  1d526ea30f0a00c23ad8198b4679ee9459f31a88
+publish.yml run 34785081751:     completed / success (context, not the verification)
+
+All three commit-sha readings agree. The live PyPI index independently
+confirms the published version. This evidence file, together with
+191-stable-02-fixture-published.txt, is the phase's verification -- not the
+operator's report and not the publish run's own conclusion.
+
+--- Addendum: a propagation-lag finding, distinct from the JSON API reading above ---
+
+The `pypi.org/pypi/firestarter/json` JSON API (section 4 above) reported
+`info.version: 2.0.9` cleanly on its first read, ~2 minutes after the
+publish run completed. That API is backed by a different path than the
+package index `pip` itself resolves against.
+
+The FIRST attempted fixture run (EXPECT_VERSION=2.0.9, before this addendum
+was written) failed at Check 0 with `installed_version: 2.0.7` -- `pip`
+resolved the previous stable even though the JSON API and a direct
+`curl https://pypi.org/simple/firestarter/` both already listed 2.0.9. This
+is recorded as a genuine propagation-lag observation, not hidden: `pip`'s
+resolution path evidently hit a CDN edge that had not yet caught up, one
+edge among several fronting the same index that the JSON API and a fresh
+`curl` to the same simple-index URL (run moments later) already reflected.
+
+Three fixture invocations were run in total, and all three are disclosed
+here rather than only the clean one:
+
+1. First invocation: `pip` resolved `installed_version: 2.0.7` -- a
+   propagation-lag read, discarded as a fixture-level failure but recorded
+   here as the lag finding it actually is. Not saved as evidence.
+2. Second invocation, run after independently confirming
+   `curl https://pypi.org/simple/firestarter/` already listed 2.0.9: `pip`
+   now resolved `installed_version: 2.0.9` and Checks 0-3 all passed
+   (`control_redirects: 1`, `subject_redirects: 0`). This run then failed
+   Check 4 (the porcelain guard) for an unrelated, non-propagation reason:
+   this very evidence file (`191-stable-01-pypi.txt`) was on disk but not
+   yet committed at that moment, so the fixture's own guard -- which only
+   allow-lists the fixture script and its baseline transcript -- correctly
+   flagged it as an unexpected untracked file in the phase directory. Not
+   saved as evidence; this is a housekeeping-ordering artifact, not a
+   version-propagation one.
+3. Third invocation, run immediately after committing this file: passed
+   all five checks cleanly, exit 0. This is the transcript saved to
+   191-stable-02-fixture-published.txt.
+
+So the version-propagation lag itself resolved within one retry (invocation
+1 to invocation 2); the additional invocation 2-to-3 retry was needed only
+because of commit ordering, not because PyPI's index lagged further.

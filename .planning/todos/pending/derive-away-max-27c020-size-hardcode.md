@@ -6,7 +6,7 @@ resolves_phase: unassigned
 files:
   - firestarter_app/firestarter/constants.py
   - firestarter_app/tools/build_db.py
-  - firestarter_app/tests/test_revision_constants_parity.py
+  - firestarter_app/firestarter/constants.py  (test_revision_constants_parity.py DELETED 2026-09-14)
   - firestarter_app/firestarter/data/pinouts.json
 ---
 
@@ -70,8 +70,9 @@ and `origin/beta`:
 git grep -n "MAX_27C020_SIZE" origin/beta   ->   (no output)
 ```
 
-And `test_max_27c020_size_parity` (`tests/test_revision_constants_parity.py:686-710`) does not
-read the header. It is:
+And `test_max_27c020_size_parity` did not read the header. **That whole module was deleted on
+2026-09-14** by the source-introspection sweep; the analysis below is retained because the
+hardcode in `constants.py` survives it. The test was:
 
 ```python
 from firestarter.constants import MAX_27C020_SIZE

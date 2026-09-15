@@ -1,0 +1,267 @@
+HOST CI GATE STEPS — LOCAL EQUIVALENT ON PYTHON 3.11 (D-17)
+==============================================================
+capture_date: 2026-09-13T17:56:11Z
+capture_commit: meta=23d6aa5e0546abcc28ceb5bdc5b7014a20aeaedb app=560ec24523eb2f8c643c9db3dd302efecf57e2e1
+
+interpreter: /workspaces/firestarter_app/.venv311/bin/python
+Python 3.11.16
+
+The five commands below are taken VERBATIM, in order, from
+firestarter_app/.github/workflows/ci.yml's primary `ci` job (lines 56, 59,
+62, 65, 71 at the time of this reading). Nothing is paraphrased and no flag
+is added or dropped. Run from /workspaces/firestarter_app, inside the
+existing `.venv311` (Python 3.11.16, the same interpreter version `ci.yml`
+pins via `actions/setup-python@v5` with `python-version: '3.11'`).
+
+Note on `pip`: this venv was created by `uv venv` without a `pip` console
+script pre-installed. `python -m ensurepip --upgrade` bootstrapped pip 24.0
+into it (a one-time, local-only setup step, not one of the five gate
+steps), giving `.venv311/bin/pip3`, invoked below wherever ci.yml says
+`pip`. This is the same effect as `pip` on PATH; no package resolution
+differs.
+
+The app repository was committed clean (`git status --porcelain` empty)
+before step 4 ran, because `tests/test_flash_path_record_sync.py` asserts
+whole-repository porcelain and goes red for unrelated reasons on a dirty
+tree (RESEARCH Pitfall 8).
+
+--------------------------------------------------------------------------
+Step 1 — Install package + test deps
+--------------------------------------------------------------------------
+command: pip install -e .[test]
+(ci.yml step name: "Install package + test deps"; run here as
+`.venv311/bin/pip3 install -e '.[test]'`)
+
+Requirement already satisfied: pathspec>=1.0.0 in ./.venv311/lib/python3.11/site-packages (from mypy<3,>=2.1.0->firestarter==3.0.0b42) (1.1.1)
+Requirement already satisfied: librt>=0.13.0 in ./.venv311/lib/python3.11/site-packages (from mypy<3,>=2.1.0->firestarter==3.0.0b42) (0.15.0)
+Requirement already satisfied: ast-serialize<1.0.0,>=0.6.0 in ./.venv311/lib/python3.11/site-packages (from mypy<3,>=2.1.0->firestarter==3.0.0b42) (0.9.0)
+Requirement already satisfied: iniconfig>=1.0.1 in ./.venv311/lib/python3.11/site-packages (from pytest>=8.0->firestarter==3.0.0b42) (2.3.0)
+Requirement already satisfied: pluggy<2,>=1.5 in ./.venv311/lib/python3.11/site-packages (from pytest>=8.0->firestarter==3.0.0b42) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in ./.venv311/lib/python3.11/site-packages (from pytest>=8.0->firestarter==3.0.0b42) (2.21.0)
+Requirement already satisfied: coverage>=7.10.6 in ./.venv311/lib/python3.11/site-packages (from coverage[toml]>=7.10.6->pytest-cov>=7.1.0->firestarter==3.0.0b42) (7.16.0)
+Requirement already satisfied: charset_normalizer<4,>=2 in ./.venv311/lib/python3.11/site-packages (from requests>=2.20->firestarter==3.0.0b42) (3.5.1)
+Requirement already satisfied: idna<4,>=2.5 in ./.venv311/lib/python3.11/site-packages (from requests>=2.20->firestarter==3.0.0b42) (3.19)
+Requirement already satisfied: urllib3<3,>=1.26 in ./.venv311/lib/python3.11/site-packages (from requests>=2.20->firestarter==3.0.0b42) (2.7.0)
+Requirement already satisfied: certifi>=2023.5.7 in ./.venv311/lib/python3.11/site-packages (from requests>=2.20->firestarter==3.0.0b42) (2026.7.22)
+Requirement already satisfied: markdown-it-py>=2.2.0 in ./.venv311/lib/python3.11/site-packages (from rich>=14.0->firestarter==3.0.0b42) (4.2.0)
+Requirement already satisfied: mdurl~=0.1 in ./.venv311/lib/python3.11/site-packages (from markdown-it-py>=2.2.0->rich>=14.0->firestarter==3.0.0b42) (0.1.2)
+Checking if build backend supports build_editable: started
+Checking if build backend supports build_editable: finished with status 'done'
+Building wheels for collected packages: firestarter
+  Building editable for firestarter (pyproject.toml): started
+  Building editable for firestarter (pyproject.toml): finished with status 'done'
+  Created wheel for firestarter: filename=firestarter-3.0.0b42-0.editable-py3-none-any.whl size=6125 sha256=7b802b898614d02b5f388a906226efd44d4e28708d6e2262fad0fa83d74ae2ec
+  Stored in directory: /tmp/pip-ephem-wheel-cache-bp4p26x4/wheels/28/88/4d/413a9ce0d6e294be245f7c0491f21b7895c6b9d68dfeeba78d
+Successfully built firestarter
+Installing collected packages: firestarter
+  Attempting uninstall: firestarter
+    Found existing installation: firestarter 3.0.0b36
+    Uninstalling firestarter-3.0.0b36:
+      Successfully uninstalled firestarter-3.0.0b36
+Successfully installed firestarter-3.0.0b42
+rc: 0
+
+--------------------------------------------------------------------------
+Step 2 — ruff lint
+--------------------------------------------------------------------------
+command: ruff check firestarter/ tests/
+
+All checks passed!
+rc: 0
+
+--------------------------------------------------------------------------
+Step 3 — ruff format check
+--------------------------------------------------------------------------
+command: ruff format --check firestarter/ tests/
+
+158 files already formatted
+rc: 0
+
+--------------------------------------------------------------------------
+Step 4 — Run pytest with coverage
+--------------------------------------------------------------------------
+command: pytest tests/ --cov=firestarter --cov-report=term-missing --cov-fail-under=70
+
+........................................................................ [ 67%]
+........................................................................ [ 70%]
+........................................................................ [ 73%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 83%]
+........................................................................ [ 87%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 97%]
+.........................................................                [100%]
+=============================== warnings summary ===============================
+tests/test_click_group_gate_hook.py::test_multicommand_is_deprecated_alias_not_in_dir_but_still_reachable[MultiCommand]
+  /workspaces/firestarter_app/tests/test_click_group_gate_hook.py:161: DeprecationWarning: 'MultiCommand' is deprecated and will be removed in Click 9.0. Use 'Group' instead.
+    assert getattr(click, attr_name) is not None
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.11.16-final-0 _______________
+
+Name                                    Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------
+firestarter/__init__.py                     1      0   100%
+firestarter/address_parser.py               8      0   100%
+firestarter/channel.py                     30      1    97%   88
+firestarter/chip_resolver.py               21      1    95%   76
+firestarter/chip_test.py                  824     33    96%   570, 1324, 1358, 1416, 1443, 1489, 1494, 1527-1528, 1850-1851, 1941-1942, 2103-2106, 2275, 2563, 2916-2917, 2976-2977, 3057-3062, 3324, 3351-3352, 3492, 3532, 3569-3570, 3667
+firestarter/cli_handlers.py               755     65    91%   113, 148-149, 196, 198, 215, 219, 221, 254, 256, 302-305, 378, 405, 461, 496, 509, 759, 924-940, 1201-1208, 1213, 1215, 1236, 1249, 1253, 1321-1323, 1697-1701, 1754, 2055-2056, 2077-2078, 2096-2097, 2121-2122, 2188-2192, 2231, 2248, 2315, 2337, 2378, 2576
+firestarter/codec.py                       98      3    97%   263-267
+firestarter/config.py                      98      4    96%   246-249
+firestarter/constants.py                   53      0   100%
+firestarter/database.py                   257     77    70%   139-144, 186, 196-207, 226-227, 256, 261-264, 280, 290, 304-334, 624-625, 635-687, 691
+firestarter/diagnostic_report.py          241      1    99%   658
+firestarter/eprom_info.py                 211     73    65%   82, 123-124, 130, 134, 155-160, 167-171, 188-216, 261-265, 310-321, 326-331, 349-350, 360, 387-388, 421-460, 464
+firestarter/eprom_operations.py           895    251    72%   184, 188-189, 248, 351, 484-486, 490-497, 660-663, 681-686, 716, 719-720, 726-727, 751, 793, 809, 840, 880-881, 889-893, 917-944, 1062-1063, 1175-1176, 1193-1194, 1209-1210, 1230-1232, 1242-1244, 1293-1294, 1305, 1350, 1357-1364, 1386-1388, 1396-1407, 1456-1460, 1463-1473, 1513-1514, 1523-1524, 1561-1562, 1567, 1570, 1592, 1600-1601, 1614-1615, 1617-1619, 1636, 1662, 1665-1668, 1681-1682, 1764-1798, 1810-1828, 1838-1865, 1875-1930, 1939-1966, 2018, 2119, 2136, 2313-2345, 2367-2388, 2423-2447
+firestarter/exceptions.py                  28      0   100%
+firestarter/firmware.py                   370     66    82%   143, 160, 202, 238-241, 243, 278-280, 348-351, 374-376, 386-387, 402-406, 410-413, 459-461, 490, 510-512, 531, 548-550, 563-575, 611, 616-631, 707-713, 730-735, 902, 909-915, 919-922, 946-950, 964
+firestarter/flash4_erase_gate.py           10      0   100%
+firestarter/frame_parser.py                82      2    98%   121, 125
+firestarter/hardware.py                   203     75    63%   92-121, 131, 142-143, 178, 214-259, 273, 279, 305-314, 326-343, 372, 400, 408
+firestarter/ic_layout.py                  170     33    81%   203, 353-354, 528-529, 571-572, 657-692, 696
+firestarter/jp5_gate.py                    44      1    98%   112
+firestarter/lock_status.py                 36      1    97%   135
+firestarter/logging_utils.py               24      0   100%
+firestarter/main.py                        12      4    67%   30-37
+firestarter/messages.py                   152      0   100%
+firestarter/protection_readability.py      65      1    98%   280
+firestarter/py32_dfu.py                   463     95    79%   179, 188-189, 205, 207, 210-211, 215, 225, 238, 240-247, 292, 295-296, 303, 311, 395, 404, 409-421, 425-426, 440-500, 645, 657-673, 681, 763-764, 772, 811-812, 818, 971-972, 976-978, 984-991, 1003-1004, 1014-1015
+firestarter/sdp_capability.py              32      1    97%   183
+firestarter/sdp_honesty.py                 18      0   100%
+firestarter/serial_comm.py                419     77    82%   144-213, 222, 230-233, 459-460, 482-486, 491-492, 507-508, 523-524, 601, 621-622, 638, 640, 642, 644, 834, 866, 870-872, 963-966, 1108-1110, 1129-1164
+firestarter/submit.py                     213     16    92%   111, 207-208, 225-226, 472-473, 480-481, 483, 490, 540-545
+firestarter/transport_counters.py          26      0   100%
+firestarter/utils.py                       27      7    74%   80-94
+---------------------------------------------------------------------
+TOTAL                                    5886    888    85%
+Required test coverage of 70% reached. Total coverage: 84.91%
+--------------------------- snapshot report summary ----------------------------
+32 snapshots passed.
+2145 passed, 1 warning in 346.22s (0:05:46)
+rc: 0
+
+Comparison against the pre-phase baseline (RESEARCH, measured before Phase
+190 started): 2129 passed -> 2145 passed (+16, all from 190-01's,
+190-02's and 190-03's new test modules: test_fw_list_failure_vs_empty.py,
+test_endpoint_constants.py, test_fw_update_dead_endpoint.py, plus the
+adapted test in test_py32_pyusb_absent.py); coverage 84.74% -> 84.91%
+against the unchanged 70% floor. Headroom widened, not narrowed.
+
+--------------------------------------------------------------------------
+Step 5 — Smoke test: firestarter entry point and --help
+--------------------------------------------------------------------------
+command: pip install -e . && firestarter --help
+
+Successfully built firestarter
+Installing collected packages: firestarter
+  Attempting uninstall: firestarter
+    Found existing installation: firestarter 3.0.0b42
+    Uninstalling firestarter-3.0.0b42:
+      Successfully uninstalled firestarter-3.0.0b42
+Successfully installed firestarter-3.0.0b42
+Usage: firestarter [OPTIONS] COMMAND [ARGS]...
+
+  EPROM programmer for Arduino and Relatively-Universal-ROM-Programmer shield.
+
+Options:
+  -v, --verbose    Enable verbose mode
+  -p, --port TEXT  Serial port to use (e.g. /dev/ttyACM1). Overrides the saved
+                   port in config.json for this invocation.
+  --version        Show the version and exit.
+  --help           Show this message and exit.
+
+Commands:
+  blank   Checks if an EPROM is blank.
+  config  Handles CONFIGURATION values.
+  dev     Development and diagnostic commands for the RURP shield.
+  erase   Erase an EPROM, if supported.
+  fw      Firmware version.
+  hw      Hardware revision.
+  id      Checks an EPROM, if supported.
+  info    EPROM info.
+  list    List all EPROMs in the database.
+  read    Reads the content from an EPROM.
+  search  Search for EPROMs in the database.
+  verify  Verifies the content of an EPROM.
+  vpe     VPE voltage.
+  vpp     VPP voltage.
+  write   Writes a binary file to an EPROM.
+rc: 0
+
+--------------------------------------------------------------------------
+Local-only quality signal (NOT one of the five gate steps, NOT a CI gate)
+--------------------------------------------------------------------------
+command: mypy firestarter/ tests/
+
+Found 33 errors in 13 files (checked 160 source files)
+rc: 1
+
+mypy is wired only into the local pre-commit config (CLAUDE.md), has no
+step in ci.yml, and its `pyproject.toml` watermark (`mypy_error_watermark
+= 35`) is itself commented out — inert configuration, not an enforced
+threshold (RESEARCH Pitfall 4). This reading is recorded only to confirm
+this phase introduced no new mypy error: 33 errors in 13 files matches the
+pre-phase baseline exactly. It is not part of D-17's contract and its
+red/green status has no bearing on the "Host CI is green" claim below.
+
+==========================================================================
+This is the local equivalent, not an Actions run
+==========================================================================
+The milestone branch `v1.38-repository-rename` is not on origin in any of
+the three repositories. Host CI (`ci.yml`) triggers on `push: branches:
+['**']`, so a push of this branch WOULD fire it -- but a push is
+outward-facing and this milestone's close targets `beta`, not a direct
+push from here, and every outward-facing step in this milestone is
+operator-gated (D-7, and the standing push-at-ship-time policy). The real
+GitHub Actions run of these same five steps happens when the operator
+pushes at ship, not during this phase's execution. This transcript proves
+the same commands are green on the same interpreter version CI uses; it
+does not itself constitute a CI run, and nothing here was pushed.
+
+D-17's five steps are the primary `ci` job only
+==========================================================================
+`ci.yml` also defines a second job, `ci-py32`, with two further steps
+(`pip install -e .[test,py32]`; `python3 -c "import usb.core, ..."`;
+`pytest tests/test_pyusb_api_surface.py -q`) that are NOT reproduced here
+-- D-17 names five steps, which are exactly the `ci` job's five `run:`
+steps, and reproducing `ci-py32` was explicitly out of scope. This matters
+because RESEARCH Finding 4's one test this phase's change broke and
+adapted (`test_py32_pyusb_absent.py::test_fw_list_exits_zero_with_header_row`)
+lives in the pyusb-absence family, which sounds `ci-py32`-adjacent by
+name -- but the test itself is a member of `tests/`, is not excluded by
+any path filter, and ran as part of step 4's ordinary collection above (it
+appears among the passing tests in the 2145-passed count). Step 4 above
+therefore DOES exercise the one test this phase touches; `ci-py32`'s own
+two steps genuinely were not run and are noted here rather than silently
+omitted.
+
+==========================================================================
+Disposition — the firestarter_app gitlink advance (Task 3)
+==========================================================================
+The meta repository's `firestarter_app` gitlink now names commit
+560ec24523eb2f8c643c9db3dd302efecf57e2e1 -- the tip of all six commits
+190-01 through 190-03 made inside the submodule on
+`v1.38-repository-rename` (a134a91, cf872a6, 3d2a367, 3d1ab18, 6f8ed57,
+560ec24). This is the same commit `git -C firestarter_app rev-parse HEAD`
+reports as of this reading, confirmed reachable from
+`v1.38-repository-rename` in the app repository.
+
+That commit is NOT on origin. Until the milestone is pushed, a fresh
+clone of the meta repository at this tip cannot fetch it -- exactly the
+state Phase 189 left the firmware submodule's gitlink in (189-03), and
+for the same reason: gitlinks are advanced per phase (the norm since
+v1.36) as soon as every commit belonging to that phase is in, which is
+necessarily before the milestone as a whole is pushed.
+
+This resolves at the milestone push, which is operator-gated per the
+standing push-at-ship-time policy; nothing in this phase pushes. Phase
+189's fresh-clone fixture (`.planning/phases/189-free-the-name/
+fresh-clone-fixture.sh`) is expected to report the unfetchable-gitlink
+case (its documented exit code 3) rather than a URL regression while
+this is true -- and as of this phase, BOTH submodule gitlinks (firmware
+and host) are in that state, not only the firmware one Phase 189 left
+behind.

@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.37
-milestone_name: Operator Safety, Answered Reports & Claim Hygiene (CLOSED 2026-09-13)
-current_phase: 188
-current_phase_name: The Tools Directory
-status: complete
-stopped_at: "v1.37 CLOSED 2026-09-13 — 7 phases, 49 plans, 35/35 requirements, hand-archived; merged to beta in all three repos, not tagged."
-last_updated: "2026-09-13T07:05:19.247Z"
-last_activity: 2026-09-13
-last_activity_desc: "v1.37 closed and hand-archived — CLOSE-RECORD.md written, ROADMAP/REQUIREMENTS snapshotted to .planning/milestones/, MILESTONES.md entry added, ROADMAP heading flipped to CLOSED. milestone.complete NOT run."
+milestone: v1.38
+milestone_name: Repository Rename (ACTIVATED 2026-09-13)
+current_phase: 193
+current_phase_name: The Deferred Claim, Made Measurable
+status: completed
+stopped_at: Phase 193 complete — all phases complete
+last_updated: "2026-09-14T11:59:31.768Z"
+last_activity: 2026-09-14
+last_activity_desc: Phase 193 complete
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 49
-  completed_plans: 49
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 23
+  completed_plans: 23
   percent: 100
 ---
 
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 188 — The Tools Directory
+**Current focus:** Phase 193 — The Deferred Claim, Made Measurable
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,49 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 188 (The Tools Directory) — COMPLETE · MILESTONE v1.37 CLOSED 2026-09-13
-Plan: 9 of 9 complete (188-01 … 188-09)
-Status: Phase complete — 188-VERIFICATION.md passed 7/7 must-haves, 188-UAT.md 1/1 passed with 0 issues. All 7 phases of v1.37 are now complete; the milestone is ready for hand-archived close.
-Last activity: 2026-09-13 — Completed quick task 260913-e7t: closed stale enforcement claims WR-02..WR-06; WR-01 left open by design for the provenance sweep
+Phase: 193 (The Deferred Claim, Made Measurable) — COMPLETE
+Plan: 5 of 5
+Status: All v1.38 phases complete — verification passed 4/4, ready for milestone close
+Last activity: 2026-09-14 — Phase 193 complete
+
+## Roadmap Summary (v1.38)
+
+**Created:** 2026-09-13, hand-authored against `.planning/REQUIREMENTS.md` (15 v1 requirements, 5
+categories, D-1…D-7). **No roadmapper subagent and no research phase were run**, deliberately and for the
+same two reasons v1.37 recorded: `ROADMAP.md` is a ~7,600-line hand-authored file carrying the entire
+`999.x` Backlog and every archived milestone, which the roadmap verbs would reformat wholesale; and every
+fact this milestone rests on was measured directly against the three live working trees and the live
+GitHub/PyPI APIs during the 2026-09-13 `/gsd-explore` session, with each figure cited at the point of use.
+The v1.38 section was spliced immediately after the `## Milestones` summary list and before the v1.37
+section. `phases.clear` was **skipped** — `phase_dir_count` was 0 (v1.37's directories were archived at its
+close), and this repo's phase history is preserved rather than cleared.
+
+**Phases:** 5 (**189–193**). Numbering continues from v1.37's 188; the vacated **150** slot and the
+v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving.
+**Coverage:** 15 requirements, all mapped, 0 orphans, 0 duplicates.
+
+| # | Phase | Requirements | Depends on |
+|---|-------|--------------|------------|
+| 189 | Free the Name | RENAME-01…03 (3) | — (first phase) |
+| 190 | Endpoints That Do Not Depend on a Redirect | URL-01, URL-03, URL-04 (3) | 189 |
+| 191 | The Branch That Reaches Users | URL-02, STABLE-01…02 (3) | 190 |
+| 192 | Live References Only | SWEEP-01…03 (3) | 189 |
+| 193 | The Deferred Claim, Made Measurable | GATE-01…03 (3) | 191 |
+
+**The one hard ordering constraint:** Phase 189 runs first — nothing can point at `firestarter_fw` until
+the name exists. Phases 190 and 192 are then independent of each other; 191 follows 190 so the repoint is
+exercised on `beta` before the same change ships to the default install; 193 follows 191 because its
+adoption instrument has nothing to measure until a stable carrying the new URL exists.
+
+**Deliberately excluded (D-1):** claiming `henols/firestarter` for the meta repository — the single
+destructive act in Backlog 999.9, and the one that deletes the firmware repo's redirect. Deferred to
+`seeds/SEED-claim-firestarter-slug.md` behind an adoption trigger. **Also excluded:** mirroring firmware
+releases onto the meta repo (D-2), renaming `firestarter_app`, and repairing the 672 archived
+firmware-slug references under `.planning/milestones/` (D-5).
+
+**Outward-facing and operator-gated (D-7):** the GitHub rename (189), the stable cut and its PyPI publish
+(191), and every push. A merge to `beta` cuts a pre-release in both sub-repos and publishes the host one to
+PyPI, so no agent performs one.
 
 ## Roadmap Summary (v1.37)
 
@@ -2009,6 +2048,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 193 Plan 01]: Built the GATE-01 `QUERY` variable with a quoted heredoc (`<<'SQL'`) instead of a single-quoted bash string with `'"'"'`-escaped embedded quotes. The escaped form breaks apart literal substrings like `installer IN ('pip', 'uv')` in the committed script's own bytes, and the plan's acceptance criteria grep directly against those bytes. The heredoc preserves the SQL's own quoting exactly as written, with no bash-level escaping artifacts in the file.
+- [Phase 193 Plan 01]: Split the GATE-01 script's curl-flag list and SQL trigger expression across multiple physical lines rather than compacting them onto one. The plan's verify block counts matching lines, not occurrences, for required substrings (`user=play`, `--fail-with-body`, `toUInt32OrZero`, and each clause of the trigger predicate); packing several onto one line would have undercounted them without changing anything the SQL or curl actually does.
 - [Phase 188 Plan 07]: D-16/D-18 executed by hand across the five in-repo survivors. build_db.py: thirteen citations removed per the plan's enumerated list (a Phase-86 provenance parenthetical, two PGSZ-01 discipline references, a v1.11/DEC-05 milestone+decision clause, and eight DB-0x/CR-01 site comments), plus three more RESEARCH.md references caught only by task 2's broadened scan pattern, plus a `_PHASE84_RELABEL` dict renamed to `_ETYPE_RELABEL` after discovering by reading (not by regex, which does not match all-caps PHASE86-style tokens) that it encoded a phase number in a variable name. A false-positive regex match on "DIP-24..32" (hardware terminology, not a citation) was reworded to "24-to-32-pin DIP" so the sweep's own oracle reads zero honestly. gen_test_image.py: an EVIDENCE.json filename and two phase-encoded `_p82` temp-path tokens rewritten without losing meaning. parse_devtest_issue.py: Phase-114/Phase-108/RESEARCH/INBOX-01/PROV-06 citations removed from the module docstring, two function docstrings and the argparse description, with the hostile-input contract's wording kept intact word for word (verified by a human-check re-read). gen_sdp_bus_config.py: Phase-116/RESEARCH/D-09 citations removed from the module docstring, two derivation comments, the runtime ValueError message and the argparse description. gen_validation_header.py confirmed byte-unchanged — its "Firestarter v1.13" docstring title and "T-71-INPUT" tag are pre-existing product-version/threat-tag labels, not `.planning/` citations, and the plan's own verify leg required this file untouched. Datasheet `[CITED: ...]` evidence markers unchanged (3/3) throughout. A "no line added is wholly a comment" verify leg reported non-zero (17 then 6) on both commits; net added/removed comment-line counts were equal in both cases (17/17, then 6/7), proving no comment was net-authored — documented as a plan-check discrepancy matching the 188-05/188-06 precedent, since the leg's literal reading is unsatisfiable for a task whose entire job is rewording existing comments.
 - [Phase 188 Plan 07]: Task 3's `_FALSE_POSITIVE_CANDIDATE_NAMES` repair (removing `check_devtest_orchestrator.py` and `test_diff_db_gate.py` from `tests/test_voltage_field_census.py`) turned out to be a no-op: 188-04's own commit (0f251f0) already settled the first entry and 188-05's commit (0c6a1c4) already settled the second, ahead of 188-07's assumption that they would still be present. Confirmed by `git show` on both commits and by re-reading the live file (7 `_FALSE_POSITIVE_CANDIDATE_NAMES` survivor entries, both required `_SELF_REFERENTIAL_NAMES` entries, 4 tests passing, zero diff). Documented as a plan-check discrepancy rather than forced; no edit was made to keep the "diff is deletions only" claim honest (the honest diff is empty, not two deletions). Both positive controls required by the plan (a planted citation, a planted AST `from`-import break) were run and detected (1 hit; 1 control-site) before trusting the zero on the real tree. The three-repo dangling-reference sweep, scoped to breaking sites (imports/subprocess/path-constants/live-read string literals in `.py`, plus any hit in `.yml/.yaml/.toml/.cfg/.ini/.sh`), returned zero breaking sites and zero config-file hits across all three repositories; the excluded inert-prose population measured 20 survivor files in this run (vs. 33 measured at planning time — lower because 188-03/04/05 each repaired stray same-directory prose mentions beyond their own core scope as they went), none of which was edited. `firestarter/tests/test_checker_convention.py` confirmed unmodified. Full app battery green under both devcontainer Python 3.12 and a CI-faithful `uv`-built Python 3.11 venv (`uv venv` does not seed pip, so `uv pip install -e '.[test]'` was used instead of bare `pip install` — a Rule 3 blocking-issue fix): 2129 passed, 0 errors, coverage 84.74% (>= 70% floor), `firestarter --help` renders. The sibling firmware checkout remains a disclosed, accepted permissive-direction hazard per D-13 (188-04) — recorded, not mitigated, per D-23.
 - [Phase 188 Plan 05]: D-04/D-05/D-06's host-side GSD-process-tool retirement executed whole: all six tools (audit_coverage_matrix.py, diff_db.py, measure_plan_shapes.py, measure_part_number_delta.py, snapshot_report_shapes.py, build_devtest_issue_corpus.py) deleted with their five dedicated test files and two orphaned data artifacts (the plan-shapes fixture, the coverage-matrix golden file). diff_db.py is deleted here only because plan 188-01 already relocated the skill's own copy to `.claude/skills/devtest-rootcause/scripts/`, confirmed tracked before deletion (D-21's ordering constraint). Measured for TOOLS-07's honest discharge before deletion: `audit_coverage_matrix.py --check` exits 1 with zero bytes on both stdout and stderr. Repaired `tests/test_numeric_schema_source_scan.py` (dropped the whole-file scan leg reading the deleted tool, kept `_AUDIT_COVERAGE_MATRIX_FORBIDDEN_TOKEN` since the non-vacuity leg still exercises it), `tests/test_skip_census.py` (dropped the now-unreachable "meta-repo ledger not available at" allow-listed skip reason) and `tests/test_voltage_field_census.py` (dropped the `test_diff_db_gate.py` entry, plus the already-stale `test_check_dispatch_invariants.py` entry orphaned by 188-03 but never swept from this docstring). Amended five stale `pyproject.toml` comment blocks naming deleted tools without touching any dependency specifier — one verify leg (a diff-line regex for version specifiers) trips on a false positive from a deleted comment's prose "<3" bound description, documented as a plan-check discrepancy rather than a code defect (the actual dependency line is unmodified). Suite: 2175->2142, 0 errors.
@@ -2969,11 +3010,28 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 188 Plan 04]: Reverted an in-progress edit that would have scrubbed two still-accurate render_shape/snapshot_report_shapes.py prose mentions from tests/test_blast_radius_invariance.py, because the edit produced added=2 in that file's numstat diff, violating the plan's own explicitly threat-modeled invariant (T-188-13: the diff over this file must be deletions-only) and its explicit instruction to leave _to_dict_with_db_diff exactly as it is. Kept the file's diff strictly deletions-only (added=0, deleted=47); the plan's own "grep -c render_shape/snapshot_report_shapes == 0" acceptance criterion is therefore measured at 2, not 0 -- a deliberate, logged choice (WINDOWS.md entry 7) favoring the stronger, safety-critical invariant over a literal-but-conflicting textual check. render_shape itself is not deleted until plan 188-05, which can settle these two remaining mentions then.
 - [Phase 188]: Plan 04: Repaired three stale references to files this plan deletes, all outside this plan's own files_modified list (tests/fixtures/synthetic_nonzero_chip_id.py's aside naming planted_permit_by_default.py; tests/test_sdp_db_invariant.py's sentence naming check_sdp_capability_invariants.py + planted_widenable_allowset.py; tests/test_voltage_field_census.py's check_devtest_orchestrator.py entry, explicitly handed off by 188-03's own SUMMARY). All three are deletion-only clause/entry removals, confirmed non-breaking (collected counts unchanged: 4, 9, 4).
 - [Phase 188]: 188-08: reordered the idempotency verify leg to run after committing both sub-repos' synced codegen.py, since git status --porcelain against the last commit cannot prove a sync is a no-op until that commit exists — The literal acceptance criterion (zero-line git status after a second sync run) can only be true when the working tree already matches the committed baseline; running it before any sub-repo commit always shows the first sync's uncommitted diff, which looks like a false failure of the determinism contract but is really just an ordering artifact
+- [Phase 191]: 191-01: board-free STABLE-02 clean-install fixture drives origin/main's real API (firestarter.config.ConfigManager, FirmwareManager positional) rather than Phase 190's click/channel surface, and is proven red against today's published 2.0.7 (bare slug) before any repointing happens.
+- [Phase 191]: D-01 applied literally on the prepared main branch: repointed the one FIRESTARTER_RELEASE_URL constant, did not backport the two beta-only names. — Adding module-level constants no code on main imports would ship dead surface to every default install and enlarge the diff on a 951-commit-stale protected branch.
+- [Phase 191]: Filed release.yml (ruleset 22046179 rejects the auto-commit push) and publish.yml (release:published never fires, 8/8 runs workflow_dispatch) as backlog items instead of fixing them. — Both name beta-release.yml's pypi job as the proven fix; porting it here would be inert because D-04 leaves the push blocker unresolved, so the job that would call publish.yml still never runs.
+- [Phase 191]: 191-03: Verified operator's merge report (PR #66, sha 1d526ea) against the live GitHub PR object before trusting it -- matched exactly. Read release.yml's live run for the merge and confirmed D-04's predicted failure (GH013 ruleset rejection of the auto-commit push); D-06 Branch A taken. No tag/release exists for 2.0.9/2.0.10, checked not inferred. URL-02 marked Complete via the shared-ID requirements gate; STABLE-01 correctly stays Pending until 191-04 runs.
+- [Phase 191]: Verified operator's tag/release/publish.yml dispatch against three independent live API reads (tag peel, release target_commitish, publish run status) rather than trusting the report; all three sha readings agreed with 191-03's merge commit.
+- [Phase 191]: Disclosed a genuine PyPI propagation-lag finding: pip briefly resolved 2.0.7 while the JSON API already reported 2.0.9; resolved on retry after confirming the simple index. All three fixture invocations recorded in evidence rather than only the final clean one.
+- [Phase 191]: Bench leg's no-flag path could not complete a version handshake against firmware 3.0.0b22; took the plan's named fallback (fw --install), recording the reason rather than retrying into a cleaner-looking transcript. — Honesty requirement: report what the board actually did, not a smoothed-over retry.
+- [Phase 193]: Used v1.35 as the pre-rename ref in all three GATE-03 transcripts, not the Phase 189 parent commit (unreachable in a fresh clone). — v1.35 is a published, immutable tag whose .gitmodules still names the old firmware slug, satisfying D-16.
+- [Phase 193]: Reproduced and repaired the git submodule sync hazard: sync at a pre-rename ref clobbers both the .git/config override and the child's own origin remote. — 999.9's own ordered procedure names submodule sync --recursive as routine hygiene, so an operator following it would silently undo the GATE-03 workaround; plan 193-04 will fold this into the archaeology-trap note.
+- [Phase 193]: Seed trigger_condition rewritten as a YAML folded block scalar starting with a word. It carries D-09's threshold, window, instrument path and re-examination date verbatim. — A leading backtick makes GSD's frontmatter parser return an empty object. That drops status: dormant and unhooks the seed from audit.cjs's scanSeeds. The parse was proved directly against extractFrontmatter after the rewrite.
+- [Phase 193]: Seed prose corrected to 2.0.9 in the past tense. The .gitmodules readiness leg is scoped to origin/main vs origin/beta rather than an unqualified claim. — origin/beta's .gitmodules still names the old firmware slug until the v1.38 milestone merges. A reader could falsify an unscoped claim with one git show.
+- [Phase 193]: Wrote the .gitmodules archaeology-trap note with no YAML frontmatter, matching sibling notes; cited both GATE-03 workarounds' transcripts by filename/READING, never by line number; and kept the deliberate "repair, not fix" word contrast the plan's own action text requires. — Matches the two sibling notes' register and satisfies GATE-03's demonstrated-not-reasoned requirement while labelling the unverifiable post-claim failure a projection, per D-16's honesty constraint.
+- [Phase 193]: GATE-02's mechanism is cited in CLAUDE.md by path and section heading (999.9-repo-rename-impact-analysis.md, "Standing rule this must produce"), not restated in full, so there is one source of truth for the PEP 440 version-parsing argument.
+- [Phase 193]: GATE-03's .gitmodules archaeology pointer lives in CLAUDE.md's repository-structure area, not the close section, because that is where an archaeology session actually starts. The pointer names the note and states the trap does not bite today.
+- [Phase 193]: The repository-structure paragraph's tools/ inventory sentence, falsified by this phase's own tools/adoption/ addition, was corrected in the same edit that added the archaeology pointer depending on it, rather than deferred.
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
+| Phase 193 P02 | 2 tasks | ~7min | Seed `trigger_condition` rewritten to a parse-safe folded scalar carrying D-09's threshold (fixed share >= 90% AND `2.0.7` downloads <= 10, 90-day window); prose corrected to 2.0.9, past tense, no `2.0.8`; `.gitmodules` checklist leg scoped to `origin/main` vs `origin/beta`; `extractFrontmatter` confirms 4 keys, `status: dormant`; meta@ac30e68b, @4a0c8dbd |
+| Phase 193 P01 | 2 tasks | ~22min | GATE-01 adoption instrument `tools/adoption/pypi_version_share.sh` built and run live against the ClickHouse public PyPI dataset; live reading 17 fixed (>= 2.0.9) / 116 at-risk (2.0.7) / 12.8% share, `TRIGGER: NOT MET` against the 90%/<=10 threshold; threshold boundary, empty-window and server-error paths each proven at the layer where they can be proven; caveat block carries the `necessary condition, never a sufficient one` framing on every run; meta@352841a9, @9c94669b |
 | Phase 188 P08 | 2 tasks | ~20min | catalog/codegen.py's five citations stripped at the meta canonical copy (LCAT-03, post-Phase-7, LCAT-05, LCAT-02+LCI-04 x2), synced to both sub-repos; all three copies hash-identical and citation-free; messages.h/messages.py proven byte-unchanged by git diff (not the sync's own tautological check); second sync a true no-op; firmware 360 passed / host 2129 passed; meta@b1db45f5, firestarter@6c4d2e2, firestarter_app@f36113b |
 | Phase 188 P07 | 3 tasks | ~40min | tools/ swept citation-free (build_db.py 13+3+1 rename, gen_test_image.py 3, parse_devtest_issue.py 6, gen_sdp_bus_config.py 3; gen_validation_header.py byte-unchanged); datasheet evidence + hostile-input contract intact; two positive controls (citation, AST break) both detected; 3-repo dangling-reference sweep zero; suite 2129 passed under both py3.12 and py3.11 CI-faithful venv, coverage 84.74%; firestarter_app@5fa57c2, @ab1addb |
 | Phase 188 P05 | 2 tasks | ~35min | Six GSD-process tools + diff_db.py retired (five tests, two orphaned data artifacts); coverage-matrix checker's exit-1/zero-output measured pre-deletion; two CI mirrors + derive_sdp_partition.py + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite 2175->2142->2129, 0 errors; coverage 5871/896/84.74%; firestarter_app@0c6a1c4, @ccf203b, @216ce23 |
@@ -3401,11 +3459,19 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 188 P04 | 2 tasks | ~50min | Op-registration parity module deleted whole and the blast-radius oracle trimmed to its two render_shape sites (68/106 survive; GATE-01/02/03, D-07, D-10 and all 19 snapshots intact); the eight remaining check_*.py gates, their tests, seven planted fixtures, the mypy CI step and the guard prose retired; 2307 -> 2262 -> 2175 collected; firestarter_app@a163dd9, @0f251f0 |
 | Phase 188 P08 | 20min | 2 tasks | 3 files |
 | Phase 188 P09 | ~50min | 3 tasks | 6 files |
+| Phase 191 P02 | 6 min | 2 tasks | 6 files |
+| Phase 191 P03 | 8min | 2 tasks | 2 files |
+| Phase 191-the-branch-that-reaches-users P04 | 22min | 1 tasks | 2 files |
+| Phase 191 P05 | 12min | 2 tasks | 2 files |
+| Phase 193 P03 | 12min | 3 tasks | 4 files |
+| Phase 193 P02 | 7min | 2 tasks | 1 files |
+| Phase 193 P05 | 20min | 3 tasks | 2 files |
 
 ## Session
 
-**Last session:** 2026-09-13T02:17:48.000Z
-**Stopped at:** Phase 188 complete — all phases complete
+**Last session:** 2026-09-14T11:36:18.261Z
+**Stopped at:** Phase 193 complete — all phases complete
+**Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
 **Was (superseded, retained for continuity):** Completed 188-05-PLAN.md — six GSD-process tools + diff_db.py retired (diff_db.py placed by 188-01's relocation), five dedicated tests + two orphaned data artifacts deleted, coverage-matrix checker's exit-1/zero-output measured before deletion; two CI mirrors + derive_sdp_partition.py orphan + host frame-vector apparatus deleted with its two CI steps in one commit, zero repo-wide fragments; suite measured 2175->2142->2129, 0 errors; coverage 5871/896/84.74% (firestarter_app@0c6a1c4, @ccf203b, @216ce23)
 **Was (superseded, retained for continuity):** Completed 188-04-PLAN.md — parity module deleted, blast-radius oracle trimmed to its two render_shape sites (68/106 tests, GATE-01/02/03 and D-07/D-10 intact, 19 snapshots byte-unchanged), all eight remaining check_*.py gates retired with their tests/fixtures, mypy CI step and CLAUDE.md guard prose removed; suite measured 2307->2262->2175, 0 errors (firestarter_app@0f251f0)
@@ -3484,7 +3550,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/v1.33/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/188-the-tools-directory/188-CONTEXT.md
+**Resume file:** None
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing

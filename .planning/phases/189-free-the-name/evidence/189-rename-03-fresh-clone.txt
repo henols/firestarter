@@ -1,0 +1,48 @@
+FRESH CLONE FIXTURE (RENAME-03)
+================================
+meta_source: file:///workspaces
+meta_ref: v1.38-repository-rename
+meta_commit: 5aba9dbc8d760e530638931d19ede0a227dd1a60
+gitmodules_url(firestarter): git@github.com:henols/firestarter_fw.git
+config_url(firestarter): git@github.com:henols/firestarter_fw.git
+remote_origin(firestarter): git@github.com:henols/firestarter_fw.git
+remote_origin(firestarter_app): git@github.com:henols/firestarter_app.git
+firestarter_head: 10ec1b0e24d98f04c3b4aa076b9d84231ac5da04
+firestarter_app_head: f926e36262c368633b50245a225478ef36aed885
+
+FRESH CLONE OK
+
+===============================================================
+READING 2 -- after the gitlink advance (189-03, Task 3)
+===============================================================
+capture_date: 2026-09-13T14:15:00Z (approx.)
+
+This reading is taken after 189-03 advanced the meta repository's firestarter
+gitlink from 10ec1b0e24d98f04c3b4aa076b9d84231ac5da04 to
+c67a3301d507bccea89281c08af75f3a7bb76edb (meta commit d0d598ba) -- the
+firmware commit carrying the README.md:47 and tests/meta_presence.py:22
+slug repoints. That firmware commit is unpushed, per D-05's designed
+ordering: the demonstration above was captured first, while the gitlink
+still named a commit fetchable from git@github.com:henols/firestarter_fw.git,
+so it proves firestarter_fw resolves directly rather than merely proving
+the clone plumbing works.
+
+Re-running the same fixture now, with no arguments, against the advanced
+gitlink:
+
+FRESH CLONE FIXTURE (RENAME-03)
+================================
+meta_source: file:///workspaces
+meta_ref: v1.38-repository-rename
+clone_result: submodule gitlink commit not present on remote
+missing_commit: c67a3301d507bccea89281c08af75f3a7bb76edb
+note: expected between this phase's gitlink advance (189-03) and the milestone push -- not a URL regression
+
+exit=3
+
+This is the designed post-advance outcome, not a regression in the recorded
+URL: the fixture correctly distinguishes "gitlink names an unpushed commit"
+(exit 3, naming the sha) from "the URL itself is wrong" (exit 1). This is the
+first time the case-3 branch has been reachable at all; this run is the proof
+that branch works, not merely a formality. The gitlink advance and this
+reading resolve when the milestone is pushed.

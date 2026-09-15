@@ -1,13 +1,13 @@
 ---
-last_mapped_commit: 3e2f7d89
-last_mapped_at: 2026-08-26T20:42:40.949Z
+last_mapped_commit: 55ca612f
+last_mapped_at: 2026-09-14T05:19:26.128Z
 mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUDE.md
 ---
 # Testing
 
-**Analysis Date:** 2026-08-26
+**Analysis Date:** 2026-09-14
 
-**Source (this pass):** meta-repo tracked paths only — `.github/workflows/`, `.devcontainer/`, `.vscode/`, `.claude/skills/`, `.gitignore`, `.gitmodules`, `CLAUDE.md`. The firmware (`firestarter/`) and host app (`firestarter_app/`) are git submodules and were **not** scanned in this pass; their internal test layout is marked below.
+**Source (this pass):** meta-repo tracked paths only — `.github/`, `.devcontainer/`, `.vscode/`, `.claude/skills/`, `.gitignore`, `.gitmodules`, `CLAUDE.md`. The firmware (`firestarter_fw/`) and host app (`firestarter_app/`) are git submodules and were **not** scanned in this pass; their internal test layout is marked below.
 
 ## Summary — corrects the 2026-05-08 claim
 
@@ -21,51 +21,23 @@ What is true of the layer this pass can see:
 
 | Layer | Test/gate surface | Verified in scope |
 |-------|-------------------|-------------------|
-| Meta repo (this repo) | Exactly one CI workflow, a cross-repo file-identity assertion. No pytest, no lint job. | Yes |
+| Meta repo (this repo) | No `.github/workflows/` directory at all. No automated check of any kind. | Yes |
 | Host app `firestarter_app/` | pytest suite, mypy watermark gate, ruff (`select = [E,F,I,UP]`), run on Python 3.11 | No — submodule out of scope |
-| Firmware `firestarter/` | `pio test` (PlatformIO), native + native_nodevtools environments | Partly — `CLAUDE.md` documents `pio test` |
+| Firmware `firestarter_fw/` | `pio test` (PlatformIO), native + native_nodevtools environments | Partly — `CLAUDE.md` documents `pio test` |
 | `.claude/skills/*/scripts/*.py` | **Nothing.** No tests, no type checking, no lint in any CI. | Yes |
 
-## Meta-repo CI — the only workflow
+## Meta-repo CI — none exists
 
-`.github/workflows/catalog-sync-check.yml` is the sole workflow in this repository.
+`.github/` holds `CONTRIBUTING.md` and a four-file `ISSUE_TEMPLATE/` directory, and
+nothing else — there is no `.github/workflows/` directory in this repository. No CI
+workflow of any kind runs against this repo: no test, no lint, no build, no publish job,
+and no cross-repo consistency check. The only executable artefacts in the mapped scope
+are the devcontainer provisioning scripts (`.devcontainer/post-create.sh`,
+`.devcontainer/gen-platformio-ini.py`), which run at container build/create time, not as
+a gate on any push or pull request.
 
-**Name:** `Catalog sync check`
-**Runner:** `ubuntu-latest`
-**Triggers:** `push` and `pull_request` on `main`, restricted to paths
-`tools/catalog/**` and `.github/workflows/catalog-sync-check.yml`; plus `workflow_dispatch`.
-
-**What it asserts** (this is a *conformance* test, not a unit test):
-
-```bash
-# 1. the two sub-repos' vendored catalogs are byte-identical to each other
-cmp  firestarter/tools/catalog/messages.toml firestarter_app/tools/catalog/messages.toml
-diff firestarter/tools/catalog/messages.toml firestarter_app/tools/catalog/messages.toml
-
-# 2. the meta-repo copy is authoritative over both vendored copies
-cmp  meta/tools/catalog/messages.toml firestarter/tools/catalog/messages.toml
-cmp  meta/tools/catalog/messages.toml firestarter_app/tools/catalog/messages.toml
-```
-
-**Mechanics worth knowing before editing it:**
-
-- It deliberately does **not** use `submodules: recursive`. The comment records why: an
-  accidentally committed gitlink at `.planning/v1.7/upstream-rurp` with no `.gitmodules`
-  entry made checkout die with `fatal: No url found for submodule path` before any
-  assertion could run.
-- The sub-repos are checked out explicitly from `henols/firestarter` and
-  `henols/firestarter_app` at a **resolved** ref: the `Resolve sub-repo ref` step probes
-  `git ls-remote --exit-code --heads` for a branch with the *same name as the meta ref
-  under test*, falling back to `beta`. Hardcoding `main` could never work — `main` lags
-  `beta` by ~224 commits in the firmware repo and `tools/catalog/**` has never existed on
-  `main`.
-- Per its own inline history, this workflow failed on all 5 runs between 2026-07-11 and
-  2026-08-18, i.e. **it had never once actually asserted the property it exists to
-  assert** before the ref-resolution fix. Treat a green run as newly-earned evidence, not
-  a long-standing baseline.
-
-**No release gate lives in this repo.** There is no test, lint, build, or publish job
-here; releases are cut from the sub-repos' own workflows.
+Releases are cut from the sub-repos' own workflows; this repo enforces nothing about
+them.
 
 ## Test tooling installed by the devcontainer
 
@@ -85,7 +57,7 @@ environment:
 
 **Python version mismatch (quality-relevant):** the devcontainer's default interpreter is
 3.12 (`python.defaultInterpreterPath: /usr/local/bin/python`), which is **not** the
-version the host-app CI pins (3.11) `[unverified in 2026-08-26 scoped remap]`. Running
+version the host-app CI pins (3.11) `[unverified in 2026-08-26 and 2026-09-14 scoped remaps]`. Running
 the app suite with the container default can pass locally while the CI job fails, and
 py3.12 has been observed to surface Click/snapshot breakage as collection errors instead.
 Create a pinned venv before trusting a local green run:
@@ -101,19 +73,21 @@ dependency groups.
 
 ## Agent-tooling scripts are untested
 
-`.claude/skills/*/scripts/` contains ~1200 lines of tracked Python:
+`.claude/skills/*/scripts/` contains ~2500 lines of tracked Python across five files:
 
 | File | Lines |
 |------|-------|
-| `.claude/skills/devtest-triage/scripts/devtest_issues.py` | 471 |
-| `.claude/skills/devtest-rootcause/scripts/seed_debug_session.py` | 404 |
-| `.claude/skills/devtest-rootcause/scripts/infoic_lookup.py` | 314 |
+| `.claude/skills/devtest-rootcause/scripts/diff_db.py` | 996 |
+| `.claude/skills/devtest-triage/scripts/devtest_issues.py` | 693 |
+| `.claude/skills/devtest-rootcause/scripts/seed_debug_session.py` | 417 |
+| `.claude/skills/devtest-rootcause/scripts/infoic_lookup.py` | 326 |
+| `.claude/skills/devtest-triage/scripts/test_supersede.py` | 84 |
 
-None of it is covered by a test file, a `conftest.py`, mypy, or ruff — the only workflow
-in this repo is path-filtered to `tools/catalog/**` and never touches these files. This
-matters because `devtest_issues.py` parses **untrusted, community-authored GitHub issue
-bodies** (its docstring says so explicitly and it bounds input at `MAX_BODY = 1_000_000`).
-That hardening is asserted by comment only.
+None of it is covered by a test file, a `conftest.py`, mypy, or ruff — this repo has no
+workflow of any kind (above), so nothing touches these files. This matters because
+`devtest_issues.py` parses **untrusted, community-authored GitHub issue bodies** (its
+docstring says so explicitly and it bounds input at `MAX_BODY = 1_000_000`). That
+hardening is asserted by comment only.
 
 The substitutes that exist:
 
@@ -136,7 +110,7 @@ the entry points:
 ./firestarter_test.sh [EPROM]     # full hardware integration test
 ./write_test.sh [EPROM]           # write/verify test
 
-# firmware (run from firestarter/)
+# firmware (run from firestarter_fw/)
 pio run -e uno                    # build for Arduino Uno
 pio run -e leonardo               # build for Arduino Leonardo
 pio run -t upload -e uno          # flash
@@ -149,9 +123,9 @@ Run output is gitignored, which tells you where it lands: `firestarter-runs/`,
 
 ## Host-app integration scripts (submodule — preserved from 2026-05-08)
 
-*`[unverified in 2026-08-26 scoped remap]` — `firestarter_app/` was out of scope. Paths
-below have been rewritten from the stale `/home/henrik/dev/...` prefix to repo-relative
-form; the descriptions are otherwise preserved.*
+*`[unverified in 2026-08-26 and 2026-09-14 scoped remaps]` — `firestarter_app/` was out
+of scope. Paths below have been rewritten from the stale `/home/henrik/dev/...` prefix to
+repo-relative form; the descriptions are otherwise preserved.*
 
 ### `firestarter_app/firestarter_test.sh`
 
@@ -178,7 +152,7 @@ database — assume the latter.*
 
 A focused write/verify/read script, also hardware-dependent.
 
-### Modules testable without hardware `[unverified in 2026-08-26 scoped remap]`
+### Modules testable without hardware `[unverified in 2026-08-26 and 2026-09-14 scoped remaps]`
 
 | Module | Testable without hardware |
 |--------|--------------------------|
@@ -192,4 +166,4 @@ A focused write/verify/read script, also hardware-dependent.
 
 ---
 
-*Testing analysis: 2026-08-26*
+*Testing analysis: 2026-09-14 (meta-repo layer); 2026-05-08 (submodule layer, preserved above)*
