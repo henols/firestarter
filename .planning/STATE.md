@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.39
 milestone_name: Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
-current_phase: 194
-current_phase_name: Real Page Size Reaches the Firmware
-status: executing
-stopped_at: Phase 194 execution started
-last_updated: "2026-09-15T13:04:22.311Z"
+current_phase: 195
+current_phase_name: Partial Writes Stop Destroying the Page
+status: planning
+stopped_at: Phase 194 complete, ready to plan Phase 195
+last_updated: "2026-09-15T19:45:39.600Z"
 last_activity: 2026-09-15
-last_activity_desc: "Phase 194 execution started. Planning record preserved: 7 plans in 4 waves; research + pattern map written; plan checker PASSED, decision coverage 12/12, requirements 3/3, verify-command probes 65/65 clean. Pre-flight: both sub-repos rebased onto their origin/beta as v1.39-protocol-0x05-write-correctness; stale codegen.py banner repaired (d5cf7e0b)."
+last_activity_desc: "Phase 194 COMPLETE — verified 4/4, 7/7 plans. The protocol 0x05 write path now reads handle->page_size; the capacity-bracket derivation flash_5v_page_page_size() is gone. DB has 45 page-size carriers (18 upstream-native 0x0D + 27 upstream-native 0x05); MSG_ERR_FL4_PAGE_SIZE minted at 0xBF (ERROR band 0xA0-0xBF now fully spent, 32/32 — guard re-derived, todo filed). Host refuses pre-serial via page_size_gate.py. Gates: host 1896/0, fw native 208/208, fw native_nodevtools 208/208. Bench: W29C020 on Leonardo, Rev 2.0 (operator-stated), fw aabd0dd, 2048 B over 16 pages, chip-ID 0x0000da45, read-back byte-identical sha256 d7a3b21b. PAGE-01/PAGE-02 Complete; PAGE-03 DELIBERATELY OPEN per D-10 — W29C020 is one of the 18 already-correct parts, so the run is no-regression only and proves nothing about the 9; W29C512 on order. Code review 0 critical / 2 warning / 2 info; WR-01 (host gate accepts non-power-of-two overrides that firmware rejects) filed as a todo, not fixed in-phase. NOT this phase: fw pytest tests/ 284/17 — all 17 in test_flash_path_record_sync.py from concurrent-session commit b51d6b5b relocating .planning/v1.23-FLASH-PATH-DECISION.md."
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 7
-  completed_plans: 0
-  percent: 0
+  completed_plans: 7
+  percent: 33
 ---
 
 # Project State
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 194 (Real Page Size Reaches the Firmware) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 194
-Last activity: 2026-09-15 — Phase 194 execution started
+Phase: 195 — Partial Writes Stop Destroying the Page
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-15 — Phase 194 complete, transitioned to Phase 195
 
 ## Roadmap Summary (v1.38)
 
@@ -3472,7 +3472,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-15T09:36:25.384Z
-**Stopped at:** Phase 194 planned
+**Stopped at:** Phase 194 complete, ready to plan Phase 195
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed

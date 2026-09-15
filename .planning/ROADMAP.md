@@ -233,7 +233,7 @@ INFO log naming the effective page size is also a direct way to measure PAGE-02 
 
 **Depends on:** nothing
 
-**Plans:** 7 plans in 4 waves
+**Plans:** 7/7 plans complete
 
 Plans:
 **Wave 1**
