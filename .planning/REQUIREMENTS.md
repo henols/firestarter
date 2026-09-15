@@ -50,8 +50,14 @@ host `3.0.0b38`. That part's derived page size is *correct*, which is what isola
 - [ ] **PAGE-03**: A contiguous multi-page write to one of the 9 previously under-sized parts reads
       back byte-identical on real silicon. **Status (2026-09-15):** the software half is landed and
       measured — see `.planning/v1.39/194-page-size-27-row-record.md` for the evidence-class split.
-      The hardware leg stays OPEN per D-11: 0 of 9 on hardware, 9 of 9 on the database comparison,
-      until the ordered `W29C512` arrives and a bench write is read back.
+      A no-regression bench write on `W29C020` (one of the 18 already-correct parts, chosen because
+      both gh#67 and gh#68 were originally reproduced on it) is now recorded in
+      `.planning/v1.39/194-w29c020-bench-transcript.md`: chip-ID-confirmed, this phase's firmware
+      and host, a 2048-byte / 16-page pattern, byte-identical read-back. That run proves the fix did
+      not regress an already-correct part. It does not and cannot prove any of the 9 were fixed,
+      because `W29C020` was never wrong. The hardware leg for the 9 stays OPEN per D-11: 0 of 9 on
+      hardware, 9 of 9 on the database comparison, until the ordered `W29C512` arrives and a bench
+      write on one of the 9 is read back.
 
 ### INSTR — the adoption instrument answers a live question, or is retired (v1.38 carry-over)
 
