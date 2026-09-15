@@ -4,11 +4,11 @@ milestone: v1.39
 milestone_name: Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
 current_phase: 194
 current_phase_name: Real Page Size Reaches the Firmware
-status: planned
-stopped_at: Phase 194 planned
-last_updated: "2026-09-15T11:56:08.767Z"
+status: executing
+stopped_at: Phase 194 execution started
+last_updated: "2026-09-15T13:04:22.311Z"
 last_activity: 2026-09-15
-last_activity_desc: "Phase 194 planned - 7 plans in 4 waves. Research + pattern map written. Plan checker PASSED, decision coverage 12/12, requirements 3/3, verify-command probes 65/65 clean."
+last_activity_desc: "Phase 194 execution started. Planning record preserved: 7 plans in 4 waves; research + pattern map written; plan checker PASSED, decision coverage 12/12, requirements 3/3, verify-command probes 65/65 clean. Pre-flight: both sub-repos rebased onto their origin/beta as v1.39-protocol-0x05-write-correctness; stale codegen.py banner repaired (d5cf7e0b)."
 progress:
   total_phases: 3
   completed_phases: 0
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 194 — Real Page Size Reaches the Firmware (v1.39). Planned, 7 plans in 4 waves, ready to execute.
+**Current focus:** Phase 194 — Real Page Size Reaches the Firmware
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 194 (Real Page Size Reaches the Firmware) — READY TO EXECUTE
-Plan: —
-Status: Ready to execute
-Last activity: 2026-09-15 — Milestone v1.39 started
+Phase: 194 (Real Page Size Reaches the Firmware) — EXECUTING
+Plan: 1 of 7
+Status: Executing Phase 194
+Last activity: 2026-09-15 — Phase 194 execution started
 
 ## Roadmap Summary (v1.38)
 
