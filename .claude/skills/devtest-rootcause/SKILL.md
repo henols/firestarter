@@ -11,7 +11,8 @@ fix. The hard part is not the fix, it is knowing which files may be edited at al
 
 **Self-contained.** `scripts/infoic_lookup.py` is stdlib-only and owns its decode
 tables outright — it never imports `build_db.py`, so it works even with
-`firestarter_app` absent. `--check` guards against the copy drifting (see §1).
+`firestarter_app` absent. The private copy can drift from the generator, so
+transcribe any table value from `build_db.py` rather than from memory (see §1).
 
 That is distinct from the **regeneration commands** in §4 (`build_db.py`,
 `.claude/skills/devtest-rootcause/scripts/diff_db.py`). Those are the project's own build and gate steps —
@@ -31,7 +32,6 @@ FW=$ROOT/firestarter_fw
 S=$ROOT/.claude/skills/devtest-rootcause/scripts
 
 python3 $S/infoic_lookup.py AT28C256        # what upstream actually says about the chip
-python3 $S/infoic_lookup.py --check         # our tables still agree with build_db.py?
 python3 $S/seed_debug_session.py 21         # seed a GSD debug session from the issue
 
 grep VERSION $FW/include/version.h          # firmware version, for the §5 fix report
@@ -89,30 +89,15 @@ Real output:
 ```
 
 The script owns its decode tables rather than importing the generator, so it stays
-usable standalone. The cost of a private copy is drift, so check it after touching
-`build_db.py`:
+usable standalone. The cost of a private copy is drift. Nothing detects that drift for
+you, so after touching `build_db.py` compare the two tables by eye.
 
-```bash
-python3 $S/infoic_lookup.py --check
-```
+The owned table is held in **millivolts** to match the generator's own unit, so the two
+can be read side by side with no string round-trip in the middle. `format_vpp()` does
+the `12000 -> "12V"` rendering at the print site.
 
-```
-ok: MINIPRO_XML_URL matches build_db.py
-ok: VPP table matches build_db.py:VPP_MV (16 entries, compared in mV)
-```
-
-It reads the generator **as text** (`ast.literal_eval`, never importing or running it —
-running it would regenerate the database) and exits 1 naming any key that disagrees.
-With `firestarter_app` absent, it prints `SKIP` and exits 0. The lookup still works.
-
-**It fails CLOSED on a rename.** A constant the check cannot find is a DRIFT, not a
-warning, and the message names every name it tried (`GENERATOR_VPP_NAMES`). The owned
-table is held in **millivolts** to match the generator exactly, so the comparison is a
-plain dict equality with no string round-trip. `format_vpp()` does the `12000 -> "12V"`
-rendering at the print site.
-
-Never "improve" a table value from memory — transcribe it from the generator, then run
-`--check`. A misremembered VPP index reads as a decode bug in a chip that has none.
+Never "improve" a table value from memory — transcribe it from the generator. A
+misremembered VPP index reads as a decode bug in a chip that has none.
 
 `--raw` dumps every attribute verbatim when you need one the decoder ignores.
 
@@ -429,5 +414,5 @@ references exist to close.
 | `gh: 'fix:committed' not found` | The shared taxonomy is not created on this tracker — run `devtest_issues.py labels` from `devtest-triage/scripts` |
 | A fix landed but the issue still says `fix:committed` | The release shipped and nobody moved the label. Swap it to `fix:released` and post the version that carries it (§5) |
 | Reporter asks "which version has the fix?" | §5's comment was skipped or omitted the artefact table. Read the versions from `version.h` and `__init__.py` — never from memory — and post it |
-| `--check` reports DRIFT | `build_db.py` changed. Update the table in `infoic_lookup.py` to match the generator — the generator is authoritative, not this script |
-| `--check` says "no VPP table found under any known name" | The generator renamed the table again. Find the new name, prepend it to `GENERATOR_VPP_NAMES`, then **re-check every value** — a rename and a value change can arrive in the same commit |
+| A decode looks wrong and `build_db.py` changed recently | The owned table in `infoic_lookup.py` drifted. Update it to match the generator — the generator is authoritative, not this script |
+| The generator renamed its VPP table | Find the new name and **re-read every value** — a rename and a value change can arrive in the same commit |

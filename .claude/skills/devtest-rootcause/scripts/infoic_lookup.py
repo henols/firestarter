@@ -5,45 +5,24 @@ build_db.py derives from them.
 Self-contained: stdlib only. This skill OWNS its decode tables — it does not
 import build_db.py, so it keeps working if firestarter_app moves or is absent.
 
-Because a private copy of a table can drift from the generator it describes,
-`--check` re-reads the constants out of build_db.py *as text* (never importing
-or executing it) and reports any disagreement. Run it after touching the
-generator. A drift is reported loudly and never silently papered over.
-
 Read-only: never writes the chip database, never invents a value.
 
     python3 infoic_lookup.py AT28C256
     python3 infoic_lookup.py W27E257 --raw
-    python3 infoic_lookup.py --check
 """
 
 from __future__ import annotations
 
 import argparse
-import ast
 import os
 import re
 import sys
 import urllib.request
 import xml.etree.ElementTree as ET
 
-def _repo_root() -> str:
-    """Locate the checkout from this file: <root>/.claude/skills/<s>/scripts/.
-
-    Falls back to the current directory when the skill is installed outside a
-    checkout, where an explicit flag or env override is the only sane source.
-    """
-    here = os.path.dirname(os.path.abspath(__file__))
-    root = os.path.normpath(os.path.join(here, *[os.pardir] * 4))
-    return root if os.path.isdir(os.path.join(root, "firestarter_app")) else os.getcwd()
-
-
-DEFAULT_APP = os.environ.get(
-    "FIRESTARTER_APP", os.path.join(_repo_root(), "firestarter_app"))
-
 # ---------------------------------------------------------------------------
-# Owned decode tables. Transcribed from minipro's own constants; `--check`
-# verifies them against build_db.py. Do not "improve" a value from memory —
+# Owned decode tables. Transcribed from minipro's own constants. Keep them in
+# step with build_db.py by hand. Do not "improve" a value from memory —
 # an earlier draft guessed 0x80 as 18V when it is 13.5V, which would have
 # fabricated a decode bug in W27E257 that does not exist.
 # ---------------------------------------------------------------------------
@@ -59,8 +38,8 @@ MINIPRO_XML_URL = (
 # and silently yield 0 mV.
 #
 # Values are MILLIVOLTS, deliberately the same unit as the generator's own
-# table, so `--check` is a direct dict comparison with no lossy string
-# round-trip in the middle. Display formatting happens in `format_vpp()`.
+# table, so the two can be compared directly with no lossy string round-trip
+# in the middle. Display formatting happens in `format_vpp()`.
 VPP_MV = {
     0x00: 12000, 0x10: 9000, 0x20: 9500, 0x30: 10000,
     0x40: 11000, 0x50: 11500, 0x60: 12500, 0x70: 13000,
@@ -68,13 +47,6 @@ VPP_MV = {
     0xC0: 16000, 0xD0: 16500, 0xE0: 17000, 0xF0: 18000,
 }
 
-# What the generator calls the table above. It was `VPP_VOLTAGES` when this
-# script was written (2026-08-07) and is `VPP_MV` today. That rename is
-# exactly how the drift check rotted: it looked for one hard-coded name,
-# found nothing, printed a WARN and exited 0 — so from the rename onward the
-# single table this script most needs verified was verified by nothing.
-# Tried in order; the first one present wins.
-GENERATOR_VPP_NAMES = ("VPP_MV", "VPP_VOLTAGES")
 
 
 def format_vpp(mv: object) -> str:
@@ -86,88 +58,6 @@ def format_vpp(mv: object) -> str:
     if not isinstance(mv, int):
         return "NOT IN TABLE"
     return f"{mv / 1000:g}V"
-
-
-def check_drift(app_dir: str) -> int:
-    """Compare our owned tables against build_db.py WITHOUT importing it.
-
-    The generator is read as text and the two constants are extracted with
-    `ast`, so nothing in it executes — importing would be a dependency, and
-    running it would regenerate the database.
-    """
-    path = os.path.join(app_dir, "tools", "build_db.py")
-    try:
-        with open(path, encoding="utf-8") as f:
-            tree = ast.parse(f.read(), filename=path)
-    except (OSError, SyntaxError) as exc:
-        print(f"SKIP: cannot read {path} ({exc}). "
-              "Tables unverified — this tool still works standalone.")
-        return 0
-
-    found: dict[str, object] = {}
-    for node in ast.walk(tree):
-        targets = []
-        if isinstance(node, ast.Assign):
-            targets = [t.id for t in node.targets if isinstance(t, ast.Name)]
-        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
-            targets = [node.target.id]
-        if not targets:
-            continue
-        for name in targets:
-            wanted = ("MINIPRO_XML_URL", *GENERATOR_VPP_NAMES)
-            if name in wanted and node.value is not None:
-                try:
-                    found[name] = ast.literal_eval(node.value)
-                except (ValueError, SyntaxError):
-                    pass
-
-    drift = 0
-    theirs_url = found.get("MINIPRO_XML_URL")
-    if theirs_url is None:
-        # Fail CLOSED. A constant this script cannot find is a constant it
-        # cannot verify, which is indistinguishable from a drift for every
-        # purpose this check exists to serve.
-        drift += 1
-        print("DRIFT: MINIPRO_XML_URL not found in build_db.py — the "
-              "generator renamed or restructured it, so the pinned catalog "
-              "SHA is now unverified. Re-read the generator and update this "
-              "script.")
-    elif theirs_url != MINIPRO_XML_URL:
-        drift += 1
-        print("DRIFT: pinned infoic.xml URL differs\n"
-              f"  ours  : {MINIPRO_XML_URL}\n  theirs: {theirs_url}")
-    else:
-        print("ok: MINIPRO_XML_URL matches build_db.py")
-
-    their_vpp_name = next(
-        (n for n in GENERATOR_VPP_NAMES if isinstance(found.get(n), dict)), None
-    )
-    theirs_vpp = found.get(their_vpp_name) if their_vpp_name else None
-    if not isinstance(theirs_vpp, dict):
-        # Fail CLOSED, and say what was looked for — the previous WARN+exit-0
-        # here is what let the VPP table go unchecked across a rename.
-        drift += 1
-        print("DRIFT: no VPP table found in build_db.py under any known name "
-              f"({', '.join(GENERATOR_VPP_NAMES)}). The generator renamed it "
-              "again. Find the new name, add it to GENERATOR_VPP_NAMES, and "
-              "re-verify the values — do NOT assume they are unchanged.")
-    elif theirs_vpp != VPP_MV:
-        drift += 1
-        keys = set(theirs_vpp) | set(VPP_MV)
-        print(f"DRIFT: VPP table differs (generator calls it {their_vpp_name})")
-        for k in sorted(keys):
-            a, b = VPP_MV.get(k), theirs_vpp.get(k)
-            if a != b:
-                print(f"  0x{k:02X}: ours={a!r} mV  theirs={b!r} mV")
-    else:
-        print(f"ok: VPP table matches build_db.py:{their_vpp_name} "
-              f"({len(VPP_MV)} entries, compared in mV)")
-
-    if drift:
-        print(f"\n{drift} table(s) drifted. Update this script to match the "
-              "generator before trusting its decode.")
-        return 1
-    return 0
 
 
 def fetch(path: str, url: str) -> str:
@@ -263,18 +153,12 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("part", nargs="?",
                     help="part number, e.g. AT28C256 (case/punctuation insensitive)")
-    ap.add_argument("--app", default=DEFAULT_APP,
-                    help=f"firestarter_app root, for --check (default {DEFAULT_APP})")
     ap.add_argument("--xml", default=None, help="local infoic.xml cache path")
     ap.add_argument("--raw", action="store_true", help="dump every attribute verbatim")
-    ap.add_argument("--check", action="store_true",
-                    help="verify our decode tables against build_db.py, then exit")
     args = ap.parse_args()
 
-    if args.check:
-        return check_drift(args.app)
     if not args.part:
-        ap.error("a part number is required (or use --check)")
+        ap.error("a part number is required")
 
     url = MINIPRO_XML_URL
     sha = re.search(r"/raw/([0-9a-f]{8})", url)

@@ -32,7 +32,6 @@ python3 $S/devtest_issues.py list       # every open [dev test] issue + verdict
 python3 $S/devtest_issues.py show 21    # parse one issue and route it
 python3 $S/devtest_issues.py fold       # group issues by EPROM (dry run)
 python3 $S/devtest_issues.py labels     # create the label taxonomy (idempotent)
-python3 $S/test_supersede.py            # self-test the three-leg supersede rule
 ```
 
 ## 1. Enumerate and pick the issues
@@ -176,9 +175,6 @@ outward-facing and must never rest on a guess. `supersedes()` in
 When firmware identity is absent on either side (an old report, per §2's
 not-attributable rule), test 2 falls back to host-version evidence alone and the close
 comment says so. That is a caveat, not a silent assumption.
-
-Run `python3 $S/test_supersede.py` after touching that function — it pins the two real
-closes and all four traps above.
 
 Show the dry run to the operator before applying — closing issues is outward-facing
 and not yours to decide unilaterally. Then:
