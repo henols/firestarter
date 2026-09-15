@@ -42,13 +42,16 @@ host `3.0.0b38`. That part's derived page size is *correct*, which is what isola
 
 ### PAGE — the firmware uses the part's real page size (gh#67)
 
-- [ ] **PAGE-01**: The page size used by the protocol `0x05` write path is the part's recorded page
+- [x] **PAGE-01**: The page size used by the protocol `0x05` write path is the part's recorded page
       size from the chip database, not a value derived from the device's total size.
-- [ ] **PAGE-02**: For **all 27** protocol `0x05` parts, the page size the firmware uses equals the
+- [x] **PAGE-02**: For **all 27** protocol `0x05` parts, the page size the firmware uses equals the
       part's recorded real page. This is measured across the whole set, not asserted for the 9 known
       to be wrong — a fix that corrects those 9 while breaking one of the other 18 is not a fix.
 - [ ] **PAGE-03**: A contiguous multi-page write to one of the 9 previously under-sized parts reads
-      back byte-identical on real silicon.
+      back byte-identical on real silicon. **Status (2026-09-15):** the software half is landed and
+      measured — see `.planning/v1.39/194-page-size-27-row-record.md` for the evidence-class split.
+      The hardware leg stays OPEN per D-11: 0 of 9 on hardware, 9 of 9 on the database comparison,
+      until the ordered `W29C512` arrives and a bench write is read back.
 
 ### INSTR — the adoption instrument answers a live question, or is retired (v1.38 carry-over)
 
@@ -74,9 +77,9 @@ host `3.0.0b38`. That part's derived page size is *correct*, which is what isola
 | WRITE-01 | Phase 195 | Pending |
 | WRITE-02 | Phase 195 | Pending |
 | WRITE-03 | Phase 195 | Pending |
-| PAGE-01 | Phase 194 | Pending |
-| PAGE-02 | Phase 194 | Pending |
-| PAGE-03 | Phase 194 | Pending |
+| PAGE-01 | Phase 194 | Complete |
+| PAGE-02 | Phase 194 | Complete |
+| PAGE-03 | Phase 194 | Pending (hardware leg OPEN per D-11) |
 | INSTR-01 | Phase 196 | Pending |
 | INSTR-02 | Phase 196 | Pending |
 
