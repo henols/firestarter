@@ -1,0 +1,88 @@
+THE .GITMODULES ARCHAEOLOGY TRAP IS NOW ARMED — EXECUTED VERIFICATION
+=====================================================================
+
+capture_date: 2026-09-15
+why_now: `henols/firestarter` was claimed for the meta repository on 2026-09-14.
+         Until then this failure was a projection that could not be tested without
+         performing the destructive act. The act was performed, so it is testable,
+         and it was tested.
+
+supersedes: the "does not bite today" readings in
+            .planning/phases/193-the-deferred-claim-made-measurable/evidence/193-gate-03-fresh-clone.txt
+            READING 2. That reading was correct on 2026-09-14 and is correct as history.
+            It is no longer a statement about today.
+
+READING 1 -- the trap, executed
+---------------------------------------------------------------------
+  $ git clone --no-recurse-submodules https://github.com/henols/firestarter.git repo
+  $ cd repo && git checkout v1.35
+  meta_ref: v1.35
+  meta_commit: 6e84030b
+  gitmodules_firmware_url: git@github.com:henols/firestarter.git
+  override_set: none
+
+  $ git submodule update --init --depth 1 firestarter
+  Submodule 'firestarter' (git@github.com:henols/firestarter.git) registered for path 'firestarter'
+  Cloning into '.../repo/firestarter'...
+  fatal: remote error: upload-pack: not our ref 4f73c80cfa2915fb22812dde55b2923a86120c5f
+  fatal: Fetched in submodule path 'firestarter', but it did not contain
+         4f73c80cfa2915fb22812dde55b2923a86120c5f. Direct fetching of that commit failed.
+
+  exit_status: 128
+  leftover_firestarter_entries: 1
+  leftover_firestarter_origin: git@github.com:henols/firestarter.git
+  leftover_firestarter_head_subject: Merge pull request #79 from henols/v1.38-gitmodules-main
+  leftover_contains_src: no
+  leftover_contains_planning: no
+
+  The projection is CONFIRMED and now an observation: the parent cloned ITSELF into
+  its own `firestarter/` child directory, because the old URL now resolves to this
+  repository. It then failed to find the firmware commit, because that sha is not in
+  this repository's history. It fails loudly (128), which is the one mercy here.
+
+READING 2 -- the documented workaround does NOT recover a clone that already failed
+---------------------------------------------------------------------
+  attempt_1_no_override_rc: 128
+  then, per the note's Workaround B, on the SAME clone:
+  $ git config submodule.firestarter.url git@github.com:henols/firestarter_fw.git
+  $ git submodule update --init --depth 1 firestarter
+  attempt_2_rc: 128
+  firestarter_origin_after_attempt_2: git@github.com:henols/firestarter.git
+  has_src_after_attempt_2: no
+
+  The override has no effect once the child clone exists with the wrong origin.
+  This is the realistic user journey -- try it, fail, look up the workaround, apply
+  it, fail again -- and the note had no recovery path for it.
+
+READING 3 -- clean slate, override set FIRST (the note's stated order) still works
+---------------------------------------------------------------------
+  $ git clone --no-recurse-submodules ... && git checkout v1.35
+  $ git config submodule.firestarter.url git@github.com:henols/firestarter_fw.git
+  $ git submodule update --init --depth 1 firestarter
+  rc: 0
+  firestarter_origin: git@github.com:henols/firestarter_fw.git
+  head(firestarter): 4f73c80
+  has_src: yes
+
+READING 4 -- the recovery, for a clone that already hit the trap
+---------------------------------------------------------------------
+  $ git submodule deinit -f firestarter
+      Cleared directory 'firestarter'
+      Submodule 'firestarter' ... unregistered for path 'firestarter'
+  $ rm -rf .git/modules/firestarter
+  $ git config submodule.firestarter.url git@github.com:henols/firestarter_fw.git
+  $ git submodule update --init --depth 1 firestarter
+  rc: 0
+  firestarter_origin: git@github.com:henols/firestarter_fw.git
+  head(firestarter): 4f73c80
+  has_src: yes
+
+  Order is load-bearing: `deinit` UNREGISTERS the submodule and discards the
+  override, so the override must be re-set AFTER deinit, not before. Removing
+  `.git/modules/firestarter` is required -- deinit alone leaves the cached module
+  and the next update reuses its wrong origin.
+
+LABEL -- what this transcript is
+---------------------------------------------------------------------
+This is an observation, not a projection. Every command above was run against the
+live GitHub state on 2026-09-15, after the slug claim. Nothing here is reasoned.

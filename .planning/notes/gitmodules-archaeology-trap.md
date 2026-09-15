@@ -9,7 +9,7 @@
 
 `.gitmodules` records a submodule URL per commit. Fixing the URL on `beta` and `main` today does not change what any past commit records. Checking out an old tag resurrects the old URL from that commit. So does bisecting firmware history, or reading any pre-rename commit. This project does a great deal of archaeology, so the trap will be met. The concrete ref a reader will actually hit is the published `v1.35` tag (`6e84030b…`, 2026-09-02). Its `.gitmodules` still declares `url = git@github.com:henols/firestarter.git` for the firmware submodule. It stays that way permanently, because tags do not move.
 
-**The trap does not bite today.** The old firmware slug `henols/firestarter` still redirects to `henols/firestarter_fw`. `gh api repos/henols/firestarter` and `gh api repos/henols/firestarter_fw` both return the same `id: 810276812`. A plain `git submodule update --init` at `v1.35`, with no override set at all, succeeds today. It fetches through the redirect (`evidence/193-gate-03-fresh-clone.txt`, READING 2). The workarounds below exist for the state that arrives once the freed slug `henols/firestarter` is claimed for the meta repository. That state has not arrived.
+**The trap is armed.** It stopped being hypothetical on 2026-09-14, when `henols/firestarter` was claimed for the meta repository and the redirect to `henols/firestarter_fw` was destroyed. `gh api repos/henols/firestarter` now returns `id: 1232995399` (this repository); `henols/firestarter_fw` is `id: 810276812`. A plain `git submodule update --init` at `v1.35` with no override now registers the old URL, clones **this repository** into its own `firestarter/` directory, fails to find the firmware sha, and exits **128** — leaving a half-initialised wrong repository behind. Executed and recorded in `evidence/gitmodules-trap-armed-2026-09-15.txt`. The workarounds below are no longer precautionary; they are required.
 
 ## Workaround A — an existing clone
 
@@ -49,6 +49,37 @@ git -c submodule.firestarter.url=git@github.com:henols/firestarter_fw.git \
 
 Verified clean, in a fresh clone at `v1.35` with no prior override. It checks out the child from `firestarter_fw`. It leaves `git config --get submodule.firestarter.url` unset afterward — the override lives only in that one command's environment. This is a **convenience** for a single checkout, offered **beside** Workaround A and Workaround B, not a replacement for either. Those two are the workarounds `.planning/notes/999.9-repo-rename-impact-analysis.md` prescribes and the ones this phase actually executed and banked as transcripts.
 
+## Recovery — a clone that already hit the trap
+
+Workarounds A and B both assume the override is set **before** the first
+`git submodule update`. Once an update has run without it, the child clone exists with
+the wrong origin and setting the override afterwards does nothing: the next update
+reuses the existing clone and fails identically. Measured, both attempts exit 128
+(`evidence/gitmodules-trap-armed-2026-09-15.txt`, READING 2).
+
+This is the journey a reader actually takes — try it, fail, look up the workaround,
+apply it, fail again — so the way out is written here rather than left to be derived.
+
+```
+git submodule deinit -f firestarter
+rm -rf .git/modules/firestarter
+git config submodule.firestarter.url git@github.com:henols/firestarter_fw.git
+git submodule update --init firestarter
+```
+
+Two ordering constraints, both load-bearing:
+
+- `deinit` **unregisters** the submodule and discards `submodule.<name>.url`, so the
+  override must be set **after** it, never before.
+- Removing `.git/modules/<name>` is required. `deinit` clears the working directory but
+  leaves the cached module, and the next update reuses its wrong origin.
+
+Verified end to end: rc 0, `firestarter/` origin `git@github.com:henols/firestarter_fw.git`,
+firmware checked out at `4f73c80` (READING 4).
+
+Substitute the submodule's name at the ref you are on. It is `firestarter` at every
+pre-rename ref, and `firestarter_fw` from v1.38 onward.
+
 ## The sync hazard
 
 Running `git submodule sync` while HEAD is at a pre-rename ref **silently destroys** the workaround set up by Workaround A or Workaround B. This is not a corner case. `.planning/notes/999.9-repo-rename-impact-analysis.md` § "Ordered procedure", Phase A step 2, names it as routine hygiene. That step tells an operator to run `git submodule sync --recursive` after repointing `.gitmodules`. An operator who has learned that step will undo the GATE-03 workaround. No warning appears. No error appears. It happens the moment `sync` runs at a pre-rename ref.
@@ -87,14 +118,20 @@ git -C firestarter remote set-url origin git@github.com:henols/firestarter_fw.gi
 
 Each transcript carries its own capture dates and the literal commands that produced it. Re-run them rather than trust this note's prose.
 
-- `evidence/193-gate-03-fresh-clone.txt` — Workaround B, executed at `v1.35` in a clean, no-override clone. READING 1 proves the workaround. The override survives `submodule init`, and the child is cloned from `firestarter_fw` despite the ref's own `.gitmodules` naming the old slug. READING 2 proves the trap does not bite today. A plain, no-override `submodule update --init` at the same ref still succeeds, through the live redirect. That reading is labelled explicitly as a statement about today's world.
+- `evidence/193-gate-03-fresh-clone.txt` — Workaround B, executed at `v1.35` in a clean, no-override clone. READING 1 proves the workaround. The override survives `submodule init`, and the child is cloned from `firestarter_fw` despite the ref's own `.gitmodules` naming the old slug. READING 2 proved the trap did not bite *on 2026-09-14*, through the then-live redirect. It is correct as history and is no longer a statement about today — the redirect was destroyed on 2026-09-14. See `evidence/gitmodules-trap-armed-2026-09-15.txt` for the executed post-claim behaviour.
 - `evidence/193-gate-03-existing-clone.txt` — Workaround A, executed by taking a maintained, post-rename clone back to `v1.35`. READING 1 captures the invisible agreement state. READING 2 forces the divergence by checking out `v1.35`, and shows the override outliving the checkout and being honoured by the subsequent update.
 - `evidence/193-gate-03-submodule-sync-hazard.txt` — the hazard reproduced and repaired. READING 1 is the pre-`sync` baseline, both values on `firestarter_fw`. READING 2 is the clobber, both values reverted to the old slug. READING 3 is the two-command repair, plus the durability check proving a second `sync` re-clobbers both.
 
+- `evidence/gitmodules-trap-armed-2026-09-15.txt` — the trap executed **after** the slug
+  claim, on 2026-09-15. READING 1 is the failure itself (exit 128, this repository cloned
+  into its own `firestarter/`). READING 2 shows the override failing to recover an
+  already-failed clone. READING 3 confirms the clean-slate order still works. READING 4 is
+  the recovery. This transcript is an observation, not a projection.
+
 ## Honest limits
 
-**(a) The trap does not bite today.** The old firmware slug `henols/firestarter` still redirects to `henols/firestarter_fw`. A plain `git submodule update --init` at a pre-rename ref succeeds through that redirect (`evidence/193-gate-03-fresh-clone.txt` READING 2). The workarounds above are for the state that arrives once the freed slug is claimed for the meta repository. That state has not arrived, and nothing in this note or its transcripts claims otherwise.
+**(a) The trap is armed, and this limit is retired.** It read "does not bite today" until 2026-09-14, when the freed slug was claimed for the meta repository. That state has arrived. A plain `git submodule update --init` at a pre-rename ref now fails with exit 128 (`evidence/gitmodules-trap-armed-2026-09-15.txt`, READING 1).
 
-**(b) The post-claim failure shape is a projection, not an observation.** `.planning/notes/999.9-repo-rename-impact-analysis.md` § "The `.gitmodules` archaeology trap" reasons that after the claim, `git submodule update --init` resolves the old URL to the **meta** repository itself. It reasons the parent then clones into its own `firestarter/` child directory. That reasoning follows from how the redirect and the URL resolve today. It is **unverified and unverifiable while the redirect is live**. It is deliberately not tested here. Testing it would require performing the destructive claim this milestone declines to perform (`.planning/REQUIREMENTS.md` § "Decisions taken at activation" D-1, D-7). This note presents it as a projection, and labels it one. No reading in any transcript banked here shows a post-claim failure, because none could.
+**(b) The post-claim failure shape is now an observation, and the projection was right.** `.planning/notes/999.9-repo-rename-impact-analysis.md` § "The `.gitmodules` archaeology trap" reasoned that after the claim, `git submodule update --init` would resolve the old URL to the **meta** repository itself, and that the parent would then clone into its own `firestarter/` child directory. Executed on 2026-09-15: that is exactly what happens. It was untestable while the redirect was live — testing it required performing the destructive claim, which the operator directed on 2026-09-14 (`.planning/seeds/SEED-claim-firestarter-slug.md`). So it was tested, and this limit is discharged rather than standing. Two things the projection did not predict are recorded in `evidence/gitmodules-trap-armed-2026-09-15.txt`: the failure leaves a half-initialised **wrong** repository in `firestarter/` rather than an empty directory, and the override does **not** recover a clone that has already failed — that needs `deinit` plus removal of `.git/modules/<name>` first.
 
 **(c) History cannot be repaired.** Fixing `.gitmodules` on `beta` and `main` does not change what any past commit records. The trap is a property of history, not of the current tip. Rewriting history across a repository with published tags and two submodules is not on the table. The trap is documented and worked around here, not solved. `.planning/notes/999.9-repo-rename-impact-analysis.md` reaches the same verdict, and this note does not revise it.
