@@ -242,7 +242,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 194-02-PLAN.md — The full firmware consumption matrix over all 7 distinct geometries, plus the four-class refusal proof and the flash delta (wave 2)
+- [x] 194-02-PLAN.md — The full firmware consumption matrix over all 7 distinct geometries, plus the four-class refusal proof and the flash delta (wave 2)
 - [ ] 194-03-PLAN.md — The host data gates move by re-derivation: 45 carriers, the 27-row two-halves table, the curated-table absence assertion, the re-derived field inventory (wave 2)
 - [ ] 194-04-PLAN.md — The fourth wire-dict delta layer: 25 programmatically generated entries and the six-pair disjointness matrix (wave 2)
 - [ ] 194-05-PLAN.md — The host refuses a protocol `0x05` write with no page size, before any serial byte, in both layers (wave 2)
