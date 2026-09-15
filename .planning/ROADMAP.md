@@ -249,7 +249,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 194-06-PLAN.md — Delete the falsified comment clauses, publish the 27-row record with its evidence classes apart, file the two deferrals, mark PAGE-01 and PAGE-02 Complete (wave 3)
+- [x] 194-06-PLAN.md — Delete the falsified comment clauses, publish the 27-row record with its evidence classes apart, file the two deferrals, mark PAGE-01 and PAGE-02 Complete (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
