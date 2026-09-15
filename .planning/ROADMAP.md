@@ -253,7 +253,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 194-07-PLAN.md — The `W29C020` no-regression silicon run, committed as a transcript, with PAGE-03's hardware leg held open (wave 4)
+- [x] 194-07-PLAN.md — The `W29C020` no-regression silicon run, committed as a transcript, with PAGE-03's hardware leg held open (wave 4)
 
 **Cross-cutting constraints:**
 
