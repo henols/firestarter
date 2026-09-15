@@ -1,6 +1,6 @@
 ---
 name: devtest-rootcause
-description: Investigate the firestarter code behind a triaged `dev test` chip failure and fix the real defect — a decode bug in the database generator, or a genuine bug in the host app or firmware — then report the fix on the issue with the artefact versions carrying it and a fix:committed / fix:released label. Knows that chip_database.json is generated and must never be hand-edited. Use when asked to investigate why an EPROM fails, root-cause a dev test issue, fix a chip's pinout or protocol or VPP, correct the database generator, act on the datasheet findings left on an issue, say which version fixes a chip, or make a chip like at28c256 or w27e257 work.
+description: Investigate the firestarter code behind a triaged `dev test` chip failure and fix the real defect. The defect is a decode bug in the database generator, or a genuine bug in the host app or firmware. Then report the fix on the issue with the artefact versions carrying it and a fix:committed / fix:released label. Knows that chip_database.json is generated and must never be hand-edited. Use when asked to investigate why an EPROM fails, root-cause a dev test issue, or fix a chip's pinout or protocol or VPP. Use it also to fix the database generator, or to act on the datasheet findings left on an issue. Use it to say which version fixes a chip, or to make a chip like at28c256 or w27e257 work.
 ---
 
 # Root-cause a `dev test` failure in the code
