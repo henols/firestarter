@@ -3,7 +3,7 @@ created: 2026-09-13T20:45:00Z
 title: release.yml's git-auto-commit-action push to main is rejected by the Protect main ruleset
 area: tooling
 resolves_phase: unassigned
-source: .planning/phases/191-the-branch-that-reaches-users/191-CONTEXT.md (D-04 / D-05)
+source: .planning/milestones/v1.38-phases/191-the-branch-that-reaches-users/191-CONTEXT.md (D-04 / D-05)
 files:
   - firestarter_app/.github/workflows/release.yml (on origin/main — the defect: pushes to main with the default GITHUB_TOKEN)
   - firestarter_app/.github/workflows/beta-release.yml (on origin/beta — the proven pattern this repository already uses on its beta channel)

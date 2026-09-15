@@ -4,7 +4,7 @@ corrected: 2026-09-13T23:30:00Z
 title: publish.yml's release published trigger is suppressed for bot-created releases — 2.0.8 was cut and never published
 area: tooling
 resolves_phase: unassigned
-source: .planning/phases/191-the-branch-that-reaches-users/191-CONTEXT.md (D-04 / D-05); measurement corrected during 191 verification
+source: .planning/milestones/v1.38-phases/191-the-branch-that-reaches-users/191-CONTEXT.md (D-04 / D-05); measurement corrected during 191 verification
 files:
   - firestarter_app/.github/workflows/publish.yml (on origin/main — the trigger is fine; it is never delivered when release.yml creates the release)
   - firestarter_app/.github/workflows/release.yml (on origin/main — the actual defect site: creates the release with the default GITHUB_TOKEN, which cannot cascade)
