@@ -212,3 +212,42 @@ of new investigations.
   an independent oracle that does not share the detector's anchor. Corollary: never let the
   remediation and the measurement key on the same structural feature.
 ---
+
+## planning-root-file-sprawl — 41 milestone-scoped items stranded at `.planning/` root, no convention ever generalized
+- **Date:** 2026-09-15
+- **Error patterns:** files stored directly under the .planning folder, milestone phases information
+  stored at root, loose v1.X-prefixed files, bare v1.X/ directories at .planning root, no convention
+  for ad hoc milestone artifacts, undated topic docs at root
+- **Root cause(s):** No convention was ever generalized past REQUIREMENTS/ROADMAP/MILESTONE-AUDIT/
+  phases. Ad hoc milestone artifacts (decision records, bench evidence, release scripts, PR-body
+  drafts) were written straight to `.planning/` root or a bare `.planning/v1.X/` scratch dir by
+  analogy to the previous phase's choice. This continued even after the `.planning/milestones/v1.X-*`
+  flat-prefix convention existed (established 2026-05-26). Separately, the last 4 milestone closes
+  (v1.35-38) invented and then copied forward a bare-directory CLOSE-RECORD.md home, modeled on an
+  unrelated bench-evidence directory from v1.34. This diverged from the 28-milestone-old dominant
+  precedent. Separately again, 4 undated cross-cutting topic docs were written to root by habit
+  instead of the already-established `.planning/notes/` home. Three independent causes. No AND-gate.
+- **Fix:** Moved all 41 items onto the measured-dominant `.planning/milestones/v1.X-<DOC>.md`
+  flat-prefix convention (69 flat files + 30 `-phases` dirs across 38 milestones against 14 bare-dir
+  uses decided the target) or `.planning/notes/` for the 4 topic docs, via `git mv` (history
+  preserved, including gitignored bench-evidence binaries and an untracked upstream clone that a
+  naive `mv` would have stranded). Fixed every live citation to the moved paths with a scripted
+  remap plus a round-trip dangling-path oracle (41 files, 334 occurrences at the pre-migration
+  HEAD baseline, down to 0 in live scope). Fixed `.gitignore`'s path-anchored ignore patterns and 2
+  hardcoded skill-script paths so ignore behavior and tool citations stayed correct after the move.
+- **Files changed:** .planning/milestones/ (41 new entries via git mv), .planning/notes/ (4 new
+  entries via git mv), .planning/{ROADMAP,STATE,PROJECT,MILESTONES,RETROSPECTIVE}.md, .gitignore,
+  CLAUDE.md, .claude/skills/devtest-triage/SKILL.md, .claude/skills/devtest-rootcause/scripts/diff_db.py,
+  .planning/codebase/*.md, .planning/notes/*.md, .planning/seeds/*.md, .planning/todos/pending/*.md,
+  .planning/graphs/GRAPH_REPORT.md, ~85 .md/.py/.sh files inside the 10 relocated -artifacts trees
+- **Why not caught:** No gate existed for this class. No GSD workflow, lint rule, or plan-checker
+  checks where a phase's PLAN.md chooses to write a non-canonical deliverable. Placement was
+  entirely a per-phase authoring choice with no enforced convention to deviate from.
+- **Recurrence guard:** None added at the code or lint level (out of this session's requested scope
+  — the operator asked for the migration, not a preventive gate). The durable guard is this KB entry
+  (a semantic-recall candidate for a future "where do I put this artifact" question) plus the fact
+  that `.planning/milestones/` is now the sole precedent in the tree (0 remaining bare `v1.X/` root
+  dirs to imitate). A follow-up gate — a plan-checker rule that flags any new `.planning/v[0-9]` root
+  path outside `.planning/milestones/` and `.planning/phases/` — would close this class completely.
+  Not built here.
+---
