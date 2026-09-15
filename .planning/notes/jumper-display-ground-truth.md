@@ -16,7 +16,7 @@ be checked against, and the defects found.
 | Revision family | Source | Status |
 |---|---|---|
 | Rev 0 / Rev 1 (identical, per operator) | `firestarter/document/rurp_schematics_rev1.pdf` (KiCad, Anders Nielsen) | Read 2026-07-10 |
-| Rev 2.0 / 2.1 / 2.2 / 2.3 | KiCad schematics in `.planning/v1.7/upstream-rurp/hardware/` | Verified during v1.7 + this session's research pass |
+| Rev 2.0 / 2.1 / 2.2 / 2.3 | KiCad schematics in `.planning/milestones/v1.7-artifacts/upstream-rurp/hardware/` | Verified during v1.7 + this session's research pass |
 | Firmware corroboration | `firestarter/include/rurp_shield.h:36` ("VPP pin is socket pin 1"), `firestarter/doc/PROTOCOLS.md:136` | — |
 
 Note: an earlier research pass claimed Rev 0/1 routing was undocumented
@@ -82,10 +82,10 @@ why the Rev 2.2 evidence photograph can show JP4, JP5, JP6 and JP9 together: it 
 the board, where JP4's through-hole pads land alongside the five solder jumpers.
 
 Types and values are from the Rev 2.3 schematic
-(`.planning/v1.7/upstream-rurp/hardware/RelativelyUniversalROMProgrammer.kicad_sch`, `(rev "2.3")`
+(`.planning/milestones/v1.7-artifacts/upstream-rurp/hardware/RelativelyUniversalROMProgrammer.kicad_sch`, `(rev "2.3")`
 — the only committed schematic that carries these designators); their presence on Rev 2.1 and
 Rev 2.2 is from those revisions' own gerber bundles, per the read-Rev-2.2's-own-artefacts rule in
-`.planning/v1.7-SHIELD-REVS.md`.
+`.planning/milestones/v1.7-SHIELD-REVS.md`.
 
 ## VPP destination per revision and JP4 state (Phase 182 trace)
 

@@ -170,7 +170,7 @@ Useful as a map of what is regenerable and must never be committed:
   `chip-test/`, root-level `/*.bin`
 - Extra submodule worktrees: `firestarter_app_py32/`, `firestarter_py32_ci/`
 - `node_modules`, `skills-lock.json`, root `/package.json` + `/package-lock.json`
-- `.planning/v1.7/**` except directories and `.md` files; `.planning/v1.7/upstream-rurp`
+- `.planning/milestones/v1.7-artifacts/**` except directories and `.md` files; `.planning/milestones/v1.7-artifacts/upstream-rurp`
   is ignored in **both** the bare and trailing-slash forms (the bare form is what prevents
   it being recorded as an orphan gitlink)
 

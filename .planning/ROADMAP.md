@@ -3091,7 +3091,7 @@ Requirement ticking is named exhaustively per plan so no plan ticks a multi-plan
 
 **Plans**: 5 plans in 4 waves. Meta-repo only (`commits_land_in: .`) — `firestarter/` and `firestarter_app/` are read-only citation sources and no submodule commit is expected or permitted. **This phase must NOT be run under `--auto`/`--chain`**: plan `139-05` carries a `checkpoint:human-action` posting gate, and the `autonomous: false` flag alone is not self-protecting.
 
-Requirement ticking is named exhaustively per plan so no plan ticks a multi-plan requirement early: `139-01` → none · `139-02` → none · `139-03` → none · `139-04` → none · `139-05` → **ISSUE-01, ISSUE-02** on the operator's wording approval, plus **ISSUE-03 only on a verified post** (on the approve-but-hold branch ISSUE-03 stays `[ ]`, annotated in place, with its exact one-command follow-up parked in `.planning/milestones/v1.3-artifacts1-OPERATOR-BATCH.md`).
+Requirement ticking is named exhaustively per plan so no plan ticks a multi-plan requirement early: `139-01` → none · `139-02` → none · `139-03` → none · `139-04` → none · `139-05` → **ISSUE-01, ISSUE-02** on the operator's wording approval, plus **ISSUE-03 only on a verified post** (on the approve-but-hold branch ISSUE-03 stays `[ ]`, annotated in place, with its exact one-command follow-up parked in `.planning/v1.31-OPERATOR-BATCH.md`).
 
 - [x] 139-01-PLAN.md — Wave 1: capture gh#15's **nine** acceptance boxes verbatim and resolve every citation by content at a pinned SHA (`139-GH15-ORIGINAL-CRITERIA.md`, `139-CITATIONS.md`)
 - [x] 139-02-PLAN.md — Wave 1: author `139-check-claims.py`, the Phase-139-scoped forbidden-claim gate, and see it fail on a planted violation before any pass is believed

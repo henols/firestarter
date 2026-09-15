@@ -190,7 +190,7 @@ _RATIONALES = {
         "      4096 B; UNVERIFIED (no on-hand silicon).\n"
         "  [CITED: tools/extra_chips.json provenance fields + 2516_EPROM.pdf datasheet;\n"
         "   .planning/phases/86-variant-decode-correct-db-regen/86-CONTEXT.md D-10/D-11;\n"
-        "   .planning/v1.15/DECODE-AUDIT.md (2516 user-override wire values)]"
+        "   .planning/milestones/v1.15-artifacts/DECODE-AUDIT.md (2516 user-override wire values)]"
     ),
     "RULE_PHASE84_RELABEL": (
         "Phase 84 cosmetic electrical.type relabel — label-only, NO dispatch / FLAG_CAN_ERASE / VPP change.\n"

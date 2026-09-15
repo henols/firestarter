@@ -98,7 +98,7 @@ directories empty.
 
 Also gitignored inside tracked trees: `.planning/graphs/graph.json`,
 `.planning/graphs/.last-build-snapshot.json`, `.planning/research/.cache/`, and everything
-under `.planning/v1.7/**` except `*.md` (raw chat dumps and photo binaries stay local).
+under `.planning/milestones/v1.7-artifacts/**` except `*.md` (raw chat dumps and photo binaries stay local).
 
 ---
 

@@ -24,7 +24,7 @@ use: `gh`, `curl`, `pdftotext`. Do not replace it with a call into `firestarter_
 ROOT=$(git rev-parse --show-superproject-working-tree 2>/dev/null)
 ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
 
-LEDGER=$ROOT/.planning/VALIDATED-EPROMS.md
+LEDGER=$ROOT/.planning/notes/VALIDATED-EPROMS.md
 APP=$ROOT/firestarter_app              # only for `firestarter info` + datasheet cache
 S=$ROOT/.claude/skills/devtest-triage/scripts
 
@@ -235,13 +235,13 @@ gh issue edit 51 --repo henols/firestarter --add-label dev-test,chip:validated
 ```
 
 **Name what passed, not where you logged it.** The close comment names the
-chip's host and firmware and stops there. Do not cite `.planning/VALIDATED-EPROMS.md`
+chip's host and firmware and stops there. Do not cite `.planning/notes/VALIDATED-EPROMS.md`
 or any other repo path — the ledger lives in a repo the reporter does not have, so the
 reference is noise to the only person who sees the comment. The `chip:validated` label
 already shows you logged the chip.
 
 Then append one row to the ledger, creating it with this header if absent. The ledger
-lives at `$ROOT/.planning/VALIDATED-EPROMS.md` when `.planning/` exists. On a
+lives at `$ROOT/.planning/notes/VALIDATED-EPROMS.md` when `.planning/` exists. On a
 clone without GSD it goes to `VALIDATED-EPROMS.md` at the repo root — the ledger is
 this skill's own artifact and has no GSD dependency beyond that directory choice.
 

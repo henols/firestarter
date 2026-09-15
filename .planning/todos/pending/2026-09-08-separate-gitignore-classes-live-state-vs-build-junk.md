@@ -5,7 +5,7 @@ area: meta
 files:
   - .gitignore (lines 78-79 pin state.json and milestone.lock)
   - .planning/state.json, .planning/milestone.lock (live GSD state, ignored)
-  - .planning/v1.34/bench/cells/**/reads/*.bin (4.0M of hardware measurements, ignored)
+  - .planning/milestones/v1.34-artifacts/bench/cells/**/reads/*.bin (4.0M of hardware measurements, ignored)
   - .planning/notes/disposable-artifact-inventory.md (the evidence)
 ---
 
@@ -18,7 +18,7 @@ files:
 2. **Live state** — `.planning/state.json` and `.planning/milestone.lock`, ignored at
    `.gitignore:78-79`. Losing these loses session position, and `state.json` scrapes the STATE.md
    **body** rather than frontmatter, so it is not trivially reconstructible from the record.
-3. **Irreproducible measurements** — `.planning/v1.34/bench/cells/**/reads/*.bin` (4.0M:
+3. **Irreproducible measurements** — `.planning/milestones/v1.34-artifacts/bench/cells/**/reads/*.bin` (4.0M:
    `run_NN.bin`, `written.bin`, per cell per arm). These came off physical hardware. No sha or
    rebuild recreates them.
 
@@ -50,5 +50,5 @@ Option 3 is the real fix and the one worth deciding on; 1 and 2 are mitigations.
 - [ ] Whatever the decision on option 3, it is recorded — including a plain "we accept the risk"
       if that is the call.
 - [ ] If a clean script lands: running it leaves `.planning/state.json`,
-      `.planning/milestone.lock`, and every `.planning/v1.34/bench/**/*.bin` in place, verified by
+      `.planning/milestone.lock`, and every `.planning/milestones/v1.34-artifacts/bench/**/*.bin` in place, verified by
       a before/after count.
