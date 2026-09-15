@@ -1,6 +1,6 @@
 ---
 name: devtest-triage
-description: Triage community `dev test` chip-validation issues in henols/firestarter against the chip's real datasheet. Close a PASS issue and log the chip. Close a failure when a later PASS supersedes it. Post a datasheet-grounded findings comment on the rest. Labels every issue by cause. Use this skill to triage dev test issues, or go through the chip test reports. Use it also to check an EPROM against its datasheet, or check the pin map or VPP for a chip. Use it to close passing validation issues, defer failures that later passed, or work an issue like "[dev test] at28c256 — FAIL".
+description: Triage community `dev test` chip-validation issues in henols/firestarter against the chip's real datasheet — close PASS issues and log the chip, close failures a later PASS supersedes, and post a datasheet-grounded findings comment on the rest. Labels every issue by cause. Use when asked to triage dev test issues, go through the chip test reports, check an EPROM against its datasheet, verify the pin map or VPP for a chip, close passing validation issues, defer failures that later passed, or work an issue like "[dev test] at28c256 — FAIL".
 ---
 
 # Triage `dev test` issues against the datasheet
