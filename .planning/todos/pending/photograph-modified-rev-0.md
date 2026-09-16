@@ -32,7 +32,7 @@ by operator direction on 2026-08-29; Phase 163 (cell B1) never put the board on 
 164 — which was scheduled to photograph it *while it was already out for B1* — never started either.
 
 **Current home: backlog 999.42** ("Finish the v1.34 sweep — six chips, two shields, and the Rev 0
-rework trace"). See `.planning/ROADMAP.md` §Phase 999.42 and `.planning/v1.34/CLOSE-RECORD.md` §2.3.
+rework trace"). See `.planning/ROADMAP.md` §Phase 999.42 and `.planning/milestones/v1.34-artifacts/CLOSE-RECORD.md` §2.3.
 
 **The third deferral in this todo's life** (Phase 31 → Phase 35 → post-v1.7 → Phase 164 → 999.42),
 and the board is **still never physically inspected**. No photographs of it exist anywhere.
@@ -48,7 +48,7 @@ Phase 35 Wave 3 bench session (2026-05-26) discovered that the Modified Rev 0 bo
 
 ## What's needed
 
-Photographs to `.planning/v1.7/photos/rev-0-modified/`:
+Photographs to `.planning/milestones/v1.7-artifacts/photos/rev-0-modified/`:
 - `top.jpg` — full top view, all components visible, silkscreen-version region readable if present
 - `bottom.jpg` — full bottom view
 - `silkscreen.jpg` — macro of silkscreen-version region (or "no silkscreen-version printed" if Rev 0 era pre-dates the convention)
@@ -58,13 +58,13 @@ Photographs to `.planning/v1.7/photos/rev-0-modified/`:
 
 ## Sentinel cross-references (preserve verbatim per Phase 35 D-Discretion Pattern E)
 
-The following sentinels in `.planning/v1.7-SHIELD-REVS.md` carry `as-modified — pending Phase 35` or `pending Phase 35` annotations that will resolve when this todo + its companion (`write-modifications-md-rework-trace.md`) close:
+The following sentinels in `.planning/milestones/v1.7-SHIELD-REVS.md` carry `as-modified — pending Phase 35` or `pending Phase 35` annotations that will resolve when this todo + its companion (`write-modifications-md-rework-trace.md`) close:
 
-- `.planning/v1.7-SHIELD-REVS.md` §1 row 4 (Modified Rev 0 row — `state: upstream-only`, `photo_dir: —`)
-- `.planning/v1.7-SHIELD-REVS.md` §4 row 8 (Rev 2.2 → Modified Rev 0 electrical delta — `as-modified — pending Phase 35`)
-- `.planning/v1.7-SHIELD-REVS.md` §5 row 7 (mechanical delta — `as-modified — pending Phase 35`)
-- `.planning/v1.7-SHIELD-REVS.md` §6 row 91 (capability matrix Modified Rev 0 row — `as-modified — pending Phase 35`)
-- `.planning/v1.7-SHIELD-REVS.md` §7 row 16+17 (R41 + JP4 alias rows — `as-modified — pending Phase 35` for mod_rev_0 column)
+- `.planning/milestones/v1.7-SHIELD-REVS.md` §1 row 4 (Modified Rev 0 row — `state: upstream-only`, `photo_dir: —`)
+- `.planning/milestones/v1.7-SHIELD-REVS.md` §4 row 8 (Rev 2.2 → Modified Rev 0 electrical delta — `as-modified — pending Phase 35`)
+- `.planning/milestones/v1.7-SHIELD-REVS.md` §5 row 7 (mechanical delta — `as-modified — pending Phase 35`)
+- `.planning/milestones/v1.7-SHIELD-REVS.md` §6 row 91 (capability matrix Modified Rev 0 row — `as-modified — pending Phase 35`)
+- `.planning/milestones/v1.7-SHIELD-REVS.md` §7 row 16+17 (R41 + JP4 alias rows — `as-modified — pending Phase 35` for mod_rev_0 column)
 
 ## When to triage
 
@@ -77,4 +77,4 @@ The following sentinels in `.planning/v1.7-SHIELD-REVS.md` carry `as-modified �
 - Phase 35 CONTEXT D-07 — deferral rationale
 - Phase 31 Plan 05 — original photo session that was blocked
 - Companion todo: `write-modifications-md-rework-trace.md` (Phase 31 follow-up #4 — depends on photos as evidentiary substrate)
-- Phase 35 bench evidence: `.planning/v1.7/bench-evidence-35.md` §"Modified Rev 0 Board" — bench observation that the rework wired a 10k pull-up on A3
+- Phase 35 bench evidence: `.planning/milestones/v1.7-artifacts/bench-evidence-35.md` §"Modified Rev 0 Board" — bench observation that the rework wired a 10k pull-up on A3

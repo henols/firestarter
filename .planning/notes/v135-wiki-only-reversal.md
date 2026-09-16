@@ -35,7 +35,7 @@ All of the above shipped in Phase 167 across 6 plans with 6/6 verification passi
   disabled, `has_wiki=false`) are unaffected.
 - **WIKI-05** (every page reachable from Home or sidebar) survives as a property but becomes
   hand-maintained — the generated `_Sidebar.md` goes away.
-- **`.planning/v1.35/MIGRATION-TABLE.md`** survives intact. It lives under `tools/`, not `wiki/`,
+- **`.planning/milestones/v1.35-MIGRATION-TABLE.md`** survives intact. It lives under `tools/`, not `wiki/`,
   and is still what makes Phase 168's move auditable (168 criterion 1) and still what the
   Backlog 999.9 repo-rename sweep greps for source paths.
 - **`wiki.py links`** (orphan detection, link-form allowlist, filename legality) is the one

@@ -7,7 +7,7 @@ files:
   - graphify-out/ (48M — duplicate graph.json + cache)
   - firestarter_app_py32/ (24M — branch is an ancestor of origin/beta)
   - .planning/graphs/graph.json (23M — untracked duplicate)
-  - .planning/v1.7/upstream-rurp/ (16M — clone of a public upstream)
+  - .planning/milestones/v1.7-artifacts/upstream-rurp/ (16M — clone of a public upstream)
   - firestarter-runs/ (1.6M), firestarter_py32_ci/ (1.5M), chip-test/ (40K)
   - AM27C020.bin (256K), scratchpad/ (empty)
   - .planning/notes/disposable-artifact-inventory.md (the evidence)
@@ -29,7 +29,7 @@ These are git-ignored and therefore ride the same sweep as build junk. Do **not*
 
 1. `.planning/state.json` and `.planning/milestone.lock` — ignored at `.gitignore:78-79`, but
    they are GSD's live state.
-2. `.planning/v1.34/bench/cells/**/reads/*.bin` — 4.0M of hardware **measurements**
+2. `.planning/milestones/v1.34-artifacts/bench/cells/**/reads/*.bin` — 4.0M of hardware **measurements**
    (`run_NN.bin`, `written.bin`). Irreproducible without the rig and the physical chips. No sha
    rebuilds these, unlike `.v1.34-arms/`.
 
@@ -42,9 +42,9 @@ carve-outs above.
 
 - [ ] Each path in `files:` above is gone from the working tree.
 - [ ] `.planning/state.json` and `.planning/milestone.lock` still exist.
-- [ ] `find .planning/v1.34/bench -name '*.bin' | wc -l` is unchanged from its pre-task count.
+- [ ] `find .planning/milestones/v1.34-artifacts/bench -name '*.bin' | wc -l` is unchanged from its pre-task count.
 - [ ] `git status --short` is still clean (nothing tracked was touched).
-- [ ] `tools/wiki/__pycache__/` is gone but `.planning/v1.35/MIGRATION-TABLE.md` remains.
+- [ ] `tools/wiki/__pycache__/` is gone but `.planning/milestones/v1.35-MIGRATION-TABLE.md` remains.
 - [ ] Root `platformio.ini` still exists — it is **generated** by
       `.devcontainer/gen-platformio-ini.py` (invoked from `.devcontainer/post-create.sh:5`) and
       root-level `pio` needs it. If removed, regenerate with

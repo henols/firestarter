@@ -7,7 +7,7 @@ files:
   - firestarter/src/firestarter.cpp (read/blank-check init VPP gate)
   - firestarter/src/rurp_shield.cpp (hw_read_voltage / VPP measurement)
   - firestarter_app/firestarter/eprom_operations.py (read/blank-check path)
-  - .planning/v1.15/bench/EVIDENCE.md (Phase 81 anomaly evidence)
+  - .planning/milestones/v1.15-artifacts/bench/EVIDENCE.md (Phase 81 anomaly evidence)
 ---
 
 ## Problem

@@ -57,11 +57,11 @@ In [ic_layout.py:169-183](../../../firestarter_app/firestarter/ic_layout.py#L169
    assumed. A single block covering revisions 2.0 through 2.3 therefore cannot describe all of them:
    2.0/2.1 share a 2-pin header state (2 values), 2.2/2.3 share a 3-pole state (3 values). Evidence:
    Rev 2.2's own pick-and-place CSV
-   (`.planning/v1.7/upstream-rurp/hardware/Rev2.2/W27C512Programmer-top-pos.csv`:
+   (`.planning/milestones/v1.7-artifacts/upstream-rurp/hardware/Rev2.2/W27C512Programmer-top-pos.csv`:
    `"JP4","P1_VPP_JMP","PinHeader_2x02_P2.54mm_Vertical"`) against Rev 2.1's
-   (`.planning/v1.7/upstream-rurp/hardware/Rev2.1/W27C512Programmer-top-pos.csv`:
+   (`.planning/milestones/v1.7-artifacts/upstream-rurp/hardware/Rev2.1/W27C512Programmer-top-pos.csv`:
    `"PinHeader_1x02_P2.54mm_Vertical"`), and the JP4 KiCad symbol
-   (`.planning/v1.7/upstream-rurp/hardware/RelativelyUniversalROMProgrammer.kicad_sch:22555-22620`,
+   (`.planning/milestones/v1.7-artifacts/upstream-rurp/hardware/RelativelyUniversalROMProgrammer.kicad_sch:22555-22620`,
    `Description "Jumper, 3-pole, both open"`). **The new block structure (how many blocks, which
    revisions in each) is left for the D-09 work (Phase 999.58) to design** — not decided here.
 

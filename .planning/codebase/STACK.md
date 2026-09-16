@@ -102,12 +102,12 @@ Steps that previously provisioned the Discord channel plugin (state dir,
 ## Agent tooling runtime (`.claude/`)
 
 **Tracked vs local — this split matters.** `.gitignore` ignores `.claude/*` with a single
-un-ignore for `!.claude/skills/`. Only **9 files** are tracked under `.claude/`:
+un-ignore for `!.claude/skills/`. Only **8 files** are tracked under `.claude/`:
 
 - `.claude/skills/devtest-triage/` — `SKILL.md`, `fixtures/*.md` (2 files),
-  `scripts/devtest_issues.py`, `scripts/test_supersede.py`
+  `scripts/devtest_issues.py`, `scripts/eprom_ledger.py`
 - `.claude/skills/devtest-rootcause/` — `SKILL.md`, `scripts/infoic_lookup.py`,
-  `scripts/seed_debug_session.py`, `scripts/diff_db.py`
+  `scripts/diff_db.py`
 
 Everything else under `.claude/` is **local runtime state** and is not reproducible from
 this repo alone:
@@ -170,7 +170,7 @@ Useful as a map of what is regenerable and must never be committed:
   `chip-test/`, root-level `/*.bin`
 - Extra submodule worktrees: `firestarter_app_py32/`, `firestarter_py32_ci/`
 - `node_modules`, `skills-lock.json`, root `/package.json` + `/package-lock.json`
-- `.planning/v1.7/**` except directories and `.md` files; `.planning/v1.7/upstream-rurp`
+- `.planning/milestones/v1.7-artifacts/**` except directories and `.md` files; `.planning/milestones/v1.7-artifacts/upstream-rurp`
   is ignored in **both** the bare and trailing-slash forms (the bare form is what prevents
   it being recorded as an orphan gitlink)
 

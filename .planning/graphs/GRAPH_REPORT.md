@@ -1,35 +1,35 @@
 # Graph Report - workspaces  (2026-09-15)
 
 ## Corpus Check
-- 4236 files · ~14,007,854 words
+- 4236 files · ~14,179,292 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 948 file(s) not represented in the graph (top: .log 541, .bin 311, (none) 53)
 
 ## Summary
-- 62008 nodes · 67850 edges · 5451 communities (4697 shown, 584 thin omitted)
+- 64937 nodes · 70779 edges · 5434 communities (4679 shown, 585 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 1386 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `da697b18`
+- Built from commit: `77a60b53`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
+- SerialCommunicator
+- Communities (5443 total, 586 thin omitted)
 - build_frame
-- test_database_conversion.py
-- TestIdFrameDecoder
 - EpromOperator
 - cli_handlers.py
-- Communities (2123 total, 278 thin omitted)
-- EpromDatabase
-- _crc8_ccitt
+- test_transport_counters.py
+- cli
+- format_message
 - Phase 159 retarget review packet
 - Class: `diff_provenance_reworded` (269 records)
 - §4: DB Inconsistencies / Defect Candidates
 - 17-01-PLAN.md
 - _aliases
-- Any
+- FakeChip
 - test_chip_test.py
 - make_app_context
 - test_characterization.py
@@ -48,13 +48,13 @@
 - test_remap_citations.py
 - rurp_shield.h
 - configure_memory
-- mock_releases_factory
+- FirmwareManager
 - remap_citations.py
-- EpromSpecBuilder
+- _fixture
 - VARIANCE (41 finding(s))
 - Roadmap: Firestarter — Protocol-Aware Programming Architecture
 - delay
-- main
+- _drive_write_via_cli
 - test_eeprom28c_sdp.cpp
 - Roadmap: Firestarter — Protocol-Aware Programming Architecture
 - channel.py
@@ -67,7 +67,7 @@
 - Pattern Assignments
 - Decisions
 - test_parse_devtest_issue.py
-- A. `.planning/v1.6-EVIDENCE.md` — append at line-186 anchor (Wave A scaffolds, Wave B fills)
+- A. `.planning/milestones/v1.6-EVIDENCE.md` — append at line-186 anchor (Wave A scaffolds, Wave B fills)
 - Implementation Decisions
 - Pattern Assignments
 - VARIANCE (33 finding(s))
@@ -79,7 +79,7 @@
 - ROADMAP.md
 - Canonical References
 - Pattern Assignments
-- test_jp5_gate.py
+- EpromDatabase
 - test_config_schema_pinned.py
 - test_trace_segment_exhaustiveness_v131.py
 - Phase 89: Incremental Primitive Recompose - Research
@@ -141,7 +141,7 @@
 - Pattern Assignments
 - Decisions
 - test_check_dead05_phrasing.py
-- test_config.py
+- _drive_write
 - loop
 - Phase 80: AT28C04/16 Adapter Graduation — Research
 - Phase 107: DOCS + GATE — Documentation & Non-Regression Close - Research
@@ -164,7 +164,7 @@
 - Corrections to the Planning Record
 - Roadmap: Firestarter — Protocol-Aware Programming Architecture
 - test_py32_dfu.py
-- test_transport_counters.py
+- .find_and_connect
 - Feature Research — v1.22 AT28C Software Data Protection Lifecycle
 - Phase 154 Plan 11: `firestarter_app/tests` Narrow Sweep + the D7 Gate Retarget Summary
 - RURP Shield + Arduino — Hardware Simulation Spec
@@ -276,9 +276,9 @@
 - Roadmap: Firestarter — Protocol-Aware Programming Architecture
 - Architecture Patterns: Open-Source EPROM Programmer Dispatch
 - test_build_citation_manifest.py
-- submit.py
 - test_submit.py
-- submit_report
+- plan_corpus
+- test_coverage_floor_v18.py
 - test_chip_database_field_inventory.py
 - test_sdp_db_invariant.py
 - v1.3 Coverage Matrix — All Algorithms (wide-scan extension)
@@ -374,7 +374,7 @@
 - Pattern Assignments
 - Pattern Assignments
 - Phase 159: Citation Remap + Milestone Close - Research
-- test_lock_status_cli.py
+- TestFormatMessageRevision
 - test_vpp_seam_manual_on_every_board.py
 - Canonical References
 - The seven cases and their observed RED reasons
@@ -390,8 +390,8 @@
 - Backlog — imported from GitHub (`henols/firestarter_prom`, 2026-07-27)
 - Cell A2 — uno328pb (ATmega328PB) on Rev 2.0 shield — the expected-failure cell
 - capture_provenance.py
-- _drive_write_via_cli
-- test_write_progress.py
+- make_app_context
+- _decode_param
 - test_val_nor_unlock.cpp
 - test_read_timing_params.cpp
 - test_config_storage_eeprom_regression.py
@@ -443,7 +443,7 @@
 - judge_readback.py
 - test_canonical_part_number.py
 - test_py32_pyusb_absent.py
-- test_chip_test_cycle.py
+- TestR1Precondition
 - firestarter.h
 - test_ack_layout_source_contract_v143.py
 - test_flash_geometry_recorded_before_linker.py
@@ -532,7 +532,7 @@
 - Canonical References
 - 1. `191-stable-install-fixture.sh` (test fixture, live HTTP + clean venv)
 - render_chip_evidence.py
-- build_body
+- `dev test` — adaptive, evidence-gated sequencing
 - Milestone v1.0 — Firestarter Protocol-Aware Programming Architecture
 - Info
 - Goal Achievement
@@ -573,7 +573,7 @@
 - Phase 03 Plan 01: Retroactive VERIFICATION.md Clean Batch (Phases 01, 02, 04, 08, 09) — Summary
 - Hardware Signal-Flow Reference: Firestarter RURP Shield
 - Section 4: Per-Protocol Handler Signal Flow
-- _drive_data_operation_and_record_timeouts
+- test_write_response_budget.py
 - test_check_landing_range.py
 - build_citation_manifest.py
 - Pattern Assignments
@@ -715,7 +715,7 @@
 - check_arms.py
 - py32f071_rurp_shield.cpp
 - 53-04 / XACT-02 fault-injection — bench findings (2026-06-05, operator-witnessed)
-- TestValidateFirmwareVersion
+- codec.py
 - FM1608 fresh-chip baseline validation
 - Implementation Decisions
 - Canonical References
@@ -778,7 +778,7 @@
 - check_ledger.py
 - Codebase Concerns
 - Implementation Decisions
-- _fixture
+- Any
 - Phase 151: Protection Readability — `lock-status` - Discussion Log
 - Implementation Decisions
 - Testing
@@ -814,7 +814,7 @@
 - v1.18 Research — AM27C020 (0x08 EPROM-QUICK) Write/VPP Path RCA
 - Project State
 - gate_record.py
-- _ready_body
+- test_hw_revision_gate.py
 - test_vcc_margin_rail.py
 - test_val_eprom.cpp
 - test_boolean_convention_source_contract_v133.py
@@ -960,7 +960,7 @@
 - After-figures record -- v1.33 Phase 155
 - BRINGUP-leonardo-provenance — A3/B2 `P-02` Pre-Proof
 - probe_board.py
-- _boot_block_hint_message
+- module_op_constants
 - check_landing_range.py
 - Implementation Decisions
 - Pattern Assignments
@@ -1070,7 +1070,7 @@
 - Phase 193: The Deferred Claim, Made Measurable - Context
 - Milestone v1.23 — Project Summary
 - render_evidence.py
-- _drive_write
+- v1.35 — The GSD close procedure under branch protection
 - config_storage_flash.cpp
 - check_erase_no_vpp.py
 - test_flash_path_record_sync.py
@@ -1136,7 +1136,7 @@
 - Codebase Structure
 - Retire `dev sdp`; prove the SDP lock behaviorally inside `dev test`
 - After-figures record -- v1.33 Phase 158
-- build_db.py
+- Voltage-reading calibration — why the design is what it is
 - Pre-sweep citation manifest — reconciliation report
 - Debug: fault-inject-harness-outgoing
 - v1.4 — Beta & Pre-release Deployment Pipeline (Shipped: 2026-05-20)
@@ -1312,7 +1312,7 @@
 - infoic_lookup.py
 - test_check_erase_no_vpp.py
 - test_jsmn_token_layout_source_contract_v158.py
-- TestUpdateVersionDryRun
+- _write_bearing_plans
 - Phase 53: Byte-Exact Bench Verification (hardware-gated) - Discussion Log
 - Goal Achievement
 - Phase 54: Even-Block Data Transfers — Verification Report
@@ -1435,7 +1435,7 @@
 - Phase 191: The Branch That Reaches Users - Discussion Log
 - Pattern Assignments
 - Pre-sweep baseline — v1.33 Phase 154
-- test_erase_flag_invariants.py
+- Binary command protocol (replace jsmn/JSON framing)
 - test_protect_flags_doc_measurements.py
 - TestEnvelopeBehaviour
 - gen_sdp_bus_config.py
@@ -1610,7 +1610,7 @@
 - Phase 159 Plan 05: Sole Production Citation Remap -- Authoritative Record
 - strip_provenance.py
 - Triage `dev test` issues against the datasheet
-- build_title
+- 2026-08-30-gate-fingerprint-readback-on-step-failure.md
 - test_b15_page_size_corroboration.py
 - TestPortlessInstall
 - Chip socket pin maps
@@ -1804,7 +1804,7 @@
 - Phase 154: Provenance Comment Sweep + Remap Tool (dual-repo lockstep) — Research
 - Goal Achievement
 - Phase 157 Plan 03: Handle Type Narrowing Summary
-- Requirements — Milestone v1.33: Source Hygiene & Firmware Size Reduction
+- After-figures record -- v1.33 Phase 156
 - Phase 161 Plan 03: Cell A1 — Uno + Rev 2.0, Both Arms x Both Chips Summary
 - v1 Requirements
 - Phase 167 Plan 01: Wiki Harness and Sidebar Generation Summary
@@ -2001,7 +2001,7 @@
 - rev-2-2/README.md
 - sync_to_subrepos.sh
 - gen-platformio-ini.py
-- test_devtest_firmware_error_propagation.py
+- v1.35 — Phases 169 and 170 were executed ad hoc, outside the phase machinery
 - RURP Shield Hardware Reference
 - Backlog 999.9 — repository rename: measured impact and sequencing
 - Host `tools/` checker apparatus — audit
@@ -2044,7 +2044,7 @@
 - Goal Achievement
 - Goal Achievement
 - Goal Achievement
-- Graph Report - workspaces  (2026-07-01)
+- Graph Report - workspaces  (2026-09-15)
 - Milestone v1.14 — Feasible-Gap Implementation — Audit Report
 - Backlog
 - Phase Details
@@ -2224,14 +2224,13 @@
 - Determining pin maps from infoic + one-rom, with no invented values
 - Implementation Decisions
 - Quick Task 260822-gxx: Suppress the Reason cell on NA-verdict rows Summary
-- v1.31 Pre-Close Carry-Over Disposition
+- TestFormatMessageDebugChunk
 - DEAD-05 phrasing corpus -- v1.33 Phase 155
 - LocationResolver
-- tools/gen_addr_image.py
 - judge_wrv.py
 - setup-claude-ste100.sh
 - _make_operator_with_comm
-- TestBetaChannelGate
+- Phase Details
 - 1. Real Protocol Buckets
 - Home.md
 - Context
@@ -2503,7 +2502,7 @@
 - BRINGUP-uno328pb — Bootloader Interrogation & Judged-Span-Policy Derivation
 - seed_debug_session.py
 - _all_chips
-- _manager_that_cannot_identify
+- Spike — does a bigger `DATA_BUFFER_SIZE` actually speed programming?
 - test_protection_status_catalog.py
 - firestarter_app/tools/planning_citation_gate.py
 - jsmn_parse
@@ -2716,9 +2715,7 @@
 - Phase 193 Plan 04: The `.gitmodules` Archaeology Note Summary
 - `dev test <chip>` — fail fast when the chip is absent, but only then
 - Quick Task 260913-e7t: Close Stale Enforcement Claims WR-02..WR-06 Summary
-- After-figures record -- v1.33 Phase 156
 - find_dfu_interfaces
-- test_fw_update_dead_endpoint.py
 - test_protection_table_citations.py
 - timing.cpp
 - _meta_doc
@@ -2831,7 +2828,7 @@
 - DfuError
 - test_build_db_inclusion.py
 - _load_db
-- _sdp_leg_readback_operator
+- all_rows
 - test_py32_flash_map_host.py
 - Phase 49: Framing Mechanism Decision (COBS `0x00` vs SLIP `0xC0`) - Discussion Log
 - Phase 52 Plan 03: Host Pytest Vector Suite Summary
@@ -2943,7 +2940,6 @@
 - Goal Achievement
 - Phase 191 disposition record
 - AE29F2008 classification verdict (SAFE-09)
-- Binary protocol vs jsmn/JSON — what's actually reclaimable
 - `dev test --destructive` — what is and is not type-conditioned
 - What the `dev test` report knows and does not say
 - Host `tools/` retirement (Phase 188)
@@ -2957,7 +2953,7 @@
 - PRE-PHASE.md — pre-sweep snapshots and budget (162-01 Task 3)
 - CHIP cell — PREFLIGHT.md (Task 2)
 - Phase 160 Gate — RIG: Dual-Arm Build, Flash Provenance & the Shared Cell Procedure
-- v1.37 — Close Record: Operator Safety, Answered Reports & Claim Hygiene
+- uv_policy_violations
 - TestBoardRouting
 - PY32F071 Flash Path & PCB Requirements — Design Record
 - Firestarter Firmware
@@ -3115,10 +3111,9 @@
 - The `.gitmodules` archaeology trap
 - infoic-maps-onerom-three-way-join.md
 - The four axes worth acting on
-- PY32F071 port — what is actually on the branches
-- v1.35 — The GSD close procedure under branch protection
+- test_a_uv_write_has_a_blank_check_ahead_of_it
 - v1.35 — Operator reverses the in-repo wiki source model
-- Voltage-reading calibration — why the design is what it is
+- _scope_selector_names
 - Phase Details
 - Phase Details
 - White-box voltage-reading calibration
@@ -3134,7 +3129,7 @@
 - CHIPS-MAP-DERIVATION.md — `rig-pins.json`'s nine new `chips` entries (162-01 Task 1)
 - FM1608-VCC.md — resolving CONTEXT.md's open `vcc_mv: 3300` item (162-01 Task 3, R2)
 - CHIP cell — POT.md (12 V-group VPP record)
-- v1.35 — Close Record: Beta Cut Under Protection, Close Procedure & Honesty Ledger
+- test_every_executable_erase_has_a_blank_check_behind_it_in_the_block
 - test_build_db_interpret_timing.py
 - RuntimeError
 - test_endpoint_constants.py
@@ -3362,7 +3357,7 @@
 - 188-05-PLAN.md
 - Dangling-Reference Sweep — the real risk
 - 190-04-PLAN.md
-- Bus-config mask-model
+- test_the_28c_family_na_blank_check_carve_out_is_pinned
 - `info` jumper-display design audit
 - The Python floor raised to 3.11 (FLOOR-01)
 - 260821-spg-PLAN.md
@@ -3587,7 +3582,7 @@
 - Disposable artifact inventory — what can and cannot be removed from the meta-repo
 - GSD installation: one project-local install, and the removal of a dangerous global 1.1.0
 - test-suite-source-introspection-removal.md
-- v1.35 — Phases 169 and 170 were executed ad hoc, outside the phase machinery
+- Phase Details
 - gh#9 staleness finding, and the Phase 187 reply ledger (D-09)
 - Milestone: v1.31 — 27C Programming-Algorithm Fidelity (gh#15)
 - Milestone: v1.32 — AT28C Write-Path Root Cause & Report Provenance
@@ -3600,7 +3595,6 @@
 - Backlog
 - v1.33 — Source Hygiene & Firmware Size Reduction (SHIPPED 2026-08-24 — 42/43, SWEEP-13 open by design)
 - Seed: `firestarter lock-status <chip>` — read chip protection state
-- PY32F071 firmware install with no external tools
 - UV run with exhausted slots: the ladder flip (T-179-05)
 - `build_db_diff`'s `ladder_state` regression — a real, still-open finding this milestone only recorded
 - Todo: decode flags bits 14/15 as protect metadata
@@ -3615,12 +3609,10 @@
 - Cell A2 — P-06 pot record
 - Cell CHIP — 11-Part `dev test` Sweep on the Reference Rig (Leonardo + Rev 2.0)
 - v1.34 Chip Sweep Evidence — 162-chip-11-part-dev-test-sweep-on-the-reference-rig
-- Wiki Migration Table
 - Development container
 - .test_fm1608_resolves_sram_std
 - TestSupportStatusUniversal
 - normalize_output
-- .test_manage_firmware_update_reaches_the_download_boundary
 - rurp_vpp.cpp
 - auto-mode-permission-blocks.md
 - v1.33 Source Hygiene & Firmware Size Reduction (Shipped: 2026-08-24)
@@ -3795,18 +3787,15 @@
 - 191-UAT.md
 - API Coverage — Phase 193: The Deferred Claim, Made Measurable
 - onerom-pinout-external-corroboration.md
-- v1.32 Archive: AT28C Write-Path Root Cause & Report Provenance — Shipped 2026-08-21
 - Strip narrative comments from shipped source
 - devtest skills: close superseded failures, label by cause, report fix versions
 - Phase Details
-- 2026-08-05-dev-test-issue-triage-diagnosis-skill.md
 - 2026-09-12-retire-two-orphaned-host-tools.md
 - Standing operator instruction for the v1.30 close
 - 2026-09-08-reclaim-local-scratch-artifacts.md
 - 2026-09-13-publish-yml-release-published-never-fires.md
 - AT28C256 write-path failure (gh#20) — a real, still-open defect this milestone only triaged
 - `CONFIG_VERSION` is not bumped on a default change — stale EEPROM calibration is stranded
-- Fix JP4 labels + Rev-2 revision block in `info` jumper display
 - fram-parts-ride-the-0x0d-handler-by-pinout-promotion.md
 - onerom-pinout-external-corroboration-gate.md
 - phase-44-read-timing-knobs-missing-json-parse-reset.md
@@ -3820,7 +3809,6 @@
 - Frozen `chips` entries — additive-key discrepancy (orchestrator record)
 - v1.34 Bench Evidence — 160-rig-dual-arm-build-flash-provenance-the-shared-cell-procedur
 - v1.34 Rig — Pre-Merge Hardware Regression Validation
-- avr_tool.py
 - Pinouts and shield wiring — firmware reference
 - `clean_cmake_manifest_excluded/`
 - `clean_orphan_provisional_consumed/`
@@ -4137,7 +4125,6 @@
 - Position 1 — `CHIP__v133__w27c512` (Task 3)
 - Firestarter
 - .test_x88c64_included
-- .test_pass_count_is_derived_from_a_live_plan_never_a_literal
 - bootloader_guard.py
 - `clean_unarmed_tree/`
 - _run_gate_in_subprocess
@@ -4690,8 +4677,6 @@
 - Architecture Patterns
 - User Constraints (from CONTEXT.md)
 - Sources
-- Current Milestone: v1.38 Repository Rename
-- v1.37 Archive: Operator Safety, Answered Reports & Claim Hygiene — Shipped 2026-09-13
 - 260821-wna-PLAN.md
 - 2026-08-31-dev-test-chip-name-must-match-database.md
 - 2026-09-08-separate-gitignore-classes-live-state-vs-build-junk.md
@@ -4700,7 +4685,6 @@
 - gh#12 follow-up reply — DRAFT, awaiting operator wording review
 - Arm CLI Surface Comparison
 - Cell A1 — P-05 / P-06: chip seating and pot confirmation
-- test_send_json_command_atomic_frame
 - _extract_board_name
 - `planted_landing_range_replayed_history/`
 - Firestarter
@@ -5280,7 +5264,6 @@
 - 189-free-the-name/COVERAGE.md
 - 190-endpoints-that-do-not-depend-on-a-redirect/COVERAGE.md
 - 192-live-references-only/COVERAGE.md
-- v1.31 Archive: 27C Programming-Algorithm Fidelity (gh#15) — Shipped 2026-08-18
 - doc_min.md
 - CHIP__control__w27e512.md
 - CHIP__v133__fm1608.md
@@ -5299,7 +5282,7 @@
 - jsmntype_t
 
 ## God Nodes (most connected - your core abstractions)
-1. `Communities (2123 total, 278 thin omitted)` - 1760 edges
+1. `Communities (5443 total, 586 thin omitted)` - 4688 edges
 2. `Phase 159 retarget review packet` - 519 edges
 3. `Class: `diff_provenance_reworded` (269 records)` - 270 edges
 4. `EpromOperator` - 219 edges
@@ -5312,52 +5295,52 @@
 
 ## Surprising Connections (you probably didn't know these)
 - `eeprom28c_check_chip_id()` --calls--> `delay()`  [INFERRED]
-  .planning/v1.33/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
+  .planning/milestones/v1.33-artifacts/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
 - `eeprom28c_wait_for_sdp_completion()` --calls--> `delay()`  [INFERRED]
-  .planning/v1.33/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
+  .planning/milestones/v1.33-artifacts/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
 - `eeprom28c_wait_for_sdp_completion()` --calls--> `delayMicroseconds()`  [INFERRED]
-  .planning/v1.33/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
+  .planning/milestones/v1.33-artifacts/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
 - `eeprom28c_emit_sdp_sequence_timed()` --calls--> `micros()`  [INFERRED]
-  .planning/v1.33/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
+  .planning/milestones/v1.33-artifacts/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
 - `eeprom28c_sdp_lock_execute()` --calls--> `delay()`  [INFERRED]
-  .planning/v1.33/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
+  .planning/milestones/v1.33-artifacts/tools/fixtures/autojunk_real_file_presweep.cpp → firestarter_fw/platform/py32f071/include/Arduino.h
 
 ## Import Cycles
 - None detected.
 
-## Communities (5451 total, 584 thin omitted)
+## Communities (5434 total, 585 thin omitted)
 
-### Community 0 - "build_frame"
-Cohesion: 0.01
-Nodes (378): Project Name: Firestarter Copyright (c) 2025 Henrik Olsson Permission is hereby…, Project Name: Firestarter Copyright (c) 2025 Henrik Olsson Permission is hereby…, # NOTE: CTRL_VPP_VPE_DROP_ENABLE further below also has the value 0x100, but, _budget_failure_hint_message(), _raise_for_error_response(), Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, # NOTE: eprom_data_dict here is resolve_chip()'s composed, Return a per-byte program-budget-failure disposition hint, or None. Keyed on… (+370 more)
+### Community 0 - "SerialCommunicator"
+Cohesion: 0.02
+Nodes (120): LogMessage, Response, One-shot incoming-frame fault injection: flip last body byte exactly once.…, Manages serial communication with the EPROM programmer hardware. It handles…, Return True if the underlying serial port is open., Write raw bytes to the serial port and return the byte count written., Encode `data_string` and send it over the serial port., Serialise ``command_dict`` as a COBS+CRC8 framed command and send it. Frame… (+112 more)
 
-### Community 1 - "test_database_conversion.py"
-Cohesion: 0.05
-Nodes (43): db(), Phase 42 / ERR-03 coverage lift for database.convert_to_programmer + DIP→RURP…, REVERSAL RECORD (Phase 121 D-12): this test previously asserted AT28C256…, Hermetic DB: no ``~/.firestarter`` override interference (Phase 36 D-06)., W29C040 (Flash/EEPROM, algorithm 0x05) must NOT carry FLAG_CAN_ERASE. FIX-01a /…, get_eproms() returns the full chip list as a list of dicts., get_eproms(verified=True) returns only verified chips., search_eprom returns chips matching the search text (case-insensitive). (+35 more)
+### Community 1 - "Communities (5443 total, 586 thin omitted)"
+Cohesion: 0.00
+Nodes (4688): Communities (5443 total, 586 thin omitted), Community 0 - "SerialCommunicator", Community 1000 - "Phase 16 — Validation Strategy", Community 1001 - "Phase 17 — Validation Strategy", Community 1002 - "Key Technical Findings", Community 1003 - "Phase 21 — Validation Strategy", Community 1004 - "Phase 22 — Validation Strategy", Community 1005 - "Architecture Patterns" (+4680 more)
 
-### Community 2 - "TestIdFrameDecoder"
+### Community 2 - "build_frame"
 Cohesion: 0.04
-Nodes (35): _drive_one_response(), LHOST-02: u24 render-hint 'hex_addr' renders as 0x%06x lowercase., LHOST-01: multi-param (u24, u8, u16) frame renders all three positions., LHOST-01: tampered CRC byte → decoder returns None, warning logged., LHOST-01 / T-06-14: unknown ID → returns None, warning logged., LHOST-03: Response.type carries severity LABEL (string), not int., LMIG-01: text-format response (OK: Hello\\n) still flows through…, LMIG-01 + LHOST-01: text line followed immediately by a binary frame both flow… (+27 more)
+Nodes (53): build_frame(), Assemble a wire frame: magic | len_u16 | id | params | crc | 0x0A. `len` (u16,…, _drive_one_response(), LHOST-02: u24 render-hint 'hex_addr' renders as 0x%06x lowercase., LHOST-01: multi-param (u24, u8, u16) frame renders all three positions., LHOST-01: tampered CRC byte → decoder returns None, warning logged., LHOST-03: Response.type carries severity LABEL (string), not int., LMIG-01: text-format response (OK: Hello\\n) still flows through… (+45 more)
 
 ### Community 3 - "EpromOperator"
 Cohesion: 0.01
-Nodes (200): ConfigManager, Loads the configuration from the configuration file. If the file doesn't exist,…, Saves the current configuration to the configuration file. Ensures the…, Retrieves a value from the configuration. Args: key (str): The configuration…, Sets a value in the configuration. Args: key (str): The configuration key to…, Record a port that just worked, for the next invocation's convenience. The…, True if `key` was set for this invocation only (persist=False). The…, Removes a key from the configuration and saves the changes. Args: key (str):… (+192 more)
+Nodes (273): ConfigManager, get_local_database(), get_local_pin_maps(), Loads the configuration from the configuration file. If the file doesn't exist,…, Saves the current configuration to the configuration file. Ensures the…, Retrieves a value from the configuration. Args: key (str): The configuration…, Sets a value in the configuration. Args: key (str): The configuration key to…, Record a port that just worked, for the next invocation's convenience. The… (+265 more)
 
 ### Community 4 - "cli_handlers.py"
-Cohesion: 0.02
-Nodes (174): argument, CompletionItem, Any, Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, Resolve a chip name to its programmer-config dict. Looks ``name`` up in the…, resolve_chip(), blank(), build_arg_flags() (+166 more)
-
-### Community 5 - "Communities (2123 total, 278 thin omitted)"
-Cohesion: 0.00
-Nodes (1760): Communities (2123 total, 278 thin omitted), Community 0 - "Community 0", Community 1000 - "Community 1000", Community 1001 - "Community 1001", Community 1002 - "Community 1002", Community 1003 - "Community 1003", Community 1004 - "Community 1004", Community 1005 - "Community 1005" (+1752 more)
-
-### Community 6 - "EpromDatabase"
 Cohesion: 0.01
-Nodes (317): AppContext, cli(), Typed DI container threaded through every Click handler via ctx.obj.…, EpromDatabase, format_mv(), main(), Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, Render a millivolt integer as the project's one human-facing voltage string.… (+309 more)
+Nodes (361): argument, Any, Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, Resolve a chip name to its programmer-config dict. Looks ``name`` up in the…, resolve_chip(), AppContext, blank(), build_arg_flags() (+353 more)
 
-### Community 7 - "_crc8_ccitt"
+### Community 5 - "test_transport_counters.py"
 Cohesion: 0.02
-Nodes (128): decode_id_frame(), format_message(), Any, LogMessage, Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, Read-path-adjacent — behavior preserved verbatim from serial_comm.py per Ring-…, Sentinel-aware message renderer for P-02/P-03 shaped IDs and MSG_DEBUG sub-…, _build_crc8_table() (+120 more)
+Nodes (138): cobs_decode(), cobs_encode(), _crc8_ccitt(), Decode a COBS body (NO trailing ``0x00`` delimiter). Raises ``ValueError`` on…, Compute CRC8-CCITT (poly 0x07, seed 0x00) over `data` via lookup table., Encode ``payload`` using Consistent Overhead Byte Stuffing (COBS). Returns the…, FaultInjectingSerialCommunicator, Any (+130 more)
+
+### Community 6 - "cli"
+Cohesion: 0.02
+Nodes (186): cli(), dev(), Set up logging in the same shape main.py uses today. Mirrors the verbose/non-…, Development and diagnostic commands for the RURP shield. On a stable install,…, _setup_logging(), EpromConsolePresenter, Prepares a comprehensive data structure for a specific EPROM, ready for…, Prepares EPROM and Pin Map configuration data formatted for export. (+178 more)
+
+### Community 7 - "format_message"
+Cohesion: 0.10
+Nodes (24): format_message(), Any, Sentinel-aware message renderer for P-02/P-03 shaped IDs and MSG_DEBUG sub-…, Phase 42 / ERR-03 fallback coverage lift for ``codec.format_message`` sentinel-…, MSG_OK_REV with effective=0xFF (no override) returns the physical silkscreen…, MSG_OK_REV with effective != 0xFF includes both physical and effective., MSG_OK_CFG with override=0xFF returns the R1/R2-only summary., MSG_OK_CFG with a non-0xFF override appends 'Override HW: ...' via silkscreen. (+16 more)
 
 ### Community 8 - "Phase 159 retarget review packet"
 Cohesion: 0.00
@@ -5379,17 +5362,17 @@ Nodes (66): 10. Run update_version.py tests                  [pytest tests/ -v],
 Cohesion: 0.18
 Nodes (9): _aliases(), DB-04 Approach A (67.1-01): the three unsupported_reason strings in build_db.py…, FUT-02 contract: the 'VPP <x>V exceeds programmer max (<ceil>V)' reason format…, Return the set of bare part-number aliases for a chip record. Splits the stored…, AT28C16 (adapter-required) unsupported_reason starts with 'adapter required:'.…, X88C64P unsupported_reason contains 'protocol not implemented'. DB-04 SC#2:…, AT28C16 (adapter-required) unsupported_reason references the adapter wiki page.…, X88C64P unsupported_reason must NOT contain 'serial-parallel hybrid'.… (+1 more)
 
-### Community 13 - "Any"
-Cohesion: 0.26
-Nodes (4): Any, The emitted JSON has the required schema., evidence_sha is present on every cell (may be null/sentinel for software cells)., TestArtifactSchema
+### Community 13 - "FakeChip"
+Cohesion: 0.06
+Nodes (31): FakeChip, Any, Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, A UV chip whose given slot already reads all-0x00 -- the `WriteTarget` vacuous-…, A UV chip where EVERY candidate slot is saturated under the address-derived…, Write the requested bytes at their ABSOLUTE offset (finding M-3): with no…, A `FakeChip` subclass modelling the firmware write-init blank-check pre-flight…, An in-memory chip backing store with real UV-AND-write physics and real… (+23 more)
 
 ### Community 14 - "test_chip_test.py"
-Cohesion: 0.03
-Nodes (191): count_applicable(), derive_plan(), is_uv_eprom(), prepass_images(), Execute `plan.steps` as independent, non-fatal steps. Each supported step re-…, Compute the applicable-only N-of-M banner data. M = `sum(1 for s in plan.steps…, A single derived operation descriptor. `supported=False` means NA for this chip…, Exact, name-keyed UV-EPROM predicate. Takes the FULL DB dict from… (+183 more)
+Cohesion: 0.02
+Nodes (205): count_applicable(), derive_plan(), _diff_offsets(), is_uv_eprom(), prepass_images(), Return (cmp_len, diff_offsets, pct, first) for two byte arrays. `cmp_len` is…, Execute `plan.steps` as independent, non-fatal steps. Each supported step re-…, Compute the applicable-only N-of-M banner data. M = `sum(1 for s in plan.steps… (+197 more)
 
 ### Community 15 - "make_app_context"
-Cohesion: 0.02
-Nodes (142): get_config_dir(), User config/override directory, resolved at call time. Honors…, ProgrammerIdentity, NamedTuple, The two identity values the CAP-02 `MSG_OK_READY` ack carries: the human…, Name-keyed SDP capability predicate:…, sdp_capability(), make_app_context() (+134 more)
+Cohesion: 0.03
+Nodes (116): make_app_context(), Construct a minimal, hardware-free AppContext (Phase 132, RETIRE-05, D-10).…, _parse_addr_or_size(), Mirror `address_parser.parse_address`/`parse_size` exactly: hex when the string…, Any, `EpromDatabase` subclass that overrides `get_eprom` for ONE chip name. Every…, SyntheticNonzeroChipIdDatabase, CliRunner (+108 more)
 
 ### Community 16 - "test_characterization.py"
 Cohesion: 0.17
@@ -5401,7 +5384,7 @@ Nodes (48): (a) File exists, has the seven required tokens, and parses as valid 
 
 ### Community 18 - "test_diagnostic_report.py"
 Cohesion: 0.02
-Nodes (173): Fingerprint, Verdict + raw evidence for a single expected-vs-actual byte compare., build_db_diff(), DbDiff, dedup_fingerprint(), _duration_cell(), Deterministic 12-char hex short-hash keying report dedup. Hashes chip name,…, Current DB `support_status` beside an ADVISORY proposed-disposition plus a… (+165 more)
+Nodes (162): Fingerprint, Verdict + raw evidence for a single expected-vs-actual byte compare., build_db_diff(), dedup_fingerprint(), Deterministic 12-char hex short-hash keying report dedup. Hashes chip name,…, Read-only transform: current `support_status` + an advisory proposed-…, _build_full_scope_report(), _build_report() (+154 more)
 
 ### Community 19 - "Class: `retired` (172 records)"
 Cohesion: 0.01
@@ -5409,7 +5392,7 @@ Nodes (173): Class: `retired` (172 records), Decision late-2ae7c8f79fa48ec7, Dec
 
 ### Community 20 - "DiagnosticReport"
 Cohesion: 0.03
-Nodes (130): BannerCounts, Plan, Applicable-only N-of-M banner DATA -- no rendering here. `n_ran` is the number…, Ordered, derived test plan for a single chip. `is_uv` is decided EXACTLY ONCE…, AutoCapture, DiagnosticReport, _hex_cell(), _identity_cell() (+122 more)
+Nodes (121): BannerCounts, Plan, Applicable-only N-of-M banner DATA -- no rendering here. `n_ran` is the number…, Ordered, derived test plan for a single chip. `is_uv` is decided EXACTLY ONCE…, AutoCapture, DbDiff, DiagnosticReport, _duration_cell() (+113 more)
 
 ### Community 21 - "Phase 67.1: Close Gaps — DB-02 Pinout Classification + DB-04 Capability Reporting"
 Cohesion: 0.04
@@ -5421,11 +5404,11 @@ Nodes (46): Canonical References, Claude's Discretion, Deferred Ideas, Establish
 
 ### Community 23 - "chip_test.py"
 Cohesion: 0.02
-Nodes (147): _address_arg(), _aggregate_cycle_results(), _alternating_cycle_targets(), _baseline_closes_sdp_gate(), coverage_tag(), _cycle_target(), _dispatch_id(), _dispatch_multi_run() (+139 more)
+Nodes (160): _address_arg(), _aggregate_cycle_results(), _alternating_cycle_targets(), _baseline_closes_sdp_gate(), coverage_tag(), _cycle_target(), _dispatch_id(), _dispatch_multi_run() (+152 more)
 
 ### Community 24 - "test_chip_test_sdp_leg.py"
 Cohesion: 0.02
-Nodes (141): `True` iff `plan` carries a RUNNABLE `write-inhibited` entry. Derived…, Pure HELD / NOT-HELD / NOT-RUN derivation from the `write-inhibited` step, if…, sdp_hold_state(), sdp_oracle_applicable(), _allow_refuse_populations(), _assert_delta_matches_intended(), _compute_precedence_delta(), _dead_write_path_operator() (+133 more)
+Nodes (134): `True` iff `plan` carries a RUNNABLE `write-inhibited` entry. Derived…, sdp_oracle_applicable(), HardwareOperationError, Exception, Custom exception for hardware operation failures., Name-keyed SDP capability predicate:…, sdp_capability(), _allow_refuse_populations() (+126 more)
 
 ### Community 25 - "Phase 40: Serial / Transport Restructure — Research"
 Cohesion: 0.04
@@ -5433,11 +5416,11 @@ Nodes (46): 1. D-05: Multi-branch coupling confirmed CORRECT (with one test-matr
 
 ### Community 26 - "generate_pattern"
 Cohesion: 0.02
-Nodes (116): address_fold_byte(), bits_cleared_by(), bits_retained_by(), classify_fingerprint(), _diff_offsets(), full_device_region(), generate_inhibited_pattern(), generate_pattern() (+108 more)
+Nodes (146): address_fold_byte(), bits_cleared_by(), bits_retained_by(), classify_fingerprint(), full_device_region(), generate_inhibited_pattern(), generate_pattern(), mask_write_pattern() (+138 more)
 
 ### Community 27 - "test_derive_plan_structural_sentinel.py"
-Cohesion: 0.03
-Nodes (109): cycle_block_bounds(), Half-open `(start, stop)` index range of the repeat cycle, or `None`. The block…, all_rows(), mock_operator(), plan_corpus(), plan_with_steps(), Phase 175 Plan 01 -- the shared corpus surface every sentinel module in this…, `"partial"` for a UV chip, `"full"` otherwise -- the same rule `dev_test`… (+101 more)
+Cohesion: 0.12
+Nodes (37): cycle_block_bounds(), Half-open `(start, stop)` index range of the repeat cycle, or `None`. The block…, plan_with_steps(), Build a `Plan` from bare `Step`s, following `test_chip_test.py:1093`., A thin `Step` builder. `Step.reason` is a required positional, and a hand-built…, step(), erase_blank_check_violations(), Phase 175 Plan 01 (PRUNE-06) -- one structural claim, carried end to end: a… (+29 more)
 
 ### Community 28 - "Phase 3: Retroactive Verification (Phases 01-10) — Research"
 Cohesion: 0.04
@@ -5455,17 +5438,17 @@ Nodes (31): analog_read_avg8(), rurp_detect_hardware_revision(), rurp_get_physic
 Cohesion: 0.05
 Nodes (80): flash_5v_page_read_protection_execute(), configure_memory(), firestarter_handle_t, make_handle(), protocol_family_row_t, family_name, protocol, test_5v_page_check_chip_id_0x05_sets_operation() (+72 more)
 
-### Community 32 - "mock_releases_factory"
-Cohesion: 0.03
-Nodes (49): _FakeAvrdude, mock_404_response(), mock_releases_factory(), Phase 23 — INST-01/02/03 + D-01..D-06 + D-10(revised) board-driven asset…, INST-01 / D-01 — fetch_release_info(channel='stable', board='uno328pb') returns…, INST-02 / D-01 — fetch_release_info(channel='pre', board='uno328pb') selects…, INST-03 / D-01 — list_releases(board='uno328pb') returns ReleaseInfo entries in…, INST-01 / D-01..D-04 + GATE-01 anti-regression anchor.… (+41 more)
+### Community 32 - "FirmwareManager"
+Cohesion: 0.01
+Nodes (158): FileNotFoundError, AvrdudeConfigNotFoundError, AvrdudeNotFoundError, Project Name: Firestarter Copyright (c) 2025 Henrik Olsson Permission is hereby…, asset_candidates(), _asset_label(), _endpoint_for_channel(), FirmwareManager (+150 more)
 
 ### Community 33 - "remap_citations.py"
 Cohesion: 0.05
 Nodes (64): _anchor_end_keeps_l(), _associate(), atomic_write(), BatchTransaction, build_index_stage_plan(), decide(), _die(), git_show() (+56 more)
 
-### Community 34 - "EpromSpecBuilder"
-Cohesion: 0.06
-Nodes (36): EpromSpecBuilder, Extract a scalar pin number from a single-element list pin field. Pin map…, Generates structured data for Rev 0.1 & 1.0 jumper settings., Generates structured data for Rev 2.0 & 2.1 jumper settings., Builds a comprehensive dictionary of technical specifications for an EPROM.…, Return a user-facing chip-type label. When protocol_id is supplied, use it to…, Interpret the info-flags value and return a list of properties. Only two bits…, Returns structured protocol information. (+28 more)
+### Community 34 - "_fixture"
+Cohesion: 0.07
+Nodes (41): app_context(), Return a default AppContext for the common no-argument case. Serves only the…, db(), Database pinned to the packaged chip_database.json (no local override)., _isolate_config_dir(), Point FIRESTARTER_CONFIG_DIR at a throwaway dir for every `dev test`. `dev…, runner(), db() (+33 more)
 
 ### Community 35 - "VARIANCE (41 finding(s))"
 Cohesion: 0.05
@@ -5479,9 +5462,9 @@ Nodes (39): Backlog, Milestones, Phase 11: Coverage Matrix & DB Inconsistency Au
 Cohesion: 0.07
 Nodes (69): firestarter_handle_t, using_p1_as_vpp(), rurp_register_t, rurp_get_hardware_revision(), rurp_map_ctrl_reg_for_hardware_revision(), rurp_register_t, rurp_internal_write_to_register(), rurp_read_from_register() (+61 more)
 
-### Community 38 - "main"
-Cohesion: 0.31
-Nodes (8): _build_argparser(), emit_cpp_header(), main(), ArgumentParser, Entry point. Returns 0/1/2 for ok/schema-fail/spec-not-found., Raise ValueError on any schema violation before emission. Validates: - Top-…, Emit the C++ header text from a validated spec. One VAL_FAMILIES row per…, validate_spec()
+### Community 38 - "_drive_write_via_cli"
+Cohesion: 0.07
+Nodes (34): _drive_write_for_pulse_override(), _fake_find_and_connect(), _drive_write_via_cli(), _fake_find_and_connect(), _fresh_serial_and_comm(), make_app_context(), CliRunner, Drive a full, otherwise-successful ``write_eprom()`` against a real 27C chip… (+26 more)
 
 ### Community 39 - "test_eeprom28c_sdp.cpp"
 Cohesion: 0.09
@@ -5492,8 +5475,8 @@ Cohesion: 0.05
 Nodes (38): Backlog, Milestones, Phase 11: Coverage Matrix & DB Inconsistency Audit, Phase 12: 28-Pin / Algo-0x07 Bench Validation, Phase 13: 32-Pin / Algo-0x08 Bench Validation, Phase 14: Milestone Close & Artifacts, Phase 44: Bug A RCA — Modified Rev 0 Upper-Address Jitter, Phase 45: Bug B RCA — Rev 2.0 Timing & Voltage (+30 more)
 
 ### Community 41 - "channel.py"
-Cohesion: 0.04
-Nodes (57): available_boards(), beta_only_message(), dev_command_gate_message(), dev_tools_enabled_by_env(), is_board_available(), is_dev_tools_enabled(), is_prerelease_build(), Project Name: Firestarter Copyright (c) 2026 Henrik Olsson Permission is hereby… (+49 more)
+Cohesion: 0.06
+Nodes (41): CompletionItem, available_boards(), beta_only_message(), dev_command_gate_message(), dev_tools_enabled_by_env(), is_board_available(), is_dev_tools_enabled(), is_prerelease_build() (+33 more)
 
 ### Community 42 - "prepare_citation_remap.py"
 Cohesion: 0.06
@@ -5521,7 +5504,7 @@ Nodes (35): Acceptance Criteria (Phase Gate), Assumptions Log, Claude's Discreti
 
 ### Community 48 - "Pattern Assignments"
 Cohesion: 0.06
-Nodes (35): 10. `firestarter/src/proms/flash_utils.cpp` (3 lines — READ_WRITE toggle), 11. `firestarter/src/hardware_operations.cpp` (`hw_read_voltage` VPP/VPE selection), 12. `firestarter/src/boards/rurp_common.cpp` (ADC read), 13. `firestarter/src/boards/uno_rurp_shield.cpp` (comment refresh), 14. `firestarter/test/native/avr/test_flash_intel_vpp/test_flash_intel_vpp.cpp` (7 lines), 15. `firestarter_app/firestarter/constants.py` (ADD-BLOCK), 16. `firestarter_app/firestarter/main.py:404-416` (docstring refresh), 17. `.planning/v1.7-SHIELD-REVS.md` §7 (FILL-IN-PLACE) (+27 more)
+Nodes (35): 10. `firestarter/src/proms/flash_utils.cpp` (3 lines — READ_WRITE toggle), 11. `firestarter/src/hardware_operations.cpp` (`hw_read_voltage` VPP/VPE selection), 12. `firestarter/src/boards/rurp_common.cpp` (ADC read), 13. `firestarter/src/boards/uno_rurp_shield.cpp` (comment refresh), 14. `firestarter/test/native/avr/test_flash_intel_vpp/test_flash_intel_vpp.cpp` (7 lines), 15. `firestarter_app/firestarter/constants.py` (ADD-BLOCK), 16. `firestarter_app/firestarter/main.py:404-416` (docstring refresh), 17. `.planning/milestones/v1.7-SHIELD-REVS.md` §7 (FILL-IN-PLACE) (+27 more)
 
 ### Community 49 - "Decisions"
 Cohesion: 0.06
@@ -5531,9 +5514,9 @@ Nodes (35): `10-CONTEXT.md` lives in `milestones/v1.0-phases/10-static-pins/`, n
 Cohesion: 0.06
 Nodes (65): _build_realistic_title_body(), Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, A future schema bump (e.g. 1.0 -> 1.1 -> 1.2) must not break detection -- only…, A degenerate report dict with no db_diff key at all (or None) must not raise --…, Schema 1.0 db_diff has no `ladder_state` key at all -- must default to ""…, A report whose auto_capture.fw_board_identity is populated renders a labelled…, A `None` fw_board_identity AND an empty-string one (a community body can…, No `hw_revision` label appears in `render_diff`'s output -- a deliberate… (+57 more)
 
-### Community 51 - "A. `.planning/v1.6-EVIDENCE.md` — append at line-186 anchor (Wave A scaffolds, Wave B fills)"
+### Community 51 - "A. `.planning/milestones/v1.6-EVIDENCE.md` — append at line-186 anchor (Wave A scaffolds, Wave B fills)"
 Cohesion: 0.06
-Nodes (34): A. `.planning/v1.6-EVIDENCE.md` — append at line-186 anchor (Wave A scaffolds, Wave B fills), B. `.planning/v1.5-BENCH-RESULTS.md` — append at EOF (line 46+; Wave A scaffolds the section, Wave B fills the row), C. `.planning/phases/29-multi-board-bench-verification/29-01-PLAN.md` — Wave A (desk-side, `autonomous: true`), D. `.planning/phases/29-multi-board-bench-verification/29-02-PLAN.md` — Wave B (operator-on-bench, `autonomous: false`), File Classification, Metadata, No Analog Found, Pattern A1: 9-column row schema (D-08 — mirror Phase 26 verbatim) (+26 more)
+Nodes (34): A. `.planning/milestones/v1.6-EVIDENCE.md` — append at line-186 anchor (Wave A scaffolds, Wave B fills), B. `.planning/milestones/v1.5-BENCH-RESULTS.md` — append at EOF (line 46+; Wave A scaffolds the section, Wave B fills the row), C. `.planning/phases/29-multi-board-bench-verification/29-01-PLAN.md` — Wave A (desk-side, `autonomous: true`), D. `.planning/phases/29-multi-board-bench-verification/29-02-PLAN.md` — Wave B (operator-on-bench, `autonomous: false`), File Classification, Metadata, No Analog Found, Pattern A1: 9-column row schema (D-08 — mirror Phase 26 verbatim) (+26 more)
 
 ### Community 52 - "Implementation Decisions"
 Cohesion: 0.06
@@ -5549,7 +5532,7 @@ Nodes (34): DEFECT-COV-100 — SGS-THOMSON on algo-0x07 / DIP28_27512 / 65536B: 
 
 ### Community 55 - "test_blast_radius_invariance.py"
 Cohesion: 0.05
-Nodes (54): build_shape(), Dispatch `shape_id` to its builder. Raises `KeyError` naming `SHAPE_IDS` on an…, _committed_shape_ids(), _dedup_fingerprint_reachable_names(), parametrize, Blast-radius invariance harness -- absolute-hash, ladder, schema-key-list and…, A GATE, not a claim. Pinning the literal -- rather than asserting two shapes…, The truncation is a plain character slice with no rounding and no tie-breaking:… (+46 more)
+Nodes (53): build_shape(), Dispatch `shape_id` to its builder. Raises `KeyError` naming `SHAPE_IDS` on an…, _committed_shape_ids(), _dedup_fingerprint_reachable_names(), parametrize, Blast-radius invariance harness -- absolute-hash, ladder, schema-key-list and…, A GATE, not a claim. Pinning the literal -- rather than asserting two shapes…, The truncation is a plain character slice with no rounding and no tie-breaking:… (+45 more)
 
 ### Community 56 - "Implementation Decisions"
 Cohesion: 0.06
@@ -5569,7 +5552,7 @@ Nodes (52): _config_start_violations(), _config_version_violations(), _declarati
 
 ### Community 60 - "ROADMAP.md"
 Cohesion: 0.04
-Nodes (33): Milestone Archive: v1.35 ROADMAP — Documentation Consolidation & Wiki Migration, Biggest win: the Unos, Binary command protocol (replace jsmn/JSON framing), Cost / risk, Next steps when triggered, Related, Scope / shape (rough), Why (payoff) (+25 more)
+Nodes (43): Binary protocol vs jsmn/JSON — what's actually reclaimable, Bottom line, Caveats on the speed claim, Incidental find (latent bug), Measured baseline (Leonardo), Starting assumption was wrong, The token array can't be cheaply trimmed, What the JSON layer costs (LTO build → some parts inlined into `main`) (+35 more)
 
 ### Community 61 - "Canonical References"
 Cohesion: 0.06
@@ -5579,9 +5562,9 @@ Nodes (31): Archive (D-14..D-15), Bench Validation Scope (D-05..D-07), Canonical
 Cohesion: 0.06
 Nodes (31): `35-HUMAN-UAT.md` (D-05), Cluster 10: Wave 2 bench evidence files, Cluster 1: Firmware CR-01/CR-02 fixes (`rurp_hw_rev_utils.h` + `rurp_pinout.h`), Cluster 2: Host fixes WR-01 + WR-02 (`serial_comm.py`), Cluster 3: Sub-repo operator-facing doc (D-10) — `firestarter/doc/SHIELD-REVISIONS.md`, Cluster 4: Sub-repo README sections (D-10) — `firestarter/README.md` + `firestarter_app/README.md`, Cluster 5: `firestarter/CLAUDE.md` + `firestarter_app/CLAUDE.md` (D-10 sync-rule extensions — optional Discretion), Cluster 6: Meta-repo planning surface updates (D-11..D-13) (+23 more)
 
-### Community 63 - "test_jp5_gate.py"
-Cohesion: 0.08
-Nodes (48): Pin1HazardRefusedError, Raised when a damage-capable operation on an affected part is refused. A part…, confirm_or_refuse(), hazard_text(), is_affected(), _print(), Any, Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby… (+40 more)
+### Community 63 - "EpromDatabase"
+Cohesion: 0.01
+Nodes (204): EpromDatabase, main(), Reads a JSON configuration file from the 'data' subdirectory. Helper function…, Manages the EPROM and pin map database for the Firestarter application. It…, Loads and merges EPROM and pin map data. When skip_local_override=True, only…, Merges two EPROM database dictionaries. `manual_db` takes precedence. Modifies…, Merges two pin map configuration dictionaries. `manual_pin_map` takes…, Retrieves a specific pin map configuration. (+196 more)
 
 ### Community 64 - "test_config_schema_pinned.py"
 Cohesion: 0.06
@@ -5624,8 +5607,8 @@ Cohesion: 0.04
 Nodes (47): A/B build + flash + identity (firmware axis), Anti-Patterns to Avoid, Applicable ASVS Categories, Architectural Responsibility Map, Architecture Patterns, Assumptions Log, Claude's Discretion, Code Examples (+39 more)
 
 ### Community 74 - "Project: Firestarter — Protocol-Aware Programming Architecture"
-Cohesion: 0.05
-Nodes (38): Approach (as built), Constraints, Context, Current State (v1.0), Evolution, Key Decisions, Out of Scope (audit after v1.0), Paused Milestone: v1.9 — Read-Bug RCA + Fix (DEFERRED again 2026-06-08) (+30 more)
+Cohesion: 0.04
+Nodes (54): Approach (as built), Constraints, Context, Current Milestone: v1.38 Repository Rename, Current State (v1.0), Decisions taken at activation (operator, 2026-09-10), Decisions taken at activation (operator, 2026-09-13), Decisions taken at kickoff (+46 more)
 
 ### Community 75 - "Phase 101: FW — Apply Names in Firmware - Research"
 Cohesion: 0.04
@@ -5827,9 +5810,9 @@ Nodes (43): A `CONCERNS.md` finding was stale in the opposite direction — the 
 Cohesion: 0.09
 Nodes (42): _argv_error(), _forbidden_needles(), main(), _normalise(), _paragraphs(), _parse_argv(), _print_fail(), _print_pass() (+34 more)
 
-### Community 125 - "test_config.py"
-Cohesion: 0.05
-Nodes (38): get_local_database(), get_local_pin_maps(), Loads the local user EPROM database override file. Returns: dict or None: The…, Loads the local user pin map override file. Returns: dict or None: The parsed…, Reads a JSON configuration file from the 'data' subdirectory. Helper function…, Loads and merges EPROM and pin map data. When skip_local_override=True, only…, Merges two EPROM database dictionaries. `manual_db` takes precedence. Modifies…, Merges two pin map configuration dictionaries. `manual_pin_map` takes… (+30 more)
+### Community 125 - "_drive_write"
+Cohesion: 0.10
+Nodes (24): _drive_write(), _fake_find_and_connect(), _fresh_serial_and_comm(), make_app_context(), CliRunner, parametrize, Invoke `firestarter write <chip> <file> [extra_args]` end to end. Drives a…, v1.22 HOST-02: `write <allowed-0x0D-chip> <file> --skip-sdp-unlock` reaches the… (+16 more)
 
 ### Community 126 - "loop"
 Cohesion: 0.13
@@ -5869,7 +5852,7 @@ Nodes (22): A3 net label lines, Accomplishments, Auto-fixed Issues, Deviations f
 
 ### Community 135 - "Pattern Assignments"
 Cohesion: 0.09
-Nodes (22): 10. `.planning/v1.7/baseline-34/verify-detect-34.sh` (delta-band regression-guard), 11. `firestarter_app/tests/test_revision_constants_parity.py` (optional Wave 3 parity assertion), 1. `.planning/v1.7-SHIELD-REVS.md` §8 (Detect-HW Schematic Delta — meta-repo doc fill), 2. `.planning/v1.7-SHIELD-REVS.md` §9 (Per-Rev Expected ADC Band Table — meta-repo doc fill), 3. `firestarter/include/rurp_shield.h` (REVISION_* enum extension), 4. `firestarter/include/rurp_hw_rev_utils.h` (detect-rev rework + ctrl-reg `case REVISION_2_3:` arm), 5. `firestarter/include/rurp_pinout.h` (ADC band threshold `#define`s), 6. `firestarter_app/firestarter/constants.py` (Python REVISION_* parity block) (+14 more)
+Nodes (22): 10. `.planning/milestones/v1.7-artifacts/baseline-34/verify-detect-34.sh` (delta-band regression-guard), 11. `firestarter_app/tests/test_revision_constants_parity.py` (optional Wave 3 parity assertion), 1. `.planning/milestones/v1.7-SHIELD-REVS.md` §8 (Detect-HW Schematic Delta — meta-repo doc fill), 2. `.planning/milestones/v1.7-SHIELD-REVS.md` §9 (Per-Rev Expected ADC Band Table — meta-repo doc fill), 3. `firestarter/include/rurp_shield.h` (REVISION_* enum extension), 4. `firestarter/include/rurp_hw_rev_utils.h` (detect-rev rework + ctrl-reg `case REVISION_2_3:` arm), 5. `firestarter/include/rurp_pinout.h` (ADC band threshold `#define`s), 6. `firestarter_app/firestarter/constants.py` (Python REVISION_* parity block) (+14 more)
 
 ### Community 136 - "Implementation Decisions"
 Cohesion: 0.09
@@ -5919,9 +5902,9 @@ Nodes (40): Milestones, Overview, Overview, Phase 105: FW — Firmware `mem_type
 Cohesion: 0.10
 Nodes (24): _bullet_list(), erase_addresses(), ImageError, load_image(), parse_dfuse_layout(), parse_intel_hex(), Project Name: Firestarter Copyright (c) 2026 Henrik Olsson Permission is hereby…, Render an iterable of strings as an indented bullet list. (+16 more)
 
-### Community 148 - "test_transport_counters.py"
-Cohesion: 0.11
-Nodes (36): probe_scope(), Project Name: Firestarter Copyright (c) 2026 Henrik Olsson Permission is hereby…, Mark the sink as "inside a port-discovery probe" for the duration of the `with`…, Zero every counter in the sink. Called once at the start of a measurement…, Return a fresh dict of every counter, keyed in fixed sorted order. A new dict…, Increment `decode_failures` by one. Called from…, Increment `resync_length_missing` by one. Called from…, Increment `resync_body_truncated` by one. Called from… (+28 more)
+### Community 148 - ".find_and_connect"
+Cohesion: 0.03
+Nodes (44): ProgrammerIdentity, NamedTuple, Reads the hardware revision of the programmer. Returns True if successful,…, Value-returning sibling of get_hardware_revision: returns both identity values…, Sets hardware configuration parameters on the programmer. Returns True if…, Continuously reads and prints voltage from the programmer., Reads the VPP voltage from the programmer., Reads the VPE voltage from the programmer. (+36 more)
 
 ### Community 149 - "Feature Research — v1.22 AT28C Software Data Protection Lifecycle"
 Cohesion: 0.05
@@ -6008,8 +5991,8 @@ Cohesion: 0.05
 Nodes (38): 0. Verification of every inherited file:line claim, 10. Competitor Feature Analysis, 1.1 Recommended op names, 1.2 What each step reports — PASS / BAD / NA-because-REFUSED, 1.3 Consumers of `StepResult.op` — the D-06/D-07 claim re-verified, 1.4 Finding: the leg needs a flags channel the engine does not have today, 1. The `dev test` SDP leg — user-visible surface, 2.1 The existing status vocabulary, and why NO new status is needed (+30 more)
 
 ### Community 170 - "Roadmap: Firestarter — Protocol-Aware Programming Architecture"
-Cohesion: 0.05
-Nodes (39): Milestones, Phase 44: Bug A RCA — Modified Rev 0 Upper-Address Jitter, Phase 45: Bug B RCA — Rev 2.0 Timing & Voltage, Phase 46: Fix Design & A/B Bench Trials, Phase 47: Acceptance Gate + Backlog Closures, Phase 48: COBS Evaluation + Post-RCA Cleanup + Milestone Close, Phase 93: RCA — Root-Cause the W29C040 Page-0 Write Fault, Phase 94: FIX + PGSZ — Firmware Write-Path Fix & Datasheet-Sourced Per-Chip Page Size (+31 more)
+Cohesion: 0.07
+Nodes (28): Milestones, Phases, Phases, Phases, Phases, Phases, Phases, Phases (+20 more)
 
 ### Community 171 - "test_lock_status_class_partition.py"
 Cohesion: 0.10
@@ -6244,8 +6227,8 @@ Cohesion: 0.06
 Nodes (34): Milestones, Overview, Overview, Phases, Phases, Phases, Phases, Phases (+26 more)
 
 ### Community 229 - "`dev test` — sequence cost model"
-Cohesion: 0.06
-Nodes (31): 1. The fingerprint read-back is unconditional on outcome, 2. The post-verify read-back duplicates the firmware's own compare, 3. The read step buys one boolean for two full sweeps, 4. The sampler costs 4 connects per write step, Connect counts (structural, validated), `dev test` — sequence cost model, Measured primitives (65536 B part), Plans as derived, per chip class (+23 more)
+Cohesion: 0.15
+Nodes (13): 1. The fingerprint read-back is unconditional on outcome, 2. The post-verify read-back duplicates the firmware's own compare, 3. The read step buys one boolean for two full sweeps, 4. The sampler costs 4 connects per write step, Connect counts (structural, validated), `dev test` — sequence cost model, Measured primitives (65536 B part), Plans as derived, per chip class (+5 more)
 
 ### Community 230 - "test_strip_provenance.py"
 Cohesion: 0.09
@@ -6367,17 +6350,17 @@ Nodes (32): 1. How minipro Handles Protocol Dispatch, 2. How Other Open-Source E
 Cohesion: 0.10
 Nodes (18): _generate(), _make_tree(), _one(), r""" Unit tests for the v1.33 citation-manifest toolchain (Phase 154 plan 04).…, Two explicit root directories -- never derived from __file__ by the tool., roots(), _run_generator(), test_backticked_wrapper_is_not_a_fifth_variant() (+10 more)
 
-### Community 260 - "submit.py"
+### Community 260 - "test_submit.py"
+Cohesion: 0.03
+Nodes (133): build_body(), build_issue_url(), build_title(), comment_via_gh(), _duration_text(), find_prior_report(), gh_available(), overall_verdict() (+125 more)
+
+### Community 261 - "plan_corpus"
 Cohesion: 0.09
-Nodes (31): comment_via_gh(), _duration_text(), find_prior_report(), gh_available(), _print(), Any, Pattern, Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby… (+23 more)
+Nodes (33): mock_operator(), plan_corpus(), Phase 175 Plan 01 -- the shared corpus surface every sentinel module in this…, `"partial"` for a UV chip, `"full"` otherwise -- the same rule `dev_test`…, The whole sweep domain: every `PART_NUMBERS` name, each at its own single…, A bench-free `EpromOperator` double. See the module docstring for why this is…, _reachable_scope(), alignment_violations() (+25 more)
 
-### Community 261 - "test_submit.py"
-Cohesion: 0.11
-Nodes (30): Recursively deep-scrub every string leaf of `d`. Returns a NEW dict built from…, File the issue via `gh issue create`, body piped over stdin (no cap). The…, sanitize_dict(), submit_via_gh(), Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, ATTR-06 / T-178-01: `rail_reading_disclosure` rides `to_dict()`, the only input…, test_sanitize_bytes_leaf_base64_encoded(), test_sanitize_clean_value_passes_through() (+22 more)
-
-### Community 262 - "submit_report"
-Cohesion: 0.11
-Nodes (31): The single submission entry point (SUB-01/02) -- composes every Plan-02 builder…, submit_report(), _make_report(), Retargeted by quick task 260821-spg: `submit_report` used to echo the sanitized…, The second removed echo (quick task 260821-spg): on the interactive path,…, D-11/ATTR-05: a transport-faulted report still reaches `confirm_fn` -- auto-…, test_a_transport_faulted_report_still_reaches_the_confirm_prompt(), test_comment_body_sent_is_sanitized() (+23 more)
+### Community 262 - "test_coverage_floor_v18.py"
+Cohesion: 0.13
+Nodes (13): decode_id_frame(), LogMessage, Read-path-adjacent — behavior preserved verbatim from serial_comm.py per Ring-…, exit_gracefully(), Signal handler that exits the process with status 1., GATE-1.8 coverage-floor restoration (v1.8 milestone close, Phase 43). Phase 42…, ``main.exit_gracefully`` SIGINT handler exits with status 1., ``decode_id_frame`` defensive guards (DoS-resilience per T-06-12). (+5 more)
 
 ### Community 263 - "test_chip_database_field_inventory.py"
 Cohesion: 0.11
@@ -6520,8 +6503,8 @@ Cohesion: 0.06
 Nodes (31): 10. Phase gate — run AFTER both sub-repo commits landed (D-11), 11. The nine deferred items — this phase's honest residuals, 12. Ruling B — the four exemptions, and the two sidecars that WERE re-derived, 13. Ruling G — the reconciliation, carried forward rather than collapsed, 14. The remap tool was NOT applied, 15. What Phase 159 inherits, 1. SWEEP-05 — the byte-identity after-pair, three AVR targets, 2. The actual swept set versus the candidate set (+23 more)
 
 ### Community 298 - "test_sdp_capability.py"
-Cohesion: 0.11
-Nodes (29): Any, SDP (Software Data Protection) capability predicate for protocol 0x0D. This…, Comma-split a DB `part_number` string into uppercased alias tokens. Rule: key…, Decide SDP capability for a `db.get_eprom()`-shaped full entry dict. Unanimity…, sdp_capability_for_entry(), split_part_number_tokens(), D-17, re-measured live at THIS plan (never inherited from a prior plan's…, test_all_sdp_allow_chips_have_zero_chip_id_measured_live() (+21 more)
+Cohesion: 0.09
+Nodes (33): Any, SDP (Software Data Protection) capability predicate for protocol 0x0D. This…, Comma-split a DB `part_number` string into uppercased alias tokens. Rule: key…, Decide SDP capability for a `db.get_eprom()`-shaped full entry dict. Unanimity…, sdp_capability_for_entry(), split_part_number_tokens(), D-17, re-measured live at THIS plan (never inherited from a prior plan's…, test_all_sdp_allow_chips_have_zero_chip_id_measured_live() (+25 more)
 
 ### Community 299 - "Canonical References"
 Cohesion: 0.06
@@ -6759,9 +6742,9 @@ Nodes (16): Documented residual ignore (D-08 escape hatch), File Classification,
 Cohesion: 0.07
 Nodes (29): Archive correction baseline, Audit of the Existing Six Plans, Common Failure Modes, Complete exception set, Current dirty state and preservation obligations, Exact Current Commands, Executive Answer, Findings Changed by This Forced Refresh (+21 more)
 
-### Community 358 - "test_lock_status_cli.py"
-Cohesion: 0.15
-Nodes (28): _configure_operator(), _first_token(), _invoke(), make_app_context(), CliRunner, parametrize, CLI-surface tests for `dev lock-status` (Phase 151, LOCK-02/03/04). Every leg…, The class token is always the first whitespace-delimited field of the first… (+20 more)
+### Community 358 - "TestFormatMessageRevision"
+Cohesion: 0.12
+Nodes (9): MSG_OK_REV / MSG_OK_CFG / MSG_INFO_HW / MSG_INFO_PHYSICAL_HW / MSG_INFO_CMD., MSG_OK_REV: effective==0xFF → physical silkscreen string only., MSG_OK_REV: effective!=0xFF → '{eff_str}, Override HW: {phys_str}'., MSG_OK_CFG: override==0xFF → 'R1: {r1}, R2: {r2}'., MSG_OK_CFG: override!=0xFF → adds ', Override HW: {silkscreen_str}'., MSG_INFO_HW: single u8 → 'HW: {silkscreen_str}'., MSG_INFO_PHYSICAL_HW: single u8 → 'Physical HW: {silkscreen_str}'., MSG_INFO_CMD: single u8 cmd → 'Cmd: 0x{n} (NAME)'. (+1 more)
 
 ### Community 359 - "test_vpp_seam_manual_on_every_board.py"
 Cohesion: 0.10
@@ -6823,13 +6806,13 @@ Nodes (28): A limit exposed in P-06 itself, Backlog 999.2 implication — a lead
 Cohesion: 0.18
 Nodes (26): build_argparser(), build_no_image_plan_reason(), _cell_id_type(), _interpret_file_probe(), _interpret_hw_probe(), _load_check_arms(), main(), patch_image_plan_fields() (+18 more)
 
-### Community 374 - "_drive_write_via_cli"
-Cohesion: 0.09
-Nodes (28): _drive_write_for_pulse_override(), _fake_find_and_connect(), _drive_write_via_cli(), _fake_find_and_connect(), CliRunner, Drive a full, otherwise-successful ``write_eprom()`` against a real 27C chip…, HOST-04 / D-14: ``write_eprom(..., pulse_us=1234)`` rides the existing…, D-14(c): the override must rebind a SHALLOW COPY, never mutate the caller's… (+20 more)
+### Community 374 - "make_app_context"
+Cohesion: 0.11
+Nodes (22): make_app_context(), CliRunner, Path, Tier-3 cells have SKIP-deferred or N/A verdict when no hardware. Boards in the…, Emitted JSON has top-level generated/harness_version/cells fields., Each cell carries family/board/tier/verdict/evidence_sha., validation-matrix.md is also emitted alongside the JSON., all' family argument emits Tier-3 cells for all 6 families. (+14 more)
 
-### Community 375 - "test_write_progress.py"
-Cohesion: 0.10
-Nodes (23): _drive_write_with_progress_frames(), _fake_find_and_connect(), _fresh_serial_and_comm(), _is_monotonic_non_decreasing(), _positions_only(), _progress_frame(), HOST-02 host-side write-progress tests (Phase 143 Plan 06, `143-06-PLAN.md`…, Build a MSG_DATA_PROGRESS (0xE0) wire frame for (current, total). messages.py's… (+15 more)
+### Community 375 - "_decode_param"
+Cohesion: 0.29
+Nodes (5): _decode_param(), Any, Decode one MSB-first parameter starting at `buf[cursor]`. Returns `(value,…, ``_decode_param`` signed-width + ascii_str + unknown-type branches., TestDecodeParamUncoveredTypes
 
 ### Community 376 - "test_val_nor_unlock.cpp"
 Cohesion: 0.15
@@ -7035,9 +7018,9 @@ Nodes (25): _canonical_part_number(), RPT-F1: the alias within the matched datab
 Cohesion: 0.10
 Nodes (26): Import pyusb lazily so the dependency is only needed for DFU boards., _require_usb(), _BlockedCliResult, MonkeyPatch, parametrize, Project Name: Firestarter Copyright (c) 2026 Henrik Olsson Permission is hereby…, Run `argv` against the real CLI in a subprocess where `usb` is genuinely…, `fw --help` exits 0, and its output contains `--board` and `--usb-id` -- a CLI… (+18 more)
 
-### Community 427 - "test_chip_test_cycle.py"
-Cohesion: 0.10
-Nodes (24): _cycle_operator(), The repeat CYCLE's per-family payload recipes (D-2). Separate file, mirroring…, The defect this whole task exists to fix, on the 301 UV rows. Same slot -- so…, Staging changed WHEN bits are cleared, not HOW MANY. The device ends exactly…, Freely rewritable in both directions, so a differing payload is free -- and the…, `same` is not a missing feature here. The erase step inside the cycle resets…, `--fast` (one cycle) must not accidentally write a partial tranche and leave…, D-4. A UV part receives one 256-byte slot at both scopes, blank or not.… (+16 more)
+### Community 427 - "TestR1Precondition"
+Cohesion: 0.05
+Nodes (30): CliRunner, Path, write_cycle_eprom returning 1 maps to FAIL in the artifact cell., uno328pb write/program cells → N/A, no cycle method called., With board=uno328pb, all Tier-3 cells record N/A., With board=uno328pb, write_cycle_eprom is never called., r1 out-of-band → abort before any cycle method runs., r1 == 270000 is within tolerance (identity check). (+22 more)
 
 ### Community 428 - "firestarter.h"
 Cohesion: 0.09
@@ -7296,8 +7279,8 @@ Cohesion: 0.16
 Nodes (24): build_argparser(), build_row(), _derive_outcome(), _gate_record(), _load_image_plan_row(), _load_json(), _load_json_list(), _load_sibling() (+16 more)
 
 ### Community 492 - "update_version"
-Cohesion: 0.10
-Nodes (20): calculate_version(), compute_beta_version(), get_header_version(), _git_tag_scan_fallback(), is_beta_mode(), parse_args(), Calculate and write the next version. args: argparse.Namespace (optional). When…, Update the version number in the header file. If version_string is provided… (+12 more)
+Cohesion: 0.06
+Nodes (31): calculate_version(), compute_beta_version(), get_header_version(), _git_tag_scan_fallback(), is_beta_mode(), parse_args(), Calculate and write the next version. args: argparse.Namespace (optional). When…, Update the version number in the header file. If version_string is provided… (+23 more)
 
 ### Community 493 - "test_config_storage_design_vendored.py"
 Cohesion: 0.13
@@ -7376,8 +7359,8 @@ Cohesion: 0.13
 Nodes (15): §A-0x10: algo-0x10 (39 chips), chip_id_check distribution — algo-0x10, DEFECT-COV-132 — MACRONIX(MXIC) on algo-0x10 / DIP32_STD / 262144B: chip_id_value differs across members with chip_id_check=True, DEFECT-COV-133 — INTEL on algo-0x10 / DIP32_STD / 131072B: chip_id_value differs across members with chip_id_check=True, DEFECT-COV-134 — AMD on algo-0x10 / DIP32_STD / 262144B: chip_id_value differs across members with chip_id_check=True, DEFECT-COV-135 — CATALYST(CSI) on algo-0x10 / DIP32_STD / 131072B: chip_id_value differs across members with chip_id_check=True, DEFECT-COV-136 — AMD on algo-0x10 / DIP32_STD / 131072B: chip_id_value differs across members with chip_id_check=True, DEFECT-COV-137 — INTEL on algo-0x10 / DIP32_STD / 32768B: chip_id_value differs across members with chip_id_check=True (+7 more)
 
 ### Community 512 - "ValueError"
-Cohesion: 0.18
-Nodes (14): calculate_version(), compute_beta_version(), get_version(), _git_tag_scan_fallback(), is_beta_mode(), parse_args(), Calculate and write the next version. args: argparse.Namespace (optional). When…, Update the version number in the file. If version_string is provided (beta… (+6 more)
+Cohesion: 0.06
+Nodes (40): calculate_version(), compute_beta_version(), get_version(), _git_tag_scan_fallback(), is_beta_mode(), parse_args(), Calculate and write the next version. args: argparse.Namespace (optional). When…, Update the version number in the file. If version_string is provided (beta… (+32 more)
 
 ### Community 513 - "Canonical References"
 Cohesion: 0.08
@@ -7391,9 +7374,9 @@ Nodes (25): 189-04's verify legs — reuse the counting idiom, 1. `191-stable-in
 Cohesion: 0.15
 Nodes (24): atomic_write(), build_argparser(), _divergence_table(), _format_cell(), load_schema_and_rows(), main(), _partition_rows(), ArgumentParser (+16 more)
 
-### Community 516 - "build_body"
-Cohesion: 0.11
-Nodes (25): build_body(), build_issue_url(), Markdown body: a human results table, then (optionally) the fenced JSON block…, `https://github.com/<SUBMIT_REPO>/issues/new?...`. Percent-encodes…, Open a prefilled `issues/new` browser URL, degrading past the encoded-byte…, submit_via_browser(), _oversize_json_only_body(), Quick task 260822-gxx, operator reversal mid-run ("Actually if a step is NA no… (+17 more)
+### Community 516 - "`dev test` — adaptive, evidence-gated sequencing"
+Cohesion: 0.17
+Nodes (12): `dev test` — adaptive, evidence-gated sequencing, Explicitly out of scope, Per-class characteristics that must survive, Projected effect, R1 — Never read what you can verify, R2 — Diagnose on failure only, R3 — Sample for a rate, sweep for a map, R4 — One session per plan, not one per call (+4 more)
 
 ### Community 517 - "Milestone v1.0 — Firestarter Protocol-Aware Programming Architecture"
 Cohesion: 0.14
@@ -7555,9 +7538,9 @@ Nodes (14): 1.1 Arduino Pin Mapping (UNO & Leonardo), 1.2 Static Wiring: DIP Soc
 Cohesion: 0.14
 Nodes (11): 4.1 Protocol Dispatch (memory.cpp:44–117), 4.2 Protocol 0x07, 0x08, 0x0B: configure_eprom(), 4.3 Protocol 0x0D: configure_eeprom28c(), 4.5 Protocol 0x10: configure_flash_intel(), Chip-ID Read (eprom_get_chip_id, line 186–197), Initialization (eprom_generic_init, line 250–258), Section 4: Per-Protocol Handler Signal Flow, Translation Layer (eprom_internal_set_control_register, line 268–274) (+3 more)
 
-### Community 557 - "_drive_data_operation_and_record_timeouts"
-Cohesion: 0.11
-Nodes (24): _drive_data_operation_and_record_timeouts(), _fake_find_and_connect(), _drive_simple_operation_and_record_timeouts(), _fake_find_and_connect(), _drive_write_and_record_timeouts(), _main_phase_calls(), Extract the ``timeout`` value from one recorded ``get_response`` call. ``self``…, Slice the MAIN-phase ``get_response`` calls out of a full INIT->MAIN->END… (+16 more)
+### Community 557 - "test_write_response_budget.py"
+Cohesion: 0.10
+Nodes (29): _drive_data_operation_and_record_timeouts(), _fake_find_and_connect(), _drive_simple_operation_and_record_timeouts(), _fake_find_and_connect(), _drive_write_and_record_timeouts(), _fresh_serial_and_comm(), _main_phase_calls(), HOST-01 write-path response-timeout oracles, plus D-12's negative proof (Phase… (+21 more)
 
 ### Community 558 - "test_check_landing_range.py"
 Cohesion: 0.15
@@ -7937,7 +7920,7 @@ Nodes (12): 1. Cold-install smoke test, 2. Top-level --help format, 3. Subcomman
 
 ### Community 652 - "Phase 43 Plan 02: Archive + ROADMAP Collapse + REQUIREMENTS Archive Summary"
 Cohesion: 0.15
-Nodes (12): Artifact 1: `.planning/v1.8-archive.sh`, Artifact 2: `.planning/milestones/v1.8-phases/` (8 phase directories), Artifact 3: `.planning/milestones/v1.8-REQUIREMENTS.md`, Artifact 4: `.planning/ROADMAP.md` (v1.8 section collapsed), Deviations from Plan, Next Plan, Phase 43 Plan 02: Archive + ROADMAP Collapse + REQUIREMENTS Archive Summary, Safety Notes (+4 more)
+Nodes (12): Artifact 1: `.planning/milestones/v1.8-archive.sh`, Artifact 2: `.planning/milestones/v1.8-phases/` (8 phase directories), Artifact 3: `.planning/milestones/v1.8-REQUIREMENTS.md`, Artifact 4: `.planning/ROADMAP.md` (v1.8 section collapsed), Deviations from Plan, Next Plan, Phase 43 Plan 02: Archive + ROADMAP Collapse + REQUIREMENTS Archive Summary, Safety Notes (+4 more)
 
 ### Community 653 - "Goal Achievement"
 Cohesion: 0.15
@@ -8069,7 +8052,7 @@ Nodes (23): Canonical References, Claude's Discretion, Deferred Ideas, Do not di
 
 ### Community 685 - "Pattern Assignments"
 Cohesion: 0.08
-Nodes (23): 10. `.planning/v1.33/158-before-figures.md` + `158-after-figures.md` (records), 1. `tests/test_jsmn_token_layout_source_contract_v158.py` (test, source-scan) — **the highest-risk new file**, 2. `tests/fixtures/captured_build_v158_{uno,uno328pb,leonardo}.log` (fixture, captured) — **the second-highest risk**, 3. `tests/fixtures/planted_size_baseline_flash_regression_v158.log` (fixture, planted), 4. `tests/fixtures/captured_test_native{,_nodevtools}_summary.log` (fixture, updated **in place**), 5. `scripts/baseline/size_baseline.json` (config, recorded measurement), 6. `scripts/baseline/size_baseline_base01.json` (config, frozen anchor — LAND-03 FIX), 7. `lib/jsmn/src/jsmn.h` (vendored header, LAND-05) (+15 more)
+Nodes (23): 10. `.planning/milestones/v1.33-artifacts/158-before-figures.md` + `158-after-figures.md` (records), 1. `tests/test_jsmn_token_layout_source_contract_v158.py` (test, source-scan) — **the highest-risk new file**, 2. `tests/fixtures/captured_build_v158_{uno,uno328pb,leonardo}.log` (fixture, captured) — **the second-highest risk**, 3. `tests/fixtures/planted_size_baseline_flash_regression_v158.log` (fixture, planted), 4. `tests/fixtures/captured_test_native{,_nodevtools}_summary.log` (fixture, updated **in place**), 5. `scripts/baseline/size_baseline.json` (config, recorded measurement), 6. `scripts/baseline/size_baseline_base01.json` (config, frozen anchor — LAND-03 FIX), 7. `lib/jsmn/src/jsmn.h` (vendored header, LAND-05) (+15 more)
 
 ### Community 686 - "Implementation Decisions"
 Cohesion: 0.08
@@ -8123,9 +8106,9 @@ Nodes (20): configure_adc(), configure_output(), control_pin_to_gpio(), data_mod
 Cohesion: 0.15
 Nodes (12): 53-04 / XACT-02 fault-injection — bench findings (2026-06-05, operator-witnessed), Clean per-frame measurement (harness refinement — `dev fault-inject --mode latency`), Final XACT-02 latency verdict, Firmware fast-NAK RCA (2026-06-05, code-level, firestarter v1.10 tip), Interpretation (XACT-02), Matrix (all 4 combos), Net, Post-optimization measurement (firmware 0266ee2, Leonardo, dev fault-inject --mode latency) (+4 more)
 
-### Community 699 - "TestValidateFirmwareVersion"
-Cohesion: 0.08
-Nodes (14): 1.0.0' + allow_pre_v12=True -> Branch B. D-02 / D-05 invariant: allow_pre_v12…, D-02: the staticmethod NEVER reads FIRESTARTER_DEV_ALLOW_PRE_V12. Override the…, Unit tests for the pure-policy version-guard @staticmethod., Ensure the dev escape-hatch env var is unset for every test by default.…, 3.0.0' -> None. Normal accept: major=3, Branch A skipped, 2.0.0 floor OK., 3.5.2' -> None. Normal accept path., 3' -> None. Single-segment version handled by tuple-compare via…, 3.0.0-dev' -> None. RESEARCH §7 Option A: trailing alpha suffix is stripped… (+6 more)
+### Community 699 - "codec.py"
+Cohesion: 0.22
+Nodes (6): Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, MessageDef, Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, Unknown/unhandled IDs return None (fall-through to generic rendering)., Unknown msg_id returns None., TestFormatMessageNoneSentinel
 
 ### Community 700 - "FM1608 fresh-chip baseline validation"
 Cohesion: 0.09
@@ -8133,11 +8116,11 @@ Nodes (22): 2026-05-18 Investigation extension — bug localized to specific Uno
 
 ### Community 701 - "Implementation Decisions"
 Cohesion: 0.09
-Nodes (22): Canonical References, Carried forward — LOCKED by Phase 49 (`.planning/v1.10-FRAMING-DECISION.md`; do NOT re-litigate), Claude's Discretion, Code to change — firmware (`v1.10-serial-transport-hardening` branch in `firestarter/`), Code to change — host (`v1.10-serial-transport-hardening` branch in `firestarter_app/`), Deferred Ideas, Established Patterns, Existing Code Insights (+14 more)
+Nodes (22): Canonical References, Carried forward — LOCKED by Phase 49 (`.planning/milestones/v1.10-FRAMING-DECISION.md`; do NOT re-litigate), Claude's Discretion, Code to change — firmware (`v1.10-serial-transport-hardening` branch in `firestarter/`), Code to change — host (`v1.10-serial-transport-hardening` branch in `firestarter_app/`), Deferred Ideas, Established Patterns, Existing Code Insights (+14 more)
 
 ### Community 702 - "Canonical References"
 Cohesion: 0.09
-Nodes (22): Breaking-change guard (SC3) — operator-locked 2026-06-02, Canonical References, Carried forward — LOCKED by Phase 49 ADR (`.planning/v1.10-FRAMING-DECISION.md`; do NOT re-litigate), Claude's Discretion, Code to change — firmware (`v1.10-serial-transport-hardening` branch in `firestarter/`), Code to change — host (`v1.10-serial-transport-hardening` branch in `firestarter_app/`), Deferred Ideas, Established Patterns (+14 more)
+Nodes (22): Breaking-change guard (SC3) — operator-locked 2026-06-02, Canonical References, Carried forward — LOCKED by Phase 49 ADR (`.planning/milestones/v1.10-FRAMING-DECISION.md`; do NOT re-litigate), Claude's Discretion, Code to change — firmware (`v1.10-serial-transport-hardening` branch in `firestarter/`), Code to change — host (`v1.10-serial-transport-hardening` branch in `firestarter_app/`), Deferred Ideas, Established Patterns (+14 more)
 
 ### Community 703 - "Canonical References"
 Cohesion: 0.09
@@ -8375,9 +8358,9 @@ Nodes (10): Codebase Concerns, Dependencies at Risk, Fragile Areas, Known Bugs, 
 Cohesion: 0.09
 Nodes (22): Canonical References, Claude's Discretion, DATA-06 (D-13, D-14, D-15), DATA-06 — `protect_on_after`'s single home, Deferred Ideas, Established Patterns, Existing Code Insights, Firmware (D-01, D-02) (+14 more)
 
-### Community 762 - "_fixture"
-Cohesion: 0.04
-Nodes (65): app_context(), fake_serial(), _factory(), Return a fresh BytesIO-backed fake serial port., Return a default AppContext for the common no-argument case. Serves only the…, db(), Database pinned to the packaged chip_database.json (no local override)., CliRunner (+57 more)
+### Community 762 - "Any"
+Cohesion: 0.29
+Nodes (4): Any, The emitted JSON has the required schema., evidence_sha is present on every cell (may be null/sentinel for software cells)., TestArtifactSchema
 
 ### Community 763 - "Phase 151: Protection Readability — `lock-status` - Discussion Log"
 Cohesion: 0.09
@@ -8519,9 +8502,9 @@ Nodes (23): Blockers, Current Position, Decisions, Deferred Items, Deferred Item
 Cohesion: 0.19
 Nodes (19): _allowed_argv0_set(), check_commands(), check_config_dir_sha(), check_cross_oracle(), check_outcome(), check_required_fields(), _is_acceptable_not_measured(), _is_blank_or_placeholder() (+11 more)
 
-### Community 798 - "_ready_body"
-Cohesion: 0.12
-Nodes (22): _cap02_params(), _cap03_params(), Build the `body` _decode_id_frame receives: [id][params][crc]., [buffer_size u16 BE][hw_revision u8][ver_len u8][ver bytes][write_budget_s u16…, Pre-CAP-02 firmware: buffer size decodes, the CAP-02 fields stay None., A length prefix claiming more bytes than are present must not yield a partial…, The CAP-01 [1, 4096] plausibility clamp survives the widened length test -- an…, 106 s is the real advertised figure for 0x0B at its modal 500 us pulse width on… (+14 more)
+### Community 798 - "test_hw_revision_gate.py"
+Cohesion: 0.07
+Nodes (48): Reference CRC8 — poly 0x07, seed 0x00, no reflection, no final XOR. Table-FREE…, _ref_crc8_ccitt(), _cap02_params(), _cap03_params(), _probe(), parametrize, Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, 0xFF ("no EEPROM override active") is not a revision and must refuse. (+40 more)
 
 ### Community 799 - "test_vcc_margin_rail.py"
 Cohesion: 0.15
@@ -8777,7 +8760,7 @@ Nodes (21): File Classification, `include/rurp_vpp.h` (config / capability heade
 
 ### Community 862 - "Pattern Assignments"
 Cohesion: 0.09
-Nodes (21): 1. `.planning/v1.23-FLASH-PATH-DECISION.md` (doc, authoritative layer), 2. `firestarter/platform/py32f071/FLASH-PATH-AND-PCB.md` (doc, subset layer), 3. `firestarter/tests/test_flash_path_record_sync.py` (test, cross-repo parity gate), 3a. Same-repo shape — `firestarter/tests/test_config_storage_design_vendored.py`, 3b. Assertion architecture — `firestarter_app/tests/test_py32_asset_name_host.py` (Phase 128, `cc9452f`), 4. `firestarter/tests/meta_presence.py` (utility, presence probe), 5. `firestarter/platform/py32f071/linker/PY32F071xB_FLASH.ld` (config, comment-only), 6. `.planning/seeds/py32f071-no-external-tool-fw-install.md` (doc, frontmatter edit) (+13 more)
+Nodes (21): 1. `.planning/milestones/v1.23-FLASH-PATH-DECISION.md` (doc, authoritative layer), 2. `firestarter/platform/py32f071/FLASH-PATH-AND-PCB.md` (doc, subset layer), 3. `firestarter/tests/test_flash_path_record_sync.py` (test, cross-repo parity gate), 3a. Same-repo shape — `firestarter/tests/test_config_storage_design_vendored.py`, 3b. Assertion architecture — `firestarter_app/tests/test_py32_asset_name_host.py` (Phase 128, `cc9452f`), 4. `firestarter/tests/meta_presence.py` (utility, presence probe), 5. `firestarter/platform/py32f071/linker/PY32F071xB_FLASH.ld` (config, comment-only), 6. `.planning/seeds/py32f071-no-external-tool-fw-install.md` (doc, frontmatter edit) (+13 more)
 
 ### Community 863 - "Phase 130 Plan 02: Record-Corrections Checker Summary"
 Cohesion: 0.09
@@ -8957,7 +8940,7 @@ Nodes (8): Manual-Only Verifications, Per-Task Verification Map, Phase 18 — Va
 
 ### Community 907 - "22-01-PLAN.md"
 Cohesion: 0.22
-Nodes (8): Branch invariant (load-bearing), CI workflow release steps — UNCHANGED per D-03 / D-11 (read-only context), `firestarter/platformio.ini` — current `[platformio]` block (verified read 2026-05-20), GATE-01 baselines (`.planning/v1.5/baselines/`), Plan-level checks (all must hold post-execution), `.planning/ROADMAP.md` — current Phase 22 SC#1 prose (line 58), STRIDE Threat Register, Trust Boundaries
+Nodes (8): Branch invariant (load-bearing), CI workflow release steps — UNCHANGED per D-03 / D-11 (read-only context), `firestarter/platformio.ini` — current `[platformio]` block (verified read 2026-05-20), GATE-01 baselines (`.planning/milestones/v1.5-artifacts/baselines/`), Plan-level checks (all must hold post-execution), `.planning/ROADMAP.md` — current Phase 22 SC#1 prose (line 58), STRIDE Threat Register, Trust Boundaries
 
 ### Community 908 - "Phase 26 — Validation Strategy"
 Cohesion: 0.22
@@ -9088,8 +9071,8 @@ Cohesion: 0.09
 Nodes (22): 1. Narrow `protocol` + `ctrl_flags` — MEASURED −348 B flash, −5 B RAM, 2. 64-bit math for one voltage read — 438 B of linked library, 3. VPP report block copy-pasted 4× — MEASURED −268 B, 172/172 pass, 4. Chip-ID mismatch block copy-pasted 4× — MEASURED −158 B, 172/172 pass, 5. json_parser.c — a half-finished refactor, ~900–1000 B, 6. Drop JSON for a binary command frame — MEASURED −3.7 KB flash, −512 B RAM, 7. The operator's original example: the `!` inversion is FREE, 8. `mem_util_blank_check` mallocs 4 bytes — MEASURED −650 B flash, −8 B RAM (+14 more)
 
 ### Community 940 - "v1.23 Flash Path & PCB Requirements — PY32F071"
-Cohesion: 0.09
-Nodes (22): 1.1 The flash map this record cites [VERIFIED: platform/py32f071/linker/PY32F071xB_FLASH.ld at the firmware HEAD recorded in 129-01], 1.2 Boot modes, BOOT0 and nBOOT1 [CITED: PY32F071 Datasheet Rev 0.7 EN §2.3 Table 2-1] [UNVERIFIED-UNTIL-SILICON], 1.3 SWD, and why PA13/PA14 are not free pins [CITED: PY32F071 Datasheet Rev 0.7 EN p.44 note 2], 1.4 USB pins, crystal-less operation, and the HSE hedge [CITED: PY32F071 Datasheet Rev 0.7 EN §2.19 and §2.25; Puya UM1504 §1.1 Table 1-1] [UNVERIFIED-UNTIL-SILICON], 1.5 Package selection constrains the data bus [VERIFIED: PY32F071 Datasheet Rev 0.7 EN pin-definition table, column header checked], 1.6 Revision Note — three premises this record corrects, 1. Context — what is already fixed, 2. Decision — the three-tier flash path [SHARED:S1] (+14 more)
+Cohesion: 0.04
+Nodes (42): Host-side FW-install seams (firestarter_app), PR #48 is much further along than the ROADMAP assumes, PY32F071 port — what is actually on the branches, Real inventory (firmware repo, all forked off `beta`), Sizing, Trap: PR #47 looks complete and is not, Update 2026-07-28 — the host half is built, Update 2026-08-02 — Supersession Section (Phase 130 Plan 09, CLOSE-01) (+34 more)
 
 ### Community 941 - "After-figures record -- v1.33 Phase 155"
 Cohesion: 0.09
@@ -9103,9 +9086,9 @@ Nodes (21): A second, independent, non-hardware blocker — found live, unrelate
 Cohesion: 0.16
 Nodes (20): build_argparser(), compute_mcu_match(), decide_identity(), main(), normalize_mcu_name(), parse_route1(), parse_route2(), _parse_sig81() (+12 more)
 
-### Community 944 - "_boot_block_hint_message"
-Cohesion: 0.16
-Nodes (20): _boot_block_hint_message(), Return a boot-block-locked inference hint string, or None. A flash4 write that…, _make_timeout_response(), Response, FIX-01b (Phase 94 Plan 03) — boot-block-locked heuristic hint tests. Tests that…, flash4 timeout at last-16K address emits the boot-block hint., flash4 timeout at a mid-chip address must NOT emit the boot-block hint.…, Non-flash4 protocol (e.g. 0x07 EPROM) must NOT emit the boot-block hint. The… (+12 more)
+### Community 944 - "module_op_constants"
+Cohesion: 0.25
+Nodes (9): assert_total_partition(), module_op_constants(), Every `OP_*` string constant `chip_test` defines, discovered at runtime rather…, Assert `REQUIRES_VERIFY` and `EXEMPT_REASONS` together account for every op in…, The measured census baked into this module's docstring and into…, Roadmap success criterion 3, read literally: a future operation type omitted…, test_a_fourteenth_op_fails_the_partition_closed(), test_op_census_is_thirteen() (+1 more)
 
 ### Community 945 - "check_landing_range.py"
 Cohesion: 0.16
@@ -9543,9 +9526,9 @@ Nodes (20): 1. Project Overview, 2. Architecture & Technical Decisions, 3. Phase
 Cohesion: 0.19
 Nodes (17): append_row_to_file(), atomic_write(), _format_cell(), load_jsonl(), main(), Exception, Path, render_evidence.py -- renders bench/EVIDENCE.md from bench/EVIDENCE.jsonl… (+9 more)
 
-### Community 1054 - "_drive_write"
-Cohesion: 0.14
-Nodes (20): _drive_write(), _fake_find_and_connect(), CliRunner, parametrize, Invoke `firestarter write <chip> <file> [extra_args]` end to end. Drives a…, v1.22 HOST-02: `write <allowed-0x0D-chip> <file> --skip-sdp-unlock` reaches the…, v1.22 HOST-04: an allowed 0x0D part with no flag gets bit 0x100 clear and no…, v1.22 HOST-04: a capability-refused 0x0D part (one FRAM part, one pre-SDP… (+12 more)
+### Community 1054 - "v1.35 — The GSD close procedure under branch protection"
+Cohesion: 0.22
+Nodes (8): A note on link stability, A premise this requirement rests on that is not true, Banked evidence — the pull-request route already works, The decision, The route into main, and where it stops, v1.35 — The GSD close procedure under branch protection, What this changes, What this costs
 
 ### Community 1055 - "config_storage_flash.cpp"
 Cohesion: 0.17
@@ -9807,9 +9790,9 @@ Nodes (18): 1. The decision (operator, 2026-07-31), 2. Why `dev sdp` does not ea
 Cohesion: 0.10
 Nodes (19): 10. LAND-08 -- the flakiness record, 11. The gate ledger -- all twelve legs, 12. The coverage ceilings -- final form, 13. The corrections ledger -- every row closed out, 14. The decisions -- OD-1 through OD-10, 15. Handoffs, 16. Self-verification of this record, 1. Git anchors (+11 more)
 
-### Community 1120 - "build_db.py"
-Cohesion: 0.43
-Nodes (6): classify(), interpret_timing(), main(), Resolve the firestarter pinout key for a chip. A pure function of decoded…, The sole chip-classification path. Keyed on the fields minipro itself…, resolve_pinout_key()
+### Community 1120 - "Voltage-reading calibration — why the design is what it is"
+Cohesion: 0.22
+Nodes (8): D1 — Error-model discovery, not assumption, D2 — White-box over black-box  → **white-box**, D3 — Two stages, measured at two different nodes → **both**, D4 — One sense node covers VPP and VPE, D5 — UX: no live monitor loop, D6 — Storage & migration, D7 — Safety is load-bearing, not optional, Voltage-reading calibration — why the design is what it is
 
 ### Community 1121 - "Pre-sweep citation manifest — reconciliation report"
 Cohesion: 0.10
@@ -9976,8 +9959,8 @@ Cohesion: 0.17
 Nodes (19): _c_comment_text(), _comment_lines(), _json_group(), main(), _print_file_table(), _print_group_table(), _py_comment_text(), Path (+11 more)
 
 ### Community 1162 - "v1.36 — Close Record: `dev test` Fidelity"
-Cohesion: 0.09
-Nodes (19): 10. Measured state at close, 1. What the milestone set out to do, and what it did, 2. The invariant the whole milestone was built around, 3. The declared-re-key protocol was retired mid-milestone, 4. Corrections made at the close, recorded rather than absorbed, 5. The one gap the verifier found, and whose fault it was, 6. What CI caught that local testing could not, 7. Security (+11 more)
+Cohesion: 0.04
+Nodes (44): Milestone Archive: v1.35 ROADMAP — Documentation Consolidation & Wiki Migration, COMPLETE — 2026-08-09, Hard constraints that shape the design, Problem, Solution, What already exists (build on it, don't re-invent), 1. Scope — what ran, what did not, and the record discrepancies, 2. POLICY-04 — the probe, and the cut's disposition (+36 more)
 
 ### Community 1163 - "json_parser.c"
 Cohesion: 0.31
@@ -10511,9 +10494,9 @@ Nodes (17): Project Name: Firestarter Copyright (c) 2026 Henrik Olsson Permissio
 Cohesion: 0.16
 Nodes (17): _assert_identifier_absent(), _live_header_region(), Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, Strip `//` and `/* ... */` comments AND the contents of every string/char…, Word-boundary absence check, copied in shape from the sibling source-contract…, Returns the substring of the comment-and-literal-stripped header from the start…, Coverage 1 -- within the LIVE jsmntok struct region only, exactly one `int…, Coverage 2 -- within the same live-struct region, exactly one `uint8_t type;`… (+9 more)
 
-### Community 1296 - "TestUpdateVersionDryRun"
-Cohesion: 0.11
-Nodes (11): Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission is hereby…, VER-02 (D-13, D-28) — Dry-run mode: compute version, emit to stdout, write…, VER-02 / D-04 — Clear all CI env vars before each test., VER-02 / D-13 — --dry-run + --beta + BETA_VERSION: no file write, no…, VER-02 / D-13, D-28 — --dry-run on stable path: no file write, DRY_RUN: 1.2.4…, VER-02 (D-17, D-24) — Stable-path tests asserting Wave-1 4-tuple return shape.…, VER-02 / D-04 — Clear all CI env vars before each test. Tests that need…, VER-02 / D-17 — Stable path produces byte-identical output to pre-v1.4 script.… (+3 more)
+### Community 1296 - "_write_bearing_plans"
+Cohesion: 0.29
+Nodes (7): Shared selector for Part B's three mutated-corpus legs (D-09). Each of those…, D-03, generalized across the whole corpus., D-04, generalized across the whole corpus., test_a_region_skewed_verify_flags_every_write_bearing_plan(), test_an_unsupported_verify_flags_every_write_bearing_plan(), test_removing_the_verify_flags_every_write_bearing_plan(), _write_bearing_plans()
 
 ### Community 1297 - "Phase 53: Byte-Exact Bench Verification (hardware-gated) - Discussion Log"
 Cohesion: 0.11
@@ -10956,8 +10939,8 @@ Cohesion: 0.11
 Nodes (18): Common Pitfalls, Pitfall 10 — the native suite is load-flaky (D-04), Pitfall 11 — counting ELF strings with an exact-match filter, Pitfall 12 — assuming `unsigned long` is 32-bit, Pitfall 13 — pinning a `.constprop.NN` suffix, Pitfall 14 — quoting a WARM figure as a cold baseline, Pitfall 15 — reading a green `--policy merge05` run as "nothing moved", Pitfall 16 — writing a `json_parser.c:NNN` citation from a pre-Phase-154 document (+10 more)
 
 ### Community 1408 - "Class: `verbatim_unique_fullfile` (9 records)"
-Cohesion: 0.11
-Nodes (18): Class: `historical_anchor_corrected` (4 records), Class: `mechanical_oracle_pass` (1 records), Class: `verbatim_unique_fullfile` (9 records), Decision late-05328595afcb9f23, Decision late-1811de672eb79f6c, Decision late-1dab9164ab57c0b4, Decision late-2036867d4785cfd6, Decision late-52fbdd2c7d2b97fa (+10 more)
+Cohesion: 0.20
+Nodes (10): Class: `verbatim_unique_fullfile` (9 records), Decision late-05328595afcb9f23, Decision late-1811de672eb79f6c, Decision late-2036867d4785cfd6, Decision late-52fbdd2c7d2b97fa, Decision late-b4978cb85d0b6c4a, Decision late-db7274529d9e2cbe, Decision late-eba06b3387d9c52a (+2 more)
 
 ### Community 1409 - "Phase 160: RIG — Dual-Arm Build, Flash Provenance & the Shared Cell Procedure - Research"
 Cohesion: 0.11
@@ -10965,7 +10948,7 @@ Nodes (17): Architectural Responsibility Map, Assumptions Log, Chip facts — ve
 
 ### Community 1410 - "Phase 171: STRAY — The Root-Level Documentation Files - Pattern Map"
 Cohesion: 0.11
-Nodes (17): 1. `Shell-Completion.md` (new wiki page), 2. `_Sidebar.md` (wiki navigation), 3. `Home.md` (wiki hub), 4. `.planning/v1.35/MIGRATION-TABLE.md` — the two row shapes, 5. The commit-shape analog, Deletion is recorded, never silent, File Classification, Metadata (+9 more)
+Nodes (17): 1. `Shell-Completion.md` (new wiki page), 2. `_Sidebar.md` (wiki navigation), 3. `Home.md` (wiki hub), 4. `.planning/milestones/v1.35-MIGRATION-TABLE.md` — the two row shapes, 5. The commit-shape analog, Deletion is recorded, never silent, File Classification, Metadata (+9 more)
 
 ### Community 1411 - "Phase 185 Plan 03: Off-TTY Unwrap and UV Slot-Write Test Merge Summary"
 Cohesion: 0.11
@@ -11003,9 +10986,9 @@ Nodes (17): Bold marks the load-bearing negative, `CLAUDE.md` — GATE-02 bullet
 Cohesion: 0.11
 Nodes (17): 1. Git anchors, 2. Byte-identity pair — three AVR targets (SWEEP-05, before-half), 3. Suite baselines — taken on the clean tree, 4. Reconciliation with RESEARCH.md — every delta explained, none silently adopted, 5. Preservation verification (task 1, step 3), 6. Environment facts and traps recorded for downstream plans, 7. What this file does NOT do, Bonus reproducibility evidence (+9 more)
 
-### Community 1420 - "test_erase_flag_invariants.py"
-Cohesion: 0.18
-Nodes (16): _all_rows(), _erase_capability_bit(), Phase 153 Plan 12 (ERASE-03) -- exhaustive host-side proof that the…, Select every (manufacturer, chip_record) pair with `programming.algorithm ==…, Every (manufacturer, chip_record) pair in the database, exhaustively., Convert `chip` through the real `_map_data` -> `convert_to_programmer` pipeline…, The 746 total is asserted in the same test as the 84 subset count -- a change…, For every row that is NOT algorithm 13, the bit must match the PRE-CHANGE rule:… (+8 more)
+### Community 1420 - "Binary command protocol (replace jsmn/JSON framing)"
+Cohesion: 0.25
+Nodes (7): Biggest win: the Unos, Binary command protocol (replace jsmn/JSON framing), Cost / risk, Next steps when triggered, Related, Scope / shape (rough), Why (payoff)
 
 ### Community 1421 - "test_protect_flags_doc_measurements.py"
 Cohesion: 0.15
@@ -11652,8 +11635,8 @@ Cohesion: 0.12
 Nodes (16): Applicable ASVS Categories, Architectural Responsibility Map, Assumptions Log, Criterion classification — which criteria branch, which only record, Don't Hand-Roll, Environment Availability, Known Threat Patterns for this stack, Metadata (+8 more)
 
 ### Community 1582 - "Class: `hand_choice_retargeted_verbatim` (16 records)"
-Cohesion: 0.12
-Nodes (17): Class: `hand_choice_retargeted_verbatim` (16 records), Decision orig-0eb49bddb82f80bd, Decision orig-1e6ee3305909e56a, Decision orig-214cda407793d3db, Decision orig-29f50ca7f611e0fc, Decision orig-303acb1f4af0883e, Decision orig-40632f5a559925b0, Decision orig-4cbc623d02cc680e (+9 more)
+Cohesion: 0.08
+Nodes (25): Class: `hand_choice_retargeted_verbatim` (16 records), Class: `historical_anchor_corrected` (4 records), Class: `mechanical_oracle_pass` (1 records), Decision late-1dab9164ab57c0b4, Decision late-82ea6775d37bf8d7, Decision late-936b7d3f18742a33, Decision late-eb8e1eb7d526c0ca, Decision late-f6b577d1070b08d1 (+17 more)
 
 ### Community 1583 - "Phase 167 Plan 03: Wiki Mirror Publish and Drift Check Summary"
 Cohesion: 0.12
@@ -11703,9 +11686,9 @@ Nodes (14): is_blob_pinned(), _is_pure_provenance(), main(), process(), Path, 1-
 Cohesion: 0.12
 Nodes (15): 1. Enumerate and pick the issues, 2. Parse the report, 3. Fold issues that describe the same EPROM, 3a. When does a later PASS supersede a failure?, 3b. Labels, 4. PASS → close the issue and log the chip, 5. FAIL or marginal → datasheet analysis, then comment, 5a. Get the datasheet (+7 more)
 
-### Community 1595 - "build_title"
-Cohesion: 0.20
-Nodes (16): build_title(), overall_verdict(), FAIL-dominant title verdict -- NOT the handler's exit-code `max()` ordering…, `[dev test] <chip> — <PASS/FAIL/INCONCLUSIVE> (<shorthash>)`. The dedup…, RPT-F1/D-01/D-03: when `auto_capture.canonical_part_number` is set and differs…, _step(), test_build_title_for_a_transport_fault_is_not_fail(), test_overall_verdict_all_ok_is_pass() (+8 more)
+### Community 1595 - "2026-08-30-gate-fingerprint-readback-on-step-failure.md"
+Cohesion: 0.29
+Nodes (6): Existing tests to expect movement in, Load-bearing precondition — assert it, do not assume it, Problem, Proposed change, Scope boundary, The one real objection, and why it does not block this
 
 ### Community 1596 - "test_b15_page_size_corroboration.py"
 Cohesion: 0.17
@@ -12111,9 +12094,9 @@ Nodes (15): Anti-Patterns Found, Behavioral Spot-Checks, Carry-Forward Item (rec
 Cohesion: 0.12
 Nodes (15): Accomplishments, Decisions Made, Deviations from Plan, Files Created/Modified, Issues Encountered, Local Gates (Step 3 of Task 2), Measured Flash/RAM Delta (Step 1 of Task 2), Measured Site Counts (Step 2) (+7 more)
 
-### Community 1789 - "Requirements — Milestone v1.33: Source Hygiene & Firmware Size Reduction"
-Cohesion: 0.12
-Nodes (11): 1. Provenance Comment Sweep (SWEEP) — Phase 154, promoted Backlog 999.34, 2. Dead-Weight Removal (DEAD) — Phase 155, measured −1366 B flash / −8 B RAM (corrected from −1364 B; see DEAD-03's note and [`155-after-figures.md`](v1.33/155-after-figures.md) §3), 3. Duplicated-Report Extraction (DEDUP) — Phase 156, measured −426 B flash, 4. Command-Decode Table & Type Narrowing (DECODE) — Phase 157, measured −1144 B flash / −5 B RAM (corrected from −1148 B; see [157-after-figures.md](v1.33/157-after-figures.md) §2, C-4, C-19), 5. Residual Optimizations & Landing (LAND) — Phase 158, close, 6. Citation Remap & Close (REMAP) — Phase 159, milestone close, Milestone Archive: v1.33 REQUIREMENTS — Source Hygiene & Firmware Size Reduction, Out of Scope (+3 more)
+### Community 1789 - "After-figures record -- v1.33 Phase 156"
+Cohesion: 0.05
+Nodes (37): 1. Provenance Comment Sweep (SWEEP) — Phase 154, promoted Backlog 999.34, 2. Dead-Weight Removal (DEAD) — Phase 155, measured −1366 B flash / −8 B RAM (corrected from −1364 B; see DEAD-03's note and [`155-after-figures.md`](v1.33/155-after-figures.md) §3), 3. Duplicated-Report Extraction (DEDUP) — Phase 156, measured −426 B flash, 4. Command-Decode Table & Type Narrowing (DECODE) — Phase 157, measured −1144 B flash / −5 B RAM (corrected from −1148 B; see [157-after-figures.md](v1.33/157-after-figures.md) §2, C-4, C-19), 5. Residual Optimizations & Landing (LAND) — Phase 158, close, 6. Citation Remap & Close (REMAP) — Phase 159, milestone close, Milestone Archive: v1.33 REQUIREMENTS — Source Hygiene & Firmware Size Reduction, Out of Scope (+29 more)
 
 ### Community 1790 - "Phase 161 Plan 03: Cell A1 — Uno + Rev 2.0, Both Arms x Both Chips Summary"
 Cohesion: 0.12
@@ -12693,7 +12676,7 @@ Nodes (14): Accomplishments, Auto-fixed Issues, Decisions Made, Deviations from 
 
 ### Community 1934 - "Phase 171: STRAY — The Root-Level Documentation Files - Discussion Log"
 Cohesion: 0.13
-Nodes (14): Area selection, Autocompletion destination, Claude's Discretion, Deferred Ideas, Phase 171: STRAY — The Root-Level Documentation Files - Discussion Log, Provenance recording, Q1 — Do these three files get rows in `.planning/v1.35/MIGRATION-TABLE.md`?, Q1 — What happens to `firestarter_app/SECURITY.md`? (+6 more)
+Nodes (14): Area selection, Autocompletion destination, Claude's Discretion, Deferred Ideas, Phase 171: STRAY — The Root-Level Documentation Files - Discussion Log, Provenance recording, Q1 — Do these three files get rows in `.planning/milestones/v1.35-MIGRATION-TABLE.md`?, Q1 — What happens to `firestarter_app/SECURITY.md`? (+6 more)
 
 ### Community 1935 - "Phase 171: STRAY — The Root-Level Documentation Files - Research"
 Cohesion: 0.13
@@ -12787,9 +12770,9 @@ Nodes (14): Accomplishments, Auto-fixed Issues, Decisions Made, Deviations from 
 Cohesion: 0.13
 Nodes (14): Accomplishments, Auto-fixed Issues, Datasheet Evidence and Rewritten User-Facing Strings, Decisions Made, Deviations from Plan, Files Created/Modified, Issues Encountered, Next Phase Readiness (+6 more)
 
-### Community 1986 - "test_devtest_firmware_error_propagation.py"
-Cohesion: 0.07
-Nodes (35): _eprom_data(), _failing_operator(), The firmware's own failure explanation must reach the diagnostic report. Debug…, Coverage 3 -- the step where it matters most. `MSG_ERR_NOT_BLANK` names the…, Coverage 4. The erase step is the one the w27c512 root cause actually fails at…, Coverage 5. `eprom_write_init` runs erase-then-blank-check, so the write step…, Coverage 6. The attach is gated on a non-OK verdict, so a passing step cannot…, Coverage 7. The D-06 `marginal` reason states a POLICY decision this module… (+27 more)
+### Community 1986 - "v1.35 — Phases 169 and 170 were executed ad hoc, outside the phase machinery"
+Cohesion: 0.29
+Nodes (6): FRONT-02 is deliberately not met, The commits, v1.35 — Phases 169 and 170 were executed ad hoc, outside the phase machinery, What happened, What this costs, for Phase 173's honesty ledger, What was checked at reconciliation, 2026-09-01
 
 ### Community 1987 - "RURP Shield Hardware Reference"
 Cohesion: 0.13
@@ -12955,9 +12938,9 @@ Nodes (13): Anti-Patterns Found, Behavioral Spot-Checks, Data-Flow Trace (Level 
 Cohesion: 0.14
 Nodes (13): Anti-Patterns Found, Behavioral Spot-Checks, Contingent Branch Context, Gaps Summary, Goal Achievement, Human Verification Required, Key Link Verification, Line-Citation Cross-Verification (+5 more)
 
-### Community 2078 - "Graph Report - workspaces  (2026-07-01)"
+### Community 2078 - "Graph Report - workspaces  (2026-09-15)"
 Cohesion: 0.18
-Nodes (10): Community Hubs (Navigation), Corpus Check, God Nodes (most connected - your core abstractions), Graph Freshness, Graph Report - workspaces  (2026-07-01), Import Cycles, Knowledge Gaps, Suggested Questions (+2 more)
+Nodes (10): Community Hubs (Navigation), Corpus Check, God Nodes (most connected - your core abstractions), Graph Freshness, Graph Report - workspaces  (2026-09-15), Import Cycles, Knowledge Gaps, Suggested Questions (+2 more)
 
 ### Community 2079 - "Milestone v1.14 — Feasible-Gap Implementation — Audit Report"
 Cohesion: 0.22
@@ -13675,9 +13658,9 @@ Nodes (13): Canonical References, Claude's Discretion, D-A: UV bit-masking is th
 Cohesion: 0.14
 Nodes (13): Accomplishments, Decisions Made, Delta: D-2 Reversal (same day, post-plan), Deviations from Plan, Files Created/Modified, Follow-on: `sdp_hold_state` stripped to bare `NOT-RUN`, Issues Encountered, Next Phase Readiness (+5 more)
 
-### Community 2258 - "v1.31 Pre-Close Carry-Over Disposition"
-Cohesion: 0.14
-Nodes (14): 1. Datasheet evidence corroborating correction C2 — and qualifying D-02, 2. Risk to Phase 145 (0x0B bench validation), 3. Gap in `0x08` datasheet coverage, Findings for v1.31 itself, ⚠ Operator decision required — stranded v1.16 artifacts, Phase 71 — `gaps_found` → `passed`, Phase 84 — sign-off is now well-supported, Phase 85 — `human_needed` → `passed` (+6 more)
+### Community 2258 - "TestFormatMessageDebugChunk"
+Cohesion: 0.33
+Nodes (4): MSG_DEBUG (DBG_CMD) and MSG_DATA_CHUNK rendering., MSG_DEBUG + DBG_CMD sub-id → 'Cmd: 0x{n} (NAME)'., MSG_DATA_CHUNK → '<chunk: N bytes>' summary (not raw dump)., TestFormatMessageDebugChunk
 
 ### Community 2259 - "DEAD-05 phrasing corpus -- v1.33 Phase 155"
 Cohesion: 0.14
@@ -13686,10 +13669,6 @@ Nodes (13): 10. The named residual risk -- stated as unmitigated, 11. Not automa
 ### Community 2260 - "LocationResolver"
 Cohesion: 0.20
 Nodes (11): LocationOutcome, LocationResolver, Reconciles a manifest's recorded `planning_file` against live topology. Three…, _init_repo(), An overlay whose live bytes match NEITHER declared hash is a THIRD state and is…, A citing document renamed by a TRACKED git commit (e.g. the real pending ->…, test_location_resolver_found_when_the_recorded_path_still_exists(), test_location_resolver_missing_with_no_overlay_or_rename() (+3 more)
-
-### Community 2261 - "tools/gen_addr_image.py"
-Cohesion: 0.23
-Nodes (12): decode_mismatch(), _extract_stamp_width(), gen_image(), main(), Positive and negative fixtures, all in-memory. Returns 0 iff every leg behaves., gen_addr_image.py -- word-stamped, address-attributable bench write image…, Pull `--stamp-width N` (space-separated, matching this tool's CLI contract) out…, Return `size` bytes of the word-stamped address pattern, XORed with `mask`. (+4 more)
 
 ### Community 2262 - "judge_wrv.py"
 Cohesion: 0.25
@@ -13703,9 +13682,9 @@ Nodes (13): configure_devcontainer_project(), die(), info(), install_global_scop
 Cohesion: 0.15
 Nodes (12): _make_operator_with_comm(), Return an EpromOperator with the given comm already wired in., Characterize: erase happy-path via _run_state_machine (no hardware)., Characterize: blank check happy-path (simple state machine, same sequence)., Characterize: read happy-path via _run_state_machine with data chunks. Feeds a…, Characterize: write happy-path via _run_state_machine. The write MAIN phase…, Characterize: verify happy-path via _run_state_machine. Verify uses the same…, test_blank_check_happy_path() (+4 more)
 
-### Community 2265 - "TestBetaChannelGate"
-Cohesion: 0.15
-Nodes (5): py32f071 install is beta-only: enabled off `beta`, disabled off `main`. The…, The service layer refuses too — the gate is not CLI-only., A stable build must still flash AVR boards exactly as before., TestBetaChannelGate, fake_avrdude()
+### Community 2265 - "Phase Details"
+Cohesion: 0.33
+Nodes (6): Phase 44: Bug A RCA — Modified Rev 0 Upper-Address Jitter, Phase 45: Bug B RCA — Rev 2.0 Timing & Voltage, Phase 46: Fix Design & A/B Bench Trials, Phase 47: Acceptance Gate + Backlog Closures, Phase 48: COBS Evaluation + Post-RCA Cleanup + Milestone Close, Phase Details
 
 ### Community 2266 - "1. Real Protocol Buckets"
 Cohesion: 0.15
@@ -14787,9 +14766,9 @@ Nodes (11): detect_gsd(), extract_report(), gh(), main(), make_slug(), parse_eli
 Cohesion: 0.21
 Nodes (8): _all_chips(), DB-02 (67.1): The 14 native-SRAM DIP chips that previously fell through…, DS1220(RW) must have pinout == 'DIP24_6116' after DB-02 regen. DS1220 is a…, 6264 (8K 28-pin SRAM) must have pinout == 'DIP28_JEDEC_SRAM_8K' after DB-02…, Iterate (mfg, chip) pairs across all manufacturer lists., 62256 (32K 28-pin SRAM) must have pinout == 'DIP28_28C256' after DB-02 regen.…, After DB-02: no supported SRAM chip should have an EPROM pinout. Any 'SRAM'…, TestSramPinoutCorrections
 
-### Community 2537 - "_manager_that_cannot_identify"
-Cohesion: 0.20
-Nodes (8): _manager_that_cannot_identify(), parametrize, A FirmwareManager whose identification step yields nothing., Guessing the board could write the wrong image — refuse instead., Named board + unreadable firmware = the only way off 2.x firmware., The composition at the heart of defect A must be unrepresentable. Restricting…, Non-regression: no install intent + no version is still an error., TestBlindInstallRequiresExplicitBoard
+### Community 2537 - "Spike — does a bigger `DATA_BUFFER_SIZE` actually speed programming?"
+Cohesion: 0.33
+Nodes (5): Decision it informs, Experiment, Related, Run it, Spike — does a bigger `DATA_BUFFER_SIZE` actually speed programming?
 
 ### Community 2538 - "test_protection_status_catalog.py"
 Cohesion: 0.17
@@ -15639,17 +15618,9 @@ Nodes (10): Decision, `dev test <chip>` — fail fast when the chip is absent, b
 Cohesion: 0.17
 Nodes (11): Accomplishments, Decisions Made, Deviations from Plan, Files Created/Modified, Issues Encountered, Next Phase Readiness, Performance, Quick Task 260913-e7t: Close Stale Enforcement Claims WR-02..WR-06 Summary (+3 more)
 
-### Community 2750 - "After-figures record -- v1.33 Phase 156"
-Cohesion: 0.17
-Nodes (12): 10. Handoffs, 1. Git anchors, 2. The phase ledger -- flash and RAM, before vs after, per target, 3. DEDUP-04's size-identity result, 4. The mechanical criteria, 5. The gate ledger -- all eight legs, 6. DEDUP-03's evidence -- the four-probe before-and-after table, 7. DEDUP-02's resolved single semantic -- the six-divergence table (+4 more)
-
 ### Community 2751 - "find_dfu_interfaces"
 Cohesion: 0.18
 Nodes (9): dfu_device_present(), _extra_descriptor_bytes(), find_dfu_interfaces(), _parse_functional_descriptor(), Any, Pull ``(attributes, transfer_size, dfu_version)`` out of extra descriptors., Enumerate every DFU interface currently attached. Discovery is by **interface…, Best-effort check used only to hint at ``--board py32f071``. Never raises.… (+1 more)
-
-### Community 2752 - "test_fw_update_dead_endpoint.py"
-Cohesion: 0.40
-Nodes (10): _error_records(), _identified_manager(), Project Name: Firestarter Copyright (c) 2026 Henrik Olsson Permission is hereby…, A FirmwareManager whose identity seam reports a board, fetch seam stubbed., test_already_up_to_date_path_still_returns_true_with_no_error(), test_bare_check_with_unresolvable_release_returns_false_and_names_endpoint(), test_force_flag_with_unresolvable_release_emits_exactly_one_error(), test_install_flag_with_unresolvable_release_emits_exactly_one_error() (+2 more)
 
 ### Community 2753 - "test_protection_table_citations.py"
 Cohesion: 0.25
@@ -16057,7 +16028,7 @@ Nodes (10): Phase 182: JP5 Destructive-Operation Gate, Phase 183: Flash4 Erase R
 
 ### Community 2854 - "1. Pattern assignment — the D-06 clone-demonstration script (NEW)"
 Cohesion: 0.18
-Nodes (10): 1. Pattern assignment — the D-06 clone-demonstration script (NEW), 2. The two firmware-repo edits, Argument handling + exit-code analog: `.planning/v1.34/tools/run_gates.sh`, Bail-on-first analog: `.planning/v1.7/phase-33-baseline-hex/check-migration.sh`, Convention survey (what the repo actually does), File Classification, `firestarter/README.md` line 47 — CHANGE, Phase 189: Free the Name - Pattern Map (+2 more)
+Nodes (10): 1. Pattern assignment — the D-06 clone-demonstration script (NEW), 2. The two firmware-repo edits, Argument handling + exit-code analog: `.planning/milestones/v1.34-artifacts/tools/run_gates.sh`, Bail-on-first analog: `.planning/milestones/v1.7-artifacts/phase-33-baseline-hex/check-migration.sh`, Convention survey (what the repo actually does), File Classification, `firestarter/README.md` line 47 — CHANGE, Phase 189: Free the Name - Pattern Map (+2 more)
 
 ### Community 2855 - "Phase 190 Plan 01: Repointed Firmware Release Endpoints Summary"
 Cohesion: 0.18
@@ -16099,9 +16070,9 @@ Nodes (7): Project Name: Firestarter Copyright (c) 2024 Henrik Olsson Permission
 Cohesion: 0.24
 Nodes (7): _load_db(), DB-03: M2716/M2732 and M2732A have corrected VPP and correct support_status., Phase 79 (NMOS-02): entries whose aliases include M2716 or M2732 (but not…, Phase 79 (NMOS-02): after the ceiling raise, NO chip in the DB has…, Entries whose aliases include M2732A (and NOT M2716/M2732) have…, Load chip_database.json; return the raw dict., TestNmosVppCorrection
 
-### Community 2865 - "_sdp_leg_readback_operator"
-Cohesion: 0.20
-Nodes (5): _gated_allow_operator(), _sdp_leg_readback_operator(), _read_eprom(), Dead-write-path double for an ALLOW chip's `write_scope="full"` plan (the same…, A stateful, SDP-lock-AWARE operator double for the AT28C256 0x0D sweeps below…
+### Community 2865 - "all_rows"
+Cohesion: 0.50
+Nodes (4): all_rows(), Every (manufacturer, chip_record) pair in the database, exhaustively., The anti-empty floor every later sweep in this module rests on., test_corpus_census_is_pinned()
 
 ### Community 2866 - "test_py32_flash_map_host.py"
 Cohesion: 0.24
@@ -16125,7 +16096,7 @@ Nodes (9): Accomplishments, Cross-repo commits, Deviations from Plan, Final per-
 
 ### Community 2871 - "Phase 53 Plan 07: XACT-01 Corpus Extension to the Shipped Post-54/55 Contract — Operator-Witnessed"
 Cohesion: 0.20
-Nodes (9): Accomplishments, Decisions Made, Deviations from Plan, Evidence Artifacts (all under `.planning/v1.10/bench-verification/even-block-ack/`), Known Stubs / Follow-ups, Performance, Phase 53 Plan 07: XACT-01 Corpus Extension to the Shipped Post-54/55 Contract — Operator-Witnessed, Self-Check: PASSED (primary witness; Uno optional deferred) (+1 more)
+Nodes (9): Accomplishments, Decisions Made, Deviations from Plan, Evidence Artifacts (all under `.planning/milestones/v1.10-artifacts/bench-verification/even-block-ack/`), Known Stubs / Follow-ups, Performance, Phase 53 Plan 07: XACT-01 Corpus Extension to the Shipped Post-54/55 Contract — Operator-Witnessed, Self-Check: PASSED (primary witness; Uno optional deferred) (+1 more)
 
 ### Community 2872 - "Specific Question Answers"
 Cohesion: 0.20
@@ -16547,10 +16518,6 @@ Nodes (9): A measured `main`-branch defect worth recording here, not filed separ
 Cohesion: 0.20
 Nodes (9): AE29F2008 classification verdict (SAFE-09), D-22, RECORDED, D-23, SETTLED — NOT A HARDWARE-LIVE DEFECT ON ALGORITHM 5, Software chip-erase for the `0x05` family — recorded, backlogged, not built (D-20), Summary of backlog items this verdict generates, THE EVIDENCE CHAIN, THE VERDICT, WHAT THIS PHASE DID NOT DO, AND WHY (D-21) (+1 more)
 
-### Community 2977 - "Binary protocol vs jsmn/JSON — what's actually reclaimable"
-Cohesion: 0.20
-Nodes (9): Binary protocol vs jsmn/JSON — what's actually reclaimable, Bottom line, Caveats on the speed claim, Incidental find (latent bug), Measured baseline (Leonardo), Starting assumption was wrong, The token array can't be cheaply trimmed, What the JSON layer costs (LTO build → some parts inlined into `main`) (+1 more)
-
 ### Community 2978 - "`dev test --destructive` — what is and is not type-conditioned"
 Cohesion: 0.20
 Nodes (9): 1. Erase composition (`chip_test.py:404`), 2. Write region (`chip_test.py:640`, `_write_region_for`), Defect candidate: the UV signal matches ~11% of UV-EPROMs, `dev test --destructive` — what is and is not type-conditioned, If this gets fixed, Source references, The flag itself: fully type-agnostic, Two asymmetries that DO exist — inside what destructive *does* (+1 more)
@@ -16603,9 +16570,9 @@ Nodes (9): Argv discipline, CHIP cell — PREFLIGHT.md (Task 2), CLOSE-04 issue-
 Cohesion: 0.20
 Nodes (9): 1. The three cross-flash falsifications, 2. The reconstruction falsification, 3. The gate-birth ledger, 4. The suite result, 5. The record state, 6. The non-claims, 7. The rig state left standing, Operator sign-off (+1 more)
 
-### Community 2991 - "v1.37 — Close Record: Operator Safety, Answered Reports & Claim Hygiene"
-Cohesion: 0.20
-Nodes (10): 1. What the milestone set out to do, and what it did, 2. The phases, 3. Requirements, 4. Phase 188 was a subtraction, and it is measured as one, 5. What the close cost, recorded rather than absorbed, 6. A verification defect found at close, and its real cause, 7. Transition-writer damage, caught by snapshot, 8. How this milestone was closed (+2 more)
+### Community 2991 - "uv_policy_violations"
+Cohesion: 0.67
+Nodes (3): Phase 175 Plan 02 (D-12): `(index, op, reason)` tuples for every step that…, test_no_uv_plan_claims_the_full_device_region_policy(), uv_policy_violations()
 
 ### Community 2993 - "PY32F071 Flash Path & PCB Requirements — Design Record"
 Cohesion: 0.22
@@ -17220,8 +17187,8 @@ Cohesion: 0.22
 Nodes (8): Backlog items this verdict generates, Dispatch invariant retirement verdict (CLAIM-03), THE DRIFT, MEASURED AND NOT ADJUDICATED, THE EVIDENCE CHAIN, THE GROUNDS, THE VERDICT, WHAT THE DELETED FIXTURES PROVED, WHAT THIS PHASE DELIBERATELY DID NOT DO
 
 ### Community 3146 - "The `.gitmodules` archaeology trap"
-Cohesion: 0.22
-Nodes (8): A one-shot variant, supplementary, Banked evidence — the executed transcripts, Honest limits, The `.gitmodules` archaeology trap, The sync hazard, The trap, Workaround A — an existing clone, Workaround B — a fresh clone at a pre-rename ref
+Cohesion: 0.20
+Nodes (9): A one-shot variant, supplementary, Banked evidence — the executed transcripts, Honest limits, Recovery — a clone that already hit the trap, The `.gitmodules` archaeology trap, The sync hazard, The trap, Workaround A — an existing clone (+1 more)
 
 ### Community 3147 - "infoic-maps-onerom-three-way-join.md"
 Cohesion: 0.22
@@ -17231,21 +17198,13 @@ Nodes (6): Consequence, infoic.xml protection flags — what the XML knows and d
 Cohesion: 0.22
 Nodes (9): 1. `page_size` — 86 rows carry a real value the generator drops, 2. `chip_info` — upstream's own "VCC is adjustable" flag, on 297 rows, 3. `voltages` low nibble — 142 rows, decoded upstream, masked off here, 4. `pin_map` bytes 1 and 3 — the layout-variant discriminator, `flags` — how much is actually left, Ledger, Negative result — pin this so nobody chases it, The four axes worth acting on (+1 more)
 
-### Community 3149 - "PY32F071 port — what is actually on the branches"
-Cohesion: 0.22
-Nodes (9): Host-side FW-install seams (firestarter_app), PR #48 is much further along than the ROADMAP assumes, PY32F071 port — what is actually on the branches, Real inventory (firmware repo, all forked off `beta`), Sizing, Trap: PR #47 looks complete and is not, Update 2026-07-28 — the host half is built, Update 2026-08-02 — Supersession Section (Phase 130 Plan 09, CLOSE-01) (+1 more)
-
-### Community 3150 - "v1.35 — The GSD close procedure under branch protection"
-Cohesion: 0.22
-Nodes (8): A note on link stability, A premise this requirement rests on that is not true, Banked evidence — the pull-request route already works, The decision, The route into main, and where it stops, v1.35 — The GSD close procedure under branch protection, What this changes, What this costs
+### Community 3150 - "test_a_uv_write_has_a_blank_check_ahead_of_it"
+Cohesion: 0.67
+Nodes (3): Phase 175 Plan 02 (D-12): `(index, reason)` tuples proving a UV plan's write…, test_a_uv_write_has_a_blank_check_ahead_of_it(), uv_blank_check_order_violations()
 
 ### Community 3151 - "v1.35 — Operator reverses the in-repo wiki source model"
 Cohesion: 0.22
 Nodes (8): Decisions locked earlier in the same session (still valid), Measured facts worth not re-deriving, Next steps, Phase 168 remains coherent, The decision, v1.35 — Operator reverses the in-repo wiki source model, What survives, What this voids
-
-### Community 3152 - "Voltage-reading calibration — why the design is what it is"
-Cohesion: 0.22
-Nodes (8): D1 — Error-model discovery, not assumption, D2 — White-box over black-box  → **white-box**, D3 — Two stages, measured at two different nodes → **both**, D4 — One sense node covers VPP and VPE, D5 — UX: no live monitor loop, D6 — Storage & migration, D7 — Safety is load-bearing, not optional, Voltage-reading calibration — why the design is what it is
 
 ### Community 3153 - "Phase Details"
 Cohesion: 0.22
@@ -17306,10 +17265,6 @@ Nodes (8): Command 1 — the wire-dict key set (vcc_mv/vdd_mv are absent from wh
 ### Community 3167 - "CHIP cell — POT.md (12 V-group VPP record)"
 Cohesion: 0.22
 Nodes (8): C-03 — per-position firmware VPP readings (one per position, this file's running log), CHIP cell — POT.md (12 V-group VPP record), D-13 scope, FINDING — position 1's firmware VPP reading exceeds the high guard; a pot adjustment is required before `dev test` can run clean, RESOLUTION — reconfirmed in band after re-adjustment; proceeding, RETRACTION — the "drift" finding below was an orchestrator error, not a rig fault, Session-open reading (Task 1, operator-performed), The pot sequence, plainly (supersedes the "Pot adjusted" note below)
-
-### Community 3168 - "v1.35 — Close Record: Beta Cut Under Protection, Close Procedure & Honesty Ledger"
-Cohesion: 0.22
-Nodes (9): 1. Scope — what ran, what did not, and the record discrepancies, 2. POLICY-04 — the probe, and the cut's disposition, 3. POLICY-05 — the close procedure under protection, 4. Corrections to this phase's own inputs, 5. The honesty ledger, 6. Filed, not carried as prose, 7. Backlog 999.9 — what this milestone's own links will invalidate, 8. Addendum — the wiki checkers were retired the day this record was written (2026-09-02) (+1 more)
 
 ### Community 3169 - "test_build_db_interpret_timing.py"
 Cohesion: 0.25
@@ -17553,7 +17508,7 @@ Nodes (7): Manual-Only Verifications, Per-Task Verification Map, Phase 98 — Va
 
 ### Community 3229 - "Plan 99-03 Summary — Operator Bench (AM27C020 0x08 graduation gate)"
 Cohesion: 0.25
-Nodes (7): Downstream (99-04), Key artifacts (all under `.planning/v1.18/bench/AM27C020-graduation/`), Plan 99-03 Summary — Operator Bench (AM27C020 0x08 graduation gate), SAFE-01, Self-Check: PASSED, Verdict: DEFER (BENCH-01), non-faked, What happened
+Nodes (7): Downstream (99-04), Key artifacts (all under `.planning/milestones/v1.18-artifacts/bench/AM27C020-graduation/`), Plan 99-03 Summary — Operator Bench (AM27C020 0x08 graduation gate), SAFE-01, Self-Check: PASSED, Verdict: DEFER (BENCH-01), non-faked, What happened
 
 ### Community 3230 - "Phase 99 — Validation Strategy"
 Cohesion: 0.25
@@ -18218,10 +18173,6 @@ Nodes (8): A1 — Collection-time breakage: 45 tests in 7 modules fail to *impor
 ### Community 3395 - "190-04-PLAN.md"
 Cohesion: 0.25
 Nodes (7): Artifacts this phase produces, Planner assumptions carried forward, stated so a reviewer can reject them, Spec-less probe coverage, STRIDE Threat Register, Success criteria, Trust Boundaries, Verification
-
-### Community 3396 - "Bus-config mask-model"
-Cohesion: 0.25
-Nodes (7): Bus-config mask-model, Decision — the cleverness lives on the HOST, Key insight — generality and speed are NOT opposed here, Open premise to validate first, Related, Scope decision — clean redesign (not additive), The motivation (all four, per operator)
 
 ### Community 3397 - "`info` jumper-display design audit"
 Cohesion: 0.25
@@ -19119,9 +19070,9 @@ Nodes (6): GSD installation: one project-local install, and the removal of a dan
 Cohesion: 0.29
 Nodes (6): How the removal set was determined, Standing rule this produces, The ruling, What is now unguarded — stated, not hidden, What triggered it, What went
 
-### Community 3621 - "v1.35 — Phases 169 and 170 were executed ad hoc, outside the phase machinery"
-Cohesion: 0.29
-Nodes (6): FRONT-02 is deliberately not met, The commits, v1.35 — Phases 169 and 170 were executed ad hoc, outside the phase machinery, What happened, What this costs, for Phase 173's honesty ledger, What was checked at reconciliation, 2026-09-01
+### Community 3621 - "Phase Details"
+Cohesion: 0.40
+Nodes (5): Phase 93: RCA — Root-Cause the W29C040 Page-0 Write Fault, Phase 94: FIX + PGSZ — Firmware Write-Path Fix & Datasheet-Sourced Per-Chip Page Size, Phase 95: BENCH — Bench Validation & Graduation Gate, Phase 96: LEDGER — Evidence, Ledger & Milestone Close, Phase Details
 
 ### Community 3622 - "gh#9 staleness finding, and the Phase 187 reply ledger (D-09)"
 Cohesion: 0.29
@@ -19170,10 +19121,6 @@ Nodes (7): Phase 154: Provenance Comment Sweep + Remap Tool (dual-repo lockstep)
 ### Community 3633 - "Seed: `firestarter lock-status <chip>` — read chip protection state"
 Cohesion: 0.29
 Nodes (6): Payoffs, Related, Scope shape (from the exploration), Seed: `firestarter lock-status <chip>` — read chip protection state, The idea, Why hand-curated (the key finding)
-
-### Community 3634 - "PY32F071 firmware install with no external tools"
-Cohesion: 0.29
-Nodes (7): Decision: a self-flashing bootloader over the transport the app already speaks, Open questions, PCB requirements this imposes (the reason the trigger includes "first schematic"), PY32F071 firmware install with no external tools, Reliability comes from the standard pattern, not from optimism, Status: the USB DFU half is implemented (2026-07-28), Why every factory-bootloader route was rejected
 
 ### Community 3635 - "UV run with exhausted slots: the ladder flip (T-179-05)"
 Cohesion: 0.29
@@ -19231,10 +19178,6 @@ Nodes (6): Cell CHIP — 11-Part `dev test` Sweep on the Reference Rig (Leonardo
 Cohesion: 0.29
 Nodes (6): Close-out counting rule, Divergence table, Excluded rows — divergence-arbitration control re-runs, Positions (arm == 'v133'), Reconciliation, v1.34 Chip Sweep Evidence — 162-chip-11-part-dev-test-sweep-on-the-reference-rig
 
-### Community 3649 - "Wiki Migration Table"
-Cohesion: 0.29
-Nodes (6): Deferred, not migrating, Honesty note: HONEST-01 no longer applies to the surviving rewritten pages, Removed without ever being published, Retired from the wiki after the migration closed, The hyphen hazard, Wiki Migration Table
-
 ### Community 3650 - "Development container"
 Cohesion: 0.33
 Nodes (5): Development container, If something is missing, Talking to a board, Working on the CLI, Working on the firmware
@@ -19250,10 +19193,6 @@ Nodes (4): DB-05/D-07: Every chip record carries an explicit support_status key.
 ### Community 3653 - "normalize_output"
 Cohesion: 0.33
 Nodes (6): normalize_output(), Run `firestarter fw --help` in a subprocess simulating `version`. Patches…, Pin `fw --help` on BOTH release channels (HOST-02 / HOST-08). Phase 127 Plan 04…, Scrub non-deterministic content before any == snapshot assertion. Applied to…, _run_fw_help_at_version(), test_help_fw()
-
-### Community 3654 - ".test_manage_firmware_update_reaches_the_download_boundary"
-Cohesion: 0.33
-Nodes (3): The updater is the one production caller that opts in., No identity in the ack, version from the legacy text ack, then install. Drives…, mock_connect()
 
 ### Community 3655 - "rurp_vpp.cpp"
 Cohesion: 0.33
@@ -19951,10 +19890,6 @@ Nodes (5): API Coverage — Phase 193: The Deferred Claim, Made Measurable, Clic
 Cohesion: 0.33
 Nodes (4): 24/28-pin mask ROM read support (2316 / 2332 / 2364 / 23xxx), Explicitly out of scope, The one real design problem: configurable CS polarity, Why this is now cheap: the pin maps are already published
 
-### Community 3829 - "v1.32 Archive: AT28C Write-Path Root Cause & Report Provenance — Shipped 2026-08-21"
-Cohesion: 0.33
-Nodes (6): Decisions taken at kickoff, Evidence ceiling — binding, not decorative, ⏸ Phase 150 (`write --sdp-relock`) DEFERRED — 2026-08-20, operator decision, Target workstreams, The finding that opens this milestone, v1.32 Archive: AT28C Write-Path Root Cause & Report Provenance — Shipped 2026-08-21
-
 ### Community 3830 - "Strip narrative comments from shipped source"
 Cohesion: 0.33
 Nodes (5): Approach, Gates (unchanged from the sweep), Operator ruling (2026-08-25), Starting state, Strip narrative comments from shipped source
@@ -19966,10 +19901,6 @@ Nodes (5): Constraint, devtest skills: close superseded failures, label by cause
 ### Community 3832 - "Phase Details"
 Cohesion: 0.33
 Nodes (6): Phase 189: Free the Name, Phase 190: Endpoints That Do Not Depend on a Redirect, Phase 191: The Branch That Reaches Users, Phase 192: Live References Only, Phase 193: The Deferred Claim, Made Measurable, Phase Details
-
-### Community 3833 - "2026-08-05-dev-test-issue-triage-diagnosis-skill.md"
-Cohesion: 0.33
-Nodes (5): COMPLETE — 2026-08-09, Hard constraints that shape the design, Problem, Solution, What already exists (build on it, don't re-invent)
 
 ### Community 3834 - "2026-09-12-retire-two-orphaned-host-tools.md"
 Cohesion: 0.33
@@ -19994,10 +19925,6 @@ Nodes (5): AT28C256 write-path failure (gh#20) — a real, still-open defect thi
 ### Community 3839 - "`CONFIG_VERSION` is not bumped on a default change — stale EEPROM calibration is stranded"
 Cohesion: 0.33
 Nodes (5): `CONFIG_VERSION` is not bumped on a default change — stale EEPROM calibration is stranded, The defect, Verification when fixed, Why it matters, Why this is a decision, not a straightforward fix
-
-### Community 3840 - "Fix JP4 labels + Rev-2 revision block in `info` jumper display"
-Cohesion: 0.33
-Nodes (5): Acceptance, Context, Fix JP4 labels + Rev-2 revision block in `info` jumper display, Scope, Split history (recorded 2026-09-10, Phase 182 Plan 07)
 
 ### Community 3841 - "fram-parts-ride-the-0x0d-handler-by-pinout-promotion.md"
 Cohesion: 0.33
@@ -20046,10 +19973,6 @@ Nodes (5): Bring-up rows — rig evidence, excluded from the 20-position count, 
 ### Community 3853 - "v1.34 Rig — Pre-Merge Hardware Regression Validation"
 Cohesion: 0.33
 Nodes (5): D-16 boundary, Directory map, The D-09 non-claim, The pinned avrdude decision, v1.34 Rig — Pre-Merge Hardware Regression Validation
-
-### Community 3854 - "avr_tool.py"
-Cohesion: 0.50
-Nodes (4): FileNotFoundError, AvrdudeConfigNotFoundError, AvrdudeNotFoundError, Project Name: Firestarter Copyright (c) 2025 Henrik Olsson Permission is hereby…
 
 ### Community 3855 - "Pinouts and shield wiring — firmware reference"
 Cohesion: 0.40
@@ -21315,10 +21238,6 @@ Nodes (4): Documentation, Firestarter, Reporting a problem, The repositories
 Cohesion: 0.50
 Nodes (3): DB-01: X88C64P (proto 0x34) appears with support_status=protocol-not-…, After DB regen, XICOR X88C64 or X88C64P appears in chip_database.json with…, TestProtocolNotImplementedInclusion
 
-### Community 4171 - ".test_pass_count_is_derived_from_a_live_plan_never_a_literal"
-Cohesion: 0.50
-Nodes (3): Renamed by quick task 260821-spg (was `TestAlwaysWritesNoticeDerivedCountD09`):…, Derive the plan for AT28C256 (the module's own ALLOW chip) at…, TestWritePassCountDerivedFromLivePlanD09
-
 ### Community 4172 - "bootloader_guard.py"
 Cohesion: 0.67
 Nodes (3): check_bootloader_margin(), _image_size(), PlatformIO post-build hook: refuse a firmware image that would overwrite the…
@@ -21573,7 +21492,7 @@ Nodes (4): Code Examples, Confirm the firmware-under-test identity (no version-s
 
 ### Community 4235 - "Upstream Schemas + Join Keys (LEDGER-01 / D-04)"
 Cohesion: 0.50
-Nodes (4): Join-key confirmation matrix (both keys present), Source 1 — `.planning/v1.15/bench/EVIDENCE.json` (per-chip baseline; join by **chip name**), Source 2 — `firestarter_app/tools/validation_matrix_spec.json` (per-family matrix; join by **family id / protocol id**), Upstream Schemas + Join Keys (LEDGER-01 / D-04)
+Nodes (4): Join-key confirmation matrix (both keys present), Source 1 — `.planning/milestones/v1.15-artifacts/bench/EVIDENCE.json` (per-chip baseline; join by **chip name**), Source 2 — `firestarter_app/tools/validation_matrix_spec.json` (per-family matrix; join by **family id / protocol id**), Upstream Schemas + Join Keys (LEDGER-01 / D-04)
 
 ### Community 4236 - "Sources"
 Cohesion: 0.50
@@ -23527,14 +23446,6 @@ Nodes (4): Claude's Discretion, Deferred Ideas (OUT OF SCOPE), Locked Decisions,
 Cohesion: 0.50
 Nodes (4): Primary (HIGH confidence — executed this session), Primary (HIGH confidence — read this session), Secondary / tertiary, Sources
 
-### Community 4724 - "Current Milestone: v1.38 Repository Rename"
-Cohesion: 0.50
-Nodes (4): Current Milestone: v1.38 Repository Rename, Decisions taken at activation (operator, 2026-09-13), Five strands, What this milestone does NOT do
-
-### Community 4725 - "v1.37 Archive: Operator Safety, Answered Reports & Claim Hygiene — Shipped 2026-09-13"
-Cohesion: 0.50
-Nodes (4): Decisions taken at activation (operator, 2026-09-10), Four strands, v1.37 Archive: Operator Safety, Answered Reports & Claim Hygiene — Shipped 2026-09-13, What this milestone does NOT do
-
 ### Community 4726 - "260821-wna-PLAN.md"
 Cohesion: 0.50
 Nodes (3): Measured at plan time (2026-08-21) — read this before writing code, STRIDE Threat Register, Trust Boundaries
@@ -24116,24 +24027,24 @@ Cohesion: 0.67
 Nodes (3): Applicable ASVS Categories, Known Threat Patterns for this change, Security Domain
 
 ## Knowledge Gaps
-- **42464 isolated node(s):** `claude-ste100-bootstrap.sh script`, `post-create.sh script`, `fresh-clone-fixture.sh script`, `endpoint-contract-fixture.sh script`, `191-stable-install-fixture.sh script` (+42459 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 48484 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **584 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **45393 isolated node(s):** `claude-ste100-bootstrap.sh script`, `post-create.sh script`, `fresh-clone-fixture.sh script`, `endpoint-contract-fixture.sh script`, `191-stable-install-fixture.sh script` (+45388 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 51413 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **585 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `EpromDatabase` connect `EpromDatabase` to `build_frame`, `test_database_conversion.py`, `EpromOperator`, `cli_handlers.py`, `test_erase_flag_invariants.py`, `test_chip_test.py`, `make_app_context`, `test_characterization.py`, `gen_sdp_bus_config.py`, `test_diagnostic_report.py`, `DiagnosticReport`, `chip_test.py`, `test_chip_test_sdp_leg.py`, `test_derive_plan_structural_sentinel.py`, `_drive_write`, `EpromSpecBuilder`, `test_sdp_capability.py`, `test_chip_test_cycle.py`, `_drive_data_operation_and_record_timeouts`, `test_parse_devtest_issue.py`, `test_blast_radius_invariance.py`, `test_jp5_gate.py`, `test_devtest_firmware_error_propagation.py`, `test_wire_dict_equivalence.py`, `_drive_write_via_cli`, `test_write_progress.py`, `_fixture`, `test_config.py`?**
+- **Why does `Communities (5443 total, 586 thin omitted)` connect `Communities (5443 total, 586 thin omitted)` to `Graph Report - workspaces  (2026-09-15)`?**
+  _High betweenness centrality (0.005) - this node is a cross-community bridge._
+- **Why does `EpromDatabase` connect `EpromDatabase` to `SerialCommunicator`, `EpromOperator`, `cli_handlers.py`, `plan_corpus`, `cli`, `FakeChip`, `test_chip_test.py`, `make_app_context`, `test_characterization.py`, `gen_sdp_bus_config.py`, `test_diagnostic_report.py`, `DiagnosticReport`, `chip_test.py`, `test_chip_test_sdp_leg.py`, `generate_pattern`, `test_hw_revision_gate.py`, `_fixture`, `_drive_write_via_cli`, `channel.py`, `test_sdp_capability.py`, `TestR1Precondition`, `test_write_response_budget.py`, `all_rows`, `test_parse_devtest_issue.py`, `test_blast_radius_invariance.py`, `test_wire_dict_equivalence.py`, `make_app_context`, `_drive_write`?**
   _High betweenness centrality (0.002) - this node is a cross-community bridge._
-- **Why does `EpromOperator` connect `EpromOperator` to `build_frame`, `test_devtest_firmware_error_propagation.py`, `cli_handlers.py`, `EpromDatabase`, `_crc8_ccitt`, `test_lock_status_cli.py`, `_drive_data_operation_and_record_timeouts`, `make_app_context`, `test_characterization.py`, `_drive_write_via_cli`, `chip_test.py`, `_make_operator_with_comm`, `_fixture`, `test_write_progress.py`, `test_jp5_gate.py`?**
+- **Why does `EpromOperator` connect `EpromOperator` to `SerialCommunicator`, `_fixture`, `cli_handlers.py`, `test_transport_counters.py`, `cli`, `_drive_write_via_cli`, `TestR1Precondition`, `test_write_response_budget.py`, `make_app_context`, `test_characterization.py`, `make_app_context`, `chip_test.py`, `_make_operator_with_comm`, `_drive_write`, `EpromDatabase`?**
   _High betweenness centrality (0.001) - this node is a cross-community bridge._
 - **Are the 93 inferred relationships involving `EpromOperator` (e.g. with `AppContext` and `cli()`) actually correct?**
   _`EpromOperator` has 93 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 58 inferred relationships involving `EpromDatabase` (e.g. with `AppContext` and `cli()`) actually correct?**
   _`EpromDatabase` has 58 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `claude-ste100-bootstrap.sh script`, `post-create.sh script`, `fresh-clone-fixture.sh script` to the rest of the system?**
-  _42464 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `build_frame` be split into smaller, more focused modules?**
-  _Cohesion score 0.008179554412176982 - nodes in this community are weakly interconnected._
-- **Should `test_database_conversion.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.045454545454545456 - nodes in this community are weakly interconnected._
+  _45393 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `SerialCommunicator` be split into smaller, more focused modules?**
+  _Cohesion score 0.016633639584459257 - nodes in this community are weakly interconnected._

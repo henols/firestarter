@@ -286,7 +286,7 @@ A canonical 1-byte-message-ID log protocol replacing every firmware text-prefix 
 - Host→fw JSON command channel migrated into the same framing as a **breaking lockstep wire change** — CRC8 verified before `parse_json()` on every `CMD_IDLE` ingest, replacing the legacy `{`-peek loop (Phase 51); CR-01 OOB-write + CR-02 hang hardened the decoder
 - Shared golden-vector catalog (`codegen_vectors.py`) pinning host-encode↔fw-decode byte-identity for data + command frames incl. delimiter-laden + all-delimiter payloads; codegen drift gates green both repos (Phase 52)
 - Even-block full-buffer host→fw transfers (no `buffer−2`, Phase 54) + buffer-size advertisement relocated from the FW version string to a `u16` param on the `MSG_OK_READY` ack with a safe-512 default (Phase 55, reverses Phase 54 D-05)
-- Operator-witnessed bench corpus (Phase 53): N=5 read + write read-back byte-identity on clean Uno + Leonardo (Rev 2.0); hardware resync proof both directions/both fault forms; uno328pb transport-exoneration verdict — all aggregated at `.planning/v1.10/bench-verification/SUMMARY.md`
+- Operator-witnessed bench corpus (Phase 53): N=5 read + write read-back byte-identity on clean Uno + Leonardo (Rev 2.0); hardware resync proof both directions/both fault forms; uno328pb transport-exoneration verdict — all aggregated at `.planning/milestones/v1.10-artifacts/bench-verification/SUMMARY.md`
 
 ### What Worked
 
@@ -562,7 +562,7 @@ A canonical 1-byte-message-ID log protocol replacing every firmware text-prefix 
 
 ### What Was Built
 
-- A per-chip bench evidence record (`.planning/v1.15/bench/EVIDENCE.{md,json}`) + a consolidated
+- A per-chip bench evidence record (`.planning/milestones/v1.15-artifacts/bench/EVIDENCE.{md,json}`) + a consolidated
   `DECODE-AUDIT.md` — every one of the operator's 11 physical chips read/blank-checked then
   write→read→verify-exercised on Leonardo + RURP Rev 2.0, with DB decode confirmed against silicon
   per chip. Reuse-first (EVID-02): no new harness, only `firestarter write/read/verify` + existing gates.

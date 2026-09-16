@@ -115,8 +115,8 @@ own source comment says:
 
 Resolved live, `_REPO_ROOT` is `/workspaces` — **the meta repo**. So a script committed inside
 the published pip-package repo climbs out of its own submodule to write
-`.planning/v1.3-COVERAGE-MATRIX.md` (184 KB, tracked in meta) and to mutate
-`.planning/v1.3-defect-coverage-ids.json`.
+`.planning/milestones/v1.3-COVERAGE-MATRIX.md` (184 KB, tracked in meta) and to mutate
+`.planning/milestones/v1.3-defect-coverage-ids.json`.
 
 The consequence for anyone who is not this operator: in a standalone clone of
 `henols/firestarter_app`, the same three-hop arithmetic resolves to the **parent of the clone

@@ -697,6 +697,14 @@ params      = [
 ]
 wire_format = "id_frame"
 
+[[messages]]
+id          = 0xBF
+name        = "MSG_ERR_FL4_PAGE_SIZE"
+severity    = "ERROR"
+format      = "page size %u rejected -- write refused"
+params      = [{ type = "u16", render = "dec" }]
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # DATA (0xE0..0xEF)
 # ---------------------------------------------------------------------------

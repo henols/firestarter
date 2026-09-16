@@ -100,7 +100,7 @@ voltage on an algorithm known to assert it.
 ## Verification limits — state these, do not paper over them
 
 All five groups are **software-proven and unvalidated on silicon.** None of these parts is
-in the bench inventory as far as `.planning/VALIDATED-EPROMS.md` records. The evidence is two
+in the bench inventory as far as `.planning/notes/VALIDATED-EPROMS.md` records. The evidence is two
 independent documentary sources agreeing, plus datasheet-consistent address arithmetic — the
 same evidence class that fixed `SST39SF040` in 2026-05 and was later borne out on the bench.
 

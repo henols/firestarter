@@ -489,7 +489,7 @@ the five D-07 repairs registered in one place rather than only inline.
 
 ### Posting — the command, and the read-back that does not false-alarm
 **Source:** `.../173-…/evidence/173-07-post-transcript.txt`; `.claude/skills/devtest-triage/SKILL.md:345-349`;
-`.claude/skills/devtest-rootcause/SKILL.md:336`
+`.claude/skills/devtest-rootcause/SKILL.md:339`
 **Apply to:** all five reply bodies
 
 ```bash

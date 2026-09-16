@@ -255,7 +255,7 @@ three still-unfixed chip defects the 2026-08-08 triage found; building a `0x05` 
 - `.claude/skills/devtest-triage/SKILL.md` — the label taxonomy at `:211-220` (`cause:rig`,
   `needs:report`, `fix:committed`, `fix:released`, `chip:validated`, `fixed:superseded`), the
   `--body-file` posting convention at `:345-349`, and the fold/close rules.
-- `.claude/skills/devtest-rootcause/SKILL.md:336` — the same posting convention for fix reports.
+- `.claude/skills/devtest-rootcause/SKILL.md:339` — the same posting convention for fix reports.
 
 ### The code the replies make claims about
 - `firestarter_app/firestarter/jp5_gate.py` — `hazard_text` at `:68-79`; call sites are **write and erase

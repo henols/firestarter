@@ -1062,7 +1062,7 @@ Which is the same convention both project skills mandate:
   "Write the body to a file and pass `--body-file`; never interpolate report text into the command line."
   gh issue comment 21 --repo henols/firestarter_prom --body-file /tmp/comment.md
 
-.claude/skills/devtest-rootcause/SKILL.md:336
+.claude/skills/devtest-rootcause/SKILL.md:339
   gh issue comment 45 --repo henols/firestarter_prom --body-file /tmp/fix.md
 ```
 
@@ -1896,7 +1896,7 @@ untrusted content.
 - `.planning/notes/jumper-display-ground-truth.md:170-200`
 - `.planning/todos/pending/2026-09-08-uv-write-shortcut-disclosure-key.md:1-40`
 - `.claude/skills/devtest-triage/SKILL.md:205-225`, `:340-355`
-- `.claude/skills/devtest-rootcause/SKILL.md:330-342`
+- `.claude/skills/devtest-rootcause/SKILL.md:333-345`
 - `/workspaces/CLAUDE.md` (full)
 - `firestarter_app/.github/workflows/beta-release.yml` (full)
 - `firestarter/.github/workflows/beta-build.yml` (full)

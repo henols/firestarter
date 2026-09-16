@@ -190,7 +190,7 @@ _RATIONALES = {
         "      4096 B; UNVERIFIED (no on-hand silicon).\n"
         "  [CITED: tools/extra_chips.json provenance fields + 2516_EPROM.pdf datasheet;\n"
         "   .planning/phases/86-variant-decode-correct-db-regen/86-CONTEXT.md D-10/D-11;\n"
-        "   .planning/v1.15/DECODE-AUDIT.md (2516 user-override wire values)]"
+        "   .planning/milestones/v1.15-artifacts/DECODE-AUDIT.md (2516 user-override wire values)]"
     ),
     "RULE_PHASE84_RELABEL": (
         "Phase 84 cosmetic electrical.type relabel — label-only, NO dispatch / FLAG_CAN_ERASE / VPP change.\n"
@@ -209,8 +209,11 @@ _RATIONALES = {
         "Phase 94 PGSZ-01 / CR-01 — datasheet-sourced per-chip page_size field added.\n"
         "  Generalizes flash4 page sizing from the firmware capacity heuristic\n"
         "  (flash4_page_size(mem_size)) to a DB-supplied per-chip value (emit-when-present).\n"
-        "  Only chips with a [CITED:] datasheet entry in build_db.py _PAGE_SIZE_BY_PART\n"
-        "  get this field. Chips without a cited datasheet continue using the heuristic.\n"
+        "  At the time: only chips with a [CITED:] datasheet entry in build_db.py\n"
+        "  _PAGE_SIZE_BY_PART got this field, and the rest kept the heuristic.\n"
+        "  SUPERSEDED by phase 194 — that table is gone and page_size now decodes\n"
+        "  from the upstream infoic page_size attribute, so this rule can match a\n"
+        "  far wider set of chips than the list below.\n"
         "    W29C040,W29C042: page_size=256 added.\n"
         "      [CITED: firestarter/datasheets/0x05-FLASH-AMD-STD/W29C040.pdf §6.2\n"
         "              'Every page contains 256 bytes of data.']\n"
@@ -399,9 +402,10 @@ _RULE_FIELD_PATHS = {
     "VARIANT_DECODE": {
         ("electrical", "type"),
     },
-    # Per-chip page_size field added to programming block. Only chips with a
-    # [CITED:] datasheet entry in build_db.py _PAGE_SIZE_BY_PART get this field.
-    # No other field changes. Scoped to programming.page_size additions only.
+    # Per-chip page_size field added to programming block. Scoped to
+    # programming.page_size additions only, no other field changes. The original
+    # Phase 94 scope was the _PAGE_SIZE_BY_PART datasheet table; phase 194 removed
+    # that table and page_size now decodes from upstream, widening what can match.
     "PGSZ_PAGE_SIZE": {
         ("programming", "page_size"),
     },

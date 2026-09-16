@@ -18,7 +18,7 @@ surface, by contrast, is 36 files outside `.planning/` and is essentially all li
 | `graphify-out/` | 48M | `graphify-out/graph.json` is byte-identical to `.planning/graphs/graph.json` (both md5 `684bd785fe6f3afb079d60a8284826d0`). `cache/` and `manifest.json` are graphify output. |
 | `firestarter_app_py32/` | 24M | Branch `feature/py32f071-fw-install` @ `4ee64a14` is an **ancestor of `origin/beta`** — `rev-list --count origin/beta..HEAD` = 0. The work already landed. |
 | `.planning/graphs/graph.json` | 23M | Untracked and ignored. Only `GRAPH_REPORT.md` is tracked in that directory. |
-| `.planning/v1.7/upstream-rurp/` | 16M | A full clone of the **public** `AndersBNielsen/Relatively-Universal-ROM-Programmer` @ `9178d84` (2025-11-28), incl. a 7.4M `.git`. Re-clonable. |
+| `.planning/milestones/v1.7-artifacts/upstream-rurp/` | 16M | A full clone of the **public** `AndersBNielsen/Relatively-Universal-ROM-Programmer` @ `9178d84` (2025-11-28), incl. a 7.4M `.git`. Re-clonable. |
 | `.mypy_cache/` + every `__pycache__` / `.pytest_cache` / `.ruff_cache` / `.cache-uv` | ~2.3M | Tool-generated; each self-ignores via its own `.gitignore`. |
 | `firestarter-runs/` | 1.6M | AM27C020 consistency-check `run_NN.bin` from 2026-06-30. Operator ruled reconstructible. |
 | `firestarter_py32_ci/` | 1.5M | 53 commits ahead of `origin/beta`, but the branch **is pushed** and tracks `origin/feature/py32f071-release-assets`. Nothing exists only locally. |
@@ -33,7 +33,7 @@ surface, by contrast, is 36 files outside `.planning/` and is essentially all li
    note it scrapes the STATE.md **body**, not frontmatter, so it is not trivially reconstructible
    from the record.
 
-2. **`.planning/v1.34/bench/cells/**/reads/*.bin`** — 4.0M of ignored `run_NN.bin` and
+2. **`.planning/milestones/v1.34-artifacts/bench/cells/**/reads/*.bin`** — 4.0M of ignored `run_NN.bin` and
    `written.bin`, per cell per arm (`A1`, `A3-B2`, `BRINGUP-wrv` × `control`/`v133` ×
    `w27c512`/`w29c020`). These are **measurements taken on hardware**, not artifacts of a build.
    Unlike `.v1.34-arms/`, no sha reproduces them: they need the rig and the physical chips.
@@ -46,7 +46,7 @@ Total ignored bytes under `.planning/` is 68M, of which the 23M duplicate graph 
 
 `git ls-files | grep -v '^\.planning/'` is 36 entries: the devcontainer, two **registered** CI
 workflows (`catalog-sync-check.yml`, `rekey-ledger-check.yml`), the issue templates,
-`tools/catalog/`, `tools/rekey/`, the two `devtest-*` skills, and `.planning/v1.35/MIGRATION-TABLE.md`.
+`tools/catalog/`, `tools/rekey/`, the two `devtest-*` skills, and `.planning/milestones/v1.35-MIGRATION-TABLE.md`.
 All live.
 
 `tools/wiki/` is the one place that *looks* retired and partly is: commit `5426d7ef` (2026-09-02)
@@ -58,7 +58,7 @@ retirement**. That residue is disposable; see the reclaim todo.
 
 `MIGRATION-TABLE.md` survived that deletion and is the milestone's provenance record, not
 tooling. Operator's call: *"it is done and does not belong in tools"*. It is cited **286 times
-across 85 files** in path form (`.planning/v1.35/MIGRATION-TABLE.md`), plus 221 bare mentions, and
+across 85 files** in path form (`.planning/milestones/v1.35-MIGRATION-TABLE.md`), plus 221 bare mentions, and
 several citations are line-anchored (`:15`, `:18-19`, `:20`, `:45-58`, `:52-53`, `:68-80`,
 `:104-105`). So it must be **relocated with a scripted path remap**, never deleted. Tracked
 separately as a todo.

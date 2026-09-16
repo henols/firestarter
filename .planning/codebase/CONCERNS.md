@@ -117,7 +117,7 @@ mapped_paths: .claude,.devcontainer,.github,.gitignore,.gitmodules,.vscode,CLAUD
 
 **`.gitignore` orphan-submodule class of failure (documented past incident):**
 - Files: `.gitignore:31-36`
-- Why fragile: The comment records that the **missing bare-path form** (`.planning/v1.7/upstream-rurp` without a trailing slash) let a nested clone get committed as an orphaned gitlink in `c502fc39`. A gitlink with no `.gitmodules` entry makes `actions/checkout` with `submodules: recursive` die with `fatal: No url found for submodule path` *before any assertion runs* — a failure mode any future submodule-checking-out workflow would need to guard against.
+- Why fragile: The comment records that the **missing bare-path form** (`.planning/milestones/v1.7-artifacts/upstream-rurp` without a trailing slash) let a nested clone get committed as an orphaned gitlink in `c502fc39`. A gitlink with no `.gitmodules` entry makes `actions/checkout` with `submodules: recursive` die with `fatal: No url found for submodule path` *before any assertion runs* — a failure mode any future submodule-checking-out workflow would need to guard against.
 - Live risk: The same shape recurs for every local clone/worktree path the ignore file lists — `firestarter_app_py32/`, `firestarter_py32_ci/`, `chip-test/` (`.gitignore:56-60`) — all of which are given **only** the trailing-slash form, i.e. exactly the form that was insufficient last time.
 - Safe modification: Add the bare-path twin for each of those three entries, matching the `upstream-rurp` fix.
 - Test coverage: None. A `git ls-files --stage | awk '$1==160000'` check against `.gitmodules` would catch it in one line.

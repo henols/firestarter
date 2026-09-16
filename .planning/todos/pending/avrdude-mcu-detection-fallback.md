@@ -87,10 +87,10 @@ Then a `firestarter fw -i --detect-mcu` flag would call this when the firmware h
 Phase 160 (v1.34, RIG — Dual-Arm Build, Flash Provenance & the Shared Cell Procedure) reused
 this idea's bench-verified avrdude signature-probe mechanism (the deliberately-wrong-`-p`
 route and the verbose `(probably mXXX)` fallback route described above) in a **phase-owned
-rig tool**, `.planning/v1.34/tools/probe_board.py` — RIG-02's "board identity by signature,
+rig tool**, `.planning/milestones/v1.34-artifacts/tools/probe_board.py` — RIG-02's "board identity by signature,
 never by handshake" requirement is built directly on the two parse routes sketched in this
 todo. This is mechanism reuse only: the tool lives under the meta-repo's own
-`.planning/v1.34/tools/`, is invoked by this milestone's bench procedure, and is never
+`.planning/milestones/v1.34-artifacts/tools/`, is invoked by this milestone's bench procedure, and is never
 imported by or copied into `firestarter_app/`.
 
 This phase does **not** build this todo's product deliverable — a `firestarter fw -i
