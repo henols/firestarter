@@ -168,7 +168,7 @@ three still-unfixed chip defects the 2026-08-08 triage found; building a `0x05` 
 ### Dispositions, labels and the gate
 
 - **D-14:** **Labels change deliberately, per issue, and the reply body says which label moved and why** —
-  never a silent reclassification. Taxonomy is `.claude/skills/devtest-triage/SKILL.md:211-220`.
+  never a silent reclassification. Taxonomy is `.claude/skills/devtest-triage/SKILL.md:219-228`.
   - **gh#23:** add `cause:rig` alongside the standing `cause:database` (the `vpp_mv=13500` defect is real
     and unfixed, so that label was never wrong); add `needs:report`.
   - **gh#28 / gh#31:** add `needs:report`. **Withhold `fix:released`** — only the *harness* fix shipped;

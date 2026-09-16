@@ -1058,7 +1058,7 @@ Returned URL: https://github.com/henols/firestarter_prom/issues/9#issuecomment-5
 Which is the same convention both project skills mandate:
 
 ```
-.claude/skills/devtest-triage/SKILL.md:345-349
+.claude/skills/devtest-triage/SKILL.md:353-357
   "Write the body to a file and pass `--body-file`; never interpolate report text into the command line."
   gh issue comment 21 --repo henols/firestarter_prom --body-file /tmp/comment.md
 
@@ -1283,7 +1283,7 @@ text.
 
 ## Finding 8 — Label taxonomy (D-14)
 
-### 8.1 The taxonomy, verbatim from `.claude/skills/devtest-triage/SKILL.md:208-220`
+### 8.1 The taxonomy, verbatim from `.claude/skills/devtest-triage/SKILL.md:216-228`
 
 ```
 | Label              | Meaning                                                      | Applied by |
@@ -1895,7 +1895,7 @@ untrusted content.
 - `.planning/notes/ae29f2008-classification-verdict.md:77-113`, `:198-215`
 - `.planning/notes/jumper-display-ground-truth.md:170-200`
 - `.planning/todos/pending/2026-09-08-uv-write-shortcut-disclosure-key.md:1-40`
-- `.claude/skills/devtest-triage/SKILL.md:205-225`, `:340-355`
+- `.claude/skills/devtest-triage/SKILL.md:213-233`, `:348-363`
 - `.claude/skills/devtest-rootcause/SKILL.md:333-345`
 - `/workspaces/CLAUDE.md` (full)
 - `firestarter_app/.github/workflows/beta-release.yml` (full)

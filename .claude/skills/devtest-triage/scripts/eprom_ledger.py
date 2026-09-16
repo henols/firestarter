@@ -24,6 +24,7 @@ from firestarter_app.
                         --issues '#48' --date 2026-08-31
     eprom_ledger.py write          # regenerate the file from its own records
     eprom_ledger.py check          # exit 1 if the file differs from a fresh render
+    eprom_ledger.py family --chip w27e257   # is this programming path proven?
 """
 
 from __future__ import annotations
@@ -61,33 +62,24 @@ PROTO_NAMES = {
 
 
 def family_names(keys: list[Key]) -> dict[Key, str]:
-    """Name each family after its protocol, disambiguated only where it must be.
+    """Name every family by its whole key: protocol, pinout and rail.
 
-    The name is a function of the key alone, so adding a chip never renames a
-    family that was already present.
+    The name is a function of that one key and nothing else, so it never changes
+    when another family appears. The shorter conditional form this replaced —
+    bare protocol while that protocol owned one family — was not stable: 7 of the
+    12 protocols in the database already own more than one family, and 9
+    protocol/pinout pairs span more than one rail, including 0x07/DIP28_27512
+    where two validated chips already sit. Qualifying on collision would have
+    renamed a family already in the file the first time either fired.
     """
-    by_proto: dict[str, list[Key]] = collections.defaultdict(list)
+    out: dict[Key, str] = {}
     for k in keys:
-        name = PROTO_NAMES.get(k[0])
-        by_proto["PROTO_" + name if name else f"0x{k[0]:02X}"].append(k)
-    names: dict[Key, str] = {}
-    for proto, group in by_proto.items():
-        if len(group) == 1:
-            names[group[0]] = proto
-            continue
-        # Same protocol, several pinouts or rails: qualify with the pinout, and
-        # with the rail too when the pinout still does not separate them.
-        by_pinout: dict[str, list[Key]] = collections.defaultdict(list)
-        for k in group:
-            by_pinout[k[1]].append(k)
-        for pinout, sub in by_pinout.items():
-            for k in sub:
-                names[k] = (
-                    f"{proto}/{pinout}"
-                    if len(sub) == 1
-                    else f"{proto}/{pinout}/{k[2] / 1000:g}V"
-                )
-    return names
+        proto = PROTO_NAMES.get(k[0])
+        head = f"PROTO_{proto}" if proto else f"0x{k[0]:02X}"
+        out[k] = f"{head}/{k[1]}/{k[2] / 1000:g}V"
+    return out
+
+
 H_CHIPS = "## Validated chips"
 H_ALIASES = "## Alternative part numbers"
 H_FAMILIES = "## Families"
@@ -249,14 +241,12 @@ def render(records: list[dict], db_path: str, notes: str) -> str:
 
     L.append(H_FAMILIES)
     L.append("")
-    L.append("| Family | Algorithm | Pinout | VPP | Parts | Vendors | Validated members |")
-    L.append("|---|---|---|---|---|---|---|")
+    L.append("| Family | Parts | Vendors | Validated members |")
+    L.append("|---|---|---|---|")
     for k, fid in sorted(fam_of.items(), key=lambda kv: kv[1]):
-        algo, pinout, vpp = k
         members = sorted(r["chip"] for r in known if entry[r["chip"]][2] == k)
         L.append(
-            f"| {fid} | `0x{algo:02X}` | `{pinout}` | {vpp / 1000:g} V | "
-            f"{len(parts[k])} | {len(vendors[k])} | {', '.join(members)} |"
+            f"| {fid} | {len(parts[k])} | {len(vendors[k])} | {', '.join(members)} |"
         )
     L.append("")
 
@@ -352,6 +342,57 @@ def cmd_add(args) -> int:
     return 0
 
 
+def cmd_family(args) -> int:
+    """Report what the ledger knows about a chip's family.
+
+    Answers one question for the fix side: has this programming path ever been
+    proven on hardware? A family with a validated member says the path works, so
+    a failure points at this chip's own data. A family with none says the path
+    itself is unproven, and the firmware is genuinely in scope.
+    """
+    db = load_db(args.db)
+    parts, vendors, entry = index(db)
+    chip = args.chip.strip().upper()
+    if chip not in entry:
+        print(f"{chip}: not in the chip database", file=sys.stderr)
+        return 1
+    vendor, e, key = entry[chip]
+    records = read_records(args.ledger)
+    keys = sorted({entry[r["chip"]][2] for r in records if r["chip"] in entry})
+    names = family_names(keys if key in keys else keys + [key])
+    members = sorted(r["chip"] for r in records
+                     if r["chip"] in entry and entry[r["chip"]][2] == key)
+
+    fam_entries = [
+        x for _, cs in db.items() for x in cs
+        if (x["programming"]["algorithm"], x["pinout"], x["electrical"]["vpp_mv"]) == key
+    ]
+    sizes = sorted({x["electrical"]["size_bytes"] for x in fam_entries})
+    pages = sorted({x["programming"].get("page_size") for x in fam_entries},
+                   key=lambda v: (v is None, v))
+
+    print(f"chip       {chip}  ({vendor})")
+    print(f"family     {names[key]}")
+    print(f"           algorithm 0x{key[0]:02X}  pinout {key[1]}  VPP {key[2] / 1000:g}V")
+    print(f"validated  {len(members)}" + (f"  ({', '.join(members)})" if members else ""))
+    if members:
+        print("verdict    this programming path is proven on hardware.")
+        print("           Suspect this chip's own data first — pinout key, VPP,")
+        print("           chip id, size — before the protocol implementation.")
+    else:
+        print("verdict    NO member of this family has ever passed on hardware.")
+        print("           The protocol implementation is in scope, not just the data.")
+    if chip in members:
+        print(f"note       {chip} is itself a validated member.")
+    lo, hi = sizes[0] // 1024, sizes[-1] // 1024
+    if lo != hi:
+        print(f"varies     size {lo}-{hi} KiB across the family")
+    if pages != [None]:
+        vals = ", ".join(str(v) for v in pages if v is not None)
+        print(f"varies     page size {vals} — this protocol reads the real page size")
+    return 0
+
+
 def cmd_check(args) -> int:
     if not os.path.exists(args.ledger):
         print(f"ERROR: no ledger at {args.ledger}", file=sys.stderr)
@@ -390,6 +431,9 @@ def main() -> int:
     sub.add_parser("write", help="regenerate the ledger from its own records")
     sub.add_parser("check", help="exit 1 if the ledger differs from a fresh render")
 
+    fam = sub.add_parser("family", help="what the ledger knows about a chip's family")
+    fam.add_argument("--chip", required=True)
+
     a = sub.add_parser("add", help="record a validated chip")
     a.add_argument("--chip", required=True)
     a.add_argument("--host", required=True)
@@ -402,7 +446,8 @@ def main() -> int:
     if not os.path.exists(args.db):
         print(f"ERROR: database not found: {args.db}", file=sys.stderr)
         return 2
-    return {"list": cmd_list, "write": cmd_write, "check": cmd_check, "add": cmd_add}[
+    return {"list": cmd_list, "write": cmd_write, "check": cmd_check,
+            "add": cmd_add, "family": cmd_family}[
         args.cmd
     ](args)
 
