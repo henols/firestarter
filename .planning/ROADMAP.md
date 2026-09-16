@@ -292,8 +292,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 195-02-PLAN.md — The firmware rejection matrix, both empty edges, the interior chunk-boundary loss direction, and the measured flash and RAM cost (wave 2)
-- [ ] 195-03-PLAN.md — The two refusal layers agree on which page sizes are valid, the alignment guard's full property matrix, and criterion 4's regression surface measured from the shipped database (wave 2)
+- [x] 195-02-PLAN.md — The firmware rejection matrix, both empty edges, the interior chunk-boundary loss direction, and the measured flash and RAM cost (wave 2)
+- [x] 195-03-PLAN.md — The two refusal layers agree on which page sizes are valid, the alignment guard's full property matrix, and criterion 4's regression surface measured from the shipped database (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
