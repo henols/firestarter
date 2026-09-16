@@ -24,7 +24,7 @@ use: `gh`, `curl`, `pdftotext`. Do not replace it with a call into `firestarter_
 ROOT=$(git rev-parse --show-superproject-working-tree 2>/dev/null)
 ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
 
-LEDGER=$ROOT/.planning/notes/VALIDATED-EPROMS.md
+LEDGER=$ROOT/VALIDATED-EPROMS.md
 APP=$ROOT/firestarter_app              # only for `firestarter info` + datasheet cache
 S=$ROOT/.claude/skills/devtest-triage/scripts
 
@@ -235,15 +235,20 @@ gh issue edit 51 --repo henols/firestarter --add-label dev-test,chip:validated
 ```
 
 **Name what passed, not where you logged it.** The close comment names the
-chip's host and firmware and stops there. Do not cite `.planning/notes/VALIDATED-EPROMS.md`
-or any other repo path — the ledger lives in a repo the reporter does not have, so the
+chip's host and firmware and stops there. Do not cite `VALIDATED-EPROMS.md` or any
+other repo path — the ledger lives in a repo the reporter does not have, so the
 reference is noise to the only person who sees the comment. The `chip:validated` label
 already shows you logged the chip.
 
-Then append one row to the ledger, creating it with this header if absent. The ledger
-lives at `$ROOT/.planning/notes/VALIDATED-EPROMS.md` when `.planning/` exists. On a
-clone without GSD it goes to `VALIDATED-EPROMS.md` at the repo root — the ledger is
-this skill's own artifact and has no GSD dependency beyond that directory choice.
+Then append one row to the ledger at `$ROOT/VALIDATED-EPROMS.md`, creating it with
+this header if absent. It sits at the repo root so it is reachable from any checkout,
+and it is this skill's own artifact.
+
+The ledger also groups the chips it records into **families** — every part sharing
+`programming.algorithm`, `pinout` and `electrical.vpp_mv`, which together decide the
+programming path, the wiring and the rail. After adding a row, check whether the chip
+opens a new family or joins one. A family member is evidence for its siblings, never
+proof: size, page size and chip id all still vary inside a family.
 
 ```markdown
 # Validated EPROMs
@@ -412,16 +417,15 @@ the conclusion.
 
 ## Handing off
 
-Comments left here are the input to `devtest-rootcause`, which investigates the code and
-runs the fix through a GSD debug session. Say plainly which issues you commented on,
+Comments left here are the input to `devtest-rootcause`, which investigates the code.
+Say plainly which issues you commented on,
 and which `cause:*` label you put on each — that label is the handoff, because it says
 which repo the fix lives in before anyone opens the thread.
 
-Save the cross-check table in the template's exact shape — `devtest-rootcause`'s
-`seed_debug_session.py` loads it back and carries every **MATCH** row into the debug
-session's `Eliminated` section, so the debugger never re-checks what you already
-settled. A verdict that is not `MATCH` is left open on purpose. That is the whole
-payoff of doing the datasheet work carefully here.
+Save the cross-check table in the template's exact shape. Whoever picks up the
+investigation reads every **MATCH** row as already settled and does not re-check it.
+A verdict that is not `MATCH` is left open on purpose. That is the whole payoff of
+doing the datasheet work carefully here.
 
 ## Troubleshooting
 

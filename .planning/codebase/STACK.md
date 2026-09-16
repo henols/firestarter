@@ -102,12 +102,12 @@ Steps that previously provisioned the Discord channel plugin (state dir,
 ## Agent tooling runtime (`.claude/`)
 
 **Tracked vs local — this split matters.** `.gitignore` ignores `.claude/*` with a single
-un-ignore for `!.claude/skills/`. Only **8 files** are tracked under `.claude/`:
+un-ignore for `!.claude/skills/`. Only **7 files** are tracked under `.claude/`:
 
 - `.claude/skills/devtest-triage/` — `SKILL.md`, `fixtures/*.md` (2 files),
   `scripts/devtest_issues.py`
 - `.claude/skills/devtest-rootcause/` — `SKILL.md`, `scripts/infoic_lookup.py`,
-  `scripts/seed_debug_session.py`, `scripts/diff_db.py`
+  `scripts/diff_db.py`
 
 Everything else under `.claude/` is **local runtime state** and is not reproducible from
 this repo alone:

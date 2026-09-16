@@ -285,7 +285,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 
 **Skill layer (the only tracked part of `.claude/`):**
 - Location: `.claude/skills/`
-- Contains: `devtest-triage/` (`SKILL.md`, `scripts/devtest_issues.py`, `fixtures/*.md`) and `devtest-rootcause/` (`SKILL.md`, `scripts/infoic_lookup.py`, `scripts/seed_debug_session.py`)
+- Contains: `devtest-triage/` (`SKILL.md`, `scripts/devtest_issues.py`, `fixtures/*.md`) and `devtest-rootcause/` (`SKILL.md`, `scripts/infoic_lookup.py`, `scripts/diff_db.py`)
 - Constraint: a skill must own its scripts — no importing from `firestarter_app/tools/`; scripts are copied in with a drift check
 - Also present but untracked: `find-skills/`, `skill-creator/` — marketplace-installed, explicitly gitignored (reinstall, don't vendor)
 

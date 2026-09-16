@@ -14,7 +14,7 @@ tables outright — it never imports `build_db.py`, so it works even with
 `firestarter_app` absent. The private copy can drift from the generator, so
 transcribe any table value from `build_db.py` rather than from memory (see §1).
 
-That is distinct from the **regeneration commands** in §4 (`build_db.py`,
+That is distinct from the **regeneration commands** in §3 (`build_db.py`,
 `.claude/skills/devtest-rootcause/scripts/diff_db.py`). Those are the project's own build and gate steps —
 the thing being fixed — exactly like `pytest` or `pio run`. A skill must not
 reimplement or shadow them. Regenerating the database means running the real generator.
@@ -29,9 +29,8 @@ FW=$ROOT/firestarter_fw
 S=$ROOT/.claude/skills/devtest-rootcause/scripts
 
 python3 $S/infoic_lookup.py AT28C256        # what upstream actually says about the chip
-python3 $S/seed_debug_session.py 21         # seed a GSD debug session from the issue
 
-grep VERSION $FW/include/version.h          # firmware version, for the §5 fix report
+grep VERSION $FW/include/version.h          # firmware version, for the §3 fix report
 grep __version__ $APP/firestarter/__init__.py   # host version, same
 ```
 
@@ -146,107 +145,7 @@ Firmware protocol implementations map to the constants in `$FW/include/proto_con
 `flash_intel.cpp`, `sram.cpp`). Constants and flag bits are duplicated between
 `$APP/firestarter/constants.py` and `$FW/include/firestarter.h` — change both together.
 
-## 3. Hand the fix to `gsd-debug`
-
-Once §2 says *which layer* is at fault but not *why*, stop reasoning in this context
-and run the fix through a GSD debug session. That gives the scientific-method loop,
-a persistent session file that survives a context reset, and atomic commits.
-
-Seed the session first — the whole point of the handoff is that the debugger inherits
-the datasheet work instead of redoing it:
-
-```bash
-python3 $S/seed_debug_session.py 21                    # from the triaged issue
-python3 $S/seed_debug_session.py 21 --slug at28c256-sdp-write
-```
-
-```
-[gsd] Session: <root>/.planning/debug/at28c256-sdp-write.md
-[gsd] Status: investigating
-[gsd] Carried over 6 eliminated hypotheses from triage
-```
-
-It reads the issue and the `devtest-triage` comment, then writes a standard GSD debug
-session file with `Symptoms` and `Context` filled from the report, and every **MATCH**
-row of the triage table pre-recorded under `Eliminated`:
-
-```
-- hypothesis: Pin map (28-DIP) is wrong
-  evidence: datasheet says §2.4 pins 1–28; database has `DIP28_28C256` —
-            triage cross-check verdict MATCH — all 28 pins agree
-```
-
-Rows that were *not* proven dead (a `LOW` or `represented` verdict) are deliberately
-left out. Only a settled question is eliminated. A PASS report is refused: that is
-`devtest-triage` territory, not a debug session.
-
-The script then prints the spawn prompt. **Spawn `gsd-debugger` directly:**
-
-```
-Agent(prompt=<the printed prompt>, subagent_type="gsd-debugger",
-      description="Debug at28c256-sdp-write")
-```
-
-**Do not spawn `gsd-debug-session-manager`, and do not invoke `/gsd-debug` for this.**
-In this devcontainer agents run in the background and the manager's nested spawn
-does not complete: it returns a bogus "waiting…" message with the session file
-untouched, while an orphaned debugger keeps running. Two debuggers then race the same
-serial port and confound every hardware reading. One level, directly, is the rule here.
-Before spawning, check no earlier debugger is still alive on the port.
-
-The printed prompt already carries the §0 fix-surface rules verbatim. That is not
-decoration: `gsd-debugger` has Write access and no knowledge that
-`chip_database.json` is generated — without those constraints it will "fix" the JSON
-and the change will vanish at the next regen. If you write the prompt yourself, carry
-them, plus the hardware note that `dev test` always writes and needs operator consent.
-
-**The prompt must also force the resume path.** `gsd-debugger`'s own entry flow reads
-*"If active sessions exist AND $ARGUMENTS: start new session → `create_debug_file`"*,
-and that step writes a fresh file with `status: gathering` and an **empty Symptoms**.
-Since the spawn prompt supplies arguments, a debugger that takes that branch discards
-the seeded file — losing the whole Eliminated section, and then skipping symptom
-gathering because `symptoms_prefilled: true`. Strictly worse than not seeding. The
-generated prompt therefore names the path and status explicitly and tells it to enter
-at `resume_from_file`. Do not drop that block.
-
-When the debugger returns, continue at §4 — a debug session does not exempt a database
-change from the regen-and-diff proof.
-
-### If GSD is not installed
-
-**GSD is optional.** A contributor who clones this repo without it must still be able
-to use the skill, so the seeder detects and degrades:
-
-```bash
-python3 $S/seed_debug_session.py 21 --mode standalone   # force it either way
-```
-
-```
-[standalone] Investigation record: gsdless/devtest-investigations/at28c256-sdp.md
-[standalone] Carried over 6 eliminated hypotheses from triage
-[standalone] GSD not detected — emitting a plain investigation prompt with no gsd-debugger dependency.
-```
-
-| Signal | Effect |
-|---|---|
-| `gsd-debugger.md` in `<root>/.claude/agents/` or `~/.claude/agents/` | Decides the **prompt**: GSD spawn prompt vs standalone |
-| `<root>/.planning/` exists | Decides the **directory**: `.planning/debug/` vs `devtest-investigations/` |
-
-The two signals are independent — `.planning/` is a sensible home for the record even
-where the agent is missing. `--mode gsd` on a machine without the agent warns rather
-than failing silently, because spawning that subagent type will fail.
-
-The standalone prompt drops every GSD-specific step name and instead states the method
-— one hypothesis at a time, name the test that would disprove it, no code changes until
-a hypothesis survives — and keeps the same record-file discipline (Symptoms immutable,
-Eliminated append-only, Current Focus overwritten before each action). **It carries the
-identical fix-surface guardrails**, which is the part that must never be lost: those
-protect the generated database regardless of who does the investigating.
-
-Hand it to a general-purpose agent or work it yourself, and commit any fix atomically
-on its own branch — the GSD routing in Hard rules below applies only where GSD exists.
-
-## 4. Regenerate and prove the change
+## 3. Regenerate and prove the change
 
 Never edit the JSON. After changing the generator:
 
@@ -286,7 +185,7 @@ cd $FW && pio run -e uno && pio test
 A firmware protocol change cannot be checked without a chip on the bench. Say that
 explicitly rather than implying the fix is checked.
 
-## 5. Report the fix on the issue
+## 4. Report the fix on the issue
 
 A code change is not a validation. What closes a `dev test` issue is a fresh PASS
 report from the reporter's bench — and only `devtest-triage` closes it, against the
@@ -376,18 +275,14 @@ references exist to close.
 - `extra_chips.json` adds chips upstream lacks. It does not override chips upstream has.
 - Do not "fix" `PROTO_PHANTOM_0x35` / `0x39` spelling in `proto_constants.h`. Those
   substrings are deliberate.
-- **Where GSD is installed**, file-changing work goes through it so it lands with atomic
-  commits and state tracking: an unexplained failure to a seeded debug session (§3), an
-  already-diagnosed one-line fix to `/gsd-quick`. Route there rather than committing
-  around the gate. Where it is not installed, that rule cannot apply — use the
-  standalone prompt and commit atomically on a branch. GSD is a convenience here. The
-  fix-surface rules are not a convenience. They hold either way.
-- Spawn `gsd-debugger` **directly**, one level. Never `gsd-debug-session-manager`, and
-  never two debuggers at once — they race the serial port and confound the readings.
-- Any prompt handed to a debugger must carry the fix-surface rules. It has Write access
-  and does not otherwise know the database is generated. `seed_debug_session.py`
-  includes them. If you hand-write a prompt, include them yourself.
-- **A fix is not reported until the artefact versions are on the issue** (§5). Name the
+- Commit any fix atomically, on its own branch.
+- **If you hand this investigation to another agent, carry the fix surface with it.**
+  An agent with write access does not otherwise know `chip_database.json` is generated,
+  and will "fix" the JSON — the change then vanishes at the next regen. Copy the fix
+  surface table and the proof rule into whatever prompt you write.
+- `dev test` always WRITES to the chip. Never run it, or any other hardware command,
+  without the operator's explicit go-ahead.
+- **A fix is not reported until the artefact versions are on the issue** (§4). Name the
   firmware and host versions read from `version.h` and `__init__.py`, and label
   `fix:committed` or `fix:released`. Without them the reporter cannot know what to
   install, and `devtest-triage` cannot show a later PASS post-dates the fix.
@@ -404,11 +299,8 @@ references exist to close.
 | `WARN: resolved pinout key 'X' not in pinouts.json` | `resolve_pinout_key()` returned a key with no definition — add the wiring or fix the resolution |
 | Chip not found by `infoic_lookup.py` | Check the part really is absent, not just package-suffixed — the script already splits on `@`. If genuinely absent → `extra_chips.json` territory |
 | Fetch of infoic.xml is slow | 17.8 MB. It caches to `$TMPDIR/infoic-<sha>.xml`. Reuse it |
-| Debugger edited `chip_database.json` | Its prompt lacked the fix-surface rules. Revert, reseed with `seed_debug_session.py`, respawn |
-| Session manager returns "waiting…" and nothing changed | Known devcontainer failure. Spawn `gsd-debugger` directly instead (§3) |
-| `seed_debug_session.py` refuses a PASS issue | Right — a PASS goes to `devtest-triage` to be closed and logged |
 | `gh: 'fix:committed' not found` | The shared taxonomy is not created on this tracker — run `devtest_issues.py labels` from `devtest-triage/scripts` |
-| A fix landed but the issue still says `fix:committed` | The release shipped and nobody moved the label. Swap it to `fix:released` and post the version that carries it (§5) |
-| Reporter asks "which version has the fix?" | §5's comment was skipped or omitted the artefact table. Read the versions from `version.h` and `__init__.py` — never from memory — and post it |
+| A fix landed but the issue still says `fix:committed` | The release shipped and nobody moved the label. Swap it to `fix:released` and post the version that carries it (§4) |
+| Reporter asks "which version has the fix?" | §3's comment was skipped or omitted the artefact table. Read the versions from `version.h` and `__init__.py` — never from memory — and post it |
 | A decode looks wrong and `build_db.py` changed recently | The owned table in `infoic_lookup.py` drifted. Update it to match the generator — the generator is authoritative, not this script |
 | The generator renamed its VPP table | Find the new name and **re-read every value** — a rename and a value change can arrive in the same commit |
