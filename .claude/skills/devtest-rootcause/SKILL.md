@@ -32,7 +32,15 @@ python3 $S/infoic_lookup.py AT28C256        # what upstream actually says about 
 
 grep VERSION $FW/include/version.h          # firmware version, for the §3 fix report
 grep __version__ $APP/firestarter/__init__.py   # host version, same
+
+# Tests for this skill's scripts. stdlib unittest, no pytest, no network, no submodule.
+for d in $ROOT/.claude/skills/*/scripts/tests; do
+  python3 -m unittest discover -s "$d" -t "$d" || break
+done
 ```
+
+Run them by hand after editing a script — nothing runs those tests
+automatically, since this repository has no CI workflow.
 
 ## The fix surface — read this before editing anything
 
