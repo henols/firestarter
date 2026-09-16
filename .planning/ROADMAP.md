@@ -283,7 +283,7 @@ changes nothing — and in no case reports success over bytes it erased.
 **Depends on:** Phase 194 (a read-modify-write over a derived page size would still corrupt the 9
 under-sized parts)
 
-**Plans:** 5 plans
+**Plans:** 5/5 plans complete
 
 Plans:
 **Wave 1**

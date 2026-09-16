@@ -2,18 +2,18 @@
 gsd_state_version: "1.0"
 milestone: v1.39
 milestone_name: Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
-current_phase: 195
-current_phase_name: Partial Writes Stop Destroying the Page
-status: verifying
-stopped_at: Phase 195 verified 4/4 but human_needed — WR-01 disposition pending in 195-UAT.md; phase NOT marked complete
-last_updated: "2026-09-16T10:46:37.492Z"
+current_phase: 196
+current_phase_name: Adoption Instrument Disposition
+status: planning
+stopped_at: Phase 195 complete, ready to plan Phase 196
+last_updated: "2026-09-16T16:09:41.578Z"
 last_activity: 2026-09-16
-last_activity_desc: "Phase 195 EXECUTING — execution started 2026-09-16; 5 plans across 4 waves, sequential (parallelization=false, use_worktrees=false), on branch v1.39-protocol-0x05-write-correctness. Prior activity: Phase 195 PLANNED — 5 plans, 4 waves, 16 tasks; plan-checker returned VERIFICATION PASSED with zero findings. No CONTEXT.md (operator chose to plan without one), so the planner closed the six open research questions itself as D-01..D-12, recorded verbatim in all 5 plans. D-01 fix shape: two-layer REFUSAL (host pre-flight S % P == 0 && L % P == 0 before the port opens, plus a firmware per-chunk guard) — firmware RMW measured out of RAM (a 512 B staging buffer leaves an uno 142 B for the whole stack). D-02 mints 0xC0 as ERROR, extending the band to 0xC0-0xDF. D-03 no override flag. D-07 scope correction: SST39SF020 is algorithm 6, not 0x05, so it cannot regress — criterion 4 reduces to a W29C020 bench run plus native/database checks. Probes: 59/59 verify commands resolve, 59/59 state a failure signal. Waves: 1=195-01 tracer (fw+app), 2=195-02 || 195-03, 3=195-04 (meta), 4=195-05 bench (autonomous: false). WRITE-01/02/03 all flipped only by 195-05, never before its evidence."
+last_activity_desc: Phase 195 complete, transitioned to Phase 196
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 12
-  completed_plans: 7
+  completed_plans: 12
   percent: 33
 ---
 
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 195 — Partial Writes Stop Destroying the Page
+**Current focus:** Phase 196 — Adoption Instrument Disposition
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 195 (Partial Writes Stop Destroying the Page) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 195
-Last activity: 2026-09-16 — Phase 195 execution started
+Phase: 196 — Adoption Instrument Disposition
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-16 — Phase 195 complete, transitioned to Phase 196
 
 ## Roadmap Summary (v1.38)
 
@@ -2048,10 +2048,11 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 196 (Adoption Instrument Disposition) with /gsd-discuss-phase 196 — the last phase of v1.39
 
 ## Decisions
 
+- [Phase 195 UAT]: The operator ruled PASS on the phase's one open judgment call, choosing disposition (a) — WR-01 (`require_page_alignment` accepts a negative address string as falsely "aligned") is accepted as known debt rather than fixed in-phase. Grounds recorded at the checkpoint: `parse_address` does not reject negatives and Python's `%` folds the sign, so `-256 % 256 == 0` reads as aligned; the firmware does not catch it either, because `simple_strtoul` consumes only `[0-9]` and returns 0 for `-256` and `-1` (confirmed by compiling the function verbatim). The write therefore lands silently at address 0, which is page-aligned for a length already proven to be a whole number of pages — a wrong-destination defect, not a partial-page-destruction one, and outside all four of the phase's success criteria, which concern alignment and length rather than address sign. Filed as `.planning/todos/pending/2026-09-16-reject-negative-write-start-address.md` and recorded in `195-SECURITY.md` under "Related Findings Outside This Register". 195-VERIFICATION.md moves from `human_needed` to `passed`, making the phase 4/4.
 - [Phase 193 Plan 01]: Built the GATE-01 `QUERY` variable with a quoted heredoc (`<<'SQL'`) instead of a single-quoted bash string with `'"'"'`-escaped embedded quotes. The escaped form breaks apart literal substrings like `installer IN ('pip', 'uv')` in the committed script's own bytes, and the plan's acceptance criteria grep directly against those bytes. The heredoc preserves the SQL's own quoting exactly as written, with no bash-level escaping artifacts in the file.
 - [Phase 193 Plan 01]: Split the GATE-01 script's curl-flag list and SQL trigger expression across multiple physical lines rather than compacting them onto one. The plan's verify block counts matching lines, not occurrences, for required substrings (`user=play`, `--fail-with-body`, `toUInt32OrZero`, and each clause of the trigger predicate); packing several onto one line would have undercounted them without changing anything the SQL or curl actually does.
 - [Phase 188 Plan 07]: D-16/D-18 executed by hand across the five in-repo survivors. build_db.py: thirteen citations removed per the plan's enumerated list (a Phase-86 provenance parenthetical, two PGSZ-01 discipline references, a v1.11/DEC-05 milestone+decision clause, and eight DB-0x/CR-01 site comments), plus three more RESEARCH.md references caught only by task 2's broadened scan pattern, plus a `_PHASE84_RELABEL` dict renamed to `_ETYPE_RELABEL` after discovering by reading (not by regex, which does not match all-caps PHASE86-style tokens) that it encoded a phase number in a variable name. A false-positive regex match on "DIP-24..32" (hardware terminology, not a citation) was reworded to "24-to-32-pin DIP" so the sweep's own oracle reads zero honestly. gen_test_image.py: an EVIDENCE.json filename and two phase-encoded `_p82` temp-path tokens rewritten without losing meaning. parse_devtest_issue.py: Phase-114/Phase-108/RESEARCH/INBOX-01/PROV-06 citations removed from the module docstring, two function docstrings and the argparse description, with the hostile-input contract's wording kept intact word for word (verified by a human-check re-read). gen_sdp_bus_config.py: Phase-116/RESEARCH/D-09 citations removed from the module docstring, two derivation comments, the runtime ValueError message and the argparse description. gen_validation_header.py confirmed byte-unchanged — its "Firestarter v1.13" docstring title and "T-71-INPUT" tag are pre-existing product-version/threat-tag labels, not `.planning/` citations, and the plan's own verify leg required this file untouched. Datasheet `[CITED: ...]` evidence markers unchanged (3/3) throughout. A "no line added is wholly a comment" verify leg reported non-zero (17 then 6) on both commits; net added/removed comment-line counts were equal in both cases (17/17, then 6/7), proving no comment was net-authored — documented as a plan-check discrepancy matching the 188-05/188-06 precedent, since the leg's literal reading is unsatisfiable for a task whose entire job is rewording existing comments.
@@ -3473,8 +3474,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-15T09:36:25.384Z
-**Stopped at:** Phase 194 complete, ready to plan Phase 195
+**Last session:** 2026-09-16T16:09:41Z
+**Stopped at:** Phase 195 complete, ready to plan Phase 196
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
