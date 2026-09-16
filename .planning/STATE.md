@@ -4,15 +4,16 @@ milestone: v1.39
 milestone_name: Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
 current_phase: 195
 current_phase_name: Partial Writes Stop Destroying the Page
-status: planning
-stopped_at: Phase 194 complete, ready to plan Phase 195
-last_updated: "2026-09-15T19:45:39.600Z"
-last_activity: 2026-09-15
-last_activity_desc: "Phase 194 COMPLETE — verified 4/4, 7/7 plans. The protocol 0x05 write path now reads handle->page_size; the capacity-bracket derivation flash_5v_page_page_size() is gone. DB has 45 page-size carriers (18 upstream-native 0x0D + 27 upstream-native 0x05); MSG_ERR_FL4_PAGE_SIZE minted at 0xBF (ERROR band 0xA0-0xBF now fully spent, 32/32 — guard re-derived, todo filed). Host refuses pre-serial via page_size_gate.py. Gates: host 1896/0, fw native 208/208, fw native_nodevtools 208/208. Bench: W29C020 on Leonardo, Rev 2.0 (operator-stated), fw aabd0dd, 2048 B over 16 pages, chip-ID 0x0000da45, read-back byte-identical sha256 d7a3b21b. PAGE-01/PAGE-02 Complete; PAGE-03 DELIBERATELY OPEN per D-10 — W29C020 is one of the 18 already-correct parts, so the run is no-regression only and proves nothing about the 9; W29C512 on order. Code review 0 critical / 2 warning / 2 info; WR-01 (host gate accepts non-power-of-two overrides that firmware rejects) filed as a todo, not fixed in-phase. NOT this phase: fw pytest tests/ 284/17 — all 17 in test_flash_path_record_sync.py from concurrent-session commit b51d6b5b relocating .planning/v1.23-FLASH-PATH-DECISION.md."
+status: planned
+stopped_at: Phase 195 planned — 5 plans across 4 waves, plan-checker passed
+last_updated: "2026-09-16T10:39:16.264Z"
+last_activity: 2026-09-16
+last_activity_desc: "Phase 195 PLANNED — 5 plans, 4 waves, 16 tasks; plan-checker returned VERIFICATION PASSED with zero findings. No CONTEXT.md (operator chose to plan without one), so the planner closed the six open research questions itself as D-01..D-12, recorded verbatim in all 5 plans. D-01 fix shape: two-layer REFUSAL (host pre-flight S % P == 0 && L % P == 0 before the port opens, plus a firmware per-chunk guard) — firmware RMW measured out of RAM (a 512 B staging buffer leaves an uno 142 B for the whole stack). D-02 mints 0xC0 as ERROR, extending the band to 0xC0-0xDF. D-03 no override flag. D-07 scope correction: SST39SF020 is algorithm 6, not 0x05, so it cannot regress — criterion 4 reduces to a W29C020 bench run plus native/database checks. Probes: 59/59 verify commands resolve, 59/59 state a failure signal. Waves: 1=195-01 tracer (fw+app), 2=195-02 || 195-03, 3=195-04 (meta), 4=195-05 bench (autonomous: false). WRITE-01/02/03 all flipped only by 195-05, never before its evidence."
+
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 7
+  total_plans: 12
   completed_plans: 7
   percent: 33
 ---
@@ -235,10 +236,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 195 — Partial Writes Stop Destroying the Page
+Phase: 195 (Partial Writes Stop Destroying the Page) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-15 — Phase 194 complete, transitioned to Phase 195
+Status: Ready to execute
+Last activity: 2026-09-16 — Phase 195 planned (5 plans, 4 waves), plan-checker passed
 
 ## Roadmap Summary (v1.38)
 
