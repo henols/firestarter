@@ -32,7 +32,7 @@ python3 $S/devtest_issues.py list       # every open [dev test] issue + verdict
 python3 $S/devtest_issues.py show 21    # parse one issue and route it
 python3 $S/devtest_issues.py fold       # group issues by EPROM (dry run)
 python3 $S/devtest_issues.py labels     # create the label taxonomy (idempotent)
-python3 $S/eprom_families.py --check    # ledger's derived tables still agree with the DB
+python3 $S/eprom_ledger.py check        # the ledger still matches a fresh render
 ```
 
 ## 1. Enumerate and pick the issues
@@ -241,39 +241,35 @@ other repo path — the ledger lives in a repo the reporter does not have, so th
 reference is noise to the only person who sees the comment. The `chip:validated` label
 already shows you logged the chip.
 
-Then append one row to the ledger at `$ROOT/VALIDATED-EPROMS.md`, creating it with
-this header if absent. It sits at the repo root so it is reachable from any checkout,
-and it is this skill's own artifact.
-
-The ledger also groups the chips it records into **families** — every part sharing
-`programming.algorithm`, `pinout` and `electrical.vpp_mv`, which together decide the
-programming path, the wiring and the rail.
-
-Only the first table is authored. The family tables are derived from it and the chip
-database, so after adding a row regenerate them rather than editing them:
+Then record the chip. **The ledger is generated — never edit it by hand.**
+`eprom_ledger.py` owns its format, so every write produces the same shape:
 
 ```bash
-python3 $S/eprom_families.py            # print the derived tables
-python3 $S/eprom_families.py --check    # exit 1 if a derived row disagrees with the DB
+S=$ROOT/.claude/skills/devtest-triage/scripts
+python3 $S/eprom_ledger.py add --chip W29C040 --host 3.0.0b33 \
+    --firmware 3.0.0b22 --issues '#48' --date 2026-08-31
+python3 $S/eprom_ledger.py check     # exit 1 if the file differs from a fresh render
 ```
 
-A family member is evidence for its siblings, never proof: size, page size and chip id
-all still vary inside a family, and the ledger records how much for each one.
+Take `--host` from the report's `auto_capture.host_version` and `--firmware` from
+`auto_capture.fw_board_identity`, not from the issue text. Omit `--firmware` when the
+report carried none — it then records `not reported`, and the host version is never
+used to infer it. Pass every closing issue in `--issues` for a chip that passed more
+than once. `add` refuses a chip the database does not know, and refuses to overwrite an
+existing row without `--force`.
 
-```markdown
-# Validated EPROMs
+Everything else in the file is derived from that row plus `chip_database.json`: the
+vendor, size, VCC and chip ID, the alternative part numbers sharing its database entry,
+and the family tables. The script recomputes all of it on every write.
 
-Chips whose community `dev test` sweep passed every applicable step. One row per
-closed issue. Appended by the `devtest-triage` skill.
+The **family** is the part of this worth reading. It is every part sharing
+`programming.algorithm`, `pinout` and `electrical.vpp_mv` — the three fields that decide
+the programming path, the socket wiring and the rail. A member this skill has logged is
+evidence for its untested siblings, never proof: size, page size and chip ID all still vary inside a
+family, and the Family variation table records how much for each one.
 
-| Chip | Protocol | Pinout | Size | Host | Firmware | Issue | Closed |
-|------|----------|--------|------|------|----------|-------|--------|
-| w27e020 | 0x08 | DIP32_27C020 | 0x40000 | 3.0.0b33 | 3.0.0b22 | #51 | 2026-08-31 |
-```
-
-Take `Host` from the report's `auto_capture.host_version` and the protocol/pinout from
-`firestarter info`, not from the issue text. Keep rows sorted by issue number. If the
-chip already has a row, add the new issue number to it rather than duplicating.
+Put anything a table cannot carry in the ledger's `## Notes` section. The script
+preserves it verbatim across a rewrite.
 
 ## 5. FAIL or marginal → datasheet analysis, then comment
 

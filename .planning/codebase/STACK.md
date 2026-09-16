@@ -105,7 +105,7 @@ Steps that previously provisioned the Discord channel plugin (state dir,
 un-ignore for `!.claude/skills/`. Only **8 files** are tracked under `.claude/`:
 
 - `.claude/skills/devtest-triage/` — `SKILL.md`, `fixtures/*.md` (2 files),
-  `scripts/devtest_issues.py`, `scripts/eprom_families.py`
+  `scripts/devtest_issues.py`, `scripts/eprom_ledger.py`
 - `.claude/skills/devtest-rootcause/` — `SKILL.md`, `scripts/infoic_lookup.py`,
   `scripts/diff_db.py`
 
