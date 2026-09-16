@@ -30,7 +30,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-REPO = "henols/firestarter_prom"
+REPO = "henols/firestarter"
 MAX_BODY = 1_000_000
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 TITLE_RE = re.compile(r"^\[dev test\]\s+(?P<chip>\S+)\s+[—-]\s+(?P<verdict>[A-Za-z]+)")
