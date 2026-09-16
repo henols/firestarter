@@ -55,3 +55,11 @@ future phase's design record), on where the next `ERROR`-severity id is minted f
 ## Filed by
 
 Phase 194 (real page size reaches the firmware), U2, Plan 06.
+
+## Closed by
+
+Phase 195 (partial writes stop destroying the page), Plan 01. The decision: `0xC0` is minted as
+`MSG_ERR_FL4_PAGE_ALIGN`, `SEVERITY_ERROR`, extending the ERROR band into `0xC0-0xDF`. The
+convention -- ERROR ids now extend past `0xBF` into `0xC0-0xDF`, with severity taken from the
+explicit `severity` field rather than inferred from the numeric range -- is recorded in
+`tools/catalog/messages.toml`'s own header comment block, immediately above `[catalog]`.
