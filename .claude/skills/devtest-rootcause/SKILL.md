@@ -19,9 +19,6 @@ That is distinct from the **regeneration commands** in §4 (`build_db.py`,
 the thing being fixed — exactly like `pytest` or `pio run`. A skill must not
 reimplement or shadow them. Regenerating the database means running the real generator.
 
-The meta repository is also named `firestarter`. That name collision is why a
-firmware path without the `_fw` suffix looks plausible and is wrong.
-
 ```bash
 # ROOT works from anywhere in the checkout, including inside either submodule.
 ROOT=$(git rev-parse --show-superproject-working-tree 2>/dev/null)
