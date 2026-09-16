@@ -64,8 +64,14 @@ PROTO_NAMES = {
 def family_names(keys: list[Key]) -> dict[Key, str]:
     """Name each family after its protocol, disambiguated only where it must be.
 
-    The name is a function of the key alone, so adding a chip never renames a
-    family that was already present.
+    The name depends on the whole set of families present, not on one key in
+    isolation: a family is named for its protocol alone while that protocol has
+    one family, and gains a pinout — and a rail, if the pinout does not separate
+    it — as soon as a second family shares the protocol. Adding a chip that opens
+    such a second family therefore RENAMES the first one. Measured: adding
+    AT29C256 (0x05, DIP28_28C256) renames PROTO_FLASH_5V_PAGE to
+    PROTO_FLASH_5V_PAGE/DIP32_SST39SF040. Cite a family by its key, not its name,
+    anywhere outside the regenerated file.
     """
     by_proto: dict[str, list[Key]] = collections.defaultdict(list)
     for k in keys:
