@@ -32,6 +32,7 @@ python3 $S/devtest_issues.py list       # every open [dev test] issue + verdict
 python3 $S/devtest_issues.py show 21    # parse one issue and route it
 python3 $S/devtest_issues.py fold       # group issues by EPROM (dry run)
 python3 $S/devtest_issues.py labels     # create the label taxonomy (idempotent)
+python3 $S/eprom_families.py --check    # ledger's derived tables still agree with the DB
 ```
 
 ## 1. Enumerate and pick the issues
@@ -246,9 +247,18 @@ and it is this skill's own artifact.
 
 The ledger also groups the chips it records into **families** — every part sharing
 `programming.algorithm`, `pinout` and `electrical.vpp_mv`, which together decide the
-programming path, the wiring and the rail. After adding a row, check whether the chip
-opens a new family or joins one. A family member is evidence for its siblings, never
-proof: size, page size and chip id all still vary inside a family.
+programming path, the wiring and the rail.
+
+Only the first table is authored. The family tables are derived from it and the chip
+database, so after adding a row regenerate them rather than editing them:
+
+```bash
+python3 $S/eprom_families.py            # print the derived tables
+python3 $S/eprom_families.py --check    # exit 1 if a derived row disagrees with the DB
+```
+
+A family member is evidence for its siblings, never proof: size, page size and chip id
+all still vary inside a family, and the ledger records how much for each one.
 
 ```markdown
 # Validated EPROMs

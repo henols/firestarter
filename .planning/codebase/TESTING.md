@@ -73,12 +73,13 @@ dependency groups.
 
 ## Agent-tooling scripts are untested
 
-`.claude/skills/*/scripts/` contains ~1900 lines of tracked Python across three files:
+`.claude/skills/*/scripts/` contains ~2100 lines of tracked Python across four files:
 
 | File | Lines |
 |------|-------|
 | `.claude/skills/devtest-rootcause/scripts/diff_db.py` | 996 |
 | `.claude/skills/devtest-triage/scripts/devtest_issues.py` | 693 |
+| `.claude/skills/devtest-triage/scripts/eprom_families.py` | 219 |
 | `.claude/skills/devtest-rootcause/scripts/infoic_lookup.py` | 210 |
 
 None of it is covered by a test file, a `conftest.py`, mypy, or ruff — this repo has no
