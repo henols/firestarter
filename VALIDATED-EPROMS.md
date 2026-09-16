@@ -45,18 +45,6 @@
 
 ## Notes
 
-- A validated chip is evidence for its untested family siblings, never proof. The family
-  key fixes the programming path, the wiring and the rail. It does not fix size, page
-  size or chip ID, and those are what a sibling fails on.
-- A sibling larger than the validated member drives address lines that member never
-  drove. On 32-pin parts that is the JP4 and JP5 straps: inspect them before suspecting
-  the protocol.
-- `PROTO_FLASH_5V_PAGE` reads the part's real page size when it writes. A sibling whose
-  page size is not 128 or 256 runs a write no row here covers.
-- A wrong recorded chip ID fails at the `id` step regardless of family. No family shares
-  identity bytes.
-- `Chip ID` = `none` means the part reports no identity, so `id` is `NA`, not a failure.
-- `Firmware` = `not reported` means the run cannot be attributed to a firmware version.
-  Do not infer one from the host version.
-- AE29F2008 and W29C020 are the same silicon under two names — identical on every
-  database field, including chip ID `0xDA45`. A finding on one applies to the other.
+- AE29F2008 and W29C020 are the same silicon under two names. Their database entries are
+  identical on every field, including chip ID `0xDA45`. A finding on one applies to the
+  other, and both rows are kept only because two distinct physical parts were tested.

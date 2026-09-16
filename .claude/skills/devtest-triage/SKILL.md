@@ -262,14 +262,34 @@ Everything else in the file is derived from that row plus `chip_database.json`: 
 vendor, size, VCC and chip ID, the alternative part numbers sharing its database entry,
 and the family tables. The script recomputes all of it on every write.
 
-The **family** is the part of this worth reading. It is every part sharing
-`programming.algorithm`, `pinout` and `electrical.vpp_mv` — the three fields that decide
-the programming path, the socket wiring and the rail. A member this skill has logged is
-evidence for its untested siblings, never proof: size, page size and chip ID all still vary inside a
-family, and the Family variation table records how much for each one.
+### Reading the ledger
 
-Put anything a table cannot carry in the ledger's `## Notes` section. The script
-preserves it verbatim across a rewrite.
+A **family** is every part sharing `programming.algorithm`, `pinout` and
+`electrical.vpp_mv` — the three fields that decide the programming path, the socket
+wiring and the rail.
+
+A logged member is evidence for its untested siblings, **never proof**. The key fixes
+the path, the wiring and the rail. It does not fix size, page size or chip ID, and those
+are what a sibling fails on:
+
+| Sibling differs in | Consequence |
+|---|---|
+| Size | It drives address lines the logged part never drove. On 32-pin parts, suspect the JP4 and JP5 straps before the protocol |
+| Page size, on `PROTO_FLASH_5V_PAGE` | That protocol reads the part's real page size when it writes, so the write is one no logged row covers |
+| Chip ID | It fails at the `id` step whatever the family says. No family shares identity bytes |
+
+The Family variation table in the ledger records how much each family varies.
+
+Two columns carry a sentinel rather than a value:
+
+| Reads | Means |
+|---|---|
+| `Chip ID` = `none` | The part reports no identity, so `id` is `NA` — not a failure |
+| `Firmware` = `not reported` | The run cannot be attributed to a firmware version. Do not infer one from the host version |
+
+The ledger's `## Notes` section is for facts about specific rows that no column can
+carry. General rules for reading it belong here, not there. The script preserves Notes
+verbatim across a rewrite.
 
 ## 5. FAIL or marginal → datasheet analysis, then comment
 
