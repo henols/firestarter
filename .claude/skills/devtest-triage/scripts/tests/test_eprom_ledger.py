@@ -279,3 +279,36 @@ class TestEpromLedger(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FamilyNameStability(unittest.TestCase):
+    """A family name must depend on its own key and nothing else.
+
+    This property was claimed twice and wrong twice. The first implementation
+    named a family for its protocol alone while that protocol owned one family,
+    so the first chip opening a second family under the same protocol renamed
+    the one already recorded. The database makes that near-certain rather than
+    theoretical: 7 of its 12 protocols already own more than one family, and 9
+    protocol/pinout pairs span more than one rail.
+    """
+
+    def test_name_is_a_function_of_its_own_key(self):
+        a = (0x05, "DIP32_SST39SF040", 12000)
+        b = (0x05, "DIP28_28C256", 12000)
+        alone = el.family_names([a])[a]
+        together = el.family_names([a, b])[a]
+        self.assertEqual(
+            alone,
+            together,
+            "adding a family that shares a protocol renamed one already present",
+        )
+
+    def test_rail_separates_two_families_on_one_protocol_and_pinout(self):
+        lo = (0x06, "DIP32_SST39SF040", 9000)
+        hi = (0x06, "DIP32_SST39SF040", 12000)
+        names = el.family_names([lo, hi])
+        self.assertNotEqual(names[lo], names[hi])
+
+    def test_unknown_protocol_degrades_to_its_hex_value(self):
+        k = (0xEE, "DIP28_27512", 12000)
+        self.assertTrue(el.family_names([k])[k].startswith("0xEE/"))
