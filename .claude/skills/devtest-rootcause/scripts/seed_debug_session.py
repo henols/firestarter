@@ -52,15 +52,16 @@ These are project rules. A fix that breaks one is wrong however well it works.
    deleted in Phase 70. A wrong value is a wrong INTERPRETATION of an existing
    attribute (`flags`, `voltages`, `protocol_id`, `variant`, `pin_map`,
    `type`); fix the function that interprets it.
-3. `firestarter/data/pinouts.json` is AUTHORED input to the generator, never
-   written by it. A wrong socket wiring IS fixed there.
-4. `tools/extra_chips.json` adds chips absent from infoic.xml ENTIRELY (2516,
-   2532 today). It is not an override for a chip upstream already has.
-5. `firestarter/include/messages.h` is GENERATED from the meta repo's
+3. `firestarter_app/firestarter/data/pinouts.json` is AUTHORED input to the
+   generator, never written by it. A wrong socket wiring IS fixed there.
+4. `firestarter_app/tools/extra_chips.json` adds chips absent from infoic.xml
+   ENTIRELY (2516, 2532 today). It is not an override for a chip upstream
+   already has.
+5. `firestarter_fw/include/messages.h` is GENERATED from the meta repo's
    messages.toml. Never hand-edit.
 6. Constants and flag bits are duplicated between
    `firestarter_app/firestarter/constants.py` and
-   `firestarter/include/firestarter.h`. Change both together.
+   `firestarter_fw/include/firestarter.h`. Change both together.
 
 Verify a database change with:
   cd firestarter_app && python3 tools/build_db.py \\
