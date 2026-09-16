@@ -63,10 +63,9 @@ If a chip decodes wrongly, the bug is in **how an existing attribute is interpre
 belongs in the function that interprets it. If the information genuinely is not in
 `infoic.xml`, the honest outcome is to report that, not to invent a field.
 
-> One exception exists: `_PAGE_SIZE_BY_PART` (`build_db.py:114`) adds `page_size` from
-> `[CITED:]` **datasheets**, not from `infoic.xml` — the exact shape this rule forbids.
-> Do not extend it or add siblings to it. Upstream carries `infoic_page_size_raw`, which
-> is the principled seam if page size ever needs revisiting.
+The rule has no exceptions. Page size was the last one: it came from a per-part table
+keyed on datasheets until phase 194 moved it onto `infoic_page_size_raw`, the upstream
+attribute. Do not reintroduce a per-part table under any name.
 
 ## 1. See what upstream actually says
 

@@ -2,7 +2,8 @@
 created: 2026-09-15T13:35:00Z
 title: Strike the obsolete _PAGE_SIZE_BY_PART exception paragraph from devtest-rootcause SKILL.md
 area: skills
-blocked_on: phase 194-01 settling (page-size mechanism is mid-change)
+completed: 2026-09-16
+resolution: struck after phase 194 closed
 files:
   - .claude/skills/devtest-rootcause/SKILL.md (lines 63-66, the "One exception exists:" blockquote)
   - firestarter_app/tools/build_db.py (the generator that no longer carries the symbol)
@@ -51,3 +52,20 @@ None of `ste-lint.py`'s findings falls in that range, so freezing it cost nothin
 3. If some new exception has appeared, document that one instead; do not resurrect this text.
 4. Re-run `python3 /home/vscode/.claude/skills/asd-ste100/scripts/ste-lint.py` on the file
    and confirm it still exits 0.
+
+## Resolution — 2026-09-16
+
+Phase 194 closed. `_PAGE_SIZE_BY_PART` is confirmed absent from `build_db.py`, and
+page size now decodes from the upstream attribute (`raw_page_size`, emitted as
+`infoic_page_size_raw`) — the seam the struck paragraph itself named.
+
+The blockquote is gone. **The proof rule now stands with no exceptions**, which is the
+stronger statement, and the replacement text says so while recording that page size was
+the last exception and must not be reintroduced as a per-part table.
+
+Two further dangling references turned up in `scripts/diff_db.py` — its `PGSZ_PAGE_SIZE`
+allowlist entry described the Phase 94 mechanism in the present tense. Those were not
+deleted: the entry is a historical record of an accepted delta, so it was re-framed as
+past tense with an explicit supersession note. It also now warns that the rule can match
+a far wider set of chips than the Phase 94 list, because the gate is no longer a
+per-part table.
