@@ -30,15 +30,27 @@ host `3.0.0b38`. That part's derived page size is *correct*, which is what isola
 
 ### WRITE — a write never destroys what it was not asked to change (gh#68)
 
-- [ ] **WRITE-01**: A partial or unaligned write to a protocol `0x05` part either preserves every byte
+- [x] **WRITE-01**: A partial or unaligned write to a protocol `0x05` part either preserves every byte
       of the touched physical page that was not part of the write, or refuses the operation with a
       named error and leaves the device unchanged. Which of the two is a design decision, not a
-      requirement — D-2 permits either.
-- [ ] **WRITE-02**: No protocol `0x05` write reports `successful` when bytes outside the requested
+      requirement — D-2 permits either. **Complete:** the refusal branch (D-01) is proved on real
+      silicon — a named error, exit non-zero, and a byte-identical read-back proving the device is
+      unchanged — in `.planning/v1.39/195-w29c020-partial-write-bench-transcript.md` §4h, backed by
+      the native and host test suites (`195-01-SUMMARY.md`, `195-03-SUMMARY.md`).
+- [x] **WRITE-02**: No protocol `0x05` write reports `successful` when bytes outside the requested
       address range were erased. If the operation cannot guarantee that, it must not claim success.
-- [ ] **WRITE-03**: The behaviour is demonstrated on real silicon in **both** loss directions — bytes
+      **Complete:** the pre-fix bench legs show the success line printed over erased bytes
+      (`195-w29c020-partial-write-bench-transcript.md` §4d, §4e, §4g — the defect this requirement
+      forbids); the post-fix bench legs show no success line and a non-zero exit for the identical
+      commands (§4h), backed by the host and native test suites.
+- [x] **WRITE-03**: The behaviour is demonstrated on real silicon in **both** loss directions — bytes
       before the start address and bytes after the end — on a part whose derived page size is already
-      correct, so the result isolates this defect from PAGE-01.
+      correct, so the result isolates this defect from PAGE-01. **Complete:** both directions
+      captured on `W29C020` (one of the 18 already-correct parts) against a pre-fix build in
+      `195-w29c020-partial-write-bench-transcript.md` §4d (trailing) and §4e (leading), with blast
+      radius confined to the touched page (§4f). The derived third direction (interior chunk-boundary
+      loss, D-06) was also attempted and observed for the first time on silicon (§4g) — a bonus
+      finding beyond what WRITE-03 requires, not a substitute for the two directions it names.
 
 ### PAGE — the firmware uses the part's real page size (gh#67)
 
@@ -80,9 +92,9 @@ host `3.0.0b38`. That part's derived page size is *correct*, which is what isola
 
 | Requirement | Phase | Status |
 |---|---|---|
-| WRITE-01 | Phase 195 | Pending |
-| WRITE-02 | Phase 195 | Pending |
-| WRITE-03 | Phase 195 | Pending |
+| WRITE-01 | Phase 195 | Complete |
+| WRITE-02 | Phase 195 | Complete |
+| WRITE-03 | Phase 195 | Complete |
 | PAGE-01 | Phase 194 | Complete |
 | PAGE-02 | Phase 194 | Complete |
 | PAGE-03 | Phase 194 | Pending (hardware leg OPEN per D-11) |
