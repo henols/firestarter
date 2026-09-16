@@ -33,7 +33,15 @@ python3 $S/devtest_issues.py show 21    # parse one issue and route it
 python3 $S/devtest_issues.py fold       # group issues by EPROM (dry run)
 python3 $S/devtest_issues.py labels     # create the label taxonomy (idempotent)
 python3 $S/eprom_ledger.py check        # the ledger still matches a fresh render
+
+# Tests for this skill's scripts. stdlib unittest, no pytest, no network, no submodule.
+for d in $ROOT/.claude/skills/*/scripts/tests; do
+  python3 -m unittest discover -s "$d" -t "$d" || break
+done
 ```
+
+Run them by hand after editing a script — nothing runs those tests
+automatically, since this repository has no CI workflow.
 
 ## 1. Enumerate and pick the issues
 
