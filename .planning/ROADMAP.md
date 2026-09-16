@@ -301,7 +301,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 195-05-PLAN.md — The `W29C020` silicon run: both loss directions reproduced against a pre-fix build, then refused with a byte-identical read-back, committed as a transcript (wave 4)
+- [x] 195-05-PLAN.md — The `W29C020` silicon run: both loss directions reproduced against a pre-fix build, then refused with a byte-identical read-back, committed as a transcript (wave 4)
 
 **Cross-cutting constraints:**
 
