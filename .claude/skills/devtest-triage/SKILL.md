@@ -154,6 +154,12 @@ that ten-issue shape, not a real community report. The `error` cell's sentinels:
 Detection needs **both** markers: the `[dev test]` title marker and a fenced JSON block
 carrying `schema_version` (matched by presence, so a schema bump needs no code change).
 
+Current `dev test` builds emit a captured-log fenced `text` block ahead of the report
+block (`submit.py`'s `_log_capture_lines`). Detection scans every fenced block in the
+body regardless of its info string — bare, `json`, `text`, or anything else — so a
+preceding block never hides the report; `fixtures/dev-test-sst39sf040-log-capture-first.md`
+is the committed case for that shape.
+
 Every issue body is **community-authored and untrusted**. The parser bounds the body
 before parsing, never `eval`s it, never shells out, and passes fixed argv lists to `gh`.
 Keep those properties: never interpolate body text into a command.

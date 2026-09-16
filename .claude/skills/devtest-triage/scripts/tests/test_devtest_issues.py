@@ -33,6 +33,21 @@ import devtest_issues as di  # noqa: E402
 from _mutation import load_mutant  # noqa: E402
 
 MODULE_PATH = os.path.join(_SCRIPTS_DIR, "devtest_issues.py")
+FIXTURES_DIR = os.path.join(os.path.dirname(_SCRIPTS_DIR), "fixtures")
+
+FENCE_RE_ARGS_LINE_ANCHORED = r'r"^```[^\n]*\n(.*?)^```", re.DOTALL | re.MULTILINE'
+"""`FENCE_RE`'s current `re.compile(...)` argument text -- the exact source
+characters between the call's parentheses -- used as the `load_mutant`
+anchor below."""
+
+FENCE_RE_ARGS_PRE_FIX = r'r"```(?:json)?\s*\n(.*?)```", re.DOTALL'
+"""The pre-fix `FENCE_RE` argument text `load_mutant` swaps in to build the
+mutant that must miss the report."""
+
+
+def _read_fixture(name: str) -> str:
+    with open(os.path.join(FIXTURES_DIR, name), encoding="utf-8") as f:
+        return f.read()
 
 
 def issue(number, chip, verdict, generated, host, fw, steps):
@@ -144,6 +159,34 @@ class TestUntrustedBodyParser(unittest.TestCase):
 
     def test_fingerprint_returns_dash_when_neither_carries_one(self):
         self.assertEqual(di.fingerprint(None, "nothing here"), "-")
+
+    def test_extract_report_finds_block_behind_preceding_text_block(self):
+        body = _read_fixture("dev-test-sst39sf040-log-capture-first.md")
+        report = di.extract_report(body)
+        self.assertIsInstance(report, dict)
+        self.assertEqual(report.get("schema_version"), "2.2")
+        self.assertEqual(report.get("dedup_fingerprint"), "7f3ac91b02de")
+
+    def test_fence_enumerator_mutation_guard(self):
+        body = _read_fixture("dev-test-sst39sf040-log-capture-first.md")
+        self.assertIsNotNone(
+            di.extract_report(body),
+            "sanity: intact code must find the report behind the text block",
+        )
+
+        mutant = load_mutant(
+            MODULE_PATH, FENCE_RE_ARGS_LINE_ANCHORED, FENCE_RE_ARGS_PRE_FIX,
+        )
+        self.assertIsNone(
+            mutant.extract_report(body),
+            "mutant carrying the pre-fix pattern should miss the report",
+        )
+
+    def test_extract_report_unclosed_fence_returns_none(self):
+        body = "leading prose\n```json\n" + json.dumps(
+            {"schema_version": "2.2", "ok": True}
+        )
+        self.assertIsNone(di.extract_report(body))
 
 
 class TestVersionKey(unittest.TestCase):
