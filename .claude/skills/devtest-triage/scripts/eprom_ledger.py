@@ -62,39 +62,24 @@ PROTO_NAMES = {
 
 
 def family_names(keys: list[Key]) -> dict[Key, str]:
-    """Name each family after its protocol, disambiguated only where it must be.
+    """Name every family by its whole key: protocol, pinout and rail.
 
-    The name depends on the whole set of families present, not on one key in
-    isolation: a family is named for its protocol alone while that protocol has
-    one family, and gains a pinout — and a rail, if the pinout does not separate
-    it — as soon as a second family shares the protocol. Adding a chip that opens
-    such a second family therefore RENAMES the first one. Measured: adding
-    AT29C256 (0x05, DIP28_28C256) renames PROTO_FLASH_5V_PAGE to
-    PROTO_FLASH_5V_PAGE/DIP32_SST39SF040. Cite a family by its key, not its name,
-    anywhere outside the regenerated file.
+    The name is a function of that one key and nothing else, so it never changes
+    when another family appears. The shorter conditional form this replaced —
+    bare protocol while that protocol owned one family — was not stable: 7 of the
+    12 protocols in the database already own more than one family, and 9
+    protocol/pinout pairs span more than one rail, including 0x07/DIP28_27512
+    where two validated chips already sit. Qualifying on collision would have
+    renamed a family already in the file the first time either fired.
     """
-    by_proto: dict[str, list[Key]] = collections.defaultdict(list)
+    out: dict[Key, str] = {}
     for k in keys:
-        name = PROTO_NAMES.get(k[0])
-        by_proto["PROTO_" + name if name else f"0x{k[0]:02X}"].append(k)
-    names: dict[Key, str] = {}
-    for proto, group in by_proto.items():
-        if len(group) == 1:
-            names[group[0]] = proto
-            continue
-        # Same protocol, several pinouts or rails: qualify with the pinout, and
-        # with the rail too when the pinout still does not separate them.
-        by_pinout: dict[str, list[Key]] = collections.defaultdict(list)
-        for k in group:
-            by_pinout[k[1]].append(k)
-        for pinout, sub in by_pinout.items():
-            for k in sub:
-                names[k] = (
-                    f"{proto}/{pinout}"
-                    if len(sub) == 1
-                    else f"{proto}/{pinout}/{k[2] / 1000:g}V"
-                )
-    return names
+        proto = PROTO_NAMES.get(k[0])
+        head = f"PROTO_{proto}" if proto else f"0x{k[0]:02X}"
+        out[k] = f"{head}/{k[1]}/{k[2] / 1000:g}V"
+    return out
+
+
 H_CHIPS = "## Validated chips"
 H_ALIASES = "## Alternative part numbers"
 H_FAMILIES = "## Families"
@@ -256,14 +241,12 @@ def render(records: list[dict], db_path: str, notes: str) -> str:
 
     L.append(H_FAMILIES)
     L.append("")
-    L.append("| Family | Algorithm | Pinout | VPP | Parts | Vendors | Validated members |")
-    L.append("|---|---|---|---|---|---|---|")
+    L.append("| Family | Parts | Vendors | Validated members |")
+    L.append("|---|---|---|---|")
     for k, fid in sorted(fam_of.items(), key=lambda kv: kv[1]):
-        algo, pinout, vpp = k
         members = sorted(r["chip"] for r in known if entry[r["chip"]][2] == k)
         L.append(
-            f"| {fid} | `0x{algo:02X}` | `{pinout}` | {vpp / 1000:g} V | "
-            f"{len(parts[k])} | {len(vendors[k])} | {', '.join(members)} |"
+            f"| {fid} | {len(parts[k])} | {len(vendors[k])} | {', '.join(members)} |"
         )
     L.append("")
 
