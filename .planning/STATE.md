@@ -4,8 +4,8 @@ milestone: v1.39
 milestone_name: Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
 current_phase: 195
 current_phase_name: Partial Writes Stop Destroying the Page
-status: executing
-stopped_at: Phase 195 — all 5 plans complete; at the phase tail gates (code review, regression, verification)
+status: verifying
+stopped_at: Phase 195 verified 4/4 but human_needed — WR-01 disposition pending in 195-UAT.md; phase NOT marked complete
 last_updated: "2026-09-16T10:46:37.492Z"
 last_activity: 2026-09-16
 last_activity_desc: "Phase 195 EXECUTING — execution started 2026-09-16; 5 plans across 4 waves, sequential (parallelization=false, use_worktrees=false), on branch v1.39-protocol-0x05-write-correctness. Prior activity: Phase 195 PLANNED — 5 plans, 4 waves, 16 tasks; plan-checker returned VERIFICATION PASSED with zero findings. No CONTEXT.md (operator chose to plan without one), so the planner closed the six open research questions itself as D-01..D-12, recorded verbatim in all 5 plans. D-01 fix shape: two-layer REFUSAL (host pre-flight S % P == 0 && L % P == 0 before the port opens, plus a firmware per-chunk guard) — firmware RMW measured out of RAM (a 512 B staging buffer leaves an uno 142 B for the whole stack). D-02 mints 0xC0 as ERROR, extending the band to 0xC0-0xDF. D-03 no override flag. D-07 scope correction: SST39SF020 is algorithm 6, not 0x05, so it cannot regress — criterion 4 reduces to a W29C020 bench run plus native/database checks. Probes: 59/59 verify commands resolve, 59/59 state a failure signal. Waves: 1=195-01 tracer (fw+app), 2=195-02 || 195-03, 3=195-04 (meta), 4=195-05 bench (autonomous: false). WRITE-01/02/03 all flipped only by 195-05, never before its evidence."
