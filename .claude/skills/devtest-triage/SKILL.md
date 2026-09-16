@@ -15,9 +15,11 @@ This skill only inspects firestarter code. It sends output only to GitHub, plus 
 ledger entry. It never edits the chip database — see `devtest-rootcause` for the fix side.
 
 **Self-contained.** `scripts/devtest_issues.py` is stdlib-only and owns its own issue
-parser. It does not import or shell out to anything in `firestarter_app`, so it keeps
-working if that repo moves, is renamed, or is not checked out. External tools it does
-use: `gh`, `curl`, `pdftotext`. Do not replace it with a call into `firestarter_app/tools/`.
+parser, including its own copy of the firmware's error-message table
+(`scripts/firmware_messages.py`). Neither script imports or shells out to anything in
+`firestarter_app`, so this skill keeps working if that repo moves, is renamed, or is
+not checked out. External tools it does use: `gh`, `curl`, `pdftotext`. Do not replace
+it with a call into `firestarter_app/tools/`.
 
 ```bash
 # ROOT works from anywhere in the checkout, including inside either submodule.
@@ -87,13 +89,13 @@ python3 $S/devtest_issues.py show --body-file $S/../fixtures/dev-test-at28c256-n
   protocol    0x0D   chip at28c256
   fingerprint 00e121446ceb
 
-  step         verdict    reason
-  id           NA         no chip-id in DB entry
-  read         OK         
-  blank-check  BAD        
-  write        BAD        
-  verify       BAD        
-  erase        NA         protocol 0x0D (28C family) has no erase operation; each page ...
+  step         verdict    error                        reason
+  id           NA         -                            no chip-id in DB entry
+  read         OK         -                            
+  blank-check  BAD        -                            
+  write        BAD        -                            
+  verify       BAD        -                            
+  erase        NA         -                            protocol 0x0D (28C family) has no erase operation; each page ...
 
   voltage     vpp 11800 -> 11800 mV   vpe 13700 -> 13700 mV
   db_diff     status=supported  ladder=community-fail
@@ -106,6 +108,48 @@ python3 $S/devtest_issues.py show --body-file $S/../fixtures/dev-test-at28c256-n
 one. A report that *does* carry firmware identity renders that row as
 `firmware    3.0.0b19:leonardo`, with no not-attributable clause —
 `fixtures/dev-test-at28c256-populated-identity.md` is that case.
+
+The ten `dev test` issues open today all carry `steps[].error_code` in their JSON block
+and none of them carry `error_name` — `show` resolves the symbolic name itself, from a
+table it owns (`scripts/firmware_messages.py`), and prints it in the new `error` column
+between `verdict` and `reason`:
+
+```bash
+python3 $S/devtest_issues.py show --body-file $S/../fixtures/dev-test-error-codes-populated.md --title '[dev test] w27c512 - FAIL'
+```
+
+```
+#?  w27c512  —  FAIL
+  schema      2.0   generated 2026-09-16T09:00:00Z
+  host        3.0.0b29   hw Rev 2.2
+  firmware    3.0.0b22:leonardo
+  protocol    0x05   chip w27c512
+  fingerprint aa11bb22cc33
+
+  step         verdict    error                        reason
+  id           OK         -                            
+  read         OK         -                            
+  blank-check  BAD        185 MSG_ERR_CHIP_ID_MISMATCH chip not blank
+  write        BAD        183 MSG_ERR_OP_TIMEOUT       write did not verify
+  verify       BAD        175 MSG_ERR_VERIFY           mismatch at multiple addresses
+  erase        NA         -                            not applicable to this family
+
+  voltage     vpp 12000 -> 12000 mV   vpe 13000 -> 13000 mV
+
+  ROUTE: FAIL — datasheet cross-check needed. Failing: blank-check, write, verify
+  NA means the step does not apply to this family — never report it as a failure.
+```
+
+`fixtures/dev-test-error-codes-populated.md` is hand-authored test data modelled on
+that ten-issue shape, not a real community report. The `error` cell's sentinels:
+
+- `-` — the report carried no `error_code` for that step.
+- `NNN unknown` — the code is real but post-dates this skill's own table; the drift
+  test (§ Troubleshooting) is what catches that table going stale.
+- `?` — the body's `error_code` was not a plain integer in `0..255` and was not
+  trusted; read the JSON block by hand.
+- `NNN NAME (table: OTHER)` — the report's own `error_name` disagrees with what this
+  skill's table resolves for that code; both are shown, neither is silently preferred.
 
 Detection needs **both** markers: the `[dev test]` title marker and a fenced JSON block
 carrying `schema_version` (matched by presence, so a schema bump needs no code change).
@@ -473,6 +517,8 @@ doing the datasheet work carefully here.
 | `gh: not found` | Install the GitHub CLI. It is the only external binary `list`/`show` need |
 | Two issues for one chip, only one triaged | Run `fold` FIRST (§3). Triage per-EPROM, not per-issue |
 | `gh: 'label' ... not found` when applying a label | The taxonomy is not created yet — `python3 $S/devtest_issues.py labels` |
+| `show`'s `error` column prints `NNN unknown` | The code post-dates this skill's own `firmware_messages.py` table. Run the skill's test suite — `CatalogDriftTest` names the drifted id against the app's real `CATALOG` |
+| `show`'s `error` column prints `?` | The body's `error_code` was not a plain integer in `0..255` — malformed or hostile. Read the JSON block by hand |
 | `fold` will not close a failure you think is fixed | Inspect the bracketed reason on its row: one of §3a's three legs blocked. A same-build PASS or an `NA` step is deliberately not grounds to close |
 | A closed `fixed:superseded` issue turns out to be live again | Reopen and label `intermittent`. The three legs prove the failure did not reproduce, not that the defect is impossible |
 | `fold` says "grouping by chip NAME only" | `chip_database.json` not found — pass `--db` or set `FIRESTARTER_DB`. Alias-different names will not group until then |

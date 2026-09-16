@@ -28,6 +28,8 @@ import re
 import subprocess
 import sys
 
+import firmware_messages
+
 REPO = "henols/firestarter"
 def _repo_root() -> str:
     """Locate the checkout from this file: <root>/.claude/skills/<s>/scripts/.
@@ -615,7 +617,7 @@ def cmd_show(args: argparse.Namespace) -> int:
         print(f"  chip id     expected {exp}  actual {act}")
     print(f"  fingerprint {fingerprint(report, body)}")
 
-    print("\n  step         verdict    reason")
+    print(f"\n  {'step':<12} {'verdict':<10} {'error':<28} reason")
     failing, soft = [], []
     for s in steps:
         if not isinstance(s, dict):
@@ -623,7 +625,10 @@ def cmd_show(args: argparse.Namespace) -> int:
         op = str(s.get("op", "?"))
         v = str(s.get("verdict", "?"))
         reason = str(s.get("reason") or "")[:90]
-        print(f"  {op:<12} {v:<10} {reason}")
+        err = firmware_messages.resolve_error(
+            s.get("error_code"), s.get("error_name")
+        )
+        print(f"  {op:<12} {v:<10} {err:<28} {reason}")
         if v.upper() in BAD:
             failing.append(op)
         elif v.upper() in SOFT:

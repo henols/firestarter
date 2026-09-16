@@ -2,18 +2,18 @@
 gsd_state_version: "1.0"
 milestone: v1.39
 milestone_name: Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
-current_phase: 195
-current_phase_name: Partial Writes Stop Destroying the Page
+current_phase: 196
+current_phase_name: Adoption Instrument Disposition
 status: planning
-stopped_at: Phase 194 complete, ready to plan Phase 195
-last_updated: "2026-09-15T19:45:39.600Z"
-last_activity: 2026-09-15
-last_activity_desc: "Phase 194 COMPLETE — verified 4/4, 7/7 plans. The protocol 0x05 write path now reads handle->page_size; the capacity-bracket derivation flash_5v_page_page_size() is gone. DB has 45 page-size carriers (18 upstream-native 0x0D + 27 upstream-native 0x05); MSG_ERR_FL4_PAGE_SIZE minted at 0xBF (ERROR band 0xA0-0xBF now fully spent, 32/32 — guard re-derived, todo filed). Host refuses pre-serial via page_size_gate.py. Gates: host 1896/0, fw native 208/208, fw native_nodevtools 208/208. Bench: W29C020 on Leonardo, Rev 2.0 (operator-stated), fw aabd0dd, 2048 B over 16 pages, chip-ID 0x0000da45, read-back byte-identical sha256 d7a3b21b. PAGE-01/PAGE-02 Complete; PAGE-03 DELIBERATELY OPEN per D-10 — W29C020 is one of the 18 already-correct parts, so the run is no-regression only and proves nothing about the 9; W29C512 on order. Code review 0 critical / 2 warning / 2 info; WR-01 (host gate accepts non-power-of-two overrides that firmware rejects) filed as a todo, not fixed in-phase. NOT this phase: fw pytest tests/ 284/17 — all 17 in test_flash_path_record_sync.py from concurrent-session commit b51d6b5b relocating .planning/v1.23-FLASH-PATH-DECISION.md."
+stopped_at: Phase 195 complete, ready to plan Phase 196
+last_updated: "2026-09-16T16:09:41.578Z"
+last_activity: 2026-09-16
+last_activity_desc: Phase 195 complete, transitioned to Phase 196
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 12
+  completed_plans: 12
   percent: 33
 ---
 
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 194 — Real Page Size Reaches the Firmware
+**Current focus:** Phase 196 — Adoption Instrument Disposition
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 195 — Partial Writes Stop Destroying the Page
+Phase: 196 — Adoption Instrument Disposition
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-09-15 — Phase 194 complete, transitioned to Phase 195
+Last activity: 2026-09-16 — Phase 195 complete, transitioned to Phase 196
 
 ## Roadmap Summary (v1.38)
 
@@ -2022,7 +2022,11 @@ Transport provably byte-exact (COBS `0x00` + CRC8-CCITT) — settled variable. G
 | 260822-gxx | `dev test`: an `NA`-verdict step now reports NO reason on any surface. A REFUSE chip's six `sdp-*` steps each carried `sdp_capability()`'s refusal prose verbatim (LEG-02), so a filed issue repeated `W27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)` six times down the Reason column -- the operator's call was "NA is enough". Suppression is keyed on the VERDICT, not on the message text and not per-op, so it also silences the erase-not-supported and flash4 blank-check prose. Shared `submit._reason_text` formatter feeds both markdown tables (the saved `dev-test-<chip>.md` and the filed issue body), matching the existing `_duration_text`/`_runs_text` single-sourcing so the two can never disagree. Mid-run the operator REVERSED the plan's locked D-2 ("if a step is NA no reason shall be reported in any place"), so `DiagnosticReport._step_dict()` now exports `""` for an NA step too -- one seam covering the saved `.json`, the fenced JSON in the saved `.md`, and the fenced JSON in the issue body. `SKIPPED` rows KEEP their reason (frequently the real disclosure, e.g. "no target resolved"); the console needed no edit at all (`render()` filters on `_RAN_VERDICTS`, so an NA row never reaches it). RENDER/EXPORT LAYER ONLY: `StepResult.reason`, `derive_plan` (LEG-02), `sdp_capability.py` and every reason constant are untouched, and `dedup_fingerprint` never read `reason` so report identity/grouping is unchanged. Three tests asserting the old rule were INVERTED rather than deleted, with their identity proofs re-homed onto `sdp_hold_state`. **Then, same session, the operator said "strip":** `chip_test.sdp_hold_state()` now returns the BARE `NOT-RUN` token, closing the last carrier -- stripped at the SOURCE, not at `to_dict()`, because an export-layer fix would leave a value computed, carried and read by nothing (the console already truncated it) and a later reader restores that as a bug. The `sdp_honesty.unreadable_state_caveat()` fallback prose went too; `chip_test`'s now-unused `sdp_honesty` import was removed; `_state_cell` stays as defensive-only with a corrected docstring; the D-15 exit floor's `startswith` still fires and is now pinned by exact-equality tests. The `sdp_capability()` identity proof was re-homed onto a focused unit test in `test_sdp_capability.py` -- its proper home -- after the earlier delta had parked it on the `sdp_hold_state` assertion. A REFUSE chip's filed issue now contains neither the prose, nor `REASON_WRONG_PROTOCOL`, nor the substring `0x0D`, verified end-to-end | 2026-08-22 | `2ce37ba..5fe007e` merged to app beta as `62bea64` (-> 3.0.0b30), then `e04c331` on branch `quick-devtest-holdstate-bare` merged as `39b74ab`; both CI-gated on a Python 3.11 parity venv (mypy 35/35 zero headroom, 1964 tests); meta gitlink re-pinned | [260822-gxx-dev-test-suppress-the-reason-cell-on-na-](./quick/260822-gxx-dev-test-suppress-the-reason-cell-on-na-/) |
 | 260915-idj | Strict ASD-STE100 rewrite of devtest-rootcause SKILL.md plus firmware submodule path repair | 2026-09-15 | faf7e055 | .planning/quick/260915-idj-rewrite-claude-skills-devtest-rootcause- |
 | 260915-idk | Strict ASD-STE100 rewrite of devtest-triage SKILL.md with step-token reservation | 2026-09-15 | ed519fc7 | .planning/quick/260915-idk-rewrite-claude-skills-devtest-triage-ski |
-| 260916-ess | Test coverage for the devtest skill scripts — 39 stdlib unittest tests with executable mutation guards | 2026-09-16 | e5e4ed6f | .planning/quick/260916-ess-add-test-coverage-for-the-devtest-skill- |
+| 260916-ess | Test coverage for the devtest skill scripts — 41 stdlib unittest tests with executable mutation guards | 2026-09-16 | e5e4ed6f | .planning/quick/260916-ess-add-test-coverage-for-the-devtest-skill- |
+| 260916-nb9 | Expose a resolved error_name alongside error_code in the dev test report JSON, and bump schema_version to 2.1 | 2026-09-16 | e4cbfdf | 260916-nb9-expose-a-resolved-error-name-alongside-error-code-in-the-dev |
+| 260916-nbc | Teach the triage skill parser to print the firmware error code and its symbolic name | 2026-09-16 | 81080882 | 260916-nbc-teach-the-triage-skill-s-own-parser-to-print-the-firmware-er |
+| 260916-nba | Render the firmware error code and its symbolic name in the dev test markdown step table | 2026-09-16 | 7bbaf3c | 260916-nba-render-the-firmware-error-code-and-its-symbolic-name-in-the |
+| 260916-nbb | Capture the actual ERROR and WARN log lines the host app and firmware emit during a dev test run | 2026-09-16 | 5ab7dac | 260916-nbb-capture-the-actual-error-and-warn-log-lines-the-host-app-and |
 
 **Discord channel plugin — container side DONE, Discord side operator-owned (260729-iyx, 2026-07-29).** `discord@claude-plugins-official` v0.0.4 was already installed and `~/.claude/channels/discord/.env` already held a token, but `bun` was missing — the plugin's `.mcp.json` launches `"command": "bun"` as a **bare name** resolved from PATH by the MCP launcher with no shell, so Bun 1.3.14 is installed at `/usr/local/bin/bun` (verified resolvable under `env -i` + stock system PATH) and the same layer is now in `.devcontainer/Dockerfile` for rebuild durability. `~/.claude` **is** a named volume, so the token and `access.json` survive rebuilds; `~/.bun` is not, which is why the prefix is overridden. **Ordering trap:** `/discord:access policy allowlist` must be set only *after* pairing succeeds — setting it first makes pairing impossible, because the default `pairing` policy is what emits the code.
 
@@ -2048,10 +2052,11 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 196 (Adoption Instrument Disposition) with /gsd-discuss-phase 196 — the last phase of v1.39
 
 ## Decisions
 
+- [Phase 195 UAT]: The operator ruled PASS on the phase's one open judgment call, choosing disposition (a) — WR-01 (`require_page_alignment` accepts a negative address string as falsely "aligned") is accepted as known debt rather than fixed in-phase. Grounds recorded at the checkpoint: `parse_address` does not reject negatives and Python's `%` folds the sign, so `-256 % 256 == 0` reads as aligned; the firmware does not catch it either, because `simple_strtoul` consumes only `[0-9]` and returns 0 for `-256` and `-1` (confirmed by compiling the function verbatim). The write therefore lands silently at address 0, which is page-aligned for a length already proven to be a whole number of pages — a wrong-destination defect, not a partial-page-destruction one, and outside all four of the phase's success criteria, which concern alignment and length rather than address sign. Filed as `.planning/todos/pending/2026-09-16-reject-negative-write-start-address.md` and recorded in `195-SECURITY.md` under "Related Findings Outside This Register". 195-VERIFICATION.md moves from `human_needed` to `passed`, making the phase 4/4.
 - [Phase 193 Plan 01]: Built the GATE-01 `QUERY` variable with a quoted heredoc (`<<'SQL'`) instead of a single-quoted bash string with `'"'"'`-escaped embedded quotes. The escaped form breaks apart literal substrings like `installer IN ('pip', 'uv')` in the committed script's own bytes, and the plan's acceptance criteria grep directly against those bytes. The heredoc preserves the SQL's own quoting exactly as written, with no bash-level escaping artifacts in the file.
 - [Phase 193 Plan 01]: Split the GATE-01 script's curl-flag list and SQL trigger expression across multiple physical lines rather than compacting them onto one. The plan's verify block counts matching lines, not occurrences, for required substrings (`user=play`, `--fail-with-body`, `toUInt32OrZero`, and each clause of the trigger predicate); packing several onto one line would have undercounted them without changing anything the SQL or curl actually does.
 - [Phase 188 Plan 07]: D-16/D-18 executed by hand across the five in-repo survivors. build_db.py: thirteen citations removed per the plan's enumerated list (a Phase-86 provenance parenthetical, two PGSZ-01 discipline references, a v1.11/DEC-05 milestone+decision clause, and eight DB-0x/CR-01 site comments), plus three more RESEARCH.md references caught only by task 2's broadened scan pattern, plus a `_PHASE84_RELABEL` dict renamed to `_ETYPE_RELABEL` after discovering by reading (not by regex, which does not match all-caps PHASE86-style tokens) that it encoded a phase number in a variable name. A false-positive regex match on "DIP-24..32" (hardware terminology, not a citation) was reworded to "24-to-32-pin DIP" so the sweep's own oracle reads zero honestly. gen_test_image.py: an EVIDENCE.json filename and two phase-encoded `_p82` temp-path tokens rewritten without losing meaning. parse_devtest_issue.py: Phase-114/Phase-108/RESEARCH/INBOX-01/PROV-06 citations removed from the module docstring, two function docstrings and the argparse description, with the hostile-input contract's wording kept intact word for word (verified by a human-check re-read). gen_sdp_bus_config.py: Phase-116/RESEARCH/D-09 citations removed from the module docstring, two derivation comments, the runtime ValueError message and the argparse description. gen_validation_header.py confirmed byte-unchanged — its "Firestarter v1.13" docstring title and "T-71-INPUT" tag are pre-existing product-version/threat-tag labels, not `.planning/` citations, and the plan's own verify leg required this file untouched. Datasheet `[CITED: ...]` evidence markers unchanged (3/3) throughout. A "no line added is wholly a comment" verify leg reported non-zero (17 then 6) on both commits; net added/removed comment-line counts were equal in both cases (17/17, then 6/7), proving no comment was net-authored — documented as a plan-check discrepancy matching the 188-05/188-06 precedent, since the leg's literal reading is unsatisfiable for a task whose entire job is rewording existing comments.
@@ -3473,8 +3478,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-15T09:36:25.384Z
-**Stopped at:** Phase 194 complete, ready to plan Phase 195
+**Last session:** 2026-09-16T16:09:41Z
+**Stopped at:** Phase 195 complete, ready to plan Phase 196
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed

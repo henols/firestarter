@@ -17,9 +17,12 @@ this suite only ever calls the private `_summarize()` and pure functions.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import sys
+import tempfile
 import unittest
 
 _SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,21 +38,63 @@ MODULE_PATH = os.path.join(_SCRIPTS_DIR, "devtest_issues.py")
 def issue(number, chip, verdict, generated, host, fw, steps):
     """Build the {"number","title","body"} shape `gh issue list --json ...`
     produces, with the report embedded in a fenced ```json block carrying
-    `schema_version`. `steps` is a list of (op, verdict) pairs.
+    `schema_version`.
+
+    `steps` is a list of tuples, each `(op, verdict)`, `(op, verdict,
+    error_code)` or `(op, verdict, error_code, error_name)`. The `error_code`
+    / `error_name` slots are optional so every pre-existing 2-tuple call site
+    keeps working unchanged; omitting `error_code` (or passing `None`) omits
+    the key entirely, which is the shape a pre-260916-nbc report carries.
 
     Every supersede assertion in this file goes through `di._summarize()` on
     the dict this returns -- never a hand-built summary dict.
     """
+    step_dicts = []
+    for s in steps:
+        op, v = s[0], s[1]
+        error_code = s[2] if len(s) > 2 else None
+        error_name = s[3] if len(s) > 3 else None
+        d = {"op": op, "verdict": v, "reason": ""}
+        if error_code is not None:
+            d["error_code"] = error_code
+        if error_name is not None:
+            d["error_name"] = error_name
+        step_dicts.append(d)
     report = {
         "schema_version": "2.0",
         "generated": generated,
         "dedup_fingerprint": "0123456789ab",
         "auto_capture": {"host_version": host, "fw_board_identity": fw},
-        "steps": [{"op": op, "verdict": v, "reason": ""} for op, v in steps],
+        "steps": step_dicts,
     }
     body = "```json\n" + json.dumps(report) + "\n```"
     title = f"[dev test] {chip} — {verdict}"
     return {"number": number, "title": title, "body": body}
+
+
+def run_show(body: str, title: str = "[dev test] chip — FAIL") -> str:
+    """Run `cmd_show` in offline `--body-file` mode and return captured
+    stdout. `args.number = None` so no `gh` call is reachable."""
+    args = di.argparse.Namespace(
+        number=None, repo=di.REPO, title=title, body_file=None,
+    )
+    with contextlib.ExitStack() as stack:
+        tmp = stack.enter_context(
+            tempfile.NamedTemporaryFile(
+                mode="w", suffix=".md", delete=False, encoding="utf-8"
+            )
+        )
+        tmp.write(body)
+        tmp.close()
+        args.body_file = tmp.name
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            di.cmd_show(args)
+        try:
+            os.unlink(tmp.name)
+        except OSError:
+            pass
+    return buf.getvalue()
 
 
 # The failure under test, measured during planning: host 3.0.0b27, firmware
@@ -260,6 +305,63 @@ class TestMutationGuards(unittest.TestCase):
             mutant.version_key("3.0.0b22") < mutant.version_key("3.0.0"),
             "mutant should wrongly rank a prerelease above the final release",
         )
+
+
+class TestErrorColumnRendering(unittest.TestCase):
+    """`cmd_show`'s step table carries a new `error` column (260916-nbc),
+    between `verdict` and `reason`. Every case here goes through the real
+    `cmd_show` in offline `--body-file` mode via `run_show()` -- never a
+    hand-built string -- with `args.number = None` so no `gh` call is
+    reachable."""
+
+    def test_header_line_carries_error_between_verdict_and_reason(self):
+        body = issue(
+            20, "w27c512", "FAIL", "2026-09-16T09:00:00Z",
+            "3.0.0b29", "3.0.0b22:leonardo",
+            [("read", "OK")],
+        )["body"]
+        out = run_show(body)
+        self.assertIn("  step         verdict    error                        reason",
+                      out)
+
+    def test_populated_codes_render_all_three_resolved_names(self):
+        body = issue(
+            21, "w27c512", "FAIL", "2026-09-16T09:00:00Z",
+            "3.0.0b29", "3.0.0b22:leonardo",
+            [
+                ("blank-check", "BAD", 185),
+                ("write", "BAD", 183),
+                ("verify", "BAD", 175),
+            ],
+        )["body"]
+        out = run_show(body)
+        self.assertIn("185 MSG_ERR_CHIP_ID_MISMATCH", out)
+        self.assertIn("183 MSG_ERR_OP_TIMEOUT", out)
+        self.assertIn("175 MSG_ERR_VERIFY", out)
+
+    def test_all_null_error_codes_render_dash_and_route_line_unchanged(self):
+        body = issue(
+            22, "sst39sf040", "FAIL", "2026-08-22T10:00:00Z",
+            "3.0.0b27", "3.0.0b20:leonardo",
+            [("read", "OK"), ("write", "BAD"), ("verify", "BAD")],
+        )["body"]
+        out = run_show(body)
+        for line in out.splitlines():
+            if line.strip().startswith(("read ", "write ", "verify ")):
+                self.assertIn(" - ", line)
+        self.assertIn(
+            "  ROUTE: FAIL — datasheet cross-check needed. Failing: write, verify",
+            out,
+        )
+
+    def test_reported_error_name_renders_in_the_cell(self):
+        body = issue(
+            23, "w27c512", "FAIL", "2026-09-16T09:00:00Z",
+            "3.0.0b29", "3.0.0b22:leonardo",
+            [("write", "BAD", 183, "MSG_ERR_OP_TIMEOUT")],
+        )["body"]
+        out = run_show(body)
+        self.assertIn("183 MSG_ERR_OP_TIMEOUT", out)
 
 
 if __name__ == "__main__":
