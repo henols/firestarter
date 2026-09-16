@@ -297,7 +297,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 195-04-PLAN.md — The decision record with its two deciding measurements, the `SST39SF020` scope correction in the ledger and on the issue, three filed deferrals, and both gitlinks advanced (wave 3)
+- [x] 195-04-PLAN.md — The decision record with its two deciding measurements, the `SST39SF020` scope correction in the ledger and on the issue, three filed deferrals, and both gitlinks advanced (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
