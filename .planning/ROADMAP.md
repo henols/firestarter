@@ -288,7 +288,7 @@ under-sized parts)
 Plans:
 **Wave 1**
 
-- [ ] 195-01-PLAN.md — Tracer: one unaligned write refuses end to end — the `0xC0` refusal id, the firmware guard before the first register write, the host pre-connect predicate and its verbatim rendering (wave 1)
+- [x] 195-01-PLAN.md — Tracer: one unaligned write refuses end to end — the `0xC0` refusal id, the firmware guard before the first register write, the host pre-connect predicate and its verbatim rendering (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
