@@ -3,7 +3,7 @@ type: todo
 created: 2026-09-15
 source: 194-REVIEW.md (Phase 194 code review, Warning 1)
 area: firestarter_app
-resolves_phase:
+resolves_phase: 195-partial-writes-stop-destroying-the-page (plan 03)
 ---
 
 # Host page-size gate accepts values the firmware rejects
@@ -37,3 +37,14 @@ size is safe, and there is no fallback value that is ever safe to guess."
 Deliberately NOT fixed inside Phase 194: every plan was complete and green when the
 review surfaced this, and the change is a behavior change to shipped host source
 outside any plan's contract.
+
+## Closed
+
+`firestarter/page_size_gate.py`'s `_ACCEPTED_PAGE_SIZES` now names the same set
+`flash_5v_page_mask` enforces firmware-side -- a non-zero power of two no greater
+than 512 (1, 2, 4, 8, 16, 32, 64, 128, 256, 512). `require_page_size` refuses any
+recorded-but-invalid value with a distinct message naming the offending value,
+in addition to the pre-existing absent/zero refusal, so the host and the firmware
+now refuse the same set of page sizes. Enforced host-side entirely inside
+`firestarter/page_size_gate.py`; test coverage in
+`firestarter_app/tests/test_page_size_write_refusal.py`.
