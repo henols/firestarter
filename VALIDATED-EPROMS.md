@@ -48,3 +48,7 @@
 - AE29F2008 and W29C020 are the same silicon under two names. Their database entries are
   identical on every field, including chip ID `0xDA45`. A finding on one applies to the
   other, and both rows are kept only because two distinct physical parts were tested.
+- SST39SF020 is `algorithm: 6` (a sector-erase NOR part handled by a different firmware file,
+  `PROTO_FLASH_NOR_UNLOCK`), not a protocol `0x05` part. It never traverses the page-write path
+  and is outside that path's blast radius entirely -- a finding about protocol `0x05` writes
+  does not apply to it (Phase 195, `.planning/v1.39/195-partial-write-refusal-record.md` §5).
