@@ -129,6 +129,28 @@ part is a faithful decode of VPP index `0x00`. Protocol `0x0D` never routes it.
 
 ## 2. Decide which layer is at fault
 
+**Start by asking whether this programming path has ever worked.** `devtest-triage`
+records every chip that passed on real hardware, grouped into families — parts sharing
+`programming.algorithm`, `pinout` and `electrical.vpp_mv`, the three fields that decide
+the programming path, the wiring and the rail:
+
+```bash
+python3 $ROOT/.claude/skills/devtest-triage/scripts/eprom_ledger.py family --chip w27e257
+```
+
+| It reports | Read it as |
+|---|---|
+| one or more passing members | The path is proven on hardware. Suspect **this chip's data** — pinout key, VPP, chip id, size — before the protocol implementation |
+| no passing member | The protocol implementation is **in scope**, not just the data. Nothing has ever passed down this path |
+
+Do not infer the family from the algorithm alone. `w27e257` is algorithm `0x07` like the
+passing `w27c512`, but sits on a different pinout and a 13.5 V rail, so it is a
+different family with nothing recorded in it.
+
+This is a subprocess call into the sibling skill, not an import — both skills stay
+stdlib-only and self-contained. Where `devtest-triage` is not installed, skip the step
+and say the family is unknown rather than guessing.
+
 | Evidence from triage | Layer | Where |
 |---|---|---|
 | Pin map disagrees with the datasheet DIP view | pinout data | `pinouts.json` if the key's wiring is wrong. `resolve_pinout_key()` if the wrong key was chosen |
