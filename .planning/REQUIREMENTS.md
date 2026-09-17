@@ -73,10 +73,16 @@ host `3.0.0b38`. That part's derived page size is *correct*, which is what isola
 
 ### INSTR — the adoption instrument is retired, with its reason recorded (v1.38 carry-over)
 
-- [ ] **INSTR-01**: The PyPI per-version download-share instrument is removed. The disposition is
-      recorded with its reason.
-- [ ] **INSTR-02**: No document describes the instrument as gating a claim that has already fired. The
-      seed, `CLAUDE.md` and any note pointing at it agree with the chosen disposition.
+- [x] **INSTR-01**: The PyPI per-version download-share instrument is removed. The disposition is
+      recorded with its reason. **Complete:** the retirement record at
+      `.planning/notes/adoption-instrument-retirement.md` carries the full causal chain, the two
+      declined alternatives, and the accepted cost of the method going with it; the instrument itself
+      is deleted.
+- [x] **INSTR-02**: No document describes the instrument as gating a claim that has already fired. The
+      seed, `CLAUDE.md` and any note pointing at it agree with the chosen disposition. **Complete:** a
+      single expression over every tracked file outside six named exclusions reads green — zero
+      residual references — recorded verbatim in `196-03-SUMMARY.md`, alongside the annotation in the
+      frozen seed that those exclusions leave the expression unable to verify on its own.
 
 ## Out of Scope
 
@@ -98,8 +104,8 @@ host `3.0.0b38`. That part's derived page size is *correct*, which is what isola
 | PAGE-01 | Phase 194 | Complete |
 | PAGE-02 | Phase 194 | Complete |
 | PAGE-03 | Phase 194 | Pending (hardware leg OPEN per D-11) |
-| INSTR-01 | Phase 196 | Pending |
-| INSTR-02 | Phase 196 | Pending |
+| INSTR-01 | Phase 196 | Complete |
+| INSTR-02 | Phase 196 | Complete |
 
 **Coverage:**
 
