@@ -5,16 +5,16 @@ milestone_name: Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
 current_phase: 196
 current_phase_name: Adoption Instrument Disposition
 status: planning
-stopped_at: Phase 195 complete, ready to plan Phase 196
-last_updated: "2026-09-16T16:09:41.578Z"
-last_activity: 2026-09-16
-last_activity_desc: Phase 195 complete, transitioned to Phase 196
+stopped_at: Phase 196 context gathered
+last_updated: "2026-09-17T14:32:31.536Z"
+last_activity: 2026-09-17
+last_activity_desc: Phase 196 context gathered — adoption instrument disposition locked (RETIRE; script deleted, reason recorded in a .planning/notes/ retirement note, ClickHouse method not preserved)
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 12
   completed_plans: 12
-  percent: 33
+  percent: 67
 ---
 
 # Project State
@@ -3482,8 +3482,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-16T16:09:41Z
-**Stopped at:** Phase 195 complete, ready to plan Phase 196
+**Last session:** 2026-09-17T14:32:31.328Z
+**Stopped at:** Phase 196 context gathered
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
@@ -3564,7 +3564,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/194-real-page-size-reaches-the-firmware/194-CONTEXT.md
+**Resume file:** .planning/phases/196-adoption-instrument-disposition/196-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
