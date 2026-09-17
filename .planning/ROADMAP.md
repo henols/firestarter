@@ -328,7 +328,20 @@ still has a consumer, or is retired with its reason recorded.
 
 **Depends on:** nothing
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 196-01-PLAN.md — The record and the deletion: one retirement note carrying the full causal chain, the two declined alternatives and the accepted cost, written from the live script before it is removed (wave 1)
+
+**Wave 2**
+
+- [ ] 196-02-PLAN.md — The live-document sweep: `CLAUDE.md`, `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md` reworded to the settled disposition, and one annotation appended to the frozen seed (wave 2)
+
+**Wave 3**
+
+- [ ] 196-03-PLAN.md — The proof, the regeneration and the bookkeeping: one expression seen red before it is trusted then green, the graph rebuilt after the sweep, and both requirements recorded complete (wave 3)
 
 ## v1.38 — Repository Rename (CLOSED 2026-09-15 — 15/15 requirements; merged to `beta` in all three repos; tagged `v1.38` — bare tag, no GitHub Release)
 

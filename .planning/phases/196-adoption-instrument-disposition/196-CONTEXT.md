@@ -141,9 +141,9 @@ meta-repo bookkeeping phase and needs no bench and no board.
 The operator answered "You decide" on three questions. The calls above are mine, and the planner
 should treat them as settled, not re-open them:
 
-- **D-01 / D-02** (record venue) — `.planning/notes/`, one record.
-- **D-04 / D-05** (how plainly to state causation) — full causal chain, plus the declined alternatives.
-- **D-14 / D-15** (seed) — freeze and annotate, leave in place.
+- D-01 / D-02 (record venue) — `.planning/notes/`, one record.
+- D-04 / D-05 (how plainly to state causation) — full causal chain, plus the declined alternatives.
+- D-14 / D-15 (seed) — freeze and annotate, leave in place.
 
 Genuinely open to the planner: how many plans this phase takes, task ordering within the constraint
 that the graph rebuild runs last, and the exact wording of every edit.
