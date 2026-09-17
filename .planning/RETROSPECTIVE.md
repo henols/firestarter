@@ -1515,8 +1515,12 @@ it — accepted as debt and filed by name.
   intersection of a plan's quotation duties and its own forbidden-token set before execution.
 - A gate leg that asserts on a file written by a branch-gated hook is unsatisfiable on a milestone
   branch. Check what actually writes a file before making it an acceptance criterion.
-- Version numbers do not track fixes. `3.0.0b31` and `3.0.0b46` read identically on `beta` and at the
-  milestone tip, because the bumps landed before the fixes. Bump at ship, not at convenience.
+- Version numbers do not track fixes. `beta` published firmware `3.0.0b32` and app `3.0.0b47` off a
+  documentation-only push, carrying none of this milestone's code — a newer number over older
+  behaviour. The number is a cut marker, not a content claim.
+- Do **not** hand-bump before a beta merge. `update_version.py` auto-increments on the push, so the
+  merge is the cut; bumping first yields two cuts for one merge, which is what made v1.21 and v1.22
+  publish spurious versions.
 - The `audit-open` scanner under-reports: a real `deferred-items.md` entry appeared in no category.
   Treat its count as a floor.
 
