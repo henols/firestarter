@@ -180,7 +180,7 @@ def parse_address(s: str | None) -> int | None:
 def parse_size(s: str | None) -> int | None:
 ```
 
-One deliberately preserved exception: `firestarter_fw/py32_dfu.py`, whose 14 `Optional[...]` sites
+One deliberately preserved exception: `firestarter_app/firestarter/py32_dfu.py`, whose 14 `Optional[...]` sites
 are each individually `# noqa: UP045`-suppressed and were left untouched by the sweep — see
 `.planning/notes/python-floor-decision.md` § 5 for why.
 
