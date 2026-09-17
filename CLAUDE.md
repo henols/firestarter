@@ -13,11 +13,12 @@ This repo tracks `.planning/` (GSD project management artifacts), `.claude/` (pr
 
 The `tools/wiki/` checkers validated a clone of that wiki. Commit `5426d7ef` retired them on 2026-09-02. A later commit deleted `tools/wiki/` on 2026-09-08. Its last occupant, `MIGRATION-TABLE.md`, moved to `.planning/milestones/v1.35-MIGRATION-TABLE.md` as a record of the completed migration. **No automated wiki guard exists now.**
 
-`tools/` holds three directories:
+`tools/` holds two directories:
 
 - `tools/catalog/` — messages codegen and sub-repo sync tooling.
 - `tools/adoption/` — the PyPI per-version download-share instrument.
-- `tools/citations/` — `code_digest.py`, the planning-citation scanner. Both firmware workflows run it as the `No planning citations in source` step. It scans C-like and Python-like extensions only. It does not scan `.md`, so it covers no `CLAUDE.md`.
+
+**The comment gate lives in each sub-repo, not here.** `firestarter_fw/tools/planning_citation_gate.py` and `firestarter_app/tools/planning_citation_gate.py` are separate files, each run by its own repository's CI as the `No planning citations in source` step. Both scan C-like and Python-like extensions only. Neither scans `.md`, so **no `CLAUDE.md` is covered by any gate.**
 
 `.gitmodules` records a submodule URL per commit. Checking out a pre-rename ref such as `v1.35`, or bisecting firmware history, resurrects the old firmware URL from that commit. **Fixing the live branches does not fix history.** See `.planning/notes/gitmodules-archaeology-trap.md` for both workarounds, their executed transcripts, and the `git submodule sync` hazard that silently undoes one of them. **The trap is armed.** `henols/firestarter` was claimed for this repository on 2026-09-14, which destroyed the redirect it depended on. A plain `git submodule update --init` at a pre-rename ref now clones *this* repository into its own `firestarter/` directory and fails with exit 128. Set the override BEFORE the first update; once a clone has failed, the override alone will not recover it.
 
