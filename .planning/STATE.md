@@ -4,17 +4,17 @@ milestone: v1.39
 milestone_name: Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
 current_phase: 196
 current_phase_name: Adoption Instrument Disposition
-status: planned
-stopped_at: Phase 196 planned
-last_updated: "2026-09-17T18:48:45.119Z"
+status: complete
+stopped_at: Phase 196 verified complete
+last_updated: "2026-09-17T19:38:26.000Z"
 last_activity: 2026-09-17
-last_activity_desc: "Phase 196 planned — 3 plans in 3 waves (record+deletion, doc sweep, proof+graph rebuild); INSTR-02 gate proven RED at 11 pre-sweep"
+last_activity_desc: "Phase 196 complete — instrument retired with its reason recorded, 5 live documents swept, INSTR-02 gate proven RED (11) then GREEN, graph rebuilt; verifier 8/8, code review clean"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 15
-  completed_plans: 12
-  percent: 67
+  completed_plans: 15
+  percent: 100
 ---
 
 # Project State
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 196 (Adoption Instrument Disposition) — READY TO EXECUTE
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-09-17 - Phase 196 planned: 3 plans in 3 waves (196-01 record + deletion, 196-02 doc sweep, 196-03 proof + graph rebuild + traceability). Plan-checker PASSED on iteration 2; the INSTR-02 gate is proven RED at 11 residual references against the pre-sweep tree.
+Phase: 196 (Adoption Instrument Disposition) — COMPLETE
+Plan: 3 of 3
+Status: Phase 196 verified complete (8/8 must-haves)
+Last activity: 2026-09-17 — Phase 196 complete: instrument retired with its reason recorded, live documents swept, INSTR-02 gate proven red then green, graph rebuilt, both requirements recorded complete
 
 ## Roadmap Summary (v1.38)
 
