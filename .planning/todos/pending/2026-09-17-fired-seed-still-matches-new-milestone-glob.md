@@ -19,7 +19,7 @@ renaming it is not the fix.
 
 ## Why it was not fixed in Phase 196
 
-Recorded in `.planning/phases/196-adoption-instrument-disposition/196-CONTEXT.md`: this is GSD
+Recorded in `.planning/milestones/v1.39-phases/196-adoption-instrument-disposition/196-CONTEXT.md`: this is GSD
 tooling behaviour, not a Phase 196 deliverable. The phase's scope was the adoption instrument's
 disposition, and D-15 fixed the seed's location against exactly this kind of drive-by edit.
 
