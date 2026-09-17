@@ -1438,3 +1438,97 @@ protection.
   but the two that dealt with *external* systems — 172 (9 plans) negotiating GitHub rulesets, bypass
   actors and pull requests, and 173 (9 plans) proving the close still works. Work whose oracle lives in
   someone else's API costs multiples of work whose oracle is a local file.
+
+## Milestone: v1.39 — Protocol 0x05 Write Correctness
+
+**Closed:** 2026-09-17 (closed, not shipped)
+**Phases:** 3 (194–196) | **Plans:** 15 | **Tasks:** 43 | 7/8 v1 requirements | `override_closeout`
+
+### What Was Built
+
+Two firmware defects on protocol `0x05` — both filed by the operator with bench evidence, both
+tracked by no milestone until this one — closed by **refusing** rather than by read-modify-write.
+`flash_5v_page_page_size()` is deleted and the page size now arrives from `programming.page_size`,
+generated for every row whose own upstream `protocol_id` is `0x0D` or `0x05` behind a fail-closed
+power-of-two-in-[1,512] assertion, with `MSG_ERR_FL4_PAGE_SIZE` at `0xBF` and a host pre-connect
+refusal when no page size resolves. A per-chunk alignment guard now sits ahead of the first register
+write and a host predicate ahead of the port opening, with `MSG_ERR_FL4_PAGE_ALIGN` at `0xC0`. The
+PyPI per-version download-share instrument was retired, its reason recorded, and every live document
+swept to agree.
+
+### What Worked
+
+**Choosing the fix shape by measurement rather than by preference.** D-2 permitted refusal or
+read-modify-write and did not pick. The phase measured the alternative instead of arguing about it: a
+firmware page-staging buffer leaves **142 bytes** of RAM on `uno` for the entire call stack. That
+number ended the question, and it is in the record, so nobody re-opens it from first principles.
+
+**Ordering by correctness rather than by severity, and saying so at activation.** gh#68 affects 27
+parts and gh#67 affects 9, but Phase 194 fixed gh#67 first, because a read-modify-write built on a
+derived page size would still have corrupted the 9. The ROADMAP stated the inversion and its reason
+before any plan existed, so no phase had to re-derive it.
+
+**Picking the bench part for what it isolates, not for what it proves.** `W29C020`'s derived page size
+was already correct, which is exactly why it separates gh#68 from gh#67 — and exactly why it can say
+nothing about gh#67. The milestone used it for the first purpose and refused to let it serve the
+second, recording *0 of 9 on hardware, 9 of 9 on the database comparison* in three documents.
+
+**Reproducing the defect before fixing it.** The bench session flashed twice, so the success line
+printed over erased bytes is on the record beside the post-fix refusal for the identical command. A
+fix with no captured pre-state is a claim; this one is a comparison.
+
+### What Was Inefficient
+
+**Three verify legs shipped broken and the plan-checker caught none of them.** One plan required a
+verbatim quote of a word its own residue gate forbade in that very file. One asserted on a file
+written solely by a hook that is inert on a milestone branch, which forced the executor to hand-write
+the file the gate reads. One matched a porcelain status pattern against the whole line including the
+path, so an uppercase letter in a filename made it reject every legitimate status for that file. All
+three are authored-gate defects, and the pattern is old: a gate is not evidence until it has been seen
+to fail for the right reason.
+
+**The close is where the ship state was discovered, not the ship.** That the firmware fixes were still
+16/17/1 commits off `beta` — with `origin/beta` still carrying the deleted derivation — surfaced
+during close bookkeeping. It should have been a standing readout, not a discovery.
+
+### Patterns Established
+
+**"Describe, do not cite."** When a phase's own residue gate scans the documents that phase writes,
+naming the retired artifact by path turns the gate red on the retirement note itself. Phase 196
+resolved it by naming the artifact by description everywhere in live prose and keeping the path in the
+commit body alone — which makes the artifact ungreppable, so the note carries a signposted
+`git log --diff-filter=D` recovery route. The rule is not in any CONTEXT.md and had to be discovered
+during planning.
+
+**Evidence classes are kept apart in the artifact, not in the reader's head.** "0 of 9 on hardware,
+9 of 9 on the database comparison" is written three times, identically, rather than summarized once
+into a number that would read as coverage.
+
+**Classify a defect before escalating it.** The negative-address finding looked like a data-destruction
+bug and is not: address 0 is page-aligned and the length was already a whole number of pages, so it is
+a wrong-destination defect. Getting that right kept it out of the milestone's scope without dismissing
+it — accepted as debt and filed by name.
+
+### Key Lessons
+
+- A plan cannot require a verbatim quote and also gate on a word that quote contains. Check the
+  intersection of a plan's quotation duties and its own forbidden-token set before execution.
+- A gate leg that asserts on a file written by a branch-gated hook is unsatisfiable on a milestone
+  branch. Check what actually writes a file before making it an acceptance criterion.
+- Version numbers do not track fixes. `beta` published firmware `3.0.0b32` and app `3.0.0b47` off a
+  documentation-only push, carrying none of this milestone's code — a newer number over older
+  behaviour. The number is a cut marker, not a content claim.
+- Do **not** hand-bump before a beta merge. `update_version.py` auto-increments on the push, so the
+  merge is the cut; bumping first yields two cuts for one merge, which is what made v1.21 and v1.22
+  publish spurious versions.
+- The `audit-open` scanner under-reports: a real `deferred-items.md` entry appeared in no category.
+  Treat its count as a floor.
+
+### Cost Observations
+
+- 154 meta commits, 17 firmware, 1 host across the milestone range (the meta figure includes an
+  unrelated concurrent `.planning/` relocation refactor).
+- Two bench sessions, both on one part, one controller, one shield revision.
+- The expensive phases were the two with silicon legs (194 at 7 plans, 195 at 5), not the meta tidy
+  (196 at 3) — but 196 consumed disproportionate planning effort for its size, because its single
+  proof expression had to survive six exclusion classes and its own terms.

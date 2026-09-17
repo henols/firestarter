@@ -13,10 +13,15 @@ This repo tracks `.planning/` (GSD project management artifacts), `.claude/` (pr
 
 The `tools/wiki/` checkers validated a clone of that wiki. Commit `5426d7ef` retired them on 2026-09-02. A later commit deleted `tools/wiki/` on 2026-09-08. Its last occupant, `MIGRATION-TABLE.md`, moved to `.planning/milestones/v1.35-MIGRATION-TABLE.md` as a record of the completed migration. **No automated wiki guard exists now.**
 
-`tools/` holds two directories:
+`tools/` holds one directory:
 
 - `tools/catalog/` — messages codegen and sub-repo sync tooling.
-- `tools/adoption/` — the PyPI per-version download-share instrument.
+
+The PyPI per-version download-share instrument measured whether it was safe to claim the
+`henols/firestarter` slug. The operator retired it on 2026-09-17, after the claim had already been
+made without the trigger being met. The reason is recorded at
+`.planning/notes/adoption-instrument-retirement.md`. **No instrument measures that download split
+now.**
 
 **Nothing mechanically enforces the source-comment rule.** Each sub-repo used to run a
 `planning_citation_gate.py` in CI. Both scripts and all three CI steps were removed by operator
@@ -88,7 +93,13 @@ sub-repos and neither can state it alone.
 ## Milestone close and branch protection
 
 - **Milestone work forks off `beta`, in all three repositories** — the meta repo and both sub-repos. Branch name: `v1.X-slug`. Never commit to `beta` directly. Never commit to `main`.
+- **A push to `beta` in either sub-repo PUBLISHES. Treat it as a release, not a merge.**
+  - `firestarter_fw` — `beta-build.yml` cuts a GitHub pre-release carrying the `.hex` assets.
+  - `firestarter_app` — `beta-release.yml` cuts a GitHub pre-release, then its `pypi` job calls `publish.yml` directly with `secrets: inherit` and **uploads to PyPI**. It calls the workflow rather than relying on the `release: published` trigger, because a bot-created release cannot cascade on the default token.
+  - **Neither carries a path filter**, so a documentation-only push publishes too. Verified on 2026-09-17: a docs-only push cut `firestarter_fw` `3.0.0b32` and `firestarter_app` `3.0.0b47`, and `3.0.0b47` reached PyPI.
+  - A PyPI version can never be reused. Decide the scope of a beta push before making it, not after.
 - **`main` is protected in all three repositories** — pull request required, no direct push, no force-push, no deletion. `current_user_can_bypass` is `never`, so no person can bypass.
+- **`beta` is protected in all three repositories too, but does NOT require a pull request.** A direct push therefore succeeds. Protection is not a safety net here — the publishing consequence above is the reason to be careful.
 - **This project's close targets `beta`, not `main`.** `.planning/config.json` sets `git.base_branch` to `beta`, so `/gsd-complete-milestone` and `/gsd-ship` both point there.
 - **Before running `/gsd-ship`, recreate local `beta` from `origin/beta`** — `ship.md` anchors its audit range on `RANGE_BASE=$(git merge-base "${BASE_BRANCH}" HEAD)` and local `beta` goes stale. Cited by content, not line number: `workflows/ship.md` is installer-owned and a GSD version bump moves its lines.
 - **The meta repository must never publish a GitHub Release — bare milestone tags only.** A tag like `v1.36` parses as PEP 440 `1.36`. `Version("3.0.0b29") >= Version("1.36")` then reads true, so `fw` reports firmware already up to date for every stranded CLI, silently and permanently. This risk is latent today and armed by a single future action. Cited by content, not line number: see `.planning/notes/999.9-repo-rename-impact-analysis.md` § "Standing rule this must produce" for the full mechanism.

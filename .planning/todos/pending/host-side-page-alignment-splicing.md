@@ -18,7 +18,7 @@ is implicit, whole-page and unconditional, so any byte not loaded when the page 
 But it also means patching part of a ROM image with an unaligned start address -- a normal
 operation an operator does routinely -- now refuses outright where it previously silently erased
 neighbouring bytes. Phase 195 measured and accepted that regression rather than build a fix for it
-(`.planning/v1.39/195-partial-write-refusal-record.md` §4); this todo is the deferred strand that
+(`.planning/milestones/v1.39-artifacts/195-partial-write-refusal-record.md` §4); this todo is the deferred strand that
 would restore the capability.
 
 ## The shape

@@ -11,6 +11,10 @@
 # symlink at .claude/skills/<name>. Reinstall, don't vendor:
 #   npx skills add anthropics/skills@skill-creator
 .claude/skills/skill-creator
+# asd-ste100 is marketplace-installed via `npx skills` (2026-09-17), same layout.
+# Reinstall, don't vendor:
+#   npx skills add danyuchn/asd-ste100-skill
+.claude/skills/asd-ste100
 .agents/
 # skills-lock.json is the `npx skills` manifest. Root-level tool artifact — this repo
 # tracks only .planning/ and .claude/, so it stays local like package*.json.
@@ -49,6 +53,7 @@ write-cycle-*/
 # tracked; graphify-out/ at the repo root is scratch output that duplicates it.
 .planning/graphs/graph.json
 .planning/graphs/.last-build-snapshot.json
+.planning/graphs/graph.html
 graphify-out/
 
 # Researcher fetch cache (web/Context7 responses). Regenerable, and not evidence.

@@ -37,6 +37,7 @@ fired_date: 2026-09-14
 > Evidence: `.planning/phases/193-the-deferred-claim-made-measurable/evidence/`.
 > The trigger text below is retained unchanged as the record of the bar that was set and
 > not cleared — it is history now, not a gate.
+> The instrument was retired on 2026-09-17; see `.planning/notes/adoption-instrument-retirement.md`.
 
 
 The deferred, destructive half of Backlog **999.9** (gh#2). The firmware rename

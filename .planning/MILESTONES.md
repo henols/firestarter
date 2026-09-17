@@ -1,5 +1,25 @@
 # Milestones
 
+## v1.39 Protocol 0x05 Write Correctness (Closed: 2026-09-17)
+
+**3 phases (194-196) · 15 plans · 43 tasks · 7/8 requirements · `override_closeout` · tagged `v1.39` — a bare tag, never a GitHub Release.**
+
+Full close record: [`v1.39-CLOSE-RECORD.md`](milestones/v1.39-CLOSE-RECORD.md).
+
+**This milestone has not shipped, and that is the first thing to know about it.** The fixes are on the milestone branch only — 16 meta commits, 17 firmware commits and 1 host commit ahead of their `beta` branches, measured after a live fetch and by `git cherry` rather than SHA ancestry. `git grep -c flash_5v_page_page_size origin/beta -- src/proms/flash_5v_page.cpp` still returns **2**; the derivation this milestone removed is still there. gh#67 and gh#68 remain live for everyone on the beta channel. Worse, the versions published on `beta` — firmware **`3.0.0b32`** and app **`3.0.0b47`** — were both cut by a *documentation-only* push and carry no line of this milestone's code, so a user on either is running unfixed firmware under a version newer than anything v1.39 produced. No hand bump is needed to ship, and one would be wrong: with no `beta_version` input `update_version.py` auto-increments and commits the bump onto `beta` itself, so **the merge is the cut**. Bumping first would produce two cuts for one merge — the defect that made the v1.21 and v1.22 closes publish spurious versions.
+
+Two firmware defects on protocol `0x05`, filed by the operator on 2026-09-11 with bench evidence and tracked by no milestone until this one. A partial or unaligned write erased every byte of the touched physical page outside the write, in **both** directions, and printed `successful` — all **27** protocol-`0x05` parts, the four validated ones included (gh#68). And `flash_5v_page_page_size()` derived a page size from total device size rather than reading the part's real page, undersized on **9 of the 27**, so a contiguous write ran two page cycles into one physical page and the second erased the first (gh#67). Phase 194 fixed the second one first, deliberately inverting severity: a read-modify-write built on a derived page size would still have corrupted those 9.
+
+**Both were fixed by refusing, and the deciding measurement is on the record rather than assumed.** D-2 permitted either shape. A firmware page-staging buffer was measured to leave **142 bytes** of RAM on `uno` for the entire call stack, and only a host pre-connect refusal can claim the device is unchanged, because the firmware never learns the total payload length. Both refusals are proved on silicon: a pre-fix build reproduced both loss directions with `sha256` baselines and exact byte ranges and printed the success line over the erased bytes; the post-fix build refused the identical commands with a named error, a non-zero exit, and a read-back hashing identical to the pre-refusal baseline.
+
+**PAGE-03 is open by design, and it is the whole of the override.** Its bench part must be one of the 9 under-sized parts; the ordered `W29C512` has not arrived, and the `W29C020` that was run is one of the **18** already-correct parts — which is precisely what made it the right part for Phase 195 and useless for this. The record reads *0 of 9 on hardware, 9 of 9 on the database comparison* in three separate documents and conflates them in none.
+
+**Three defects surfaced in the plans' own verify legs, none caught by the plan-checker.** A plan required a quote to be verbatim while its own gate forbade a word that quote contains. A gate leg asserted on a file written only by a hook that is inert on a milestone branch, so the executor hand-wrote the file the gate reads — disclosed as self-attested, and corroborated from four independent sources instead. And a leg matched a porcelain status pattern against the whole line including the path, so an uppercase `D` in `SEED-claim-firestarter-slug.md` made it reject every legitimate status for that one file.
+
+**Accepted debt:** a negative write start address passes the host guard (`-256 % 128 == 0`) and the firmware's `simple_strtoul` clamps it to 0, so the write lands at address 0 and reports success. Address 0 is page-aligned and the length was already proven a whole number of pages, so it destroys nothing outside what it writes — a **wrong-destination** defect, not a page-destruction one. Filed, not fixed.
+
+**Not claimed:** no part from the 9 was ever written on hardware; every silicon result is one part, one controller, one shield revision (`W29C020`, Leonardo, Rev 2.0-class); `SST39SF020` is `algorithm: 6` and never traverses this path at all; `AE29F2008` rests on database-proven row identity with `W29C020`, not its own bench run. `milestone.complete` was not run — hand-archived, as v1.35 through v1.38 were. `audit-open acknowledge` was not run either; **86** open artifacts are disclosed in `STATE.md` by hand, with **0** suppressed.
+
 ## v1.38 Repository Rename (Shipped: 2026-09-15)
 
 **5 phases (189-193) · 23 plans · 15/15 requirements · app `3.0.0b42`, firmware `3.0.0b29` on `beta` · tagged `v1.38` — a bare tag, never a GitHub Release.**
