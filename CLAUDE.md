@@ -9,7 +9,15 @@ This is a meta-repo / planning repo for the Firestarter EPROM programmer project
 - `firestarter_fw/` — Arduino C++ firmware (PlatformIO). See `firestarter_fw/CLAUDE.md`.
 - `firestarter_app/` — Python host CLI application (pip package). See `firestarter_app/CLAUDE.md`.
 
-This repo tracks `.planning/` (GSD project management artifacts), `.claude/` (project settings), `tools/` and `.github/` (repo-level tooling and CI). Neither sub-repo is committed here. Documentation lives only in the `firestarter` GitHub wiki — there is no in-repo copy of it. The `tools/wiki/` checkers that used to validate a clone of that wiki were retired on 2026-09-02 (`5426d7ef`); `tools/wiki/` was removed entirely on 2026-09-08, when its last occupant, `MIGRATION-TABLE.md`, moved to `.planning/milestones/v1.35-MIGRATION-TABLE.md` as a record of the completed migration — `tools/` now holds two occupants, `tools/catalog/` (messages codegen and sub-repo sync tooling) and `tools/adoption/` (the PyPI per-version download-share instrument) — and **no automated wiki guard exists now**.
+This repo tracks `.planning/` (GSD project management artifacts), `.claude/` (project settings), `tools/` and `.github/` (repo-level tooling and CI). Neither sub-repo is committed here. Documentation lives only in the `firestarter` GitHub wiki. No in-repo copy exists.
+
+The `tools/wiki/` checkers validated a clone of that wiki. Commit `5426d7ef` retired them on 2026-09-02. A later commit deleted `tools/wiki/` on 2026-09-08. Its last occupant, `MIGRATION-TABLE.md`, moved to `.planning/milestones/v1.35-MIGRATION-TABLE.md` as a record of the completed migration. **No automated wiki guard exists now.**
+
+`tools/` holds three directories:
+
+- `tools/catalog/` — messages codegen and sub-repo sync tooling.
+- `tools/adoption/` — the PyPI per-version download-share instrument.
+- `tools/citations/` — `code_digest.py`, the planning-citation scanner. Both firmware workflows run it as the `No planning citations in source` step. It scans C-like and Python-like extensions only. It does not scan `.md`, so it covers no `CLAUDE.md`.
 
 `.gitmodules` records a submodule URL per commit. Checking out a pre-rename ref such as `v1.35`, or bisecting firmware history, resurrects the old firmware URL from that commit. **Fixing the live branches does not fix history.** See `.planning/notes/gitmodules-archaeology-trap.md` for both workarounds, their executed transcripts, and the `git submodule sync` hazard that silently undoes one of them. **The trap is armed.** `henols/firestarter` was claimed for this repository on 2026-09-14, which destroyed the redirect it depended on. A plain `git submodule update --init` at a pre-rename ref now clones *this* repository into its own `firestarter/` directory and fails with exit 128. Set the override BEFORE the first update; once a clone has failed, the override alone will not recover it.
 
@@ -70,9 +78,18 @@ pio test                          # run unit tests
   constant — rather than annotating it.
 - Docstrings are a separate question. Click docstrings in `firestarter_app` are user-facing
   `--help` text, not commentary, and must not be treated as comments.
+- **The rule is not "no GSD citations".** You delete `Phase 194` from a comment and keep the
+  comment. This still breaks the rule. Add no `#`, `//` or `/* */` line, for any reason, however
+  helpful it seems. State the rule in these words when you spawn a subagent that touches source.
+- Before each commit, run the check for that repo. It must print nothing:
+  - Python: `git -C firestarter_app diff --cached | /usr/bin/grep -E '^\+\s*#' | /usr/bin/grep -v '^\+\s*#!'`
+  - C/C++: `git -C firestarter_fw diff --cached | /usr/bin/grep -E '^\+\s*(//|/\*|\*)'`
+- Deleting one clause from an existing comment reflows the rest. Read the remainder. Confirm it
+  still parses and that every pronoun still has an antecedent.
 
 ## Milestone close and branch protection
 
+- **Milestone work forks off `beta`, in all three repositories** — the meta repo and both sub-repos. Branch name: `v1.X-slug`. Never commit to `beta` directly. Never commit to `main`.
 - **`main` is protected in all three repositories** — pull request required, no direct push, no force-push, no deletion. `current_user_can_bypass` is `never`, so no person can bypass.
 - **This project's close targets `beta`, not `main`.** `.planning/config.json` sets `git.base_branch` to `beta`, so `/gsd-complete-milestone` and `/gsd-ship` both point there.
 - **Before running `/gsd-ship`, recreate local `beta` from `origin/beta`** — `ship.md` anchors its audit range on `RANGE_BASE=$(git merge-base "${BASE_BRANCH}" HEAD)` and local `beta` goes stale. Cited by content, not line number: `workflows/ship.md` is installer-owned and a GSD version bump moves its lines.
