@@ -18,7 +18,11 @@ The `tools/wiki/` checkers validated a clone of that wiki. Commit `5426d7ef` ret
 - `tools/catalog/` — messages codegen and sub-repo sync tooling.
 - `tools/adoption/` — the PyPI per-version download-share instrument.
 
-**The comment gate lives in each sub-repo, not here.** `firestarter_fw/tools/planning_citation_gate.py` and `firestarter_app/tools/planning_citation_gate.py` are separate files, each run by its own repository's CI as the `No planning citations in source` step. Both scan C-like and Python-like extensions only. Neither scans `.md`, so **no `CLAUDE.md` is covered by any gate.**
+**Nothing mechanically enforces the source-comment rule.** Each sub-repo used to run a
+`planning_citation_gate.py` in CI. Both scripts and all three CI steps were removed by operator
+decision on 2026-09-17. The rule now rests entirely on the per-repo `CLAUDE.md` text and the
+pre-commit check it carries. Restore points, if the gate is ever wanted back:
+`firestarter_fw` `876a223`, `firestarter_app` `c77ff2e`.
 
 `.gitmodules` records a submodule URL per commit. Checking out a pre-rename ref such as `v1.35`, or bisecting firmware history, resurrects the old firmware URL from that commit. **Fixing the live branches does not fix history.** See `.planning/notes/gitmodules-archaeology-trap.md` for both workarounds, their executed transcripts, and the `git submodule sync` hazard that silently undoes one of them. **The trap is armed.** `henols/firestarter` was claimed for this repository on 2026-09-14, which destroyed the redirect it depended on. A plain `git submodule update --init` at a pre-rename ref now clones *this* repository into its own `firestarter/` directory and fails with exit 128. Set the override BEFORE the first update; once a clone has failed, the override alone will not recover it.
 
