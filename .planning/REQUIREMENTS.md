@@ -71,10 +71,10 @@ host `3.0.0b38`. That part's derived page size is *correct*, which is what isola
       hardware, 9 of 9 on the database comparison, until the ordered `W29C512` arrives and a bench
       write on one of the 9 is read back.
 
-### INSTR — the adoption instrument answers a live question, or is retired (v1.38 carry-over)
+### INSTR — the adoption instrument is retired, with its reason recorded (v1.38 carry-over)
 
-- [ ] **INSTR-01**: `tools/adoption/pypi_version_share.sh` either measures a question with a named
-      consumer, or is removed. Either way the disposition is recorded with its reason.
+- [ ] **INSTR-01**: The PyPI per-version download-share instrument is removed. The disposition is
+      recorded with its reason.
 - [ ] **INSTR-02**: No document describes the instrument as gating a claim that has already fired. The
       seed, `CLAUDE.md` and any note pointing at it agree with the chosen disposition.
 

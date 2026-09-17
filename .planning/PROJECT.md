@@ -65,10 +65,11 @@ corrupts a user's chip while printing `successful`:
 Both were reproduced on a **W29C020** (Leonardo, Rev 2.0-class shield, firmware `3.0.0b22`, host
 `3.0.0b38`) — a part whose derived page size is *correct*, which is what isolates gh#68 from gh#67.
 
-The third item is bookkeeping the v1.38 close left behind: `tools/adoption/pypi_version_share.sh`
-was built to measure whether it was safe to claim `henols/firestarter`. The operator claimed it on
-2026-09-14 with the trigger unmet, and the seed is `status: fired`. The instrument still runs and still
-reports, but it now answers a question with no consumer.
+The third item is bookkeeping the v1.38 close left behind: the PyPI per-version download-share
+instrument was built to measure whether it was safe to claim `henols/firestarter`. The operator
+claimed it on 2026-09-14 with the trigger unmet, and the seed is `status: fired`. The instrument was
+retired on 2026-09-17; the reason is recorded at
+`.planning/notes/adoption-instrument-retirement.md`.
 
 ### Decisions taken at activation (operator, 2026-09-15)
 

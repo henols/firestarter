@@ -318,13 +318,14 @@ still has a consumer, or is retired with its reason recorded.
 
 **Success criteria**:
 
-1. `tools/adoption/pypi_version_share.sh` is either re-pointed at a question with a named consumer, or
-   removed. The disposition and its reason are recorded where a reader meets the decision, not only in
-   a commit message.
+1. The PyPI per-version download-share instrument is removed. The disposition and its reason are
+   recorded at `.planning/notes/adoption-instrument-retirement.md` — where a reader meets the
+   decision, not only in a commit message.
 2. No document describes the instrument as gating a claim that has already fired — the seed,
    `CLAUDE.md` and any note pointing at it agree with the chosen disposition.
 3. If the instrument is retained, the record names who reads its output and when. "It might be useful"
-   is not a consumer.
+   is not a consumer. The instrument was not retained, so this criterion is vacuously satisfied and no
+   consumer is named.
 
 **Depends on:** nothing
 

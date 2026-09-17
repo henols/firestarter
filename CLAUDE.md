@@ -13,10 +13,15 @@ This repo tracks `.planning/` (GSD project management artifacts), `.claude/` (pr
 
 The `tools/wiki/` checkers validated a clone of that wiki. Commit `5426d7ef` retired them on 2026-09-02. A later commit deleted `tools/wiki/` on 2026-09-08. Its last occupant, `MIGRATION-TABLE.md`, moved to `.planning/milestones/v1.35-MIGRATION-TABLE.md` as a record of the completed migration. **No automated wiki guard exists now.**
 
-`tools/` holds two directories:
+`tools/` holds one directory:
 
 - `tools/catalog/` — messages codegen and sub-repo sync tooling.
-- `tools/adoption/` — the PyPI per-version download-share instrument.
+
+The PyPI per-version download-share instrument measured whether it was safe to claim the
+`henols/firestarter` slug. The operator retired it on 2026-09-17, after the claim had already been
+made without the trigger being met. The reason is recorded at
+`.planning/notes/adoption-instrument-retirement.md`. **No instrument measures that download split
+now.**
 
 **Nothing mechanically enforces the source-comment rule.** Each sub-repo used to run a
 `planning_citation_gate.py` in CI. Both scripts and all three CI steps were removed by operator
