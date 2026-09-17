@@ -4,15 +4,15 @@ milestone: v1.39
 milestone_name: Protocol 0x05 Write Correctness (ACTIVATED 2026-09-15)
 current_phase: 196
 current_phase_name: Adoption Instrument Disposition
-status: planning
-stopped_at: Phase 196 context gathered
-last_updated: "2026-09-17T14:32:31.536Z"
+status: planned
+stopped_at: Phase 196 planned
+last_updated: "2026-09-17T18:48:45.119Z"
 last_activity: 2026-09-17
-last_activity_desc: Phase 196 context gathered — adoption instrument disposition locked (RETIRE; script deleted, reason recorded in a .planning/notes/ retirement note, ClickHouse method not preserved)
+last_activity_desc: "Phase 196 planned — 3 plans in 3 waves (record+deletion, doc sweep, proof+graph rebuild); INSTR-02 gate proven RED at 11 pre-sweep"
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 12
+  total_plans: 15
   completed_plans: 12
   percent: 67
 ---
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 196 — Adoption Instrument Disposition
+Phase: 196 (Adoption Instrument Disposition) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-17 - Completed quick task 260917-8pj: dev test defaults to three runs, --submit files without a prompt (Phase 195 complete, transitioned to Phase 196)
+Status: Ready to execute
+Last activity: 2026-09-17 - Phase 196 planned: 3 plans in 3 waves (196-01 record + deletion, 196-02 doc sweep, 196-03 proof + graph rebuild + traceability). Plan-checker PASSED on iteration 2; the INSTR-02 gate is proven RED at 11 residual references against the pre-sweep tree.
 
 ## Roadmap Summary (v1.38)
 
