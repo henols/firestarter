@@ -5,8 +5,8 @@ milestone_name: Protocol 0x05 Write Correctness (CLOSED 2026-09-17)
 current_phase: 196
 current_phase_name: Adoption Instrument Disposition
 status: complete
-stopped_at: "v1.39 CLOSED 2026-09-17 — 3 phases, 15 plans, 43 tasks, 7/8 requirements, override_closeout, hand-archived; tagged v1.39 (bare tag). NOT shipped — the fixes are not on beta."
-last_updated: "2026-09-17T20:30:00.000Z"
+stopped_at: "v1.39 CLOSED and SHIPPED 2026-09-17 — merged to beta in all three repos, tag v1.39 pushed bare. app 3.0.0b48 on PyPI; fw 3.0.0b33 released but with ZERO .hex assets, repair pending."
+last_updated: "2026-09-17T21:05:00.000Z"
 last_activity: 2026-09-17
 last_activity_desc: "v1.39 closed and hand-archived — CLOSE-RECORD.md written, ROADMAP/REQUIREMENTS snapshotted to .planning/milestones/, phase dirs 194-196 and .planning/v1.39/ archived, MILESTONES.md entry prepended, ROADMAP heading flipped to CLOSED, tagged v1.39. milestone.complete and audit-open acknowledge both deliberately NOT run. Superseded: Phase 196 complete — instrument retired with its reason recorded, 5 live documents swept, INSTR-02 gate proven RED (11) then GREEN, graph rebuilt; verifier 8/8, code review clean"
 progress:
@@ -237,7 +237,7 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 Phase: 196 (Adoption Instrument Disposition) — COMPLETE · MILESTONE v1.39 CLOSED 2026-09-17
 Plan: 3 of 3
-Status: v1.39 CLOSED 2026-09-17 — 3/3 phases, 15/15 plans, 7/8 requirements (PAGE-03's hardware leg open per D-11, blocked on a W29C512), override_closeout, hand-archived, tagged v1.39. NOT shipped: 16 meta / 17 firmware / 1 host commit still ahead of beta, so gh#67 and gh#68 remain live for beta users. Next: /gsd-ship, then /gsd-new-milestone.
+Status: v1.39 CLOSED and SHIPPED 2026-09-17 — 3/3 phases, 15/15 plans, 7/8 requirements (PAGE-03's hardware leg open per D-11, blocked on a W29C512), override_closeout, hand-archived. Merged to beta in all three repositories; meta tagged v1.39 (bare tag pushed, 0 GitHub Releases on the meta repo, /releases/latest still a clean 404). firestarter_app published cleanly: pre-release 3.0.0b48 and the PyPI upload both succeeded. firestarter_fw pre-release 3.0.0b33 exists against the correct commit but carries ZERO .hex assets — the upload failed with 'Error creating asset temp dir' and a re-run cannot recover it, because the re-run repeats the non-idempotent version bump and is rejected non-fast-forward. Repair needs a workflow_dispatch of beta-build.yml at beta_version=3.0.0b33; overwrite_files places the assets onto the existing tag. Next: repair b33, then /gsd-new-milestone.
 Last activity: 2026-09-17 — Phase 196 complete: instrument retired with its reason recorded, live documents swept, INSTR-02 gate proven red then green, graph rebuilt, both requirements recorded complete
 
 ## Roadmap Summary (v1.38)
