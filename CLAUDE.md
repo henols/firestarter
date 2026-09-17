@@ -33,44 +33,38 @@ The protocol runs at 250000 baud. Commands are JSON objects; responses are prefi
 
 ## Development Commands
 
-### Python app (run from `firestarter_app/`)
-```bash
-pip install -e .                  # install in dev mode
-firestarter --help                # verify install
-./firestarter_test.sh [EPROM]     # full hardware integration test
-./write_test.sh [EPROM]           # write/verify test
-```
+**Each sub-repo's own `CLAUDE.md` owns its build, test and CI commands.** Read
+`firestarter_app/CLAUDE.md` or `firestarter_fw/CLAUDE.md` rather than a copy here. A copy in this
+file drifts: it read `pip install -e .` for months after the app's CI moved to `pip install -e
+'.[test]'`.
 
-### Firmware (run from `firestarter_fw/`)
-```bash
-pio run -e uno                    # build for Arduino Uno
-pio run -e leonardo               # build for Arduino Leonardo
-pio run -t upload -e uno          # flash to board
-pio run -t monitor -e uno         # serial monitor at 250000 baud
-pio test                          # run unit tests
-```
+## Cross-repo obligations
 
-## Key Architecture Points
+These are the only architecture facts that belong in the meta repo, because each one spans both
+sub-repos and neither can state it alone.
 
-- **EPROM database** is in `firestarter_app/firestarter/data/chip_database.json`; user overrides go in `~/.firestarter/database.json`. `EpromDatabase` (singleton) translates generic DIP pin numbers to RURP bus config before sending to firmware.
-- **Serial protocol changes** must be kept in sync between `firestarter_app/firestarter/serial_comm.py` and `firestarter_fw/src/firestarter.cpp`.
-- **Constants/flag bits** are duplicated between `firestarter_app/firestarter/constants.py` (Python) and `firestarter_fw/include/firestarter.h` (C++). Change both together.
-- **Board differences**: Uno has a 512-byte data buffer; Leonardo has 1024 bytes. Buffer size affects chunked transfer in `eprom_operations.py`.
-- Hardware calibration (R1/R2 resistor values, board revision) is persisted in Arduino EEPROM via `rurp_configuration_t`.
+- **Serial protocol changes** must stay in sync between `firestarter_app/firestarter/serial_comm.py`
+  and `firestarter_fw/src/firestarter.cpp`.
+- **Constants and flag bits** are duplicated between `firestarter_app/firestarter/constants.py` and
+  three firmware headers. `firestarter_app/CLAUDE.md` § Constants carries the per-block table.
+  Change both sides in the same commit pair.
+- **Messages are generated here and consumed there.** `tools/catalog/messages.toml` is the source of
+  truth. Codegen runs in this repo only. Both sub-repos consume synced artifacts, so never
+  regenerate or hand-edit `messages.h` or `messages.py` inside a sub-repo.
+- **Board buffer sizes differ:** Uno has 512 bytes, Leonardo 1024. This changes chunked transfer on
+  the host side, in `eprom_operations.py`.
 
 ## Source code comments — hard rule
 
 **Write no comments into product source.** This covers everything under `firestarter_fw/` and
 `firestarter_app/`, and it is not overridable by a plan, task, skill, or subagent instruction.
 
-- GSD process commentary never belongs in code: no `// Phase NNN (REQ-NN):`, no `// D-06`, no
-  `// LOCK-04`, no plan/task/milestone citations, no blocks explaining why a phase decided
-  something. The reader of the firmware or the pip package does not have `.planning/` and never
-  will — those identifiers resolve to nothing for them, and phase numbers are renumbered at
-  milestone close.
-- **Where it goes instead:** the phase `SUMMARY.md` ("Key decisions made during execution with
-  rationale"), `.planning/REQUIREMENTS.md` traceability, or the commit message. That is where GSD
-  itself puts rationale; nothing in GSD asks for it in source.
+- Forbidden: `// Phase NNN (REQ-NN):`, `// D-06`, `// LOCK-04`, any plan, task or milestone
+  citation, and any block explaining why a phase decided something. Rationale goes in the commit
+  message or in `.planning/`, never in source.
+- **The rule is not "no GSD citations".** You delete `Phase 194` from a comment and keep the
+  comment. This still breaks the rule. Add no `#`, `//` or `/* */` line, for any reason, however
+  helpful it seems. State the rule in these words when you spawn a subagent that touches source.
 - **Planners:** do not write "add a comment citing X" into a plan, and do not make "a comment
   exists" an acceptance criterion. Both generate exactly what this rule forbids.
 - **Executors:** if an existing plan instructs a source comment, do not add it. Record the
@@ -79,9 +73,6 @@ pio test                          # run unit tests
   constant — rather than annotating it.
 - Docstrings are a separate question. Click docstrings in `firestarter_app` are user-facing
   `--help` text, not commentary, and must not be treated as comments.
-- **The rule is not "no GSD citations".** You delete `Phase 194` from a comment and keep the
-  comment. This still breaks the rule. Add no `#`, `//` or `/* */` line, for any reason, however
-  helpful it seems. State the rule in these words when you spawn a subagent that touches source.
 - Before each commit, run the check for that repo. It must print nothing. **The pathspec is
   load-bearing** — without it each pattern also matches markdown, and the check reports a file it
   does not govern:

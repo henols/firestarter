@@ -57,7 +57,7 @@ The repository is a **meta-repo with two git submodules** (`.gitmodules`), not a
 - Contains:
   - `EpromDatabase` (`database.py`) - singleton, loads/merges JSON databases, translates pinouts to RURP bus config
   - `ConfigManager` (`config.py`) - singleton, persists app config to `~/.firestarter/config.json`
-- Depends on: JSON data files in `firestarter_fw/data/`, `~/.firestarter/` user overrides
+- Depends on: JSON data files in `firestarter_app/firestarter/data/`, `~/.firestarter/` user overrides
 - Used by: All manager classes and CLI layer
 
 **Communication Layer:**
