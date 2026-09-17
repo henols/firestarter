@@ -81,9 +81,11 @@ pio test                          # run unit tests
 - **The rule is not "no GSD citations".** You delete `Phase 194` from a comment and keep the
   comment. This still breaks the rule. Add no `#`, `//` or `/* */` line, for any reason, however
   helpful it seems. State the rule in these words when you spawn a subagent that touches source.
-- Before each commit, run the check for that repo. It must print nothing:
-  - Python: `git -C firestarter_app diff --cached | /usr/bin/grep -E '^\+\s*#' | /usr/bin/grep -v '^\+\s*#!'`
-  - C/C++: `git -C firestarter_fw diff --cached | /usr/bin/grep -E '^\+\s*(//|/\*|\*)'`
+- Before each commit, run the check for that repo. It must print nothing. **The pathspec is
+  load-bearing** — without it each pattern also matches markdown, and the check reports a file it
+  does not govern:
+  - Python: `git -C firestarter_app diff --cached -- '*.py' | /usr/bin/grep -E '^\+\s*#' | /usr/bin/grep -v '^\+\s*#!'`
+  - C/C++: `git -C firestarter_fw diff --cached -- '*.c' '*.cpp' '*.cc' '*.h' '*.hpp' '*.inc' '*.ino' | /usr/bin/grep -E '^\+\s*(//|/\*|\*)'`
 - Deleting one clause from an existing comment reflows the rest. Read the remainder. Confirm it
   still parses and that every pronoun still has an antecedent.
 
