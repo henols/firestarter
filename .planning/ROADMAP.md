@@ -8025,6 +8025,50 @@ datasheets; the entries stay in the database with their honest `UNSOURCED` marke
 
 ---
 
+### Phase 999.72: `apply_datasheet_override` runs after `resolve_pinout_key` and `classify`, so two of its six overridable fields half-apply silently (BACKLOG — filed 2026-09-18 during v1.40 Phase 197, from that phase's code review CR-01)
+
+**Goal:** Make the override mechanism genuinely general across all six fields it declares
+overridable, by applying overrides before the decode consumers that read them.
+
+**MEASURED** (orchestrator-confirmed against the live source, not taken from the review):
+`firestarter_app/tools/build_db.py`'s `main()` calls `resolve_pinout_key(pin_count, ..., mem_size=mem_size)`
+and then `classify(type_int, proto_id, pm_idx, flags, pinout_key, mem_size)` **before**
+`apply_datasheet_override(...)` runs, and only reads the overridden values back afterwards.
+`_OVERRIDABLE_DECODED_FIELDS` nevertheless declares `electrical.size_bytes` and
+`electrical.pin_count` overridable alongside the four that are fully hoisted
+(`electrical.vpp_mv`, `electrical.vcc_mv`, `electrical.vdd_mv`, `programming.pulse_duration_us`).
+
+**Consequence:** an override targeting `electrical.size_bytes` or `electrical.pin_count` would
+correct the row's emitted value while leaving `pinout` and `programming.algorithm` computed from
+the stale pre-override figure — silently, with no error raised and no test catching it. The
+mechanism is general for four of its six declared fields and half-applied for the other two.
+
+**DORMANT, not live.** All nine entries shipped in `tools/datasheet_overrides.json` target
+`electrical.vpp_mv` or `programming.pulse_duration_us`, so no current row is affected and the
+phase's byte-identical regeneration proofs are unaffected. Operator decision 2026-09-18: file
+rather than patch, leaving Phase 197's verified state untouched.
+
+**Why it is worth fixing before more entries land:** phases 198, 199 and 200 all write into this
+same override file. **999.70 above is a pinout defect** — `FUJITSU/MBM27C1000` sitting on its
+sibling's pin map — and a `pin_count`-shaped override is exactly the instrument someone would
+reach for to address that class of problem, which is the case that would half-apply.
+
+**Two routes:** move the override application ahead of `resolve_pinout_key`/`classify` and read all
+six values back before either consumer runs (the real fix, and it requires re-proving the
+phase-wide regeneration diff: 746 rows in and out, 13 changed, 0 added or removed, wire-dict delta
+still exactly 3, suite back to 2065); or, as an interim, make those two field paths raise until the
+hoist is complete, turning a silent half-apply into a loud refusal.
+
+**The rest of Phase 197's review** recorded four warnings alongside this one, at
+`.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-REVIEW.md`. One of them,
+WR-04, was assessed by the orchestrator and **not accepted**: it read the `UNSOURCED` notes'
+closing `Closed by: <vendor>'s own datasheet, vendored and git-tracked under datasheets/` as a
+present-tense claim, but each note states `No <vendor> datasheet ... is vendored in this
+repository` one sentence earlier, so the clause is a closure condition and the note is honest read
+whole.
+
+---
+
 ## v1.20 — Protocol-Only Dispatch — Remove the Legacy `mem_type` Axis (SHIPPED 2026-07-02)
 
 **Milestone goal:** Delete the vestigial `mem_type`/`type` backward-compat dispatch axis so Firestarter trusts *only* the real protocol (`handle->protocol` / `algorithm`) end to end — firmware, wire, and host. The fallback is already dead code for every DB chip (all carry `algorithm`); this is a legibility/safety cleanup, not a behavior change for real chips. Accepted consequence: user-override DB entries lacking `algorithm` will no longer work (must specify a protocol).
