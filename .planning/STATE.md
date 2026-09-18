@@ -4,15 +4,15 @@ milestone: v1.40
 milestone_name: Program-Parameter Fidelity
 current_phase: 198
 current_phase_name: The two voltage nibbles
-status: planning
-stopped_at: Phase 198 context gathered
-last_updated: "2026-09-18T17:05:28.598Z"
+status: planned
+stopped_at: Phase 198 planned
+last_updated: "2026-09-18T18:28:04.519Z"
 last_activity: 2026-09-18
-last_activity_desc: "Phase 198 context gathered. Scouting against the pinned minipro database.c settled the phase's central question ahead of research: xg_vcc_voltages[] is a strict CONFLICT-FREE superset of tl866ii_vcc_voltages[] (6 shared indices, 0 conflicts, +9 more), so the generator's table is one encoding truncated to what the TL866-II can output, not a different model's. 24 of 767 filtered rows carry a vdd index outside the table (0x6 x12, 0xD x5, 0xE x7) and silently default to 5000 mV. That FALSIFIES the blocking todo's premise: the 12 EXEL/ST rows it calls genuinely-5V reach 5000 through the fallback, not a decode. The relation vdd < vcc selects EXACTLY the 28-row group and nothing else (739 of 767 have vdd >= vcc). Decisions: complete both tables from xg and fix the & 0xF0 mask that would collapse 0xF1 (25 V) and 0xF2 (21 V) onto 18 V; hold the 12 rows at 5000 via explicit UNSOURCED entries so the decoder stays complete and the exception stays legible; correct MBM27C1001 and MBM27C4001 VPP to 12500 and those two plus MBM27128 vdd to 6000, all datasheet-backed; leave all 28 rows unchanged and close the todo with a successor backlog entry; DECODE-NOTES.md section 9 makes the general finding (programmer rail indices, model-dependent, nearest-rail substitution) with its limits named. gh#66 is drafted and HELD on the 197-08 publishing prohibition, so VOLT-04 will end Pending like PULSE-04. Next: /gsd-plan-phase 198."
+last_activity_desc: "Phase 198 planned. Research (HIGH confidence) reproduced the generator offline and confirmed every CONTEXT measurement: 767 filtered rows, 746 emitted, zero rows carrying VPP 0xF1/0xF2, the 28-row vdd<vcc split (16+12). It falsified three things the phase must now correct because it edits them: the decisive upstream comment is at database.c L125-126 not L123; VPP_MV's provenance marker carries no VERIFIED token and names tl866a.c, whose VPP table conflicts 8 of 8; and the tl866ii_vcc_voltages marker cites the wrong line range and is duplicated at build_db.py 116 and 126. It also found the D-02 trap: keying on the full low byte literally breaks 142 rows, so 0xF1/0xF2 must exact-match before masking. Four plans, tracer-first, waves 1/2/3. 198-01 takes one datasheet voltage end to end (3 Fujitsu rows, 5 fields) and opens a deliberate known-red window closed in its own Task 2; 198-02 completes VCC_VOLTAGES from xg and signs the 0x06 carve-out as 12 UNSOURCED entries in one commit; 198-03 writes DECODE-NOTES section 9, disposes all 28 VOLT-03 rows and closes the todo; 198-04 drafts and HOLDS the gh#66 answer. Override keys go 9 to 22 (not 26 - CONTEXT's 17 was a field count). Net diff: 15 rows, 17 fields, electrical only. Plan-checker PASSED with no blockers or warnings; 75 of 75 automated commands resolve and state a failing direction; decision coverage 18/18. Next: /gsd-execute-phase 198."
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 8
+  total_plans: 12
   completed_plans: 8
   percent: 20
 ---
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 198 — The two voltage nibbles
+Phase: 198 (The two voltage nibbles) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-18 — Phase 197 complete, transitioned to Phase 198
+Status: Ready to execute
+Last activity: 2026-09-18 — Phase 198 planned: 4 plans, checker passed, 18/18 decisions covered
 
 ## Roadmap Summary (v1.38)
 
