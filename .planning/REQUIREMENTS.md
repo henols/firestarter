@@ -48,7 +48,7 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
 - [x] **OVR-05**: The three part-specific corrections currently hardcoded in `build_db.py`
       (`NMOS_TRUE_VPP_MV`, `_AT28C_DIP24_NAMES`, and the relabel map) move into the override file,
       and the generated database is unchanged by the move.
-- [ ] **OVR-06**: Any constant that remains part-specific in the generator after OVR-05 is named, with
+- [x] **OVR-06**: Any constant that remains part-specific in the generator after OVR-05 is named, with
       the reason no alternative exists. An empty list is the expected answer.
 
 ### PULSE — the program pulse is the one the datasheet asks for (gh#70)
@@ -56,7 +56,7 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
 - [ ] **PULSE-01**: What `pulse_delay` encodes is established per algorithm family from evidence, and
       the finding is written down — including whether the generator's current "microseconds for all
       protocols" reading survives contact with the datasheets.
-- [ ] **PULSE-02**: `MBM27C1000`'s program pulse falls inside its datasheet window (475–525 µs) in the
+- [x] **PULSE-02**: `MBM27C1000`'s program pulse falls inside its datasheet window (475–525 µs) in the
       generated database.
 - [ ] **PULSE-03**: The regeneration diff is measured across all 746 rows, and no row changes value
       without either a decode rule that explains it or an override that cites a datasheet for it.
@@ -138,9 +138,9 @@ Tracked, not in this milestone.
 | OVR-03 | Phase 197 | Pending |
 | OVR-04 | Phase 197 | Complete |
 | OVR-05 | Phase 197 | Complete |
-| OVR-06 | Phase 197 | Pending |
+| OVR-06 | Phase 197 | Complete |
 | PULSE-01 | Phase 197 | Pending |
-| PULSE-02 | Phase 197 | Pending |
+| PULSE-02 | Phase 197 | Complete |
 | PULSE-03 | Phase 197 | Pending |
 | PULSE-04 | Phase 197 | Pending |
 | VOLT-01 | Phase 198 | Pending |
