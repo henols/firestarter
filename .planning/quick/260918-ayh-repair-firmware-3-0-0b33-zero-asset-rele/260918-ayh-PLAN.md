@@ -180,7 +180,7 @@ Installing or upgrading the application with pip is unaffected.
 **BODY-05** — post on #5 before closing it:
 
 ~~~markdown
-Done. All project documentation now lives in one place: the wiki of this repository. The `doc/` directories in the firmware and application repositories have been removed, and both of those READMEs are now short and repo-specific, linking here. The wikis on the two sub-repositories are disabled, so there is no second copy to drift out of date.
+Done. All project documentation now lives in one place: the wiki of this repository. The firmware and application READMEs are now short and repo-specific and link here, and the wikis on both of those repositories are disabled, so there is no second copy to drift out of date.
 ~~~
 
 </comment_bodies>
