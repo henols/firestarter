@@ -1,20 +1,20 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.40
-milestone_name: Program-Parameter Fidelity
+milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
 current_phase: 199
 current_phase_name: What the rails can actually deliver
 status: planning
-stopped_at: Phase 198 complete, ready to plan Phase 199
-last_updated: "2026-09-18T20:21:21.017Z"
+stopped_at: Phase 199 context gathered
+last_updated: "2026-09-18T22:10:43.490Z"
 last_activity: 2026-09-18
 last_activity_desc: "Phase 198 (The two voltage nibbles) CLOSED 2026-09-18 — 4/4 plans, verifier 22/23 with one deliberate deferral, no gaps. Both decode tables completed from upstream index-for-index: VPP_MV gained 0xF1=25000 and 0xF2=21000 and now exact-matches those two low bytes BEFORE the 0xF0 mask (the naive re-key would have dropped 142 rows to the 0 default; the shipped DB carries zero rows at vpp_mv 0), and VCC_VOLTAGES went 6 to 15 entries with 0x0F left genuinely absent. Whole-phase regeneration diff re-measured by the orchestrator at 15 rows / 17 field values, all under electrical: 3 rows / 5 fields from 198-01 (two Fujitsu parts to vpp_mv 12500, three to vdd_mv 6000) and 12 rows / 12 fields from 198-02 (5 at 5000-to-6000, 7 at 5000-to-6250). 746 rows in and out, same key set, support_status multiset identical, zero vcc_mv moved. The 0x06 carve-out is 12 explicit UNSOURCED override entries rather than an omission from the table, proven load-bearing by a planted mutation; overrides now 22 sorted keys, 18 UNSOURCED, 4 citing git-tracked PDFs. D-11 held: all 28 rows at vcc_mv 5500 ship unchanged, and the vdd<vcc predicate selects exactly that set (28/433/285 = 746) but ships no assertion. DECODE-NOTES section 9 states the general finding as a verdict before its evidence with four named limits, sections 1-8 byte-unchanged, and cites database.c 125-126 after measuring the phase context 123 as wrong. 198-VOLT03-DISPOSITION.md disposes all 28 rows with no elision, names the in-repo contradiction against Phase 148 and sides with the measurement, and states the honesty limit that this repository vendors no Microchip and no AMD datasheet. The blocking vcc-5500 todo closed by a genuine pure rename (R100, 0/0) and backlog 999.73 filed as its successor. VOLT-01/02/03 Complete; VOLT-04 deliberately Pending — the gh#66 answer is written and held as 198-GH66-ANSWER.md but NOT posted, because the milestone branch has no upstream so no version a reader could resolve exists yet; 197-GH70-ANSWER.md now carries one consolidated deferral list naming both gh#70 and gh#66 for the milestone close. Zero comment lines added to any .py file across the whole phase; 7 deleted. Suite 2075 passed on the py3.11 CI replica, 32 snapshots, ruff clean; regression gate over prior-phase test files 121 passed. Code review: 0 critical, 1 warning (a latent, currently-unreachable 0xF1/0xF2 ambiguity in the new exact-match branch), 2 info. Nothing pushed, nothing posted."
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 0
   total_plans: 12
   completed_plans: 12
-  percent: 40
+  percent: 0
 ---
 
 # Project State
@@ -3565,8 +3565,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-18T20:23:40.000Z
-**Stopped at:** Phase 198 complete, ready to plan Phase 199
+**Last session:** 2026-09-18T22:10:43.228Z
+**Stopped at:** Phase 199 context gathered
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
@@ -3647,7 +3647,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/198-the-two-voltage-nibbles/198-CONTEXT.md
+**Resume file:** .planning/phases/199-what-the-rails-can-actually-deliver/199-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
