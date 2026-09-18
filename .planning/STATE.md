@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 197 (The override mechanism and the program pulse) — EXECUTING
-Plan: 8 of 8 (197-01 through 197-07 complete)
+Plan: 8 of 8 — all plans complete
 Status: v1.40 ACTIVATED 2026-09-18 — 5 phases (197-201), 24 requirements across OVR/PULSE/VOLT/RAIL/VCC/BLANK. REQUIREMENTS.md and ROADMAP.md §v1.40 hand-authored at activation, as v1.33's were, because the GSD roadmap and requirements verbs normalise whole files and ROADMAP.md is 7,900 lines of hand-kept history. phases.clear skipped — 25 phase directories are live and the verb hard-deletes every non-999 one. Research skipped: the evidence is the three issue threads, their attached datasheets, build_db.py and infoic.xml, all already in hand. Meta forked off beta at d11d37ec as v1.40-program-parameter-fidelity; firestarter_app and firestarter_fw forked off beta at 70c92ce as v1.40-program-parameter-fidelity at Phase 197 execution start. Executing Phase 197 — 8 plans, 8 sequential waves, each plan depending on the one before.
-Last activity: 2026-09-18 — 197-07 complete. Pulse inventory filed; the true 100us count is 215 of 297, not the 217 every prior document states. Backlog 999.69/70/71 applied to ROADMAP by the orchestrator. 999.70 is safety-adjacent and VERIFIED on the generated data: MBM27C1000 sits on MBM27C1001's pinout with pins 2/24 swapped — it constrains what 197-08 may claim on gh#70. Suite green, 2065.
+Last activity: 2026-09-18 — 197-08 complete; all 8 plans done. Operator chose `hold` on the gh#70 answer: it is a committed DRAFT, nothing posted or pushed. PULSE-04 deliberately left Pending, to close at the v1.40 beta cut per the answer's Held-pending deferral section. Suite green at 2065. Phase gates next.
 
 ## Roadmap Summary (v1.38)
 
