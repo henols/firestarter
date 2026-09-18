@@ -378,11 +378,14 @@ claim that its 100 µs value is wrong. It is a claim that nobody has checked it 
 own datasheet. D-02 makes correcting one row cost exactly one datasheet, which is the intended
 deterrent against a bulk sweep that would apply one vendor's figure across many parts — precisely
 the failure mode the six `UNSOURCED` NMOS entries in `tools/datasheet_overrides.json` already
-carry forward from before this phase, and which backlog entry 999.71 (filed by this same plan)
+carry forward from before this phase, and which backlog entry 999.71 (recorded by this same plan)
 names directly.
 
-Filed to the backlog as entry 999.69 (see `.planning/ROADMAP.md` § Backlog), pointing back at this
-file as the inventory of record.
+Recorded for filing to the backlog as entry 999.69, pointing back at this file as the inventory of
+record. Per this project's standing single-writer discipline for `.planning/ROADMAP.md`, this
+plan does not edit that file directly — the exact entry text and its anchor are recorded in this
+plan's `197-07-SUMMARY.md` under `## ROADMAP edits for the orchestrator to apply`, for the
+orchestrator to apply verbatim.
 
 ---
 *Phase: 197-the-override-mechanism-and-the-program-pulse*
