@@ -6,11 +6,26 @@ internal project bookkeeping and must never be pasted onto the issue.**
 
 ## Status
 
-**DRAFT — NOT POSTED.** Awaiting an operator decision on:
+**DRAFT — APPROVED, HELD PENDING THE BETA CUT. NOT POSTED.**
 
-1. Approval or amendment of the comment body below.
-2. Which value replaces the version placeholder — post now naming the forthcoming beta, hold the
-   comment until the beta actually publishes, or post now naming the carrying commit instead.
+Operator decision recorded 2026-09-18:
+
+1. **Publication route: `hold`.** The comment is held until the v1.40 beta cut, then posted naming
+   the real published version. Reason given: nothing in this milestone is pushed —
+   `v1.40-program-parameter-fidelity` has no upstream in either the meta repository or
+   `firestarter_app`, and sits 41 commits (meta) / 14 commits (`firestarter_app`) ahead of
+   `origin/beta`; `git branch -r --contains` on this branch's tip returns nothing in either
+   repository. Both `post-with-beta` and `post-with-commit` would name something a reader cannot
+   resolve today. `hold` is the only route on which every claim in the comment body is true at the
+   moment it posts.
+2. **One text amendment approved, and only one.** The "What changed" paragraph's sentence claiming
+   the datasheet PDF is committed to this repository was replaced with wording that keeps the
+   correction and the citation but drops that claim, per the exact replacement text the operator
+   supplied. No other wording change was approved. The 215-row unverified-pulse-width paragraph
+   proposed in an earlier draft round was explicitly NOT added.
+
+**Nothing has been posted.** See "Held-pending deferral" near the end of this file for what releases
+this hold and exactly what to do at that point.
 
 ## Internal provenance (project bookkeeping only — do not post)
 
@@ -44,14 +59,14 @@ AC Characteristics table on page 4-68 directly.
 **What changed.** This project's chip database was asking for a 100 µs programming pulse on the
 MBM27C1000. Your datasheet's Programming Pulse Width (tPW) row gives 0.475 ms minimum, 0.50 ms
 typical, 0.525 ms maximum — the database's value was about a fifth of the part's own minimum. That
-value is now corrected to 500 µs, taken directly from that table, and the datasheet PDF you
-supplied is committed to this project's repository at `datasheets/MBM27C1000.pdf` so anyone can
-check it directly. The sibling part MBM27C1001 had the identical defect and got the same
-correction from its own datasheet. A third Fujitsu part, MBM27C4001, was also checked against its
-datasheet — its 100 µs value already matches that part's own spec, so it was deliberately left
-unchanged.
+value is now corrected to 500 µs, taken directly from the AC Characteristics table (tPW) on page
+4-68 of the MBM27C1000 datasheet you attached to this issue. The sibling part MBM27C1001 had the
+identical defect and got the same correction from its own datasheet. A third Fujitsu part,
+MBM27C4001, was also checked against its datasheet — its 100 µs value already matches that part's
+own spec, so it was deliberately left unchanged.
 
-**Version:** PLACEHOLDER
+**Version:** held pending the v1.40 beta cut; this line will be updated with the real published
+version before this comment is posted.
 
 **What this correction does not do.** The firmware applies this pulse width as the start of a loop
 that verifies after every pulse and gives up after 25 attempts. On this firmware, none of these
@@ -95,18 +110,37 @@ already noted on this thread.
 
 ---
 
-## Version resolution note (internal — do not post)
+## Held-pending deferral (internal — do not post)
 
-The comment body above contains one unresolved line: `**Version:** PLACEHOLDER`. This project has
-not cut a release carrying the correction yet, and a `beta` push in the `firestarter_app`
-repository publishes to PyPI irreversibly, so this placeholder cannot be resolved without an
-operator decision. The checkpoint that follows this draft puts three readings to the operator:
+**This comment is held, not posted, by explicit operator decision dated 2026-09-18 (`hold`).**
 
-- Post now, naming the forthcoming beta version, and say plainly it is not yet published.
-- Hold the comment until the milestone's beta cut, then post with the real published version.
-- Post now, naming the commit that carries the change instead of a version, and follow up once a
-  version exists.
-
-Whichever is chosen, substitute the exact string into the `**Version:**` line above before this
-text reaches the issue, and re-run the no-over-claim and no-attribution checks against the final
-text, since a hand edit can reintroduce either.
+- **What is held:** the entire "## Comment Body" section above — the full public answer to gh#70,
+  including the corrected pulse width, the firmware limitation, the standing failure hypothesis, and
+  the pinout finding. Nothing in it has reached the issue. gh#70 remains OPEN with 3 comments, none
+  from this project.
+- **Why:** at the time of this decision, `v1.40-program-parameter-fidelity` has no upstream in
+  either the meta repository or `firestarter_app`, and sits 41 commits (meta) / 14 commits
+  (`firestarter_app`) ahead of `origin/beta`. `git branch -r --contains` on this branch's tip
+  returns nothing in either repository. Naming a forthcoming beta version or a commit string would
+  both name something a reader cannot resolve today — `post-with-beta` would name a version that
+  does not exist, and `post-with-commit` would name a commit nobody can find on any remote branch.
+  `hold` is the only route on which every sentence in the comment body is true at the instant it is
+  posted.
+- **What releases the hold:** the v1.40 beta cut — the point at which `firestarter_app` (and, if the
+  correction also touches firmware, `firestarter_fw`) are pushed to `beta` and a real, installable
+  version number exists.
+- **Exactly what to do at that point:**
+  1. Replace the `**Version:**` line in the "## Comment Body" section above with the real published
+     version (the `firestarter_app` version string cut at that beta push).
+  2. Re-run the no-over-claim and no-attribution checks against the final "## Comment Body" text
+     only — a hand edit at this step can reintroduce either.
+  3. Post ONLY the "## Comment Body" section — verbatim, starting after the opening `---` and ending
+     before the closing `---` — to gh#70 with
+     `gh issue comment 70 --repo henols/firestarter --body-file`. Never paste this file's header,
+     "Status", "Internal provenance", or this "Held-pending deferral" section onto the issue.
+  4. Record the returned comment URL back into this file (in this section) and mark PULSE-04
+     complete in `.planning/REQUIREMENTS.md`.
+- **Requirement status:** PULSE-04 is NOT satisfied by this plan. It is explicitly carried forward
+  to the milestone close, to be satisfied when the comment above actually posts, per the steps
+  above. The artifact carrying it is this file:
+  `.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-GH70-ANSWER.md`.
