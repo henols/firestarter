@@ -217,13 +217,14 @@ firmware change and the only dual-repo lockstep — but every UV bench re-run in
 that 201's absence can refuse, so pulling it earlier is a legitimate re-ordering if bench time comes
 first.
 
-### Phase Details
+## Phase Details
 
-**Phase 197: The override mechanism and the program pulse**
-Goal: A datasheet value can correct an infoic decode without a line of part-specific code in the
-generator, and the first correction proves it on the pulse width gh#70 measured.
-Requirements: OVR-01, OVR-02, OVR-03, OVR-04, OVR-05, OVR-06, PULSE-01, PULSE-02, PULSE-03, PULSE-04
-Success criteria:
+### Phase 197: The override mechanism and the program pulse
+
+**Goal**: A datasheet value can correct an infoic decode without a line of part-specific code in the generator, and the first correction proves it on the pulse width gh#70 measured.
+**Requirements**: OVR-01, OVR-02, OVR-03, OVR-04, OVR-05, OVR-06, PULSE-01, PULSE-02, PULSE-03, PULSE-04
+
+**Success criteria**:
 1. An override entry changes a generated value, and deleting the entry restores the decoded one.
 2. `build_db.py` contains no part-number literal after the three existing hardcodes move out, or every
    survivor is named with the proof that no alternative exists.
@@ -233,11 +234,14 @@ Success criteria:
    accounts for every other changed row.
 5. gh#70 carries the answer and the version that holds it.
 
-**Phase 198: The two voltage nibbles**
-Goal: Settle what infoic's two voltage fields encode, per algorithm family, and correct what the
-datasheets contradict — including the 28-row group that has been unproven since v1.32 Phase 148.
-Requirements: VOLT-01, VOLT-02, VOLT-03, VOLT-04
-Success criteria:
+### Phase 198: The two voltage nibbles
+
+**Goal**: Settle what infoic's two voltage fields encode, per algorithm family, and correct what the datasheets contradict — including the 28-row group that has been unproven since v1.32 Phase 148.
+**Requirements**: VOLT-01, VOLT-02, VOLT-03, VOLT-04
+
+**Depends on**: Phase 197
+
+**Success criteria**:
 1. The per-family meaning of both nibbles is written down with its evidence, and the families where it
    does not generalise are named rather than assumed.
 2. The Fujitsu 1 Mbit and 4 Mbit parts ask for a VPP at or above their 12.2 V floor.
@@ -245,11 +249,16 @@ Success criteria:
    and the pending todo that has blocked them is closed either way.
 4. gh#66 carries the answer and the version that holds it.
 
-**Phase 199: What the rails can actually deliver** — *bench-gated*
-Goal: Replace a theoretical ceiling with a measured one, decide the VPE routing question, and make the
-shield say what it cannot do instead of offering it.
-Requirements: RAIL-01, RAIL-02, RAIL-03, RAIL-04, RAIL-05
-Success criteria:
+### Phase 199: What the rails can actually deliver
+
+**Bench-gated.**
+
+**Goal**: Replace a theoretical ceiling with a measured one, decide the VPE routing question, and make the shield say what it cannot do instead of offering it.
+**Requirements**: RAIL-01, RAIL-02, RAIL-03, RAIL-04, RAIL-05
+
+**Depends on**: Phase 197
+
+**Success criteria**:
 1. A recorded deliverable maximum per rail per shield revision, with the measurement method named and
    any ADC-derived figure carrying its known error.
 2. The 30 rows at 18 V or more are classified against whichever ceiling stands, and the classification
@@ -259,18 +268,25 @@ Success criteria:
 4. The VPE routing question is decided and recorded, a decision not to route it included.
 5. gh#71 carries the answer.
 
-**Phase 200: An elevated programming supply is stated**
-Goal: A decoded `vdd_mv` that nothing applies stops being invisible.
-Requirements: VCC-01, VCC-02
-Success criteria:
+### Phase 200: An elevated programming supply is stated
+
+**Goal**: A decoded `vdd_mv` that nothing applies stops being invisible.
+**Requirements**: VCC-01, VCC-02
+
+**Depends on**: Phase 198, Phase 199
+
+**Success criteria**:
 1. A part needing more than 5.0 V to program says so where the operator sees it before the attempt.
 2. The wording is the same shape as Phase 199's, so one fact does not acquire two explanations.
 
-**Phase 201: A partial write is gated on its own region** — *firmware, dual-repo lockstep, bench-gated*
-Goal: Close backlog 999.44's live firmware half, so a non-erasable part holding data anywhere stops
-being unwritable everywhere.
-Requirements: BLANK-01, BLANK-02, BLANK-03
-Success criteria:
+### Phase 201: A partial write is gated on its own region
+
+**Firmware, dual-repo lockstep, bench-gated.**
+
+**Goal**: Close backlog 999.44's live firmware half, so a non-erasable part holding data anywhere stops being unwritable everywhere.
+**Requirements**: BLANK-01, BLANK-02, BLANK-03
+
+**Success criteria**:
 1. A write into a blank region of a non-blank, non-erasable part succeeds.
 2. The standalone blank-check command and the erase-end check are unchanged, chunked resumption
    included.
