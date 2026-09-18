@@ -1,8 +1,8 @@
 ---
 phase: 197-the-override-mechanism-and-the-program-pulse
 verified: 2026-09-18T15:33:01Z
-status: gaps_found
-score: 4/5 roadmap success criteria verified (1 decision-backed deferral); requirement traceability 7/10 Complete, 3 Pending (OVR-03, PULSE-01, PULSE-04)
+status: passed
+score: 4/5 roadmap success criteria verified (1 decision-backed deferral, accepted); requirement traceability 8/10 Complete, 2 Pending (OVR-03, PULSE-04) — PULSE-01 was Pending at verification time and has since been marked Complete, see resolved_since_verification
 covered_files:
   - .planning/phases/197-the-override-mechanism-and-the-program-pulse
   - .planning/phases/197-the-override-mechanism-and-the-program-pulse/197-01-PLAN.md
@@ -41,7 +41,23 @@ covered_files:
   - firestarter_app/firestarter/data/chip_database.json
 covered_digest: "v1:sha256:f178a8d6856c5aeee165334cfba452fd10ba7d678e75e4b4d08a1b12b9849f03"
 behavior_unverified: 0
-overrides_applied: 0
+overrides_applied: 3
+status_changed_by: "orchestrator, on operator decision 2026-09-18 — the verifier's verdict was gaps_found (4/5 criteria). The operator was shown the four gaps and chose 'Mark complete, accept both'. Status set to passed so phase.complete would run. The verifier's original verdict, its evidence and the full gaps: block below are left UNEDITED — nothing was removed to make this pass."
+overrides:
+  - must_have: "gh#70 carries the answer and the version that holds it (ROADMAP SC5 / PULSE-04)."
+    reason: "Accepted as a decision-backed carry-forward, not as achieved. The operator selected `hold` on 2026-09-18: the milestone branch has no upstream in either repo, so any version or commit the comment could cite does not exist for a reader to check. The draft is authored, content-verified and committed; gh#70 confirmed live as OPEN with 3 comments, none from this project. Closes at the v1.40 beta cut per the four steps in 197-GH70-ANSWER.md's 'Held-pending deferral' section. PULSE-04 remains Pending in REQUIREMENTS.md and is NOT claimed complete."
+    accepted_by: "operator"
+    accepted_at: "2026-09-18"
+  - must_have: "OVR-03: the datasheet citation contract is enforced by the generator itself, not only by the test suite."
+    reason: "Accepted as carried forward. The override file's shape satisfies OVR-03's literal text on all 9 entries, but WR-03 shows `_validate_datasheet_overrides_shape` does not check git-tracked status or reject a `..`-escaping path, so a standalone `python tools/build_db.py` would accept a citation the test suite would reject. OVR-03 remains Pending in REQUIREMENTS.md; its substantive route is the WR-03 hardening, which belongs with backlog 999.72 in the same mechanism. Separately, the verifier found OVR-03 was orphaned across plans — recorded in the orchestrator addendum below."
+    accepted_by: "operator"
+    accepted_at: "2026-09-18"
+  - must_have: "The override mechanism is general across all six fields it advertises as overridable (CR-01)."
+    reason: "Accepted with tracking, not disputed. The verifier's verdict is adopted verbatim: the mechanism is general for four of its six advertised fields and silently half-applied for `electrical.pin_count` and `electrical.size_bytes`. Dormant — all 9 shipped entries target the four safe fields. The verifier recorded 'no backlog entry ... as of this verification'; that was true when it began reading and stale by the time it wrote — backlog 999.72 was filed at efa71d21, 2026-09-18T15:28:10Z, mid-run. Operator chose file-only over patching so this phase's byte-identity proofs and verified state stay untouched."
+    accepted_by: "operator"
+    accepted_at: "2026-09-18"
+resolved_since_verification:
+  - "PULSE-01 — the verifier's gap 3 was a real bookkeeping omission and is now FIXED, not overridden. 197-07-SUMMARY.md claimed `requirements-completed: [PULSE-01]` while REQUIREMENTS.md still read Pending. The substantive work was independently confirmed present by both the verifier and the orchestrator (tools/DECODE-NOTES.md section 8, 197-PULSE-INVENTORY.md), and 197-07 is the sole plan declaring PULSE-01, so no shared-ID gate applied. Marked Complete at 5fa1ecf7." 
 gaps:
   - truth: "gh#70 carries the answer and the version that holds it (ROADMAP SC5 / PULSE-04)"
     status: failed
