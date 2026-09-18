@@ -58,7 +58,7 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
       protocols" reading survives contact with the datasheets.
 - [x] **PULSE-02**: `MBM27C1000`'s program pulse falls inside its datasheet window (475–525 µs) in the
       generated database.
-- [ ] **PULSE-03**: The regeneration diff is measured across all 746 rows, and no row changes value
+- [x] **PULSE-03**: The regeneration diff is measured across all 746 rows, and no row changes value
       without either a decode rule that explains it or an override that cites a datasheet for it.
 - [ ] **PULSE-04**: gh#70 is answered on the issue with the resulting values and the version carrying
       them.
@@ -141,7 +141,7 @@ Tracked, not in this milestone.
 | OVR-06 | Phase 197 | Complete |
 | PULSE-01 | Phase 197 | Pending |
 | PULSE-02 | Phase 197 | Complete |
-| PULSE-03 | Phase 197 | Pending |
+| PULSE-03 | Phase 197 | Complete |
 | PULSE-04 | Phase 197 | Pending |
 | VOLT-01 | Phase 198 | Pending |
 | VOLT-02 | Phase 198 | Pending |
