@@ -10,6 +10,20 @@ files:
   - firestarter_app/firestarter/data/pinouts.json
 ---
 
+## Closed — 2026-09-18 (Phase 197, plan 197-01)
+
+Point 1, the only point left open after the 2026-09-10 update below, is now closed. Plan
+`197-01` (Phase 197, `197-the-override-mechanism-and-the-program-pulse`) derived away the
+`_PGM_ON_PIN31_MAX_SIZE` constant per CONTEXT.md's D-09: the fork between `DIP32_27C020`
+(pin 31 = PGM) and `DIP32_STD` (pin 31 = A18) is now computed from `code_memory_size`
+arithmetic (`(mem_size - 1).bit_length() <= 18`) rather than compared against a named
+262144 constant. The byte-identical proof — an exhaustive integer-identity check over the
+practical domain plus a full-pipeline regeneration producing a database byte-identical to
+the one committed before the change — is `firestarter_app` commit `5fec5eb` (Plan 197-01
+Task 3). `197-REGEN-DIFF.md`'s independently measured phase-wide regeneration diff
+additionally confirms the derivation contributes zero diff across all 746 rows, exactly as
+claimed.
+
 ## Status update — 2026-09-10 (Phase 182, plan 182-02)
 
 **Points 2 and 3 are resolved; point 1 is not.** Plan 182-02 deleted `MAX_27C020_SIZE` from
