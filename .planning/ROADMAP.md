@@ -223,6 +223,17 @@ first.
 
 **Goal**: A datasheet value can correct an infoic decode without a line of part-specific code in the generator, and the first correction proves it on the pulse width gh#70 measured.
 **Requirements**: OVR-01, OVR-02, OVR-03, OVR-04, OVR-05, OVR-06, PULSE-01, PULSE-02, PULSE-03, PULSE-04
+**Plans:** 8 plans
+
+Plans:
+- [ ] 197-01-PLAN.md — Groundwork: milestone branch, datasheet provenance, and the size-threshold derivation proven byte-identical (wave 1)
+- [ ] 197-02-PLAN.md — Tracer: one datasheet value reaches the generated database end-to-end, `MBM27C1000` 100 → 500 µs (wave 2)
+- [ ] 197-03-PLAN.md — The loader fails closed on all five legs, and the NMOS hardcode moves out as six one-row entries (wave 3)
+- [ ] 197-04-PLAN.md — The two deletions: the AT28C name list and the FM1608 relabel, with the guard left alone (wave 4)
+- [ ] 197-05-PLAN.md — The remaining pulse corrections, the OVR-06 constant census, and the 746-row regeneration diff (wave 5)
+- [ ] 197-06-PLAN.md — The wire-dict 197 delta layer, measured not assumed, and the suite back to green (wave 6)
+- [ ] 197-07-PLAN.md — The PULSE-01 finding, the measured 100 µs inventory, and the stale references this phase falsified (wave 7)
+- [ ] 197-08-PLAN.md — gh#70 is answered, without over-claiming and without withholding the pinout finding (wave 8)
 
 **Success criteria**:
 1. An override entry changes a generated value, and deleting the entry restores the decoded one.
