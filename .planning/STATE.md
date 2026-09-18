@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 197 (The override mechanism and the program pulse) — EXECUTING
-Plan: 4 of 8 (197-01, 197-02, 197-03 complete)
+Plan: 5 of 8 (197-01 through 197-04 complete)
 Status: v1.40 ACTIVATED 2026-09-18 — 5 phases (197-201), 24 requirements across OVR/PULSE/VOLT/RAIL/VCC/BLANK. REQUIREMENTS.md and ROADMAP.md §v1.40 hand-authored at activation, as v1.33's were, because the GSD roadmap and requirements verbs normalise whole files and ROADMAP.md is 7,900 lines of hand-kept history. phases.clear skipped — 25 phase directories are live and the verb hard-deletes every non-999 one. Research skipped: the evidence is the three issue threads, their attached datasheets, build_db.py and infoic.xml, all already in hand. Meta forked off beta at d11d37ec as v1.40-program-parameter-fidelity; firestarter_app and firestarter_fw forked off beta at 70c92ce as v1.40-program-parameter-fidelity at Phase 197 execution start. Executing Phase 197 — 8 plans, 8 sequential waves, each plan depending on the one before.
-Last activity: 2026-09-18 — 197-03 complete. Five fail-closed legs + NMOS hardcode evacuated to six UNSOURCED override entries; chip_database.json byte-identical to 197-02, proving the move value-preserving. Suite 2 failed / 2053 passed (known-red wire-dict pair only). 16 deleted comment lines rescued; the '~22 V max' shield fact is VOLT/RAIL input for phases 198-201.
+Last activity: 2026-09-18 — 197-04 complete. AT28C name list and FM1608 relabel deleted, guard byte-unchanged and now sole writer; FM1608 SRAM/5000 mV both pinned. Suite 2 failed / 2053 passed (known-red wire-dict pair only). Phase 199 evidence note filed; its ROADMAP pointer applied by the orchestrator at line 295 after the proposed anchor proved ambiguous with Phase 198.
 
 ## Roadmap Summary (v1.38)
 
