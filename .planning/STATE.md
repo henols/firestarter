@@ -5,10 +5,10 @@ milestone_name: Program-Parameter Fidelity
 current_phase: 198
 current_phase_name: The two voltage nibbles
 status: planning
-stopped_at: Phase 197 complete, ready to plan Phase 198
-last_updated: "2026-09-18T15:42:06.419Z"
+stopped_at: Phase 198 context gathered
+last_updated: "2026-09-18T17:05:28.598Z"
 last_activity: 2026-09-18
-last_activity_desc: "Phase 197 complete — 8/8 plans, suite green at 2065 passed / 0 failed on py3.11. Override mechanism lands: a datasheet value corrects an infoic decode with no part-specific code in the generator, proven on gh#70's pulse width (MBM27C1000 100 → 500 µs). Three hardcodes evacuated; regeneration moved exactly 13 of 746 rows with 0 support_status changes. 8/10 requirements Complete. OVR-03 and PULSE-04 remain Pending BY DECISION, not omission — OVR-03 on the WR-03 gap (the datasheet-citation contract is test-only, not enforced by build_db.py standalone), PULSE-04 on the operator's `hold` of the gh#70 answer until the v1.40 beta cut. phase.complete wrongly flipped both to Complete and they were reverted by hand. Code review CR-01 confirmed and filed as backlog 999.72: the override mechanism is general for four of its six advertised fields. Next: Phase 198, the two voltage nibbles."
+last_activity_desc: "Phase 198 context gathered. Scouting against the pinned minipro database.c settled the phase's central question ahead of research: xg_vcc_voltages[] is a strict CONFLICT-FREE superset of tl866ii_vcc_voltages[] (6 shared indices, 0 conflicts, +9 more), so the generator's table is one encoding truncated to what the TL866-II can output, not a different model's. 24 of 767 filtered rows carry a vdd index outside the table (0x6 x12, 0xD x5, 0xE x7) and silently default to 5000 mV. That FALSIFIES the blocking todo's premise: the 12 EXEL/ST rows it calls genuinely-5V reach 5000 through the fallback, not a decode. The relation vdd < vcc selects EXACTLY the 28-row group and nothing else (739 of 767 have vdd >= vcc). Decisions: complete both tables from xg and fix the & 0xF0 mask that would collapse 0xF1 (25 V) and 0xF2 (21 V) onto 18 V; hold the 12 rows at 5000 via explicit UNSOURCED entries so the decoder stays complete and the exception stays legible; correct MBM27C1001 and MBM27C4001 VPP to 12500 and those two plus MBM27128 vdd to 6000, all datasheet-backed; leave all 28 rows unchanged and close the todo with a successor backlog entry; DECODE-NOTES.md section 9 makes the general finding (programmer rail indices, model-dependent, nearest-rail substitution) with its limits named. gh#66 is drafted and HELD on the 197-08 publishing prohibition, so VOLT-04 will end Pending like PULSE-04. Next: /gsd-plan-phase 198."
 progress:
   total_phases: 5
   completed_phases: 1
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 197 — The override mechanism and the program pulse
+**Current focus:** Phase 198 — The two voltage nibbles
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -3565,8 +3565,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-18T09:58:17.809Z
-**Stopped at:** Phase 197 complete, ready to plan Phase 198
+**Last session:** 2026-09-18T17:05:28.303Z
+**Stopped at:** Phase 198 context gathered
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
@@ -3647,7 +3647,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/197-the-override-mechanism-and-the-program-pulse/197-CONTEXT.md
+**Resume file:** .planning/phases/198-the-two-voltage-nibbles/198-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
