@@ -53,7 +53,7 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
 
 ### PULSE — the program pulse is the one the datasheet asks for (gh#70)
 
-- [ ] **PULSE-01**: What `pulse_delay` encodes is established per algorithm family from evidence, and
+- [x] **PULSE-01**: What `pulse_delay` encodes is established per algorithm family from evidence, and
       the finding is written down — including whether the generator's current "microseconds for all
       protocols" reading survives contact with the datasheets.
 - [x] **PULSE-02**: `MBM27C1000`'s program pulse falls inside its datasheet window (475–525 µs) in the
@@ -139,7 +139,7 @@ Tracked, not in this milestone.
 | OVR-04 | Phase 197 | Complete |
 | OVR-05 | Phase 197 | Complete |
 | OVR-06 | Phase 197 | Complete |
-| PULSE-01 | Phase 197 | Pending |
+| PULSE-01 | Phase 197 | Complete |
 | PULSE-02 | Phase 197 | Complete |
 | PULSE-03 | Phase 197 | Complete |
 | PULSE-04 | Phase 197 | Pending |
