@@ -84,3 +84,73 @@ Two trailing markers on code lines, deleted with them:
 
 Related: `.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-02-SUMMARY.md`,
 and the v1.33 source-hygiene milestone that set the no-comments direction.
+
+---
+
+# Second rescue: the NMOS block deleted in 197-03
+
+**Date:** 2026-09-18
+**Commit:** `firestarter_app` `047a5bd` (`feat(197-03): move NMOS_TRUE_VPP_MV into six one-row override entries`)
+**Lines:** 16 comment lines removed, 0 added.
+
+197-03 deleted `NMOS_TRUE_VPP_MV` and its surrounding comment paragraph, replacing it with six
+`UNSOURCED` entries in `tools/datasheet_overrides.json`. The regeneration is **byte-identical**
+to 197-02's database, so the move is value-preserving.
+
+The six `note` fields carry the vendor/datasheet provenance well — each states the value is
+inherited verbatim from the hardcode, that the Intel reading was applied to an SGS-THOMSON or ST
+part with no vendor-specific backing, and what would close it. That part needs no rescue.
+
+**Three operational facts in the deleted block are not in those notes**, and are rescued here.
+
+## 1. The shield cannot reach 25 V — "~22 V max"
+
+    # Upstream caps VPP at 18 V, which some antique Intel NMOS parts exceed:
+    # M2716 and M2732 need 25 V, M2732A needs 21 V. They report 18 V here because
+    # upstream aliases them under generic 2716/2732 entries. The 25 V parts are
+    # unprogrammable on this shield regardless (~22 V max); for the rest the
+    # operator must override via ~/.firestarter/database.json.
+
+**This is the load-bearing one, and it bears directly on the rest of v1.40.** The four rows now
+overridden to 25000 mV are, by this comment's own account, **unprogrammable on real hardware** —
+the shield tops out around 22 V. `RURP_VPP_CEILING_MV` is 25000, so a 25000 mV row passes the
+`>` ceiling check and ships `support_status: supported` while being physically unreachable.
+
+That is the same defect gh#71 reports from the other direction: the ROADMAP records VPP measuring
+17.8 V and VPE 22.7 V against a 21 V ± 0.5 requirement, and notes the 25 V ceiling is "a regulator
+figure, not a socket measurement". This deleted comment is independent corroboration of the ~22 V
+socket reality, written before that issue existed. Phases 198–201 (VOLT/RAIL/VCC, and the
+bench-gated Phase 199) are where it has to be resolved; D-4 already rules that the operation
+proceeds with a warning naming both numbers rather than refusing silently.
+
+Also recorded here: the pre-197 operator escape hatch was `~/.firestarter/database.json`, which is
+a *runtime user* override, distinct from the build-time `tools/datasheet_overrides.json` this
+phase introduces. The two are not the same mechanism and the deleted comment is the only place
+the older one was written down in this file.
+
+## 2. The ordering invariant
+
+    # Must run AFTER all fm1608/WARNING-5 overrides (ordering invariant).
+
+The NMOS correction had to run after the fm1608/WARNING-5 overrides. The new design applies every
+override at a single point between `classify()` and the VPP ceiling check, so the invariant is
+satisfied by construction rather than by ordering discipline — but nothing now states that it was
+ever a constraint. A future refactor that reintroduces a second application site needs to know.
+
+## 3. "Highest VPP wins", and why there is no `INTEL/M2732A` key
+
+    # Matched against part_number aliases; "highest VPP wins" for entries with
+    # multiple NMOS aliases (e.g., INTEL/2732,2732A,M2732,M2732A).
+
+    # "Highest VPP wins": iterate all aliases; the match with the highest
+    # VPP determines the final voltage + status (conservative — avoids
+    # M2732/M2732A match-order ambiguity on combined entries like
+    # INTEL/2732,2732A,M2732,M2732A).
+
+The hardcode resolved alias collisions by taking the highest VPP, deliberately conservative, to
+avoid match-order ambiguity on comma-joined rows such as `INTEL/2732,2732A,M2732,M2732A`. The
+override file replaces that rule with one entry per row and a duplicate-target check, which is why
+the shipped file has **no `INTEL/M2732A` key** — it would target the same row as `INTEL/M2732` and
+trip the duplicate-target leg. The conflict rule is therefore gone by design, not by oversight.
+The `was: 18000` figures were measured by regenerating with the hardcode deleted, not copied from
+the comment.
