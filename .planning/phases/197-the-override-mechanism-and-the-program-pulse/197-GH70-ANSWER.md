@@ -113,34 +113,50 @@ already noted on this thread.
 ## Held-pending deferral (internal — do not post)
 
 **This comment is held, not posted, by explicit operator decision dated 2026-09-18 (`hold`).**
+**This is now the consolidated list for every held answer in this milestone.** A second held
+draft, for gh#66, exists at
+`.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md`. It carries the same five-section
+shape and its own copy of these same four steps, so a reader who finds either file reaches
+complete instructions for both. Whoever runs the v1.40 beta cut should read this list once and post
+both.
 
 - **What is held:** the entire "## Comment Body" section above — the full public answer to gh#70,
   including the corrected pulse width, the firmware limitation, the standing failure hypothesis, and
-  the pinout finding. Nothing in it has reached the issue. gh#70 remains OPEN with 3 comments, none
-  from this project.
+  the pinout finding — and, in the sibling file
+  `.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md`, the full public answer to
+  gh#66, stating the corrected VPP and program-VCC values for the MBM27C4001 report. Neither has
+  reached its issue. gh#70 remains OPEN with 3 comments, none from this project; gh#66 remains OPEN
+  with 6 comments, none from this project.
 - **Why:** at the time of this decision, `v1.40-program-parameter-fidelity` has no upstream in
   either the meta repository or `firestarter_app`, and sits 41 commits (meta) / 14 commits
   (`firestarter_app`) ahead of `origin/beta`. `git branch -r --contains` on this branch's tip
   returns nothing in either repository. Naming a forthcoming beta version or a commit string would
   both name something a reader cannot resolve today — `post-with-beta` would name a version that
   does not exist, and `post-with-commit` would name a commit nobody can find on any remote branch.
-  `hold` is the only route on which every sentence in the comment body is true at the instant it is
-  posted.
+  `hold` is the only route on which every sentence in either comment body is true at the instant it
+  is posted. This reasoning is not per-issue; it applies identically to gh#66's held draft.
 - **What releases the hold:** the v1.40 beta cut — the point at which `firestarter_app` (and, if the
   correction also touches firmware, `firestarter_fw`) are pushed to `beta` and a real, installable
-  version number exists.
-- **Exactly what to do at that point:**
-  1. Replace the `**Version:**` line in the "## Comment Body" section above with the real published
-     version (the `firestarter_app` version string cut at that beta push).
-  2. Re-run the no-over-claim and no-attribution checks against the final "## Comment Body" text
-     only — a hand edit at this step can reintroduce either.
-  3. Post ONLY the "## Comment Body" section — verbatim, starting after the opening `---` and ending
-     before the closing `---` — to gh#70 with
-     `gh issue comment 70 --repo henols/firestarter --body-file`. Never paste this file's header,
-     "Status", "Internal provenance", or this "Held-pending deferral" section onto the issue.
-  4. Record the returned comment URL back into this file (in this section) and mark PULSE-04
-     complete in `.planning/REQUIREMENTS.md`.
-- **Requirement status:** PULSE-04 is NOT satisfied by this plan. It is explicitly carried forward
-  to the milestone close, to be satisfied when the comment above actually posts, per the steps
-  above. The artifact carrying it is this file:
-  `.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-GH70-ANSWER.md`.
+  version number exists. The same beta cut releases both held drafts; there is no separate trigger
+  for gh#66.
+- **Exactly what to do at that point — the following four steps apply once per issue, run
+  separately for gh#70 and for gh#66:**
+  1. Replace the `**Version:**` line in the "## Comment Body" section of the relevant draft (this
+     file for gh#70; `198-GH66-ANSWER.md` for gh#66) with the real published version (the
+     `firestarter_app` version string cut at that beta push).
+  2. Re-run the no-over-claim and no-attribution checks against that draft's final "## Comment
+     Body" text only — a hand edit at this step can reintroduce either.
+  3. Post ONLY that draft's "## Comment Body" section — verbatim, starting after the opening `---`
+     and ending before the closing `---` — with
+     `gh issue comment 70 --repo henols/firestarter --body-file` for gh#70, or
+     `gh issue comment 66 --repo henols/firestarter --body-file` for gh#66. Never paste either
+     file's header, "Status", "Internal provenance", or "Held-pending deferral" section onto either
+     issue.
+  4. Record the returned comment URL back into that draft (in its own deferral section) and mark
+     the corresponding requirement complete in `.planning/REQUIREMENTS.md` — PULSE-04 for gh#70,
+     VOLT-04 for gh#66.
+- **Requirement status:** PULSE-04 (gh#70) and VOLT-04 (gh#66) are NOT satisfied by their
+  respective plans. Both are explicitly carried forward to the milestone close, to be satisfied
+  when each comment above actually posts, per the steps above. The artifacts carrying them are this
+  file, `.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-GH70-ANSWER.md` for
+  PULSE-04, and `.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md` for VOLT-04.
