@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 197 (The override mechanism and the program pulse) — EXECUTING
-Plan: 6 of 8 (197-01 through 197-05 complete)
+Plan: 7 of 8 (197-01 through 197-06 complete)
 Status: v1.40 ACTIVATED 2026-09-18 — 5 phases (197-201), 24 requirements across OVR/PULSE/VOLT/RAIL/VCC/BLANK. REQUIREMENTS.md and ROADMAP.md §v1.40 hand-authored at activation, as v1.33's were, because the GSD roadmap and requirements verbs normalise whole files and ROADMAP.md is 7,900 lines of hand-kept history. phases.clear skipped — 25 phase directories are live and the verb hard-deletes every non-999 one. Research skipped: the evidence is the three issue threads, their attached datasheets, build_db.py and infoic.xml, all already in hand. Meta forked off beta at d11d37ec as v1.40-program-parameter-fidelity; firestarter_app and firestarter_fw forked off beta at 70c92ce as v1.40-program-parameter-fidelity at Phase 197 execution start. Executing Phase 197 — 8 plans, 8 sequential waves, each plan depending on the one before.
-Last activity: 2026-09-18 — 197-05 complete. Final two Fujitsu pulse corrections landed; MBM27C4001 correctly refused as a datasheet-confirmed no-op. OVR-06 census is a real gate (three planted-literal controls) and found one honest survivor, "DIP28", a pinout-family prefix, kept with a reason rather than tuned away. Regen diff re-measured: 13 rows, 0 support_status. Suite 2 failed / 2062 passed.
+Last activity: 2026-09-18 — 197-06 complete. Suite GREEN at 2065 passed / 0 failed, first since 197-02. Both wire-dict tests closed by a measured 3-record delta layer; module verified strictly more constrained than before, golden baseline and all four prior delta files byte-unchanged. 13 DB rows changed, only 3 reach the wire — reconciliation checked leg by leg.
 
 ## Roadmap Summary (v1.38)
 
