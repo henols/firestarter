@@ -273,8 +273,23 @@ Plans:
 
 **Goal**: Settle what infoic's two voltage fields encode, per algorithm family, and correct what the datasheets contradict — including the 28-row group that has been unproven since v1.32 Phase 148.
 **Requirements**: VOLT-01, VOLT-02, VOLT-03, VOLT-04
+**Plans:** 4 plans
 
 **Depends on**: Phase 197
+
+Plans:
+**Wave 1**
+
+- [ ] 198-01-PLAN.md — Tracer: a datasheet voltage reaches the operator — the three Fujitsu corrections, the two-entry wire delta layer, and the completed VPP decode proven byte-identical (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 198-02-PLAN.md — The VCC table completed from upstream and the 0x06 carve-out signed as twelve UNSOURCED entries, with the phase's 15-row regeneration record (wave 2)
+- [ ] 198-04-PLAN.md — gh#66 answered in a held draft, and one consolidated held-pending list naming both issues (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 198-03-PLAN.md — DECODE-NOTES § 9 with its four named limits, the 28-row disposition, and the blocking todo closed with a drafted successor (wave 3)
 
 **Success criteria**:
 
