@@ -37,7 +37,7 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
 
 ### OVR — one readable override file, and no part-specific constants in the generator (D-1, D-2, D-3)
 
-- [ ] **OVR-01**: A single override file beside `tools/extra_chips.json` carries per-part field
+- [x] **OVR-01**: A single override file beside `tools/extra_chips.json` carries per-part field
       overrides, and the generator applies them on top of the `infoic.xml` decode.
 - [ ] **OVR-02**: An entry holds only the fields that differ from the decoded value. A field whose
       override equals what infoic decodes to is not an entry.
@@ -133,7 +133,7 @@ Tracked, not in this milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OVR-01 | Phase 197 | Pending |
+| OVR-01 | Phase 197 | Complete |
 | OVR-02 | Phase 197 | Pending |
 | OVR-03 | Phase 197 | Pending |
 | OVR-04 | Phase 197 | Pending |
