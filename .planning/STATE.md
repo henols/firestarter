@@ -1,20 +1,20 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.39
-milestone_name: Protocol 0x05 Write Correctness (CLOSED 2026-09-17)
-current_phase: 196
-current_phase_name: Adoption Instrument Disposition
-status: complete
-stopped_at: "v1.39 CLOSED and SHIPPED 2026-09-17 — merged to beta in all three repos, tag v1.39 pushed bare. app 3.0.0b48 on PyPI. fw 3.0.0b33's zero-asset release REPAIRED 2026-09-18 by quick task 260918-ayh: it now carries all three AVR .hex assets plus py32f071. No milestone is active — next is /gsd-new-milestone."
-last_updated: "2026-09-18T08:20:00.000Z"
+milestone: v1.40
+milestone_name: Program-Parameter Fidelity
+current_phase: 197
+current_phase_name: The Override Mechanism and the Program Pulse
+status: planning
+stopped_at: "v1.40 ACTIVATED 2026-09-18 — 5 phases (197-201), 24 requirements, hand-authored REQUIREMENTS.md and ROADMAP.md §v1.40. No phase planned yet. Next: /gsd-discuss-phase 197."
+last_updated: "2026-09-18T08:55:00.000Z"
 last_activity: 2026-09-18
-last_activity_desc: "v1.39 closed and hand-archived — CLOSE-RECORD.md written, ROADMAP/REQUIREMENTS snapshotted to .planning/milestones/, phase dirs 194-196 and .planning/v1.39/ archived, MILESTONES.md entry prepended, ROADMAP heading flipped to CLOSED, tagged v1.39. milestone.complete and audit-open acknowledge both deliberately NOT run. Superseded: Phase 196 complete — instrument retired with its reason recorded, 5 live documents swept, INSTR-02 gate proven RED (11) then GREEN, graph rebuilt; verifier 8/8, code review clean"
+last_activity_desc: "v1.40 Program-Parameter Fidelity activated — three community reports (gh#66, gh#70, gh#71), each with a reporter-attached datasheet, each proving a fleet-scale parameter fault: 217 of 297 algorithm 7/8 rows at pulse_duration_us 100 against a measured 475 us floor on one of them, 563 of 746 rows at vpp_mv 12000 against a 12.2 V family floor, and 30 rows asking 18 V or more under a theoretical 25 V ceiling with every one marked supported. Operator constraints: infoic.xml is the only baseline and nothing part-specific may be hardcoded in the generator (D-1); datasheet corrections live in one override file holding only the changed fields (D-3); when the shield cannot reach a required voltage the operation proceeds with a warning naming both numbers rather than refusing or attempting silently (D-4), which keeps voltage calibration out of scope (D-5). Requirements and roadmap hand-authored per the v1.33 precedent; phases.clear deliberately skipped (25 live phase dirs); research skipped - the evidence is datasheets, infoic encoding and the bench, all in hand."
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 196 (Adoption Instrument Disposition) — COMPLETE · MILESTONE v1.39 CLOSED 2026-09-17
-Plan: 3 of 3
-Status: v1.39 CLOSED and SHIPPED 2026-09-17 — 3/3 phases, 15/15 plans, 7/8 requirements (PAGE-03's hardware leg open per D-11, blocked on a W29C512), override_closeout, hand-archived. Merged to beta in all three repositories; meta tagged v1.39 (bare tag pushed, 0 GitHub Releases on the meta repo, /releases/latest still a clean 404). firestarter_app published cleanly: pre-release 3.0.0b48 and the PyPI upload both succeeded. firestarter_fw pre-release 3.0.0b33 exists against the correct commit but carries ZERO .hex assets — the upload failed with 'Error creating asset temp dir' and a re-run cannot recover it, because the re-run repeats the non-idempotent version bump and is rejected non-fast-forward. REPAIRED 2026-09-18 by quick task 260918-ayh: one workflow_dispatch of beta-build.yml on ref beta at beta_version=3.0.0b33 (run 35322889419, success) attached firestarter_uno.hex, firestarter_uno328pb.hex, firestarter_leonardo.hex and firestarter_py32f071.hex to the existing tag, and origin/beta did not move (11024ee). Next: /gsd-new-milestone.
-Last activity: 2026-09-18 — quick task 260918-ayh: repaired the 3.0.0b33 zero-asset pre-release and closed gh#67, gh#68, gh#2 and gh#5; gh#15 and gh#16 deliberately left open on mixed evidence
+Phase: 197 (The Override Mechanism and the Program Pulse) — not started
+Plan: —
+Status: v1.40 ACTIVATED 2026-09-18 — 5 phases (197-201), 24 requirements across OVR/PULSE/VOLT/RAIL/VCC/BLANK. REQUIREMENTS.md and ROADMAP.md §v1.40 hand-authored at activation, as v1.33's were, because the GSD roadmap and requirements verbs normalise whole files and ROADMAP.md is 7,900 lines of hand-kept history. phases.clear skipped — 25 phase directories are live and the verb hard-deletes every non-999 one. Research skipped: the evidence is the three issue threads, their attached datasheets, build_db.py and infoic.xml, all already in hand. Meta forked off beta at d11d37ec as v1.40-program-parameter-fidelity; no sub-repo branch exists yet — those are created when a phase first commits into a submodule. Next: /gsd-discuss-phase 197.
+Last activity: 2026-09-18 — Milestone v1.40 activated; phases 197-201 defined, requirements mapped 24/24 with zero unmapped
 
 ## Roadmap Summary (v1.38)
 

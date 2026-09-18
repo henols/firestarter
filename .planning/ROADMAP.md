@@ -52,6 +52,7 @@
   **Known gaps carried, not hidden:** the evidence ceiling (accepted debt); **`leonardo` MERGE-05 flash headroom is 0 B** at `+724 B` against BASE-01, exactly the four-term allowance, and **separately the Caterina USB-bootloader cliff at 28672 B has 1042 B left and is UNGUARDED** — `board_upload.maximum_size` does not enforce it, so nothing in the build stops a future change silently overwriting the bootloader region (a split-or-trimmed-build phase was raised and deliberately deferred; it is on no roadmap); the protection-class counting ambiguity, stated rather than collapsed (Method A 664/82 vs Method B 665/81, with Phase 151's published 406/111/39 reproducing under neither — only 665/81 plus the method-invariant `no_mechanism` 405 / `not_implemented` 40 are citable); the 20 ms `t_EC` wait being an Atmel-family maximum applied to a multi-vendor 84-row bucket, with **no** native test able to prove the wall-clock wait is honoured (the stubs never stub `delay()`); and one already-published part-name misattribution (W29C020 vs W29C040) that this project's own discipline forbids editing in place. Seven todos were filed by this milestone's own work. Full detail in `.planning/MILESTONES.md` §v1.32 + [`.planning/milestones/v1.32-ROADMAP.md`](milestones/v1.32-ROADMAP.md); honesty ledger at [`152-LEDGER.md`](phases/152-outward-facing-close-operator-gated/152-LEDGER.md); erase-policy record at [`153-RECORD.md`](phases/153-write-path-erase-policy/153-RECORD.md); merge record at [`152-MERGE-RECORD.md`](phases/152-outward-facing-close-operator-gated/152-MERGE-RECORD.md).
   **Milestone-level non-claim, in this milestone's own canonical wording: no AT28C part was tested, at any point, by any phase — protocol `0x0D` stays UNVERIFIED in PROTOCOL-LEDGER exactly as it stood at the open, and every write-path change v1.32 shipped is software-proven and unvalidated on silicon.**
 
+- ◆ **v1.40 Program-Parameter Fidelity** — Phases 197–201 (**ACTIVATED 2026-09-18** — 24 requirements across OVR/PULSE/VOLT/RAIL/VCC/BLANK; generator and host first, one firmware change in the write-init blank check; bench-gated at Phase 199). Promotes three community reports that each arrived with the reporter's own datasheet attached, and that together prove the parameters are wrong at **fleet scale rather than per chip**: [gh#70](https://github.com/henols/firestarter/issues/70) (`MBM27C1000` programmed with a 100 µs pulse against a 475 µs datasheet floor — five times short, and **217 of the 297** algorithm 7/8 rows carry that same 100 µs), [gh#66](https://github.com/henols/firestarter/issues/66) (`MBM27C4001` asked for 12.0 V against a 12.2 V family floor, with the rail measuring 12.1 V and the accepted −5 %/+500 mV window calling that in band — **563 of 746** rows carry `vpp_mv: 12000`, while the sibling `MBM27C1000` correctly carries 12500), and [gh#71](https://github.com/henols/firestarter/issues/71) (`MBM27128` needs 21 V ± 0.5 where the VPP rail measured 17.8 V and the VPE rail measured 22.7 V — **30 rows ask 18 V or more, 8 of them 21–25 V, and every one is `support_status: supported`** under a `RURP_VPP_CEILING_MV` of 25 V that is a regulator figure, not a socket measurement). **Two operator constraints shape the whole milestone**: `infoic.xml` stays the single baseline and nothing part-specific may be hardcoded in the generator (**D-1**), and every datasheet correction moves into one override file that holds **only the changed fields**, small enough for a person to read and see the full picture (**D-3**) — which also evacuates the three part-specific hardcodes already in `build_db.py`. **When the shield cannot reach a part's required voltage the operation proceeds with a warning naming both numbers, rather than refusing silently or attempting silently** (**D-4**, operator 2026-09-18) — the decision that keeps voltage-reading calibration out of scope, since a refusal threshold would have needed a trustworthy ADC and a warning does not (**D-5**; 999.38 and the white-box calibration seed stay filed). Closes with backlog **999.44**'s live firmware half, because every bench re-run in the four phases before it is a 256-byte UV slot write that today one non-blank byte anywhere on the part can refuse.
 - ✅ **v1.39 Protocol 0x05 Write Correctness** — Phases 194–196 (**CLOSED 2026-09-17** — **7/8 requirements**, `override_closeout`; tagged `v1.39`, a bare tag with no GitHub Release. **Both defects were fixed by refusing, not by read-modify-write** — the fix shape D-2 permitted and the one a firmware page-staging buffer could not afford, measured at 142 bytes of RAM left on `uno` for the entire call stack. Both refusals are proved on real silicon on a `W29C020`: a pre-fix build reproduced both loss directions and printed `successful` over the erased bytes, and the post-fix build refused the identical commands with a named error, a non-zero exit and a `sha256`-identical read-back. **PAGE-03's hardware leg is deliberately open, not overlooked** — its bench part must be one of the **9** under-sized parts, the ordered `W29C512` has not arrived, and `W29C020` is one of the **18** that were already correct, so the record reads *0 of 9 on hardware, 9 of 9 on the database comparison* in three places and conflates them in none. Originally activated 2026-09-15; firmware and host in dual-repo lockstep, plus one meta tidy). Promotes two untracked defects on protocol `0x05`, both filed by the operator on 2026-09-11 with bench evidence and covered by no milestone until now. [gh#68](https://github.com/henols/firestarter/issues/68): a partial or unaligned write erases every byte of the touched physical page that was not part of the write — **in both directions**, before the start address as well as after the end — and reports `successful`; there is no read-modify-write anywhere on the path, and it affects **all 27** protocol-`0x05` parts including the four validated ones. [gh#67](https://github.com/henols/firestarter/issues/67): `flash_5v_page_page_size()` derives a page size from total device size rather than reading the part's real page from the database, and on **9 of the 27** that derivation is undersized, so a contiguous write runs two page cycles into one physical page and the second erases the first. Both reproduced on a **W29C020** — a part whose derived page size is *correct*, which is what isolates the two. **Ordering inverts severity deliberately**: Phase 194 fixes gh#67 first, because a read-modify-write built on a derived page size would still corrupt those 9 parts. Refusing an unsafe write is an accepted fix shape (**D-2**) — the milestone fixes the outcome, not the mechanism. Bench validation on real silicon is required, not optional (**D-4**). The stable firmware channel — `/releases/latest` serving 2.0.6 against a current `3.0.0b30` — is **out of scope** (**D-5**), an operator-gated release decision.
 - ✅ **v1.38 Repository Rename** — Phases 189–193 (**CLOSED 2026-09-15** — 15/15 requirements; merged to `beta` in all three repos; tagged `v1.38`, a bare tag with no GitHub Release. **The deferred claim fired ahead of its own trigger**: the operator directed the `firestarter_prom` → `firestarter` rename on 2026-09-14 with the adoption gate reading 12.8% against a 90% threshold and 116 at-risk downloads against a ceiling of 10 — recorded in `seeds/SEED-claim-firestarter-slug.md`, which keeps its trigger text unchanged as the bar that was set and not cleared, and in `notes/gitmodules-archaeology-trap.md`, whose "does not bite today" limits that act retired. Originally activated 2026-09-13; infrastructure only — no firmware source, no protocol, no dual-repo behavioural lockstep, no bench leg). Promotes Backlog **999.9** (gh#2), the highest-blast-radius item in the 2026-07-27 import and a hazard **v1.35 accepted rather than solved**. Renames `firestarter` → `firestarter_fw` and **stops there**: claiming `henols/firestarter` for the meta repo is the one destructive act in 999.9 — it is what deletes the firmware repo's redirect — and it is deferred to [`seeds/SEED-claim-firestarter-slug.md`](seeds/SEED-claim-firestarter-slug.md) behind an *adoption* trigger rather than a date (**D-1**). **Scoped from measurement, not estimate** (2026-09-13): the front door has **0 stars / 0 forks / 0 watchers** six weeks after v1.35 made it the documented entry point, against **75** on the two components; `pip install firestarter` resolves to **2.0.7**, so `origin/main` — **948 commits** behind `beta` — is the branch that reaches users, and 999.9's own clean-environment validation would have exercised it while only `beta` got fixed (**D-3**, and the sole reason the STABLE strand exists); the three hardcoded endpoints are consumed **only** by `firmware.py`, so a stranded CLI loses `fw` alone and keeps read/write/verify/erase/`dev test`; **no workflow in any of the three repos hardcodes a repo slug**, making 999.9's "CI/release workflows" clause a no-op; and **672 of 778** firmware-slug references sit in `.planning/milestones/`, historical-by-intent and deliberately not swept (**D-5**). **Standing rule established here:** the meta repo must never publish a GitHub Release — it has **0** today, which is what keeps a post-claim failure a clean 404 instead of `_compare_versions` parsing `v1.36` as PEP 440 `1.36`, judging `3.0.0b29` newer, and reporting firmware current forever (**D-4**). Full analysis: [`notes/999.9-repo-rename-impact-analysis.md`](notes/999.9-repo-rename-impact-analysis.md).
 - ✅ **v1.37 Operator Safety, Answered Reports & Claim Hygiene** — Phases 182–188 (**CLOSED 2026-09-13** — 7 phases, 49 plans, 35/35 requirements; merged to `beta` in all three repos, **not tagged** — stable release stays operator-gated; host-first, firmware touched only at the edges — one `.md`, one baseline JSON plus fixtures, and at most one generated message id). Stops the project withholding what it already knows: a JP5 destructive-operation gate for the hazard that cost a user real chips ([gh#60](https://github.com/henols/firestarter_prom/issues/60)); a flash4 erase refusal that names its cause instead of teaching users to forge a chip identity with `--force` ([gh#62](https://github.com/henols/firestarter_prom/issues/62)); the replies owed on gh#23/#28/#31 since 2026-08-09; and the repository's own false claims — a deleted guard still named as live, a three-milestone-stale size baseline, a citation pointing 49 lines off, two tests asserting coverage that no longer exists, and `Catalog sync check` red on `main`. Plus the one item with an external clock: the Python floor, before 3.10 EOLs 2026-10-31. **Deliberately excluded (D-1): 999.43 R4 session reuse**, against a measured 50–80 s/run payoff — see the milestone section for why. **Closed with six stale enforcement claims (WR-01…WR-06) accepted as disclosed follow-on debt, not fixed**, and Phase 188 appended 2026-09-12 after 187 completed — inward-facing tooling hygiene, a **−21,281 net-line** subtraction. Full record: `.planning/milestones/v1.37-CLOSE-RECORD.md`.
@@ -169,6 +170,111 @@ Full detail: [`.planning/milestones/v1.16-ROADMAP.md`](milestones/v1.16-ROADMAP.
 **Full phase detail:** [`.planning/milestones/v1.22-ROADMAP.md`](milestones/v1.22-ROADMAP.md) · **shipped record:** `.planning/MILESTONES.md` §v1.22 · **honesty ledger:** `.planning/phases/122-close-honesty-ledger-community-ask-release-decision/122-LEDGER.md`
 
 </details>
+
+## v1.40 — Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
+
+**Milestone goal:** Every programming parameter the host sends is either what `infoic.xml` decodes to,
+or a datasheet value recorded in one readable override file — and when the shield cannot deliver what a
+part needs, the operator is told before the attempt, not after the failure.
+
+**Why now.** Three community reports arrived inside eight days, each carrying a datasheet the reporter
+attached, and each one turned out to be a fleet-scale fault wearing a single chip's name. gh#70's
+`MBM27C1000` is programmed with a pulse a fifth of its datasheet minimum — and **217 of the 297**
+algorithm 7/8 rows carry that identical 100 µs. gh#66's `MBM27C4001` is asked for 12.0 V against a
+12.2 V family floor — and **563 of 746** rows carry `vpp_mv: 12000`, while that part's own sibling
+carries the correct 12500, so the decode is not even self-consistent inside one family. gh#71's
+`MBM27128` needs 21 V ± 0.5 V, the VPP rail measured 17.8 V, the VPE rail measured 22.7 V — and **30
+rows ask 18 V or more, 8 of them 21–25 V, every one of them `support_status: supported`**, because the
+generator's ceiling is a regulator's theoretical figure rather than anything measured at a socket.
+Three reporters are waiting, and the answer to each is the same answer.
+
+**The two constraints that shape it.** `infoic.xml` is the baseline for everything and nothing
+part-specific may be hardcoded in the generator (**D-1**) — which makes the first phase's real
+deliverable a mechanism, not a value. Every datasheet finding lives in one override file carrying
+**only the changed fields**, sibling to `tools/extra_chips.json`, small enough that a person reads it
+and sees the full picture (**D-3**). Decode tables that read infoic's own encoding stay in code,
+because they are the decoder rather than a correction (**D-2**).
+
+**What happens when the hardware cannot comply** (**D-4**, operator 2026-09-18): the operation proceeds
+with a warning naming the required voltage and the deliverable one. Not a silent refusal, not a silent
+attempt. That decision is what keeps calibration out of scope (**D-5**) — a refusal threshold would
+have needed an ADC whose ~+7.5 % error is an open backlog item, and a warning does not.
+
+### Phases
+
+| # | Phase | Requirements | Bench |
+|---|-------|--------------|-------|
+| 197 | The override mechanism and the program pulse | OVR-01…06, PULSE-01…04 | no |
+| 198 | The two voltage nibbles | VOLT-01…04 | no |
+| 199 | What the rails can actually deliver | RAIL-01…05 | **yes** |
+| 200 | An elevated programming supply is stated | VCC-01, VCC-02 | no |
+| 201 | A partial write is gated on its own region | BLANK-01…03 | **yes** |
+
+**Dependencies.** 197 delivers the override file that 198, 199 and 200 all write into, so it runs
+first. 198 answers the nibble question that 200 depends on for its `vdd_mv` reading. 199 is bench-gated
+and independent of 198. 201 is independent of all of them and is placed last because it is the only
+firmware change and the only dual-repo lockstep — but every UV bench re-run in 197–199 is a slot write
+that 201's absence can refuse, so pulling it earlier is a legitimate re-ordering if bench time comes
+first.
+
+### Phase Details
+
+**Phase 197: The override mechanism and the program pulse**
+Goal: A datasheet value can correct an infoic decode without a line of part-specific code in the
+generator, and the first correction proves it on the pulse width gh#70 measured.
+Requirements: OVR-01, OVR-02, OVR-03, OVR-04, OVR-05, OVR-06, PULSE-01, PULSE-02, PULSE-03, PULSE-04
+Success criteria:
+1. An override entry changes a generated value, and deleting the entry restores the decoded one.
+2. `build_db.py` contains no part-number literal after the three existing hardcodes move out, or every
+   survivor is named with the proof that no alternative exists.
+3. The generator fails closed, with a legible message, on an unknown part, an unknown field, and a
+   no-op override.
+4. `MBM27C1000`'s `pulse_duration_us` lands inside 475–525 µs, and the full-database regeneration diff
+   accounts for every other changed row.
+5. gh#70 carries the answer and the version that holds it.
+
+**Phase 198: The two voltage nibbles**
+Goal: Settle what infoic's two voltage fields encode, per algorithm family, and correct what the
+datasheets contradict — including the 28-row group that has been unproven since v1.32 Phase 148.
+Requirements: VOLT-01, VOLT-02, VOLT-03, VOLT-04
+Success criteria:
+1. The per-family meaning of both nibbles is written down with its evidence, and the families where it
+   does not generalise are named rather than assumed.
+2. The Fujitsu 1 Mbit and 4 Mbit parts ask for a VPP at or above their 12.2 V floor.
+3. The 28 rows reporting 5.5 V are either corrected with a citation or left unchanged with a reason —
+   and the pending todo that has blocked them is closed either way.
+4. gh#66 carries the answer and the version that holds it.
+
+**Phase 199: What the rails can actually deliver** — *bench-gated*
+Goal: Replace a theoretical ceiling with a measured one, decide the VPE routing question, and make the
+shield say what it cannot do instead of offering it.
+Requirements: RAIL-01, RAIL-02, RAIL-03, RAIL-04, RAIL-05
+Success criteria:
+1. A recorded deliverable maximum per rail per shield revision, with the measurement method named and
+   any ADC-derived figure carrying its known error.
+2. The 30 rows at 18 V or more are classified against whichever ceiling stands, and the classification
+   is reproducible from the recorded numbers.
+3. A part asking more than the shield can deliver produces a warning naming both voltages, on the path
+   the operator actually uses — and the operation still proceeds.
+4. The VPE routing question is decided and recorded, a decision not to route it included.
+5. gh#71 carries the answer.
+
+**Phase 200: An elevated programming supply is stated**
+Goal: A decoded `vdd_mv` that nothing applies stops being invisible.
+Requirements: VCC-01, VCC-02
+Success criteria:
+1. A part needing more than 5.0 V to program says so where the operator sees it before the attempt.
+2. The wording is the same shape as Phase 199's, so one fact does not acquire two explanations.
+
+**Phase 201: A partial write is gated on its own region** — *firmware, dual-repo lockstep, bench-gated*
+Goal: Close backlog 999.44's live firmware half, so a non-erasable part holding data anywhere stops
+being unwritable everywhere.
+Requirements: BLANK-01, BLANK-02, BLANK-03
+Success criteria:
+1. A write into a blank region of a non-blank, non-erasable part succeeds.
+2. The standalone blank-check command and the erase-end check are unchanged, chunked resumption
+   included.
+3. A regression test covers a non-blank non-erasable part — the case whose absence is why this shipped.
 
 ## v1.39 — Protocol 0x05 Write Correctness (CLOSED 2026-09-17 — 7/8 requirements; PAGE-03's hardware leg deliberately open per D-11, pending a `W29C512`; tagged `v1.39` — bare tag, no GitHub Release)
 

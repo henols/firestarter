@@ -1,119 +1,168 @@
-# Requirements: Firestarter — v1.39 Protocol 0x05 Write Correctness
+# Requirements: Firestarter — v1.40 Program-Parameter Fidelity
 
-**Defined:** 2026-09-15
-**Milestone:** v1.39 — "Never report success over bytes you erased"
-**Core Value (this milestone):** A write to a 5V page-write flash part either preserves the bytes it was
-not asked to change, or refuses — and never reports success while destroying data.
+**Defined:** 2026-09-18
+**Milestone:** v1.40 — "Ask the chip for what its datasheet says, or say plainly that you cannot"
+**Core Value (this milestone):** Every programming parameter the host sends is either what
+`infoic.xml` decodes to, or a datasheet value recorded in one readable override file — and when the
+shield cannot deliver what a part needs, the operator is told before the attempt, not after the
+failure.
 
-**Scope:** Firmware and host, dual-repo lockstep, plus one meta-repository tidy. The firmware's
-protocol `0x05` write path changes. The host changes only where it must carry the part's real page size
-or surface a refusal. The meta repository disposes of an instrument whose question has been answered.
-No other protocol is touched.
+**Scope:** The database generator (`firestarter_app/tools/build_db.py`) and one new data file beside
+it; the host surfaces that report voltages and warn; and one firmware change in the write-init blank
+check. No protocol dispatch changes. No new chip is added — `tools/extra_chips.json` keeps that job.
 
-**Provenance:** Both defects were filed by the operator on 2026-09-11 with bench evidence
-([gh#67](https://github.com/henols/firestarter/issues/67),
-[gh#68](https://github.com/henols/firestarter/issues/68)) and were tracked by no milestone until this
-one. Both were reproduced on a **W29C020** — Leonardo, Rev 2.0-class shield, firmware `3.0.0b22`,
-host `3.0.0b38`. That part's derived page size is *correct*, which is what isolates WRITE from PAGE.
+**Provenance:** Three community reports, each carrying a datasheet the reporter attached, proved that
+the parameters are wrong at fleet scale rather than per chip:
+[gh#66](https://github.com/henols/firestarter/issues/66) (MBM27C4001 — VPP below the family floor),
+[gh#70](https://github.com/henols/firestarter/issues/70) (MBM27C1000 — a program pulse five times
+shorter than the datasheet minimum), and
+[gh#71](https://github.com/henols/firestarter/issues/71) (MBM27128 — needs 21 V where the VPP rail
+measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746-row database:
+**217 of the 297 algorithm 7/8 rows carry `pulse_duration_us: 100`**, **563 of 746 rows carry
+`vpp_mv: 12000`**, and **30 rows ask for 18 V or more — 8 of them 21–25 V — every one of them
+`support_status: supported`**.
 
-## Decisions taken at activation (operator, 2026-09-15)
+## Decisions taken at activation (operator, 2026-09-18)
 
 | | Decision |
 |---|---|
-| **D-1** | **Silent corruption is the milestone.** Both defects report `successful` while destroying data. Whatever the fix shape, the non-negotiable outcome is that a write never claims success over bytes it erased. |
-| **D-2** | **Refusing is an acceptable fix.** Read-modify-write is not assumed. A firmware that declines an unsafe partial write with a clear error resolves WRITE-01 — losing the operation is strictly better than losing the chip. |
-| **D-3** | **The page size comes from the database, not a second derivation.** The real page is already generated as `programming.infoic_page_size_raw`. Replacing one wrong derivation with another is not a fix. |
-| **D-4** | **Bench validation on real silicon is required.** Both issues carry hardware evidence; the fixes must too. A green native test is not sufficient for a defect that was found on a bench. |
-| **D-5** | **The stable firmware channel is out of scope.** `/releases/latest` serves 2.0.6 while current firmware is `3.0.0b30`. That is an operator-gated release decision, not phase work. |
+| **D-1** | **`infoic.xml` is the baseline for everything.** Nothing part-specific may be hardcoded in the generator. A hardcode is permitted only where there is provably no alternative, and it must carry the proof that no alternative exists. |
+| **D-2** | **Decode tables are not corrections.** `VPP_MV`, `VCC_VOLTAGES` and `PROTOCOL_MAP` stay in code: they *are* the reader of infoic's own encoding. What moves out is every value that contradicts what infoic decodes to. |
+| **D-3** | **Datasheet findings live in one override file holding only the changed fields.** No whole rows, no restated infoic values, so the file stays small enough for a person to read and see the full picture. Sibling to `tools/extra_chips.json`, which adds chips absent from infoic; this one corrects chips present in it. |
+| **D-4** | **When the shield cannot reach the voltage a part needs, do the best that can be done and warn.** If the deliverable maximum is high enough, attempt the operation with a warning that names both numbers. A silent refusal and a silent attempt are both wrong; the operator decides with the numbers in front of them. |
+| **D-5** | **Voltage-reading calibration stays out of scope** (derived from D-4, not chosen by the operator against it). Backlog 999.38's ~+7.5 % ratiometric VPP ADC error and the dormant white-box bandgap/divider calibration seed stay filed. A warn-and-attempt policy does not need a calibrated ADC; a refusal threshold would have. |
+| **D-6** | **Phase numbering continues at 197.** v1.39 ran 194–196. The vacated 150 slot and the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving. |
 
 ## v1 Requirements
 
-### WRITE — a write never destroys what it was not asked to change (gh#68)
+### OVR — one readable override file, and no part-specific constants in the generator (D-1, D-2, D-3)
 
-- [x] **WRITE-01**: A partial or unaligned write to a protocol `0x05` part either preserves every byte
-      of the touched physical page that was not part of the write, or refuses the operation with a
-      named error and leaves the device unchanged. Which of the two is a design decision, not a
-      requirement — D-2 permits either. **Complete:** the refusal branch (D-01) is proved on real
-      silicon — a named error, exit non-zero, and a byte-identical read-back proving the device is
-      unchanged — in `.planning/milestones/v1.39-artifacts/195-w29c020-partial-write-bench-transcript.md` §4h, backed by
-      the native and host test suites (`195-01-SUMMARY.md`, `195-03-SUMMARY.md`).
-- [x] **WRITE-02**: No protocol `0x05` write reports `successful` when bytes outside the requested
-      address range were erased. If the operation cannot guarantee that, it must not claim success.
-      **Complete:** the pre-fix bench legs show the success line printed over erased bytes
-      (`195-w29c020-partial-write-bench-transcript.md` §4d, §4e, §4g — the defect this requirement
-      forbids); the post-fix bench legs show no success line and a non-zero exit for the identical
-      commands (§4h), backed by the host and native test suites.
-- [x] **WRITE-03**: The behaviour is demonstrated on real silicon in **both** loss directions — bytes
-      before the start address and bytes after the end — on a part whose derived page size is already
-      correct, so the result isolates this defect from PAGE-01. **Complete:** both directions
-      captured on `W29C020` (one of the 18 already-correct parts) against a pre-fix build in
-      `195-w29c020-partial-write-bench-transcript.md` §4d (trailing) and §4e (leading), with blast
-      radius confined to the touched page (§4f). The derived third direction (interior chunk-boundary
-      loss, D-06) was also attempted and observed for the first time on silicon (§4g) — a bonus
-      finding beyond what WRITE-03 requires, not a substitute for the two directions it names.
+- [ ] **OVR-01**: A single override file beside `tools/extra_chips.json` carries per-part field
+      overrides, and the generator applies them on top of the `infoic.xml` decode.
+- [ ] **OVR-02**: An entry holds only the fields that differ from the decoded value. A field whose
+      override equals what infoic decodes to is not an entry.
+- [ ] **OVR-03**: Every entry names the datasheet it comes from and the decoded value it replaces, so
+      a reader sees what changed and why without running the generator.
+- [ ] **OVR-04**: The generator fails closed on an override it cannot apply — an unknown part number,
+      an unknown field, or an override that has become a no-op because the decode now agrees with it.
+- [ ] **OVR-05**: The three part-specific corrections currently hardcoded in `build_db.py`
+      (`NMOS_TRUE_VPP_MV`, `_AT28C_DIP24_NAMES`, and the relabel map) move into the override file,
+      and the generated database is unchanged by the move.
+- [ ] **OVR-06**: Any constant that remains part-specific in the generator after OVR-05 is named, with
+      the reason no alternative exists. An empty list is the expected answer.
 
-### PAGE — the firmware uses the part's real page size (gh#67)
+### PULSE — the program pulse is the one the datasheet asks for (gh#70)
 
-- [x] **PAGE-01**: The page size used by the protocol `0x05` write path is the part's recorded page
-      size from the chip database, not a value derived from the device's total size.
-- [x] **PAGE-02**: For **all 27** protocol `0x05` parts, the page size the firmware uses equals the
-      part's recorded real page. This is measured across the whole set, not asserted for the 9 known
-      to be wrong — a fix that corrects those 9 while breaking one of the other 18 is not a fix.
-- [ ] **PAGE-03**: A contiguous multi-page write to one of the 9 previously under-sized parts reads
-      back byte-identical on real silicon. **Status (2026-09-15):** the software half is landed and
-      measured — see `.planning/milestones/v1.39-artifacts/194-page-size-27-row-record.md` for the evidence-class split.
-      A no-regression bench write on `W29C020` (one of the 18 already-correct parts, chosen because
-      both gh#67 and gh#68 were originally reproduced on it) is now recorded in
-      `.planning/milestones/v1.39-artifacts/194-w29c020-bench-transcript.md`: chip-ID-confirmed, this phase's firmware
-      and host, a 2048-byte / 16-page pattern, byte-identical read-back. That run proves the fix did
-      not regress an already-correct part. It does not and cannot prove any of the 9 were fixed,
-      because `W29C020` was never wrong. The hardware leg for the 9 stays OPEN per D-11: 0 of 9 on
-      hardware, 9 of 9 on the database comparison, until the ordered `W29C512` arrives and a bench
-      write on one of the 9 is read back.
+- [ ] **PULSE-01**: What `pulse_delay` encodes is established per algorithm family from evidence, and
+      the finding is written down — including whether the generator's current "microseconds for all
+      protocols" reading survives contact with the datasheets.
+- [ ] **PULSE-02**: `MBM27C1000`'s program pulse falls inside its datasheet window (475–525 µs) in the
+      generated database.
+- [ ] **PULSE-03**: The regeneration diff is measured across all 746 rows, and no row changes value
+      without either a decode rule that explains it or an override that cites a datasheet for it.
+- [ ] **PULSE-04**: gh#70 is answered on the issue with the resulting values and the version carrying
+      them.
 
-### INSTR — the adoption instrument is retired, with its reason recorded (v1.38 carry-over)
+### VOLT — the programming voltage clears the part's own floor (gh#66)
 
-- [x] **INSTR-01**: The PyPI per-version download-share instrument is removed. The disposition is
-      recorded with its reason. **Complete:** the retirement record at
-      `.planning/notes/adoption-instrument-retirement.md` carries the full causal chain, the two
-      declined alternatives, and the accepted cost of the method going with it; the instrument itself
-      is deleted.
-- [x] **INSTR-02**: No document describes the instrument as gating a claim that has already fired. The
-      seed, `CLAUDE.md` and any note pointing at it agree with the chosen disposition. **Complete:** a
-      single expression over every tracked file outside six named exclusions reads green — zero
-      residual references — recorded verbatim in `196-03-SUMMARY.md`, alongside the annotation in the
-      frozen seed that those exclusions leave the expression unable to verify on its own.
+- [ ] **VOLT-01**: What the two voltage nibbles encode is established per algorithm family — the
+      unproven question that has blocked the 28-row `vcc_mv: 5500` group since v1.32 Phase 148.
+- [ ] **VOLT-02**: The Fujitsu 1 Mbit and 4 Mbit parts ask for a VPP at or above their datasheet floor
+      of 12.2 V, rather than the 12.0 V that reads as in-band under the accepted window while sitting
+      below the part's own minimum.
+- [ ] **VOLT-03**: The 28 rows reporting 5.5 V either report their real operating voltage or are left
+      unchanged with the reason recorded. Leaving them unproven and unchanged is an acceptable outcome;
+      changing them on an unproven assumption is not.
+- [ ] **VOLT-04**: gh#66 is answered on the issue with the resulting values and the version carrying
+      them.
+
+### RAIL — what the shield can actually deliver, and what it does when that is not enough (D-4, gh#71)
+
+- [ ] **RAIL-01**: The deliverable maximum of the VPP and VPE rails is established at the socket per
+      shield revision and recorded, with the method named — a meter reading and an ADC reading are not
+      interchangeable, and an ADC-derived figure carries its known error.
+- [ ] **RAIL-02**: The generator's `RURP_VPP_CEILING_MV = 25000` is either replaced by a measured
+      figure or kept with its status recorded as theoretical, and the 30 rows asking 18 V or more are
+      classified against whichever figure stands.
+- [ ] **RAIL-03**: When a part's required VPP exceeds what the shield can deliver, the operation
+      proceeds with a warning that names the required voltage and the deliverable one. It does not
+      refuse silently, and it does not attempt silently.
+- [ ] **RAIL-04**: Where the VPE rail is the only one that reaches a part's requirement, the routing
+      decision is made and recorded — including a decision not to route it.
+- [ ] **RAIL-05**: gh#71 is answered on the issue, whichever way RAIL-04 goes.
+
+### VCC — an elevated programming supply is stated, not silently dropped
+
+- [ ] **VCC-01**: A part that needs a programming VCC above the shield's fixed 5.0 V says so where the
+      operator will see it, rather than carrying a decoded `vdd_mv` that nothing applies.
+- [ ] **VCC-02**: That statement uses the same warning shape as RAIL-03, so one fact does not get two
+      explanations.
+
+### BLANK — a partial write is gated on the region it writes (backlog 999.44, firmware half)
+
+- [ ] **BLANK-01**: The write-init blank check applies to the region being written, not to the whole
+      device, so a non-erasable part holding data outside the target region accepts a write into a
+      blank region.
+- [ ] **BLANK-02**: `mem_util_blank_check`'s whole-device behaviour is unchanged for its other two
+      callers — the standalone blank-check command and the erase-end check — and the multi-call
+      chunking contract through `blank_check_saved_address` still resumes correctly.
+- [ ] **BLANK-03**: A UV part holding data outside the target slot accepts a slot write, proved by the
+      regression test whose absence is why this shipped.
+
+## Future Requirements
+
+Tracked, not in this milestone.
+
+| ID | Requirement | Why deferred |
+|---|---|---|
+| **OVR-F1** | The database records, per field, whether the value came from infoic or from an override, and `info` can show it | The override file already answers this for a reader; a per-field provenance channel on the wire is a separate design |
+| **CAL-F1** | White-box bandgap and divider calibration so the board's own voltage readings are trustworthy | D-5 — the warn-and-attempt policy does not need it; seed `voltage-reading-whitebox-calibration` stays dormant, 999.38 stays filed |
+| **VOLT-F1** | The remaining families touching `VCC_VOLTAGES[0x04]` beyond the 28 rows | Only if VOLT-01 proves the nibble semantics generalise |
 
 ## Out of Scope
 
-| Item | Reason |
-|---|---|
-| Cutting a stable firmware release | D-5. Whether stable users move off 2.0.6 is an operator-gated release decision. |
-| Read-modify-write specifically | D-2. RMW is one possible shape for WRITE-01; refusing is another. The requirement fixes the outcome, not the mechanism. |
-| The other 12 protocols | Scope is `0x05`. If the same defect class exists elsewhere it is filed, not fixed here. |
-| The 999.x backlog | 17 backlog phase directories stay untouched. |
-| Re-auditing the slug claim | Done, recorded, and its consequences are documented in `.planning/notes/gitmodules-archaeology-trap.md`. |
+| Feature | Reason |
+|---------|--------|
+| Adding chips absent from `infoic.xml` | `tools/extra_chips.json` already owns that, and this milestone corrects rows that exist |
+| Hand-editing `chip_database.json` | It is generated. A wrong value is a decode fault or a missing override, never a row to patch |
+| Protocol dispatch changes | The algorithm axis is settled; this milestone changes parameters, not paths |
+| The SST39SF040 write stall (gh#86/#90) and the 62256 read divergence (gh#83) | Undiagnosed, and neither is a parameter fault — investigation work, not this milestone |
+| Voltage-reading calibration | D-5 |
 
 ## Traceability
 
 | Requirement | Phase | Status |
-|---|---|---|
-| WRITE-01 | Phase 195 | Complete |
-| WRITE-02 | Phase 195 | Complete |
-| WRITE-03 | Phase 195 | Complete |
-| PAGE-01 | Phase 194 | Complete |
-| PAGE-02 | Phase 194 | Complete |
-| PAGE-03 | Phase 194 | Pending (hardware leg OPEN per D-11) |
-| INSTR-01 | Phase 196 | Complete |
-| INSTR-02 | Phase 196 | Complete |
+|-------------|-------|--------|
+| OVR-01 | Phase 197 | Pending |
+| OVR-02 | Phase 197 | Pending |
+| OVR-03 | Phase 197 | Pending |
+| OVR-04 | Phase 197 | Pending |
+| OVR-05 | Phase 197 | Pending |
+| OVR-06 | Phase 197 | Pending |
+| PULSE-01 | Phase 197 | Pending |
+| PULSE-02 | Phase 197 | Pending |
+| PULSE-03 | Phase 197 | Pending |
+| PULSE-04 | Phase 197 | Pending |
+| VOLT-01 | Phase 198 | Pending |
+| VOLT-02 | Phase 198 | Pending |
+| VOLT-03 | Phase 198 | Pending |
+| VOLT-04 | Phase 198 | Pending |
+| RAIL-01 | Phase 199 | Pending |
+| RAIL-02 | Phase 199 | Pending |
+| RAIL-03 | Phase 199 | Pending |
+| RAIL-04 | Phase 199 | Pending |
+| RAIL-05 | Phase 199 | Pending |
+| VCC-01 | Phase 200 | Pending |
+| VCC-02 | Phase 200 | Pending |
+| BLANK-01 | Phase 201 | Pending |
+| BLANK-02 | Phase 201 | Pending |
+| BLANK-03 | Phase 201 | Pending |
 
 **Coverage:**
-
-- v1 requirements: 8 total
-- Mapped to phases: 8
+- v1 requirements: 24 total
+- Mapped to phases: 24
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-09-15*
-*v1.38's requirements are recoverable at `git show 77a60b53:.planning/REQUIREMENTS.md` — this file is
-replaced per milestone, the convention since v1.9.*
+*Requirements defined: 2026-09-18*
+*Last updated: 2026-09-18 at milestone activation*

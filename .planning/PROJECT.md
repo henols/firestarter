@@ -38,6 +38,47 @@
 **v1.30 shipped:** 2026-08-05 (SDP Surface Retirement & Behavioral Lock Proof — 7 phases (131–134, 136, 136.1, 137), 48 plans, 125 tasks; **55/56 requirements, CLOSE-06 held open by design**; host-only, no firmware change. Retired v1.22's unverifiable standalone `dev sdp <chip> enable|disable` and moved the proof into a six-step `dev test` leg whose oracle is read-back equality against a baseline pattern, never an exit code; hardened `check_mypy_watermark.py` from fail-open to fail-closed and certified `firestarter_app`'s primary `ci` job GREEN for the first time in two months (run `30856059940`, mypy 32 against an unratcheted watermark of 35); landed gh#8's stable-channel `dev` narrowing. **Phase 135 (`write --sdp-relock`) deferred out to Backlog 999.28** by operator decision, number not reused — so v1.30 ships the deletion and the behavioral proof and **withdraws** the deliberate-protection surface with **no replacement** (RELOCK-01…06 left v1 scope, 56 → 50 reqs; RELOCK-07 re-homed to Phase 137). Evidence ceiling honoured throughout: **no AT28C part in inventory, no hardware ran** — emission, plan-derivation and read-back-comparison logic are proven; the causal claim "the lock inhibited the write" is not, and did not gate the close. Seventh consecutive `override_closeout`. **⚠ `firestarter_app`'s `gsd/v1.30-sdp-surface-retirement` was never merged to `origin/beta`** — the PR was staged but not opened; v1.31 Phase 138 lands it. See `.planning/MILESTONES.md` §v1.30.)
 
 **v1.31 shipped:** 2026-08-18 (27C Programming-Algorithm Fidelity — 9 phases (138–146), 74 plans, 164 tasks; **45/45 v1 requirements**; firmware-touching, dual-repo lockstep. Implements [gh#15](https://github.com/henols/firestarter_prom/issues/15) **as corrected, not as filed** — two wrong numbers and one inverted premise, all three corrected *publicly and before implementation* (comment `#5233463320`): `0x0B`'s pulse is **500 µs**, not `50000 us`; pulse width is a **database datum**, not a per-protocol constant (re-derived live through the production parser — 170/127/32 chips); and the safe 32-bit delay helper is for the overprogram pulse, not any bare pulse. Delivered: **one shared per-byte pulse-to-verify loop** driven by a `const` PROGMEM `eprom_params_t` table keyed on `protocol_id` (**D-01** — protocol owns *shape*, the database owns the *pulse*), **not** gh#15's three state machines; fixed-width pulses that never grow between attempts; hard-fail at `max_pulses` reporting the failing **address and pulse count**; one shared `eprom_hv_route_mask()` with every **error** exit disabling every HV route through a single-exit wrapper; `write --pulse-us N` bounded 1..65535 and pre-validated before a serial byte, riding the existing wire field with **no new DB field and no second algorithm selector**; plus a host long-write timeout fix and intra-block progress, scoped to the `leonardo` class only — on `SERIAL_ON_IO` boards the emission is compiled out **structurally**, because a buffered progress frame there could displace a later `MSG_ERR_MAX_PULSES` and convert a program failure into a transport timeout. **Bench-validated on real silicon:** three full 65536-byte write→read→verify cycles on a Winbond **W27C512** (`0xda08`), **Leonardo**, shield **Rev 2.0** — three distinct images, nine clean oracle cells, read stability N=3 at one SHA each, write timing consistent to **0.37 s**. A firmware defect this milestone itself introduced (Phase 141 deleted the only `CTRL_VPE_ENABLE` assert) failed the **first** bench cycle on byte 0; it was root-caused by a debug session, fixed, and **stands in the record with its cause** rather than being counted out. **Evidence Ceiling stands: the ~6.25 V program-VCC rail all four vendor algorithms assume is unreachable on every shield revision this project owns** — so this milestone claims **fidelity, not improvement**, with no comparative claim, no control run, and no datasheet-conformance claim in either direction. `0x08` (AM27C020) and `0x0B` (M2716/M2732) are **skipped-with-reason** with the missing parts named, never inferred from `0x07`. Twelve items carry forward with the literal phrase `no v1.31 owner`; **MERGE-05's +96 B leonardo band breach is open and un-adjudicated** with the operator as its named owner. Eighth consecutive `override_closeout` (9 carry-forward items, none originating in v1.31). Closed via **PRs to `beta` in all three repos, not direct merges**, per operator decision — meta tagged `v1.31`, gitlinks re-pinned; **no beta cut yet**, and stable stays operator-gated. See `.planning/MILESTONES.md` §v1.31.)
+## Current Milestone: v1.40 — Program-Parameter Fidelity
+
+**Activated:** 2026-09-18 · **Phases continue at 197** (v1.39 ran 194–196; the vacated **150** slot and
+the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving)
+
+**Goal:** Every programming parameter the host sends is either what `infoic.xml` decodes to, or a
+datasheet value recorded in one readable override file — and when the shield cannot deliver what a part
+needs, the operator is told before the attempt, not after the failure.
+
+**Why now.** Three community reports inside eight days, each with the reporter's own datasheet
+attached, each a fleet-scale fault wearing one chip's name. gh#70's `MBM27C1000` programs with a pulse
+a fifth of its datasheet minimum, and **217 of the 297** algorithm 7/8 rows carry that same 100 µs.
+gh#66's `MBM27C4001` asks 12.0 V against a 12.2 V family floor, and **563 of 746** rows carry
+`vpp_mv: 12000` while that part's own sibling correctly carries 12500 — the decode is not self-
+consistent inside one family. gh#71's `MBM27128` needs 21 V ± 0.5 V where the VPP rail measured 17.8 V
+and VPE measured 22.7 V, and **30 rows ask 18 V or more, 8 of them 21–25 V, every one
+`support_status: supported`** beneath a ceiling that is a regulator's theoretical figure rather than a
+socket measurement.
+
+**Shape.** Five phases, 24 requirements. Phase 197 builds the override mechanism and proves it on the
+pulse width; 198 settles the two voltage nibbles, including the 28-row group unproven since v1.32
+Phase 148; 199 measures what the rails deliver and decides the VPE routing question; 200 makes an
+elevated programming supply visible instead of decoded-and-dropped; 201 closes backlog 999.44's live
+firmware half. Generator and host first — 201 is the only firmware change and the only dual-repo
+lockstep. Phases 199 and 201 are bench-gated.
+
+**Constraints that shape it, not preferences.** `infoic.xml` is the baseline for everything and nothing
+part-specific may be hardcoded in the generator (**D-1**), so the first phase's real deliverable is a
+mechanism rather than a value. Datasheet findings live in one override file carrying **only the changed
+fields** (**D-3**), sibling to `tools/extra_chips.json`, small enough for a person to read whole. Decode
+tables that read infoic's own encoding stay in code — they are the decoder, not corrections (**D-2**).
+When the hardware cannot comply, the operation proceeds with a warning naming the required and the
+deliverable voltage (**D-4**, operator 2026-09-18), which is what keeps voltage-reading calibration out
+of scope: a refusal threshold would have needed a trustworthy ADC and a warning does not (**D-5**).
+
+**Full detail:** [`REQUIREMENTS.md`](REQUIREMENTS.md) · [`ROADMAP.md`](ROADMAP.md) §v1.40. Requirements
+and roadmap were **hand-authored** at activation, as v1.33's were and for the same reason — the GSD
+roadmap and requirements verbs normalise whole files, and `ROADMAP.md` is 7,900 lines of hand-kept
+history. `phases.clear` was **skipped**: 25 phase directories are live in `.planning/phases/` and the
+verb hard-deletes every non-`999.*` one.
+
 ## v1.39 Archive: Protocol 0x05 Write Correctness — Closed 2026-09-17 (closed, not shipped)
 
 **Activated:** 2026-09-15 · **Phases continue at 194** (v1.38 ran 189–193; the vacated **150** slot and
