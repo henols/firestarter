@@ -5,12 +5,12 @@ milestone_name: Program-Parameter Fidelity
 current_phase: 197
 current_phase_name: The Override Mechanism and the Program Pulse
 status: planning
-stopped_at: "v1.40 ACTIVATED 2026-09-18 — 5 phases (197-201), 24 requirements, hand-authored REQUIREMENTS.md and ROADMAP.md §v1.40. No phase planned yet. Next: /gsd-discuss-phase 197."
-last_updated: "2026-09-18T08:55:00.000Z"
+stopped_at: Phase 197 context gathered
+last_updated: "2026-09-18T09:58:18.247Z"
 last_activity: 2026-09-18
 last_activity_desc: "v1.40 Program-Parameter Fidelity activated — three community reports (gh#66, gh#70, gh#71), each with a reporter-attached datasheet, each proving a fleet-scale parameter fault: 217 of 297 algorithm 7/8 rows at pulse_duration_us 100 against a measured 475 us floor on one of them, 563 of 746 rows at vpp_mv 12000 against a 12.2 V family floor, and 30 rows asking 18 V or more under a theoretical 25 V ceiling with every one marked supported. Operator constraints: infoic.xml is the only baseline and nothing part-specific may be hardcoded in the generator (D-1); datasheet corrections live in one override file holding only the changed fields (D-3); when the shield cannot reach a required voltage the operation proceeds with a warning naming both numbers rather than refusing or attempting silently (D-4), which keeps voltage calibration out of scope (D-5). Requirements and roadmap hand-authored per the v1.33 precedent; phases.clear deliberately skipped (25 live phase dirs); research skipped - the evidence is datasheets, infoic encoding and the bench, all in hand."
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -3565,8 +3565,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-17T14:32:31.328Z
-**Stopped at:** Phase 196 context gathered
+**Last session:** 2026-09-18T09:58:17.809Z
+**Stopped at:** Phase 197 context gathered
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
@@ -3647,7 +3647,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/milestones/v1.39-phases/196-adoption-instrument-disposition/196-CONTEXT.md
+**Resume file:** .planning/phases/197-the-override-mechanism-and-the-program-pulse/197-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
