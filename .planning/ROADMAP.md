@@ -226,16 +226,40 @@ first.
 **Plans:** 8 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 197-01-PLAN.md — Groundwork: milestone branch, datasheet provenance, and the size-threshold derivation proven byte-identical (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 197-02-PLAN.md — Tracer: one datasheet value reaches the generated database end-to-end, `MBM27C1000` 100 → 500 µs (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 197-03-PLAN.md — The loader fails closed on all five legs, and the NMOS hardcode moves out as six one-row entries (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 197-04-PLAN.md — The two deletions: the AT28C name list and the FM1608 relabel, with the guard left alone (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 197-05-PLAN.md — The remaining pulse corrections, the OVR-06 constant census, and the 746-row regeneration diff (wave 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 197-06-PLAN.md — The wire-dict 197 delta layer, measured not assumed, and the suite back to green (wave 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
 - [ ] 197-07-PLAN.md — The PULSE-01 finding, the measured 100 µs inventory, and the stale references this phase falsified (wave 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
 - [ ] 197-08-PLAN.md — gh#70 is answered, without over-claiming and without withholding the pinout finding (wave 8)
 
 **Success criteria**:
+
 1. An override entry changes a generated value, and deleting the entry restores the decoded one.
 2. `build_db.py` contains no part-number literal after the three existing hardcodes move out, or every
    survivor is named with the proof that no alternative exists.
@@ -253,6 +277,7 @@ Plans:
 **Depends on**: Phase 197
 
 **Success criteria**:
+
 1. The per-family meaning of both nibbles is written down with its evidence, and the families where it
    does not generalise are named rather than assumed.
 2. The Fujitsu 1 Mbit and 4 Mbit parts ask for a VPP at or above their 12.2 V floor.
@@ -270,6 +295,7 @@ Plans:
 **Depends on**: Phase 197
 
 **Success criteria**:
+
 1. A recorded deliverable maximum per rail per shield revision, with the measurement method named and
    any ADC-derived figure carrying its known error.
 2. The 30 rows at 18 V or more are classified against whichever ceiling stands, and the classification
@@ -287,6 +313,7 @@ Plans:
 **Depends on**: Phase 198, Phase 199
 
 **Success criteria**:
+
 1. A part needing more than 5.0 V to program says so where the operator sees it before the attempt.
 2. The wording is the same shape as Phase 199's, so one fact does not acquire two explanations.
 
@@ -298,6 +325,7 @@ Plans:
 **Requirements**: BLANK-01, BLANK-02, BLANK-03
 
 **Success criteria**:
+
 1. A write into a blank region of a non-blank, non-erasable part succeeds.
 2. The standalone blank-check command and the erase-end check are unchanged, chunked resumption
    included.

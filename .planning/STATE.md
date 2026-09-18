@@ -4,15 +4,15 @@ milestone: v1.40
 milestone_name: Program-Parameter Fidelity
 current_phase: 197
 current_phase_name: The Override Mechanism and the Program Pulse
-status: planning
-stopped_at: Phase 197 context gathered
-last_updated: "2026-09-18T09:58:18.247Z"
+status: planned
+stopped_at: Phase 197 planned
+last_updated: "2026-09-18T11:53:21.665Z"
 last_activity: 2026-09-18
 last_activity_desc: "v1.40 Program-Parameter Fidelity activated — three community reports (gh#66, gh#70, gh#71), each with a reporter-attached datasheet, each proving a fleet-scale parameter fault: 217 of 297 algorithm 7/8 rows at pulse_duration_us 100 against a measured 475 us floor on one of them, 563 of 746 rows at vpp_mv 12000 against a 12.2 V family floor, and 30 rows asking 18 V or more under a theoretical 25 V ceiling with every one marked supported. Operator constraints: infoic.xml is the only baseline and nothing part-specific may be hardcoded in the generator (D-1); datasheet corrections live in one override file holding only the changed fields (D-3); when the shield cannot reach a required voltage the operation proceeds with a warning naming both numbers rather than refusing or attempting silently (D-4), which keeps voltage calibration out of scope (D-5). Requirements and roadmap hand-authored per the v1.33 precedent; phases.clear deliberately skipped (25 live phase dirs); research skipped - the evidence is datasheets, infoic encoding and the bench, all in hand."
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 8
   completed_plans: 0
   percent: 0
 ---
@@ -235,7 +235,7 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 197 (The Override Mechanism and the Program Pulse) — not started
+Phase: 197 (The Override Mechanism and the Program Pulse) — READY TO EXECUTE
 Plan: —
 Status: v1.40 ACTIVATED 2026-09-18 — 5 phases (197-201), 24 requirements across OVR/PULSE/VOLT/RAIL/VCC/BLANK. REQUIREMENTS.md and ROADMAP.md §v1.40 hand-authored at activation, as v1.33's were, because the GSD roadmap and requirements verbs normalise whole files and ROADMAP.md is 7,900 lines of hand-kept history. phases.clear skipped — 25 phase directories are live and the verb hard-deletes every non-999 one. Research skipped: the evidence is the three issue threads, their attached datasheets, build_db.py and infoic.xml, all already in hand. Meta forked off beta at d11d37ec as v1.40-program-parameter-fidelity; no sub-repo branch exists yet — those are created when a phase first commits into a submodule. Next: /gsd-discuss-phase 197.
 Last activity: 2026-09-18 — Milestone v1.40 activated; phases 197-201 defined, requirements mapped 24/24 with zero unmapped

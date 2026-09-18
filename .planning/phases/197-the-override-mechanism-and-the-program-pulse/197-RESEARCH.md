@@ -1630,7 +1630,10 @@ applicable. (`pymupdf` was used only as a research tool in a scratch environment
 
 ---
 
-## Open Questions
+## Open Questions (ALL RESOLVED — see the resolution line under each)
+
+*Resolved during `/gsd-plan-phase 197`. Each question below keeps its original wording; the
+**Resolution** line records what settled it and where that decision now lives.*
 
 1. **Does the operator want the HARDWARE-DAMAGE GUARD narrowed?** (C-1)
    - Known: the nine rows are selected by `flags & 0x10`, not by the name list; they resolve to
@@ -1640,10 +1643,18 @@ applicable. (`pymupdf` was used only as a research tool in a scratch environment
      guard he has not been shown.
    - Recommendation: **escalate before planning.** Do not delete the guard on the strength of D-07,
      which describes a different mechanism.
+   - **Resolution — escalated and answered.** The operator ruled: delete the name list now, route the
+     guard narrowing to Phase 199. Recorded as **D-15** in `197-CONTEXT.md`. Plan 04 deletes only the
+     name list and asserts the guard's condition and reason string are byte-unchanged; the evidence
+     for Phase 199 lands in `.planning/notes/197-at28c-guard-evidence-for-phase-199.md`.
 
 2. **Which `MBM27128` figure does the field carry — 1000 µs or 50000 µs?** (A2)
    - Known: the datasheet gives both; the firmware implements the Quick Pro shape.
    - Recommendation: 1000 µs, recorded with the reasoning in the override entry's `note`.
+   - **Resolution — 1000 µs, as recommended.** Settled on the firmware's own shape rather than left
+     to preference: `pulse_duration_us` is the initial pulse of a verify-per-pulse loop capped at 25
+     pulses with `overprogram_factor = 0`, which is the Quick Pro algorithm, not the conventional
+     50 ms single shot. Recorded as **D-19** in `197-CONTEXT.md`; carried by plan 05.
 
 3. **Is `FUJITSU/MBM27C1000`'s `DIP32_27C020` assignment a live hazard?**
    - Known: the datasheets put `/OE` and `A16` on opposite pins between the two parts, and the
@@ -1652,11 +1663,17 @@ applicable. (`pymupdf` was used only as a research tool in a scratch environment
      is mis-assigned the same way.
    - Recommendation: file against the `pinout-address-width-and-we-pin-corrections.md` todo. **Out of
      scope here**, but it must be in gh#70's answer.
+   - **Resolution — filed and disclosed, not fixed.** Pinout correctness is out of scope per the phase
+     `<domain>`. Plan 07 files it to the backlog; plan 08 requires gh#70's answer to disclose it
+     rather than let the pulse fix read as closing the issue.
 
 4. **Should the ceiling comparison become `>=`?**
    - Known: six rows sit exactly on 25000 and ship `supported`; the shield reaches ~22 V.
    - Recommendation: **not this phase.** Phase 199 owns rail ceilings and the warn-on-shortfall
      surface. Flagged so it is not lost.
+   - **Resolution — deferred to Phase 199, comparison stays `>`.** Settled by scope: the phase
+     `<domain>` puts rail ceilings and the warn-on-shortfall surface in Phase 199. Changing `>` to
+     `>=` here would flip the six rows sitting exactly on 25000 and redden `test_chip_resolver.py`.
 
 ---
 
