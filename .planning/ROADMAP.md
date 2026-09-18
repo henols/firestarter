@@ -223,7 +223,7 @@ first.
 
 **Goal**: A datasheet value can correct an infoic decode without a line of part-specific code in the generator, and the first correction proves it on the pulse width gh#70 measured.
 **Requirements**: OVR-01, OVR-02, OVR-03, OVR-04, OVR-05, OVR-06, PULSE-01, PULSE-02, PULSE-03, PULSE-04
-**Plans:** 8 plans
+**Plans:** 8/8 plans complete
 
 Plans:
 **Wave 1**

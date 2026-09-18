@@ -4,7 +4,6 @@ verified: 2026-09-18T15:33:01Z
 status: passed
 score: 4/5 roadmap success criteria verified (1 decision-backed deferral, accepted); requirement traceability 8/10 Complete, 2 Pending (OVR-03, PULSE-04) — PULSE-01 was Pending at verification time and has since been marked Complete, see resolved_since_verification
 covered_files:
-  - .planning/phases/197-the-override-mechanism-and-the-program-pulse
   - .planning/phases/197-the-override-mechanism-and-the-program-pulse/197-01-PLAN.md
   - .planning/phases/197-the-override-mechanism-and-the-program-pulse/197-01-SUMMARY.md
   - .planning/phases/197-the-override-mechanism-and-the-program-pulse/197-02-PLAN.md

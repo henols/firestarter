@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.40
 milestone_name: Program-Parameter Fidelity
-current_phase: 197
-current_phase_name: The Override Mechanism and the Program Pulse
-status: executing
-stopped_at: Phase 197 planned
-last_updated: "2026-09-18T12:03:33.918Z"
+current_phase: 198
+current_phase_name: The two voltage nibbles
+status: planning
+stopped_at: Phase 197 complete, ready to plan Phase 198
+last_updated: "2026-09-18T15:42:06.419Z"
 last_activity: 2026-09-18
-last_activity_desc: "Phase 197 execution started — 8 plans, 8 sequential waves (each plan depends on the one before). Milestone branch v1.40-program-parameter-fidelity created in firestarter_app and firestarter_fw off beta at 70c92ce; meta was already on it. Phase 197 lands in firestarter_app (build_db.py, datasheet_overrides.json, chip_database.json, tests) and .planning/ only. Prior activity: v1.40 activated 2026-09-18 from three community reports (gh#66, gh#70, gh#71), each with a reporter-attached datasheet proving a fleet-scale parameter fault — 217 of 297 algorithm 7/8 rows at pulse_duration_us 100 against a measured 475 us floor, 563 of 746 rows at vpp_mv 12000 against a 12.2 V family floor, 30 rows asking 18 V or more under a theoretical 25 V ceiling, all marked supported. Operator constraints: infoic.xml is the only baseline and nothing part-specific may be hardcoded in the generator (D-1)."
+last_activity_desc: "Phase 197 complete — 8/8 plans, suite green at 2065 passed / 0 failed on py3.11. Override mechanism lands: a datasheet value corrects an infoic decode with no part-specific code in the generator, proven on gh#70's pulse width (MBM27C1000 100 → 500 µs). Three hardcodes evacuated; regeneration moved exactly 13 of 746 rows with 0 support_status changes. 8/10 requirements Complete. OVR-03 and PULSE-04 remain Pending BY DECISION, not omission — OVR-03 on the WR-03 gap (the datasheet-citation contract is test-only, not enforced by build_db.py standalone), PULSE-04 on the operator's `hold` of the gh#70 answer until the v1.40 beta cut. phase.complete wrongly flipped both to Complete and they were reverted by hand. Code review CR-01 confirmed and filed as backlog 999.72: the override mechanism is general for four of its six advertised fields. Next: Phase 198, the two voltage nibbles."
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 8
-  completed_plans: 0
-  percent: 0
+  completed_plans: 8
+  percent: 20
 ---
 
 # Project State
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 197 (The override mechanism and the program pulse) — EXECUTING
-Plan: 8 of 8 — all plans complete
-Status: v1.40 ACTIVATED 2026-09-18 — 5 phases (197-201), 24 requirements across OVR/PULSE/VOLT/RAIL/VCC/BLANK. REQUIREMENTS.md and ROADMAP.md §v1.40 hand-authored at activation, as v1.33's were, because the GSD roadmap and requirements verbs normalise whole files and ROADMAP.md is 7,900 lines of hand-kept history. phases.clear skipped — 25 phase directories are live and the verb hard-deletes every non-999 one. Research skipped: the evidence is the three issue threads, their attached datasheets, build_db.py and infoic.xml, all already in hand. Meta forked off beta at d11d37ec as v1.40-program-parameter-fidelity; firestarter_app and firestarter_fw forked off beta at 70c92ce as v1.40-program-parameter-fidelity at Phase 197 execution start. Executing Phase 197 — 8 plans, 8 sequential waves, each plan depending on the one before.
-Last activity: 2026-09-18 — 197-08 complete; all 8 plans done. Operator chose `hold` on the gh#70 answer: it is a committed DRAFT, nothing posted or pushed. PULSE-04 deliberately left Pending, to close at the v1.40 beta cut per the answer's Held-pending deferral section. Suite green at 2065. Phase gates next.
+Phase: 198 — The two voltage nibbles
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-18 — Phase 197 complete, transitioned to Phase 198
 
 ## Roadmap Summary (v1.38)
 
@@ -3566,7 +3566,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-18T09:58:17.809Z
-**Stopped at:** Phase 197 context gathered
+**Stopped at:** Phase 197 complete, ready to plan Phase 198
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
