@@ -252,7 +252,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 197-07-PLAN.md — The PULSE-01 finding, the measured 100 µs inventory, and the stale references this phase falsified (wave 7)
+- [x] 197-07-PLAN.md — The PULSE-01 finding, the measured 100 µs inventory, and the stale references this phase falsified (wave 7) — **done 2026-09-18: `197-PULSE-INVENTORY.md` filed on the `177-READBACK-INVENTORY.md` precedent — reproducible method first, every row disposed, a named honesty limit. It CORRECTS a figure this phase falsified: **215 of 297** algorithm 7/8 rows carry `pulse_duration_us: 100`, not the 217 every prior document states, because this phase corrected two of them away. PULSE-01 written up at `tools/DECODE-NOTES.md` § 8 (markdown, so the no-comments rule does not reach it — the right home for decode rationale, next to the code). Todo `derive-away-max-27c020-size-hardcode` closed to `completed/`; its `MAX_27C020_SIZE` fake-parity trap was already fixed in 182-02 and was NOT re-asserted. Suite still GREEN at 2065 passed. **Three backlog entries filed — 999.69, 999.70, 999.71 — applied to ROADMAP.md by the orchestrator.** The executor drafted and verified them, then REVERTED its own edit (`d883d9f6`) to respect single-writer; orchestrator confirmed ROADMAP byte-identical to its pre-dispatch snapshot before applying, then re-ran the executor's own legs: 3 entries present, `### Phase ` headings 174 → 177 (exactly +3, zero lost), all five required tokens found. **⚠ 999.70 is a live, safety-adjacent finding and the orchestrator verified its generated-data half directly.** `DIP32_27C020` carries `address-bus-pins` index 16 (the A16 bit) at **pin 2** and `oe-pin` at **24**; both `FUJITSU/MBM27C1000P,MBM27C1000` and `FUJITSU/MBM27C1001` resolve to that one pinout key. Per the datasheets vendored in `197-01`, that is `MBM27C1001`'s layout — `MBM27C1000` has `/OE` on pin 2 and `A16` on pin 24, i.e. the two are SWAPPED for that part. The consequent failure mode (a verify reading a different address than the pulse wrote, matching gh#70's reported top-of-address-space symptom) is marked INFERRED, NOT bench-tested, and is honest to do so — no bench run has isolated it from the pulse correction. **It contradicts an earlier PUBLISHED gh#70 cross-check** that read the sibling part's datasheet, and it therefore constrains what `197-08` may claim. Two self-caught executor deviations, both real: a `git mv` run against an uncommitted edit staged the PRE-edit blob and silently produced a 0-diff rename, caught by re-checking `git diff --stat` rather than trusting the commit summary and landed in `b7ae2cbe`; and a verify leg forbidding the substring `diff_db` was tripped by a golden META KEY NAME containing it regardless of value, fixed by renaming the key after confirming nothing reads it. Commits: `firestarter_app` `0372cc6`; meta `f43c3e67`, `af0f70d1`, `59481654`, `b7ae2cbe`, `d883d9f6`, `2d331286`, `9ecceb15`.**
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
@@ -7938,6 +7938,90 @@ seeing a refusal from either layer.
 narrative framing rather than a must-have, and the verifier ruled it falsifies no criterion, but it
 is exactly the kind of overstated claim this milestone exists to remove. Correct it, or record why
 not, in whatever artifact carries this work.
+
+---
+
+### Phase 999.69: 215 algorithm 7/8 rows still carry `pulse_duration_us: 100` with no datasheet evidence (BACKLOG — filed 2026-09-18 during v1.40 Phase 197)
+
+**Goal:** Correct as many of the 215 uncorrected algorithm 7/8 rows as datasheet evidence
+justifies, one row at a time.
+
+**Measured 2026-09-18** (Phase 197 Plan 07), against the shipped `firestarter/data/chip_database.json`:
+**215 of 297** algorithm 7/8 rows carry `pulse_duration_us: 100`, down from a pre-phase 217 (Phase
+197 corrected two of them away from 100 via `tools/datasheet_overrides.json`). The full inventory —
+reproducible generating command, the twelve-row Fujitsu disposition table, and the complete
+208-row non-Fujitsu list with per-manufacturer counts — is recorded at
+[`197-PULSE-INVENTORY.md`](../phases/197-the-override-mechanism-and-the-program-pulse/197-PULSE-INVENTORY.md).
+
+**Cost model (D-02, deliberate):** one entry in `tools/datasheet_overrides.json` targets exactly
+one row, and each entry must name the datasheet that justifies it. Correcting all 215 rows costs
+215 datasheets — this is the intended deterrent against a bulk sweep that would apply one
+convenient figure across many parts, the exact failure shape `NMOS_TRUE_VPP_MV` demonstrated before
+Phase 197 deleted it (see 999.71 below).
+
+**A row's presence in this list is not a claim that its value is wrong** — it is a claim that
+nobody has checked it against that part's own datasheet. `197-PULSE-INVENTORY.md`'s own honesty
+limit states this explicitly: these rows are inventoried, not audited.
+
+---
+
+### Phase 999.70: `FUJITSU/MBM27C1000` is on `DIP32_27C020`, which is the sibling part's pinout — pins 2 and 24 are swapped (BACKLOG — filed 2026-09-18 during v1.40 Phase 197, from `197-RESEARCH.md` § "PULSE-02 — Which Rows, To What Values")
+
+**Goal:** Resolve whether `FUJITSU/MBM27C1000P,MBM27C1000` needs its own pinout, distinct from
+`FUJITSU/MBM27C1001`'s, and correct gh#70's own pinout cross-check if so.
+
+**MEASURED:** `MBM27C1000` and `MBM27C1001` have different pin assignments. From the MBM27C1000
+datasheet (page 4-61, PIN ASSIGNMENT): `/OE` on pin 2, `A16` on pin 24. From the MBM27C1001
+datasheet (page 9-86, PIN DESCRIPTION): `A16` on pin 2, `OE` on pin 24 — the two pins are swapped
+between the parts. `firestarter/data/pinouts.json`'s `DIP32_27C020` gives an `address-bus-pins`
+list whose index 16 (the `A16` bit) is pin 2, and an `oe-pin` of 24 — the **MBM27C1001** layout.
+The database routes `FUJITSU/MBM27C1000P,MBM27C1000` through this same `DIP32_27C020` pinout key,
+so that row is on its sibling's pin map, not its own.
+
+**INFERRED, NOT bench-tested:** under the swap, a write to an address needing `A16` set drives the
+wrong socket pin, and because the part's real `A16` (socket pin 24) then follows whatever the `OE`
+line is doing, a verify reads a different address than the program pulse wrote. This matches the
+reported failure signature of a byte at the top of the address space failing to program within 25
+pulses. This inference is unconfirmed on hardware — no bench run has isolated the pinout swap from
+the pulse-width correction Phase 197 already applied to this row.
+
+**This contradicts an earlier published cross-check on gh#70** that concluded the pinout was a
+"MATCH on every pin the part uses" — that conclusion was drawn from the `MBM27C1001` datasheet,
+before the `MBM27C1000` datasheet (vendored into this repository during Phase 197, from the gh#70
+attachment) was available for direct comparison.
+
+**Route:** this belongs with the existing todo
+[`pinout-address-width-and-we-pin-corrections.md`](../todos/pending/pinout-address-width-and-we-pin-corrections.md)
+— it is the same class of defect (a row on a pinout too narrow or wrong for it), found by the same
+kind of datasheet-vs-generated-data comparison. **It also materially changes what a `197-08`-style
+PULSE-04 answer may claim on gh#70**: an answer that states only the pulse-width correction, without
+naming the pinout question as open and unresolved, would overstate what Phase 197 actually fixed
+for this specific reported failure.
+
+---
+
+### Phase 999.71: Six `UNSOURCED` override entries carry an Intel VPP reading applied to non-Intel parts (BACKLOG — filed 2026-09-18 during v1.40 Phase 197, from `197-03-SUMMARY.md`)
+
+**Goal:** Close each `UNSOURCED` entry in `tools/datasheet_overrides.json` with the vendor-specific
+datasheet that would actually justify its value, or revert the entry if no such datasheet
+substantiates it.
+
+**The six entries**, all on `electrical.vpp_mv`, all inherited verbatim from the deleted
+`NMOS_TRUE_VPP_MV` hardcode: `INTEL/M2716` (18000 → 25000), `INTEL/M2732` (18000 → 25000),
+`SGS-THOMSON/M2716` (18000 → 25000), `SGS-THOMSON/M2732A` (18000 → 21000), `ST/M2716` (18000 →
+25000), `ST/M2732A` (18000 → 21000).
+
+**What would close each:** the two `INTEL` rows need Intel's own 2716 and 2732 datasheets,
+vendored and git-tracked, so the inherited figure can finally be checked against the vendor it
+claims. The four `SGS-THOMSON`/`ST` rows need SGS-THOMSON's and ST's own datasheets for the
+respective parts — none is vendored in this repository today, and the value on each of those four
+rows is an Intel-sourced figure applied to a different vendor's part with no vendor-specific
+backing.
+
+**Consequence of leaving them:** an Intel reading applied to four non-Intel parts is exactly the
+silent cross-application D-02 exists to make visible. It is now visible — each entry's `note` field
+says so in plain language — but it is not yet fixed. Closing all six requires six additional
+datasheets; the entries stay in the database with their honest `UNSOURCED` marker until then.
 
 ---
 
