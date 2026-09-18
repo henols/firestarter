@@ -165,6 +165,16 @@ None - no external service configuration required.
 - `_PGM_ON_PIN31_MAX_SIZE` is fully removed; OVR-06's eventual "empty list" answer no longer needs to account for it. `NMOS_TRUE_VPP_MV`, `_AT28C_DIP24_NAMES`, and `_ETYPE_RELABEL` remain and are the subject of later plans (D-06/D-07/D-08).
 - No blockers. Plan `197-02`'s tracer slice (the override file and its loader) can proceed against a byte-identical, unmodified-elsewhere `chip_database.json` baseline.
 
+## Self-Check: PASSED
+
+- FOUND: `firestarter_app/datasheets/MBM27C1000.pdf`
+- FOUND: `firestarter_app/tests/test_build_db_pinout_fork.py`
+- FOUND: `.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-01-SUMMARY.md`
+- FOUND commit: `firestarter_app@63fb97f`
+- FOUND commit: `firestarter_app@5fec5eb`
+- FOUND commit: `meta@ba6af22a`
+- Both `firestarter_app` and meta repo HEAD confirmed on `v1.40-program-parameter-fidelity`
+
 ---
 *Phase: 197-the-override-mechanism-and-the-program-pulse*
 *Completed: 2026-09-18*
