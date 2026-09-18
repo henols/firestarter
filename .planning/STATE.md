@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.40
 milestone_name: Program-Parameter Fidelity
-current_phase: 198
-current_phase_name: The two voltage nibbles
-status: executing
-stopped_at: Phase 198 execution started
-last_updated: "2026-09-18T18:47:19.442Z"
+current_phase: 199
+current_phase_name: What the rails can actually deliver
+status: planning
+stopped_at: Phase 198 complete, ready to plan Phase 199
+last_updated: "2026-09-18T20:21:21.017Z"
 last_activity: 2026-09-18
-last_activity_desc: "Phase 198 planned. Research (HIGH confidence) reproduced the generator offline and confirmed every CONTEXT measurement: 767 filtered rows, 746 emitted, zero rows carrying VPP 0xF1/0xF2, the 28-row vdd<vcc split (16+12). It falsified three things the phase must now correct because it edits them: the decisive upstream comment is at database.c L125-126 not L123; VPP_MV's provenance marker carries no VERIFIED token and names tl866a.c, whose VPP table conflicts 8 of 8; and the tl866ii_vcc_voltages marker cites the wrong line range and is duplicated at build_db.py 116 and 126. It also found the D-02 trap: keying on the full low byte literally breaks 142 rows, so 0xF1/0xF2 must exact-match before masking. Four plans, tracer-first, waves 1/2/3. 198-01 takes one datasheet voltage end to end (3 Fujitsu rows, 5 fields) and opens a deliberate known-red window closed in its own Task 2; 198-02 completes VCC_VOLTAGES from xg and signs the 0x06 carve-out as 12 UNSOURCED entries in one commit; 198-03 writes DECODE-NOTES section 9, disposes all 28 VOLT-03 rows and closes the todo; 198-04 drafts and HOLDS the gh#66 answer. Override keys go 9 to 22 (not 26 - CONTEXT's 17 was a field count). Net diff: 15 rows, 17 fields, electrical only. Plan-checker PASSED with no blockers or warnings; 75 of 75 automated commands resolve and state a failing direction; decision coverage 18/18. Next: /gsd-execute-phase 198."
+last_activity_desc: "Phase 198 (The two voltage nibbles) CLOSED 2026-09-18 — 4/4 plans, verifier 22/23 with one deliberate deferral, no gaps. Both decode tables completed from upstream index-for-index: VPP_MV gained 0xF1=25000 and 0xF2=21000 and now exact-matches those two low bytes BEFORE the 0xF0 mask (the naive re-key would have dropped 142 rows to the 0 default; the shipped DB carries zero rows at vpp_mv 0), and VCC_VOLTAGES went 6 to 15 entries with 0x0F left genuinely absent. Whole-phase regeneration diff re-measured by the orchestrator at 15 rows / 17 field values, all under electrical: 3 rows / 5 fields from 198-01 (two Fujitsu parts to vpp_mv 12500, three to vdd_mv 6000) and 12 rows / 12 fields from 198-02 (5 at 5000-to-6000, 7 at 5000-to-6250). 746 rows in and out, same key set, support_status multiset identical, zero vcc_mv moved. The 0x06 carve-out is 12 explicit UNSOURCED override entries rather than an omission from the table, proven load-bearing by a planted mutation; overrides now 22 sorted keys, 18 UNSOURCED, 4 citing git-tracked PDFs. D-11 held: all 28 rows at vcc_mv 5500 ship unchanged, and the vdd<vcc predicate selects exactly that set (28/433/285 = 746) but ships no assertion. DECODE-NOTES section 9 states the general finding as a verdict before its evidence with four named limits, sections 1-8 byte-unchanged, and cites database.c 125-126 after measuring the phase context 123 as wrong. 198-VOLT03-DISPOSITION.md disposes all 28 rows with no elision, names the in-repo contradiction against Phase 148 and sides with the measurement, and states the honesty limit that this repository vendors no Microchip and no AMD datasheet. The blocking vcc-5500 todo closed by a genuine pure rename (R100, 0/0) and backlog 999.73 filed as its successor. VOLT-01/02/03 Complete; VOLT-04 deliberately Pending — the gh#66 answer is written and held as 198-GH66-ANSWER.md but NOT posted, because the milestone branch has no upstream so no version a reader could resolve exists yet; 197-GH70-ANSWER.md now carries one consolidated deferral list naming both gh#70 and gh#66 for the milestone close. Zero comment lines added to any .py file across the whole phase; 7 deleted. Suite 2075 passed on the py3.11 CI replica, 32 snapshots, ruff clean; regression gate over prior-phase test files 121 passed. Code review: 0 critical, 1 warning (a latent, currently-unreachable 0xF1/0xF2 ambiguity in the new exact-match branch), 2 info. Nothing pushed, nothing posted."
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 12
   completed_plans: 12
-  percent: 20
+  percent: 40
 ---
 
 # Project State
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 198 (The two voltage nibbles) — EXECUTING
-Plan: 4 of 4 complete
-Status: All 4 plans complete — verifying
-Last activity: 2026-09-18 — Phase 198 execution started
+Phase: 199 — What the rails can actually deliver
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-18 — Phase 198 complete, transitioned to Phase 199
 
 ## Roadmap Summary (v1.38)
 
@@ -3566,7 +3566,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-18T17:05:28.303Z
-**Stopped at:** Phase 198 context gathered
+**Stopped at:** Phase 198 complete, ready to plan Phase 199
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed

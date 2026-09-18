@@ -273,7 +273,7 @@ Plans:
 
 **Goal**: Settle what infoic's two voltage fields encode, per algorithm family, and correct what the datasheets contradict — including the 28-row group that has been unproven since v1.32 Phase 148.
 **Requirements**: VOLT-01, VOLT-02, VOLT-03, VOLT-04
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 **Depends on**: Phase 197
 

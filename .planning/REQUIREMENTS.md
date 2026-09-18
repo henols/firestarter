@@ -65,12 +65,12 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
 
 ### VOLT — the programming voltage clears the part's own floor (gh#66)
 
-- [ ] **VOLT-01**: What the two voltage nibbles encode is established per algorithm family — the
+- [x] **VOLT-01**: What the two voltage nibbles encode is established per algorithm family — the
       unproven question that has blocked the 28-row `vcc_mv: 5500` group since v1.32 Phase 148.
-- [ ] **VOLT-02**: The Fujitsu 1 Mbit and 4 Mbit parts ask for a VPP at or above their datasheet floor
+- [x] **VOLT-02**: The Fujitsu 1 Mbit and 4 Mbit parts ask for a VPP at or above their datasheet floor
       of 12.2 V, rather than the 12.0 V that reads as in-band under the accepted window while sitting
       below the part's own minimum.
-- [ ] **VOLT-03**: The 28 rows reporting 5.5 V either report their real operating voltage or are left
+- [x] **VOLT-03**: The 28 rows reporting 5.5 V either report their real operating voltage or are left
       unchanged with the reason recorded. Leaving them unproven and unchanged is an acceptable outcome;
       changing them on an unproven assumption is not.
 - [ ] **VOLT-04**: gh#66 is answered on the issue with the resulting values and the version carrying
@@ -143,9 +143,9 @@ Tracked, not in this milestone.
 | PULSE-02 | Phase 197 | Complete |
 | PULSE-03 | Phase 197 | Complete |
 | PULSE-04 | Phase 197 | Pending |
-| VOLT-01 | Phase 198 | Pending |
-| VOLT-02 | Phase 198 | Pending |
-| VOLT-03 | Phase 198 | Pending |
+| VOLT-01 | Phase 198 | Complete |
+| VOLT-02 | Phase 198 | Complete |
+| VOLT-03 | Phase 198 | Complete |
 | VOLT-04 | Phase 198 | Pending |
 | RAIL-01 | Phase 199 | Pending |
 | RAIL-02 | Phase 199 | Pending |
