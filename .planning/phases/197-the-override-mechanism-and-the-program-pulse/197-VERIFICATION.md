@@ -39,7 +39,8 @@ covered_files:
   - firestarter_app/tests/golden/chip_database_field_inventory.json
   - firestarter_app/tests/__snapshots__/test_characterization.ambr
   - firestarter_app/firestarter/data/chip_database.json
-covered_digest: "v1:sha256:f178a8d6856c5aeee165334cfba452fd10ba7d678e75e4b4d08a1b12b9849f03"
+covered_digest: "v1:sha256:da6078e385e93c5160b0862f31807b20c2b3532b2d6be73a1820eb629ce515b7"
+covered_digest_reanchored: "2026-09-18 — re-anchored by the orchestrator with `query verification fingerprint` after the close edits landed (999.72 filed, PULSE-01 marked Complete, overrides recorded). The verifier computed its digest at 15:33Z, before those edits, so it was already stale on arrival — the documented behaviour of this gate in this repo, not evidence of drift. No covered file changed content between the verifier reading it and this re-anchor except .planning/REQUIREMENTS.md, whose PULSE-01 edit is recorded above. Expect it to read stale again after phase.complete writes ROADMAP.md and REQUIREMENTS.md."
 behavior_unverified: 0
 overrides_applied: 3
 status_changed_by: "orchestrator, on operator decision 2026-09-18 — the verifier's verdict was gaps_found (4/5 criteria). The operator was shown the four gaps and chose 'Mark complete, accept both'. Status set to passed so phase.complete would run. The verifier's original verdict, its evidence and the full gaps: block below are left UNEDITED — nothing was removed to make this pass."
