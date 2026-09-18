@@ -4,9 +4,9 @@ milestone: v1.40
 milestone_name: Program-Parameter Fidelity
 current_phase: 198
 current_phase_name: The two voltage nibbles
-status: planned
-stopped_at: Phase 198 planned
-last_updated: "2026-09-18T18:28:04.519Z"
+status: executing
+stopped_at: Phase 198 execution started
+last_updated: "2026-09-18T18:47:19.442Z"
 last_activity: 2026-09-18
 last_activity_desc: "Phase 198 planned. Research (HIGH confidence) reproduced the generator offline and confirmed every CONTEXT measurement: 767 filtered rows, 746 emitted, zero rows carrying VPP 0xF1/0xF2, the 28-row vdd<vcc split (16+12). It falsified three things the phase must now correct because it edits them: the decisive upstream comment is at database.c L125-126 not L123; VPP_MV's provenance marker carries no VERIFIED token and names tl866a.c, whose VPP table conflicts 8 of 8; and the tl866ii_vcc_voltages marker cites the wrong line range and is duplicated at build_db.py 116 and 126. It also found the D-02 trap: keying on the full low byte literally breaks 142 rows, so 0xF1/0xF2 must exact-match before masking. Four plans, tracer-first, waves 1/2/3. 198-01 takes one datasheet voltage end to end (3 Fujitsu rows, 5 fields) and opens a deliberate known-red window closed in its own Task 2; 198-02 completes VCC_VOLTAGES from xg and signs the 0x06 carve-out as 12 UNSOURCED entries in one commit; 198-03 writes DECODE-NOTES section 9, disposes all 28 VOLT-03 rows and closes the todo; 198-04 drafts and HOLDS the gh#66 answer. Override keys go 9 to 22 (not 26 - CONTEXT's 17 was a field count). Net diff: 15 rows, 17 fields, electrical only. Plan-checker PASSED with no blockers or warnings; 75 of 75 automated commands resolve and state a failing direction; decision coverage 18/18. Next: /gsd-execute-phase 198."
 progress:
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 198 (The two voltage nibbles) — READY TO EXECUTE
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-09-18 — Phase 198 planned: 4 plans, checker passed, 18/18 decisions covered
+Phase: 198 (The two voltage nibbles) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 198
+Last activity: 2026-09-18 — Phase 198 execution started
 
 ## Roadmap Summary (v1.38)
 
