@@ -306,9 +306,25 @@ Plans:
 
 **Goal**: Replace a theoretical ceiling with a measured one, decide the VPE routing question, and make the shield say what it cannot do instead of offering it.
 **Requirements**: RAIL-01, RAIL-02, RAIL-03, RAIL-04, RAIL-05
+**Plans:** 5 plans
 
 **Depends on**: Phase 197
 **Evidence inherited**: see `.planning/notes/197-at28c-guard-evidence-for-phase-199.md` for the measured 19-row AT28C DIP24 pinout/flags table, the operator ruling routing the guard's narrowing here, and the three test legs that redden together the moment the guard is narrowed — `tests/test_sdp_capability.py`, `tests/test_chip_resolver.py::test_resolve_chip_adapter_required_raises_not_implemented` and `tests/test_build_db_inclusion.py::TestUnsupportedReasonStrings::test_at28c16_named_arm_reason_mentions_adapter_doc`, all in `firestarter_app`.
+
+Plans:
+**Wave 1**
+
+- [ ] 199-01-PLAN.md — Tracer: the Fujitsu 21 V correction end to end — override field, regeneration, the one-record wire delta layer, the one-line snapshot re-record, and the regeneration record (wave 1, RAIL-02)
+- [ ] 199-02-PLAN.md — **Bench session, `autonomous: false`, three blocking-human gates.** What the rails actually deliver at socket pin 1 on both VPP paths, Rev 2.0, pot at maximum, chip out — plus the paired ADC reads and the measured error (wave 1, RAIL-01). **Must not be run under `--auto` or `--chain`.**
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 199-03-PLAN.md — The shortfall gate: a pure policy module in the three-gate shape that never refuses, its threshold filled from the bench record, the `write` and `info` call sites, and the derived `FLAG_VPE_AS_VPP` (wave 2, RAIL-03, RAIL-04) — *depends on 199-02 for the measured threshold; no plan hardcodes 18000*
+- [ ] 199-04-PLAN.md — The 30-row classification test: exact post-override counts from the generated artifact, the algorithm-to-VPP-path mapping mirrored with its limit stated, and three non-vacuity legs (wave 2, RAIL-02) — *depends on 199-01 for the post-override voltage buckets*
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 199-05-PLAN.md — DECODE-NOTES § 10 with its seven named limits and the 30-row table, the held gh#71 draft, the one consolidated held-pending list now naming three issues, and a three-way proof that the measured threshold is the shipped threshold (wave 3, RAIL-01, RAIL-02, RAIL-04, RAIL-05)
 
 **Success criteria**:
 
