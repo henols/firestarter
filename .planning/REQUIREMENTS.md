@@ -45,7 +45,7 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
       a reader sees what changed and why without running the generator.
 - [x] **OVR-04**: The generator fails closed on an override it cannot apply — an unknown part number,
       an unknown field, or an override that has become a no-op because the decode now agrees with it.
-- [ ] **OVR-05**: The three part-specific corrections currently hardcoded in `build_db.py`
+- [x] **OVR-05**: The three part-specific corrections currently hardcoded in `build_db.py`
       (`NMOS_TRUE_VPP_MV`, `_AT28C_DIP24_NAMES`, and the relabel map) move into the override file,
       and the generated database is unchanged by the move.
 - [ ] **OVR-06**: Any constant that remains part-specific in the generator after OVR-05 is named, with
@@ -137,7 +137,7 @@ Tracked, not in this milestone.
 | OVR-02 | Phase 197 | Complete |
 | OVR-03 | Phase 197 | Pending |
 | OVR-04 | Phase 197 | Complete |
-| OVR-05 | Phase 197 | Pending |
+| OVR-05 | Phase 197 | Complete |
 | OVR-06 | Phase 197 | Pending |
 | PULSE-01 | Phase 197 | Pending |
 | PULSE-02 | Phase 197 | Pending |
