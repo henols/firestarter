@@ -39,11 +39,11 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
 
 - [x] **OVR-01**: A single override file beside `tools/extra_chips.json` carries per-part field
       overrides, and the generator applies them on top of the `infoic.xml` decode.
-- [ ] **OVR-02**: An entry holds only the fields that differ from the decoded value. A field whose
+- [x] **OVR-02**: An entry holds only the fields that differ from the decoded value. A field whose
       override equals what infoic decodes to is not an entry.
 - [ ] **OVR-03**: Every entry names the datasheet it comes from and the decoded value it replaces, so
       a reader sees what changed and why without running the generator.
-- [ ] **OVR-04**: The generator fails closed on an override it cannot apply — an unknown part number,
+- [x] **OVR-04**: The generator fails closed on an override it cannot apply — an unknown part number,
       an unknown field, or an override that has become a no-op because the decode now agrees with it.
 - [ ] **OVR-05**: The three part-specific corrections currently hardcoded in `build_db.py`
       (`NMOS_TRUE_VPP_MV`, `_AT28C_DIP24_NAMES`, and the relabel map) move into the override file,
@@ -134,9 +134,9 @@ Tracked, not in this milestone.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | OVR-01 | Phase 197 | Complete |
-| OVR-02 | Phase 197 | Pending |
+| OVR-02 | Phase 197 | Complete |
 | OVR-03 | Phase 197 | Pending |
-| OVR-04 | Phase 197 | Pending |
+| OVR-04 | Phase 197 | Complete |
 | OVR-05 | Phase 197 | Pending |
 | OVR-06 | Phase 197 | Pending |
 | PULSE-01 | Phase 197 | Pending |
