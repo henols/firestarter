@@ -289,7 +289,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 198-03-PLAN.md — DECODE-NOTES § 9 with its four named limits, the 28-row disposition, and the blocking todo closed with a drafted successor (wave 3)
+- [x] 198-03-PLAN.md — DECODE-NOTES § 9 with its four named limits, the 28-row disposition, and the blocking todo closed with a drafted successor (wave 3) — **done 2026-09-18: `DECODE-NOTES.md` § 9 completed with the D-15 general finding — the voltage word's two nibbles and the VPP byte select a **programmer rail index, not a chip requirement** — stated as a verdict in the opening line, before any evidence, on the § 8 template and with its own trailing sources paragraph (§ 7 Sources sits before § 8, so § 9 cannot extend it). **Sections 1–8 verified byte-identical** by the orchestrator; only § 9 moved, 81 → 155 lines. **The D-15 citation correction was applied and shown, not silently swapped:** § 9 cites `database.c` lines **125-126**, records that the phase context cited 123, and quotes what line 123 actually reads at the pinned sha — a phase whose subject is decode provenance does not propagate a citation it has measured as off. Evidence is the upstream comment plus the arithmetic that neither 5.5 nor 6.5 V lies inside the 5.75–6.25 V band the three vendored Fujitsu datasheets state. All four mandatory limits present in § 6's assertive voice: datasheet corroboration is **n = 3 and all three Fujitsu**; **no claim about the 167 rows at vdd index 0x4** this phase does not reach, which Phase 200 owns; the finding asserts **no particular row's value is correct**; and the low nibble's option-flag reading is **this generator's own, not upstream-attested**. D-16 recorded: 25 V and 21 V exist at `0xF1`/`0xF2` but no filtered row carries either, and no test can cover them until upstream ships such a row. D-03's **surviving silent fallback is named explicitly** — nothing mechanical reports a future unmapped index, and the decision was to keep defaulting. D-06's `vdd < vcc` predicate stated as documented-not-shipped; no assertion added to `build_db.py`, and `chip_database.json` and `build_db.py` are byte-unchanged. `198-VOLT03-DISPOSITION.md` enumerates **all 28 rows with no elision** (16 sub-group-1 + 12 sub-group-2, orchestrator-counted at 28 table rows) and re-derives the predicate against the pinned `infoic.xml` rather than trusting the prior plan's SUMMARY. It names the **direct in-repo contradiction** — the pending todo calls the 16 rows genuinely 3.3 V while Phase 148's own decision record and the shipped source comment call the same 16 genuinely 5 V — and **sides with the measurement**; `28LV64A` is left unresolved either way per D-11. The archived `148-DB-DIFF.md`'s falsified Non-claim is **pointed at, never edited**; `.planning/milestones/` verified untouched. **Honesty limit independently confirmed by the orchestrator: the repository vendors 13 datasheet PDFs and not one is a Microchip or an AMD datasheet**, so not one of the 16 has a vendored datasheet and every disposition for them is a part-class inference plus an in-repo measurement, never a datasheet reading. **The todo was closed by a genuinely pure rename — `R100`, similarity index 100%, 0 insertions / 0 deletions** — the 197 executor's zero-diff `git mv` trap avoided and checked with `git diff --stat` rather than trusting the commit summary. The successor backlog entry was **drafted to `198-BACKLOG-DRAFT.md`, not written to ROADMAP by the executor**; the orchestrator applied it as `999.73` after confirming ROADMAP byte-identical to its pre-dispatch snapshot, and re-ran the executor's own three legs: heading present, `### Phase 999.` count 68 → 69 with none of the prior 68 lost, and every required token found — diff shape **33 insertions / 0 deletions, a pure insertion**. **VOLT-03's flagged assumption stays unresolved by instruction:** the edge probe returned `unclassified — review manually`, the risk is evidentiary rather than computational, and it is discharged by the per-row disposition and its named honesty limit — a verifier that cannot confirm it should abstain to human review rather than pass or fail it against a predicate that was never meant to exist. Zero added comment lines. Suite **2075 passed** on the py3.11 CI replica, 32 snapshots pass. Commits: `firestarter_app` `f155364`; meta `2edf63aa`, `91f365b0`, `b6b60058`, `62be43f2`, `f2b22e43`.**
 
 **Success criteria**:
 
@@ -8081,6 +8081,39 @@ closing `Closed by: <vendor>'s own datasheet, vendored and git-tracked under dat
 present-tense claim, but each note states `No <vendor> datasheet ... is vendored in this
 repository` one sentence earlier, so the clause is a closure condition and the note is honest read
 whole.
+
+---
+
+### Phase 999.73: The 28-row `vcc_mv == 5500` group still reports the wrong operating voltage for 16 of its rows (BACKLOG — filed 2026-09-18 during v1.40 Phase 198, from `198-VOLT03-DISPOSITION.md`)
+
+**Goal:** Close each of the 28 rows with the vendor-specific datasheet that would settle whether
+its reported `vcc_mv: 5500` should move to its `vdd_mv`, or revert to the same value the read for
+that class of chip has always used.
+
+**MEASURED** (from `198-VOLT03-DISPOSITION.md`, the phase's per-row disposition record): 28 rows
+still report `vcc_mv: 5500` — 16 at decoded `(vcc 5500, vdd 3300)` and 12 at decoded `(vcc 5500,
+vdd 1800)`. All 28 ship unchanged this phase (D-11), as VOLT-03 explicitly permits. 12 of the 28
+are additionally held at an unsourced `vdd_mv: 5000` by twelve explicit `UNSOURCED` entries in
+`tools/datasheet_overrides.json`, each naming the part's own datasheet as what would close it.
+The repository vendors 13 datasheet PDFs and not one is a Microchip or an AMD datasheet, so 16 of
+the 28 (all of sub-group 1: `AM28C16A`, `AM28C17A`, `2804`, `2816`, `2817`, `28C04A`, `28C04AF`,
+`28C16A`, `28C16AF`, `28C17A`, `28C17AF`, `28C256,28C256F`, `28C64A`, `28C64AF`, `28C64B`,
+`28LV64A`) have no route to closure without a new PDF entering this repository first.
+
+**What would close each:** one datasheet per row, vendored and git-tracked. The 15 non-`28LV64A`
+sub-group-1 rows each need a Microchip or AMD datasheet for that specific part; `28LV64A` needs
+Microchip's own 28LV64A datasheet, which would also settle whether its `vcc_mv: 5500` is itself
+wrong (a 3.3 V part reporting a 5.5 V read rail is odd regardless of how `vdd_mv` reads). The 12
+sub-group-2 rows each need the EXEL, ST or SGS-THOMSON datasheet the corresponding `UNSOURCED`
+override entry already names.
+
+**Consequence of leaving them:** `firestarter info` continues to report 5.5 V for 28 parts whose
+own decoded program rail (`vdd_mv`) already disagrees with that figure, exactly the same category
+error Phase 148 corrected for 56 other rows in the inverse direction. The group is now fully
+disposed and the in-repo contradiction between the pending todo's premise and Phase 148's own
+prior measurement is resolved in favor of the measurement, but resolving the contradiction did not
+change a single emitted value — closing any of the 28 with confidence still requires the datasheet
+this repository does not yet vendor for it.
 
 ---
 
