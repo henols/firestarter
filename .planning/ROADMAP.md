@@ -347,7 +347,23 @@ Plans:
 **Success criteria**:
 
 1. A part needing more than 5.0 V to program says so where the operator sees it before the attempt.
-2. The wording is the same shape as Phase 199's, so one fact does not acquire two explanations.
+2. That wording **establishes** the project's shortfall-statement shape rather than matching a prior
+   one. **Amended 2026-09-19 (operator).** As written, criterion 2 and VCC-02 both pointed at
+   "the same shape as RAIL-03" — and RAIL-03 was adjudicated UNMET at the close of Phase 199, so
+   there is no shape to match. Phase 200 defines it instead.
+
+**Scope facts settled before planning (2026-09-19):**
+
+- **This is host-side work, and that does not contradict D-21.** `vdd_mv` — the elevated *programming*
+  supply this phase is about — **does not cross the wire**: the host's wire dict carries `vpp_mv` and
+  `vcc_mv` only. So the firmware cannot know a part needs it. Nor is there anything to route: the
+  shield's VCC is fixed at 5.0 V, so unlike the VPP shortfall there is no second rail to rescue the
+  part with. D-21 moved a *routing decision* the firmware could make from data it already held; here
+  the firmware has neither the data nor an action.
+- **RAIL-03 stays Pending and is NOT retrofitted here.** Whether this phase's wording later also
+  covers VPP shortfall, and so closes RAIL-03, is a separate decision. It would require the host to
+  carry the 17380 drop-path ceiling again, which is the stale-figure exposure D-21 moved away from —
+  milder for a warning than for routing, but not free, and not to be absorbed silently.
 
 ### Phase 201: A partial write is gated on its own region
 
