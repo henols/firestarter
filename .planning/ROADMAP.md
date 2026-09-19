@@ -383,6 +383,9 @@ Plans:
 
 **Goal**: Close backlog 999.44's live firmware half, so a non-erasable part holding data anywhere stops being unwritable everywhere.
 **Requirements**: BLANK-01, BLANK-02, BLANK-03
+**Plans:** 6 plans
+
+**Depends on**: nothing in v1.40 — the host half of 999.44 shipped in v1.36 Phase 179 (D-01)
 
 **Success criteria**:
 
@@ -390,6 +393,49 @@ Plans:
 2. The standalone blank-check command and the erase-end check are unchanged, chunked resumption
    included.
 3. A regression test covers a non-blank non-erasable part — the case whose absence is why this shipped.
+
+**Planning facts settled before the plans were written (2026-09-19):**
+
+- **The wire field carries an absolute END ADDRESS, not a length.** `eprom_internal_write_init_body`
+  is re-entered once per 8192-byte chunk and `handle->address` is the scan cursor from entry 2
+  onward, so `end = handle->address + length` is wrong on every call but the first — a silent
+  correctness bug visible only on parts larger than 8 KiB. Wire key `region-end`, handle member
+  `uint32_t region_end`, `0 = absent = whole device` (D-04).
+- **The `0 = absent` fallback and the fail-closed clamp resolve in ONE place** —
+  `mem_util_operation_end()` in `memory.cpp`. Resolving them with an inline ternary inside
+  `eprom.cpp` would add a row to the branch-inventory golden and would break
+  `test_progress_emission_is_leonardo_only.py`'s parenthesis-intolerant argument capture.
+- **The host key is emitted from `_setup_operation`, not from `database.py`'s
+  `convert_to_programmer`**, whose wire-key union is pinned to exactly nine keys.
+- **The cross-repo parity obligation splits across the two repos:** a literal-pinned host constant
+  plus a firmware source-contract gate. A cross-repo scanner is forbidden by operator ruling
+  `088d2b7`; the technique fails open.
+
+Plans:
+
+**Wave 1**
+
+- [ ] 201-01-PLAN.md — Harness and contract freeze: an address-keyed shadow readback model in `test_val_eprom`'s stubs, proved non-aliasing by a positive control, plus the two BLANK-02 characterization tests (multi-chunk resumption with cursor restore, and the erase-end arm scanning from 0) written GREEN against unmodified firmware
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 201-02-PLAN.md — `region-end` on both sides of the wire, inert: the handle member, four `json_parser.c` sites with the row-count assert edited 11→12, the per-command reset, the host constant and its literal pin — then the D-16.1 regression test written, run and SEEN RED with its transcript captured
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 201-03-PLAN.md — **Tracer:** one region end from `_setup_operation` through the wire into `mem_util_blank_check_region`, with the whole-device wrapper, the single `eprom.cpp:145` call site and the branch-inventory golden re-derived in the same commit — D-16.1 turns GREEN; plus the host legs once `fake_chip.py` learns the region
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 201-04-PLAN.md — Bound write and verify on the operation's end at `_process_incoming_data`'s two sites and the write-loop progress denominator, with the one-payload-meaning contract restated in the progress gate and a second golden re-derivation in the same commit
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 201-05-PLAN.md — The D-15.3 source-contract gate over all nine reference sites, proved by two planted violations observed RED; plus the D-11 latency non-claim, the answer to the folded `uv-write-shortcut` todo, the retirement of 999.44 and the flash measurement
+
+**Wave 6** *(blocked on Wave 5 — bench, `autonomous: false`)*
+
+- [ ] 201-06-PLAN.md — W27C512 (`0xDA08`, `--skip-erase`) rehearses RED→GREEN twice on pre-fix and post-fix images, then TMS27C512 (`0x9785`, UV-EPROM) supplies one confirming run; the transcript is committed as evidence and labelled as evidence
 
 ## v1.39 — Protocol 0x05 Write Correctness (CLOSED 2026-09-17 — 7/8 requirements; PAGE-03's hardware leg deliberately open per D-11, pending a `W29C512`; tagged `v1.39` — bare tag, no GitHub Release)
 
