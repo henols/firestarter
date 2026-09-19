@@ -5,10 +5,10 @@ milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 
 current_phase: 201
 current_phase_name: A partial write is gated on its own region
 status: planning
-stopped_at: Phase 200 complete, ready to plan Phase 201
-last_updated: "2026-09-19T20:00:06.978Z"
+stopped_at: Phase 201 context gathered
+last_updated: "2026-09-19T21:53:35.173Z"
 last_activity: 2026-09-19
-last_activity_desc: Phase 200 complete, transitioned to Phase 201
+last_activity_desc: Phase 201 context gathered (4 gray areas, 16 decisions)
 progress:
   total_phases: 5
   completed_phases: 1
@@ -238,7 +238,7 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 Phase: 201 — A partial write is gated on its own region
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-09-19 — Phase 200 complete, transitioned to Phase 201
+Last activity: 2026-09-19 — Phase 201 context gathered (4 gray areas, 16 decisions)
 
 ## Roadmap Summary (v1.38)
 
@@ -3566,8 +3566,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-18T22:10:43.228Z
-**Stopped at:** Phase 200 complete, ready to plan Phase 201
+**Last session:** 2026-09-19T21:52:47.571Z
+**Stopped at:** Phase 201 context gathered
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
@@ -3648,7 +3648,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/199-what-the-rails-can-actually-deliver/199-CONTEXT.md
+**Resume file:** .planning/phases/201-a-partial-write-is-gated-on-its-own-region/201-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
