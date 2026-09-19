@@ -23,6 +23,19 @@ human_verification:
 **Status:** passed
 **Re-verification:** Yes — re-verified 2026-09-19 after UAT gap G-200-1 shortened the warning to one line (firestarter_app `b3a777e`). Truths 1, 4 and 9 re-measured against the shipped source; all other truths unaffected and carried forward.
 
+
+> **Digest note.** `covered_digest` was recomputed twice this session: once after the G-200-1
+> reword changed three covered implementation files, and again after `phase.complete` flipped
+> VCC-01/VCC-02 in `.planning/REQUIREMENTS.md` — which is itself a covered file, so marking the
+> phase complete invalidated the digest it had just satisfied. Two tooling facts worth knowing
+> before trusting a recompute here: `gsd-tools query verification fingerprint` **silently drops
+> `.planning/`-root paths** such as `REQUIREMENTS.md` (it returned 13 of the 14 declared files, and
+> rejects that path outright when passed alone), while `verification.status` hashes the full
+> declared list — so that verb cannot reproduce the digest this file needs whenever `covered_files`
+> reaches outside the phase directory. The stored value was computed with the library's own
+> algorithm (sorted paths, `v1\n` + per-file `rel\nsha256\n`) over all 14 declared paths, and
+> confirmed by `verification.status` reading `passed`.
+
 ## Goal Achievement
 
 ### Observable Truths
