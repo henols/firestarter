@@ -162,6 +162,17 @@ and is read and discarded as junk. Payload destroyed, handler spinning, firmware
 a bounded wait on a `TIMEOUT_MS` deadline; a genuinely absent payload still ends in the same timeout
 error, so no failure mode is hidden.
 
+**Correction (2026-09-19, quick task `260919-cli`).** Fault 1's claim above — "No shipped AVR
+firmware implements `firestarter dev reg`, `dev addr` or this script" — is false, as is Deviation
+1's claim above that the `dt_set_registers` fix "ships in no release artifact." `beta-build.yml`
+sets `PLATFORMIO_BUILD_FLAGS: -D DEV_TOOLS=1` for its `pio run`, and the three published `3.0.0b31`
+AVR release assets were decoded and confirmed to carry `dev_tools.cpp` code — the conclusion here
+was drawn from `platformio.ini` alone, which never shows a CI-injected build flag. The fix ships in
+every published beta, unfixed there until firmware commit `7eed3af` reaches `beta`. Why this
+session's own board, reporting `3.0.0b31`, refused command 8 anyway is recorded as an open,
+unresolved inference in `199-BENCH-RECORD.md`'s corrected Fault 1, not a measurement. Full evidence:
+`.planning/quick/260919-cli-beta-build-ships-dev-tools-so-dev-reg-an/260919-cli-EVIDENCE.md`.
+
 **Two of this plan's four Task 2 verify legs do not pass.** One true negative, left failing (see
 Deviations 2). One false positive: `test -z "$(pgrep -af hold_rail.py)"` matches the verify script's
 own command line, because the preceding leg contains the literal string and both run in one shell.

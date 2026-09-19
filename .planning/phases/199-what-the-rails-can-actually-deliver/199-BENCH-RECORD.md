@@ -170,10 +170,32 @@ ERROR:RURP         : ERROR: Unknown command: 8
 
 `CMD_DEV_REGISTER` is `8`, and `firestarter_fw/include/firestarter.h` defines it inside
 `#if DEV_TOOLS`. `-D DEV_TOOLS=1` appears in `platformio.ini` **only under `[env:native]`** — not
-under `[env:leonardo]`, `[env:uno]` or `[env:uno328pb]`. **No shipped AVR firmware implements
-command 8**, so `firestarter dev reg`, `firestarter dev addr` and `hold_rail.py` cannot work on any
-released build. Historically `-D DEV_TOOLS` sat in the shared `[env]` block (firmware commit
-`2678306`), which is why this method worked at the v1.14 and v1.18 benches and silently stopped.
+under `[env:leonardo]`, `[env:uno]` or `[env:uno328pb]`. This session concluded from that reading
+alone that **no shipped AVR firmware implements command 8**.
+
+**Correction, 2026-09-19 (quick task `260919-cli`): that conclusion is false, and the falsification
+is the finding.** `.github/workflows/beta-build.yml`'s "Build PlatformIO Project" step sets
+`PLATFORMIO_BUILD_FLAGS: -D DEV_TOOLS=1` for its `pio run` — a per-channel injection added in
+firmware commit `e6888a9` ("build: make dev tools a per-channel decision, off by default") and
+invisible to a reading of `platformio.ini` alone. The three published `3.0.0b31` AVR release
+assets were downloaded, decoded from Intel HEX, and searched for `CTRL remapped` (a string literal
+that exists only in `dev_tools.cpp`) on 2026-09-19: `firestarter_uno.hex`, `firestarter_uno328pb.hex`
+and `firestarter_leonardo.hex` all contain it. **The published beta channel does implement command
+8.** Historically `-D DEV_TOOLS` sat in the shared `[env]` block (firmware commit `2678306`), which
+is why this method worked at the v1.14 and v1.18 benches — it did not silently stop working, as
+this record originally concluded; `e6888a9` moved the flag from the shared block to the beta
+publisher alone, and the shipped beta artifact still carries it.
+
+These two facts do not reconcile on their own: the board in this session, reporting itself as
+`3.0.0b31`, refused command 8 with `ERROR: Unknown command: 8` below; the published `3.0.0b31`
+release assets implement that command. The most likely explanation is that the attached board was
+running a locally built image rather than the actual published `3.0.0b31` asset — but that
+explanation is an **inference, not a measurement**: no image was pulled off the board and compared
+byte-for-byte against the release asset. The "Rig state left by this session" paragraph below
+records exactly that hazard for the image this session left behind (a locally built
+`-D DEV_TOOLS=1` image that self-reports as `3.0.0b33` and is not the released `3.0.0b33`), which
+is consistent with the same hazard having already been present, unnoticed, at the session's start.
+Full evidence: `.planning/quick/260919-cli-beta-build-ships-dev-tools-so-dev-reg-an/260919-cli-EVIDENCE.md`.
 
 `firestarter dev reg` **exits 0** on this path despite printing `ERROR: Unknown command: 8`.
 
@@ -200,8 +222,12 @@ to the `default:` arm of its switch and is read and discarded as junk**
 (`firestarter_fw/src/operation_utils.cpp`). The payload is destroyed, the handler spins, and the
 firmware's own timeout fires. The handler is not re-entrant across its own early return.
 
-This is a latent defect in code that **no CI leg exercises on hardware and no release ships**:
-`dev_tools.cpp` compiles only under `DEV_TOOLS`, which only `[env:native]` sets.
+This is a latent defect in code that **no CI leg exercises on hardware**. It does ship: per the
+correction above, the published beta channel builds `dev_tools.cpp` under `-D DEV_TOOLS=1`
+(`beta-build.yml`'s `PLATFORMIO_BUILD_FLAGS` injection), so every published pre-release through
+`3.0.0b33` carries this re-entrancy defect uncorrected, and `firestarter dev reg` against any of
+them dispatches command 8 and then times out. It is fixed on this milestone branch (firmware commit
+`7eed3af`) but that fix has not yet reached `beta`.
 
 ### Rig state left by this session
 
