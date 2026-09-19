@@ -1,24 +1,27 @@
 ---
 phase: 200-an-elevated-programming-supply-is-stated
-verified: 2026-09-19T00:00:00Z
-status: human_needed
+verified: 2026-09-19T19:40:00Z
+status: passed
 score: 9/10 must-haves verified
 covered_files: [".planning/REQUIREMENTS.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-01-PLAN.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-01-SUMMARY.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-02-PLAN.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-02-SUMMARY.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-03-PLAN.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-03-SUMMARY.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-CONTEXT.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-REVIEW.md", "firestarter_app/firestarter/eprom_info.py", "firestarter_app/tests/__snapshots__/test_characterization.ambr", "firestarter_app/tests/test_characterization.py", "firestarter_app/tests/test_cli_handlers.py", "firestarter_app/tests/test_programming_vcc_census.py"]
-covered_digest: "v1:sha256:24628ba3c41de3584bfe2e272fba6794b470a926fe6966e1639540d741e3a4a2"
+covered_digest: "v1:sha256:ab4005f88a85adabd19af96fcac20150939c338986872c34265f5ef4ab5c016e"
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
-  - test: "Read the shipped wording once, in place: run `firestarter info MBM27C1000` (or MBM27C4001) and confirm the two deliberate voltage spellings (`6.0v` in the field-row cell via `format_mv`, `6.0 V` in the warning prose via `_format_v_prose`) are both wanted, and that the amended verb — \"this part's programming supply decodes to 6.0 V; the shield supplies a fixed 5.0 V. Programming will be attempted at 5.0 V.\" — reads the way you intended when you amended it on 2026-09-19."
+  - test: "Read the shipped wording once, in place: run `firestarter info MBM27C1000` (or MBM27C4001) and confirm the two deliberate voltage spellings (`6.0v` in the field-row cell via `format_mv`, `6.0 V` in the warning prose via `_format_v_prose`) are both wanted, and that the amended verb reads the way you intended when you amended it on 2026-09-19."
     expected: "Operator confirms both spellings and the amended verb read as intended, or states which should change."
     why_human: "This is plan 200-02 Task 2's own reserved `<human-check>`; no agent ran it, correctly, since the plan reserves this judgment for the operator. It is also the substance of VCC-02's 'is this the same shortfall-statement shape, does it read right' question, which 200-01's own flagged_assumptions explicitly route to human review rather than an automated pass/fail."
+    resolved: true
+    resolved_at: 2026-09-19
+    outcome: "REJECTED then FIXED. Operator judged the shipped two-line warning \"To long and complicated warning\", and chose a one-line replacement. Shipped in firestarter_app b3a777e as `WARNING: Programming VCC decodes to 6.0 V; using 5.0 V.` (55 chars, down from 92+40 across two lines). The deliberate 6.0v / 6.0 V spelling split is retained and both numbers still route through `_format_v_prose`; D-04's amended \"decodes to\" verb is preserved verbatim; D-05's state-and-proceed signal is now carried by \"using\" rather than a follow-on sentence. Tracked as UAT gap G-200-1, status resolved."
 ---
 
 # Phase 200: An elevated programming supply is stated Verification Report
 
 **Phase Goal:** A decoded `vdd_mv` that nothing applies stops being invisible.
 **Verified:** 2026-09-19
-**Status:** human_needed
-**Re-verification:** No — initial verification
+**Status:** passed
+**Re-verification:** Yes — re-verified 2026-09-19 after UAT gap G-200-1 shortened the warning to one line (firestarter_app `b3a777e`). Truths 1, 4 and 9 re-measured against the shipped source; all other truths unaffected and carried forward.
 
 ## Goal Achievement
 
@@ -26,15 +29,15 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | (SC1/VCC-01) A part whose `vdd_mv` decodes above 5000 mV shows a `Programming VCC:` row (between `VCC:` and `VPP:`) and a two-line `WARNING:` block naming both numbers, on `firestarter info`, before any write is attempted; exits 0. | ✓ VERIFIED | Re-ran independently: `firestarter info MBM27C1000` (clean `FIRESTARTER_CONFIG_DIR`) prints `Programming VCC:    6.0v` directly after `VCC:                5.0v` and before `VPP:                12.5v`, then a blank line, then `WARNING: this part's programming supply decodes to 6.0 V; the shield supplies a fixed 5.0 V.` / `Programming will be attempted at 5.0 V.`, `rc=0`, full DIP layout still printed. Corroborated by `tests/test_characterization.py::test_info_mbm27c1000`/`test_info_mbm27c4001` (subprocess, real entry point, syrupy-pinned) — both pass (`2 passed`, `4 snapshots passed`). |
+| 1 | (SC1/VCC-01) A part whose `vdd_mv` decodes above 5000 mV shows a `Programming VCC:` row (between `VCC:` and `VPP:`) and a `WARNING:` block naming both numbers, on `firestarter info`, before any write is attempted; exits 0. **(Amended at UAT 2026-09-19: the block is one line, not two — see G-200-1. REQUIREMENTS.md's VCC-01 never specified a line count, so the requirement is unchanged.)** | ✓ VERIFIED (re-measured) | Re-ran after the G-200-1 fix: `firestarter info MBM27C1000` (no `~/.firestarter/database.json` override present) prints `Programming VCC:    6.0v` directly after `VCC:                5.0v` and before `VPP:                12.5v`, then a blank line, then the single line `WARNING: Programming VCC decodes to 6.0 V; using 5.0 V.`, `rc=0`, full DIP layout still printed. `MBM27C4001` renders the identical row and warning, `rc=0`. Corroborated by `tests/test_characterization.py::test_info_mbm27c1000`/`test_info_mbm27c4001` (subprocess, real entry point, syrupy-pinned) — both pass after a scoped `--snapshot-update` proved narrow by `git diff --numstat` (2 insertions / 4 deletions, both hunks the warning block). Full suite re-run green: **2100 passed, 36 snapshots passed**. |
 | 2 | (D-06 fail-open, enumerated cases) A part at or below 5000 mV, or with `vdd_mv` absent/`None`/`0`/exactly `5000`/a non-numeric string, shows neither the row nor the warning; still shows `VCC:` correctly; exits 0. | ✓ VERIFIED | Re-ran independently: `firestarter info W27C512` shows only `VCC:                5.0v`, no `Programming VCC:`/`decodes`, `rc=0`. `programming_vcc_over_rail_mv` re-run directly against all 9 plan-specified cases (6000→6000, 5001→5001, 5000→None, 0→None, None→None, `{}`→None, `{}`(no electrical)→None, `None` arg→None, `"not-a-number"`→None) — all match. |
 | 3 | (D-03) The predicate is `vdd_mv > _SHIELD_FIXED_VCC_MV`, `_SHIELD_FIXED_VCC_MV = 5000` defined exactly once, at module level in `eprom_info.py`, not in `constants.py`. | ✓ VERIFIED | `grep -c '_SHIELD_FIXED_VCC_MV = 5000' firestarter/eprom_info.py` = 1; `firestarter/constants.py` confirmed byte-unchanged against `0d6be3f`. |
-| 4 | (D-04) The shipped sentence uses the operator's 2026-09-19 amended verb ("decodes to"), and the pre-amendment verb ("programs at") occurs zero times in `eprom_info.py`. | ✓ VERIFIED | Read `eprom_info.py` source directly: `programming supply decodes to` appears once; `grep -cF 'programs at' firestarter/eprom_info.py` = 0. |
+| 4 | (D-04) The shipped sentence uses the operator's 2026-09-19 amended verb ("decodes to"), and the pre-amendment verb ("programs at") occurs zero times in `eprom_info.py`. | ✓ VERIFIED (re-measured) | Read `eprom_info.py` source directly after the G-200-1 rewording: `grep -cF 'decodes to'` = 2 (the shipped sentence plus the design comment above it); `grep -cF 'programs at'` = 0; `grep -cF "part's programming supply requires"` = 0. The amended verb survived the shortening verbatim — only the subject phrase and the follow-on line changed. |
 | 5 | (D-02/D-07) The `write` path is unchanged; `vdd_mv` never crosses the wire; `database.py`, `cli_handlers.py`, `constants.py` byte-unchanged against phase base `0d6be3f`; no firmware file touched. | ✓ VERIFIED | `git diff --quiet 0d6be3f -- firestarter/database.py firestarter/cli_handlers.py firestarter/constants.py` exits 0 (re-run independently). `firestarter_fw` gitlink is unchanged since Phase 199 (`a050730`, clean tree). Phase diff overall: 5 files, 836 insertions, 0 deletions — none in database.py/cli_handlers.py/constants.py/firmware. |
 | 6 | (D-01) The shipped predicate selects exactly 284 of 746 rows in the live database, proved non-vacuous (not a hand-transcribed number). | ✓ VERIFIED | `tests/test_programming_vcc_census.py` — 11/11 tests pass (re-run independently); imports the shipped predicate rather than reimplementing it; three in-module planted mutations plus an external `sed` mutation on `_EXPECTED_TOTAL_ROWS` all observed to fail per plan verify legs (reproduced: mutated total 283 fails, restored to 284 passes as part of the 11-test run). |
 | 7 | (D-03) Phase 198's 28-row VOLT-03 set (`vcc_mv: 5500`) is fully disjoint from the 284-row elevated set. | ✓ VERIFIED | `test_volt03_five_five_volt_set_is_disjoint_from_the_elevated_set` passes as part of the 11/11 run; independently re-derivable from the live database (28 rows at `vcc_mv==5500`, 0 overlap with the 284). |
 | 8 | The amended D-04 verb is warranted by measurement: exactly 3 of 284 rows carry a datasheet-cited `vdd_mv` override, 281 carry a pure rail-table slot. | ✓ VERIFIED | `test_only_three_elevated_rows_carry_a_datasheet_cited_vdd_override` passes; keys are `FUJITSU/MBM27128`, `FUJITSU/MBM27C1001`, `FUJITSU/MBM27C4001`, matched via comma-split aliasing (the exact bug class the plan calls out is guarded against). |
-| 9 | (SC2/VCC-02) The shortfall-statement shape (blank separator, `WARNING:`-prefixed condition+consequence, follow-on line) is **defined**, generalising the existing `no_pinout_warning` advisory, per the ROADMAP's 2026-09-19 amendment superseding the RAIL-03-matching clause. | ✓ VERIFIED (structural) — see human_verification for the design-intent half | Read `present_eprom_details` directly: the new block is byte-for-byte the same three-part shape (`logger.warning("")`, condition+consequence line, follow-on line) as the pre-existing `no_pinout_warning` block a few lines below it. ROADMAP.md's Phase 200 section carries the amendment text verbatim, matching CONTEXT.md's D-04 note and the plans' `flagged_assumptions`. Whether this reads as the *intended* wording is inherently a design judgment, not a code-shape fact — routed to human_verification per the plan's own instruction. |
+| 9 | (SC2/VCC-02) The shortfall-statement shape (blank separator, `WARNING:`-prefixed condition+consequence) is **defined**, generalising the existing `no_pinout_warning` advisory, per the ROADMAP's 2026-09-19 amendment superseding the RAIL-03-matching clause. **(Amended at UAT 2026-09-19 — G-200-1: the consequence is now folded into the single `WARNING:` line rather than carried by a follow-on line.)** | ✓ VERIFIED (re-measured) — design-intent half now signed off, see `human_verification.resolved` | Read `present_eprom_details` directly after the G-200-1 rewording: the block is now two-part (`logger.warning("")`, then one condition+consequence line) against the `no_pinout_warning` block's three parts a few lines below it — the shared, generalised shape is the blank separator plus a `WARNING:`-prefixed condition+consequence line, which both blocks still have. **This is a deliberate operator amendment made during UAT, not drift:** the two-line form was rejected as too long. REQUIREMENTS.md's VCC-02 asks only that the statement "uses the same warning shape as RAIL-03, so one fact does not get two explanations" — it specifies no line count, and the one-line form arguably serves the "not two explanations" clause more directly. Both regression tests still pin the shape and both pass. ROADMAP.md's Phase 200 section carries the amendment text verbatim, matching CONTEXT.md's D-04 note and the plans' `flagged_assumptions`. Whether this reads as the *intended* wording is inherently a design judgment, not a code-shape fact — routed to human_verification per the plan's own instruction. |
 | 10 | (D-06, full contract) The predicate "must fail open" **unconditionally**, per its own docstring, for any malformed `raw_config_data`/`electrical`/`vdd_mv` shape reachable through a hand-edited local override. | ✗ Not fully met — see finding below | Reproduced directly: `programming_vcc_over_rail_mv({"electrical": "bogus"})` raises `AttributeError` rather than returning `None` (also for `123`, `[1,2,3]`). This is outside the plan's own explicitly enumerated D-06 case list (absent/`None`/`0`/exactly-5000/non-numeric-string `vdd_mv`), all of which pass, but it contradicts the shipped docstring's unconditional framing. See "CR-01" discussion below. |
 
 **Score:** 9/10 truths verified (0 present, behavior-unverified)
@@ -125,13 +128,40 @@ No orphaned requirements: `REQUIREMENTS.md`'s Traceability table maps only VCC-0
 
 No debt markers (`TBD`/`FIXME`/`XXX`) found in any file this phase modified (the one `XXX` grep hit in `test_characterization.py` is part of a `/dev/ttyXXX` path-masking pattern, not a debt marker). No `TODO`/`HACK`/`PLACEHOLDER` found.
 
-### Human Verification Required
+### Human Verification — RESOLVED 2026-09-19
 
-### 1. Wording and spelling confirmation (200-02 Task 2's reserved human-check)
+### 1. Wording and spelling confirmation (200-02 Task 2's reserved human-check) — ✓ SIGNED OFF (after one rejection)
 
 **Test:** Run `firestarter info MBM27C1000` (or `MBM27C4001`) and read the output.
-**Expected:** Confirm (a) the deliberate two-spelling split is wanted — `6.0v` in the `Programming VCC:` field-row cell (via `format_mv`) versus `6.0 V` in the warning prose (via `_format_v_prose`) — or say which one should win; and (b) the amended-verb sentence — `WARNING: this part's programming supply decodes to 6.0 V; the shield supplies a fixed 5.0 V.` / `Programming will be attempted at 5.0 V.` — reads the way you intended when you amended it on 2026-09-19.
+**Expected:** Confirm (a) the deliberate two-spelling split is wanted — `6.0v` in the `Programming VCC:` field-row cell (via `format_mv`) versus `6.0 V` in the warning prose (via `_format_v_prose`) — or say which one should win; and (b) the amended-verb sentence reads the way you intended when you amended it on 2026-09-19.
 **Why human:** This is a design-intent judgment the plan itself reserves for the operator (`200-02-PLAN.md` Task 2's own `<human-check>` block), not a code-shape fact a verifier can adjudicate. It is also the substance of the "does VCC-02's defined shape read right" question both plans' `flagged_assumptions` explicitly route to human review.
+
+**Outcome — the human-check did its job and caught something no automated leg could.** The operator
+rejected the shipped wording outright: *"To long and complicated warning"*. Logged as UAT gap
+**G-200-1** (severity minor), then closed in the same session.
+
+| | Before | After |
+|---|---|---|
+| Text | `WARNING: this part's programming supply decodes to 6.0 V; the shield supplies a fixed 5.0 V.`<br>`Programming will be attempted at 5.0 V.` | `WARNING: Programming VCC decodes to 6.0 V; using 5.0 V.` |
+| Lines | 2 | 1 |
+| Chars | 92 + 40 | 55 |
+| Rail value spelled | twice | once |
+
+Shipped as `firestarter_app` **`b3a777e`**. Both phase-locked constraints survive the shortening:
+
+- **D-04's amended verb** — "decodes to", not "requires"/"programs at" — preserved verbatim
+  (`grep -cF 'programs at'` = 0).
+- **D-05's state-and-proceed signal** — the warning must never read as a refusal — now carried by
+  "using" instead of a follow-on sentence.
+- **The deliberate spelling split (a)** — the field row still reads `6.0v` via `format_mv`, the
+  prose still reads `6.0 V` via `_format_v_prose`, and *both* numbers in the new line route
+  through `_format_v_prose`. Confirmed wanted as-is; no change requested to (a).
+
+Evidence: full suite **2100 passed / 36 snapshots**; snapshot diff **2 insertions, 4 deletions**,
+both hunks the warning block; `ruff check` + `ruff format --check` clean; **mypy delta zero**
+(32 errors before and after on a py3.11 interpreter matching CI, neither changed file in the
+list); live render re-checked on `MBM27C1000` and `MBM27C4001` (both `rc=0`) and on the
+negative case `W27C512` (neither row nor warning).
 
 ### Gaps Summary
 
@@ -139,7 +169,7 @@ No blocking gaps. Every artifact this phase claims to have produced exists, is s
 
 One narrow, non-blocking correctness gap exists in `programming_vcc_over_rail_mv`'s exception handling for a malformed (non-dict) `electrical` value — real, caught by the phase's own code review, reproduced independently here, but outside every must-have this phase's plans actually declared, currently unreachable via the shipped `info` path, and unreachable from the live database. Recommended disposition: file as a backlog fix rather than block the phase (see "CR-01 discussion" above for the fix already drafted by the code review).
 
-One item needs the operator's own sign-off before this phase can be called fully closed: confirming the shipped wording (spelling split + amended verb) reads as intended. This is the sole reason overall status is `human_needed` rather than `passed` — every other truth is independently verified against the actual codebase, not taken from a SUMMARY.
+The one item that needed the operator's own sign-off — confirming the shipped wording reads as intended — has been resolved. It came back **rejected** ("To long and complicated warning"), the warning was shortened to a single line in `firestarter_app` `b3a777e`, and the affected truths (1, 4, 9) were re-measured against the shipped source. Overall status is now `passed`. Note that the commit SHAs listed above are the phase's original six; `b3a777e` is the seventh, added by this gap closure, and the meta gitlink is advanced to it.
 
 ---
 
