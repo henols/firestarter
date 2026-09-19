@@ -4,15 +4,15 @@ milestone: v1.40
 milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
 current_phase: 201
 current_phase_name: A partial write is gated on its own region
-status: planning
-stopped_at: Phase 201 context gathered
-last_updated: "2026-09-19T21:53:35.173Z"
+status: planned
+stopped_at: Phase 201 planned
+last_updated: "2026-09-19T23:17:03.177Z"
 last_activity: 2026-09-19
-last_activity_desc: Phase 201 context gathered (4 gray areas, 16 decisions)
+last_activity_desc: Phase 201 planned (6 plans, waves 1-6; research + pattern map; plan-checker passed)
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 20
+  total_plans: 26
   completed_plans: 20
   percent: 20
 ---
@@ -237,8 +237,8 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 Phase: 201 — A partial write is gated on its own region
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-19 — Phase 201 context gathered (4 gray areas, 16 decisions)
+Status: Ready to execute
+Last activity: 2026-09-19 — Phase 201 planned (6 plans, waves 1-6)
 
 ## Roadmap Summary (v1.38)
 
