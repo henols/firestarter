@@ -4,7 +4,7 @@ verified: 2026-09-19T19:40:00Z
 status: passed
 score: 9/10 must-haves verified
 covered_files: [".planning/REQUIREMENTS.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-01-PLAN.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-01-SUMMARY.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-02-PLAN.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-02-SUMMARY.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-03-PLAN.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-03-SUMMARY.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-CONTEXT.md", ".planning/phases/200-an-elevated-programming-supply-is-stated/200-REVIEW.md", "firestarter_app/firestarter/eprom_info.py", "firestarter_app/tests/__snapshots__/test_characterization.ambr", "firestarter_app/tests/test_characterization.py", "firestarter_app/tests/test_cli_handlers.py", "firestarter_app/tests/test_programming_vcc_census.py"]
-covered_digest: "v1:sha256:ab4005f88a85adabd19af96fcac20150939c338986872c34265f5ef4ab5c016e"
+covered_digest: "v1:sha256:94ce6b02249921ef9196a02470bc2b398e82bb6bb07045e32a3d64cc73ac07d6"
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
