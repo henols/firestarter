@@ -78,6 +78,48 @@ This differs from the plan's prescribed method, which assumed `hold_rail.py 0x18
 rail. It does not on this rig — see Fault 1 and Fault 2. A reader must not read the
 `hold_rail.py 0x188` string elsewhere in this file as the provenance of `17380`.
 
+### Window B — direct VPE path to socket pin 1 (`0x088`)
+
+| Field | Value |
+|---|---|
+| Operator's meter reading, verbatim | **`22.14v`** |
+| Millivolt conversion (exact decimal shift, not rounded) | **`22140`** |
+| Composite | `0x088` = `0x080` REGULATOR + `0x008` P1, drop bit CLEAR |
+| Measurement point | socket pin 1 against board ground, same pin as Window A |
+| Rig | same session, pot NOT moved between Window A and Window B |
+
+Invocation, held by the same firmware button-wait as Window A:
+
+```
+firestarter -v -p /dev/ttyACM0 dev reg 0 0 0x088 -f
+```
+
+Firmware answered `OK: Ready` and the host disconnected before the reading. No `firestarter`
+command ran while the rail was held.
+
+### The pair
+
+| Path | Composite | Delivered at socket pin 1 |
+|---|---|---|
+| Drop-resistor (standard VPP) | `0x188` | **17380 mV** |
+| Direct VPE (VPE-as-VPP) | `0x088` | **22140 mV** |
+
+Both at one pot setting, pot at maximum, socket empty, Rev 2.0 by operator silkscreen statement.
+
+**What the pair supports, stated no further than it goes.** Against the 30-row census measured in
+plan `199-04` (30 rows at or above 18000 mV; 10 on algorithm `0x07`, 20 on `0x0B`):
+
+- The drop-resistor path at 17380 mV reaches **none** of the 30. The nine `0x07` rows at 18000 miss
+  by 620 mV; the one `0x07` row at 21000 (`FUJITSU/MBM27128`, the gh#71 part) misses by 3620 mV.
+- The direct-VPE path at 22140 mV covers **all ten** `0x07` rows, the worst by 1140 mV of margin.
+
+**What the pair does NOT support.** The 20 algorithm `0x0B` rows — which include all six rows at
+25000 mV — receive VPE through `CTRL_VPE_ENABLE` to **pin 21**, and per D-06 that configuration was
+deliberately NOT measured in this session. Neither figure above is evidence about those rows. In
+particular, nothing here licenses the inference that the six 25000 mV rows are out of reach: 22140
+is a pin-1 figure on a path those rows do not use. Plan `199-05` owes its reader that approximation
+disclosure explicitly.
+
 ### Attempts that produced no rail and no reading
 
 
