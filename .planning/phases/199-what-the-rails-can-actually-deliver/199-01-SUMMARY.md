@@ -178,6 +178,14 @@ None — no external service configuration required.
 - The 199 delta layer, override entry, and regeneration record are all committed on `v1.40-program-parameter-fidelity` in both repositories, gitlink advanced. No blockers for `199-02` (the bench session) or `199-03`/`199-04`/`199-05`.
 - No firmware file was touched, consistent with this phase being host-only.
 
+## Self-Check: PASSED
+
+- Branch identity: both `firestarter_app` and the meta repo confirmed on `v1.40-program-parameter-fidelity` after every commit.
+- Created files exist on disk: `firestarter_app/tests/golden/wire_dict_expected_deltas_199.json`, `.planning/phases/199-what-the-rails-can-actually-deliver/199-REGEN-DIFF.md`, `.planning/phases/199-what-the-rails-can-actually-deliver/199-01-SUMMARY.md` — all FOUND.
+- Commits exist in `git log --oneline --all`: `firestarter_app@82e2461`, `firestarter_app@b26e764`, `firestarter_app@7e02494`, `meta@3ab2e8f9`, `meta@ac85d4a9` — all FOUND.
+- Meta gitlink for `firestarter_app` matches its live HEAD (`7e02494`).
+- RAIL-02 correctly left unmarked in REQUIREMENTS.md pending sibling plans 199-04/199-05 (shared-ID gate, `requirements.ready-ids` reported 0/1 ready).
+
 ---
 *Phase: 199-what-the-rails-can-actually-deliver*
 *Completed: 2026-09-19*
