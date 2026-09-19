@@ -4,16 +4,16 @@ milestone: v1.40
 milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
 current_phase: 199
 current_phase_name: What the rails can actually deliver
-status: planned
-stopped_at: Phase 199 planned
-last_updated: "2026-09-18T23:25:28.596Z"
-last_activity: 2026-09-18
-last_activity_desc: "Phase 198 (The two voltage nibbles) CLOSED 2026-09-18 — 4/4 plans, verifier 22/23 with one deliberate deferral, no gaps. Both decode tables completed from upstream index-for-index: VPP_MV gained 0xF1=25000 and 0xF2=21000 and now exact-matches those two low bytes BEFORE the 0xF0 mask (the naive re-key would have dropped 142 rows to the 0 default; the shipped DB carries zero rows at vpp_mv 0), and VCC_VOLTAGES went 6 to 15 entries with 0x0F left genuinely absent. Whole-phase regeneration diff re-measured by the orchestrator at 15 rows / 17 field values, all under electrical: 3 rows / 5 fields from 198-01 (two Fujitsu parts to vpp_mv 12500, three to vdd_mv 6000) and 12 rows / 12 fields from 198-02 (5 at 5000-to-6000, 7 at 5000-to-6250). 746 rows in and out, same key set, support_status multiset identical, zero vcc_mv moved. The 0x06 carve-out is 12 explicit UNSOURCED override entries rather than an omission from the table, proven load-bearing by a planted mutation; overrides now 22 sorted keys, 18 UNSOURCED, 4 citing git-tracked PDFs. D-11 held: all 28 rows at vcc_mv 5500 ship unchanged, and the vdd<vcc predicate selects exactly that set (28/433/285 = 746) but ships no assertion. DECODE-NOTES section 9 states the general finding as a verdict before its evidence with four named limits, sections 1-8 byte-unchanged, and cites database.c 125-126 after measuring the phase context 123 as wrong. 198-VOLT03-DISPOSITION.md disposes all 28 rows with no elision, names the in-repo contradiction against Phase 148 and sides with the measurement, and states the honesty limit that this repository vendors no Microchip and no AMD datasheet. The blocking vcc-5500 todo closed by a genuine pure rename (R100, 0/0) and backlog 999.73 filed as its successor. VOLT-01/02/03 Complete; VOLT-04 deliberately Pending — the gh#66 answer is written and held as 198-GH66-ANSWER.md but NOT posted, because the milestone branch has no upstream so no version a reader could resolve exists yet; 197-GH70-ANSWER.md now carries one consolidated deferral list naming both gh#70 and gh#66 for the milestone close. Zero comment lines added to any .py file across the whole phase; 7 deleted. Suite 2075 passed on the py3.11 CI replica, 32 snapshots, ruff clean; regression gate over prior-phase test files 121 passed. Code review: 0 critical, 1 warning (a latent, currently-unreachable 0xF1/0xF2 ambiguity in the new exact-match branch), 2 info. Nothing pushed, nothing posted."
+status: executing
+stopped_at: Phase 199 — 199-01 and 199-04 done; awaiting operator bench session for 199-02
+last_updated: "2026-09-19T06:22:19.257Z"
+last_activity: 2026-09-19
+last_activity_desc: "Phase 199 in progress 2026-09-19 — 2 of 5 plans complete. 199-01 took gh#71's 21 V from the vendored MBM27128 datasheet to the operator's screen: one override field added, regeneration re-measured at 746 rows in / 746 out / exactly one changed tuple (FUJITSU/MBM27128 electrical.vpp_mv 18000 -> 21000), support_status multiset byte-identical so D-01 survives D-17, a one-record programmatically-generated wire delta layer, and a snapshot re-record of 1 insertion / 1 deletion reading 21.0v. 199-04 made the 30-row classification able to go red: 30 rows at or above 18000 mV, 21/3/6 by voltage, 10 drop-resistor (algo 0x07, 28-pin) / 20 direct-VPE (algo 0x0B, 24-pin), all supported, every count an equality and proved non-vacuous three ways. Its deviation of record: the plan's claim that every drop-resistor row sits at exactly 18000 is false post-override — 199-01 moved MBM27128 (algo 0x07) to 21000, so the path reads 9 @ 18000 + 1 @ 21000. The same stale claim is still written at 199-CONTEXT.md:396 and must not be copied into 199-05's DECODE-NOTES table. Suite 2085 passed on py3.11, 32 snapshots, ruff clean; zero comment lines added to firestarter_app across all five app commits. 199-02 is a blocking-human bench plan and cannot start: no programmer is attached to this host. 199-03 consumes its DELIVERABLE_MAX_DROP_PATH_MV threshold and 199-05 depends on all four, so both are blocked behind it. Branch creation was skipped deliberately — init computes gsd/v1.40-...-activated-... from the milestone title, which would fork off origin/beta and strand the milestone. Nothing pushed."
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 17
-  completed_plans: 12
+  completed_plans: 14
   percent: 0
 ---
 
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 199 — What the rails can actually deliver — READY TO EXECUTE
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-09-18 — Phase 199 planned: 5 plans across 3 waves, plan-checker passed, 20/20 decisions covered
+Phase: 199 (What the rails can actually deliver) — EXECUTING
+Plan: 2 of 5 complete (199-01, 199-04) — 199-02 blocked at its bench gate, 199-03 and 199-05 downstream of it
+Status: Executing Phase 199 — halted pending the operator's bench session (199-02)
+Last activity: 2026-09-19 — 199-01 and 199-04 complete and independently re-verified; suite 2085 passed on py3.11
 
 ## Roadmap Summary (v1.38)
 
