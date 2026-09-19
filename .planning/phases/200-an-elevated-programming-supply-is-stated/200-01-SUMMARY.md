@@ -157,4 +157,14 @@ None — no external service configuration required.
 ---
 *Phase: 200-an-elevated-programming-supply-is-stated*
 *Completed: 2026-09-19*
-</content>
+
+## Self-Check: PASSED
+
+- `FOUND: firestarter_app/firestarter/eprom_info.py`
+- `FOUND: firestarter_app/tests/test_cli_handlers.py`
+- `FOUND: .planning/phases/200-an-elevated-programming-supply-is-stated/200-01-SUMMARY.md`
+- Commit `3895753` (feat, Task 1) present in `firestarter_app` history
+- Commit `077fce2` (test, Task 2) present in `firestarter_app` history
+- Commit `4de9ca9` (gitlink advance) present in meta history
+- `git -C firestarter_app rev-parse --abbrev-ref HEAD` == `v1.40-program-parameter-fidelity`
+- `git rev-parse --abbrev-ref HEAD` (meta) == `v1.40-program-parameter-fidelity`
