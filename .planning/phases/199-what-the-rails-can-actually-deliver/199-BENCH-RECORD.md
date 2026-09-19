@@ -46,12 +46,42 @@ statement, not as a measurement.
 
 ## Task 2 — The two hold windows
 
-**BLOCKED. No meter reading was taken, and none is recorded. The rails were never energized.**
+**Window A MEASURED after a firmware fix. Window B pending.** The three attempts below produced no
+rail and no reading; they are kept because they are why the method had to change, not as
+measurements. Read the "Fault 1"/"Fault 2" subsections before trusting any invocation in this file.
 
-Nothing in this section is a measurement. It is the record of why the plan's method does not work
-on this rig, so that a later attempt does not repeat it.
+### Window A — drop-resistor path to socket pin 1 (`0x188`) — THE THRESHOLD FIGURE
 
-### What was attempted
+| Field | Value |
+|---|---|
+| Operator's meter reading, verbatim | **`17.38v`** |
+| Millivolt conversion (exact decimal shift, not rounded) | **`17380`** |
+| `DELIVERABLE_MAX_DROP_PATH_MV` | **`17380`** |
+| Composite | `0x188` = `0x080` REGULATOR + `0x100` VPE-DROP + `0x008` P1 |
+| Measurement point | socket pin 1 against board ground |
+| Rig | Rev 2.0 silkscreen (operator), socket empty, pot at maximum and untouched since Task 1 |
+
+**The invocation that produced this figure was NOT `hold_rail.py`.** It was:
+
+```
+firestarter -v -p /dev/ttyACM0 dev reg 0 0 0x188 -f
+```
+
+with the rail held by the firmware's own `while (!rurp_user_button_pressed()) delay(200);` loop at
+the tail of `dt_set_registers()` — the host had already disconnected. The board answers no serial
+traffic while in that loop, which is how the hold was confirmed to be real: a probe and a
+`hold_rail.py 0x188` invocation both timed out against it, and the operator then reported the
+reading off a live rail. **No `firestarter` command ran while the rail was held**; the two timed-out
+attempts happened before the reading and could not have opened the port. The pot was not moved.
+
+This differs from the plan's prescribed method, which assumed `hold_rail.py 0x188` would hold the
+rail. It does not on this rig — see Fault 1 and Fault 2. A reader must not read the
+`hold_rail.py 0x188` string elsewhere in this file as the provenance of `17380`.
+
+### Attempts that produced no rail and no reading
+
+
+Nothing in this subsection is a measurement.
 
 | # | Invocation | Hold | Outcome |
 |---|---|---|---|
