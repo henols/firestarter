@@ -46,8 +46,89 @@ statement, not as a measurement.
 
 ## Task 2 — The two hold windows
 
-*Pending.*
+**BLOCKED. No meter reading was taken, and none is recorded. The rails were never energized.**
+
+Nothing in this section is a measurement. It is the record of why the plan's method does not work
+on this rig, so that a later attempt does not repeat it.
+
+### What was attempted
+
+| # | Invocation | Hold | Outcome |
+|---|---|---|---|
+| A1 | `python3 .planning/milestones/v1.18-artifacts/bench/hold_rail.py 0x188 300` | 300 s | Window lapsed before the operator reached it. **No reading taken.** Not a discarded reading — no reading exists. |
+| A2 | `python3 .planning/milestones/v1.18-artifacts/bench/hold_rail.py 0x188 1800` | 1800 s | Operator reports no voltage at socket pin 1 and **no LEDs lit**. Rail not energized. |
+| A3 | `python3 .planning/milestones/v1.18-artifacts/bench/hold_rail.py 0x188 1800` | 1800 s | Re-run after reflashing with `-D DEV_TOOLS=1`. Operator again reports **no LEDs lit**. Rail not energized. |
+
+Window B (`0x088`) was never opened: Window A never produced a rail, so opening B would have
+measured the same nothing. **The D-06 pin-21 configuration was likewise not measured**, which is
+the deliberate non-measurement the plan called for — but it is recorded here alongside two further
+non-measurements that were NOT deliberate, and plan `199-05` must not conflate them.
+
+No `firestarter` command ran inside any window. The pot was not moved at any point after Task 1.
+
+### Fault 1 — `hold_rail.py` reports success against a command the firmware does not have
+
+`hold_rail.py` prints `>>> RAIL HELD: CTRL=0x188 payload=00008188 (4 bytes sent)` **whether or not
+the firmware accepted the command.** It calls `comm.send_bytes()` and never calls `expect_ack()`, so
+it cannot observe a refusal. Traced with `firestarter -v dev reg 0 0 0x188 -f` against the shipped
+firmware `3.0.0b31`:
+
+```
+INFO :EpromOperator: Setting registers: MSB: 0x00, LSB: 0x00, CTRL: 0x188
+DEBUG:SerialComm   : Sent 2 bytes   (the "OK" ack)
+DEBUG:SerialComm   : Sent 4 bytes   (the payload)
+ERROR:RURP         : ERROR: Unknown command: 8
+```
+
+`CMD_DEV_REGISTER` is `8`, and `firestarter_fw/include/firestarter.h` defines it inside
+`#if DEV_TOOLS`. `-D DEV_TOOLS=1` appears in `platformio.ini` **only under `[env:native]`** — not
+under `[env:leonardo]`, `[env:uno]` or `[env:uno328pb]`. **No shipped AVR firmware implements
+command 8**, so `firestarter dev reg`, `firestarter dev addr` and `hold_rail.py` cannot work on any
+released build. Historically `-D DEV_TOOLS` sat in the shared `[env]` block (firmware commit
+`2678306`), which is why this method worked at the v1.14 and v1.18 benches and silently stopped.
+
+`firestarter dev reg` **exits 0** on this path despite printing `ERROR: Unknown command: 8`.
+
+### Fault 2 — `dt_set_registers` cannot complete, even under `-D DEV_TOOLS=1`
+
+`[env:leonardo]` was rebuilt with `-D DEV_TOOLS=1` and flashed to the attached board (24898 B of the
+28672 B safe ceiling, 86.8 %, bootloader-guard passed, avrdude verified). The firmware error then
+changed from `Unknown command: 8` to `Command 8 timed out` — the command is now dispatched, but it
+never completes, and **no `MSB`/`LSB`/`CTRL` decode line is ever returned**, so the handler never
+reaches its register writes.
+
+`firestarter_fw/src/dev_tools.cpp` `dt_set_registers()` opens:
+
+```c
+if (op_get_message(handle) != OP_MSG_ACK) { return false; }
+if (rurp_communication_available() < 4)   { return false; }
+```
+
+The host sends the ack and the payload as **two separate writes**. `op_get_message()` returns
+`OP_MSG_ACK` the moment it consumes `OK`; if the 4 payload bytes have not yet arrived, the second
+guard returns `false`. The dispatcher re-enters the handler — but the ack has already been consumed,
+so `op_get_message()` now runs over the payload `00 00 81 88`, and **every one of those bytes falls
+to the `default:` arm of its switch and is read and discarded as junk**
+(`firestarter_fw/src/operation_utils.cpp`). The payload is destroyed, the handler spins, and the
+firmware's own timeout fires. The handler is not re-entrant across its own early return.
+
+This is a latent defect in code that **no CI leg exercises on hardware and no release ships**:
+`dev_tools.cpp` compiles only under `DEV_TOOLS`, which only `[env:native]` sets.
+
+### Rig state left by this session
+
+The attached board no longer runs shipped firmware. It carries a **locally built `[env:leonardo]`
+image with `-D DEV_TOOLS=1`, which self-reports as `3.0.0b33` and is NOT the released `3.0.0b33`.**
+The port re-enumerated from `/dev/ttyACM0` to `/dev/ttyACM1` during the session; identity was
+re-probed on the new node (`leonardo`, `3.0.0b33`) per standing bench rule 1.
+
+### Consequence for this phase
+
+D-07 makes the Window A figure load-bearing: it is the shipped threshold and cannot be derived
+without an attended bench session. No figure exists. **`199-03` cannot fill
+`DELIVERABLE_MAX_DROP_PATH_MV` from this record**, and `199-05` cannot claim a measured threshold.
 
 ## Task 3 — Paired ADC reads and the error figures
 
-*Pending.*
+**Not started.** Its precondition is that both Task 2 hold windows closed with readings recorded.
+Neither window produced a rail, so the pairing Task 3 exists to compute has nothing to pair.
