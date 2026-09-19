@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.40
 milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
-current_phase: 199
-current_phase_name: What the rails can actually deliver
-status: verifying
-stopped_at: Phase 199 — all 5 plans complete, awaiting verification
-last_updated: "2026-09-19T06:22:19.257Z"
+current_phase: 200
+current_phase_name: An elevated programming supply is stated
+status: planning
+stopped_at: Phase 199 complete, ready to plan Phase 200
+last_updated: "2026-09-19T13:44:36.088Z"
 last_activity: 2026-09-19
-last_activity_desc: "Phase 199 in progress 2026-09-19 — 2 of 5 plans complete. 199-01 took gh#71's 21 V from the vendored MBM27128 datasheet to the operator's screen: one override field added, regeneration re-measured at 746 rows in / 746 out / exactly one changed tuple (FUJITSU/MBM27128 electrical.vpp_mv 18000 -> 21000), support_status multiset byte-identical so D-01 survives D-17, a one-record programmatically-generated wire delta layer, and a snapshot re-record of 1 insertion / 1 deletion reading 21.0v. 199-04 made the 30-row classification able to go red: 30 rows at or above 18000 mV, 21/3/6 by voltage, 10 drop-resistor (algo 0x07, 28-pin) / 20 direct-VPE (algo 0x0B, 24-pin), all supported, every count an equality and proved non-vacuous three ways. Its deviation of record: the plan's claim that every drop-resistor row sits at exactly 18000 is false post-override — 199-01 moved MBM27128 (algo 0x07) to 21000, so the path reads 9 @ 18000 + 1 @ 21000. The same stale claim is still written at 199-CONTEXT.md:396 and must not be copied into 199-05's DECODE-NOTES table. Suite 2085 passed on py3.11, 32 snapshots, ruff clean; zero comment lines added to firestarter_app across all five app commits. 199-02 is a blocking-human bench plan and cannot start: no programmer is attached to this host. 199-03 consumes its DELIVERABLE_MAX_DROP_PATH_MV threshold and 199-05 depends on all four, so both are blocked behind it. Branch creation was skipped deliberately — init computes gsd/v1.40-...-activated-... from the milestone title, which would fork off origin/beta and strand the milestone. Nothing pushed."
+last_activity_desc: "Phase 199 (What the rails can actually deliver) CLOSED 2026-09-19 — 5/5 plans, verifier PASSED at 13/15 truths with 2 deliberate carries. The phase REVERSED ITS OWN DESIGN mid-flight: D-21, on the operator's ruling that controlling the VPE flag is not the app's responsibility, moved the routing decision from host to firmware. A host-side vpp_rail_gate.py was built and reverted in full; what shipped is one strictly-greater-than comparison in eprom_hv_route_mask against RURP_VPP_DROP_PATH_MAX_DELIVERABLE_MV = 17380 in rurp_pinout.h — no host change, no wire change, no new message ID, no meta codegen. Bench session on a Rev 2.0 shield, pot at max, socket empty: drop path delivers 17380 mV at socket pin 1, direct VPE 22140 mV, monitor pair 18700/23900 i.e. +7.59%/+7.95% COMBINED ADC-plus-P1 discrepancy that this session cannot decompose. D-22 is the phase's most important finding and is now in DECODE-NOTES section 10 with its arithmetic: triggering routing on the ADC would have SILENTLY MISSED NINE OF THE TEN rescued rows, because 18700 < 18000*95/100 = 17100 is false while the socket is 620 mV short; only MBM27128 at 21000 is caught. Routing therefore keys on path capability and the ADC stays verification only, which also keeps 999.38 calibration decoupled (D-23). Two faults found in bench tooling nothing covers: hold_rail.py reports RAIL HELD without reading an ack, and dt_set_registers was not re-entrant across its payload wait — fixed, and that fix is the first build where dev reg completes, so every published beta b31/b32/b33 ships dev tools that time out. Quick task 260919-cli proved beta already ships DEV_TOOLS (my premise was false) and added mirror CI assertions to both publishers. THE NO-COMMENTS-IN-SOURCE RULE WAS REMOVED by operator decision in all three repos (meta 41a34c6a) — archived .planning/ text enforcing it is historical. RAIL-01/02/04 Complete; RAIL-03 left Pending as adjudicated-UNMET (MSG_WARN_VPP_LOW's 5% window is narrower than the measured discrepancy, so it cannot see the shortfalls that exist) and RAIL-05 Pending since nothing is posted. phase.complete blank-ticked both to Complete and was reverted. gh#71 answered in a HELD draft, unposted, joining gh#70 and gh#66 on one consolidated list. Suites: app 2085, fw native 232/232 and native_nodevtools 232/232, fw pytest at its pre-existing 17/284. Nothing pushed, nothing posted."
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 17
   completed_plans: 17
-  percent: 0
+  percent: 20
 ---
 
 # Project State
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 199 (What the rails can actually deliver) — EXECUTING
-Plan: 5 of 5 complete — phase 199 awaiting verification
-Status: Phase 199 — all 5 plans complete, verifier pending
-Last activity: 2026-09-19 — 199-02 measured at the bench (17380/22140 mV), 199-03 replanned and shipped as a firmware change, no-comments rule removed
+Phase: 200 — An elevated programming supply is stated
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-19 — Phase 199 complete, transitioned to Phase 200
 
 ## Roadmap Summary (v1.38)
 
@@ -3567,7 +3567,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-18T22:10:43.228Z
-**Stopped at:** Phase 199 context gathered
+**Stopped at:** Phase 199 complete, ready to plan Phase 200
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
