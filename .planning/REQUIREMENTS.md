@@ -78,16 +78,16 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
 
 ### RAIL — what the shield can actually deliver, and what it does when that is not enough (D-4, gh#71)
 
-- [ ] **RAIL-01**: The deliverable maximum of the VPP and VPE rails is established at the socket per
+- [x] **RAIL-01**: The deliverable maximum of the VPP and VPE rails is established at the socket per
       shield revision and recorded, with the method named — a meter reading and an ADC reading are not
       interchangeable, and an ADC-derived figure carries its known error.
-- [ ] **RAIL-02**: The generator's `RURP_VPP_CEILING_MV = 25000` is either replaced by a measured
+- [x] **RAIL-02**: The generator's `RURP_VPP_CEILING_MV = 25000` is either replaced by a measured
       figure or kept with its status recorded as theoretical, and the 30 rows asking 18 V or more are
       classified against whichever figure stands.
 - [ ] **RAIL-03**: When a part's required VPP exceeds what the shield can deliver, the operation
       proceeds with a warning that names the required voltage and the deliverable one. It does not
       refuse silently, and it does not attempt silently.
-- [ ] **RAIL-04**: Where the VPE rail is the only one that reaches a part's requirement, the routing
+- [x] **RAIL-04**: Where the VPE rail is the only one that reaches a part's requirement, the routing
       decision is made and recorded — including a decision not to route it.
 - [ ] **RAIL-05**: gh#71 is answered on the issue, whichever way RAIL-04 goes.
 
@@ -147,10 +147,10 @@ Tracked, not in this milestone.
 | VOLT-02 | Phase 198 | Complete |
 | VOLT-03 | Phase 198 | Complete |
 | VOLT-04 | Phase 198 | Pending |
-| RAIL-01 | Phase 199 | Pending |
-| RAIL-02 | Phase 199 | Pending |
+| RAIL-01 | Phase 199 | Complete |
+| RAIL-02 | Phase 199 | Complete |
 | RAIL-03 | Phase 199 | Pending |
-| RAIL-04 | Phase 199 | Pending |
+| RAIL-04 | Phase 199 | Complete |
 | RAIL-05 | Phase 199 | Pending |
 | VCC-01 | Phase 200 | Pending |
 | VCC-02 | Phase 200 | Pending |
