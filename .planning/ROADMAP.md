@@ -341,6 +341,7 @@ Plans:
 
 **Goal**: A decoded `vdd_mv` that nothing applies stops being invisible.
 **Requirements**: VCC-01, VCC-02
+**Plans:** 3 plans
 
 **Depends on**: Phase 198, Phase 199
 
@@ -364,6 +365,16 @@ Plans:
   covers VPP shortfall, and so closes RAIL-03, is a separate decision. It would require the host to
   carry the 17380 drop-path ceiling again, which is the stale-figure exposure D-21 moved away from —
   milder for a warning than for routing, but not free, and not to be absorbed silently.
+
+Plans:
+**Wave 1**
+
+- [ ] 200-01-PLAN.md — Tracer: 6.0 V from the raw database record to the operator's screen — the named 5000 mV rail constant, the testable predicate helper, the gated injection through the existing `raw_config_data` seam, the `Programming VCC:` row and the two-sentence warning carrying D-04's amended verb; plus the in-process CliRunner pins on the warning's presence at 6.0 V and its silence at 5.0 V (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 200-02-PLAN.md — The rendered output committed: subprocess snapshots for `MBM27C1000` (the rail-slot class, gh#70's part) and `MBM27C4001` (one of the only 3 datasheet-cited rows), each re-recorded scoped to its own node id and each proved additive by an insertions-with-zero-deletions numstat (wave 2)
+- [ ] 200-03-PLAN.md — The census: the shipped predicate selects exactly 284 of 746 rows, with the vdd/algorithm/type/status histograms, the 34-vendor count, VOLT-03 disjointness and the 3-versus-281 provenance split all asserted as equalities, the fail-open boundary exercised with synthetic records, and every count proved capable of failing (wave 2)
 
 ### Phase 201: A partial write is gated on its own region
 
