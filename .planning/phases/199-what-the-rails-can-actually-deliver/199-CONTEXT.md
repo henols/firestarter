@@ -501,3 +501,85 @@ Reviewed and **not** folded:
 
 *Phase: 199-what-the-rails-can-actually-deliver*
 *Context gathered: 2026-09-18*
+
+---
+
+## D-21 — REVERSAL: the VPE-routing decision moves to firmware (operator, 2026-09-19)
+
+**This supersedes D-09, D-11's host half, D-13, D-14 and D-16.** Those decisions are left above
+byte-unchanged as the record of what was decided before the bench session; they are no longer the
+design. Plan `199-03` was replanned against this decision, and the two commits its first executor
+had already landed (`4dc1913`, `f21d9a4` in `firestarter_app`, plus meta gitlinks `bf37aee4`,
+`ea115560`) were reverted rather than adapted.
+
+**Operator ruling, verbatim in substance:** it is not the app's responsibility to control the VPE
+flag; if VPE routing is needed it is much safer for the firmware to control when it is used.
+
+### Why it holds
+
+- **The firmware already owns routing.** `eprom_hv_route_mask` (`src/proms/eprom.cpp`) already reads
+  the `vpp_path` column of the protocol-keyed `eprom_params` table and returns the undropped rail for
+  `VPP_PATH_DIRECT_VPE`. This is not introducing firmware routing; it extends a decision the firmware
+  already makes. `FLAG_VPE_AS_VPP` is only the human override layered on top, checked first.
+- **The firmware already has the required voltage.** `handle->vpp_mv` (`include/firestarter.h`)
+  carries it, so no wire change and no new field is needed.
+- **The firmware already detects and reports the shortfall.** `eprom_check_vpp` routes via
+  `eprom_hv_route_mask`, reads the live rail with `rurp_read_voltage_mv()`, and emits
+  `MSG_WARN_VPP_LOW` below the -5% window. No new message ID, so no `tools/catalog/messages.toml`
+  change and no meta codegen or sub-repo sync.
+- **Host/firmware version skew is the safety argument.** The two ship independently — separate repos,
+  separate channels, PyPI versus GitHub releases. A host pinned at an old version, or carrying a
+  threshold measured on a different shield, would silently mis-route a high-voltage rail onto socket
+  pin 1. A decision that must match the hardware belongs with the hardware. This is the principle
+  already written into `include/firestarter.h`'s `is_memory_cmd()`: an access-control gate, because
+  admitting a command there is a hardware-safety decision.
+
+### D-22 — routing triggers on path capability, NOT on the ADC reading
+
+The naive firmware implementation triggers on the ADC, and **the bench pair proves it would silently
+fail for nine of the ten rows this phase exists to rescue.** The firmware's existing trigger is
+`adc < required * 95/100`:
+
+| Part needs | Firmware threshold | ADC sees on the drop path | Fires? | Socket actually receives |
+|---|---|---|---|---|
+| 18000 mV | 17100 | 18700 | **No** | 17380 — short by 620 |
+| 21000 mV | 19950 | 18700 | Yes | 17380 — short by 3620 |
+
+The ADC reads roughly 7.6% high and reads a monitor node rather than socket pin 1. For the nine rows
+at exactly 18000 that error exceeds the shortfall, so the firmware's own check would call the rail
+healthy while the socket is 620 mV short. Only `FUJITSU/MBM27128` at 21000 is caught, because its
+shortfall is larger than the measurement error.
+
+**Therefore:** routing is decided by path capability; the existing ADC check is left exactly as it is
+and continues to verify whatever was routed.
+
+- **Routing** compares `handle->vpp_mv` against the drop path's *ceiling* — the most that path can
+  deliver at any pot setting. A part needing more than the ceiling cannot be served by the drop path
+  at all, so it must take VPE. This is a property of the resistor network, not of the ADC.
+- **Verification** stays with `eprom_check_vpp`'s existing ADC comparison, unchanged. Because that
+  function already calls `eprom_hv_route_mask`, it follows the new route for free.
+
+**The constant is a ceiling, not a threshold, and the distinction is load-bearing.** VPE-as-VPP does
+not deliver a fixed 22 V; it delivers the undropped pot voltage, which the operator sets. The rule is
+therefore not "17380 is what you get" but "no pot setting lets the drop path exceed 17380, so any part
+needing more must use VPE."
+
+### D-23 — this keeps future ADC calibration decoupled
+
+Backlog 999.38's calibration work is deliberately outside v1.40. Keeping routing off the ADC means
+calibration is never a *precondition* for routing to be correct — it lands later and improves only the
+verification leg. Had routing depended on the ADC, a hardware-safety decision would have been coupled
+to an instrument known to be ~7.6% out and known not to be fixed yet.
+
+### Standing limits on the constant
+
+Exactly one measurement exists: `DELIVERABLE_MAX_DROP_PATH_MV = 17380`, one Rev 2.0 shield, pot at
+maximum, socket empty, recorded in `199-BENCH-RECORD.md`. No Rev 1 or Rev 2.2 board was measured. The
+constant must be labelled as that measurement rather than as a specification. Per operator ruling
+2026-09-19, **Rev 0 is explicitly not a concern** — it converts to Rev 1 with a voltage divider.
+
+### Scope consequence, flagged not absorbed
+
+v1.40 declared exactly one firmware change (Phase 201, the write-init blank check). This is a second.
+It is small — one comparison and one constant, in `eprom_hv_route_mask` and `rurp_pinout.h` — and it
+ships in the product build rather than being `DEV_TOOLS`-gated, so it is a real release change.
