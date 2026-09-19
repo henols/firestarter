@@ -367,6 +367,7 @@ Plans:
   milder for a warning than for routing, but not free, and not to be absorbed silently.
 
 Plans:
+
 **Wave 1**
 
 - [ ] 200-01-PLAN.md — Tracer: 6.0 V from the raw database record to the operator's screen — the named 5000 mV rail constant, the testable predicate helper, the gated injection through the existing `raw_config_data` seam, the `Programming VCC:` row and the two-sentence warning carrying D-04's amended verb; plus the in-process CliRunner pins on the warning's presence at 6.0 V and its silence at 5.0 V (wave 1)
