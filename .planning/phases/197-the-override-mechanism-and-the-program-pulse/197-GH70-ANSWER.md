@@ -113,20 +113,27 @@ already noted on this thread.
 ## Held-pending deferral (internal — do not post)
 
 **This comment is held, not posted, by explicit operator decision dated 2026-09-18 (`hold`).**
-**This is now the consolidated list for every held answer in this milestone.** A second held
-draft, for gh#66, exists at
-`.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md`. It carries the same five-section
-shape and its own copy of these same four steps, so a reader who finds either file reaches
-complete instructions for both. Whoever runs the v1.40 beta cut should read this list once and post
-both.
+**This is now the consolidated list for every held answer in this milestone.** Two further held
+drafts exist: for gh#66, at
+`.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md`, and for gh#71, at
+`.planning/phases/199-what-the-rails-can-actually-deliver/199-GH71-ANSWER.md`. Both carry the same
+five-section shape and their own copy of these same four steps, so a reader who finds any one of the
+three files reaches complete instructions for all three. Whoever runs the v1.40 beta cut should read
+this list once and post all three.
 
 - **What is held:** the entire "## Comment Body" section above — the full public answer to gh#70,
   including the corrected pulse width, the firmware limitation, the standing failure hypothesis, and
   the pinout finding — and, in the sibling file
   `.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md`, the full public answer to
-  gh#66, stating the corrected VPP and program-VCC values for the MBM27C4001 report. Neither has
-  reached its issue. gh#70 remains OPEN with 3 comments, none from this project; gh#66 remains OPEN
-  with 6 comments, none from this project.
+  gh#66, stating the corrected VPP and program-VCC values for the MBM27C4001 report — and, in the
+  further sibling file
+  `.planning/phases/199-what-the-rails-can-actually-deliver/199-GH71-ANSWER.md`, the full public
+  answer to gh#71, crediting the reporter, claiming the one database correction, and answering the
+  VPE-as-VPP proposal as now automatic in firmware. None has reached its issue. gh#70 remains OPEN
+  with 3 comments, none from this project; gh#66 remains OPEN with 6 comments, none from this
+  project; **gh#71 remains OPEN with 3 comments — one from the reporter, and two from this project's
+  own maintainer**, so the "none from this project" phrasing used for the other two entries does not
+  apply to gh#71 and is not reused for it.
 - **Why:** at the time of this decision, `v1.40-program-parameter-fidelity` has no upstream in
   either the meta repository or `firestarter_app`, and sits 41 commits (meta) / 14 commits
   (`firestarter_app`) ahead of `origin/beta`. `git branch -r --contains` on this branch's tip
@@ -134,29 +141,40 @@ both.
   both name something a reader cannot resolve today — `post-with-beta` would name a version that
   does not exist, and `post-with-commit` would name a commit nobody can find on any remote branch.
   `hold` is the only route on which every sentence in either comment body is true at the instant it
-  is posted. This reasoning is not per-issue; it applies identically to gh#66's held draft.
+  is posted. This reasoning is not per-issue; it applies identically to gh#66's and gh#71's held
+  drafts.
 - **What releases the hold:** the v1.40 beta cut — the point at which `firestarter_app` (and, if the
   correction also touches firmware, `firestarter_fw`) are pushed to `beta` and a real, installable
-  version number exists. The same beta cut releases both held drafts; there is no separate trigger
-  for gh#66.
+  version number exists. The same beta cut releases all three held drafts; there is no separate
+  trigger for gh#66 or gh#71. **gh#71 is the first held answer whose claims span both
+  repositories**, so its two version lines resolve against two different artifacts rather than one:
+  the Python package cut at the `firestarter_app` beta push, and the firmware pre-release cut at the
+  separate `firestarter_fw` beta push. The firmware half is only postable once that pre-release
+  exists **and carries build assets** — this project has already cut a firmware pre-release with zero
+  assets attached, and that specific failure cannot be repaired by re-running the build at the same
+  version.
 - **Exactly what to do at that point — the following four steps apply once per issue, run
-  separately for gh#70 and for gh#66:**
-  1. Replace the `**Version:**` line in the "## Comment Body" section of the relevant draft (this
-     file for gh#70; `198-GH66-ANSWER.md` for gh#66) with the real published version (the
-     `firestarter_app` version string cut at that beta push).
+  separately for gh#70, for gh#66, and for gh#71:**
+  1. Replace the `**Version:**` line(s) in the "## Comment Body" section of the relevant draft (this
+     file for gh#70; `198-GH66-ANSWER.md` for gh#66; `199-GH71-ANSWER.md` for gh#71 — which carries
+     two such lines, one per release channel) with the real published version(s) (the
+     `firestarter_app` version string cut at that beta push, and, for gh#71's firmware line, the
+     `firestarter_fw` pre-release confirmed to carry assets).
   2. Re-run the no-over-claim and no-attribution checks against that draft's final "## Comment
      Body" text only — a hand edit at this step can reintroduce either.
   3. Post ONLY that draft's "## Comment Body" section — verbatim, starting after the opening `---`
      and ending before the closing `---` — with
-     `gh issue comment 70 --repo henols/firestarter --body-file` for gh#70, or
-     `gh issue comment 66 --repo henols/firestarter --body-file` for gh#66. Never paste either
-     file's header, "Status", "Internal provenance", or "Held-pending deferral" section onto either
-     issue.
+     `gh issue comment 70 --repo henols/firestarter --body-file` for gh#70,
+     `gh issue comment 66 --repo henols/firestarter --body-file` for gh#66, or
+     `gh issue comment 71 --repo henols/firestarter --body-file` for gh#71. Never paste any of the
+     three files' header, "Status", "Internal provenance", or "Held-pending deferral" section onto
+     any issue.
   4. Record the returned comment URL back into that draft (in its own deferral section) and mark
      the corresponding requirement complete in `.planning/REQUIREMENTS.md` — PULSE-04 for gh#70,
-     VOLT-04 for gh#66.
-- **Requirement status:** PULSE-04 (gh#70) and VOLT-04 (gh#66) are NOT satisfied by their
-  respective plans. Both are explicitly carried forward to the milestone close, to be satisfied
-  when each comment above actually posts, per the steps above. The artifacts carrying them are this
-  file, `.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-GH70-ANSWER.md` for
-  PULSE-04, and `.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md` for VOLT-04.
+     VOLT-04 for gh#66, RAIL-05 for gh#71.
+- **Requirement status:** PULSE-04 (gh#70), VOLT-04 (gh#66) and RAIL-05 (gh#71) are NOT satisfied by
+  their respective plans. All three are explicitly carried forward to the milestone close, to be
+  satisfied when each comment above actually posts, per the steps above. The artifacts carrying them
+  are this file, `.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-GH70-ANSWER.md`
+  for PULSE-04; `.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md` for VOLT-04; and
+  `.planning/phases/199-what-the-rails-can-actually-deliver/199-GH71-ANSWER.md` for RAIL-05.
