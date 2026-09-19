@@ -53,16 +53,32 @@ any firmware change, and retrofitting RAIL-03.
   The row alone is too easy to skim past on a 38%-common condition; the warning alone loses the value
   itself. This wording **establishes** the project's shortfall-statement shape — VCC-02 is satisfied
   by defining it, not by matching RAIL-03, which was adjudicated UNMET at the close of Phase 199.
-  Shape agreed with the operator:
+  Shape agreed with the operator, **verb amended 2026-09-19 (operator) — see below**:
 
   ```
   VCC:                5.0v
   Programming VCC:    6.0v
   VPP:                12.5v
 
-  WARNING: this part programs at 6.0 V; the shield supplies a fixed 5.0 V.
+  WARNING: this part's programming supply decodes to 6.0 V; the shield supplies a fixed 5.0 V.
   Programming will be attempted at 5.0 V.
   ```
+
+  **Amended 2026-09-19 (operator), after Phase 200 research.** The verb was originally "this part
+  **programs at** 6.0 V". Research measured that of the 284 rows, only **3** carry a datasheet-cited
+  `vdd_mv` (the three Fujitsu overrides); **281 carry a pure `VCC_VOLTAGES` rail-table slot** — and
+  `DECODE-NOTES.md` § 9 is the Phase 198 verdict that those nibbles "select a programmer rail index,
+  **not a chip requirement**". CONTEXT.md's own worked example `FUJITSU/MBM27C1000P,MBM27C1000` is
+  one of the 281: its 6000 mV is `VCC_VOLTAGES[0x0D]`, and its override touches only
+  `pulse_duration_us`. "Programs at" would therefore assert as a part's requirement a number § 9
+  established is the programmer's rail selection, on the very part chosen to illustrate it.
+  **"decodes to" claims exactly what is known and nothing more.** The direction of the error also
+  matters: § 9 showed the true Fujitsu requirement (6.0 V ± 0.25 V) sat *above* the 5500 the decode
+  gave, which is why those overrides exist — so the 164 rows rendering 5.5 V may be *understating*
+  their parts' real needs by an unmeasured amount. Distinguishing the 3 from the 281 in the wording
+  was considered and rejected as out of scope: it needs a DB→display provenance channel that does
+  not exist and is already filed as deferred requirement **OVR-F1**.
+  **Nothing else in D-04 changes** — the row, the warning, the predicate and the 284-row set all stand.
 
 - **D-05:** **State and proceed; refuse nothing.** Milestone D-4 already settled this shape: the
   operation proceeds with a statement naming both numbers rather than refusing silently or attempting
