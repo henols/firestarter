@@ -238,9 +238,23 @@ re-probed on the new node (`leonardo`, `3.0.0b33`) per standing bench rule 1.
 
 ### Consequence for this phase
 
-D-07 makes the Window A figure load-bearing: it is the shipped threshold and cannot be derived
-without an attended bench session. No figure exists. **`199-03` cannot fill
-`DELIVERABLE_MAX_DROP_PATH_MV` from this record**, and `199-05` cannot claim a measured threshold.
+**Superseded by the measurement, 2026-09-19.** The paragraph below was written while the session was
+blocked and before the `dt_set_registers` fix unblocked it. It is kept because the blocked state was
+real, but it is **no longer true** and must not be acted on:
+
+> D-07 makes the Window A figure load-bearing: it is the shipped threshold and cannot be derived
+> without an attended bench session. No figure exists. **`199-03` cannot fill
+> `DELIVERABLE_MAX_DROP_PATH_MV` from this record**, and `199-05` cannot claim a measured threshold.
+
+Both windows were subsequently measured. `DELIVERABLE_MAX_DROP_PATH_MV = 17380` and
+`DELIVERABLE_MAX_DIRECT_VPE_MV = 22140` are recorded in § "Measured figures" above, and that fenced
+block is the only place any consumer should read them from. D-07's substance still stands: the figure
+is load-bearing and cannot be re-derived without another attended bench session.
+
+**Where the figure is consumed changed too.** Under D-21 (2026-09-19) the VPE-routing decision moved
+from the host to the firmware, so `17380` becomes a firmware constant in `include/rurp_pinout.h`
+rather than a host-side threshold. It is a **ceiling** — the most the drop-resistor path can deliver
+at any pot setting — not a threshold for one pot position. See `199-CONTEXT.md` § D-21/D-22/D-23.
 
 ## Task 3 — Paired ADC reads and the error figures
 
