@@ -5,6 +5,22 @@
 This record holds the figures Phase 199 ships. Per D-07 the figure in Task 2 Window A becomes the
 shipped threshold and cannot be re-derived without another attended bench session.
 
+## Measured figures
+
+Plans `199-03` and `199-05` parse these four lines. Each is a bare integer count of millivolts.
+Read the integer from here; do not re-transcribe it from prose elsewhere in this file.
+
+```
+DELIVERABLE_MAX_DROP_PATH_MV = 17380
+DELIVERABLE_MAX_DIRECT_VPE_MV = 22140
+ADC_PAIRED_DROP_MV = 18700
+ADC_PAIRED_DIRECT_MV = 23900
+```
+
+The first two are operator meter readings at socket pin 1. The second two are the firmware's own
+monitor readings. They are not the same measurement and must not be substituted for one another —
+see "Limits" below.
+
 ## Session setup
 
 **Serial port identity — probed in this session, not inherited.**
@@ -202,5 +218,86 @@ without an attended bench session. No figure exists. **`199-03` cannot fill
 
 ## Task 3 — Paired ADC reads and the error figures
 
-**Not started.** Its precondition is that both Task 2 hold windows closed with readings recorded.
-Neither window produced a rail, so the pairing Task 3 exists to compute has nothing to pair.
+### Method
+
+- Shield revision **Rev 2.0**, operator silkscreen statement (standing bench rule 6; `hw_revision`
+  cannot distinguish Rev 2.0 / Rev 2.2 / modified Rev 0 and was not used to establish it).
+- Socket **empty** for the whole session, operator statement (D-05).
+- Pot at **maximum**, operator statement, set against the operator's own meter and **not touched at
+  any point** after Task 1 — so all four figures above share one pot setting.
+- Composites, host `-f` namespace: `0x188` = `0x080` REGULATOR + `0x100` VPE-DROP + `0x008` P1;
+  `0x088` = `0x080` REGULATOR + `0x008` P1 with the drop bit clear. Wire payloads `00008188` and
+  `00008088`, the `0x80` in byte 2 being the firestarter-namespace marker.
+- Meter at **socket pin 1 against board ground** for both windows. `pinouts.json`'s `DIP28_2764`
+  entry puts `vpp-pin` at 1, which is why both configurations are measured there.
+- Monitor commands, each a **bounded one-second sampling window**:
+  `firestarter -p /dev/ttyACM0 vpp -t 1` and `firestarter -p /dev/ttyACM0 vpe -t 1`.
+  The `-t` option is mandatory, not stylistic: without it the read loop is an unbounded
+  `while True:` live monitor, which standing bench rule 4 forbids outright.
+- **Sampling rule, fixed before the reads were taken:** the value recorded is the last frame emitted
+  inside the window; if the last three frames disagreed by more than one 100 mV step, every frame
+  would be recorded with its spread instead of a single figure. In the event each window emitted two
+  frames and **both frames were identical** on both rails (`VPP: 18.7V` twice; `VPE: 23.9V` twice),
+  so the rule resolved without a spread. Internal VCC reported 5.5 V in both windows.
+
+### The two error figures
+
+| Rail | Monitor reading | Meter at pin 1 | Signed difference | As a share of the meter figure |
+|---|---|---|---|---|
+| Drop-resistor / VPP | 18700 mV | 17380 mV | **+1320 mV** | **+7.59 %** |
+| Direct VPE | 23900 mV | 22140 mV | **+1760 mV** | **+7.95 %** |
+
+Both derived by integer arithmetic from the four integers in "Measured figures". The firmware reads
+**high** against the meter on both rails.
+
+## Provisional versus measured
+
+The operator named **18 V** as the provisional drop-path figure during discussion, and it was not an
+arbitrary guess: 18 V is the top of upstream's own VPP scale, and every capped row in the database is
+capped at exactly it. The measured drop-path figure at socket pin 1 is **17380 mV**.
+
+**17380 ships.** D-07 makes this session load-bearing rather than confirmatory, and the measurement
+wins over the provisional figure regardless of how well-motivated that figure was. The difference is
+not cosmetic: at 18000 the nine algorithm `0x07` rows sitting at exactly 18000 would have been
+judged reachable, and at 17380 they are not.
+
+## Limits
+
+Stated in the voice `firestarter_app/firestarter/diagnostic_report.py`'s rail-reading disclosure
+establishes, and section 6 of `tools/DECODE-NOTES.md` templates.
+
+- **The ADC/meter difference is a combined discrepancy and this session cannot separate its terms.**
+  The monitor reads assert no socket-routing bit, while the meter reads at pin 1 *through the P1
+  route*. The +7.59 % and +7.95 % figures are therefore an ADC error **plus** a P1-switch-path drop,
+  summed. Nothing here attributes any portion of either figure to one term or the other.
+- **Backlog 999.38's figure is cited, not replaced.** Its roughly 7.5 % ratiometric figure, range
+  6.8 % to 8.3 %, remains the only ADC-only number this project has. Both figures above fall inside
+  that range, which corroborates it from an independent measurement but does not supersede it.
+  **999.38's standing operational rule stands unchanged: any pot target is set from a meter reading,
+  never from the firmware's own figure.**
+- **The monitor's wire format carries whole volts plus one tenths digit**, so every firmware figure
+  here is quantised to 100 mV. `18700` and `23900` carry two significant decimal places at most and
+  must not be treated as millivolt-precise.
+- **The pin-21 direct-VPE configuration was deliberately not measured** (D-06). The 20 algorithm
+  `0x0B` rows, including all six rows at 25000 mV, receive VPE through `CTRL_VPE_ENABLE` to pin 21.
+  No figure in this record is evidence about those rows.
+- **One shield, one session, one pot setting.** These are figures for *this* Rev 2.0 board at
+  maximum pot. They are not a specification, not a fleet figure, and not a tolerance band. A second
+  board could differ, and this session measured no second board.
+- **The bench method in the plan does not work on this rig and was replaced mid-session.** The
+  figures came from `dev reg` invocations held by the firmware's own button-wait loop, after a
+  firmware fix to `dt_set_registers`. See Fault 1 and Fault 2. Any future session that copies the
+  plan's `hold_rail.py` recipe will measure nothing and, worse, be told it succeeded.
+
+## Disposition of this plan's Task 2 verify legs
+
+Recorded because two of the four do not pass, and neither failure is a defect in the measurement.
+
+| Leg | Result | Disposition |
+|---|---|---|
+| `grep -qF 'hold_rail.py 0x188'` | PASS | The string is present, but as a **failed attempt**, not as the provenance of `17380`. The leg cannot tell those apart. |
+| `grep -qF 'hold_rail.py 0x088'` | **FAIL** | **True negative, left failing.** Window B was measured with `dev reg 0 0 0x088 -f`, not `hold_rail.py`, because `hold_rail.py` holds no rail on this rig. Inserting the string to make the leg pass would make the record lie about how the figure was obtained. |
+| `git ls-files --error-unmatch …/hold_rail.py` | PASS | The script is git-tracked. It is also non-functional here; tracked and working are different claims. |
+| `test -z "$(pgrep -af hold_rail.py)"` | **FAIL, then PASS** | **False positive.** The leg's pattern matches the verify script's OWN command line, because the preceding leg contains the literal `hold_rail.py` and both run in one shell. Re-run alone it returns empty, and a direct scan of every `/proc/<pid>/fd` for a `ttyACM` handle found no holder. The idiom needs `pgrep -af 'hold_rail[.]py'` **and** to not share a shell with a line containing the bare string. It fails closed, so it blocks rather than passing a live rail — the safe direction. |
+
+Both windows were confirmed closed by the `/proc` fd scan, not by the `pgrep` leg.
