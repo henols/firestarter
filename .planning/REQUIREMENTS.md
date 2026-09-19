@@ -93,9 +93,9 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
 
 ### VCC — an elevated programming supply is stated, not silently dropped
 
-- [ ] **VCC-01**: A part that needs a programming VCC above the shield's fixed 5.0 V says so where the
+- [x] **VCC-01**: A part that needs a programming VCC above the shield's fixed 5.0 V says so where the
       operator will see it, rather than carrying a decoded `vdd_mv` that nothing applies.
-- [ ] **VCC-02**: That statement uses the same warning shape as RAIL-03, so one fact does not get two
+- [x] **VCC-02**: That statement uses the same warning shape as RAIL-03, so one fact does not get two
       explanations.
 
 ### BLANK — a partial write is gated on the region it writes (backlog 999.44, firmware half)
@@ -152,8 +152,8 @@ Tracked, not in this milestone.
 | RAIL-03 | Phase 199 | Pending |
 | RAIL-04 | Phase 199 | Complete |
 | RAIL-05 | Phase 199 | Pending |
-| VCC-01 | Phase 200 | Pending |
-| VCC-02 | Phase 200 | Pending |
+| VCC-01 | Phase 200 | Complete |
+| VCC-02 | Phase 200 | Complete |
 | BLANK-01 | Phase 201 | Pending |
 | BLANK-02 | Phase 201 | Pending |
 | BLANK-03 | Phase 201 | Pending |
