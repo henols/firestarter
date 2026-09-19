@@ -23,11 +23,21 @@ made without the trigger being met. The reason is recorded at
 `.planning/notes/adoption-instrument-retirement.md`. **No instrument measures that download split
 now.**
 
-**Nothing mechanically enforces the source-comment rule.** Each sub-repo used to run a
-`planning_citation_gate.py` in CI. Both scripts and all three CI steps were removed by operator
-decision on 2026-09-17. The rule now rests entirely on the per-repo `CLAUDE.md` text and the
-pre-commit check it carries. Restore points, if the gate is ever wanted back:
-`firestarter_fw` `876a223`, `firestarter_app` `c77ff2e`.
+**The source-comment rule was REMOVED on 2026-09-19 by operator decision.** Comments in product
+source are allowed again, in both sub-repos. This note exists because the rule ran for months and
+`.planning/` is full of references to it: archived plans forbid comments, executor summaries report
+comment deletions as compliance, and phase records cite it as binding. **Read all of that as
+historical.** Source written before 2026-09-19 had comments deliberately stripped — notably the
+roughly 6,600 lines a sweep deleted, and the 18 lines removed from `build_db.py` in Phase 197 whose
+content was rescued to `.planning/notes/197-build-db-comment-provenance-rescued.md`. Their absence
+is not a style anyone needs to preserve, and restoring explanatory comments to that code is allowed.
+
+Its enforcement had already been dismantled in stages: each sub-repo ran a `planning_citation_gate.py`
+in CI until both scripts and all three CI steps were removed on 2026-09-17, leaving only the per-repo
+`CLAUDE.md` text and a pre-commit grep, both of which went on 2026-09-19. Restore points if any of it
+is ever wanted back: the CI gates at `firestarter_fw` `876a223` and `firestarter_app` `c77ff2e`; the
+rule text itself in this file and both sub-repo `CLAUDE.md` files immediately before the
+2026-09-19 removal commit.
 
 `.gitmodules` records a submodule URL per commit. Checking out a pre-rename ref such as `v1.35`, or bisecting firmware history, resurrects the old firmware URL from that commit. **Fixing the live branches does not fix history.** See `.planning/notes/gitmodules-archaeology-trap.md` for both workarounds, their executed transcripts, and the `git submodule sync` hazard that silently undoes one of them. **The trap is armed.** `henols/firestarter` was claimed for this repository on 2026-09-14, which destroyed the redirect it depended on. A plain `git submodule update --init` at a pre-rename ref now clones *this* repository into its own `firestarter/` directory and fails with exit 128. Set the override BEFORE the first update; once a clone has failed, the override alone will not recover it.
 
@@ -62,33 +72,6 @@ sub-repos and neither can state it alone.
   regenerate or hand-edit `messages.h` or `messages.py` inside a sub-repo.
 - **Board buffer sizes differ:** Uno has 512 bytes, Leonardo 1024. This changes chunked transfer on
   the host side, in `eprom_operations.py`.
-
-## Source code comments — hard rule
-
-**Write no comments into product source.** This covers everything under `firestarter_fw/` and
-`firestarter_app/`, and it is not overridable by a plan, task, skill, or subagent instruction.
-
-- Forbidden: `// Phase NNN (REQ-NN):`, `// D-06`, `// LOCK-04`, any plan, task or milestone
-  citation, and any block explaining why a phase decided something. Rationale goes in the commit
-  message or in `.planning/`, never in source.
-- **The rule is not "no GSD citations".** You delete `Phase 194` from a comment and keep the
-  comment. This still breaks the rule. Add no `#`, `//` or `/* */` line, for any reason, however
-  helpful it seems. State the rule in these words when you spawn a subagent that touches source.
-- **Planners:** do not write "add a comment citing X" into a plan, and do not make "a comment
-  exists" an acceptance criterion. Both generate exactly what this rule forbids.
-- **Executors:** if an existing plan instructs a source comment, do not add it. Record the
-  deviation in the plan's `SUMMARY.md` instead.
-- If code needs explaining, make the code clearer — better names, smaller functions, a named
-  constant — rather than annotating it.
-- Docstrings are a separate question. Click docstrings in `firestarter_app` are user-facing
-  `--help` text, not commentary, and must not be treated as comments.
-- Before each commit, run the check for that repo. It must print nothing. **The pathspec is
-  load-bearing** — without it each pattern also matches markdown, and the check reports a file it
-  does not govern:
-  - Python: `git -C firestarter_app diff --cached -- '*.py' | /usr/bin/grep -E '^\+\s*#' | /usr/bin/grep -v '^\+\s*#!'`
-  - C/C++: `git -C firestarter_fw diff --cached -- '*.c' '*.cpp' '*.cc' '*.h' '*.hpp' '*.inc' '*.ino' | /usr/bin/grep -E '^\+\s*(//|/\*|\*)'`
-- Deleting one clause from an existing comment reflows the rest. Read the remainder. Confirm it
-  still parses and that every pronoun still has an antecedent.
 
 ## Milestone close and branch protection
 
