@@ -4,8 +4,8 @@ milestone: v1.40
 milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
 current_phase: 200
 current_phase_name: An elevated programming supply is stated
-status: executing
-stopped_at: Phase 200 plan 200-01 complete, wave 2 next
+status: verifying
+stopped_at: Phase 200 all 3 plans complete, awaiting verification
 last_updated: "2026-09-19T17:27:25.857Z"
 last_activity: 2026-09-19
 last_activity_desc: "Phase 200 execution started 2026-09-19 - 3 plans in 2 waves, dispatched sequentially: workflow.use_worktrees is false and all three plans write into the firestarter_app submodule, so worktree isolation is off for every plan. Branch creation SKIPPED at handle_branching - init.execute-phase computed gsd/v1.40-program-parameter-fidelity-active-activated-2026-09-18-24-re from the milestone TITLE; all three repos are already on v1.40-program-parameter-fidelity and forking the computed name off origin/beta would strand the milestone's commits. PRIOR: Phase 200 planned 2026-09-19 - 3 plans, 6 tasks, 2 waves; plan-checker PASSED with zero blockers, warnings or advisories, and both deterministic probes clean at 39/39 (path resolvability and stated failing direction). Research reproduced D-01 to the unit - 746 rows, 284 above 5000 mV, all support_status supported, 34 vendors, algorithms 7/8/11 - and added three invariants now pinned as test legs: all 284 are UV-EPROM with zero exceptions, the algorithm split is 7:161 / 8:102 / 11:21, and Phase 198's VOLT-03 28-row set is FULLY DISJOINT from the 284 (overlap 0). THE OPERATOR AMENDED D-04's VERB MID-PLANNING: the warning now reads the part's programming supply DECODES TO 6.0 V, not PROGRAMS AT 6.0 V. Measured cause: only 3 of the 284 carry a datasheet-cited vdd_mv (the three Fujitsu overrides); 281 carry a pure VCC_VOLTAGES rail-table slot, and DECODE-NOTES section 9 is the Phase 198 verdict that those nibbles select a programmer rail index, NOT a chip requirement. CONTEXT.md's own worked example MBM27C1000 is one of the 281 - its 6000 mV is VCC_VOLTAGES[0x0D]. The error direction matters too: section 9 showed the true Fujitsu requirement sat ABOVE the decode, so the 164 rows rendering 5.5 V may be UNDERSTATING by an unmeasured amount. Distinguishing the 3 from the 281 in the wording was rejected as out of scope - it needs the DB-to-display provenance channel already filed as deferred requirement OVR-F1. Three CONTEXT.md claims were found WRONG, all in the phase's favour: info DOES already have advisory warning paths - the CONTEXT grep searched eprom_presenter.py, A FILE THAT DOES NOT EXIST, the renderer is eprom_info.py and its no_pinout_warning block is an in-repo precedent for the shape VCC-02 asks be defined; the ClickException refusal cannot fire on info at all because info never calls resolve_chip, so the D-05 tension CONTEXT perceived does not exist; and Phase 199's logger.warning-may-not-reach-the-operator rationale is FALSE on this surface - _setup_logging sets root to INFO so warnings reach stdout with no -v and no level prefix. Mechanism chosen on testability, not inheritance: logger.info for the field row, logger.warning for the warning, because under CliRunner with obj=app _setup_logging is short-circuited and only the warning lines survive - an in-process assertion seam click.echo cannot give. Snapshot blast radius is ZERO existing entries: both info-rendering snapshot chips (W27C512, AT28C256) have vdd_mv == 5000, so the change is purely additive and the numstat gate is insertions-with-zero-deletions, strictly stronger than Phase 199's 1 1 pattern. D-06's fail-open branch has NO live data - all 746 rows carry a non-zero int vdd_mv because build_db.py:687 uses .get(..., 5000) - so it is tested with synthetic in-memory dicts; the database is GENERATED and is never hand-edited. _SHIELD_FIXED_VCC_MV = 5000 goes in eprom_info.py, NOT constants.py, which is the firmware-mirror block and has no counterpart for it. database.py stays read-only: vdd_mv does not cross the wire and is not being put on it. Spec-less probe fallback fired (no SPEC for this phase); both edge rows came back unclassified and are surfaced as explicit flagged assumptions in all three plans - never backstopped, never dismissed. state.planned-phase mis-wrote four fields AGAIN (status to executing before any executor ran, percent 20 to 0, stopped_at left stale, body Last activity still pointing at Phase 199); all hand-repaired. Passing the HUMAN title rather than the init JSON's slug kept current_phase_name intact and left last_activity_desc undestroyed - that workaround holds. Nothing pushed, nothing posted. PRIOR: Phase 200 context gathered 2026-09-19 - 284 of 746 rows (38%) carry vdd_mv above the shield's fixed 5.0 V; that scale drove every decision. Locked: info surface only not write, predicate vdd_mv > 5000, a field row plus a warning naming both numbers, state-and-proceed per milestone D-4, fail open on absent or zero vdd_mv, host-side because vdd_mv does not cross the wire and there is no second rail to route to. Tiering 5500 apart from 6000-6500 was declined for want of a measured threshold."
@@ -13,7 +13,7 @@ progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 20
   percent: 20
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 200 (An elevated programming supply is stated) — EXECUTING
-Plan: 1 of 3 complete (200-01) — wave 2 next (200-02, 200-03)
+Plan: 3 of 3 complete (200-01, 200-02, 200-03) — awaiting verification
 Status: Executing Phase 200
-Last activity: 2026-09-19 — Phase 200 wave 1 complete: 200-01 shipped the Programming VCC row and shortfall warning; suite 2087 passed on py3.11
+Last activity: 2026-09-19 — Phase 200 all 3 plans complete; suite 2100 passed / 36 snapshots on py3.11, 836 insertions and 0 deletions across 5 files
 
 ## Roadmap Summary (v1.38)
 
