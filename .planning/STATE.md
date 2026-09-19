@@ -5,7 +5,7 @@ milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 
 current_phase: 199
 current_phase_name: What the rails can actually deliver
 status: executing
-stopped_at: Phase 199 — 199-01 and 199-04 done; awaiting operator bench session for 199-02
+stopped_at: Phase 199 — 4 of 5 plans done; 199-05 pending replan against D-21
 last_updated: "2026-09-19T06:22:19.257Z"
 last_activity: 2026-09-19
 last_activity_desc: "Phase 199 in progress 2026-09-19 — 2 of 5 plans complete. 199-01 took gh#71's 21 V from the vendored MBM27128 datasheet to the operator's screen: one override field added, regeneration re-measured at 746 rows in / 746 out / exactly one changed tuple (FUJITSU/MBM27128 electrical.vpp_mv 18000 -> 21000), support_status multiset byte-identical so D-01 survives D-17, a one-record programmatically-generated wire delta layer, and a snapshot re-record of 1 insertion / 1 deletion reading 21.0v. 199-04 made the 30-row classification able to go red: 30 rows at or above 18000 mV, 21/3/6 by voltage, 10 drop-resistor (algo 0x07, 28-pin) / 20 direct-VPE (algo 0x0B, 24-pin), all supported, every count an equality and proved non-vacuous three ways. Its deviation of record: the plan's claim that every drop-resistor row sits at exactly 18000 is false post-override — 199-01 moved MBM27128 (algo 0x07) to 21000, so the path reads 9 @ 18000 + 1 @ 21000. The same stale claim is still written at 199-CONTEXT.md:396 and must not be copied into 199-05's DECODE-NOTES table. Suite 2085 passed on py3.11, 32 snapshots, ruff clean; zero comment lines added to firestarter_app across all five app commits. 199-02 is a blocking-human bench plan and cannot start: no programmer is attached to this host. 199-03 consumes its DELIVERABLE_MAX_DROP_PATH_MV threshold and 199-05 depends on all four, so both are blocked behind it. Branch creation was skipped deliberately — init computes gsd/v1.40-...-activated-... from the milestone title, which would fork off origin/beta and strand the milestone. Nothing pushed."
@@ -13,7 +13,7 @@ progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 17
-  completed_plans: 14
+  completed_plans: 16
   percent: 0
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 199 (What the rails can actually deliver) — EXECUTING
-Plan: 2 of 5 complete (199-01, 199-04) — 199-02 blocked at its bench gate, 199-03 and 199-05 downstream of it
-Status: Executing Phase 199 — halted pending the operator's bench session (199-02)
-Last activity: 2026-09-19 - Completed quick task 260919-cli: beta already ships DEV_TOOLS; both channel polarities now asserted in CI
+Plan: 4 of 5 complete (199-01, 199-02, 199-03, 199-04) — only 199-05 left, and it needs replanning first
+Status: Executing Phase 199 — 199-05 needs replanning against D-21 before it can run
+Last activity: 2026-09-19 — 199-02 measured at the bench (17380/22140 mV), 199-03 replanned and shipped as a firmware change, no-comments rule removed
 
 ## Roadmap Summary (v1.38)
 
