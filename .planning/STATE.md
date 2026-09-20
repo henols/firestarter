@@ -5,15 +5,15 @@ milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 
 current_phase: 201
 current_phase_name: A partial write is gated on its own region
 status: executing
-stopped_at: Completed 201-02-PLAN.md
-last_updated: "2026-09-20T00:00:00.000Z"
+stopped_at: Completed 201-03-PLAN.md
+last_updated: "2026-09-20T01:00:00.000Z"
 last_activity: 2026-09-20
-last_activity_desc: Completed 201-02-PLAN.md — region-end wire field landed inert on both sides of the seam, D-16.1 regression test authored and observed RED (negative control green)
+last_activity_desc: Completed 201-03-PLAN.md (tracer) — region-scoped write-init blank check wired end to end, D-16.1 flipped from RED (201-02) to PASS, host region-end emission + fake-chip region awareness landed
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 26
-  completed_plans: 21
+  completed_plans: 22
   percent: 20
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 201 (A partial write is gated on its own region) — EXECUTING
-Plan: 3 of 6
-Status: Plan 201-02 complete (firestarter_fw `af47bf4`, firestarter_app `a36b9ec`, meta `7fcdbe5a`) — plan 201-03 next
-Last activity: 2026-09-20 — Completed 201-02-PLAN.md: region-end wire field landed inert on both sides, D-16.1 regression test authored and observed RED with negative control green, zero production source changed in the RED commit
+Plan: 4 of 6
+Status: Plan 201-03 (tracer) complete (firestarter_fw `76fd3c7`, firestarter_app `18f2088`/`5b3fe45`, meta `fa6b500f`) — plan 201-04 next
+Last activity: 2026-09-20 — Completed 201-03-PLAN.md: write-init blank check scoped to its own region end-to-end (BLANK-01), D-16.1 flipped RED->PASS, branch-inventory golden re-derived in the same commit, host region-end emission + fake-chip region awareness landed (BLANK-03)
 
 ## Roadmap Summary (v1.38)
 
@@ -2144,6 +2144,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 201 Plan 03]: `test_chip_test_uv_slot_write.py`'s `test_the_double_refuses_a_non_blank_write_without_the_flag` reseeded its non-blank byte INSIDE the write's target region instead of outside it. That leg's shared fixture (`_seeded_m27c512_double`, used by legs 3-6 for the witness/`FLAG_SKIP_BLANK_CHECK` policy) deliberately seeds outside the target region — correct for the whole-device check this phase fixes, but region-scoping now reads that region as genuinely blank and the write succeeds, so the leg stopped proving anything. Rewrote only this one test's body to seed its own double inside the target region; the shared fixture is untouched. None of the plan's six enumerated `WriteInitPreflightChip` reference lines were edited.
+- [Phase 201 Plan 03]: The plan's literal planted-mutation command (`sed` changing `_is_blank`'s default `end` value from `None` to `0`) cannot detect a regression, because the mandated implementation always calls `_is_blank(start, end)` with two explicit arguments — the default is dead code from that call site. Measured: `planted_rc=0`, all 49 legs still passed. Used an equivalent, stronger mutation instead (reverting the comparison body to the OLD whole-buffer form), which correctly drove the suite non-zero (`planted_rc=1`) and was confirmed restored.
+- [Phase 201 Plan 03]: `mem_util_operation_end` and `mem_util_blank_check_region` resolve D-04's 0=absent fallback and the fail-closed clamp in exactly one place in `memory.cpp`, deliberately as a function rather than an inline ternary in `eprom.cpp` — an inline ternary would have added a row to the branch-inventory golden and separately would have tripped the parenthesis-intolerant argument capture in `test_progress_emission_is_leonardo_only.py` (RESEARCH.md's G-1 hazard, avoided structurally).
 - [Phase 201 Plan 02]: Did not call `configure_eprom(&h)` a second time after `configure_memory(&h)` in the two new D-16.1 tests, despite the plan's literal action text instructing both. `configure_memory` already dispatches to `configure_eprom` for protocol `0x07`, and a second explicit call re-reads the `eprom_internal_set_control_register` wrapper `configure_eprom` just installed and assigns it to the module-global `ep_set_control_register`, making that wrapper call itself. Any path touching `handle->firestarter_set_control_register` (`eprom_check_vpp`, on the first init call) then recurses until the stack overflows — measured directly as a SIGSEGV on a standalone run of the test binary, not asserted.
 - [Phase 201 Plan 02]: `clear_bus_recording()` is called before every loop iteration inside the D-16.1 driving helper, not once before the loop. One `BLANK_CHECK_CHUNK_SIZE` (8192-byte) chunk scan performs 24576 register writes, saturating `HOST_STUBS_MAX_RECORDING` (4096) well inside a single call; once saturated, the address-keyed shadow model's backward address-recovery scan falls back to the last address recovered before saturation and repeats that stale byte for the rest of the call. The negative control's target (offset 1024 into chunk 2) was silently unreachable without a per-call clear, because chunk 1's own already-saturated recording was still active when chunk 2's scan began.
 - [Phase 201 Plan 02]: The D-16.1 driving loop is a `do-while`, not the plan's literal "while" framing — before the first call to `firestarter_operation_init`, the operation has not started, so `is_operation_in_progress` reads false and a `while`-loop would never invoke init at all, leaving both cases silently reading the fixture's default `RESPONSE_CODE_OK` instead of exercising the blank check.
@@ -3133,6 +3136,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
+| Phase 201 P03 | 2 tasks | ~50min | Tracer: `mem_util_blank_check_region`/`mem_util_operation_end` in `memory.cpp`, write-init call site scoped at `eprom.cpp:145`, branch-inventory golden re-derived in the same commit; D-16.1 flipped RED (`af47bf4`) -> PASS (`76fd3c7`); native 237/237 both envs; host `region_length` emitted for write/verify, `WriteInitPreflightChip` taught the region, 5 new host legs; host suite 2106 passed, coverage 85.42%; leonardo flash 23932/32768 B (4740 B bootloader-guard margin); firestarter_fw@76fd3c7, firestarter_app@18f2088+@5b3fe45, meta@fa6b500f |
 | Phase 201 P02 | 2 tasks | ~65min | `region-end` wire field landed inert on both sides (uint32_t region_end, JSON_KEY_REGION_END), reset per command; D-16.1 regression test authored, run, and observed RED against unmodified firmware, negative control GREEN; `pio run` 3/3 SUCCESS, native 235/235 unchanged + 1 deliberate RED; app 55 passed, ruff clean; firestarter_fw@666195b, @af47bf4, firestarter_app@a36b9ec, meta@7fcdbe5a |
 | Phase 193 P02 | 2 tasks | ~7min | Seed `trigger_condition` rewritten to a parse-safe folded scalar carrying D-09's threshold (fixed share >= 90% AND `2.0.7` downloads <= 10, 90-day window); prose corrected to 2.0.9, past tense, no `2.0.8`; `.gitmodules` checklist leg scoped to `origin/main` vs `origin/beta`; `extractFrontmatter` confirms 4 keys, `status: dormant`; meta@ac30e68b, @4a0c8dbd |
 | Phase 193 P01 | 2 tasks | ~22min | GATE-01 adoption instrument `tools/adoption/pypi_version_share.sh` built and run live against the ClickHouse public PyPI dataset; live reading 17 fixed (>= 2.0.9) / 116 at-risk (2.0.7) / 12.8% share, `TRIGGER: NOT MET` against the 90%/<=10 threshold; threshold boundary, empty-window and server-error paths each proven at the layer where they can be proven; caveat block carries the `necessary condition, never a sufficient one` framing on every run; meta@352841a9, @9c94669b |
@@ -3573,8 +3577,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-20T00:00:00.000Z
-**Stopped at:** Completed 201-02-PLAN.md
+**Last session:** 2026-09-20T01:00:00.000Z
+**Stopped at:** Completed 201-03-PLAN.md
+**Was (superseded, retained for continuity):** Completed 201-02-PLAN.md
 **Was (superseded, retained for continuity):** Completed 201-01-PLAN.md
 **Was (superseded, retained for continuity):** Phase 201 context gathered
 **Was (superseded, retained for continuity):** Phase 194 context gathered

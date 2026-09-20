@@ -423,7 +423,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 201-03-PLAN.md — **Tracer:** one region end from `_setup_operation` through the wire into `mem_util_blank_check_region`, with the whole-device wrapper, the single `eprom.cpp:145` call site and the branch-inventory golden re-derived in the same commit — D-16.1 turns GREEN; plus the host legs once `fake_chip.py` learns the region
+- [x] 201-03-PLAN.md — **Tracer:** one region end from `_setup_operation` through the wire into `mem_util_blank_check_region`, with the whole-device wrapper, the single `eprom.cpp:145` call site and the branch-inventory golden re-derived in the same commit — D-16.1 turns GREEN; plus the host legs once `fake_chip.py` learns the region — complete 2026-09-20, `76fd3c7`
 
 **Wave 4** *(blocked on Wave 3)*
 
