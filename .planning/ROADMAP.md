@@ -285,7 +285,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 202-04-PLAN.md — Break the read in flight, and answer success criterion 5 in writing (wave 4)
+- [x] 202-04-PLAN.md — Break the read in flight, and answer success criterion 5 in writing (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
