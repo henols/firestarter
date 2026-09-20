@@ -296,3 +296,50 @@ None -- no external service configuration required.
 - `mypy firestarter/ tests/` (full CI scope): 32 errors in 12 files -- unchanged from the 202-01/202-04 baseline
 - `python -c "...assert 'ONLY' not in d and 'only EpromOperator method' not in d..."`: `stale claim repaired`
 - `python -c "from firestarter.constants import COMMAND_NAMES, COMMAND_BLANK_CHECK, COMMAND_VERIFY; ..."`: `ordinals still defined`
+
+## Post-Review Fix
+
+`202-REVIEW.md` (meta commit `363da414`) found one blocker:
+
+**CR-01: `blank -a <past-chip-end>` with no `--size` was not refused, sent a malformed region to
+the wire, and reported exit 1 ("not blank") instead of exit 2 (region refusal).**
+
+`_region_refusal_exit_code` left `length` as `None` whenever both `--size` and `input_file` were
+absent -- the reasoning ("blank's whole-chip default: nothing to bound") only holds when
+`start == 0`. With `-a <addr>` given and no `-s`, the declared region is "the rest of the chip
+from `addr` onward", a real, boundable length -- not "nothing to bound" -- so the past-chip-end
+check was skipped entirely for exactly this case, and an out-of-range `--address` reached
+`EpromOperator.check_eprom_blank`, which computed a negative `region_length` and drove a
+`COMMAND_READ` whose wire `address` exceeded its own wire `memory-size`.
+
+**Fix:** a start address at or past the chip's declared `memory-size` is now refused
+unconditionally, before any length is resolved -- checked first so the length-based check never
+has to reason about a non-positive "rest of chip" length. `blank`'s no-`--size` default now
+resolves `length` to `memory-size - start` (always positive once the new guard has run) instead of
+`None`. Boundary decided explicitly, per the reviewer's request: a start address exactly equal to
+`memory-size` is past the last addressable byte (valid addresses are `[0, memory-size)`) and is
+refused; `memory-size - 1` with no `--size` is the last valid byte and is accepted.
+
+**Coverage added** (`tests/test_cli_handlers.py`): `test_address_alone_past_chip_end_is_refused_before_opening_the_port`
+and `test_address_alone_exactly_at_chip_end_is_refused` (both parametrised over `verify`/`blank`,
+covering the reviewer's request to also check `verify`'s `-a`-alone path even though it turned out
+already covered incidentally by its `input_file`-length branch), plus
+`test_blank_address_alone_at_last_valid_byte_is_not_refused` as the required negative control
+proving the new guard does not simply refuse everything.
+
+**Verification after the fix:** full suite 2216 passed (up from 2211), coverage 85.80% (`Required
+test coverage of 70% reached`), 36/36 snapshots. `ruff check`/`ruff format --check` clean over
+`firestarter/ tests/`. `mypy firestarter/cli_handlers.py firestarter/main.py firestarter/compare.py`:
+no issues. `mypy firestarter/ tests/` (full CI scope): 32 errors in 12 files, unchanged from
+baseline. The reviewer's own repro (`_region_refusal_exit_code(eprom="X",
+eprom_data={"memory-size": 0x4000}, address="0x8000", size=None)`) now returns `2` instead of
+`None`.
+
+**Not acted on** (per the coordinator's explicit instruction): WR-01 (the D-08 abort-vs-timeout
+3.0s window's untested near-boundary edge), WR-02 (blank-check's verdict-2 fold-in inside `dev
+test`'s dispatch, already deferred to phase 206 by the code's own comment), and IN-01 (a
+dead/defensive branch in `CompareAccumulator.feed()`). All three are recorded in `202-REVIEW.md`
+for the phase verifier.
+
+**Commits:** app `a0855b9` (`fix(202-05): refuse -a past the chip end when --size is absent
+(CR-01)`); meta `76dc82e0` (gitlink advance) plus this SUMMARY update.
