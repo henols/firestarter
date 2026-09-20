@@ -415,7 +415,7 @@ Plans:
 
 **Wave 1**
 
-- [ ] 201-01-PLAN.md — Harness and contract freeze: an address-keyed shadow readback model in `test_val_eprom`'s stubs, proved non-aliasing by a positive control, plus the two BLANK-02 characterization tests (multi-chunk resumption with cursor restore, and the erase-end arm scanning from 0) written GREEN against unmodified firmware
+- [x] 201-01-PLAN.md — Harness and contract freeze: an address-keyed shadow readback model in `test_val_eprom`'s stubs, proved non-aliasing by a positive control, plus the two BLANK-02 characterization tests (multi-chunk resumption with cursor restore, and the erase-end arm scanning from 0) written GREEN against unmodified firmware — complete 2026-09-19, `a7746d0c`
 
 **Wave 2** *(blocked on Wave 1)*
 

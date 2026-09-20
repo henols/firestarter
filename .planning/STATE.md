@@ -4,11 +4,11 @@ milestone: v1.40
 milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
 current_phase: 201
 current_phase_name: A partial write is gated on its own region
-status: planned
-stopped_at: Phase 201 planned
-last_updated: "2026-09-19T23:17:03.177Z"
+status: executing
+stopped_at: Completed 201-01-PLAN.md
+last_updated: "2026-09-19T23:58:58.000Z"
 last_activity: 2026-09-19
-last_activity_desc: Phase 201 planned (6 plans, waves 1-6; research + pattern map; plan-checker passed)
+last_activity_desc: Completed 201-01-PLAN.md — address-keyed shadow readback model + BLANK-02 contract freeze, 235/235 both native envs, zero production source changed
 progress:
   total_phases: 5
   completed_phases: 1
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 201 — A partial write is gated on its own region
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-09-19 — Phase 201 planned (6 plans, waves 1-6)
+Phase: 201 (A partial write is gated on its own region) — EXECUTING
+Plan: 2 of 6
+Status: Plan 201-01 complete (firestarter_fw `a7746d0c`, meta `d5256603`) — plan 201-02 next
+Last activity: 2026-09-19 — Completed 201-01-PLAN.md: address-keyed shadow readback model + BLANK-02 contract freeze, 235/235 both native envs, zero production source changed
 
 ## Roadmap Summary (v1.38)
 
@@ -2144,6 +2144,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 201 Plan 01]: Substituted `CONTROL_REGISTER` for the plan's "TOP_ADDRESS" register (which does not exist anywhere in the repository — `git grep` confirms zero hits) when composing an absolute address from the recorded register writes in `test_val_eprom`'s new shadow model. Production writes the top address bits to `CONTROL_REGISTER` (`mem_util_calculate_top_address_register`, `memory.cpp`); for every address this suite drives through the shadow (< 65536) that contribution is structurally 0, matching what the plan's formula expected.
+- [Phase 201 Plan 01]: Added `h.bus_config = VAL_EPROM_BUS_CONFIG_0x07` to both the Task 1 positive-control fixture and the new `make_region_handle` factory, though the plan's action text listed neither. A zero-initialized `bus_config` is degenerate (`mem_util_remap_address_bus` collapses every address to the same physical line), not an identity remap — confirmed by the file's own pre-existing comment on `VAL_EPROM_BUS_CONFIG_0x07`. Without this the shadow-model positive control could not discriminate its four probe addresses.
+- [Phase 201 Plan 01]: `test_erase_end_blank_check_scans_from_zero` asserts `val_recording_saturated()` is TRUE, the opposite of the plan's stated expectation. Measured: one `mem_util_blank_check` call over a 16384-byte part scans a full 8192-byte `BLANK_CHECK_CHUNK_SIZE` chunk in that single call (24576 register-write attempts), which saturates the recorder (4096 entries — the plan's cited 256 is a stale in-file comment, not the compiled value) regardless of contents. The address-0 composition this test actually checks is unaffected: the recorder's documented saturation drops only the tail and keeps the prefix, which is all `first_recorded_address()` needs. Full detail in `201-01-SUMMARY.md`.
 - [Phase 195 UAT]: The operator ruled PASS on the phase's one open judgment call, choosing disposition (a) — WR-01 (`require_page_alignment` accepts a negative address string as falsely "aligned") is accepted as known debt rather than fixed in-phase. Grounds recorded at the checkpoint: `parse_address` does not reject negatives and Python's `%` folds the sign, so `-256 % 256 == 0` reads as aligned; the firmware does not catch it either, because `simple_strtoul` consumes only `[0-9]` and returns 0 for `-256` and `-1` (confirmed by compiling the function verbatim). The write therefore lands silently at address 0, which is page-aligned for a length already proven to be a whole number of pages — a wrong-destination defect, not a partial-page-destruction one, and outside all four of the phase's success criteria, which concern alignment and length rather than address sign. Filed as `.planning/todos/pending/2026-09-16-reject-negative-write-start-address.md` and recorded in `195-SECURITY.md` under "Related Findings Outside This Register". 195-VERIFICATION.md moves from `human_needed` to `passed`, making the phase 4/4.
 - [Phase 193 Plan 01]: Built the GATE-01 `QUERY` variable with a quoted heredoc (`<<'SQL'`) instead of a single-quoted bash string with `'"'"'`-escaped embedded quotes. The escaped form breaks apart literal substrings like `installer IN ('pip', 'uv')` in the committed script's own bytes, and the plan's acceptance criteria grep directly against those bytes. The heredoc preserves the SQL's own quoting exactly as written, with no bash-level escaping artifacts in the file.
 - [Phase 193 Plan 01]: Split the GATE-01 script's curl-flag list and SQL trigger expression across multiple physical lines rather than compacting them onto one. The plan's verify block counts matching lines, not occurrences, for required substrings (`user=play`, `--fail-with-body`, `toUInt32OrZero`, and each clause of the trigger predicate); packing several onto one line would have undercounted them without changing anything the SQL or curl actually does.
@@ -3566,8 +3569,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-19T21:52:47.571Z
-**Stopped at:** Phase 201 context gathered
+**Last session:** 2026-09-19T23:58:58.000Z
+**Stopped at:** Completed 201-01-PLAN.md
+**Was (superseded, retained for continuity):** Phase 201 context gathered
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
@@ -3648,7 +3652,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/201-a-partial-write-is-gated-on-its-own-region/201-CONTEXT.md
+**Resume file:** None
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
