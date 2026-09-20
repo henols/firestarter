@@ -419,7 +419,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 201-02-PLAN.md — `region-end` on both sides of the wire, inert: the handle member, four `json_parser.c` sites with the row-count assert edited 11→12, the per-command reset, the host constant and its literal pin — then the D-16.1 regression test written, run and SEEN RED with its transcript captured
+- [x] 201-02-PLAN.md — `region-end` on both sides of the wire, inert: the handle member, four `json_parser.c` sites with the row-count assert edited 11→12, the per-command reset, the host constant and its literal pin — then the D-16.1 regression test written, run and SEEN RED with its transcript captured — complete 2026-09-20, `af47bf4`
 
 **Wave 3** *(blocked on Wave 2)*
 

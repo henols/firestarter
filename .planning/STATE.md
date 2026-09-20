@@ -5,15 +5,15 @@ milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 
 current_phase: 201
 current_phase_name: A partial write is gated on its own region
 status: executing
-stopped_at: Completed 201-01-PLAN.md
-last_updated: "2026-09-19T23:58:58.000Z"
-last_activity: 2026-09-19
-last_activity_desc: Completed 201-01-PLAN.md — address-keyed shadow readback model + BLANK-02 contract freeze, 235/235 both native envs, zero production source changed
+stopped_at: Completed 201-02-PLAN.md
+last_updated: "2026-09-20T00:00:00.000Z"
+last_activity: 2026-09-20
+last_activity_desc: Completed 201-02-PLAN.md — region-end wire field landed inert on both sides of the seam, D-16.1 regression test authored and observed RED (negative control green)
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 26
-  completed_plans: 20
+  completed_plans: 21
   percent: 20
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 201 (A partial write is gated on its own region) — EXECUTING
-Plan: 2 of 6
-Status: Plan 201-01 complete (firestarter_fw `a7746d0c`, meta `d5256603`) — plan 201-02 next
-Last activity: 2026-09-19 — Completed 201-01-PLAN.md: address-keyed shadow readback model + BLANK-02 contract freeze, 235/235 both native envs, zero production source changed
+Plan: 3 of 6
+Status: Plan 201-02 complete (firestarter_fw `af47bf4`, firestarter_app `a36b9ec`, meta `7fcdbe5a`) — plan 201-03 next
+Last activity: 2026-09-20 — Completed 201-02-PLAN.md: region-end wire field landed inert on both sides, D-16.1 regression test authored and observed RED with negative control green, zero production source changed in the RED commit
 
 ## Roadmap Summary (v1.38)
 
@@ -2144,6 +2144,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 201 Plan 02]: Did not call `configure_eprom(&h)` a second time after `configure_memory(&h)` in the two new D-16.1 tests, despite the plan's literal action text instructing both. `configure_memory` already dispatches to `configure_eprom` for protocol `0x07`, and a second explicit call re-reads the `eprom_internal_set_control_register` wrapper `configure_eprom` just installed and assigns it to the module-global `ep_set_control_register`, making that wrapper call itself. Any path touching `handle->firestarter_set_control_register` (`eprom_check_vpp`, on the first init call) then recurses until the stack overflows — measured directly as a SIGSEGV on a standalone run of the test binary, not asserted.
+- [Phase 201 Plan 02]: `clear_bus_recording()` is called before every loop iteration inside the D-16.1 driving helper, not once before the loop. One `BLANK_CHECK_CHUNK_SIZE` (8192-byte) chunk scan performs 24576 register writes, saturating `HOST_STUBS_MAX_RECORDING` (4096) well inside a single call; once saturated, the address-keyed shadow model's backward address-recovery scan falls back to the last address recovered before saturation and repeats that stale byte for the rest of the call. The negative control's target (offset 1024 into chunk 2) was silently unreachable without a per-call clear, because chunk 1's own already-saturated recording was still active when chunk 2's scan began.
+- [Phase 201 Plan 02]: The D-16.1 driving loop is a `do-while`, not the plan's literal "while" framing — before the first call to `firestarter_operation_init`, the operation has not started, so `is_operation_in_progress` reads false and a `while`-loop would never invoke init at all, leaving both cases silently reading the fixture's default `RESPONSE_CODE_OK` instead of exercising the blank check.
 - [Phase 201 Plan 01]: Substituted `CONTROL_REGISTER` for the plan's "TOP_ADDRESS" register (which does not exist anywhere in the repository — `git grep` confirms zero hits) when composing an absolute address from the recorded register writes in `test_val_eprom`'s new shadow model. Production writes the top address bits to `CONTROL_REGISTER` (`mem_util_calculate_top_address_register`, `memory.cpp`); for every address this suite drives through the shadow (< 65536) that contribution is structurally 0, matching what the plan's formula expected.
 - [Phase 201 Plan 01]: Added `h.bus_config = VAL_EPROM_BUS_CONFIG_0x07` to both the Task 1 positive-control fixture and the new `make_region_handle` factory, though the plan's action text listed neither. A zero-initialized `bus_config` is degenerate (`mem_util_remap_address_bus` collapses every address to the same physical line), not an identity remap — confirmed by the file's own pre-existing comment on `VAL_EPROM_BUS_CONFIG_0x07`. Without this the shadow-model positive control could not discriminate its four probe addresses.
 - [Phase 201 Plan 01]: `test_erase_end_blank_check_scans_from_zero` asserts `val_recording_saturated()` is TRUE, the opposite of the plan's stated expectation. Measured: one `mem_util_blank_check` call over a 16384-byte part scans a full 8192-byte `BLANK_CHECK_CHUNK_SIZE` chunk in that single call (24576 register-write attempts), which saturates the recorder (4096 entries — the plan's cited 256 is a stale in-file comment, not the compiled value) regardless of contents. The address-0 composition this test actually checks is unaffected: the recorder's documented saturation drops only the tail and keeps the prefix, which is all `first_recorded_address()` needs. Full detail in `201-01-SUMMARY.md`.
@@ -3130,6 +3133,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
+| Phase 201 P02 | 2 tasks | ~65min | `region-end` wire field landed inert on both sides (uint32_t region_end, JSON_KEY_REGION_END), reset per command; D-16.1 regression test authored, run, and observed RED against unmodified firmware, negative control GREEN; `pio run` 3/3 SUCCESS, native 235/235 unchanged + 1 deliberate RED; app 55 passed, ruff clean; firestarter_fw@666195b, @af47bf4, firestarter_app@a36b9ec, meta@7fcdbe5a |
 | Phase 193 P02 | 2 tasks | ~7min | Seed `trigger_condition` rewritten to a parse-safe folded scalar carrying D-09's threshold (fixed share >= 90% AND `2.0.7` downloads <= 10, 90-day window); prose corrected to 2.0.9, past tense, no `2.0.8`; `.gitmodules` checklist leg scoped to `origin/main` vs `origin/beta`; `extractFrontmatter` confirms 4 keys, `status: dormant`; meta@ac30e68b, @4a0c8dbd |
 | Phase 193 P01 | 2 tasks | ~22min | GATE-01 adoption instrument `tools/adoption/pypi_version_share.sh` built and run live against the ClickHouse public PyPI dataset; live reading 17 fixed (>= 2.0.9) / 116 at-risk (2.0.7) / 12.8% share, `TRIGGER: NOT MET` against the 90%/<=10 threshold; threshold boundary, empty-window and server-error paths each proven at the layer where they can be proven; caveat block carries the `necessary condition, never a sufficient one` framing on every run; meta@352841a9, @9c94669b |
 | Phase 188 P08 | 2 tasks | ~20min | catalog/codegen.py's five citations stripped at the meta canonical copy (LCAT-03, post-Phase-7, LCAT-05, LCAT-02+LCI-04 x2), synced to both sub-repos; all three copies hash-identical and citation-free; messages.h/messages.py proven byte-unchanged by git diff (not the sync's own tautological check); second sync a true no-op; firmware 360 passed / host 2129 passed; meta@b1db45f5, firestarter@6c4d2e2, firestarter_app@f36113b |
@@ -3569,8 +3573,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-19T23:58:58.000Z
-**Stopped at:** Completed 201-01-PLAN.md
+**Last session:** 2026-09-20T00:00:00.000Z
+**Stopped at:** Completed 201-02-PLAN.md
+**Was (superseded, retained for continuity):** Completed 201-01-PLAN.md
 **Was (superseded, retained for continuity):** Phase 201 context gathered
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
