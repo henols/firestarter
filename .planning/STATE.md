@@ -5,10 +5,10 @@ milestone_name: Verification Moves to the Host
 current_phase: 202
 current_phase_name: One comparison engine, on the host
 status: planning
-stopped_at: "v1.41 ACTIVATED 2026-09-20 — PROJECT.md, REQUIREMENTS.md (34 requirements) and ROADMAP.md (6 phases, 202–207) are written, all hand-authored, and every phase verified to resolve through roadmap.get-phase. Next: /gsd-discuss-phase 202. Phases continue at 202. v1.40 is still unmerged: PRs henols/firestarter#91, firestarter_app#72, firestarter_fw#70 all target beta and the merge stays operator-gated."
-last_activity_desc: "Activated milestone v1.41 Verification Moves to the Host. Blank check and verify leave the firmware in BOTH forms — the standalone CMD_BLANK_CHECK (4) / CMD_VERIFY (6) command surfaces and the in-algorithm write-init and erase-end pre-flights, retiring mem_util_blank_check{,_region} and the FLAG_SKIP_BLANK_CHECK wire bit five weeks after Phase 201 region-scoped them. The host reads and compares instead, through one implementation reusing chip_test.py's _diff_offsets / classify_fingerprint. memory_verify_execute and every in-algorithm verify (per-pulse, eeprom28c_verify_page_readback, flash_util_verify_operation) STAY — eprom.cpp calls memory_verify_execute for VERIFY_PER_PULSE_PLUS_FINAL. Six decisions at activation: all-of-it scope, erasable-exempt host pre-write check, opt-in write --verify, clean-break protocol with ordinals 4 and 6 retired, 3.1.0b1 in both repos, and dev-test seed R4 (one leased serial session per plan) in scope. Open mechanic: no abort message exists for a mid-stream read, so break-at-first-mismatch saves reporting noise but not time until that is solved. phases.clear deliberately NOT run — 25 live phase directories."
-last_updated: "2026-09-20T12:25:21.994Z"
+stopped_at: "Phase 202 context gathered — 202-CONTEXT.md written and committed (17 decisions). Next: /gsd-plan-phase 202. CMP-04 must be amended in REQUIREMENTS.md before planning (202-CONTEXT.md D-15). v1.40 is still unmerged: PRs henols/firestarter#91, firestarter_app#72, firestarter_fw#70 all target beta and the merge stays operator-gated."
+last_updated: "2026-09-20T13:11:23.370Z"
 last_activity: 2026-09-20
+last_activity_desc: "Phase 202 discuss-phase. Four gray areas discussed; 202-CONTEXT.md and 202-DISCUSSION-LOG.md committed as 4e6db1dd. The engine goes in a new import-light firestarter/compare.py as a streaming accumulator that classify_fingerprint delegates to, pinned by a corpus equality test so DEVTEST-03 cannot drift in Phase 206. Success criterion 5 is answered AFFIRMATIVELY and against the roadmap's stated premise: a mid-stream abort works inside the existing protocol with no firmware change, because the host can simply stop acking — op_wait_for_ack times out in 1000 ms and loop() then runs command_done(), which zeroes the registers and returns to CMD_IDLE, so the port is left clean on the error path too. The saving is therefore temporal, not merely diagnostic, and CMP-F1 is cheaper than filed. Phase 202 stays app-only and bench-no. Exit codes become 0/1/2 on verify and blank ONLY, following diff(1) and the in-repo consistency_check_eprom precedent; SRAM/FRAM blank becomes a 2 refusal rather than a 1 'not blank'. Output is one line per mismatching range carrying range and byte count with NO byte values, plus one bucket summary line — an operator decision that contradicts CMP-04, so D-15 requires CMP-04 be amended in REQUIREMENTS.md before planning rather than closed as unmet. Deferred: a one-line DONE-based clean stop for Phase 204, and CLI-wide exit-code consistency for the other ~20 commands."
 progress:
   total_phases: 6
   completed_phases: 0
@@ -3664,8 +3664,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-20T12:00:00.000Z
-**Stopped at:** v1.40 shipped as PRs — firestarter#91, firestarter_app#72, firestarter_fw#70, all to beta, all unmerged; merge decision and the three held issue answers outstanding
+**Last session:** 2026-09-20T13:11:23.152Z
+**Stopped at:** Phase 202 context gathered — 202-CONTEXT.md committed. v1.40 still shipped-as-PRs: firestarter#91, firestarter_app#72, firestarter_fw#70, all to beta, all unmerged; merge decision and the three held issue answers outstanding
 **Was (superseded, retained for continuity):** Phase 201 complete — all phases complete
 **Was (superseded, retained for continuity):** Completed 201-04-PLAN.md
 **Was (superseded, retained for continuity):** Completed 201-03-PLAN.md
@@ -3752,7 +3752,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** None
+**Resume file:** .planning/phases/202-one-comparison-engine-on-the-host/202-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
