@@ -2,6 +2,7 @@
 created: 2026-08-30T20:13:16Z
 title: Remove the CMD_VERIFY command surface from firmware — verify by read-back and compare in the app
 area: both
+resolves_phase: 204
 files:
   - firestarter/include/firestarter.h:55
   - firestarter/include/firestarter.h:120

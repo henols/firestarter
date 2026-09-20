@@ -1,7 +1,7 @@
 ---
 created: 2026-09-20
 source: 201-REVIEW.md WR-02
-resolves_phase:
+resolves_phase: 205
 severity: warning
 ---
 

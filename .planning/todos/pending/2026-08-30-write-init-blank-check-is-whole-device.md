@@ -2,6 +2,7 @@
 created: 2026-08-30T00:00:00Z
 title: Write-init blank check scans the whole device — non-blank UV EPROMs cannot be written at all
 area: firmware + host app
+resolves_phase: 205
 files:
   - firestarter/src/proms/memory.cpp (:450-459 mem_util_blank_check resets address to 0)
   - firestarter/src/proms/eprom.cpp (:144-146 write-init calls it as the pre-flight)
