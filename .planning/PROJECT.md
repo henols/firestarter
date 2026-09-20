@@ -38,6 +38,98 @@
 **v1.30 shipped:** 2026-08-05 (SDP Surface Retirement & Behavioral Lock Proof — 7 phases (131–134, 136, 136.1, 137), 48 plans, 125 tasks; **55/56 requirements, CLOSE-06 held open by design**; host-only, no firmware change. Retired v1.22's unverifiable standalone `dev sdp <chip> enable|disable` and moved the proof into a six-step `dev test` leg whose oracle is read-back equality against a baseline pattern, never an exit code; hardened `check_mypy_watermark.py` from fail-open to fail-closed and certified `firestarter_app`'s primary `ci` job GREEN for the first time in two months (run `30856059940`, mypy 32 against an unratcheted watermark of 35); landed gh#8's stable-channel `dev` narrowing. **Phase 135 (`write --sdp-relock`) deferred out to Backlog 999.28** by operator decision, number not reused — so v1.30 ships the deletion and the behavioral proof and **withdraws** the deliberate-protection surface with **no replacement** (RELOCK-01…06 left v1 scope, 56 → 50 reqs; RELOCK-07 re-homed to Phase 137). Evidence ceiling honoured throughout: **no AT28C part in inventory, no hardware ran** — emission, plan-derivation and read-back-comparison logic are proven; the causal claim "the lock inhibited the write" is not, and did not gate the close. Seventh consecutive `override_closeout`. **⚠ `firestarter_app`'s `gsd/v1.30-sdp-surface-retirement` was never merged to `origin/beta`** — the PR was staged but not opened; v1.31 Phase 138 lands it. See `.planning/MILESTONES.md` §v1.30.)
 
 **v1.31 shipped:** 2026-08-18 (27C Programming-Algorithm Fidelity — 9 phases (138–146), 74 plans, 164 tasks; **45/45 v1 requirements**; firmware-touching, dual-repo lockstep. Implements [gh#15](https://github.com/henols/firestarter_prom/issues/15) **as corrected, not as filed** — two wrong numbers and one inverted premise, all three corrected *publicly and before implementation* (comment `#5233463320`): `0x0B`'s pulse is **500 µs**, not `50000 us`; pulse width is a **database datum**, not a per-protocol constant (re-derived live through the production parser — 170/127/32 chips); and the safe 32-bit delay helper is for the overprogram pulse, not any bare pulse. Delivered: **one shared per-byte pulse-to-verify loop** driven by a `const` PROGMEM `eprom_params_t` table keyed on `protocol_id` (**D-01** — protocol owns *shape*, the database owns the *pulse*), **not** gh#15's three state machines; fixed-width pulses that never grow between attempts; hard-fail at `max_pulses` reporting the failing **address and pulse count**; one shared `eprom_hv_route_mask()` with every **error** exit disabling every HV route through a single-exit wrapper; `write --pulse-us N` bounded 1..65535 and pre-validated before a serial byte, riding the existing wire field with **no new DB field and no second algorithm selector**; plus a host long-write timeout fix and intra-block progress, scoped to the `leonardo` class only — on `SERIAL_ON_IO` boards the emission is compiled out **structurally**, because a buffered progress frame there could displace a later `MSG_ERR_MAX_PULSES` and convert a program failure into a transport timeout. **Bench-validated on real silicon:** three full 65536-byte write→read→verify cycles on a Winbond **W27C512** (`0xda08`), **Leonardo**, shield **Rev 2.0** — three distinct images, nine clean oracle cells, read stability N=3 at one SHA each, write timing consistent to **0.37 s**. A firmware defect this milestone itself introduced (Phase 141 deleted the only `CTRL_VPE_ENABLE` assert) failed the **first** bench cycle on byte 0; it was root-caused by a debug session, fixed, and **stands in the record with its cause** rather than being counted out. **Evidence Ceiling stands: the ~6.25 V program-VCC rail all four vendor algorithms assume is unreachable on every shield revision this project owns** — so this milestone claims **fidelity, not improvement**, with no comparative claim, no control run, and no datasheet-conformance claim in either direction. `0x08` (AM27C020) and `0x0B` (M2716/M2732) are **skipped-with-reason** with the missing parts named, never inferred from `0x07`. Twelve items carry forward with the literal phrase `no v1.31 owner`; **MERGE-05's +96 B leonardo band breach is open and un-adjudicated** with the operator as its named owner. Eighth consecutive `override_closeout` (9 carry-forward items, none originating in v1.31). Closed via **PRs to `beta` in all three repos, not direct merges**, per operator decision — meta tagged `v1.31`, gitlinks re-pinned; **no beta cut yet**, and stable stays operator-gated. See `.planning/MILESTONES.md` §v1.31.)
+## Current Milestone: v1.41 Verification Moves to the Host
+
+**Activated:** 2026-09-20 · **Phases continue at 202** (v1.40 ran 197–201; the vacated **150** slot and
+the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving)
+
+**Goal:** The Arduino stops deciding whether a chip is blank or matches an image. The host reads the
+chip and compares in Python — one comparison implementation, a named diagnosis instead of a single
+address, and the flash the removed command surfaces were costing.
+
+**Why now.** Verification lives in the wrong place, and has since the beginning. The firmware compares
+bytes it has no better view of than the host does, and it aborts at the *first* bad byte — so a user
+learns one address and nothing about the shape of the failure. The host meanwhile already carries a far
+richer comparison primitive: `classify_fingerprint` / `_diff_offsets` in `chip_test.py` names *why* a
+verify failed (blank/contact fault vs stuck bits vs pattern never matched) and counts total against
+bad. `dev test` has been more informative than `verify` for four milestones. Routing every comparison
+through one host implementation closes that gap and deletes the second one. AVR flash is the scarce
+resource — the v1.33 premise — and `CMD_VERIFY` / `CMD_BLANK_CHECK` are a dispatch case, a wrapper, a
+configure case and a header declaration each, all to run a byte comparison the host can run for free.
+Wire volume is roughly unchanged: verify pushes the whole image down today; read pulls the whole image
+back instead.
+
+**Shape.** Host comparison engine first — `blank` and `verify` become read-and-compare against a
+constant `0xFF` and against a file respectively, streaming per chunk, stopping at the first mismatch by
+default and, under a flag, scanning the whole device and reporting the mismatching ranges. Then the
+firmware command surfaces go: `CMD_VERIFY` (6) and `CMD_BLANK_CHECK` (4), their dispatch entries,
+`is_memory_cmd`, the `configure_memory` case, and the `eprom_verify()` / `eprom_blank_check()`
+wrappers. Then the in-algorithm pre-flights go too — the write-init and erase-end blank checks,
+`mem_util_blank_check{,_region}`, and the `FLAG_SKIP_BLANK_CHECK` wire bit — with the host taking over
+the refusal. `write` gains an opt-in `--verify` read-back. Both repos bump to `3.1.0b1`.
+
+**What must NOT be removed.** `memory_verify_execute` stays: `eprom.cpp` calls it for the
+`VERIFY_PER_PULSE_PLUS_FINAL` arm on protocols `0x07` / `0x08`, and `memory_utils.h` exposes it
+precisely so `eprom.cpp` need not carry a byte-identical copy. The in-algorithm verifies are
+load-bearing and untouched — the per-pulse verify inside the EPROM program loop (a UV program loop
+cannot decide whether to pulse again without it), `eeprom28c_verify_page_readback`, and
+`flash_util_verify_operation`. `MSG_ERR_VERIFY` (0xAF) stays for the same reason. This milestone
+removes a *command surface*, not verification.
+
+**Decisions taken at activation.**
+
+- **D-1 — All of it, both halves** (operator 2026-09-20). The standalone commands AND the in-algorithm
+  pre-flight blank checks leave the firmware. This retires Phase 201's `mem_util_blank_check_region` as
+  firmware code, five weeks after it landed, and re-lands the region property on the host.
+- **D-2 — The host pre-write blank check is exempt on erasable parts** (operator 2026-09-20). A part
+  carrying `FLAG_CAN_ERASE` is erased immediately before the write, so the check passes trivially and
+  always has. Only UV parts pay the read. `write -b` keeps its meaning as the opt-out. The consequence
+  is accepted deliberately: with the device-side refusal gone, this host check is the whole safety net
+  against half-programming a non-blank UV part, and it has no second line of defence. The exemption's
+  reasoning is to be explicit in the code and pinned by a test, not left as a remembered argument.
+- **D-3 — Post-write verify is opt-in** (operator 2026-09-20). `write --verify` chains a read-back
+  compare of the written region. Default write time is unchanged.
+- **D-4 — Clean break on the protocol** (operator 2026-09-20). Ordinals 4 and 6 are retired outright,
+  not deprecated. The host direction is safe without a version gate: a new host against old firmware
+  only ever sends `CMD_READ`. Old host against new firmware is refused by the existing fail-closed
+  dispatch.
+- **D-5 — `3.1.0b1` in both repos** (operator 2026-09-20). A minor bump, beta series, stable line
+  untouched. This is the first version string movement since `3.0.0b48` / `3.0.0b33`; v1.40 shipped
+  without one, which is why its three held gh#70 / gh#66 / gh#71 answers still have no version to name.
+- **D-6 — dev-test seed R4 rides along** (operator 2026-09-20). One leased serial session per plan
+  instead of one per call. Directly provoked by this milestone: a pre-write blank check, a write and a
+  `--verify` are three separate port opens under today's `EpromOperator.comm`-is-None-after-every-call
+  shape.
+
+**Known open mechanic.** Aborting a read mid-stream. The read path is ack-driven, so the host can stop
+acking — but there is no abort message in the protocol and the END phase must still run to leave the
+port clean. Without a resolution, "break at first mismatch" saves reporting noise but no time. This is
+a research question for the first phase, not an assumption.
+
+**Target features:**
+- One host comparison engine, streamed per chunk, shared by `blank` and `verify`
+- First-mismatch default; a flag for a whole-device scan reporting mismatching ranges
+- Failure diagnosis through `chip_test.py`'s `_diff_offsets` / `classify_fingerprint`, not a bare address
+- `CMD_VERIFY` and `CMD_BLANK_CHECK` removed from the firmware, ordinals retired
+- Firmware write-init and erase-end blank checks removed, `FLAG_SKIP_BLANK_CHECK` retired
+- Host pre-write blank check, exempt on erasable parts
+- `write --verify` opt-in read-back
+- One leased serial session per plan (seed R4)
+- Both repos to `3.1.0b1`
+
+**Cost that is not incidental.** Test re-anchoring: 13 firmware test files, 17 app test files, and the
+`protocol_branch_inventory.json` golden — which re-derives lossily, so it must be diffed field-by-field
+keyed on `line` rather than trusted to its truthiness gate. `dev test`'s `OP_VERIFY` and
+`OP_BLANK_CHECK` steps route through the rewritten methods, so verdict classification and
+`dedup_fingerprint` re-keying are in scope, not side effects.
+
+**Mechanics.** Dual-repo lockstep, firmware-touching, bench-gated. Branch `v1.41-verification-to-host`
+off `beta` in all three repositories. REQUIREMENTS.md and ROADMAP.md are **hand-authored**, as v1.33's
+and v1.40's were and for the same reason — the GSD roadmap and requirements verbs normalise whole files,
+and `ROADMAP.md` is ~7,900 lines of hand-kept history. `phases.clear` is **skipped**: 25 phase
+directories are live in `.planning/phases/` and the verb hard-deletes every non-`999.*` one.
+
+
 ## v1.40 Archive: Program-Parameter Fidelity — Closed 2026-09-20 (closed, not shipped)
 
 **Outcome:** 5 phases (197–201), 26 plans, 65 tasks, **19/24 requirements**, `override_closeout`,
@@ -2291,6 +2383,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+
+*Last updated: 2026-09-20 — v1.41 Verification Moves to the Host ACTIVATED. Phases continue at 202. Blank check and verify leave the firmware in both their forms (standalone commands and in-algorithm pre-flights); the host reads and compares instead, through one implementation reusing `chip_test.py`'s diagnosis primitives. `memory_verify_execute` and every in-algorithm verify stay. Both repos bump to `3.1.0b1`. Dual-repo lockstep, bench-gated; requirements and roadmap hand-authored; `phases.clear` skipped. Prior footer retained below.*
 
 *Last updated: 2026-09-20 — **v1.40 (Program-Parameter Fidelity) CLOSED**, 19/24 requirements, `override_closeout`, tagged `v1.40` — a bare tag that must never become a GitHub Release. 5 phases (197–201), 26 plans, 65 tasks. Three community reports, each carrying the reporter's own datasheet, were each found to be a fleet-scale fault wearing one chip's name — a 100 µs pulse shared by 217 of 297 algorithm 7/8 rows, a 12.0 V VPP shared by 563 of 746, and 30 rows asking 18 V or more on rails nobody had measured. **The deliverable was the mechanism, not any value**: `tools/datasheet_overrides.json` holds only changed fields, each naming its datasheet and the decoded value it replaces, behind a loader that fails closed on an unknown part, an unknown field, or an override gone no-op — and all three of `build_db.py`'s part-specific hardcodes are gone, two of them **deleted as defects rather than migrated as corrections**. Across the milestone the database changed **25 of 746 rows, with 0 `support_status` changes and none added or removed**. The decode itself was wrong, not just its outputs: the `VPP_MV` `0xF0` mask was incomplete so 25 V and 21 V collapsed onto 18 V, `VCC_VOLTAGES` gained nine upstream indices with twelve non-credible rows signed `UNSOURCED` and proved load-bearing by a planted mutation, and `DECODE-NOTES.md` § 9 records the finding underneath it all — the voltage word's two nibbles select a **programmer rail index, not a chip requirement** — which is what finally disposed of the 28-row `vcc_mv == 5500` group unprovable since v1.32 Phase 148. **The rails were measured rather than assumed** (17380 mV drop path, 22140 mV direct VPE at socket pin 1), and the shortfall for ten algorithm `0x07` rows was **removed by routing in firmware** — one comparison in `eprom_hv_route_mask`, decided on path capability and reading no voltage at all, with a 15-case native suite proving it voltage-blind. Backlog **999.44**'s firmware half landed: a `region-end` key carrying an **absolute end address, not a length** (the write-init body is re-entered per 8 KiB chunk, so a length would be wrong on every call but the first) travels host → wire → `mem_util_blank_check_region`, watched RED with its transcript committed, then GREEN, then confirmed on real silicon. **The milestone has NOT shipped** — 170 meta / 37 host / 15 firmware commits ahead of `beta` with **zero** patch-equivalent by `git cherry`, and no version string separates the two states (`3.0.0b33` / `3.0.0b48` read identically on `beta` and at the tip). **Five requirements stay Pending, all by recorded decision.** PULSE-04 / VOLT-04 / RAIL-05 are the three gh#70 / gh#66 / gh#71 answers — written, operator-approved, committed and deliberately unposted, because `git branch -r --contains HEAD` resolves nothing anywhere, so every other route would name a version or a SHA no reader could look up; `197-GH70-ANSWER.md` § "Held-pending deferral" is the single release checklist. RAIL-03 is honestly unmet: `MSG_WARN_VPP_LOW`'s 5 % window is narrower than the measured +7.59 %/+7.95 % ADC-vs-meter discrepancy, so it stays silent for 9 of the 10 rescued rows. OVR-03's citation contract is enforced by the test suite and not by `build_db.py` itself. Filed: five backlog items (999.69–999.73) and three todos, one of them Phase 200's Critical review finding that the phase's own verification asked to be filed and nobody filed. **Not claimed:** no part was programmed at 21 V; the rail figures are one rig and one session; 215 of 297 algorithm 7/8 rows still carry an unproven 100 µs pulse, inventoried rather than fixed. Hand-archived; `milestone.complete` and `audit-open acknowledge` both deliberately not run — **88** open artifacts disclosed in `STATE.md` with **0** suppressed. Full record: [`milestones/v1.40-CLOSE-RECORD.md`](milestones/v1.40-CLOSE-RECORD.md). Prior footer retained below.*
 

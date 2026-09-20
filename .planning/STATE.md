@@ -1,33 +1,33 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.40
-milestone_name: Program-Parameter Fidelity (CLOSED 2026-09-20 — 19/24 requirements, override_closeout, tagged v1.40 as a bare tag; NOT shipped — nothing is on beta in any of the three repositories)
-current_phase: 201
-current_phase_name: A partial write is gated on its own region
-status: milestone_complete
-stopped_at: "v1.40 SHIPPED as PRs 2026-09-20 — milestone branch pushed and a PR opened in all three repositories (henols/firestarter#91, henols/firestarter_app#72, henols/firestarter_fw#70), each targeting beta and each UNMERGED. The beta merge is the publish and stays operator-gated; it is also what releases the three held gh#70/gh#66/gh#71 answers. The bare v1.40 tag is still local-only. Next step — the merge decision, then /gsd-new-milestone at phase 202."
-last_updated: "2026-09-20T12:00:00.000Z"
+milestone: v1.41
+milestone_name: Verification Moves to the Host
+current_phase: 202
+current_phase_name: (not yet planned — roadmap pending)
+status: planning
+stopped_at: "v1.41 ACTIVATED 2026-09-20 — PROJECT.md carries the Current Milestone block; REQUIREMENTS.md and ROADMAP.md are next and are hand-authored. Phases continue at 202. v1.40 is still unmerged: PRs henols/firestarter#91, firestarter_app#72, firestarter_fw#70 all target beta and the merge stays operator-gated."
+last_activity_desc: "Activated milestone v1.41 Verification Moves to the Host. Blank check and verify leave the firmware in BOTH forms — the standalone CMD_BLANK_CHECK (4) / CMD_VERIFY (6) command surfaces and the in-algorithm write-init and erase-end pre-flights, retiring mem_util_blank_check{,_region} and the FLAG_SKIP_BLANK_CHECK wire bit five weeks after Phase 201 region-scoped them. The host reads and compares instead, through one implementation reusing chip_test.py's _diff_offsets / classify_fingerprint. memory_verify_execute and every in-algorithm verify (per-pulse, eeprom28c_verify_page_readback, flash_util_verify_operation) STAY — eprom.cpp calls memory_verify_execute for VERIFY_PER_PULSE_PLUS_FINAL. Six decisions at activation: all-of-it scope, erasable-exempt host pre-write check, opt-in write --verify, clean-break protocol with ordinals 4 and 6 retired, 3.1.0b1 in both repos, and dev-test seed R4 (one leased serial session per plan) in scope. Open mechanic: no abort message exists for a mid-stream read, so break-at-first-mismatch saves reporting noise but not time until that is solved. phases.clear deliberately NOT run — 25 live phase directories."
+last_updated: "2026-09-20T12:25:21.994Z"
 last_activity: 2026-09-20
-last_activity_desc: "Closed and hand-archived milestone v1.40 Program-Parameter Fidelity — 5 phases (197-201), 26 plans, 65 tasks, 19/24 requirements, override_closeout. Archive at .planning/milestones/v1.40-{CLOSE-RECORD,ROADMAP,REQUIREMENTS}.md and v1.40-phases/. milestone.complete and audit-open acknowledge both deliberately not run; 88 open artifacts disclosed by hand with 0 suppressed. SHIPPED 2026-09-20: branches pushed to origin in all three repos and PRs opened to beta — firestarter#91, firestarter_app#72, firestarter_fw#70. No merge, so nothing is published and no PyPI version is burned; the three held issue answers remain unposted."
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 26
-  completed_plans: 26
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 **Project:** Firestarter — Protocol-Aware Programming Architecture
-**Updated:** 2026-08-30
+**Updated:** 2026-09-20
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.40 Program-Parameter Fidelity CLOSED; its outcome block and footer carry the close, and `milestones/v1.40-CLOSE-RECORD.md` is the full record)
+See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.41 Verification Moves to the Host ACTIVATED; its `## Current Milestone` block carries the goal, the six activation decisions and the open read-abort mechanic. v1.40's close record is at `milestones/v1.40-CLOSE-RECORD.md`)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** v1.40 SHIPPED AS PRs 2026-09-20 — branches pushed and PRs open in all three repos (`henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70`), all targeting `beta`, all **unmerged**, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging, it is the single checklist for gh#70/gh#66/gh#71. The bare `v1.40` tag is still local-only and must never become a GitHub Release. Then `/gsd-new-milestone`. Phases continue at **202**.
+**Current focus:** v1.41 ACTIVATED 2026-09-20 — requirements and roadmap next, both **hand-authored** (the GSD verbs reformat whole files and ROADMAP.md is ~7,900 lines). Phases continue at **202**. Dual-repo lockstep, firmware-touching, bench-gated; branch `v1.41-verification-to-host` off `beta` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, which is the first version-string movement since `3.0.0b48` / `3.0.0b33`.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: — (v1.40 closed; the next milestone starts at phase 202)
-Plan: — (all 26 v1.40 plans complete across phases 197-201)
-Status: **v1.40 CLOSED and hand-archived 2026-09-20** — 19/24 requirements, `override_closeout`, bare tag `v1.40`. Five requirements Pending by decision: PULSE-04 / VOLT-04 / RAIL-05 are the three held gh#70 / gh#66 / gh#71 answers that release at the beta cut, RAIL-03 is honestly unmet, OVR-03 is test-enforced only. NOT shipped: 170 meta / 37 host / 15 firmware commits ahead of `beta`, zero patch-equivalent by `git cherry`.
-Last activity: 2026-09-20 — Closed and archived v1.40. ROADMAP bullet and section header flipped to CLOSED, archives written to `.planning/milestones/v1.40-{CLOSE-RECORD,ROADMAP,REQUIREMENTS}.md`, phase directories 197-201 moved to `.planning/milestones/v1.40-phases/`, MILESTONES.md entry prepended, PROJECT.md evolved, RETROSPECTIVE.md appended, 88 open artifacts disclosed with 0 suppressed, and Phase 200 CR-01 filed as a pending todo.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-09-20 — Milestone v1.41 started
 
 ## Roadmap Summary (v1.38)
 
