@@ -4,9 +4,9 @@ milestone: v1.40
 milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
 current_phase: 201
 current_phase_name: A partial write is gated on its own region
-status: verifying
-stopped_at: Completed 201-06-PLAN.md — phase 201 complete (6/6), all v1.40 phases complete
-last_updated: "2026-09-20T09:20:00.000Z"
+status: completed
+stopped_at: Phase 201 complete — all phases complete
+last_updated: "2026-09-20T09:50:19.669Z"
 last_activity: 2026-09-20
 last_activity_desc: "Completed 201-06-PLAN.md — the bench-gated confirming run of criterion 1. Task 3's blocking-human checkpoint was answered by the operator: the plan's named TMS27C512 was unavailable, so an ST M27C512 (chip-ID 0x203D) was substituted with operator authorization, confirmed non-erasable by database (electrical-type UV-EPROM, FLAG_CAN_ERASE clear) on the same measured basis the plan specified. The plan's target address 0x00FF00 was also changed to 0x008000 (operator-authorised) because 0x00FF00 sits one byte from a programmed ramp on this part. A read-back at 0x008000 confirmed blank immediately before the single write; blank-check reported not blank at 0x000000 (v: 0x44), the write succeeded with no --skip-erase, and verify was clean. Criterion 1 is satisfied. Recorded as evidence in 201-BENCH-RECORD.md (not a test, not a CI leg, cannot re-run automatically) — committed 6dbae72f. BLANK-01 and BLANK-03 marked Complete; BLANK-02 was already Complete from 201-05. Phase 201 is now 6/6 plans complete, the last of v1.40's five phases — the milestone is ready for /gsd-complete-milestone."
 progress:
@@ -3583,7 +3583,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-20T01:43:13.152Z
-**Stopped at:** Completed 201-05-PLAN.md
+**Stopped at:** Phase 201 complete — all phases complete
 **Was (superseded, retained for continuity):** Completed 201-04-PLAN.md
 **Was (superseded, retained for continuity):** Completed 201-03-PLAN.md
 **Was (superseded, retained for continuity):** Completed 201-02-PLAN.md
