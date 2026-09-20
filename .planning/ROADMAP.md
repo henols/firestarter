@@ -223,11 +223,16 @@ commands still exist; only then does 204 remove them. Phase 203 puts the host wr
 while the firmware pre-flight still runs — harmlessly redundant for one phase — and only then does 205
 remove it. At no point in the sequence is there a window where neither side checks.
 
-**Known open mechanic.** There is no abort message for a read in flight. The read path is ack-driven,
-so the host can stop acking, but the END phase must still run to leave the port clean. Until that is
-solved, "break at first mismatch" saves output and not time. Phase 202 researches it and either solves
-it within the existing protocol or states plainly that the default's saving is diagnostic rather than
-temporal — it does not get to be quietly assumed. A protocol-level abort is filed as **CMP-F1**.
+**Known open mechanic — answered by phase 202.** There is no abort message for a read in flight; the
+read path is ack-driven, so the host can stop acking. Phase 202 answered this affirmatively: the
+firmware's `command_done()` teardown routine runs on the error path the abort produces too, so the
+port is left clean without the END phase ever needing to complete normally. The default's "break at
+first mismatch" saving is therefore temporal, not merely diagnostic. See
+`.planning/phases/202-one-comparison-engine-on-the-host/202-READ-ABORT-ANSWER.md` for the mechanism,
+the measured one-second-per-abort cost, and the four-condition discrimination that keeps the
+deliberate stop from ever being mistaken for a fault. A protocol-level abort remains filed as
+**CMP-F1**, though the deferred one-line firmware change (a `DONE`-based clean stop, phase 204) is a
+cheaper route to it than the abort CMP-F1 originally assumed.
 
 ### Phases
 
