@@ -73,6 +73,31 @@ class TestVppTableDrift(unittest.TestCase):
         generator_table = extract_vpp_mv_via_ast(build_db_path)
         self.assertEqual(table_drift(il.VPP_MV, generator_table), [])
 
+    def test_generator_still_uses_the_two_tier_lookup(self):
+        """The table-contents check above cannot see a change in HOW the
+        generator reads its table. If build_db.py drops `_VPP_EXACT_LOW_BYTES`
+        or stops deriving it from the table, this copy's `vpp_for_voltages`
+        is no longer a mirror and must be re-synced by hand."""
+        build_db_path = _find_build_db()
+        if build_db_path is None:
+            self.skipTest(
+                "firestarter_app submodule not checked out -- cannot compare "
+                "against the generator's VPP lookup"
+            )
+        with open(build_db_path, encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn(
+            "_VPP_EXACT_LOW_BYTES",
+            source,
+            "build_db.py no longer names _VPP_EXACT_LOW_BYTES -- its VPP "
+            "lookup strategy changed; re-read it and re-sync vpp_for_voltages",
+        )
+        generator_table = extract_vpp_mv_via_ast(build_db_path)
+        self.assertEqual(
+            il._VPP_EXACT_LOW_BYTES,
+            frozenset(k for k in generator_table if k & 0x0F),
+        )
+
     def test_table_drift_negative_control(self):
         """The RED demonstration for the drift comparison itself: prove
         `table_drift` is not unconditionally empty by perturbing a copy."""
@@ -96,12 +121,61 @@ class TestFormatVpp(unittest.TestCase):
 
 
 class TestVppKeyInvariant(unittest.TestCase):
-    def test_every_key_is_a_masked_high_nibble(self):
-        """VPP_MV is keyed on `voltages & 0xF0` -- every key's low nibble
-        must be zero. This is the decode invariant SKILL.md's troubleshooting
-        table names: masking the full byte pushes the lookup off the table."""
+    """VPP_MV is read through a TWO-TIER lookup, so "every key is a masked
+    high nibble" is no longer the invariant -- 0xF1 and 0xF2 are deliberate
+    exact keys. What must still hold is that the two tiers stay disjoint and
+    that tier 2 covers every high nibble."""
+
+    def test_tier2_keys_are_masked_high_nibbles(self):
         for key in il.VPP_MV:
+            if key in il._VPP_EXACT_LOW_BYTES:
+                continue
             self.assertEqual(key & 0x0F, 0, f"key 0x{key:02X} is not a masked high nibble")
+
+    def test_tier1_is_exactly_the_keys_with_a_low_nibble(self):
+        self.assertEqual(
+            il._VPP_EXACT_LOW_BYTES,
+            frozenset(k for k in il.VPP_MV if k & 0x0F),
+        )
+
+    def test_tier2_covers_every_high_nibble(self):
+        """The `0` default in `vpp_for_voltages` is unreachable only because
+        all 16 high nibbles are present. Pin that, or the default becomes a
+        silent 0 mV."""
+        for nibble in range(16):
+            self.assertIn(nibble << 4, il.VPP_MV)
+
+
+class TestVppForVoltages(unittest.TestCase):
+    """The lookup itself, not just the table. The table-drift test above
+    compares CONTENTS; this pins the two-tier READ that gives those contents
+    meaning. Without it, transcribing 0xF1/0xF2 into the table while still
+    masking would leave the values present and unreachable."""
+
+    def test_exact_low_byte_keys_are_not_masked(self):
+        self.assertEqual(il.vpp_for_voltages(0xF1), 25000)
+        self.assertEqual(il.vpp_for_voltages(0xF2), 21000)
+
+    def test_masking_an_exact_key_would_give_the_wrong_answer(self):
+        """The regression this tier exists to prevent: 0xF1 masked reads
+        0xF0 -> 18V, for a part whose real VPP is 25V."""
+        self.assertEqual(il.VPP_MV[0xF1 & 0xF0], 18000)
+        self.assertNotEqual(il.vpp_for_voltages(0xF1), 18000)
+
+    def test_option_bits_still_mask(self):
+        """SST27VF512 has voltages=0x0001. 0x01 is not a key; it must mask to
+        0x00 -> 12V, not fall off the table."""
+        self.assertEqual(il.vpp_for_voltages(0x0001), 12000)
+
+    def test_high_nibble_lookup(self):
+        self.assertEqual(il.vpp_for_voltages(0x0080), 13500)
+        self.assertEqual(il.vpp_for_voltages(0x008F), 13500)
+
+    def test_vcc_vdd_nibbles_above_the_low_byte_are_ignored(self):
+        """`voltages` packs VCC and VDD in the high byte; only the low byte
+        selects VPP."""
+        self.assertEqual(il.vpp_for_voltages(0x41F1), 25000)
+        self.assertEqual(il.vpp_for_voltages(0x4100), 12000)
 
 
 if __name__ == "__main__":

@@ -33,9 +33,18 @@ MINIPRO_XML_URL = (
     "a8efaedc236c1d9718bd28299dfbb99536b010ff/infoic.xml"
 )
 
-# Key is (voltages & 0xF0) — the HIGH nibble. Masking the full byte is the
-# classic build_db.py bug: option bits in 3-0 push the lookup off the table
-# and silently yield 0 mV.
+# The lookup is TWO-TIER, mirroring build_db.py exactly:
+#
+#   1. A low byte that is ITSELF a key — the ones with a non-zero low nibble,
+#      0xF1 and 0xF2 — matches EXACTLY. Masking those would read 0xF0 and
+#      report 18V for a 25V or 21V part.
+#   2. Every other low byte keys on (voltages & 0xF0) — the HIGH nibble.
+#      Masking the full byte there is the classic build_db.py bug: option bits
+#      in 3-0 push the lookup off the table and silently yield 0 mV.
+#
+# `vpp_for_voltages()` is the only correct way to read this table. Do not index
+# it directly — a bare `VPP_MV[volt & 0xF0]` is tier 2 with tier 1 missing,
+# which is exactly the drift this table's own test suite exists to catch.
 #
 # Values are MILLIVOLTS, deliberately the same unit as the generator's own
 # table, so the two can be compared directly with no lossy string round-trip
@@ -45,8 +54,26 @@ VPP_MV = {
     0x40: 11000, 0x50: 11500, 0x60: 12500, 0x70: 13000,
     0x80: 13500, 0x90: 14000, 0xA0: 14500, 0xB0: 15500,
     0xC0: 16000, 0xD0: 16500, 0xE0: 17000, 0xF0: 18000,
+    0xF1: 25000, 0xF2: 21000,
 }
 
+# Tier-1 keys: those whose low nibble is set. DERIVED, never hand-listed, so
+# adding a key to VPP_MV extends tier 1 on its own — same expression, and the
+# same reason, as the generator's own `_VPP_EXACT_LOW_BYTES`.
+_VPP_EXACT_LOW_BYTES = frozenset(k for k in VPP_MV if k & 0x0F)
+
+
+def vpp_for_voltages(volt: int) -> int:
+    """Decode a raw `voltages` attribute to VPP in millivolts.
+
+    Mirrors build_db.py's two-tier lookup. The `0` default is unreachable —
+    keys 0x00..0xF0 cover every high nibble — and is kept only because the
+    generator keeps it.
+    """
+    lo = volt & 0xFF
+    if lo in _VPP_EXACT_LOW_BYTES:
+        return VPP_MV[lo]
+    return VPP_MV.get(lo & 0xF0, 0)
 
 
 def format_vpp(mv: object) -> str:
@@ -115,12 +142,20 @@ def decode(ic: ET.Element) -> list[str]:
         )
     volt = as_int(ic.get("voltages"))
     if volt is not None:
-        idx = volt & 0xF0
-        out.append(
-            f"  voltages & 0xF0   = 0x{idx:02X}"
-            f"  -> VPP {format_vpp(VPP_MV.get(idx))}"
-            f"   (option bits 0x{volt & 0x0F:X})"
-        )
+        lo = volt & 0xFF
+        if lo in _VPP_EXACT_LOW_BYTES:
+            out.append(
+                f"  voltages & 0xFF   = 0x{lo:02X}"
+                f"  -> VPP {format_vpp(vpp_for_voltages(volt))}"
+                "   (EXACT key -- the low nibble is part of the key here,"
+                " not option bits)"
+            )
+        else:
+            out.append(
+                f"  voltages & 0xF0   = 0x{lo & 0xF0:02X}"
+                f"  -> VPP {format_vpp(vpp_for_voltages(volt))}"
+                f"   (option bits 0x{volt & 0x0F:X})"
+            )
     proto = as_int(ic.get("protocol_id"))
     if proto is not None:
         out.append(
