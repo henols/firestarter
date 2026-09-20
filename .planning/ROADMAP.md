@@ -263,7 +263,14 @@ and 205 each own their own share; neither may defer it to the other.
 
 **Goal**: `firestarter verify` and `firestarter blank` compare by reading the chip and comparing on the host, through one streamed implementation that names why a compare failed instead of reporting a single address.
 **Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06, CMP-07, CMP-08
-**Plans:** TBD (not yet planned)
+**Plans:** 5 plans
+
+Plans:
+- [ ] 202-01-PLAN.md — Tracer: `verify` reads the chip and compares on the host, end to end (wave 1, has the D-10 exit-code checkpoint)
+- [ ] 202-02-PLAN.md — Bounded memory, bounded runtime, coalescing and the honest range cap (wave 2)
+- [ ] 202-03-PLAN.md — One divergence implementation: `classify_fingerprint` delegates, plus the bucket line (wave 3)
+- [ ] 202-04-PLAN.md — Break the read in flight, and answer success criterion 5 in writing (wave 4)
+- [ ] 202-05-PLAN.md — `blank` joins the engine, region options and refusals, exit-code closure (wave 5)
 
 **Success criteria**:
 
