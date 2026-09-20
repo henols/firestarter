@@ -6,7 +6,9 @@ internal project bookkeeping and must never be pasted onto the issue.**
 
 ## Status
 
-**DRAFT — APPROVED, HELD PENDING THE BETA CUT. NOT POSTED.**
+**POSTED 2026-09-20 — the hold is discharged.** (Was: DRAFT — APPROVED, HELD PENDING
+THE BETA CUT, NOT POSTED.) See "HOLD RELEASED — POSTED" at the end of this file for the
+comment URL and the version named.
 
 Operator decision recorded 2026-09-18:
 
@@ -24,7 +26,7 @@ Operator decision recorded 2026-09-18:
    supplied. No other wording change was approved. The 215-row unverified-pulse-width paragraph
    proposed in an earlier draft round was explicitly NOT added.
 
-**Nothing has been posted.** See "Held-pending deferral" near the end of this file for what releases
+**Superseded — this has now been posted; see the final section of this file.** The original note read: "Nothing has been posted." See "Held-pending deferral" near the end of this file for what releases
 this hold and exactly what to do at that point.
 
 ## Internal provenance (project bookkeeping only — do not post)
@@ -178,3 +180,18 @@ this list once and post all three.
   are this file, `.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-GH70-ANSWER.md`
   for PULSE-04; `.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md` for VOLT-04; and
   `.planning/phases/199-what-the-rails-can-actually-deliver/199-GH71-ANSWER.md` for RAIL-05.
+
+---
+
+## HOLD RELEASED — POSTED 2026-09-20
+
+**The hold described above is discharged. This draft's `## Comment Body` was posted to gh#70.**
+
+- **Comment URL:** https://github.com/henols/firestarter/issues/70#issuecomment-5749345972
+- **Version named:** `firestarter` 3.0.0b49 — the release in which the correction first shipped, verified
+  against the published artifact rather than assumed.
+- **Requirement PULSE-04:** marked Complete in `.planning/REQUIREMENTS.md` and
+  `.planning/milestones/v1.40-REQUIREMENTS.md`.
+- **Released by:** the v1.40 beta cut — `firestarter_app` 3.0.0b49 (on PyPI) and
+  `firestarter_fw` 3.0.0b34 (pre-release, four `.hex` assets attached and verified).
+- The no-over-claim and no-attribution checks were re-run against the final posted text.

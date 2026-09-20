@@ -6,7 +6,9 @@ internal project bookkeeping and must never be pasted onto the issue.**
 
 ## Status
 
-**DRAFT — APPROVED, HELD PENDING THE BETA CUT. NOT POSTED.**
+**POSTED 2026-09-20 — the hold is discharged.** (Was: DRAFT — APPROVED, HELD PENDING
+THE BETA CUT, NOT POSTED.) See "HOLD RELEASED — POSTED" at the end of this file for the
+comment URL and the version named.
 
 Operator decision recorded 2026-09-18, carried forward from the ruling on gh#70 and gh#66 without
 re-asking:
@@ -21,7 +23,7 @@ re-asking:
    only route on which every claim in the comment body is true at the moment it posts — the identical
    reasoning the operator applied to gh#70 and gh#66.
 
-**Nothing has been posted.** See "Held-pending deferral" near the end of this file for what releases
+**Superseded — this has now been posted; see the final section of this file.** The original note read: "Nothing has been posted." See "Held-pending deferral" near the end of this file for what releases
 this hold and exactly what to do at that point.
 
 ## Internal provenance (project bookkeeping only — do not post)
@@ -150,3 +152,18 @@ point on its own.
   the milestone close, to be satisfied when the comment above actually posts, per the steps above.
   The artifact carrying it is this file:
   `.planning/phases/199-what-the-rails-can-actually-deliver/199-GH71-ANSWER.md`.
+
+---
+
+## HOLD RELEASED — POSTED 2026-09-20
+
+**The hold described above is discharged. This draft's `## Comment Body` was posted to gh#71.**
+
+- **Comment URL:** https://github.com/henols/firestarter/issues/71#issuecomment-5749346446
+- **Version named:** `firestarter` 3.0.0b49 and firmware 3.0.0b34 — the release in which the correction first shipped, verified
+  against the published artifact rather than assumed.
+- **Requirement RAIL-05:** marked Complete in `.planning/REQUIREMENTS.md` and
+  `.planning/milestones/v1.40-REQUIREMENTS.md`.
+- **Released by:** the v1.40 beta cut — `firestarter_app` 3.0.0b49 (on PyPI) and
+  `firestarter_fw` 3.0.0b34 (pre-release, four `.hex` assets attached and verified).
+- The no-over-claim and no-attribution checks were re-run against the final posted text.
