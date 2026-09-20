@@ -26,7 +26,7 @@ affects: [201-04, 201-05, 201-06]
 actuals:
   tokens: 16016
   tasks: 2
-  commits: 4
+  commits: 6
 
 tech-stack:
   added: []
@@ -57,6 +57,15 @@ key-decisions:
   - "Deviation (Rule 1): the plan's literal planted-mutation sed command (default-value-only) cannot
     detect a regression given the mandated always-explicit-args call shape; used an equivalent
     body-level mutation instead. See Deviations section."
+  - "Deviation (Rule 1, found by coordinator spot-check, repaired in 0c2eac7): the 76fd3c7
+    golden re-derivation silently dropped `class` on all 22 rows and collapsed 4 `reason` strings
+    onto a wrong sibling's text, because the re-derivation script's old-reason lookup keyed on
+    (predicate, keyed_on, tier) collided for two site pairs sharing identical predicate text, and
+    the extractor's own output never carried `class` at all. The gate never caught it because
+    test_protocol_branch_inventory.py only asserts predicate/reason truthiness, never class or
+    reason content. Repaired by restoring class and the 4 displaced reasons verbatim from
+    76fd3c7^, matched by line (confirmed unique and unmoved on all 22 rows). See Deviations
+    section for the full field-by-field comparison."
   - "requirements-completed left empty in REQUIREMENTS.md (though this plan's frontmatter declares
     BLANK-01/BLANK-03): both IDs are also declared by later plans (201-04, 201-06) with no SUMMARY.md
     yet, so the shared-ID gate holds them at Pending until the last declaring plan finishes."
@@ -122,7 +131,7 @@ coverage:
       to 32768 against a real 28672 B Caterina ceiling) — a human should see the margin trend across
       plans in this phase, not just this plan's own pass/fail."
 
-duration: ~50min
+duration: ~65min (including the post-hoc golden provenance repair)
 completed: 2026-09-20
 status: complete
 ---
@@ -133,7 +142,7 @@ status: complete
 
 ## Performance
 
-- **Duration:** ~50 min
+- **Duration:** ~65 min (including the post-hoc golden provenance repair)
 - **Tasks:** 2
 - **Files modified:** 8 (4 firmware, 4 host)
 
@@ -193,10 +202,14 @@ on `v1.40-program-parameter-fidelity`:
 2. **Task 1 (firestarter_app half): emit `region-end` for write/verify from `_setup_operation`** —
    `18f2088` (feat)
 3. **Task 2: teach the host fake the region, add five host legs** — `5b3fe45` (test)
+4. **Repair (post-hoc, coordinator spot-check): restore dropped `class`/`reason` provenance in the
+   branch-inventory golden** — `0c2eac7` (fix) — see "Golden re-derivation" and "Deviations" below
 
-**Meta-repository gitlink advance:** `fa6b500f` (feat) — `firestarter_fw` pointer moved `af47bf46`
-→ `76fd3c7b`, `firestarter_app` pointer moved `a36b9eca` → `5b3fe458`, both in `/workspaces` on
-`v1.40-program-parameter-fidelity`.
+**Meta-repository gitlink advances:**
+- `fa6b500f` (feat) — `firestarter_fw` pointer moved `af47bf46` → `76fd3c7b`, `firestarter_app`
+  pointer moved `a36b9eca` → `5b3fe458`, both in `/workspaces` on `v1.40-program-parameter-fidelity`.
+- `ec5caa9d` (fix) — `firestarter_fw` pointer moved `76fd3c7b` → `0c2eac79`, carrying the golden
+  provenance repair below.
 
 ### D-16.1: RED (plan 201-02) → PASS (this plan)
 
@@ -228,21 +241,73 @@ native_nodevtools  : 237 test cases: 237 succeeded in 00:00:44.321
 269 passed, 32 skipped in 13.44s
 ```
 
-### Golden re-derivation, new values
+### Golden re-derivation, new values — CORRECTED (see repair below)
 
 - `meta.blob_shas["src/proms/eprom.cpp"]`: `c16c1972b4d30779b77fc5b03e0f44d08810ec1b` →
   `8fa3c7a00869ed6ee3165e5ba538d42c144eb347` (matches `git hash-object src/proms/eprom.cpp` on the
-  committed tree).
+  committed tree). **Legitimate, unchanged by the repair.**
 - `meta.recorded_at_head`: `af47bf464a24c005e556cf3d7308679064feca5e` (this commit's PARENT — plan
   201-02's tip — per the golden's own one-commit-offset convention, recorded in every prior
-  re-derivation in `meta.recorded_by`).
+  re-derivation in `meta.recorded_by`). **Legitimate, unchanged by the repair.**
 - `counts`: `{total_sites: 21, protocol_keyed_sites: 1, other_sites: 20}` →
   `{total_sites: 22, protocol_keyed_sites: 1, other_sites: 21}`, now equal to `len(sites)` (22).
-  `protocol_lines` stays `[70]`.
+  `protocol_lines` stays `[70]`. **Legitimate, unchanged by the repair.**
 - `meta.recorded_by`: appended a paragraph naming this plan's edit and the counts correction.
+  **Legitimate, unchanged by the repair.**
 - Zero new predicate rows — the function-call replacement inside an existing statement carries no
   new ternary; every site's `(predicate, keyed_on, tier)` triple is unchanged, only line numbers
-  shifted below the insertion point.
+  shifted below the insertion point. **This claim was correct as stated, but incomplete** — see
+  below.
+
+**What this section originally omitted, found by a coordinator spot-check comparing `76fd3c7^` to
+`76fd3c7` field by field, and repaired in `0c2eac7` / meta `ec5caa9d`:**
+
+The re-derivation script (run as part of Task 1) built its old-value lookup keyed on
+`(predicate, keyed_on, tier)` and then did `inv["sites"] = live`, where `live` is
+`_extract_predicates`'s own output. Two defects followed from that, silently, because
+`test_protocol_branch_inventory.py`'s `test_inventory_is_non_vacuous` only asserts that `predicate`
+and `reason` are truthy — it checks neither `class` nor reason *content*:
+
+1. **All 22 `class` fields were dropped.** `_extract_predicates`'s output never carries a `class`
+   field at all (it is not part of the 4-tuple the extractor derives), so replacing `sites` wholesale
+   with `live` discarded every row's `class` — `command_dispatch`, `operation_flag`, `data_compare`,
+   `algorithm_selector`, `budget_refusal`, `status_check`, `hv_disable_gate`, `vpp_route`,
+   `skip_check`, `pin_routing` — silently.
+2. **4 `reason` strings were replaced with a wrong sibling's text.** The `(predicate, keyed_on,
+   tier)` lookup key collides for two site pairs sharing identical predicate text:
+   `if (!is_flag_set(FLAG_SKIP_BLANK_CHECK))` / `ctrl_flags` at lines 52 and 144, and
+   `if (handle->response_code == RESPONSE_CODE_ERROR)` / `response_code` at lines 132, 158, 502 and
+   574. A plain dict comprehension keeps only the LAST-inserted value per key, so every site sharing
+   a key inherited one arbitrary sibling's reason. Lines 52, 132, 158 and 502 lost their own text to
+   144's and 574's respectively (144 and 574 happened to keep their own correct text, since they were
+   last in file order). The two worst losses were the `hv_disable_gate` rows at `:158` and `:502`,
+   whose reasons documented Phase 142's single-exit HV-disable invariant — VPP-02's headline
+   requirement, and why `:502`'s clear is conditional rather than unconditional
+   (`test_loop_eprom_v131.cpp`'s `test_loop05_a_successful_block_does_not_disable_the_route`) — both
+   replaced by an unrelated VPP-error-propagation sentence that does not describe what those sites do.
+
+**Repair (`0c2eac7`):** restored `class` on all 22 rows and the 4 displaced `reason` strings,
+verbatim from `76fd3c7^`, matched by `line` (confirmed unique and identical between parent and
+`76fd3c7` on all 22 rows — no site's line number moved, matching the "zero new predicate rows" claim
+above). Field-by-field comparison of `line`/`predicate`/`keyed_on`/`tier`/`class`/`reason` against
+`76fd3c7^`, all 22 rows:
+
+```
+per-row field diffs (line/predicate/keyed_on/tier/class/reason): 0
+top-level keys that differ from parent: ['counts', 'meta']
+  meta.blob_shas old: {'src/proms/eprom.cpp': 'c16c1972b4d30779b77fc5b03e0f44d08810ec1b', ...}
+  meta.blob_shas new: {'src/proms/eprom.cpp': '8fa3c7a00869ed6ee3165e5ba538d42c144eb347', ...}
+  meta.recorded_at_head old: bdefe388f536536bb1df0b4493dd520022c648b3
+  meta.recorded_at_head new: af47bf464a24c005e556cf3d7308679064feca5e
+  counts old: {'total_sites': 21, 'protocol_keyed_sites': 1, 'other_sites': 20}
+  counts new: {'total_sites': 22, 'protocol_keyed_sites': 1, 'other_sites': 21}
+  recorded_by changed: True
+```
+
+Zero per-row field diffs on all 22 rows; only the four legitimate fields above differ from the
+parent. Post-repair: `test_protocol_branch_inventory.py` 7/7 passed, `pio test -e native` 237/237,
+`-e native_nodevtools` 237/237, `FIRESTARTER_META_ROOT=/tmp/no-meta pytest tests/` 269 passed / 32
+skipped — no regression from the repair. See Deviations item 3 for the full root-cause writeup.
 
 ### `pio run` — leonardo flash figure
 
@@ -275,7 +340,10 @@ coverage: 6140 stmts, 895 missed, 85.42% (>= 70% floor, ci.yml:63-64)
 - `firestarter_fw/src/proms/eprom.cpp` — the write-init call site at `:145` now calls the region
   form with `mem_util_operation_end(handle)` as the end argument.
 - `firestarter_fw/tests/golden/protocol_branch_inventory.json` — re-derived; blob sha, `counts`,
-  and `recorded_by` all updated in the same commit as the source edit.
+  and `recorded_by` all updated in the same commit as the source edit. The re-derivation script
+  itself silently dropped `class` on all 22 rows and collapsed 4 `reason` strings onto a wrong
+  sibling's text (found by coordinator spot-check); repaired in a follow-up commit (`0c2eac7`) —
+  see Deviations item 3.
 - `firestarter_app/firestarter/eprom_operations.py` — `region_length` threaded through
   `_setup_operation`/`_operation_context`; `write_eprom`/`verify_eprom` each compute it via a
   guarded `os.path.getsize`.
@@ -311,10 +379,18 @@ measured fact once the region-scoping fix landed system-wide; both are detailed 
 - **Verification:** `planted_rc=1` with the body-level mutation applied; `git diff --quiet -- tests/fake_chip.py` confirms restoration; `RESTORED` printed.
 - **Committed in:** N/A (verification-only finding, documented here per the 201-01/201-02 precedent of correcting a plan's own broken verify command rather than reporting a false PASS)
 
+**3. [Rule 1 - Bug, found by coordinator spot-check] The golden re-derivation in `76fd3c7` silently destroyed `class`/`reason` provenance on all 22 rows**
+- **Found during:** post-hoc coordinator spot-check comparing `76fd3c7^` to `76fd3c7` field by field, after this plan's own executor report claimed "zero new predicate rows" without checking whether the *existing* rows' non-structural fields survived intact
+- **Issue:** The re-derivation script (RESEARCH.md § G-2's own runnable script, used as instructed) builds an old-value lookup keyed on `(predicate, keyed_on, tier)`, then replaces `inv["sites"]` wholesale with the extractor's live output. Two silent defects followed: (a) `_extract_predicates`'s output never carries a `class` field, so all 22 rows lost theirs on replacement; (b) the lookup key collides for two site pairs with identical predicate text (`FLAG_SKIP_BLANK_CHECK`/`ctrl_flags` at :52/:144, and `RESPONSE_CODE_ERROR`/`response_code` at :132/:158/:502/:574) — a plain dict comprehension keeps only the last-inserted value per colliding key, so lines 52, 132, 158 and 502 silently inherited 144's or 574's reason text instead of their own. The two worst losses, at `:158` and `:502`, were the `hv_disable_gate` rows documenting Phase 142's single-exit HV-disable invariant (VPP-02's headline requirement) — replaced by an unrelated VPP-error-propagation sentence. `test_protocol_branch_inventory.py`'s `test_inventory_is_non_vacuous` only asserts `predicate`/`reason` truthiness, never `class` or reason content, so the corrupted golden passed the gate while proving nothing about those 22 rows' documentation — exactly the failure mode the executor's own dispatch instructions (golden rule 6, checkpoints.md) name as a reason to stop and report rather than regenerate to make a gate green. This plan's own re-derivation was NOT stopped on, because the check performed at the time (structural 4-tuple + blob sha + counts) did not include a field-by-field diff against the parent — a gap in this plan's own verification, not merely in the golden's test suite.
+- **Fix:** Restored `class` on all 22 rows and the 4 displaced `reason` strings, verbatim from `76fd3c7^`, matched by `line` (confirmed unique and unmoved on all 22 rows between parent and `76fd3c7`). Kept the four legitimate changes (`blob_shas["src/proms/eprom.cpp"]`, `recorded_at_head`, `counts`, the appended `recorded_by` paragraph). See "Golden re-derivation" above for the full field-by-field comparison output.
+- **Files modified:** `firestarter_fw/tests/golden/protocol_branch_inventory.json`
+- **Verification:** field-by-field diff against `76fd3c7^` on `line`/`predicate`/`keyed_on`/`tier`/`class`/`reason` — 0 diffs across all 22 rows; `test_protocol_branch_inventory.py` 7/7 passed; `pio test -e native` 237/237; `-e native_nodevtools` 237/237; `FIRESTARTER_META_ROOT=/tmp/no-meta pytest tests/` 269 passed / 32 skipped.
+- **Committed in:** `0c2eac7` (firestarter_fw), gitlink advanced in `ec5caa9d` (meta)
+
 ---
 
-**Total deviations:** 2 (both Rule 1 — bug corrections forced by measured fact once the region-scoping fix landed system-wide, not architectural changes and not scope creep). Neither touches production firmware or host logic beyond what the plan already mandated.
-**Impact on plan:** Both were necessary to keep the full test suites honestly green and to keep the non-vacuity proof genuinely non-vacuous. No weakening of any assertion occurred — if anything, the negative control in deviation 1 is now a genuine region-scoped proof rather than a whole-device one, and the mutation in deviation 2 is a stronger, more relevant proof than the plan's own literal command.
+**Total deviations:** 3 (all Rule 1 — bug corrections forced by measured fact; deviation 3 was found by a coordinator spot-check after this plan's own executor pass, not by this plan's own verification). None is an architectural change and none is scope creep.
+**Impact on plan:** All three were necessary to keep the full test suites honestly green, the non-vacuity proof genuinely non-vacuous, and the branch-inventory golden's documentation intact. No weakening of any assertion occurred — if anything, the negative control in deviation 1 is now a genuine region-scoped proof rather than a whole-device one, the mutation in deviation 2 is a stronger, more relevant proof than the plan's own literal command, and deviation 3's repair restores documentation this plan should have preserved on the first pass.
 
 ## Issues Encountered
 
@@ -353,22 +429,27 @@ None - no external service configuration required.
 - FOUND: `firestarter_app/tests/test_eprom_operations.py`
 - FOUND: `firestarter_app/tests/test_chip_test_uv_slot_write.py`
 - FOUND: commit `76fd3c7` (`git -C firestarter_fw log --oneline --all`)
+- FOUND: commit `0c2eac7` (`git -C firestarter_fw log --oneline --all`, golden provenance repair)
 - FOUND: commit `18f2088` (`git -C firestarter_app log --oneline --all`)
 - FOUND: commit `5b3fe45` (`git -C firestarter_app log --oneline --all`)
 - FOUND: commit `fa6b500f` (`git log --oneline --all`, meta repo gitlink advance)
+- FOUND: commit `ec5caa9d` (`git log --oneline --all`, meta repo gitlink advance for the repair)
 - Re-ran acceptance criteria and plan-level `<verification>`: `pio test -e native` 237/237; `pio test
   -e native_nodevtools -f native/avr/test_val_eprom` 13/13 with D-16.1 PASS and negative control PASS;
   `FIRESTARTER_META_ROOT=/tmp/no-meta pytest tests/` 269 passed / 32 skipped / 0 failed;
-  `test_protocol_branch_inventory.py` 7/7 passed; golden blob sha / counts / no-TODO-reasons all
-  confirmed via the plan's own python check; `eprom.cpp` holds exactly one region-form call and zero
-  comment-stripped whole-device calls; the four out-of-scope protocol files (`flash_intel.cpp`,
-  `flash_nor_unlock.cpp`, `flash_5v_page.cpp`, `eeprom_28c.cpp`) confirmed byte-unchanged via diff
-  against the pre-task base commit; `pio run` 3/3 SUCCESS, leonardo 23932/32768 B with 4740 B
-  bootloader-guard margin; host suite 2106 passed, ruff clean, coverage 85.42%; the planted-mutation
-  leg (corrected form) drove the suite non-zero and restored the file; `git -C firestarter_fw
-  rev-parse --abbrev-ref HEAD`, `git -C firestarter_app rev-parse --abbrev-ref HEAD` and `git
-  rev-parse --abbrev-ref HEAD` (meta) all `== v1.40-program-parameter-fidelity`; gitlinks in the meta
-  commit match each submodule's own HEAD exactly.
+  `test_protocol_branch_inventory.py` 7/7 passed; golden blob sha / counts / no-TODO-reasons /
+  no-missing-class all confirmed via the plan's own python check, re-run after the repair; `eprom.cpp`
+  holds exactly one region-form call and zero comment-stripped whole-device calls; the four
+  out-of-scope protocol files (`flash_intel.cpp`, `flash_nor_unlock.cpp`, `flash_5v_page.cpp`,
+  `eeprom_28c.cpp`) confirmed byte-unchanged via diff against the pre-task base commit; `pio run`
+  3/3 SUCCESS, leonardo 23932/32768 B with 4740 B bootloader-guard margin; host suite 2106 passed,
+  ruff clean, coverage 85.42%; the planted-mutation leg (corrected form) drove the suite non-zero and
+  restored the file; field-by-field diff of the branch-inventory golden against `76fd3c7^` shows 0
+  diffs on `line`/`predicate`/`keyed_on`/`tier`/`class`/`reason` across all 22 rows post-repair;
+  `git -C firestarter_fw rev-parse --abbrev-ref HEAD`, `git -C firestarter_app rev-parse
+  --abbrev-ref HEAD` and `git rev-parse --abbrev-ref HEAD` (meta) all `==
+  v1.40-program-parameter-fidelity`; gitlinks in both meta commits match each submodule's own HEAD
+  exactly.
 
 ---
 *Phase: 201-a-partial-write-is-gated-on-its-own-region*
