@@ -268,7 +268,7 @@ and 205 each own their own share; neither may defer it to the other.
 
 **Goal**: `firestarter verify` and `firestarter blank` compare by reading the chip and comparing on the host, through one streamed implementation that names why a compare failed instead of reporting a single address.
 **Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06, CMP-07, CMP-08
-**Plans:** 5 plans
+**Plans:** 5/5 plans complete
 
 Plans:
 **Wave 1**
@@ -289,7 +289,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 202-05-PLAN.md — `blank` joins the engine, region options and refusals, exit-code closure (wave 5)
+- [x] 202-05-PLAN.md — `blank` joins the engine, region options and refusals, exit-code closure (wave 5)
 
 **Success criteria**:
 
