@@ -269,7 +269,7 @@ and 205 each own their own share; neither may defer it to the other.
 
 1. `verify` and `blank` complete correctly against firmware that still carries `CMD_VERIFY` and `CMD_BLANK_CHECK`, without sending either — proving the host half stands alone before anything is removed.
 2. A mismatch is found on a 512 KB part with peak host memory bounded independently of device size.
-3. The default run names the first mismatching address with its expected and actual byte; `--full` names every mismatching span as a coalesced range with a byte count.
+3. The default run names the first mismatching range as `start–end` with a byte count and no byte values; `--full` names every mismatching span in that same form. (Amended 2026-09-20 at Phase 202 discuss — operator decision D-13; the original wording asked the default for the expected and actual byte.)
 4. A failed compare carries a `classify_fingerprint` bucket with total and bad counts, computed from streamed accumulation rather than a materialised image.
 5. The read-abort question is answered in writing — either a mid-stream stop works within the existing protocol, or the default's saving is stated as diagnostic and not temporal. It does not get to be assumed either way.
 

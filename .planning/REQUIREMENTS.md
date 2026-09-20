@@ -54,7 +54,7 @@ golden.
 - [ ] **CMP-01**: `firestarter verify <chip> <file>` compares the chip against the file by reading the chip; no `CMD_VERIFY` is sent on the wire.
 - [ ] **CMP-02**: `firestarter blank <chip>` compares the chip against a constant `0xFF` through that same engine; no `CMD_BLANK_CHECK` is sent on the wire.
 - [ ] **CMP-03**: the comparison runs on each chunk as it arrives; the device image is never materialised whole in host memory, and peak host memory for a compare is bounded independently of device size.
-- [ ] **CMP-04**: by default the comparison stops at the first mismatching byte and reports its absolute address, the expected value and the value read.
+- [ ] **CMP-04**: by default the comparison stops at the first mismatching byte — the host breaks the read in flight rather than draining it — and reports that mismatch as a single `start–end` range with a byte count, in the same one-line form `--full` uses. **No expected or actual byte values are printed** (operator decision, 2026-09-20, recorded as D-13 in `phases/202-one-comparison-engine-on-the-host/202-CONTEXT.md`; this requirement previously asked for the expected value and the value read).
 - [ ] **CMP-05**: `--full` scans the whole region and reports every mismatching span as a coalesced `start–end` range with a byte count, instead of one address.
 - [ ] **CMP-06**: a failed comparison is classified through the existing `classify_fingerprint`, naming one of its honest buckets with total and bad counts — computed from streamed accumulation, never from a materialised image.
 - [ ] **CMP-07**: `verify` and `blank` keep their exit-code contract — `0` on match, `1` on mismatch — and a hardware or transport failure is distinguishable from a mismatch.
