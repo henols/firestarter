@@ -431,7 +431,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4)*
 
-- [ ] 201-05-PLAN.md — The D-15.3 source-contract gate over all nine reference sites, proved by two planted violations observed RED; plus the D-11 latency non-claim, the answer to the folded `uv-write-shortcut` todo, the retirement of 999.44 and the flash measurement
+- [x] 201-05-PLAN.md — The D-15.3 source-contract gate over all nine reference sites, proved by two planted violations observed RED; plus the D-11 latency non-claim, the answer to the folded `uv-write-shortcut` todo, the retirement of 999.44 and the flash measurement — complete 2026-09-20, `e5842d8`
 
 **Wave 6** *(blocked on Wave 5 — bench, `autonomous: false`)*
 
