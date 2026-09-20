@@ -272,7 +272,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 202-02-PLAN.md — Bounded memory, bounded runtime, coalescing and the honest range cap (wave 2)
+- [x] 202-02-PLAN.md — Bounded memory, bounded runtime, coalescing and the honest range cap (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
