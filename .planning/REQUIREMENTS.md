@@ -56,7 +56,7 @@ golden.
 - [x] **CMP-03**: the comparison runs on each chunk as it arrives; the device image is never materialised whole in host memory, and peak host memory for a compare is bounded independently of device size.
 - [ ] **CMP-04**: by default the comparison stops at the first mismatching byte — the host breaks the read in flight rather than draining it — and reports that mismatch as a single `start–end` range with a byte count, in the same one-line form `--full` uses. **No expected or actual byte values are printed** (operator decision, 2026-09-20, recorded as D-13 in `phases/202-one-comparison-engine-on-the-host/202-CONTEXT.md`; this requirement previously asked for the expected value and the value read).
 - [x] **CMP-05**: `--full` scans the whole region and reports every mismatching span as a coalesced `start–end` range with a byte count, instead of one address.
-- [ ] **CMP-06**: a failed comparison is classified through the existing `classify_fingerprint`, naming one of its honest buckets with total and bad counts — computed from streamed accumulation, never from a materialised image.
+- [x] **CMP-06**: a failed comparison is classified through the existing `classify_fingerprint`, naming one of its honest buckets with total and bad counts — computed from streamed accumulation, never from a materialised image.
 - [ ] **CMP-07**: `verify` and `blank` keep their exit-code contract — `0` on match, `1` on mismatch — and a hardware or transport failure is distinguishable from a mismatch.
 - [ ] **CMP-08**: both accept `--address` and `--size`, and a region-scoped comparison reads and compares only that region.
 
@@ -137,7 +137,7 @@ Every requirement maps to exactly one phase.
 | CMP-03 | Phase 202 | Complete |
 | CMP-04 | Phase 202 | Pending |
 | CMP-05 | Phase 202 | Complete |
-| CMP-06 | Phase 202 | Pending |
+| CMP-06 | Phase 202 | Complete |
 | CMP-07 | Phase 202 | Pending |
 | CMP-08 | Phase 202 | Pending |
 | WRITE-01 | Phase 203 | Pending |

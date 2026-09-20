@@ -276,7 +276,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 202-03-PLAN.md — One divergence implementation: `classify_fingerprint` delegates, plus the bucket line (wave 3)
+- [x] 202-03-PLAN.md — One divergence implementation: `classify_fingerprint` delegates, plus the bucket line (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
