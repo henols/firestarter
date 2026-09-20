@@ -416,6 +416,11 @@ Compare every row. This is the checklist the comment must cover:
 | **Write protection** | SDP / hardware data protection section | `Flags:` | a locked chip that silently refuses writes |
 | **Pulse timing** | write cycle / program pulse time | `pulse_duration` | under- or over-programming |
 
+Every row is settled by comparing the datasheet text to `firestarter info`'s output —
+never by reading the code that implements or consumes the field. If confirming a row
+tempts you to open `firestarter_app` or `firestarter_fw` source, stop: that row is
+*unchecked*, not a reason to start the investigation `devtest-rootcause` owns.
+
 State which of these you actually checked. A check you could not perform (datasheet
 section absent) is reported as *unchecked*, never as passing.
 
@@ -441,6 +446,18 @@ the command line.
 gh issue comment 21 --repo henols/firestarter --body-file /tmp/comment.md
 ```
 
+**Never include code-level analysis — that is `devtest-rootcause`'s job, not this
+skill's.** No `file:line` citations. No function, variable, or struct names from
+`firestarter_app` or `firestarter_fw`. No quoted source code, however short. No proposed
+fix, override table, or patch. No bisect or "which commit" recommendation. When the table
+is all MATCH, the comment's job is to say **which layer** looks responsible — harness,
+firmware, host, database, or rig — in one sentence, and stop there; proving the mechanism
+inside that layer is `devtest-rootcause`'s deliverable, posted later as its own
+"### Fix —" comment. A community report runs 700-1300 characters; a triage comment
+answering it should be the same order of magnitude, not 4-6x that. If you find yourself
+quoting source or naming a function, you have crossed into the next skill's territory —
+delete that paragraph and replace it with the layer name and the `cause:*` label.
+
 Template:
 
 ```markdown
@@ -461,17 +478,21 @@ Failing steps: blank-check BAD, write BAD, verify BAD
 | VPP | none; single 5V supply | `12V` | MATCH in effect — protocol `0x0D` never routes VPP |
 
 **Not a pin-map fault, and not a missing-SDP-config fault.** The wiring is right and
-the database already asks for SDP disable-before / enable-after, so the failure is in
-how that sequence is *executed*, not in the data describing it.
+the database already asks for SDP disable-before / enable-after, so the likely layer is
+firmware execution, not the data describing it. That is as far as this comment goes —
+`cause:firmware`, handed to `devtest-rootcause` to find the mechanism.
 
-Most likely cause: <the one you actually believe, and why>.
+Most likely cause: <the layer — harness / firmware / host / database / rig — in one
+sentence. Not the mechanism inside it; that is `devtest-rootcause`'s job>.
 
 Unchecked: <anything the datasheet did not let you confirm>.
 ```
 
 An all-MATCH table like that one is a real result, not a wasted pass: it says the data
-describing the part is right and moves the fault into execution. A row that does
-*not* match names the field and both values, e.g. from W27E257 (#23):
+describing the part is right and points the fault at execution. Say that and stop — do
+not go read the firmware or host source to prove *how* it fails there; that write-up,
+with its file:line evidence, is `devtest-rootcause`'s deliverable, not this comment's.
+A row that does *not* match names the field and both values, e.g. from W27E257 (#23):
 
 ```markdown
 | VPP (program) | 12V program; 14V is the ERASE voltage only | `vpp_mv: 13500` | MISMATCH — neither the program nor the erase voltage |
@@ -502,16 +523,17 @@ Cross-link it, and hand it to `devtest-rootcause` as a host/firmware question, n
 database one.
 
 That is the model: compare all pins, then keep going and rule out each remaining field
-by its real value. **Inspect the field, do not assume it** — a plausible guess about
-`page_size` or whether write protection is represented is wrong often enough to invert
-the conclusion.
+by its real value — through the datasheet's own rows, not into firestarter's source.
+**Inspect the field, do not assume it** — a plausible guess about `page_size` or whether
+write protection is represented is wrong often enough to invert the conclusion.
 
 ## Handing off
 
 Comments left here are the input to `devtest-rootcause`, which investigates the code.
 Say plainly which issues you commented on,
 and which `cause:*` label you put on each — that label is the handoff, because it says
-which repo the fix lives in before anyone opens the thread.
+which repo the fix lives in before anyone opens the thread. The layer name and the label
+are the handoff; leave the file:line mechanism for `devtest-rootcause` to find (§5d).
 
 Save the cross-check table in the template's exact shape. Whoever picks up the
 investigation reads every **MATCH** row as already settled and does not re-check it.

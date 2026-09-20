@@ -99,6 +99,13 @@ The owned table is held in **millivolts** to match the generator's own unit, so 
 can be read side by side with no string round-trip in the middle. `format_vpp()` does
 the `12000 -> "12V"` rendering at the print site.
 
+Reading that table is **two-tier**, and both copies implement it the same way. A low byte
+that is itself a key — `0xF1` (25V) and `0xF2` (21V), the ones with a non-zero low nibble
+— matches exactly; every other low byte masks to `& 0xF0`. Neither value occurs in the
+pinned `infoic.xml`, so tier 1 is dormant today: a part reading 21V or 25V in the shipped
+database got there through `apply_datasheet_override`, not through this decode. Read the
+table through `vpp_for_voltages()`, never by indexing it directly.
+
 Never "improve" a table value from memory — transcribe it from the generator. A
 misremembered VPP index reads as a decode bug in a chip that has none.
 
@@ -163,7 +170,7 @@ and say the family is unknown rather than guessing.
 |---|---|---|
 | Pin map disagrees with the datasheet DIP view | pinout data | `pinouts.json` if the key's wiring is wrong. `resolve_pinout_key()` if the wrong key was chosen |
 | Wrong `electrical.type` / erase capability | decode | `classify()` — the `flags & 0x10` axis, not `protocol_id` |
-| Wrong VPP | decode | the VPP index table. Mask `voltages & 0xF0`, never `& 0xFF` |
+| Wrong VPP | decode | the VPP index table, read through `vpp_for_voltages()` — exact key first, else mask `voltages & 0xF0`. Never a bare `& 0xFF` |
 | Wrong algorithm/protocol | decode | `classify()` and the safety-flip rules in `main()` |
 | Wrong pulse timing | decode | `interpret_timing()` |
 | Chip missing from the DB entirely | supplement | `extra_chips.json`, only if absent from `infoic.xml` |
