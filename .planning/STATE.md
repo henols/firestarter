@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.39
-milestone_name: Protocol 0x05 Write Correctness (CLOSED 2026-09-17)
-current_phase: 196
-current_phase_name: Adoption Instrument Disposition
-status: complete
-stopped_at: "v1.39 CLOSED and SHIPPED 2026-09-17 — merged to beta in all three repos, tag v1.39 pushed bare. app 3.0.0b48 on PyPI. fw 3.0.0b33's zero-asset release REPAIRED 2026-09-18 by quick task 260918-ayh: it now carries all three AVR .hex assets plus py32f071. No milestone is active — next is /gsd-new-milestone."
-last_updated: "2026-09-18T08:20:00.000Z"
-last_activity: 2026-09-18
-last_activity_desc: "v1.39 closed and hand-archived — CLOSE-RECORD.md written, ROADMAP/REQUIREMENTS snapshotted to .planning/milestones/, phase dirs 194-196 and .planning/v1.39/ archived, MILESTONES.md entry prepended, ROADMAP heading flipped to CLOSED, tagged v1.39. milestone.complete and audit-open acknowledge both deliberately NOT run. Superseded: Phase 196 complete — instrument retired with its reason recorded, 5 live documents swept, INSTR-02 gate proven RED (11) then GREEN, graph rebuilt; verifier 8/8, code review clean"
+milestone: v1.40
+milestone_name: Program-Parameter Fidelity (CLOSED 2026-09-20 — 19/24 requirements, override_closeout, tagged v1.40 as a bare tag; NOT shipped — nothing is on beta in any of the three repositories)
+current_phase: 201
+current_phase_name: A partial write is gated on its own region
+status: milestone_complete
+stopped_at: "v1.40 SHIPPED as PRs 2026-09-20 — milestone branch pushed and a PR opened in all three repositories (henols/firestarter#91, henols/firestarter_app#72, henols/firestarter_fw#70), each targeting beta and each UNMERGED. The beta merge is the publish and stays operator-gated; it is also what releases the three held gh#70/gh#66/gh#71 answers. The bare v1.40 tag is still local-only. Next step — the merge decision, then /gsd-new-milestone at phase 202."
+last_updated: "2026-09-20T12:00:00.000Z"
+last_activity: 2026-09-20
+last_activity_desc: "Closed and hand-archived milestone v1.40 Program-Parameter Fidelity — 5 phases (197-201), 26 plans, 65 tasks, 19/24 requirements, override_closeout. Archive at .planning/milestones/v1.40-{CLOSE-RECORD,ROADMAP,REQUIREMENTS}.md and v1.40-phases/. milestone.complete and audit-open acknowledge both deliberately not run; 88 open artifacts disclosed by hand with 0 suppressed. SHIPPED 2026-09-20: branches pushed to origin in all three repos and PRs opened to beta — firestarter#91, firestarter_app#72, firestarter_fw#70. No merge, so nothing is published and no PyPI version is burned; the three held issue answers remain unposted."
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 15
-  completed_plans: 15
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 26
+  completed_plans: 26
   percent: 100
 ---
 
@@ -24,10 +24,10 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-09-08 — v1.36 activated 2026-09-02; Phase 179 falsification notes appended)
+See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.40 Program-Parameter Fidelity CLOSED; its outcome block and footer carry the close, and `milestones/v1.40-CLOSE-RECORD.md` is the full record)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 196 — Adoption Instrument Disposition
+**Current focus:** v1.40 SHIPPED AS PRs 2026-09-20 — branches pushed and PRs open in all three repos (`henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70`), all targeting `beta`, all **unmerged**, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging, it is the single checklist for gh#70/gh#66/gh#71. The bare `v1.40` tag is still local-only and must never become a GitHub Release. Then `/gsd-new-milestone`. Phases continue at **202**.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 196 (Adoption Instrument Disposition) — COMPLETE · MILESTONE v1.39 CLOSED 2026-09-17
-Plan: 3 of 3
-Status: v1.39 CLOSED and SHIPPED 2026-09-17 — 3/3 phases, 15/15 plans, 7/8 requirements (PAGE-03's hardware leg open per D-11, blocked on a W29C512), override_closeout, hand-archived. Merged to beta in all three repositories; meta tagged v1.39 (bare tag pushed, 0 GitHub Releases on the meta repo, /releases/latest still a clean 404). firestarter_app published cleanly: pre-release 3.0.0b48 and the PyPI upload both succeeded. firestarter_fw pre-release 3.0.0b33 exists against the correct commit but carries ZERO .hex assets — the upload failed with 'Error creating asset temp dir' and a re-run cannot recover it, because the re-run repeats the non-idempotent version bump and is rejected non-fast-forward. REPAIRED 2026-09-18 by quick task 260918-ayh: one workflow_dispatch of beta-build.yml on ref beta at beta_version=3.0.0b33 (run 35322889419, success) attached firestarter_uno.hex, firestarter_uno328pb.hex, firestarter_leonardo.hex and firestarter_py32f071.hex to the existing tag, and origin/beta did not move (11024ee). Next: /gsd-new-milestone.
-Last activity: 2026-09-18 — quick task 260918-ayh: repaired the 3.0.0b33 zero-asset pre-release and closed gh#67, gh#68, gh#2 and gh#5; gh#15 and gh#16 deliberately left open on mixed evidence
+Phase: — (v1.40 closed; the next milestone starts at phase 202)
+Plan: — (all 26 v1.40 plans complete across phases 197-201)
+Status: **v1.40 CLOSED and hand-archived 2026-09-20** — 19/24 requirements, `override_closeout`, bare tag `v1.40`. Five requirements Pending by decision: PULSE-04 / VOLT-04 / RAIL-05 are the three held gh#70 / gh#66 / gh#71 answers that release at the beta cut, RAIL-03 is honestly unmet, OVR-03 is test-enforced only. NOT shipped: 170 meta / 37 host / 15 firmware commits ahead of `beta`, zero patch-equivalent by `git cherry`.
+Last activity: 2026-09-20 — Closed and archived v1.40. ROADMAP bullet and section header flipped to CLOSED, archives written to `.planning/milestones/v1.40-{CLOSE-RECORD,ROADMAP,REQUIREMENTS}.md`, phase directories 197-201 moved to `.planning/milestones/v1.40-phases/`, MILESTONES.md entry prepended, PROJECT.md evolved, RETROSPECTIVE.md appended, 88 open artifacts disclosed with 0 suppressed, and Phase 200 CR-01 filed as a pending todo.
 
 ## Roadmap Summary (v1.38)
 
@@ -1142,6 +1142,87 @@ not hold (the v1.22 C-5 overclaim class).
 gate-hardening v1.23 left OPEN (fail-open `tools/check_mypy_watermark.py` + 69 hidden inherited
 errors → `firestarter_app`'s primary `ci` job is RED), and 999.15 / gh#8 dev-tools channel gating.
 Plus the owed gh#12 outward follow-up, behind operator wording review.
+
+## Deferred Items — disclosed at v1.40 milestone close (2026-09-20)
+
+`gsd_run query audit-open` reported **88 open items** at the v1.40 close. **Every one is disclosed
+here and NONE is suppressed.** `gsd_run query audit-open acknowledge` was deliberately not run: it
+destroys the artifacts it annotates (backlog **999.49** — at the v1.35 close it replaced 100 lines
+of a quick task's YAML frontmatter with a four-line marker, reflowed whole files including the
+inside of a fenced code block, and manufactured phantom items from markdown table rows that it then
+refused to acknowledge). This table is therefore a **disclosure record, not a suppression
+mechanism** — every item below resurfaces at the next `audit-open`, which is honest, because they
+are all still open. `acknowledged.total` reads **0**, as it has at every close since v1.23.
+
+**Treat 88 as a floor.** The scanner under-reported at the v1.39 close, missing a real
+`deferred-items.md`, and it misses one again here: Phase 201's own `.planning/milestones/v1.40-phases/201-…/deferred-items.md`
+appears in no category. Its single entry is disclosed at the foot of this section.
+
+**One of the 88 was filed by this close, not inherited.** Phase 200's Critical code-review finding
+(CR-01) was recommended for filing by `200-VERIFICATION.md` and never filed; the close filed it as
+`todos/pending/2026-09-20-programming-vcc-predicate-fails-closed-on-non-dict-electrical.md`, which
+took the pre-close count of 87 to 88. Almost everything else predates v1.40 — the oldest UAT gap is
+Phase 08, archived at v1.2.
+
+| Category | Item | Status | Disclosed At | Milestone |
+|----------|------|--------|--------------|-----------|
+| debug_sessions | knowledge-base | unknown | 2026-09-20 | v1.40 |
+| debug_sessions | w27c512-devtest-all-bad | investigating | 2026-09-20 | v1.40 |
+| quick_tasks | 260820-a7w-make-the-flash-limit-guards-to-be-the-ac | unknown | 2026-09-20 | v1.40 |
+| quick_tasks | 260916-nbb-capture-the-actual-error-and-warn-log-lines-the-host-app-and | unknown | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 191/191-UAT.md (archived v1.38) | passed — 0 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 186/186-UAT.md (archived v1.37) | passed — 0 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 43/43-HUMAN-UAT.md (archived v1.8) | partial — 2 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 31/31-HUMAN-UAT.md (archived v1.7) | partial — 4 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 34/34-HUMAN-UAT.md (archived v1.7) | partial — 3 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 28/28-HUMAN-UAT.md (archived v1.6) | partial — 1 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 30/30-HUMAN-UAT.md (archived v1.6) | passed — 2 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 20/20-HUMAN-UAT.md (archived v1.4) | passed — 0 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 08/08-HUMAN-UAT.md (archived v1.2) | partial — 0 open scenario(s) | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 84/84-VERIFICATION.md (archived v1.15) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 31/31-VERIFICATION.md (archived v1.7) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 34/34-VERIFICATION.md (archived v1.7) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 28/28-VERIFICATION.md (archived v1.6) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 08/08-VERIFICATION.md (archived v1.2) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 09/09-VERIFICATION.md (archived v1.2) | human_needed | 2026-09-20 | v1.40 |
+| deferred_items | Phase 182/deferred-items.md (archived v1.37): Pre-existing `ruff check` failures in `firestarter_app/tools/audit_coverage_matrix.py`, `firestarter_app/tools… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 183/deferred-items.md (archived v1.37): `make_write_handle_with_data()`'s inline comment in `firestarter/test/native/avr/test_val_5v_page/test_val_5v_… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 181/deferred-items.md (archived v1.36): `tests/test_blast_radius_invariance.py:565` fails `ruff format --check` (a wrapped multi-line expression the f… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 168/deferred-items.md (archived v1.35): Plan 168-04, Task 1 — two orphaned C++ fixture files Deleting `firestarter_app/tests/test_dispatch_mirror.py` … | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): `test_diagnostic_range_unchanged_with_phase_151_comment` → `test_diagnostic_range_unchanged_with_stated_choice… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): `assert "Phase 151" in preceding_text` → `assert not _missing_stated_choice_phrases(...)` over a **four-phrase… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): **Proven strictly stronger, not merely different.** Against a planted `// Phase 151 touched this block.` repla… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): A committed checkable negative was added as **leg 5** (`test_non_vacuity_control_reports_absent_stated_choice`… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): Original filing (kept verbatim for the record) `firestarter_app/tests/test_parse_gate_admission.py::test_diagn… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): D9 — Pre-existing `ruff check` findings in `firestarter_app/tools` (unrelated to the sweep) **Found during:** … | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): before plan 07 — **203** | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): after plan 07 — **152** | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): `#`-comment lines carrying a D-01 token NOT adjacent to the opener — **313** — **236** — outside the survey re… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): Token occurrences on non-`#` lines (docstrings + string literals) — **335** across 22 files — **335**, unchang… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 153/deferred-items.md (archived v1.32): 153-10 - **`ruff check .` (whole-tree, run to confirm plan-scoped files) surfaces 4 pre-existing errors in `to… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 133/deferred-items.md (archived v1.30): From plan 133-06 - **Pre-existing `ruff check` failures in three unrelated files**, discovered while running t… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 121/deferred-items.md (archived v1.22): 121-08 - **Pre-existing untracked file in the firmware submodule**: `git -C /workspaces/firestarter status --p… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 111/deferred-items.md (archived v1.21): 111-01: Pre-existing ruff F841 unmasked in test_diagnostic_report.py (out of scope) - **File:** `firestarter_a… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 111/deferred-items.md (archived v1.21): 111-UAT: Before/after write-step voltage capture → Phase 112 re-verify - **What:** SC2's destructive-run half … | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 106/deferred-items.md (archived v1.20): From Plan 106-01 - **`tests/test_audit_coverage_matrix.py::TestAuditCoverageMatrix::test_golden_file_matches`*… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 102/deferred-items.md (archived v1.19): Out-of-scope pre-existing failure (not fixed — scope boundary) **`tests/test_audit_coverage_matrix.py::TestAud… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 98/deferred-items.md (archived v1.18): Out-of-scope pre-existing test failure - **Test:** `tests/test_audit_coverage_matrix.py::TestAuditCoverageMatr… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 98/deferred-items.md (archived v1.18): Plan 98-05 — pre-existing blanket `ruff check .` failures (out of scope) - **Found during:** Plan 98-05 Task 3… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 99/deferred-items.md (archived v1.18): Pre-existing ruff findings in check_ledger.py / test_check_ledger.py (out of scope) **Found during:** Task 3 (… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 79/deferred-items.md (archived v1.14): Pre-existing ruff errors/format issues in firestarter_app (py39 target) Confirmed pre-existing by stashing the… | open | 2026-09-20 | v1.40 |
+| todos | 2026-06-24-skip-vpp-error-and-warning-checks-when-vpp-unused-on-reads.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | 2026-08-27-safe-state-outputs-on-powerup-and-fault.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | 2026-08-27-strip-gsd-provenance-comments-from-source.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | 2026-08-30-dev-test-flag-to-auto-file-issue.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | 2026-08-30-remove-cmd-verify-from-firmware-compare-in-app.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | … and 39 more pending todos — the scanner caps this list at 5 per scan | (presence-only) | 2026-09-20 | v1.40 |
+
+**Not caught by the scanner — Phase 201's `deferred-items.md`.** `firestarter_app` reads dirty in
+`git status --porcelain` solely because of one untracked file, `firestarter_app/datasheets/LST62832I.pdf`,
+created 2026-09-19 and deliberately left untracked since plan 197-01. No tracked file is modified and
+the gitlink recorded in the meta repository matches `firestarter_app`'s actual HEAD exactly. It made
+plan 201-06's own `test -z "$DIRTY"` verify leg read dirty for a reason unrelated to the bench work
+recorded under it. Left in place rather than deleted without the operator's say-so.
 
 ## Deferred Items — disclosed at v1.39 milestone close (2026-09-17)
 
@@ -2089,6 +2170,7 @@ Transport provably byte-exact (COBS `0x00` + CRC8-CCITT) — settled variable. G
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 260919-cli | **The premise was false and the falsification is the finding.** Asked to make the beta build ship `DEV_TOOLS`, after a Phase 199 bench session concluded from `platformio.ini` alone that no shipped AVR firmware implements `CMD_DEV_REGISTER` (8). It already does: `beta-build.yml`'s "Build PlatformIO Project" step has set `PLATFORMIO_BUILD_FLAGS: -D DEV_TOOLS=1` since firmware `e6888a9` ("build: make dev tools a per-channel decision, off by default", 2026-09-14), an injection invisible to a reading of `platformio.ini`. Proven against the real artifacts, twice independently: the three published `3.0.0b31` AVR assets decoded from Intel HEX all contain `CTRL remapped`, a literal that exists only in `dev_tools.cpp` (`uno` 22734 B, `uno328pb` 22778 B, `leonardo` 24830 B). So nothing needed enabling; what was missing was any CHECK that it stays true. Added two mirror-image inline assertions: `beta-build.yml` now fails the publish if any of the three AVR ELFs LACKS the dev-tools marker, and `build.yml` (stable) fails if any HAS it — the fail-closed direction `e6888a9` chose, now enforced in both polarities. Both step bodies were extracted and run against real build trees in all four combinations, not just the two expected-green ones. The gate avoids the `strings | grep -q` SIGPIPE-141 trap by writing to a file, resolves exactly one ELF per env, and asserts a checked-count of 3 so an empty loop cannot pass vacuously. Flash measured on all six builds via the repo's own bootloader-guard: no breach, leonardo tightest at 24936/28672 B (87.0%, 3736 B margin). **Rejected** restoring `-D DEV_TOOLS=1` to the shared `[env]` block — it would make a local `pio run` match the beta artifact, closing the divergence that caused the misreading, but would put dev tools in stable unless `build.yml` actively stripped them, inverting fail-closed to fail-open; the divergence is closed in `firestarter_fw/CLAUDE.md` prose instead. Phase 199's `199-BENCH-RECORD.md` Fault 1 and Fault 2 and `199-02-SUMMARY.md` corrected, preserving the transcript and the observed symptom and labelling the unreconciled board-vs-asset mismatch as **inference, not measurement** (no image was pulled off the board and compared byte-for-byte). The four `DELIVERABLE_*`/`ADC_PAIRED_*` lines that 199-03 and 199-05 parse were preserved byte-identical. **Still true and untouched:** `dt_set_registers` is genuinely broken in every published beta (b31/b32/b33); `7eed3af` on this branch is the first build where `dev reg` completes. `pio test` native 217/217 and native_nodevtools 217/217; `pytest tests/` 17 failed / 284 passed, all 17 the documented pre-existing stale scan path to `.planning/v1.23-FLASH-PATH-DECISION.md`. Nothing pushed, tagged or dispatched. | 2026-09-19 | `44baa601` | [260919-cli-beta-build-ships-dev-tools-so-dev-reg-an](./quick/260919-cli-beta-build-ships-dev-tools-so-dev-reg-an/) |
 | 260918-ayh | `firestarter_fw` pre-release `3.0.0b33` had been published against the right commit with ZERO `.hex` assets — the upload failed with "Error creating asset temp dir" while the run itself stayed green — so `firestarter fw --install --pre` resolved b33 and then found nothing installable. Repaired by one `workflow_dispatch` of `beta-build.yml` on ref `beta` at `beta_version=3.0.0b33` (run 35322889419): because `beta`'s `include/version.h` already read `3.0.0b33`, `update_version.py` wrote no diff, the auto-commit was a no-op and `origin/beta` did not move. All three AVR images plus `firestarter_py32f071.hex` are now attached, and every basename was checked against the host's own `asset_candidates()`. With the release installable, gh#67 and gh#68 were closed `fix:released` naming firmware `3.0.0b33` and host `3.0.0b48`, and gh#2 (repository rename) and gh#5 (documentation move) were closed as shipped. gh#15 and gh#16 were examined against `origin/beta` and deliberately LEFT OPEN: #15's own acceptance criteria ask for separate per-protocol write handlers, a factor-3 overprogram pulse and a long single-attempt 0x0B pulse, and none of the three is met by the one shared `eprom_write_execute` and its all-zero overprogram column; #16's HAL tree exists but `RURP_HAS_VPP_DAC=0`, the pin map is marked assumed, CI publishes only the `.hex`, and no PY32F071 board has ever been flashed. No product source was touched and nothing was pushed. | 2026-09-18 | `bd2139bb` | [260918-ayh-repair-firmware-3-0-0b33-zero-asset-rele](./quick/260918-ayh-repair-firmware-3-0-0b33-zero-asset-rele/) |
 | 260917-8pj | `dev test` now runs three passes by default for the read step and for the write/verify/erase cycle block, and a new `--submit` flag files the report with no prompt through an authenticated `gh`. The single-pass-read work committed earlier the same day was reverted first: with the default at three there was nothing left for `--compare-reads` to opt into, and read is a normal repeat-policy op again, so `_REPEAT_POLICY_OPS` and the frozen hash `m27c512-full-runs-1` are back to their pre-change values. `dedup_fingerprint` does not hash `run_count`, so the 2 to 3 move leaves every already-filed fingerprint byte-identical. `--submit` reverses v1.21 SUB-01's ban on silent off-TTY submission, by operator decision, and may file a `--fast` run and file even when the duplicate check could not run. | 2026-09-17 | `6047d2e` | [260917-8pj-dev-test-default-3-runs-for-read-and-wri](./quick/260917-8pj-dev-test-default-3-runs-for-read-and-wri/) |
 | 260917-co5 | Three `CLAUDE.md` files carried verified-wrong facts. The app's WARNING-5 block described a `build_db.py` conditional that no longer exists, scoped at ~23 chips across 6 vendors against a measured 84 rows across 15 vendors; its pinout list named 5 of the real 16 keys; and it said `build_db.py` parses a vendored `tools/infoic.xml` that does not exist, when the script fetches the XML from pinned minipro commit `a8efaedc`. Four `.planning/` citations across app and fw pointed at paths archived under `milestones/`, one fw citation named a `REQUIREMENTS.md` section that no longer exists, and meta said `tools/` held two directories when it holds three. Corrected all of them and added what was missing: the branching rule, the comment-rule loophole closer and its staged-diff check, what firmware CI actually runs, the two firmware test trees, and `include/messages.h` as generated-do-not-edit. Corrected passages written in ASD-STE100 strict mode; hard-rule violations fell 11 to 10 in meta and held flat elsewhere, with none added. Pre-existing prose was NOT remediated: firestarter_fw still carries 87 hard violations in sections this task did not touch. | 2026-09-17 | 9573851 | [260917-co5-correct-factual-errors-in-the-three-clau](./quick/260917-co5-correct-factual-errors-in-the-three-clau/) |
@@ -2143,6 +2225,20 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 201 Plan 05]: `firestarter_app` carries a pre-existing untracked file (`datasheets/LST62832I.pdf`, present before this plan's Task 1 began, unrelated to any Phase 201 task) that makes the plan's literal `git status --porcelain firestarter_fw firestarter_app` verify leg report non-empty even after this plan's own commits land cleanly. Left untouched per the scope boundary rule (out-of-scope discovery, not this task's to fix); verified instead that `firestarter_app` carries zero TRACKED modifications, matching its state at session start.
+- [Phase 201 Plan 05]: The verify script the plan itself specifies for "no skip/no grep/no shell" does a flat substring scan for the literal `skipif`, which the house self-skip-proof pattern (`test_write_path_source_contract_v131.py`'s own technique) necessarily contains as a fragment (`"mark" + ".skipif"`) even though it is never a live `@pytest.mark.skipif` decorator. Split the concatenation one letter deeper (`"ski" + "pif"`) so the literal string `skipif` never appears contiguously anywhere in the module's own source, while the self-check still proves the actual decorator's absence at runtime.
+- [Phase 201 Plan 04]: The branch-inventory golden's second re-derivation matched old sites to live sites BY POSITION (index i of old zipped with index i of live), not by rebuilding the `(predicate, keyed_on, tier)` dict-key lookup RESEARCH.md's own script uses — that key is exactly what collided and silently corrupted `class`/`reason` in plan 201-03's first re-derivation (`76fd3c7`, repaired in `0c2eac7`). Positional correspondence was verified safe FIRST (zero `(predicate, keyed_on, tier)` mismatches between old[i] and live[i] for all 22 i, confirming no site was added, removed or reordered by the op_end insertion) before being trusted to carry `class`/`reason` forward. A field-by-field diff against the parent commit then confirmed 0 non-line diffs across all 22 rows, with only 8 rows' `line` shifting (all below the insertion point) and the four legitimate top-level fields (`blob_shas`, `recorded_at_head`, `counts`, `recorded_by`) differing.
+- [Phase 201 Plan 04]: `op_end` (`mem_util_operation_end(handle)`) is declared inside the SAME `#ifndef SERIAL_ON_IO` guard as `last_emit_ms` in `eprom_internal_write_execute_body`, rather than unconditionally — it is read only inside the guarded emit block, and an unreferenced local on a build that defines `SERIAL_ON_IO` would be an unused-variable warning against the AVR zero-warning policy, exactly the reasoning the file's own pre-existing comment already gives for `last_emit_ms`.
+- [Phase 201 Plan 03]: Coordinator spot-check found that the branch-inventory golden re-derivation in `76fd3c7` silently dropped `class` on all 22 rows and collapsed 4 `reason` strings (lines 52, 132, 158, 502) onto a wrong sibling's text, because the re-derivation script's old-reason lookup keyed on `(predicate, keyed_on, tier)` collided for two site pairs sharing identical predicate text, and the extractor's own output never carried `class` at all. `test_protocol_branch_inventory.py` only asserts `predicate`/`reason` truthiness, never `class` or reason content, so the corrupted golden passed the gate. Repaired in `firestarter_fw@0c2eac7` (meta gitlink `ec5caa9d`): restored `class` and the 4 displaced `reason` strings verbatim from `76fd3c7^`, matched by line; field-by-field comparison confirmed 0 diffs on `line`/`predicate`/`keyed_on`/`tier`/`class`/`reason` across all 22 rows, with only the four legitimate fields (`blob_shas`, `recorded_at_head`, `counts`, `recorded_by`) differing from the parent. `201-03-SUMMARY.md` amended (meta `e052b3c8`) to document what actually happened.
+- [Phase 201 Plan 03]: `test_chip_test_uv_slot_write.py`'s `test_the_double_refuses_a_non_blank_write_without_the_flag` reseeded its non-blank byte INSIDE the write's target region instead of outside it. That leg's shared fixture (`_seeded_m27c512_double`, used by legs 3-6 for the witness/`FLAG_SKIP_BLANK_CHECK` policy) deliberately seeds outside the target region — correct for the whole-device check this phase fixes, but region-scoping now reads that region as genuinely blank and the write succeeds, so the leg stopped proving anything. Rewrote only this one test's body to seed its own double inside the target region; the shared fixture is untouched. None of the plan's six enumerated `WriteInitPreflightChip` reference lines were edited.
+- [Phase 201 Plan 03]: The plan's literal planted-mutation command (`sed` changing `_is_blank`'s default `end` value from `None` to `0`) cannot detect a regression, because the mandated implementation always calls `_is_blank(start, end)` with two explicit arguments — the default is dead code from that call site. Measured: `planted_rc=0`, all 49 legs still passed. Used an equivalent, stronger mutation instead (reverting the comparison body to the OLD whole-buffer form), which correctly drove the suite non-zero (`planted_rc=1`) and was confirmed restored.
+- [Phase 201 Plan 03]: `mem_util_operation_end` and `mem_util_blank_check_region` resolve D-04's 0=absent fallback and the fail-closed clamp in exactly one place in `memory.cpp`, deliberately as a function rather than an inline ternary in `eprom.cpp` — an inline ternary would have added a row to the branch-inventory golden and separately would have tripped the parenthesis-intolerant argument capture in `test_progress_emission_is_leonardo_only.py` (RESEARCH.md's G-1 hazard, avoided structurally).
+- [Phase 201 Plan 02]: Did not call `configure_eprom(&h)` a second time after `configure_memory(&h)` in the two new D-16.1 tests, despite the plan's literal action text instructing both. `configure_memory` already dispatches to `configure_eprom` for protocol `0x07`, and a second explicit call re-reads the `eprom_internal_set_control_register` wrapper `configure_eprom` just installed and assigns it to the module-global `ep_set_control_register`, making that wrapper call itself. Any path touching `handle->firestarter_set_control_register` (`eprom_check_vpp`, on the first init call) then recurses until the stack overflows — measured directly as a SIGSEGV on a standalone run of the test binary, not asserted.
+- [Phase 201 Plan 02]: `clear_bus_recording()` is called before every loop iteration inside the D-16.1 driving helper, not once before the loop. One `BLANK_CHECK_CHUNK_SIZE` (8192-byte) chunk scan performs 24576 register writes, saturating `HOST_STUBS_MAX_RECORDING` (4096) well inside a single call; once saturated, the address-keyed shadow model's backward address-recovery scan falls back to the last address recovered before saturation and repeats that stale byte for the rest of the call. The negative control's target (offset 1024 into chunk 2) was silently unreachable without a per-call clear, because chunk 1's own already-saturated recording was still active when chunk 2's scan began.
+- [Phase 201 Plan 02]: The D-16.1 driving loop is a `do-while`, not the plan's literal "while" framing — before the first call to `firestarter_operation_init`, the operation has not started, so `is_operation_in_progress` reads false and a `while`-loop would never invoke init at all, leaving both cases silently reading the fixture's default `RESPONSE_CODE_OK` instead of exercising the blank check.
+- [Phase 201 Plan 01]: Substituted `CONTROL_REGISTER` for the plan's "TOP_ADDRESS" register (which does not exist anywhere in the repository — `git grep` confirms zero hits) when composing an absolute address from the recorded register writes in `test_val_eprom`'s new shadow model. Production writes the top address bits to `CONTROL_REGISTER` (`mem_util_calculate_top_address_register`, `memory.cpp`); for every address this suite drives through the shadow (< 65536) that contribution is structurally 0, matching what the plan's formula expected.
+- [Phase 201 Plan 01]: Added `h.bus_config = VAL_EPROM_BUS_CONFIG_0x07` to both the Task 1 positive-control fixture and the new `make_region_handle` factory, though the plan's action text listed neither. A zero-initialized `bus_config` is degenerate (`mem_util_remap_address_bus` collapses every address to the same physical line), not an identity remap — confirmed by the file's own pre-existing comment on `VAL_EPROM_BUS_CONFIG_0x07`. Without this the shadow-model positive control could not discriminate its four probe addresses.
+- [Phase 201 Plan 01]: `test_erase_end_blank_check_scans_from_zero` asserts `val_recording_saturated()` is TRUE, the opposite of the plan's stated expectation. Measured: one `mem_util_blank_check` call over a 16384-byte part scans a full 8192-byte `BLANK_CHECK_CHUNK_SIZE` chunk in that single call (24576 register-write attempts), which saturates the recorder (4096 entries — the plan's cited 256 is a stale in-file comment, not the compiled value) regardless of contents. The address-0 composition this test actually checks is unaffected: the recorder's documented saturation drops only the tail and keeps the prefix, which is all `first_recorded_address()` needs. Full detail in `201-01-SUMMARY.md`.
 - [Phase 195 UAT]: The operator ruled PASS on the phase's one open judgment call, choosing disposition (a) — WR-01 (`require_page_alignment` accepts a negative address string as falsely "aligned") is accepted as known debt rather than fixed in-phase. Grounds recorded at the checkpoint: `parse_address` does not reject negatives and Python's `%` folds the sign, so `-256 % 256 == 0` reads as aligned; the firmware does not catch it either, because `simple_strtoul` consumes only `[0-9]` and returns 0 for `-256` and `-1` (confirmed by compiling the function verbatim). The write therefore lands silently at address 0, which is page-aligned for a length already proven to be a whole number of pages — a wrong-destination defect, not a partial-page-destruction one, and outside all four of the phase's success criteria, which concern alignment and length rather than address sign. Filed as `.planning/todos/pending/2026-09-16-reject-negative-write-start-address.md` and recorded in `195-SECURITY.md` under "Related Findings Outside This Register". 195-VERIFICATION.md moves from `human_needed` to `passed`, making the phase 4/4.
 - [Phase 193 Plan 01]: Built the GATE-01 `QUERY` variable with a quoted heredoc (`<<'SQL'`) instead of a single-quoted bash string with `'"'"'`-escaped embedded quotes. The escaped form breaks apart literal substrings like `installer IN ('pip', 'uv')` in the committed script's own bytes, and the plan's acceptance criteria grep directly against those bytes. The heredoc preserves the SQL's own quoting exactly as written, with no bash-level escaping artifacts in the file.
 - [Phase 193 Plan 01]: Split the GATE-01 script's curl-flag list and SQL trigger expression across multiple physical lines rather than compacting them onto one. The plan's verify block counts matching lines, not occurrences, for required substrings (`user=play`, `--fail-with-body`, `toUInt32OrZero`, and each clause of the trigger predicate); packing several onto one line would have undercounted them without changing anything the SQL or curl actually does.
@@ -3126,6 +3222,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
+| Phase 201 P03 | 2 tasks | ~65min | Tracer: `mem_util_blank_check_region`/`mem_util_operation_end` in `memory.cpp`, write-init call site scoped at `eprom.cpp:145`, branch-inventory golden re-derived in the same commit; D-16.1 flipped RED (`af47bf4`) -> PASS (`76fd3c7`); native 237/237 both envs; host `region_length` emitted for write/verify, `WriteInitPreflightChip` taught the region, 5 new host legs; host suite 2106 passed, coverage 85.42%; leonardo flash 23932/32768 B (4740 B bootloader-guard margin); coordinator spot-check found the golden re-derivation had dropped `class` on all 22 rows and collapsed 4 `reason` strings, repaired in a follow-up commit with a 0-diff field-by-field comparison; firestarter_fw@76fd3c7+@0c2eac7, firestarter_app@18f2088+@5b3fe45, meta@fa6b500f+@ec5caa9d+@e052b3c8 |
+| Phase 201 P02 | 2 tasks | ~65min | `region-end` wire field landed inert on both sides (uint32_t region_end, JSON_KEY_REGION_END), reset per command; D-16.1 regression test authored, run, and observed RED against unmodified firmware, negative control GREEN; `pio run` 3/3 SUCCESS, native 235/235 unchanged + 1 deliberate RED; app 55 passed, ruff clean; firestarter_fw@666195b, @af47bf4, firestarter_app@a36b9ec, meta@7fcdbe5a |
 | Phase 193 P02 | 2 tasks | ~7min | Seed `trigger_condition` rewritten to a parse-safe folded scalar carrying D-09's threshold (fixed share >= 90% AND `2.0.7` downloads <= 10, 90-day window); prose corrected to 2.0.9, past tense, no `2.0.8`; `.gitmodules` checklist leg scoped to `origin/main` vs `origin/beta`; `extractFrontmatter` confirms 4 keys, `status: dormant`; meta@ac30e68b, @4a0c8dbd |
 | Phase 193 P01 | 2 tasks | ~22min | GATE-01 adoption instrument `tools/adoption/pypi_version_share.sh` built and run live against the ClickHouse public PyPI dataset; live reading 17 fixed (>= 2.0.9) / 116 at-risk (2.0.7) / 12.8% share, `TRIGGER: NOT MET` against the 90%/<=10 threshold; threshold boundary, empty-window and server-error paths each proven at the layer where they can be proven; caveat block carries the `necessary condition, never a sufficient one` framing on every run; meta@352841a9, @9c94669b |
 | Phase 188 P08 | 2 tasks | ~20min | catalog/codegen.py's five citations stripped at the meta canonical copy (LCAT-03, post-Phase-7, LCAT-05, LCAT-02+LCI-04 x2), synced to both sub-repos; all three copies hash-identical and citation-free; messages.h/messages.py proven byte-unchanged by git diff (not the sync's own tautological check); second sync a true no-op; firmware 360 passed / host 2129 passed; meta@b1db45f5, firestarter@6c4d2e2, firestarter_app@f36113b |
@@ -3565,8 +3663,14 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-17T14:32:31.328Z
-**Stopped at:** Phase 196 context gathered
+**Last session:** 2026-09-20T12:00:00.000Z
+**Stopped at:** v1.40 shipped as PRs — firestarter#91, firestarter_app#72, firestarter_fw#70, all to beta, all unmerged; merge decision and the three held issue answers outstanding
+**Was (superseded, retained for continuity):** Phase 201 complete — all phases complete
+**Was (superseded, retained for continuity):** Completed 201-04-PLAN.md
+**Was (superseded, retained for continuity):** Completed 201-03-PLAN.md
+**Was (superseded, retained for continuity):** Completed 201-02-PLAN.md
+**Was (superseded, retained for continuity):** Completed 201-01-PLAN.md
+**Was (superseded, retained for continuity):** Phase 201 context gathered
 **Was (superseded, retained for continuity):** Phase 194 context gathered
 **Was (superseded, retained for continuity):** Phase 193 context gathered
 **Was (superseded, retained for continuity):** Completed 188-08-PLAN.md — tools/catalog/codegen.py stripped of its five planning citations at the meta canonical copy, synced to both sub-repos, all three copies hash-identical and citation-free, both generated artifacts (messages.h/messages.py) proven byte-unchanged by a version-control diff, second sync a true no-op, firmware 360 passed / host 2129 passed
@@ -3647,7 +3751,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/milestones/v1.39-phases/196-adoption-instrument-disposition/196-CONTEXT.md
+**Resume file:** None
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing

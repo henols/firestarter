@@ -2,7 +2,7 @@
 created: 2026-08-19T00:00:00Z
 title: "vcc == 5500 high-margin verify-rail group (28 chips) reports the wrong operating voltage"
 area: host
-resolves_phase: unassigned
+resolves_phase: 198
 files:
   - firestarter_app/tools/build_db.py
   - .planning/phases/148-numeric-database-values-the-at28c-vcc-decode/148-DB-DIFF.md

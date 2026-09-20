@@ -1532,3 +1532,116 @@ it — accepted as debt and filed by name.
 - The expensive phases were the two with silicon legs (194 at 7 plans, 195 at 5), not the meta tidy
   (196 at 3) — but 196 consumed disproportionate planning effort for its size, because its single
   proof expression had to survive six exclusion classes and its own terms.
+
+## Milestone: v1.40 — Program-Parameter Fidelity
+
+**Closed:** 2026-09-20 (closed, not shipped)
+**Phases:** 5 (197–201) | **Plans:** 26 | **Tasks:** 65 | 19/24 v1 requirements | `override_closeout`
+
+### What Was Built
+
+A route by which a datasheet value can beat an `infoic.xml` decode without a line of part-specific
+code in the generator — `tools/datasheet_overrides.json`, holding only changed fields, each naming
+its datasheet and the value it replaces, behind a loader that fails closed on an unknown part, an
+unknown field, or an override that has become a no-op. All three of `build_db.py`'s part-specific
+hardcodes went through it or away: `NMOS_TRUE_VPP_MV` migrated as six `UNSOURCED` entries proven
+byte-identical, `_AT28C_DIP24_NAMES` and `_ETYPE_RELABEL` deleted as defects. The `VPP_MV` `0xF0`
+mask was completed and `VCC_VOLTAGES` filled out from upstream, with `DECODE-NOTES.md` § 9 recording
+that the voltage word's nibbles select a programmer rail index rather than a chip requirement. The
+rails were measured on the bench (17380 mV drop path, 22140 mV direct VPE) and the shortfall for ten
+algorithm `0x07` rows removed by routing in firmware. `firestarter info` now states an elevated
+programming VCC instead of silently dropping it, on 284 of 746 rows. And backlog 999.44's firmware
+half landed: a `region-end` key that lets a write into a blank region of a non-blank, non-erasable
+part succeed.
+
+### What Worked
+
+**Building the mechanism first and proving it with exactly one value.** Phase 197's tracer plan moved
+a single number — `MBM27C1000`'s pulse, 100 µs → 500 µs — all the way from the override file to the
+generated database, and the regeneration diff against the fork point was **one line pair**. Every
+later correction in 198, 199 and 200 rode a route that had already been proven end to end, which is
+why three phases could write into the same file without coordinating.
+
+**Proving a move by byte-identity rather than by review.** The `NMOS_TRUE_VPP_MV` migration and the
+`_PGM_ON_PIN31_MAX_SIZE` derivation were both claimed to change nothing, and both were proved the
+strong way: `chip_database.json` does not appear in `git diff <base> --name-only` at all. A reviewer
+reading a diff cannot make that claim; the absence of the file from the diff can.
+
+**Measuring the rails instead of reasoning about them.** `RURP_VPP_CEILING_MV` was a regulator
+figure. Thirty rows were marked `supported` against it. One bench session with a multimeter replaced
+it with a socket measurement, and that measurement then drove a firmware routing decision that
+removed the shortfall entirely for ten rows — a better outcome than the warning the milestone's own
+D-4 had planned for. The decision reads **no voltage at all**, which is what makes it trustworthy on
+a rig whose ADC is known to be ~+7.6 % out.
+
+**Refusing a no-op override.** Phase 197-05 was offered a `MBM27C4001` entry that matched what the
+decode already produced, and the loader rejected it by design. A correction file that accepts no-ops
+stops being readable within a year.
+
+**Watching the regression test fail before believing it.** Plan 201-02 wrote the D-16.1 case, ran it
+against unmodified firmware, watched it go RED, and **committed the transcript**. Plan 201-03 then
+turned it GREEN. Nothing in that sequence rests on anyone's assurance that the test was capable of
+failing.
+
+### What Was Inefficient
+
+**A requirement was orphaned across eight plans and nobody noticed until verification.** OVR-03 is
+declared in two plans' frontmatter, both of which defer it, and claimed by none. A summary also
+asserted it appeared in a third plan's frontmatter, and it did not. The phase's own verifier caught
+it. Nothing in the plan-checker tests whether every declared requirement has a plan that actually
+claims it.
+
+**A Critical code-review finding was recommended for filing and then not filed.** Phase 200's review
+raised CR-01, the verification discussed it at length and explicitly recommended a backlog entry, and
+the phase closed with no entry anywhere. This close filed it. The gap is structural: a verification
+document can *recommend* a filing, but nothing in the close path reads those recommendations back.
+
+**A comment deletion was under-reported by six times.** Commit `11351e0` removed 18 comment lines
+from `build_db.py`; its summary reported three. The rationale reached neither the commit message nor
+`.planning/`. All 18 were rescued verbatim afterwards — including two decode-bug records and the
+upstream anchor the `MINIPRO_XML_URL` pin depends on — but only because someone re-read the diff.
+
+**The first branch-inventory golden re-derivation was corrupted by a predicate-key collision** and
+had to be redone with position-based matching inside the same phase.
+
+### Patterns Established
+
+- **An override file that holds only deltas, each with its provenance and the value it replaces.**
+  Sibling to `extra_chips.json`, which adds chips; this one corrects them. Small enough to read.
+- **Delete a hardcode as a defect where it is one; migrate it only where it is a correction.** The
+  difference decides whether a wrong answer survives in a tidier place.
+- **`UNSOURCED` as a first-class signed value.** A correction with no datasheet behind it says so, is
+  counted, and is proved load-bearing by a planted mutation rather than assumed.
+- **Decide routing on path capability, never on a voltage reading**, on a rig whose ADC error is a
+  known open backlog item.
+- **A wire field that is re-entered per chunk carries an absolute address, not a length.**
+- **Hold a public answer until a version exists to name in it.** The test is mechanical:
+  `git branch -r --contains HEAD`.
+
+### Key Lessons
+
+- **A fleet-scale fault arrives wearing one chip's name.** All three reports named a single part.
+  All three were classes — 217 rows, 563 rows, 30 rows. The first question on a parameter report
+  should be "how many rows share this value", and it is one command.
+- **A ceiling that was never measured is not a ceiling.** `RURP_VPP_CEILING_MV` marked 30 rows
+  `supported` on a regulator datasheet figure. One afternoon with a multimeter settled it.
+- **"The test suite enforces it" is not the same as "the generator enforces it."** OVR-03 stayed
+  Pending on exactly that distinction, and the distinction is real: the documented regen command does
+  not run the test suite.
+- **A better fix than the one the decision authorised does not satisfy the requirement that
+  authorised it.** RAIL-04's routing is strictly better than RAIL-03's warning for ten rows, and
+  RAIL-03 is still unmet. Recording both is the honest outcome; collapsing them would have bought a
+  clean 24/24 with a false claim in it.
+- **A held answer needs one release checklist, not three.** The three drafts converged on a single
+  consolidated "Held-pending deferral" section in `197-GH70-ANSWER.md`. Had each carried its own,
+  shipping would have needed someone to find all three.
+
+### Cost Observations
+
+- 170 meta commits, 37 host, 15 firmware across the milestone range — the largest meta figure of any
+  recent milestone, reflecting five phases of dense planning artifacts rather than five phases of code.
+- Two bench sessions (199 rail measurement, 201 silicon confirmation), both on one shield revision
+  and one controller.
+- Phase 197 was the expensive one at 8 plans, and correctly so — it built the mechanism the other
+  four phases spent single plans using. Phase 200 was the cheapest at 3 plans and produced the one
+  operator rejection, which cost a re-verification and improved the result.
