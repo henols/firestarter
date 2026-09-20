@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.41
 milestone_name: Verification Moves to the Host
-current_phase: 202
-current_phase_name: One comparison engine, on the host
-status: executing
-stopped_at: "Plan 202-05 executed and committed, closing Phase 202 (5/5 plans complete). check_eprom_blank rewritten onto COMMAND_READ sharing verify_eprom's new _drive_region_compare helper (D-02); returns int 0/1/2 with the SRAM/FRAM short-circuit now refusing (D-12). verify gained -s/--size; blank gained -a/--address, -s/--size, --full (CMP-08), spelled exactly as read spells them. D-17's region resolution and its two pre-wire refusals live in the CLI tier, before either command opens the serial port; map_typed_errors byte-identical (D-11). A wire-level test proves across four runs that no composed command dict ever carries ordinal 4 or 6 (CMP-01, CMP-02, criterion 1); the exit-code matrix is proven for both commands with two distinct routes to exit 2 each (CMP-07). consistency_check_eprom's stale sole-int-returner docstring claim repaired. WINDOWS.md id 1 reconciled and marked fixed. All eight CMP requirements Complete. App commits 92f9cbe, ee0743c; meta gitlink 2ff49d6c, c541ef07. Full suite green (2211 passed), mypy full-CI-scope unchanged at 32 errors, ruff clean, 36/36 snapshots. See 202-05-SUMMARY.md. Next: /gsd-plan-phase 203."
-last_updated: "2026-09-20T19:30:00.000Z"
+current_phase: 203
+current_phase_name: The write guard moves up a layer
+status: planning
+stopped_at: Phase 202 complete, ready to plan Phase 203
+last_updated: "2026-09-20T20:11:14.000Z"
 last_activity: 2026-09-20
-last_activity_desc: "Plan 202-05 executed (auto x3), closing Phase 202: blank joins the one comparison engine, region options (-a/-s/--full) and D-17's pre-wire refusals land on both verify and blank, and the exit-code matrix plus the never-sends-either-ordinal wire proof close out CMP-01/02/07/08. All eight CMP requirements now Complete; Phase 202 is 5/5 plans done."
+last_activity_desc: "Phase 202 CLOSED — verified 38/38 must-haves, 0 behavior-unverified, 0 human-verification items; transitioned to Phase 203. One streamed comparison engine (firestarter/compare.py, import-pure) now backs both verify and blank on the host: both compose COMMAND_READ only and a wire-level test proves neither retired ordinal (4 blank-check / 6 verify) is ever sent, while the firmware still carries both. All eight CMP requirements Complete. Code review (202-REVIEW.md) found 1 critical: _region_refusal_exit_code did not refuse an out-of-range --address when --size was omitted, letting a malformed region reach the wire with a negative length; fixed in firestarter_app a0855b9 with three test legs including a negative control at memory-size - 1, gitlink advanced. CI-parity gates green under Python 3.11: 2216 passed, 36 snapshots, coverage 85.80%, ruff check and ruff format clean. Review WR-01/WR-02/IN-01 remain open and block no must-have (WR-02 is deferred to Phase 206 in-code)."
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 5
   completed_plans: 5
-  percent: 100
+  percent: 17
 ---
 
 # Project State
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 202 (One comparison engine, on the host) — COMPLETE
-Plan: 5 of 5 complete
-Status: Phase complete
-Last activity: 2026-09-20 - Plan 202-05 (auto x3) executed, closing Phase 202: `check_eprom_blank` rewritten onto `COMMAND_READ`, sharing a new `EpromOperator._drive_region_compare` helper with `verify_eprom` (D-02) rather than carrying a second accumulator drive; returns an int (0 blank / 1 not blank / 2 refusal) with the SRAM/FRAM short-circuit now refusing (D-12) instead of returning a false "not blank". `verify` gained `-s/--size`; `blank` gained `-a/--address`, `-s/--size`, `--full`, spelled exactly as `read` spells them (CMP-08). D-17's region resolution and its two pre-wire refusals (an explicit size shorter than the input file; a region running past the chip's end) live in the CLI tier, fired before either command opens the serial port; `map_typed_errors` is byte-identical (D-11). A wire-level test class proves across four runs (clean/mismatching verify, clean/non-blank blank) that no composed command dict ever carries ordinal 4 or 6 and every one carries ordinal 1 (CMP-01, CMP-02, phase success criterion 1). The exit-code matrix (0/1/2, two distinct routes to 2 per command, each distinguished from a Click usage error by its message) is proven for both commands (CMP-07). `consistency_check_eprom`'s stale "only int-returning method" docstring claim is repaired. 202-01's WINDOWS.md deviation (id 1, the provisional read-bounding reuse) is reconciled by the real `--size` option and marked fixed. All eight CMP requirements (CMP-01…CMP-08) now Complete. App commits `92f9cbe`, `ee0743c` (meta gitlink `2ff49d6c`, `c541ef07`), plus this plan's own metadata commit. Full suite green (2211 passed), mypy full-CI-scope unchanged at 32 errors, mypy strict-island clean, ruff clean, 36/36 snapshots (verify/blank `--help` regenerated). See `202-05-SUMMARY.md`.
-Next: **Plan Phase 203** — `/gsd-plan-phase 203` (The write guard moves up a layer). Also run `/gsd-verify-work 202`.
+Phase: 203 — The write guard moves up a layer
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-20 — Phase 202 complete, transitioned to Phase 203
+Next: **Plan Phase 203** — `/gsd-plan-phase 203` (The write guard moves up a layer). Phase 202 needs no UAT: its verification returned 0 human-verification items (no bench hardware in scope, `Bench: no` in the v1.41 phase table).
 
 ## Roadmap Summary (v1.38)
 
@@ -3688,7 +3688,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-20T19:30:00.000Z
-**Stopped at:** Completed 202-05-PLAN.md, closing Phase 202 (5/5 plans) — check_eprom_blank joins the one comparison engine (COMMAND_READ, shared _drive_region_compare, int 0/1/2 verdict, D-12 refusal for SRAM/FRAM), verify/blank gain -a/-s/--full region options spelled as read spells them (CMP-08), D-17's region resolution and pre-wire refusals live in the CLI tier before the port opens, map_typed_errors byte-identical (D-11), a wire-level test proves neither ordinal 4 nor 6 is ever composed across four runs (CMP-01/02, criterion 1), the exit-code matrix is proven for both commands (CMP-07), and consistency_check_eprom's stale sole-int-returner claim is repaired. All eight CMP requirements now Complete. Full suite green (2211 passed), mypy unchanged at 32 errors, ruff clean, 36/36 snapshots; no unresolved deviations
+**Stopped at:** Phase 202 complete, ready to plan Phase 203
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
 **Was (superseded, retained for continuity):** Completed 202-03-PLAN.md — classify_fingerprint delegates to classify_streamed via a CompareAccumulator (D-02 enforced), _diff_offsets retired, D-03 12-row corpus proves whole-Fingerprint equality against a transcribed batch reference, finalise() always classifies, render_compare_lines gains the D-14 bucket line; test count 2144->2180, full suite green, mypy unchanged at 32 errors, ruff clean; no deviations
 **Was (superseded, retained for continuity):** Completed 202-02-PLAN.md — peak-allocation ceiling and runtime gates now assert CMP-03, CMP-05 engine half (coalescing/ordering/cap-honesty) completed; test count 12->33, full suite 2144 passed, mypy unchanged at 32 errors; one disclosed deviation (ceiling test traces 128 KiB not 512 KiB, see Decisions)
