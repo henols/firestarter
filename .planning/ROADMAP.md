@@ -427,7 +427,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 201-04-PLAN.md — Bound write and verify on the operation's end at `_process_incoming_data`'s two sites and the write-loop progress denominator, with the one-payload-meaning contract restated in the progress gate and a second golden re-derivation in the same commit
+- [x] 201-04-PLAN.md — Bound write and verify on the operation's end at `_process_incoming_data`'s two sites and the write-loop progress denominator, with the one-payload-meaning contract restated in the progress gate and a second golden re-derivation in the same commit — complete 2026-09-20, `cb6b434`
 
 **Wave 5** *(blocked on Wave 4)*
 

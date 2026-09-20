@@ -5,15 +5,15 @@ milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 
 current_phase: 201
 current_phase_name: A partial write is gated on its own region
 status: executing
-stopped_at: Completed 201-03-PLAN.md
-last_updated: "2026-09-20T01:00:00.000Z"
+stopped_at: Completed 201-04-PLAN.md
+last_updated: "2026-09-20T02:00:00.000Z"
 last_activity: 2026-09-20
-last_activity_desc: Completed 201-03-PLAN.md (tracer) — region-scoped write-init blank check wired end to end, D-16.1 flipped from RED (201-02) to PASS, host region-end emission + fake-chip region awareness landed
+last_activity_desc: Completed 201-04-PLAN.md — write and verify bounded on op_end at _process_incoming_data's two sites and the write-loop progress denominator; progress gate's one-payload-meaning contract restated; branch-inventory golden re-derived a second time
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 26
-  completed_plans: 22
+  completed_plans: 23
   percent: 20
 ---
 
@@ -236,9 +236,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 201 (A partial write is gated on its own region) — EXECUTING
-Plan: 4 of 6
-Status: Plan 201-03 (tracer) complete (firestarter_fw `76fd3c7`, firestarter_app `18f2088`/`5b3fe45`, meta `fa6b500f`) — plan 201-04 next
-Last activity: 2026-09-20 — Completed 201-03-PLAN.md: write-init blank check scoped to its own region end-to-end (BLANK-01), D-16.1 flipped RED->PASS, branch-inventory golden re-derived in the same commit, host region-end emission + fake-chip region awareness landed (BLANK-03)
+Plan: 5 of 6
+Status: Plan 201-04 complete (firestarter_fw `01db51b`/`cb6b434`, meta `13981bed`) — plan 201-05 next
+Last activity: 2026-09-20 — Completed 201-04-PLAN.md: _process_incoming_data's done-condition and out-of-range refusal (shared by eprom_write/eprom_verify) and the write-loop MSG_DATA_PROGRESS denominator now bound on op_end (mem_util_operation_end) instead of handle->mem_size (BLANK-01/D-06/D-07); the one-payload-meaning contract restated in test_progress_emission_is_leonardo_only.py's Coverage 6; branch-inventory golden re-derived a second time this phase, matched by POSITION (not by the colliding predicate/keyed_on/tier key that corrupted 201-03's first re-derivation)
 
 ## Roadmap Summary (v1.38)
 
@@ -2144,6 +2144,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 201 Plan 04]: The branch-inventory golden's second re-derivation matched old sites to live sites BY POSITION (index i of old zipped with index i of live), not by rebuilding the `(predicate, keyed_on, tier)` dict-key lookup RESEARCH.md's own script uses — that key is exactly what collided and silently corrupted `class`/`reason` in plan 201-03's first re-derivation (`76fd3c7`, repaired in `0c2eac7`). Positional correspondence was verified safe FIRST (zero `(predicate, keyed_on, tier)` mismatches between old[i] and live[i] for all 22 i, confirming no site was added, removed or reordered by the op_end insertion) before being trusted to carry `class`/`reason` forward. A field-by-field diff against the parent commit then confirmed 0 non-line diffs across all 22 rows, with only 8 rows' `line` shifting (all below the insertion point) and the four legitimate top-level fields (`blob_shas`, `recorded_at_head`, `counts`, `recorded_by`) differing.
+- [Phase 201 Plan 04]: `op_end` (`mem_util_operation_end(handle)`) is declared inside the SAME `#ifndef SERIAL_ON_IO` guard as `last_emit_ms` in `eprom_internal_write_execute_body`, rather than unconditionally — it is read only inside the guarded emit block, and an unreferenced local on a build that defines `SERIAL_ON_IO` would be an unused-variable warning against the AVR zero-warning policy, exactly the reasoning the file's own pre-existing comment already gives for `last_emit_ms`.
 - [Phase 201 Plan 03]: Coordinator spot-check found that the branch-inventory golden re-derivation in `76fd3c7` silently dropped `class` on all 22 rows and collapsed 4 `reason` strings (lines 52, 132, 158, 502) onto a wrong sibling's text, because the re-derivation script's old-reason lookup keyed on `(predicate, keyed_on, tier)` collided for two site pairs sharing identical predicate text, and the extractor's own output never carried `class` at all. `test_protocol_branch_inventory.py` only asserts `predicate`/`reason` truthiness, never `class` or reason content, so the corrupted golden passed the gate. Repaired in `firestarter_fw@0c2eac7` (meta gitlink `ec5caa9d`): restored `class` and the 4 displaced `reason` strings verbatim from `76fd3c7^`, matched by line; field-by-field comparison confirmed 0 diffs on `line`/`predicate`/`keyed_on`/`tier`/`class`/`reason` across all 22 rows, with only the four legitimate fields (`blob_shas`, `recorded_at_head`, `counts`, `recorded_by`) differing from the parent. `201-03-SUMMARY.md` amended (meta `e052b3c8`) to document what actually happened.
 - [Phase 201 Plan 03]: `test_chip_test_uv_slot_write.py`'s `test_the_double_refuses_a_non_blank_write_without_the_flag` reseeded its non-blank byte INSIDE the write's target region instead of outside it. That leg's shared fixture (`_seeded_m27c512_double`, used by legs 3-6 for the witness/`FLAG_SKIP_BLANK_CHECK` policy) deliberately seeds outside the target region — correct for the whole-device check this phase fixes, but region-scoping now reads that region as genuinely blank and the write succeeds, so the leg stopped proving anything. Rewrote only this one test's body to seed its own double inside the target region; the shared fixture is untouched. None of the plan's six enumerated `WriteInitPreflightChip` reference lines were edited.
 - [Phase 201 Plan 03]: The plan's literal planted-mutation command (`sed` changing `_is_blank`'s default `end` value from `None` to `0`) cannot detect a regression, because the mandated implementation always calls `_is_blank(start, end)` with two explicit arguments — the default is dead code from that call site. Measured: `planted_rc=0`, all 49 legs still passed. Used an equivalent, stronger mutation instead (reverting the comparison body to the OLD whole-buffer form), which correctly drove the suite non-zero (`planted_rc=1`) and was confirmed restored.
@@ -3578,8 +3580,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-20T01:00:00.000Z
-**Stopped at:** Completed 201-03-PLAN.md
+**Last session:** 2026-09-20T02:00:00.000Z
+**Stopped at:** Completed 201-04-PLAN.md
+**Was (superseded, retained for continuity):** Completed 201-03-PLAN.md
 **Was (superseded, retained for continuity):** Completed 201-02-PLAN.md
 **Was (superseded, retained for continuity):** Completed 201-01-PLAN.md
 **Was (superseded, retained for continuity):** Phase 201 context gathered
