@@ -4,17 +4,17 @@ milestone: v1.41
 milestone_name: Verification Moves to the Host
 current_phase: 202
 current_phase_name: One comparison engine, on the host
-status: planned
-stopped_at: "Phase 202 planned — 5 plans in 5 waves (202-01..202-05), 15 tasks, committed 592a6d6d. Plan-checker: VERIFICATION PASSED, no blockers. Requirements 8/8, decisions 17/17. Next: /gsd-execute-phase 202. NOTE 202-01 is autonomous:false and halts on the D-10 exit-code checkpoint. v1.40 is still unmerged: PRs henols/firestarter#91, henols/firestarter_app#72, henols/firestarter_fw#70."
-last_updated: "2026-09-20T14:25:10.119Z"
+status: executing
+stopped_at: "Plan 202-01 (tracer) executed and committed. `firestarter verify` reads with COMMAND_READ and compares on the host via firestarter/compare.py, against firmware that still carries COMMAND_VERIFY. D-10 exit-code checkpoint confirmed (confirm-d10). App commits 7d084a2, 6df39dc; meta gitlink 27e112b4. Full suite green (2124 passed), mypy full-CI-scope unchanged at 32 errors. See 202-01-SUMMARY.md. Next: /gsd-execute-phase 202 for 202-02 (wave 2). v1.40 is still unmerged: PRs henols/firestarter#91, henols/firestarter_app#72, henols/firestarter_fw#70."
+last_updated: "2026-09-20T16:19:51.000Z"
 last_activity: 2026-09-20
-last_activity_desc: "Phase 202 plan-phase. Researcher (202-RESEARCH.md, 5f14bd1b) and pattern mapper (202-PATTERNS.md) ran, then gsd-planner wrote 5 plans (592a6d6d) and gsd-plan-checker returned VERIFICATION PASSED first iteration. Research corrected two CONTEXT.md premises: _main_phase_read_data discards its callback return and acks unconditionally, so D-06 abort needed a new abort_predicate seam (202-04); and a naive per-byte accumulator costs 19.8s at 512KB, gated in 202-02. Planner also caught an int-return truthiness inversion at chip_test.py:2691 and :3328 that no source artifact had flagged."
+last_activity_desc: "Plan 202-01 executed (tracer): host-side streaming compare engine (firestarter/compare.py), verify_eprom rewritten onto COMMAND_READ with D-10's 0/1/2 exit-code contract, dev-test dispatch adapted to the int return. Two post-approval repairs landed before this summary: retired the now-vacuous test_region_end_emitted_on_verify (COMMAND_VERIFY is dead on the verify path), and dropped the inert region_length= kwarg verify_eprom passed to _operation_context (discarded by _setup_operation's cmd guard once verify composes COMMAND_READ)."
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 5
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 20
 ---
 
 # Project State
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 202 (One comparison engine, on the host) — READY TO EXECUTE
-Plan: — (Phase 202 planned: 5 plans in 5 waves, 0 of 5 executed)
-Status: Ready to execute
-Last activity: 2026-09-20 - Phase 202 planned. 5 plans (202-01..202-05), 15 tasks, committed 592a6d6d; plan-checker returned VERIFICATION PASSED with no blockers.
-Next: **Execute Phase 202** — `/gsd-execute-phase 202`. 202-01 is `autonomous: false` and halts on the D-10 exit-code `checkpoint:decision`; do not run it under `--auto`.
+Phase: 202 (One comparison engine, on the host) — EXECUTING
+Plan: 202-01 of 5 complete (202-02..202-05 remain, waves 2-5, each blocked on the prior wave)
+Status: Executing
+Last activity: 2026-09-20 - Plan 202-01 (tracer) executed: `firestarter verify` reads the chip with COMMAND_READ and compares on the host through the new `firestarter/compare.py` streaming engine, against firmware that still carries `COMMAND_VERIFY`. D-10 exit-code checkpoint confirmed (`confirm-d10`); app commits `7d084a2`, `6df39dc` (meta gitlink `c018371a`, `27e112b4`). Full suite green (2124 passed), mypy full-CI-scope unchanged at 32 errors. See `202-01-SUMMARY.md`.
+Next: **Execute Phase 202, plan 202-02** — `/gsd-execute-phase 202`. Wave 2: bounded memory, bounded runtime, coalescing and the honest range cap.
 
 ## Roadmap Summary (v1.38)
 

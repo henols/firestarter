@@ -268,7 +268,7 @@ and 205 each own their own share; neither may defer it to the other.
 Plans:
 **Wave 1**
 
-- [ ] 202-01-PLAN.md — Tracer: `verify` reads the chip and compares on the host, end to end (wave 1, has the D-10 exit-code checkpoint)
+- [x] 202-01-PLAN.md — Tracer: `verify` reads the chip and compares on the host, end to end (wave 1, has the D-10 exit-code checkpoint)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
