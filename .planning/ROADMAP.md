@@ -266,10 +266,24 @@ and 205 each own their own share; neither may defer it to the other.
 **Plans:** 5 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 202-01-PLAN.md — Tracer: `verify` reads the chip and compares on the host, end to end (wave 1, has the D-10 exit-code checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 202-02-PLAN.md — Bounded memory, bounded runtime, coalescing and the honest range cap (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 202-03-PLAN.md — One divergence implementation: `classify_fingerprint` delegates, plus the bucket line (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 202-04-PLAN.md — Break the read in flight, and answer success criterion 5 in writing (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 202-05-PLAN.md — `blank` joins the engine, region options and refusals, exit-code closure (wave 5)
 
 **Success criteria**:

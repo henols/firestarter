@@ -4,15 +4,15 @@ milestone: v1.41
 milestone_name: Verification Moves to the Host
 current_phase: 202
 current_phase_name: One comparison engine, on the host
-status: planning
-stopped_at: "Phase 202 context gathered — 202-CONTEXT.md written and committed (17 decisions). Next: /gsd-plan-phase 202. CMP-04 must be amended in REQUIREMENTS.md before planning (202-CONTEXT.md D-15). v1.40 is still unmerged: PRs henols/firestarter#91, firestarter_app#72, firestarter_fw#70 all target beta and the merge stays operator-gated."
-last_updated: "2026-09-20T13:11:23.370Z"
+status: planned
+stopped_at: "Phase 202 planned — 5 plans in 5 waves (202-01..202-05), 15 tasks, committed 592a6d6d. Plan-checker: VERIFICATION PASSED, no blockers. Requirements 8/8, decisions 17/17. Next: /gsd-execute-phase 202. NOTE 202-01 is autonomous:false and halts on the D-10 exit-code checkpoint. v1.40 is still unmerged: PRs henols/firestarter#91, henols/firestarter_app#72, henols/firestarter_fw#70."
+last_updated: "2026-09-20T14:25:10.119Z"
 last_activity: 2026-09-20
-last_activity_desc: "Phase 202 discuss-phase. Four gray areas discussed; 202-CONTEXT.md and 202-DISCUSSION-LOG.md committed as 4e6db1dd. The engine goes in a new import-light firestarter/compare.py as a streaming accumulator that classify_fingerprint delegates to, pinned by a corpus equality test so DEVTEST-03 cannot drift in Phase 206. Success criterion 5 is answered AFFIRMATIVELY and against the roadmap's stated premise: a mid-stream abort works inside the existing protocol with no firmware change, because the host can simply stop acking — op_wait_for_ack times out in 1000 ms and loop() then runs command_done(), which zeroes the registers and returns to CMD_IDLE, so the port is left clean on the error path too. The saving is therefore temporal, not merely diagnostic, and CMP-F1 is cheaper than filed. Phase 202 stays app-only and bench-no. Exit codes become 0/1/2 on verify and blank ONLY, following diff(1) and the in-repo consistency_check_eprom precedent; SRAM/FRAM blank becomes a 2 refusal rather than a 1 'not blank'. Output is one line per mismatching range carrying range and byte count with NO byte values, plus one bucket summary line — an operator decision that contradicts CMP-04, so D-15 requires CMP-04 be amended in REQUIREMENTS.md before planning rather than closed as unmet. Deferred: a one-line DONE-based clean stop for Phase 204, and CLI-wide exit-code consistency for the other ~20 commands."
+last_activity_desc: "Phase 202 plan-phase. Researcher (202-RESEARCH.md, 5f14bd1b) and pattern mapper (202-PATTERNS.md) ran, then gsd-planner wrote 5 plans (592a6d6d) and gsd-plan-checker returned VERIFICATION PASSED first iteration. Research corrected two CONTEXT.md premises: _main_phase_read_data discards its callback return and acks unconditionally, so D-06 abort needed a new abort_predicate seam (202-04); and a naive per-byte accumulator costs 19.8s at 512KB, gated in 202-02. Planner also caught an int-return truthiness inversion at chip_test.py:2691 and :3328 that no source artifact had flagged."
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
+  total_plans: 5
   completed_plans: 0
   percent: 0
 ---
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 202 — One comparison engine, on the host (not yet planned)
-Plan: — (0 of 6 phases planned)
-Status: Roadmap approved; ready to discuss or plan Phase 202
-Last activity: 2026-09-20 - Completed quick task 260920-ib5: README carried to meta `main` verbatim from `beta`; PR #93 open, unmerged
-Next: **Phase 202 discussion** — `/gsd-discuss-phase 202`
+Phase: 202 (One comparison engine, on the host) — READY TO EXECUTE
+Plan: — (Phase 202 planned: 5 plans in 5 waves, 0 of 5 executed)
+Status: Ready to execute
+Last activity: 2026-09-20 - Phase 202 planned. 5 plans (202-01..202-05), 15 tasks, committed 592a6d6d; plan-checker returned VERIFICATION PASSED with no blockers.
+Next: **Execute Phase 202** — `/gsd-execute-phase 202`. 202-01 is `autonomous: false` and halts on the D-10 exit-code `checkpoint:decision`; do not run it under `--auto`.
 
 ## Roadmap Summary (v1.38)
 

@@ -1134,7 +1134,10 @@ commented out and inert.
 | A4 | `firestarter.compare` should join the mypy strict list from birth | Question 4 | **Open — D-01 does not decide it.** The `sdp_honesty` precedent (verified in `pyproject.toml`'s own comment) favours joining. Risk if skipped: the module is never type-gated, and adding it later means fixing accumulated errors at once |
 | A5 | The corpus can reach the `transport` bucket by calling `classify_fingerprint(repeat_divergent=True)` directly | Question 3 | Verified that `test_fp_transport_scattered_repeatable` does exactly this. CMP-F2 records that the bucket is unreachable *in production* (`_dispatch_multi_run` always runs with `runs=1`), which does not block a direct-call corpus case |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> All four were disposed of during planning (5 plans, commit `592a6d6d`). Each carries its
+> resolution and the plan task that owns it. Nothing here is still open.
 
 1. **How does the engine signal "stop acking" through `_main_phase_read_data`?**
    - What we know: the callback's return value is discarded (`eprom_operations.py:909`) and
@@ -1144,22 +1147,37 @@ commented out and inert.
    - Recommendation: the planner should decide this explicitly in a task, not leave it to an
      executor. Prefer the explicit keyword — it leaves the four existing callers untouched and makes
      the abort readable at the call site. **This is the phase's one genuine unplumbed seam.**
+   - **RESOLVED:** explicit keyword, as recommended. `202-04-PLAN.md` Task 1 ("An additive abort
+     seam in the read loop") adds `abort_predicate: Callable[[], bool] | None = None` to
+     `_main_phase_read_data`. The four existing callers are unchanged and the chunk callback's
+     return value stays ignored, so no existing behaviour moves. `202-04` Task 2 consumes it.
 
 2. **Does `firestarter.compare` join the mypy strict-island list?**
    - What we know: it lands in neither override list by default, so it inherits lenient global
      settings (probed empirically). `sdp_honesty` has a stated precedent for joining from birth.
    - Recommendation: add it. The cost is writing annotations in a brand-new file; the alternative is
      an untyped module consumed by a strict one.
+   - **RESOLVED:** it joins, from birth. `202-01-PLAN.md` Task 2 adds `firestarter.compare` to the
+     `disallow_untyped_defs = true` override block in `pyproject.toml`, following the
+     `sdp_honesty` joins-from-birth precedent recorded in that block's own comment.
 
 3. **Does the range cap `N` apply to the default mode as well as `--full`?**
    - What we know: D-16 scopes the cap to `--full`; D-13 says the default produces exactly one range
      line, so the cap is moot there.
    - Recommendation: implement the cap in the accumulator (one code path) and let the default's
      single-range behaviour fall out of the abort, not out of a separate cap.
+   - **RESOLVED:** one code path, as recommended. `MAX_RETAINED_RANGES` (= 64) lives in the
+     accumulator, declared in `202-01-PLAN.md`; `202-02-PLAN.md` Task 3 tests its boundary and the
+     honesty of the `extra_ranges` counter. The default's single-range behaviour falls out of the
+     abort, not a second cap.
 
 4. **What does the progress bar do on an aborted read, and does `blank` show one?**
    - Explicitly left to Claude's discretion by CONTEXT.md; raised and declined during discussion.
      Flagged only so the planner allocates it rather than discovering it mid-execution.
+   - **RESOLVED:** allocated, not discovered. `202-04-PLAN.md` Task 2 stops the bar at the compared
+     byte count and never advances it to the region total on an abort, with the reason recorded at
+     the site; the same plan's threat table cites it under T-202-08 (an aborted compare must not
+     read as a clean pass).
 
 ## Sources
 
