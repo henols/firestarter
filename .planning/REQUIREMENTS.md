@@ -100,13 +100,13 @@ measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746
 
 ### BLANK — a partial write is gated on the region it writes (backlog 999.44, firmware half)
 
-- [ ] **BLANK-01**: The write-init blank check applies to the region being written, not to the whole
+- [x] **BLANK-01**: The write-init blank check applies to the region being written, not to the whole
       device, so a non-erasable part holding data outside the target region accepts a write into a
       blank region.
 - [x] **BLANK-02**: `mem_util_blank_check`'s whole-device behaviour is unchanged for its other two
       callers — the standalone blank-check command and the erase-end check — and the multi-call
       chunking contract through `blank_check_saved_address` still resumes correctly.
-- [ ] **BLANK-03**: A UV part holding data outside the target slot accepts a slot write, proved by the
+- [x] **BLANK-03**: A UV part holding data outside the target slot accepts a slot write, proved by the
       regression test whose absence is why this shipped.
 
 ## Future Requirements
@@ -154,9 +154,9 @@ Tracked, not in this milestone.
 | RAIL-05 | Phase 199 | Pending |
 | VCC-01 | Phase 200 | Complete |
 | VCC-02 | Phase 200 | Complete |
-| BLANK-01 | Phase 201 | Pending |
+| BLANK-01 | Phase 201 | Complete |
 | BLANK-02 | Phase 201 | Complete |
-| BLANK-03 | Phase 201 | Pending |
+| BLANK-03 | Phase 201 | Complete |
 
 **Coverage:**
 

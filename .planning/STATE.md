@@ -4,17 +4,17 @@ milestone: v1.40
 milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
 current_phase: 201
 current_phase_name: A partial write is gated on its own region
-status: executing
-stopped_at: Completed 201-05-PLAN.md
-last_updated: "2026-09-20T01:43:13.419Z"
+status: verifying
+stopped_at: Completed 201-06-PLAN.md — phase 201 complete (6/6), all v1.40 phases complete
+last_updated: "2026-09-20T09:20:00.000Z"
 last_activity: 2026-09-20
-last_activity_desc: "Completed 201-05-PLAN.md — D-15.3 source-contract gate over all nine mem_util_blank_check reference sites, proved non-vacuous by two planted violations observed RED and reverted; three .planning/notes findings recorded (D-11 one-flag-deep latency, uv-write-shortcut answered \"neither\", backlog 999.44 retired); BLANK-02 marked Complete"
+last_activity_desc: "Completed 201-06-PLAN.md — the bench-gated confirming run of criterion 1. Task 3's blocking-human checkpoint was answered by the operator: the plan's named TMS27C512 was unavailable, so an ST M27C512 (chip-ID 0x203D) was substituted with operator authorization, confirmed non-erasable by database (electrical-type UV-EPROM, FLAG_CAN_ERASE clear) on the same measured basis the plan specified. The plan's target address 0x00FF00 was also changed to 0x008000 (operator-authorised) because 0x00FF00 sits one byte from a programmed ramp on this part. A read-back at 0x008000 confirmed blank immediately before the single write; blank-check reported not blank at 0x000000 (v: 0x44), the write succeeded with no --skip-erase, and verify was clean. Criterion 1 is satisfied. Recorded as evidence in 201-BENCH-RECORD.md (not a test, not a CI leg, cannot re-run automatically) — committed 6dbae72f. BLANK-01 and BLANK-03 marked Complete; BLANK-02 was already Complete from 201-05. Phase 201 is now 6/6 plans complete, the last of v1.40's five phases — the milestone is ready for /gsd-complete-milestone."
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 5
   total_plans: 26
-  completed_plans: 24
-  percent: 20
+  completed_plans: 26
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-18 — v1.40 Program-Parameter Fidelity activated; the v1.39 close record and its corrected beta SHAs are archived in it)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 201 — A partial write is gated on its own region
+**Current focus:** Phase 201 complete — all v1.40 phases done; ready for /gsd-complete-milestone
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 201 (A partial write is gated on its own region) — EXECUTING
-Plan: 6 of 6
-Status: Plan 201-05 complete (firestarter_fw `e5842d8`, meta `5f48eb01`/`707f830e`) — plan 201-06 next (bench, `autonomous: false`)
-Last activity: 2026-09-20 — Completed 201-05-PLAN.md: the D-15.3 source-contract gate over all nine `mem_util_blank_check` reference sites (three direct calls + six function-pointer assignments), proved non-vacuous by two planted violations each observed RED and reverted; plus three `.planning/notes/` findings the gate cannot carry — the one-flag-deep latency on `flash_intel.cpp`/`flash_nor_unlock.cpp` (D-11), the folded uv-write-shortcut todo answered "neither", and backlog 999.44's retirement with the leonardo flash figure — and a filed todo for `test_flash_path_record_sync.py`'s stale `_META_DOC_REL`. BLANK-02 marked Complete.
+Phase: 201 (A partial write is gated on its own region) — COMPLETE (6/6 plans)
+Plan: 6 of 6 complete
+Status: Plan 201-06 complete (meta `6dbae72f`/`496ffca8`) — bench confirming run satisfied criterion 1 on an operator-authorised ST M27C512 substitute (chip-ID 0x203D) at operator-authorised address 0x008000. BLANK-01 and BLANK-03 marked Complete. Phase 201 is the last of v1.40's five phases — milestone ready for /gsd-complete-milestone.
+Last activity: 2026-09-20 — Completed 201-06-PLAN.md: Task 3's blocking-human checkpoint answered by the operator. The plan's named TMS27C512 was unavailable; an ST M27C512 was substituted with operator authorization and confirmed non-erasable by the database (electrical-type UV-EPROM, FLAG_CAN_ERASE clear) on the same measured basis the plan specified for the TMS27C512. The plan's target address 0x00FF00 was also changed to 0x008000 (operator-authorised) — 0x00FF00 sits one byte from a programmed descending ramp on this part and would have collided with it. A read-back at 0x008000 confirmed blank immediately before the single write; `blank-check` reported not blank at 0x000000 (v: 0x44), the write succeeded with no `--skip-erase` (FLAG_CAN_ERASE is clear, so there is no erase to skip), and `verify` was clean. Criterion 1 of Phase 201 is satisfied. Recorded as evidence in `201-BENCH-RECORD.md` (explicitly labelled not a test and not a CI leg, cannot re-run automatically) — committed `6dbae72f`; `deferred-items.md` committed separately `496ffca8`.
 
 ## Roadmap Summary (v1.38)
 

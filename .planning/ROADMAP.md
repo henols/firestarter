@@ -383,7 +383,7 @@ Plans:
 
 **Goal**: Close backlog 999.44's live firmware half, so a non-erasable part holding data anywhere stops being unwritable everywhere.
 **Requirements**: BLANK-01, BLANK-02, BLANK-03
-**Plans:** 6 plans
+**Plans:** 6/6 plans complete
 
 **Depends on**: nothing in v1.40 — the host half of 999.44 shipped in v1.36 Phase 179 (D-01)
 
@@ -435,7 +435,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 — bench, `autonomous: false`)*
 
-- [ ] 201-06-PLAN.md — W27C512 (`0xDA08`, `--skip-erase`) rehearses RED→GREEN twice on pre-fix and post-fix images, then TMS27C512 (`0x9785`, UV-EPROM) supplies one confirming run; the transcript is committed as evidence and labelled as evidence
+- [x] 201-06-PLAN.md — W27C512 (`0xDA08`, `--skip-erase`) rehearses RED→GREEN twice on pre-fix and post-fix images, then a confirming run closes criterion 1 — complete 2026-09-20, meta `6dbae72f`. **Deviation, operator-authorised:** the plan's named TMS27C512 was unavailable; an **ST M27C512** (chip-ID `0x203D`, not `0x9785`) was substituted, confirmed non-erasable by the database on the same measured basis (`electrical-type: UV-EPROM`, `FLAG_CAN_ERASE` clear). **Deviation, operator-authorised:** target address moved `0x00FF00` → `0x008000` — `0x00FF00` sits one byte from a programmed descending ramp on this part. The single confirming write at `0x008000` succeeded against a part holding programmed data on both sides of the target; `201-BENCH-RECORD.md` carries the full transcript, labelled as evidence.
 
 ## v1.39 — Protocol 0x05 Write Correctness (CLOSED 2026-09-17 — 7/8 requirements; PAGE-03's hardware leg deliberately open per D-11, pending a `W29C512`; tagged `v1.39` — bare tag, no GitHub Release)
 
