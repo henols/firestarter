@@ -84,7 +84,7 @@ golden.
 - [ ] **WRITE-03**: `write -b` / `--no-blank-check` skips the host check and still does not skip erase.
 - [ ] **WRITE-04**: `write --verify` runs a read-back comparison of the written region through the CMP engine, and reports through it.
 - [ ] **WRITE-05**: a `write --verify` whose comparison fails exits non-zero and says the write landed but did not verify — never "successful".
-- [ ] **WRITE-06**: a non-blank, non-erasable part accepts a region write into a blank region. This is the regression test the 2026-08-30 todo recorded as not existing, and it must be seen RED before the change.
+- [ ] **WRITE-06**: a non-blank, non-erasable part accepts a region write into a blank region — and still does after the firmware check is gone. v1.40 Phase 201 already region-scoped the firmware pre-flight, so this passes today; the 2026-08-30 todo's "must be seen RED first" framing predates that fix and does not apply. The risk this pins is **silent re-breakage** when the guard moves to the host, so the test must exercise the host path and fail if the host refuses a blank region on a non-blank part.
 
 ### DEVTEST — `dev test` keeps its fidelity (D-6)
 
@@ -128,17 +128,50 @@ Tracked, not in this milestone.
 
 ## Traceability
 
-Filled at roadmap creation.
+Every requirement maps to exactly one phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CMP-01 | — | Pending |
+| CMP-01 | Phase 202 | Pending |
+| CMP-02 | Phase 202 | Pending |
+| CMP-03 | Phase 202 | Pending |
+| CMP-04 | Phase 202 | Pending |
+| CMP-05 | Phase 202 | Pending |
+| CMP-06 | Phase 202 | Pending |
+| CMP-07 | Phase 202 | Pending |
+| CMP-08 | Phase 202 | Pending |
+| WRITE-01 | Phase 203 | Pending |
+| WRITE-02 | Phase 203 | Pending |
+| WRITE-03 | Phase 203 | Pending |
+| WRITE-04 | Phase 203 | Pending |
+| WRITE-05 | Phase 203 | Pending |
+| WRITE-06 | Phase 203 | Pending |
+| FWCMD-01 | Phase 204 | Pending |
+| FWCMD-02 | Phase 204 | Pending |
+| FWCMD-03 | Phase 204 | Pending |
+| FWCMD-04 | Phase 204 | Pending |
+| FWCMD-05 | Phase 204 | Pending |
+| FWCMD-06 | Phase 204 | Pending |
+| REL-02 | Phase 204 | Pending |
+| REL-03 | Phase 204 | Pending |
+| FWBLANK-01 | Phase 205 | Pending |
+| FWBLANK-02 | Phase 205 | Pending |
+| FWBLANK-03 | Phase 205 | Pending |
+| FWBLANK-04 | Phase 205 | Pending |
+| FWBLANK-05 | Phase 205 | Pending |
+| DEVTEST-01 | Phase 206 | Pending |
+| DEVTEST-02 | Phase 206 | Pending |
+| DEVTEST-03 | Phase 206 | Pending |
+| SESS-01 | Phase 206 | Pending |
+| SESS-02 | Phase 206 | Pending |
+| REL-01 | Phase 207 | Pending |
+| REL-04 | Phase 207 | Pending |
 
 **Coverage:**
 
 - v1 requirements: 34 total
-- Mapped to phases: 0
-- Unmapped: 34 ⚠️
+- Mapped to phases: 34
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-20*

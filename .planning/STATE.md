@@ -3,14 +3,14 @@ gsd_state_version: "1.0"
 milestone: v1.41
 milestone_name: Verification Moves to the Host
 current_phase: 202
-current_phase_name: (not yet planned — roadmap pending)
+current_phase_name: One comparison engine, on the host
 status: planning
-stopped_at: "v1.41 ACTIVATED 2026-09-20 — PROJECT.md carries the Current Milestone block; REQUIREMENTS.md and ROADMAP.md are next and are hand-authored. Phases continue at 202. v1.40 is still unmerged: PRs henols/firestarter#91, firestarter_app#72, firestarter_fw#70 all target beta and the merge stays operator-gated."
+stopped_at: "v1.41 ACTIVATED 2026-09-20 — PROJECT.md, REQUIREMENTS.md (34 requirements) and ROADMAP.md (6 phases, 202–207) are written, all hand-authored, and every phase verified to resolve through roadmap.get-phase. Next: /gsd-discuss-phase 202. Phases continue at 202. v1.40 is still unmerged: PRs henols/firestarter#91, firestarter_app#72, firestarter_fw#70 all target beta and the merge stays operator-gated."
 last_activity_desc: "Activated milestone v1.41 Verification Moves to the Host. Blank check and verify leave the firmware in BOTH forms — the standalone CMD_BLANK_CHECK (4) / CMD_VERIFY (6) command surfaces and the in-algorithm write-init and erase-end pre-flights, retiring mem_util_blank_check{,_region} and the FLAG_SKIP_BLANK_CHECK wire bit five weeks after Phase 201 region-scoped them. The host reads and compares instead, through one implementation reusing chip_test.py's _diff_offsets / classify_fingerprint. memory_verify_execute and every in-algorithm verify (per-pulse, eeprom28c_verify_page_readback, flash_util_verify_operation) STAY — eprom.cpp calls memory_verify_execute for VERIFY_PER_PULSE_PLUS_FINAL. Six decisions at activation: all-of-it scope, erasable-exempt host pre-write check, opt-in write --verify, clean-break protocol with ordinals 4 and 6 retired, 3.1.0b1 in both repos, and dev-test seed R4 (one leased serial session per plan) in scope. Open mechanic: no abort message exists for a mid-stream read, so break-at-first-mismatch saves reporting noise but not time until that is solved. phases.clear deliberately NOT run — 25 live phase directories."
 last_updated: "2026-09-20T12:25:21.994Z"
 last_activity: 2026-09-20
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -235,10 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-09-20 — Milestone v1.41 started
+Phase: 202 — One comparison engine, on the host (not yet planned)
+Plan: — (0 of 6 phases planned)
+Status: Roadmap approved; ready to discuss or plan Phase 202
+Last activity: 2026-09-20 — Milestone v1.41 activated; 34 requirements across 6 phases (202–207), all hand-authored
+Next: **Phase 202 discussion** — `/gsd-discuss-phase 202`
 
 ## Roadmap Summary (v1.38)
 
