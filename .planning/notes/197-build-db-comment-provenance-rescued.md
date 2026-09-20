@@ -82,7 +82,7 @@ Two trailing markers on code lines, deleted with them:
 - **M2732A at 21 V stays `supported`** — it is within the ceiling. This is the `>` not `>=`
   boundary that plan 197-02 was required to preserve, and six rows sit exactly on 25000 mV.
 
-Related: `.planning/phases/197-the-override-mechanism-and-the-program-pulse/197-02-SUMMARY.md`,
+Related: `.planning/milestones/v1.40-phases/197-the-override-mechanism-and-the-program-pulse/197-02-SUMMARY.md`,
 and the v1.33 source-hygiene milestone that set the no-comments direction.
 
 ---

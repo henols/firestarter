@@ -1,14 +1,14 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.40
-milestone_name: Program-Parameter Fidelity (ACTIVE — activated 2026-09-18; 24 requirements, phases 197–201; generator and host first, one firmware change; Phase 199 is bench-gated)
+milestone_name: Program-Parameter Fidelity (CLOSED 2026-09-20 — 19/24 requirements, override_closeout, tagged v1.40 as a bare tag; NOT shipped — nothing is on beta in any of the three repositories)
 current_phase: 201
 current_phase_name: A partial write is gated on its own region
-status: completed
-stopped_at: Phase 201 complete — all phases complete
-last_updated: "2026-09-20T09:50:19.669Z"
+status: milestone_complete
+stopped_at: v1.40 CLOSED and archived 2026-09-20 — next is /gsd-ship (operator-gated; it carries the three held gh#70/gh#66/gh#71 answers), then /gsd-new-milestone at phase 202
+last_updated: "2026-09-20T00:00:00.000Z"
 last_activity: 2026-09-20
-last_activity_desc: "Completed 201-06-PLAN.md — the bench-gated confirming run of criterion 1. Task 3's blocking-human checkpoint was answered by the operator: the plan's named TMS27C512 was unavailable, so an ST M27C512 (chip-ID 0x203D) was substituted with operator authorization, confirmed non-erasable by database (electrical-type UV-EPROM, FLAG_CAN_ERASE clear) on the same measured basis the plan specified. The plan's target address 0x00FF00 was also changed to 0x008000 (operator-authorised) because 0x00FF00 sits one byte from a programmed ramp on this part. A read-back at 0x008000 confirmed blank immediately before the single write; blank-check reported not blank at 0x000000 (v: 0x44), the write succeeded with no --skip-erase, and verify was clean. Criterion 1 is satisfied. Recorded as evidence in 201-BENCH-RECORD.md (not a test, not a CI leg, cannot re-run automatically) — committed 6dbae72f. BLANK-01 and BLANK-03 marked Complete; BLANK-02 was already Complete from 201-05. Phase 201 is now 6/6 plans complete, the last of v1.40's five phases — the milestone is ready for /gsd-complete-milestone."
+last_activity_desc: "Closed and hand-archived milestone v1.40 Program-Parameter Fidelity — 5 phases (197-201), 26 plans, 65 tasks, 19/24 requirements, override_closeout. Archive at .planning/milestones/v1.40-{CLOSE-RECORD,ROADMAP,REQUIREMENTS}.md and v1.40-phases/. milestone.complete and audit-open acknowledge both deliberately not run; 88 open artifacts disclosed by hand with 0 suppressed."
 progress:
   total_phases: 5
   completed_phases: 5
@@ -24,10 +24,10 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-09-18 — v1.40 Program-Parameter Fidelity activated; the v1.39 close record and its corrected beta SHAs are archived in it)
+See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.40 Program-Parameter Fidelity CLOSED; its outcome block and footer carry the close, and `milestones/v1.40-CLOSE-RECORD.md` is the full record)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 201 complete — all v1.40 phases done; ready for /gsd-complete-milestone
+**Current focus:** v1.40 CLOSED 2026-09-20 — nothing shipped. Next: `/gsd-ship` (operator-gated; read `197-GH70-ANSWER.md` § "Held-pending deferral" first — it is the single checklist for the three held issue answers), then `/gsd-new-milestone`. Phases continue at **202**.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 201 (A partial write is gated on its own region) — COMPLETE (6/6 plans)
-Plan: 6 of 6 complete
-Status: Plan 201-06 complete (meta `6dbae72f`/`496ffca8`) — bench confirming run satisfied criterion 1 on an operator-authorised ST M27C512 substitute (chip-ID 0x203D) at operator-authorised address 0x008000. BLANK-01 and BLANK-03 marked Complete. Phase 201 is the last of v1.40's five phases — milestone ready for /gsd-complete-milestone.
-Last activity: 2026-09-20 — Completed 201-06-PLAN.md: Task 3's blocking-human checkpoint answered by the operator. The plan's named TMS27C512 was unavailable; an ST M27C512 was substituted with operator authorization and confirmed non-erasable by the database (electrical-type UV-EPROM, FLAG_CAN_ERASE clear) on the same measured basis the plan specified for the TMS27C512. The plan's target address 0x00FF00 was also changed to 0x008000 (operator-authorised) — 0x00FF00 sits one byte from a programmed descending ramp on this part and would have collided with it. A read-back at 0x008000 confirmed blank immediately before the single write; `blank-check` reported not blank at 0x000000 (v: 0x44), the write succeeded with no `--skip-erase` (FLAG_CAN_ERASE is clear, so there is no erase to skip), and `verify` was clean. Criterion 1 of Phase 201 is satisfied. Recorded as evidence in `201-BENCH-RECORD.md` (explicitly labelled not a test and not a CI leg, cannot re-run automatically) — committed `6dbae72f`; `deferred-items.md` committed separately `496ffca8`.
+Phase: — (v1.40 closed; the next milestone starts at phase 202)
+Plan: — (all 26 v1.40 plans complete across phases 197-201)
+Status: **v1.40 CLOSED and hand-archived 2026-09-20** — 19/24 requirements, `override_closeout`, bare tag `v1.40`. Five requirements Pending by decision: PULSE-04 / VOLT-04 / RAIL-05 are the three held gh#70 / gh#66 / gh#71 answers that release at the beta cut, RAIL-03 is honestly unmet, OVR-03 is test-enforced only. NOT shipped: 170 meta / 37 host / 15 firmware commits ahead of `beta`, zero patch-equivalent by `git cherry`.
+Last activity: 2026-09-20 — Closed and archived v1.40. ROADMAP bullet and section header flipped to CLOSED, archives written to `.planning/milestones/v1.40-{CLOSE-RECORD,ROADMAP,REQUIREMENTS}.md`, phase directories 197-201 moved to `.planning/milestones/v1.40-phases/`, MILESTONES.md entry prepended, PROJECT.md evolved, RETROSPECTIVE.md appended, 88 open artifacts disclosed with 0 suppressed, and Phase 200 CR-01 filed as a pending todo.
 
 ## Roadmap Summary (v1.38)
 
@@ -1142,6 +1142,87 @@ not hold (the v1.22 C-5 overclaim class).
 gate-hardening v1.23 left OPEN (fail-open `tools/check_mypy_watermark.py` + 69 hidden inherited
 errors → `firestarter_app`'s primary `ci` job is RED), and 999.15 / gh#8 dev-tools channel gating.
 Plus the owed gh#12 outward follow-up, behind operator wording review.
+
+## Deferred Items — disclosed at v1.40 milestone close (2026-09-20)
+
+`gsd_run query audit-open` reported **88 open items** at the v1.40 close. **Every one is disclosed
+here and NONE is suppressed.** `gsd_run query audit-open acknowledge` was deliberately not run: it
+destroys the artifacts it annotates (backlog **999.49** — at the v1.35 close it replaced 100 lines
+of a quick task's YAML frontmatter with a four-line marker, reflowed whole files including the
+inside of a fenced code block, and manufactured phantom items from markdown table rows that it then
+refused to acknowledge). This table is therefore a **disclosure record, not a suppression
+mechanism** — every item below resurfaces at the next `audit-open`, which is honest, because they
+are all still open. `acknowledged.total` reads **0**, as it has at every close since v1.23.
+
+**Treat 88 as a floor.** The scanner under-reported at the v1.39 close, missing a real
+`deferred-items.md`, and it misses one again here: Phase 201's own `.planning/milestones/v1.40-phases/201-…/deferred-items.md`
+appears in no category. Its single entry is disclosed at the foot of this section.
+
+**One of the 88 was filed by this close, not inherited.** Phase 200's Critical code-review finding
+(CR-01) was recommended for filing by `200-VERIFICATION.md` and never filed; the close filed it as
+`todos/pending/2026-09-20-programming-vcc-predicate-fails-closed-on-non-dict-electrical.md`, which
+took the pre-close count of 87 to 88. Almost everything else predates v1.40 — the oldest UAT gap is
+Phase 08, archived at v1.2.
+
+| Category | Item | Status | Disclosed At | Milestone |
+|----------|------|--------|--------------|-----------|
+| debug_sessions | knowledge-base | unknown | 2026-09-20 | v1.40 |
+| debug_sessions | w27c512-devtest-all-bad | investigating | 2026-09-20 | v1.40 |
+| quick_tasks | 260820-a7w-make-the-flash-limit-guards-to-be-the-ac | unknown | 2026-09-20 | v1.40 |
+| quick_tasks | 260916-nbb-capture-the-actual-error-and-warn-log-lines-the-host-app-and | unknown | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 191/191-UAT.md (archived v1.38) | passed — 0 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 186/186-UAT.md (archived v1.37) | passed — 0 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 43/43-HUMAN-UAT.md (archived v1.8) | partial — 2 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 31/31-HUMAN-UAT.md (archived v1.7) | partial — 4 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 34/34-HUMAN-UAT.md (archived v1.7) | partial — 3 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 28/28-HUMAN-UAT.md (archived v1.6) | partial — 1 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 30/30-HUMAN-UAT.md (archived v1.6) | passed — 2 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 20/20-HUMAN-UAT.md (archived v1.4) | passed — 0 open scenario(s) | 2026-09-20 | v1.40 |
+| uat_gaps | Phase 08/08-HUMAN-UAT.md (archived v1.2) | partial — 0 open scenario(s) | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 84/84-VERIFICATION.md (archived v1.15) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 31/31-VERIFICATION.md (archived v1.7) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 34/34-VERIFICATION.md (archived v1.7) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 28/28-VERIFICATION.md (archived v1.6) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 08/08-VERIFICATION.md (archived v1.2) | human_needed | 2026-09-20 | v1.40 |
+| verification_gaps | Phase 09/09-VERIFICATION.md (archived v1.2) | human_needed | 2026-09-20 | v1.40 |
+| deferred_items | Phase 182/deferred-items.md (archived v1.37): Pre-existing `ruff check` failures in `firestarter_app/tools/audit_coverage_matrix.py`, `firestarter_app/tools… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 183/deferred-items.md (archived v1.37): `make_write_handle_with_data()`'s inline comment in `firestarter/test/native/avr/test_val_5v_page/test_val_5v_… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 181/deferred-items.md (archived v1.36): `tests/test_blast_radius_invariance.py:565` fails `ruff format --check` (a wrapped multi-line expression the f… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 168/deferred-items.md (archived v1.35): Plan 168-04, Task 1 — two orphaned C++ fixture files Deleting `firestarter_app/tests/test_dispatch_mirror.py` … | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): `test_diagnostic_range_unchanged_with_phase_151_comment` → `test_diagnostic_range_unchanged_with_stated_choice… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): `assert "Phase 151" in preceding_text` → `assert not _missing_stated_choice_phrases(...)` over a **four-phrase… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): **Proven strictly stronger, not merely different.** Against a planted `// Phase 151 touched this block.` repla… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): A committed checkable negative was added as **leg 5** (`test_non_vacuity_control_reports_absent_stated_choice`… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): Original filing (kept verbatim for the record) `firestarter_app/tests/test_parse_gate_admission.py::test_diagn… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): D9 — Pre-existing `ruff check` findings in `firestarter_app/tools` (unrelated to the sweep) **Found during:** … | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): before plan 07 — **203** | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): after plan 07 — **152** | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): `#`-comment lines carrying a D-01 token NOT adjacent to the opener — **313** — **236** — outside the survey re… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): Token occurrences on non-`#` lines (docstrings + string literals) — **335** across 22 files — **335**, unchang… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 153/deferred-items.md (archived v1.32): 153-10 - **`ruff check .` (whole-tree, run to confirm plan-scoped files) surfaces 4 pre-existing errors in `to… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 133/deferred-items.md (archived v1.30): From plan 133-06 - **Pre-existing `ruff check` failures in three unrelated files**, discovered while running t… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 121/deferred-items.md (archived v1.22): 121-08 - **Pre-existing untracked file in the firmware submodule**: `git -C /workspaces/firestarter status --p… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 111/deferred-items.md (archived v1.21): 111-01: Pre-existing ruff F841 unmasked in test_diagnostic_report.py (out of scope) - **File:** `firestarter_a… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 111/deferred-items.md (archived v1.21): 111-UAT: Before/after write-step voltage capture → Phase 112 re-verify - **What:** SC2's destructive-run half … | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 106/deferred-items.md (archived v1.20): From Plan 106-01 - **`tests/test_audit_coverage_matrix.py::TestAuditCoverageMatrix::test_golden_file_matches`*… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 102/deferred-items.md (archived v1.19): Out-of-scope pre-existing failure (not fixed — scope boundary) **`tests/test_audit_coverage_matrix.py::TestAud… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 98/deferred-items.md (archived v1.18): Out-of-scope pre-existing test failure - **Test:** `tests/test_audit_coverage_matrix.py::TestAuditCoverageMatr… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 98/deferred-items.md (archived v1.18): Plan 98-05 — pre-existing blanket `ruff check .` failures (out of scope) - **Found during:** Plan 98-05 Task 3… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 99/deferred-items.md (archived v1.18): Pre-existing ruff findings in check_ledger.py / test_check_ledger.py (out of scope) **Found during:** Task 3 (… | open | 2026-09-20 | v1.40 |
+| deferred_items | Phase 79/deferred-items.md (archived v1.14): Pre-existing ruff errors/format issues in firestarter_app (py39 target) Confirmed pre-existing by stashing the… | open | 2026-09-20 | v1.40 |
+| todos | 2026-06-24-skip-vpp-error-and-warning-checks-when-vpp-unused-on-reads.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | 2026-08-27-safe-state-outputs-on-powerup-and-fault.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | 2026-08-27-strip-gsd-provenance-comments-from-source.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | 2026-08-30-dev-test-flag-to-auto-file-issue.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | 2026-08-30-remove-cmd-verify-from-firmware-compare-in-app.md | (presence-only) | 2026-09-20 | v1.40 |
+| todos | … and 39 more pending todos — the scanner caps this list at 5 per scan | (presence-only) | 2026-09-20 | v1.40 |
+
+**Not caught by the scanner — Phase 201's `deferred-items.md`.** `firestarter_app` reads dirty in
+`git status --porcelain` solely because of one untracked file, `firestarter_app/datasheets/LST62832I.pdf`,
+created 2026-09-19 and deliberately left untracked since plan 197-01. No tracked file is modified and
+the gitlink recorded in the meta repository matches `firestarter_app`'s actual HEAD exactly. It made
+plan 201-06's own `test -z "$DIRTY"` verify leg read dirty for a reason unrelated to the bench work
+recorded under it. Left in place rather than deleted without the operator's say-so.
 
 ## Deferred Items — disclosed at v1.39 milestone close (2026-09-17)
 
