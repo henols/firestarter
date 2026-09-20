@@ -143,12 +143,17 @@ was taken specifically to keep it that way.
   `address-line, 2305 bad of 65536 compared of 65536`. This is what keeps CMP-06 and criterion 4
   met, and it is the diagnosis the whole milestone exists for.
 
-- **D-15:** **CMP-04 must be amended in `.planning/REQUIREMENTS.md` before planning.** As written it
-  requires "its absolute address, the expected value and the value read"; D-13 deliberately drops
-  the two byte values. Reword CMP-04 to match the decided output so the requirement and the code
-  agree, rather than closing the phase with a requirement marked Complete that the code does not
-  satisfy. Check CMP-05's wording at the same time — the coalesced `start–end` + byte count phrasing
-  already matches D-13, so it likely needs no change.
+- **D-15:** **CMP-04 has been amended — DONE, do not repeat.** As written it required "its absolute
+  address, the expected value and the value read", which D-13 deliberately drops. Both contradicting
+  texts were reworded during this discussion session, in commit `81414f98`:
+  - `.planning/REQUIREMENTS.md` CMP-04 — now asks for a single `start–end` range with a byte count
+    and no byte values, citing D-13.
+  - `.planning/ROADMAP.md` Phase 202 success criterion 3 — carried the same contradiction and was
+    amended identically.
+
+  Checked and **not** amended: CMP-05's coalesced `start–end` + byte-count phrasing already matches
+  D-13, and CMP-07 is unaffected — it says a transport failure must be "distinguishable" from a
+  mismatch without prescribing how, which D-10's exit 2 satisfies.
 
 - **D-16:** **`--full`'s retained range list is capped at a named constant N; the counts stay
   exact.** Past N, ranges stop being retained and a tail line reports `… and M more ranges, K bytes`
