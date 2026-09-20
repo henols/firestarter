@@ -18,7 +18,9 @@ mechanical. The consequences are not — the firmware merge *is* the stable rele
 `firestarter_fw`'s `build.yml` carries no path filter.
 
 Full analysis, with the evidence behind every figure:
-[`../notes/stable-3.0.0-release-gate.md`](../notes/stable-3.0.0-release-gate.md).
+[`../notes/stable-3.0.0-release-gate.md`](../notes/stable-3.0.0-release-gate.md). The guard that
+gates this seed is filed as
+[`../todos/pending/2026-09-20-preflight-firmware-version-compat-guard.md`](../todos/pending/2026-09-20-preflight-firmware-version-compat-guard.md).
 
 ## Why the trigger conditions are what they are
 

@@ -2,7 +2,9 @@
 
 **Date:** 2026-09-20
 **Raised during:** `/gsd-explore` — "when can I release 3.0.x to the public?"
-**Status:** Analysis. No work planned from it yet. The promotion itself is seeded at
+**Status:** Analysis. The guard is filed as
+[`../todos/pending/2026-09-20-preflight-firmware-version-compat-guard.md`](../todos/pending/2026-09-20-preflight-firmware-version-compat-guard.md);
+the promotion itself is seeded at
 [`../seeds/stable-3.0.0-promotion.md`](../seeds/stable-3.0.0-promotion.md).
 **Method:** Every figure below was read from the repositories and the GitHub API on 2026-09-20, with
 the command noted beside it. Nothing here is inferred from the roadmap.
@@ -59,7 +61,9 @@ CLI on the stable channel.
 
 ## The guard — decided design
 
-A `2.0.10` stable release whose only change is a pre-flash version guard.
+A `2.0.10` stable release whose only change is a pre-flash version guard. Filed as
+[`../todos/pending/2026-09-20-preflight-firmware-version-compat-guard.md`](../todos/pending/2026-09-20-preflight-firmware-version-compat-guard.md),
+which carries the same rule and decisions in executable form.
 
 The guard must work from release metadata alone. The CLI is deciding whether to download a `.hex` it
 has not run yet, so no handshake is available and the release tag is the only signal.
