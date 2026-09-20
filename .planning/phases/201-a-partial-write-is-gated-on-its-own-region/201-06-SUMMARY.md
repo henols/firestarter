@@ -253,6 +253,23 @@ All three repositories (`/workspaces`, `firestarter_fw`, `firestarter_app`) are 
 `REQUIREMENTS.md` now shows all three BLANK requirements Complete. The milestone is ready for
 `/gsd-complete-milestone` — no blockers identified.
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/201-a-partial-write-is-gated-on-its-own-region/201-BENCH-RECORD.md`
+- FOUND: `.planning/phases/201-a-partial-write-is-gated-on-its-own-region/deferred-items.md`
+- FOUND: commit `6dbae72f` (`git log --oneline`, bench record; contains only that one path)
+- FOUND: commit `496ffca8` (`git log --oneline`, deferred-items)
+- FOUND: commit `0f62a7b3` (`git log --oneline`, SUMMARY + STATE + ROADMAP + REQUIREMENTS)
+- Re-ran acceptance criteria: `0x008000` confirmed all-`0xFF` by read-back immediately before the
+  write; exactly one `write` recorded against the part, with no `--skip-erase`; all three step
+  outputs captured verbatim; the record carries its confirmation section, its deviations with the
+  authorising party named, and a `## How to read this record` section; the words `test`, `gate`
+  and `CI leg` do not describe the record's own role anywhere in it.
+- Verified by the orchestrator after hand-back: all three repos on
+  `v1.40-program-parameter-fidelity`; `git ls-tree HEAD` gitlinks match each submodule HEAD; zero
+  tracked modifications in both submodules; `REQUIREMENTS.md` shows BLANK-01/02/03 Complete; the
+  `progress:` block (5/5 phases, 26/26 plans) matches the SUMMARY count on disk.
+
 ---
 *Phase: 201-a-partial-write-is-gated-on-its-own-region*
 *Completed: 2026-09-20*
