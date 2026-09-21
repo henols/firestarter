@@ -4,16 +4,16 @@ milestone: v1.41
 milestone_name: Verification Moves to the Host
 current_phase: 203
 current_phase_name: The write guard moves up a layer
-status: planned
-stopped_at: Phase 203 planned
-last_updated: "2026-09-21T10:48:48.053Z"
+status: executing
+stopped_at: Phase 203 execution started
+last_updated: "2026-09-21T10:54:55.086Z"
 last_activity: 2026-09-21
-last_activity_desc: "Phase 203 planned — 4 plans, 12 tasks, 4 sequential waves, plan-checker PASSED after one revision cycle. Research corrected three CONTEXT assumptions: WRITE-01's byte value is structurally absent from Phase 202's engine (needs an additive CompareResult.first_actual), _drive_region_compare renders unconditionally so it cannot be reused unchanged under D-11, and FakeChip does not subclass EpromOperator at all — so the WRITE-06 harness is new construction, not a rename, and no test in the suite drives a genuine read main-phase over _FakeSerial. Five open design forks resolved: allowlist {0x06,0x07,0x08,0x0B,0x10} with absent-algorithm failing closed (D-01 wins over D-05 on a known-but-unlisted id); refusal by return False, not a typed exception, so dev test keeps its bool contract; --verify at the CLI tier; no progress bar on the guard read; D-17's session cost as a derivation from Phase 176's measured port-open medians with visible provenance. The checker's one warning — D-13's exit 2 was wired only for the guard read, so a mid-write port drop would exit 1 — was fixed by a second transient channel (last_write_attempt_verdict), keeping write_eprom -> bool. WRITE-02 and ROADMAP criterion 2 were amended before planning per CONTEXT D-02. 203-03 Task 1 is a blocking checkpoint on D-13's one-way exit-code contract and must be answered by the operator, not auto-approved."
+last_activity_desc: "Phase 203 execution started — 4 sequential waves (203-01 guard path, 203-02 allowlist pinning, 203-03 write --verify, 203-04 help text). 203-03 Task 1 is a BLOCKING operator checkpoint on D-13's one-way exit-code contract and must not be auto-approved."
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 9
-  completed_plans: 5
+  completed_plans: 6
   percent: 17
 ---
 
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.41 Verification Moves to the Host ACTIVATED; its `## Current Milestone` block carries the goal, the six activation decisions and the open read-abort mechanic. v1.40's close record is at `milestones/v1.40-CLOSE-RECORD.md`)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** v1.41 ACTIVATED 2026-09-20 — requirements and roadmap next, both **hand-authored** (the GSD verbs reformat whole files and ROADMAP.md is ~7,900 lines). Phases continue at **202**. Dual-repo lockstep, firmware-touching, bench-gated; branch `v1.41-verification-to-host` off `beta` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, which is the first version-string movement since `3.0.0b48` / `3.0.0b33`.
+**Current focus:** Phase 203 — The write guard moves up a layer. Executing 4 sequential waves; 203-03 Task 1 is a **blocking operator checkpoint** (D-13 one-way exit-code contract) and must not be auto-approved. Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, the first version-string movement since `3.0.0b48` / `3.0.0b33`.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 203 (The write guard moves up a layer) — READY TO EXECUTE
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-09-21 — Phase 203 planned (4 plans, 4 waves); plan-checker passed
+Phase: 203 (The write guard moves up a layer) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 203
+Last activity: 2026-09-21 — Phase 203 execution started
 Next: **Plan Phase 203** — `/gsd-plan-phase 203` (The write guard moves up a layer). Phase 202 needs no UAT: its verification returned 0 human-verification items (no bench hardware in scope, `Bench: no` in the v1.41 phase table).
 
 ## Roadmap Summary (v1.38)

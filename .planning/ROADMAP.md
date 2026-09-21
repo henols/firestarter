@@ -308,7 +308,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 203-01-PLAN.md — the host refuses a non-blank write end to end, and a blank region still writes (wave 1, tracer)
+- [x] 203-01-PLAN.md — the host refuses a non-blank write end to end, and a blank region still writes (wave 1, tracer)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
