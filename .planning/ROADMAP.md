@@ -312,7 +312,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 203-02-PLAN.md — pin the exact guarded set, the bypass, the erase re-arming, and the negative start address (wave 2)
+- [x] 203-02-PLAN.md — pin the exact guarded set, the bypass, the erase re-arming, and the negative start address (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
