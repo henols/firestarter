@@ -5,10 +5,10 @@ milestone_name: Verification Moves to the Host
 current_phase: 204
 current_phase_name: The command surfaces leave the firmware
 status: planning
-stopped_at: Phase 203 complete, ready to plan Phase 204
-last_updated: "2026-09-21T14:46:21.161Z"
+stopped_at: Phase 204 context gathered
+last_updated: "2026-09-21T21:30:30.668Z"
 last_activity: 2026-09-21
-last_activity_desc: "Phase 203 CLOSED 2026-09-21 — verifier 5/5, all six WRITE reqs complete. The pre-write blank check now runs on the HOST: write_blank_guard.py is a fail-closed pure predicate, GUARDED_PROTOCOL_IDS pinned to {0x06,0x07,0x08,0x0B,0x10} by a test proven RED on both narrowing and widening. `write --verify` ships the operator-confirmed D-13 contract (confirm-d13): --verify opts into 0/1/2, plain write stays 0/1, a transport failure in ANY phase exits 2. Code review found 1 Critical — CR-01, the guard read and the write could resolve to DIFFERENT boards because neither connect pinned the port — FIXED in firestarter_app 0fc6c77 and perturbation-verified. Suite 2216 -> 2306, 0 failed. WR-01/WR-02/IN-01 carried as advisory in 203-VERIFICATION.md. OUTSTANDING: /gsd-secure-phase 203 (security_enforcement on, no 203-SECURITY.md)."
+last_activity_desc: "Phase 204 context gathered 2026-09-21 - four gray areas discussed, CONTEXT.md + DISCUSSION-LOG.md committed at 741ceba6. D-01 full sweep of ordinals 4 and 6 (11 firmware sites plus the host mirror, not the 3 FWCMD-01 names); D-02 reserved recorded on BOTH constant ladders, mirroring FWBLANK-02; D-03 FWCMD-05 is factually wrong - only 1 of its 3 named sites raises MSG_ERR_VERIFY (per-pulse verify raises MAX_PULSES/ENERGY_CAP, flash_util_verify_operation raises OP_TIMEOUT) and it MUST be amended in REQUIREMENTS.md and ROADMAP criterion 3 before planning; D-04 proof split - source-contract gate for FWCMD-04, behavioural native tests for FWCMD-05 (MSG_ERR_VERIFY is asserted by no test today); D-05 the existing MSG_ERR_UNKNOWN_CMD default arm satisfies FWCMD-06 for free, no new message minted; D-06 orphaned DBG_VERIFY_PROM/DBG_BLANK_CHECK_PROM stay in the catalog so 204 stays a two-repo phase; D-07 3.1.0b1 is a substituted label because REL-01 is phase 207; D-08 PyPI 3.0.0b49 in an isolated 3.11 venv plays the old host; D-09 no-side-effect proven by read-back equivalence on silicon; D-10 rig is a LEONARDO carrying Rev 2.0 with a W27C512 seated on /dev/ttyACM0, standing operator permission to drive and flash, so the bench matrix runs unattended - no Uno-class coverage; D-12 the DONE clean stop stays filed as CMP-F1. Folded the milestone provenance todo 2026-08-30-remove-cmd-verify-from-firmware."
 progress:
   total_phases: 6
   completed_phases: 2
@@ -3687,8 +3687,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-21T08:52:31.093Z
-**Stopped at:** Phase 203 complete, ready to plan Phase 204
+**Last session:** 2026-09-21T21:30:30.547Z
+**Stopped at:** Phase 204 context gathered
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
 **Was (superseded, retained for continuity):** Completed 202-03-PLAN.md — classify_fingerprint delegates to classify_streamed via a CompareAccumulator (D-02 enforced), _diff_offsets retired, D-03 12-row corpus proves whole-Fingerprint equality against a transcribed batch reference, finalise() always classifies, render_compare_lines gains the D-14 bucket line; test count 2144->2180, full suite green, mypy unchanged at 32 errors, ruff clean; no deviations
 **Was (superseded, retained for continuity):** Completed 202-02-PLAN.md — peak-allocation ceiling and runtime gates now assert CMP-03, CMP-05 engine half (coalescing/ordering/cap-honesty) completed; test count 12->33, full suite 2144 passed, mypy unchanged at 32 errors; one disclosed deviation (ceiling test traces 128 KiB not 512 KiB, see Decisions)
@@ -3779,7 +3779,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/203-the-write-guard-moves-up-a-layer/203-CONTEXT.md
+**Resume file:** .planning/phases/204-the-command-surfaces-leave-the-firmware/204-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
