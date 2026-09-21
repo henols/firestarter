@@ -334,7 +334,28 @@ Plans:
 
 **Goal**: Ordinals 4 and 6 leave the firmware with every in-algorithm verify provably intact, and both host-firmware compatibility directions are demonstrated on the bench rather than reasoned about.
 **Requirements**: FWCMD-01, FWCMD-02, FWCMD-03, FWCMD-04, FWCMD-05, FWCMD-06, REL-02, REL-03
-**Plans:** TBD (not yet planned)
+**Plans:** 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 204-01-PLAN.md — tracer: ordinal 6 leaves both ladders and a published `3.0.0b49` host is refused on silicon, with ordinal 4 still live as the control (wave 1, has the package-legitimacy checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 204-02-PLAN.md — the two proof instruments: the eighth source-contract gate and the native id-asserting suite, both with their RED seen (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 204-03-PLAN.md — the ordinal-4 sweep in three green commits: the collapses, the five protocol handlers with the golden re-derived, then both ladders (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 204-04-PLAN.md — the record: the two orphaned catalog ids kept and annotated, five stale firmware citations repaired, and CMP-F1's deferral finding (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 204-05-PLAN.md — the four-role bench matrix: both skew directions on silicon, three matching whole-device digests, and the D-07 sha record (wave 5)
 
 **Success criteria**:
 
