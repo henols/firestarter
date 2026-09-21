@@ -75,7 +75,7 @@ every host command was unrunnable until 204-01 task 1 rebuilds it.*
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 01-T1 | 204-01 | 1 | FWCMD-05 | — | FWCMD-05 and ROADMAP criterion 3 name four real ids; the host 3.11 interpreter is runnable | source-scan + env | `grep -l 'MSG_ERR_OP_TIMEOUT' .planning/REQUIREMENTS.md .planning/ROADMAP.md` and the `.venv311` interpreter probe | ✅ | ⬜ pending |
+| 01-T1 | 204-01 | 1 | FWCMD-05 | — | FWCMD-05 and ROADMAP criterion 3 name all four real ids; the host 3.11 interpreter is runnable | source-scan + env | one **region-scoped** probe asserting all four ids inside the `FWCMD-05` bullet and inside Phase 204 criterion 3, plus the `.venv311` interpreter probe | ✅ | ⬜ pending |
 | 01-T2 | 204-01 | 1 | FWCMD-01, FWCMD-02, FWCMD-03 | T-204-01, T-204-02 | ordinal 6 absent from ladder, admission predicate, dispatch switch, wrapper, declaration and `configure_memory`; host ladder mirrors | source-scan + unit (native) | `pio test -e native`; `pio test -e native_nodevtools`; `/usr/local/py-utils/bin/pytest tests/ -o addopts="" -p no:cacheprovider -q`; the firmware and host absence probes | ✅ (re-anchor 9→8 on two counts) | ⬜ pending |
 | 01-T2b | 204-01 | 1 | REL-03 | T-204-SC | blocking human gate before the pinned `3.0.0b49` install | checkpoint | n/a — `checkpoint:human-verify`, `gate="blocking-human"` | n/a | ⬜ pending |
 | 01-T3 | 204-01 | 1 | FWCMD-06, REL-03 | T-204-05, T-204-SC | upload path proven; ordinal 6 refused while ordinal 4 is still SERVED — a two-sided control | **bench (automated under D-10 standing permission)** | `pio run -e leonardo -t upload`; the rig probe; `cmp tracer-pre.bin tracer-post.bin` | ❌ produces `204-BENCH-TRACER.md` | ⬜ pending |
@@ -154,7 +154,7 @@ The Uno-class gap is physically real for this phase — D-10 confirmed.
 
 ## Validation Sign-Off
 
-- [x] All tasks have `<automated>` verify or Wave 0 dependencies — 15 working tasks across 5 plans, 92 `<automated>` legs, each with a stated `<fails_when>`; the one checkpoint task (204-01 task 2b) is a blocking package-legitimacy gate and carries no runnable command by design
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies — 15 working tasks across 5 plans, 91 `<automated>` legs, each with a stated `<fails_when>`; the one checkpoint task (204-01 task 2b) is a blocking package-legitimacy gate and carries no runnable command by design. Count re-derived from the committed blobs at `3c8e775a` (19 + 14 + 25 + 16 + 17), with the `<automated>` open, close and `<fails_when>` counts asserted equal in each file
 - [x] Sampling continuity: no 3 consecutive tasks without automated verify — every task in every plan carries at least four
 - [x] Wave 0 covers all MISSING references — plus one the seed did not know about: the dangling `.venv311` interpreter, now owned by 204-01 task 1
 - [x] No watch-mode flags
