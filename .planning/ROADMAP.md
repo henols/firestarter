@@ -316,7 +316,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 203-03-PLAN.md — `write --verify` and `--full`, with the confirmed exit-code contract (wave 3, has a decision checkpoint)
+- [x] 203-03-PLAN.md — `write --verify` and `--full`, with the confirmed exit-code contract (wave 3, has a decision checkpoint)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
