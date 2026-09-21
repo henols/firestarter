@@ -5,10 +5,10 @@ milestone_name: Verification Moves to the Host
 current_phase: 203
 current_phase_name: The write guard moves up a layer
 status: planning
-stopped_at: Phase 202 complete, ready to plan Phase 203
-last_updated: "2026-09-20T20:11:14.000Z"
-last_activity: 2026-09-20
-last_activity_desc: "Phase 202 CLOSED — gsd-verifier returned PASSED: 8/8 requirement IDs (CMP-01..08) and 5/5 roadmap success criteria verified, 0 gaps, 0 behavior-unverified, 0 human-verification items; transitioned to Phase 203. Orchestrator re-derived independently: full suite 2216 passed, ruff clean, mypy 32 errors = pre-phase baseline (zero added), map_typed_errors byte-identical (D-11), compare.py import set exactly {__future__, dataclasses} (D-01), and classify_fingerprint matched its real pre-refactor implementation over 2922 generated cases across all five buckets (zero differences). One streamed comparison engine (firestarter/compare.py, import-pure) now backs both verify and blank on the host: both compose COMMAND_READ only and a wire-level test proves neither retired ordinal (4 blank-check / 6 verify) is ever sent, while the firmware still carries both. All eight CMP requirements Complete. Code review (202-REVIEW.md) found 1 critical: _region_refusal_exit_code did not refuse an out-of-range --address when --size was omitted, letting a malformed region reach the wire with a negative length; fixed in firestarter_app a0855b9 with three test legs including a negative control at memory-size - 1, gitlink advanced. CI-parity gates green under Python 3.11: 2216 passed, 36 snapshots, coverage 85.80%, ruff check and ruff format clean. Review WR-01/WR-02/IN-01 remain open and block no must-have (WR-02 is deferred to Phase 206 in-code)."
+stopped_at: Phase 203 context gathered
+last_updated: "2026-09-21T08:52:31.350Z"
+last_activity: 2026-09-21
+last_activity_desc: "Phase 203 context gathered — 4 gray areas discussed, 17 decisions locked. Central finding: a literal FLAG_CAN_ERASE exemption (WRITE-01/02) would newly refuse non-blank writes on protocol 0x05 and on every SRAM/FRAM part, families the firmware has never pre-flighted; operator chose 'preserve today's coverage', so the guarded set is 0x07/0x08/0x0B, 0x06, 0x10 and WRITE-02 + roadmap criterion 2 must be amended before planning (the CMP-04 precedent). Guard is region-scoped on every family (lands the host half of the 2026-08-30 whole-device todo), fails closed on an unclassifiable protocol, and lives in a new pure-predicate module beside jp5_gate/flash4_erase_gate/sdp_capability/page_size_gate, called from write_eprom so dev test and dev write-cycle inherit it. Refusal is host-voiced, one line, no remedy clause, carrying address and value. write --verify: one combined verdict line (the word 'successful' never appears), --full supported, and 0/1/2 exit codes gated on the flag while plain write keeps 0/1 (Claude's call on an operator 'you decide'). Three port opens accepted and to be measured, so Phase 206 SESS-02 inherits a real baseline. Folded the negative-write-address todo, host half only. Named trap for the planner: tests/fake_chip.py's WriteInitPreflightChip overrides write_eprom wholesale, so it cannot prove WRITE-06."
 progress:
   total_phases: 6
   completed_phases: 1
@@ -3687,8 +3687,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-20T19:30:00.000Z
-**Stopped at:** Phase 202 complete, ready to plan Phase 203
+**Last session:** 2026-09-21T08:52:31.093Z
+**Stopped at:** Phase 203 context gathered
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
 **Was (superseded, retained for continuity):** Completed 202-03-PLAN.md — classify_fingerprint delegates to classify_streamed via a CompareAccumulator (D-02 enforced), _diff_offsets retired, D-03 12-row corpus proves whole-Fingerprint equality against a transcribed batch reference, finalise() always classifies, render_compare_lines gains the D-14 bucket line; test count 2144->2180, full suite green, mypy unchanged at 32 errors, ruff clean; no deviations
 **Was (superseded, retained for continuity):** Completed 202-02-PLAN.md — peak-allocation ceiling and runtime gates now assert CMP-03, CMP-05 engine half (coalescing/ordering/cap-honesty) completed; test count 12->33, full suite 2144 passed, mypy unchanged at 32 errors; one disclosed deviation (ceiling test traces 128 KiB not 512 KiB, see Decisions)
@@ -3779,7 +3779,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/202-one-comparison-engine-on-the-host/202-CONTEXT.md
+**Resume file:** .planning/phases/203-the-write-guard-moves-up-a-layer/203-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
