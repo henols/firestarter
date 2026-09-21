@@ -320,7 +320,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 203-04-PLAN.md — the help text tells the truth, both snapshots hand-edited, and the session cost recorded (wave 4)
+- [x] 203-04-PLAN.md — the help text tells the truth, both snapshots hand-edited, and the session cost recorded (wave 4)
 
 **Success criteria**:
 
