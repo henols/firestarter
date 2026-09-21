@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 0
+open_count: 1
 waived_count: 0
 fixed_count: 1
-total_count: 1
-last_updated: 2026-09-20T19:21:05.488Z
+total_count: 2
+last_updated: 2026-09-21T13:34:28.036Z
 ---
 
 # Broken Windows Ledger
@@ -16,6 +16,7 @@ last_updated: 2026-09-20T19:21:05.488Z
 | id | phase | kind | file | line | description | status | reason | recorded_at | resolved_at |
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
 | 1 | 202 | deviation | firestarter_app/firestarter/eprom_operations.py |  | verify_eprom bounds its COMMAND_READ to the file's length by reusing _setup_operation's COMMAND_READ+size override (passing region_length as a string) ahead of --size landing for verify in 202-05. 202-05 should reconcile this with the real --size/-a option and D-17's explicit region-resolution rules. | fixed |  | 2026-09-20T16:22:24.576Z | 2026-09-20T19:21:05.488Z |
+| 2 | 203 | deviation | firestarter_app/tests/test_characterization.py |  | test_help_write and test_no_blank_check_polarity (write --help snapshots) are known-red at 203-03 close by plan design -- write --verify/--full landed and changed the help text; hand-editing the two syrupy snapshot blocks is explicitly 203-04's job (203-03-PLAN.md verification block). Never run --snapshot-update. | open |  | 2026-09-21T13:34:28.036Z |  |
 
 ````json
 [
@@ -30,6 +31,18 @@ last_updated: 2026-09-20T19:21:05.488Z
     "reason": "",
     "recorded_at": "2026-09-20T16:22:24.576Z",
     "resolved_at": "2026-09-20T19:21:05.488Z"
+  },
+  {
+    "id": 2,
+    "kind": "deviation",
+    "phase": "203",
+    "file": "firestarter_app/tests/test_characterization.py",
+    "line": null,
+    "description": "test_help_write and test_no_blank_check_polarity (write --help snapshots) are known-red at 203-03 close by plan design -- write --verify/--full landed and changed the help text; hand-editing the two syrupy snapshot blocks is explicitly 203-04's job (203-03-PLAN.md verification block). Never run --snapshot-update.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-21T13:34:28.036Z",
+    "resolved_at": null
   }
 ]
 ````
