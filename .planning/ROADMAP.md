@@ -303,7 +303,13 @@ Plans:
 
 **Goal**: The host refuses a write to a non-blank, non-erasable part before any programming byte reaches the wire, and `write --verify` proves that a write landed.
 **Requirements**: WRITE-01, WRITE-02, WRITE-03, WRITE-04, WRITE-05, WRITE-06
-**Plans:** TBD (not yet planned)
+**Plans:** 4 plans
+
+Plans:
+- [ ] 203-01-PLAN.md — the host refuses a non-blank write end to end, and a blank region still writes (wave 1, tracer)
+- [ ] 203-02-PLAN.md — pin the exact guarded set, the bypass, the erase re-arming, and the negative start address (wave 2)
+- [ ] 203-03-PLAN.md — `write --verify` and `--full`, with the confirmed exit-code contract (wave 3, has a decision checkpoint)
+- [ ] 203-04-PLAN.md — the help text tells the truth, both snapshots hand-edited, and the session cost recorded (wave 4)
 
 **Success criteria**:
 
