@@ -4,15 +4,15 @@ milestone: v1.41
 milestone_name: Verification Moves to the Host
 current_phase: 204
 current_phase_name: The command surfaces leave the firmware
-status: planning
-stopped_at: Phase 204 context gathered
-last_updated: "2026-09-21T21:30:30.668Z"
+status: planned
+stopped_at: Phase 204 planned
+last_updated: "2026-09-21T22:54:19.996Z"
 last_activity: 2026-09-21
-last_activity_desc: "Phase 204 context gathered 2026-09-21 - four gray areas discussed, CONTEXT.md + DISCUSSION-LOG.md committed at 741ceba6. D-01 full sweep of ordinals 4 and 6 (11 firmware sites plus the host mirror, not the 3 FWCMD-01 names); D-02 reserved recorded on BOTH constant ladders, mirroring FWBLANK-02; D-03 FWCMD-05 is factually wrong - only 1 of its 3 named sites raises MSG_ERR_VERIFY (per-pulse verify raises MAX_PULSES/ENERGY_CAP, flash_util_verify_operation raises OP_TIMEOUT) and it MUST be amended in REQUIREMENTS.md and ROADMAP criterion 3 before planning; D-04 proof split - source-contract gate for FWCMD-04, behavioural native tests for FWCMD-05 (MSG_ERR_VERIFY is asserted by no test today); D-05 the existing MSG_ERR_UNKNOWN_CMD default arm satisfies FWCMD-06 for free, no new message minted; D-06 orphaned DBG_VERIFY_PROM/DBG_BLANK_CHECK_PROM stay in the catalog so 204 stays a two-repo phase; D-07 3.1.0b1 is a substituted label because REL-01 is phase 207; D-08 PyPI 3.0.0b49 in an isolated 3.11 venv plays the old host; D-09 no-side-effect proven by read-back equivalence on silicon; D-10 rig is a LEONARDO carrying Rev 2.0 with a W27C512 seated on /dev/ttyACM0, standing operator permission to drive and flash, so the bench matrix runs unattended - no Uno-class coverage; D-12 the DONE clean stop stays filed as CMP-F1. Folded the milestone provenance todo 2026-08-30-remove-cmd-verify-from-firmware."
+last_activity_desc: "Phase 204 planned 2026-09-21 - research, pattern map, validation strategy and 5 plans in 5 waves committed (6ff3184f, ad2e9407, 3c8e775a, 01ea3a0b). Plan-checker returned VERIFICATION PASSED with one advisory, closed by a region-scoped amendment gate that the checkers own example fix would have passed open on. Requirements 8/8 covered, decisions 12/12 covered, 91 automated verify legs each with a stated failing direction. Spec-less probe fallback (no SPEC.md): 10 edge items = 3 authored into must_haves + 7 flagged assumptions. Next: /gsd-execute-phase 204 - wave 1 pauses once at a package-legitimacy checkpoint before the pinned 3.0.0b49 install."
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 9
+  total_plans: 14
   completed_plans: 9
   percent: 33
 ---
@@ -237,9 +237,9 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 Phase: 204 — The command surfaces leave the firmware
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-21 — Phase 203 complete, transitioned to Phase 204
-Next: **Plan Phase 203** — `/gsd-plan-phase 203` (The write guard moves up a layer). Phase 202 needs no UAT: its verification returned 0 human-verification items (no bench hardware in scope, `Bench: no` in the v1.41 phase table).
+Status: Ready to execute
+Last activity: 2026-09-21 — Phase 204 planned: 5 plans in 5 waves, plan-checker PASSED, 8/8 requirements and 12/12 decisions covered
+Next: **Execute Phase 204** — `/gsd-execute-phase 204` (The command surfaces leave the firmware). Wave 1 is a tracer slice that takes ordinal 6 through every layer and onto silicon; it pauses once at a package-legitimacy checkpoint before installing the pinned `3.0.0b49` host.
 
 ## Roadmap Summary (v1.38)
 
