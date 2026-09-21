@@ -4,15 +4,15 @@ milestone: v1.41
 milestone_name: Verification Moves to the Host
 current_phase: 203
 current_phase_name: The write guard moves up a layer
-status: planning
-stopped_at: Phase 203 context gathered
-last_updated: "2026-09-21T08:52:31.350Z"
+status: planned
+stopped_at: Phase 203 planned
+last_updated: "2026-09-21T10:48:48.053Z"
 last_activity: 2026-09-21
-last_activity_desc: "Phase 203 context gathered — 4 gray areas discussed, 17 decisions locked. Central finding: a literal FLAG_CAN_ERASE exemption (WRITE-01/02) would newly refuse non-blank writes on protocol 0x05 and on every SRAM/FRAM part, families the firmware has never pre-flighted; operator chose 'preserve today's coverage', so the guarded set is 0x07/0x08/0x0B, 0x06, 0x10 and WRITE-02 + roadmap criterion 2 must be amended before planning (the CMP-04 precedent). Guard is region-scoped on every family (lands the host half of the 2026-08-30 whole-device todo), fails closed on an unclassifiable protocol, and lives in a new pure-predicate module beside jp5_gate/flash4_erase_gate/sdp_capability/page_size_gate, called from write_eprom so dev test and dev write-cycle inherit it. Refusal is host-voiced, one line, no remedy clause, carrying address and value. write --verify: one combined verdict line (the word 'successful' never appears), --full supported, and 0/1/2 exit codes gated on the flag while plain write keeps 0/1 (Claude's call on an operator 'you decide'). Three port opens accepted and to be measured, so Phase 206 SESS-02 inherits a real baseline. Folded the negative-write-address todo, host half only. Named trap for the planner: tests/fake_chip.py's WriteInitPreflightChip overrides write_eprom wholesale, so it cannot prove WRITE-06."
+last_activity_desc: "Phase 203 planned — 4 plans, 12 tasks, 4 sequential waves, plan-checker PASSED after one revision cycle. Research corrected three CONTEXT assumptions: WRITE-01's byte value is structurally absent from Phase 202's engine (needs an additive CompareResult.first_actual), _drive_region_compare renders unconditionally so it cannot be reused unchanged under D-11, and FakeChip does not subclass EpromOperator at all — so the WRITE-06 harness is new construction, not a rename, and no test in the suite drives a genuine read main-phase over _FakeSerial. Five open design forks resolved: allowlist {0x06,0x07,0x08,0x0B,0x10} with absent-algorithm failing closed (D-01 wins over D-05 on a known-but-unlisted id); refusal by return False, not a typed exception, so dev test keeps its bool contract; --verify at the CLI tier; no progress bar on the guard read; D-17's session cost as a derivation from Phase 176's measured port-open medians with visible provenance. The checker's one warning — D-13's exit 2 was wired only for the guard read, so a mid-write port drop would exit 1 — was fixed by a second transient channel (last_write_attempt_verdict), keeping write_eprom -> bool. WRITE-02 and ROADMAP criterion 2 were amended before planning per CONTEXT D-02. 203-03 Task 1 is a blocking checkpoint on D-13's one-way exit-code contract and must be answered by the operator, not auto-approved."
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 5
+  total_plans: 9
   completed_plans: 5
   percent: 17
 ---
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 203 — The write guard moves up a layer
+Phase: 203 (The write guard moves up a layer) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-20 — Phase 202 complete, transitioned to Phase 203
+Status: Ready to execute
+Last activity: 2026-09-21 — Phase 203 planned (4 plans, 4 waves); plan-checker passed
 Next: **Plan Phase 203** — `/gsd-plan-phase 203` (The write guard moves up a layer). Phase 202 needs no UAT: its verification returned 0 human-verification items (no bench hardware in scope, `Bench: no` in the v1.41 phase table).
 
 ## Roadmap Summary (v1.38)

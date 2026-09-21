@@ -306,9 +306,20 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 203-01-PLAN.md — the host refuses a non-blank write end to end, and a blank region still writes (wave 1, tracer)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 203-02-PLAN.md — pin the exact guarded set, the bypass, the erase re-arming, and the negative start address (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 203-03-PLAN.md — `write --verify` and `--full`, with the confirmed exit-code contract (wave 3, has a decision checkpoint)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 203-04-PLAN.md — the help text tells the truth, both snapshots hand-edited, and the session cost recorded (wave 4)
 
 **Success criteria**:
