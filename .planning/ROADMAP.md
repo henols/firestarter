@@ -308,7 +308,7 @@ Plans:
 **Success criteria**:
 
 1. A write to a non-blank UV part is refused by the host, naming the first non-blank address and its value, before the port carries a programming command.
-2. A part carrying `FLAG_CAN_ERASE` is not read first; the exemption's reasoning sits at the exemption site, and a test fails if the exemption ever widens beyond that flag.
+2. The guarded set is exactly the protocol families the firmware blank-checks at write-init today — `0x07`, `0x08`, `0x0B`, `0x06`, `0x10` — with a part whose erase actually ran exempt inside them; SRAM/FRAM and `0x05` are named exemptions whose reasoning sits at the exemption site, and a test pins that exact set and fails if it narrows or widens. *(Amended 2026-09-21 per 203-CONTEXT.md D-01/D-02; previously worded as a `FLAG_CAN_ERASE`-only exemption pinned against widening.)*
 3. `write -b` skips the host check and still erases an erase-capable part.
 4. `write --verify` compares the written region through Phase 202's engine and exits non-zero on mismatch, with wording that distinguishes "wrote but did not verify" from "did not write".
 5. A non-blank, non-erasable part still accepts a region write into a blank region — the property Phase 201 delivered, now pinned against silent re-breakage on the host path.

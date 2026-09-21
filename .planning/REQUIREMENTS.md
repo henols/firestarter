@@ -80,7 +80,7 @@ golden.
 ### WRITE — the host takes over the write guard (D-2, D-3)
 
 - [ ] **WRITE-01**: before writing to a part that does not carry `FLAG_CAN_ERASE`, the host reads the target region and refuses the write if it is not blank, naming the first non-blank address and its value.
-- [ ] **WRITE-02**: a part carrying `FLAG_CAN_ERASE` is exempt from that read, the exemption's reasoning is stated at the exemption site, and a test fails if the exemption widens beyond `FLAG_CAN_ERASE`.
+- [ ] **WRITE-02**: the guard applies to exactly the protocol families whose firmware write-init blank-checks today — `0x07`, `0x08`, `0x0B`, `0x06`, `0x10` — and within those, a part whose erase actually ran is exempt from the read; SRAM/FRAM and protocol `0x05` are named exemptions whose reasoning is stated at the exemption site, and a test pins that exact guarded set and fails if it **narrows or widens** (operator decision, 2026-09-21, recorded as D-01/D-02 in `phases/203-the-write-guard-moves-up-a-layer/203-CONTEXT.md`; this requirement previously exempted any part carrying `FLAG_CAN_ERASE` and pinned only against widening beyond that flag — measurement across every firmware write-init path showed that wording would make the host start refusing non-blank writes on protocol `0x05` and on every SRAM/FRAM part, families the firmware has never checked).
 - [ ] **WRITE-03**: `write -b` / `--no-blank-check` skips the host check and still does not skip erase.
 - [ ] **WRITE-04**: `write --verify` runs a read-back comparison of the written region through the CMP engine, and reports through it.
 - [ ] **WRITE-05**: a `write --verify` whose comparison fails exits non-zero and says the write landed but did not verify — never "successful".
