@@ -303,7 +303,7 @@ Plans:
 
 **Goal**: The host refuses a write to a non-blank, non-erasable part before any programming byte reaches the wire, and `write --verify` proves that a write landed.
 **Requirements**: WRITE-01, WRITE-02, WRITE-03, WRITE-04, WRITE-05, WRITE-06
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**

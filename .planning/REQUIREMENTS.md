@@ -79,12 +79,12 @@ golden.
 
 ### WRITE — the host takes over the write guard (D-2, D-3)
 
-- [ ] **WRITE-01**: before writing to a part that does not carry `FLAG_CAN_ERASE`, the host reads the target region and refuses the write if it is not blank, naming the first non-blank address and its value.
-- [ ] **WRITE-02**: the guard applies to exactly the protocol families whose firmware write-init blank-checks today — `0x07`, `0x08`, `0x0B`, `0x06`, `0x10` — and within those, a part whose erase actually ran is exempt from the read; SRAM/FRAM and protocol `0x05` are named exemptions whose reasoning is stated at the exemption site, and a test pins that exact guarded set and fails if it **narrows or widens** (operator decision, 2026-09-21, recorded as D-01/D-02 in `phases/203-the-write-guard-moves-up-a-layer/203-CONTEXT.md`; this requirement previously exempted any part carrying `FLAG_CAN_ERASE` and pinned only against widening beyond that flag — measurement across every firmware write-init path showed that wording would make the host start refusing non-blank writes on protocol `0x05` and on every SRAM/FRAM part, families the firmware has never checked).
-- [ ] **WRITE-03**: `write -b` / `--no-blank-check` skips the host check and still does not skip erase.
-- [ ] **WRITE-04**: `write --verify` runs a read-back comparison of the written region through the CMP engine, and reports through it.
-- [ ] **WRITE-05**: a `write --verify` whose comparison fails exits non-zero and says the write landed but did not verify — never "successful".
-- [ ] **WRITE-06**: a non-blank, non-erasable part accepts a region write into a blank region — and still does after the firmware check is gone. v1.40 Phase 201 already region-scoped the firmware pre-flight, so this passes today; the 2026-08-30 todo's "must be seen RED first" framing predates that fix and does not apply. The risk this pins is **silent re-breakage** when the guard moves to the host, so the test must exercise the host path and fail if the host refuses a blank region on a non-blank part.
+- [x] **WRITE-01**: before writing to a part that does not carry `FLAG_CAN_ERASE`, the host reads the target region and refuses the write if it is not blank, naming the first non-blank address and its value.
+- [x] **WRITE-02**: the guard applies to exactly the protocol families whose firmware write-init blank-checks today — `0x07`, `0x08`, `0x0B`, `0x06`, `0x10` — and within those, a part whose erase actually ran is exempt from the read; SRAM/FRAM and protocol `0x05` are named exemptions whose reasoning is stated at the exemption site, and a test pins that exact guarded set and fails if it **narrows or widens** (operator decision, 2026-09-21, recorded as D-01/D-02 in `phases/203-the-write-guard-moves-up-a-layer/203-CONTEXT.md`; this requirement previously exempted any part carrying `FLAG_CAN_ERASE` and pinned only against widening beyond that flag — measurement across every firmware write-init path showed that wording would make the host start refusing non-blank writes on protocol `0x05` and on every SRAM/FRAM part, families the firmware has never checked).
+- [x] **WRITE-03**: `write -b` / `--no-blank-check` skips the host check and still does not skip erase.
+- [x] **WRITE-04**: `write --verify` runs a read-back comparison of the written region through the CMP engine, and reports through it.
+- [x] **WRITE-05**: a `write --verify` whose comparison fails exits non-zero and says the write landed but did not verify — never "successful".
+- [x] **WRITE-06**: a non-blank, non-erasable part accepts a region write into a blank region — and still does after the firmware check is gone. v1.40 Phase 201 already region-scoped the firmware pre-flight, so this passes today; the 2026-08-30 todo's "must be seen RED first" framing predates that fix and does not apply. The risk this pins is **silent re-breakage** when the guard moves to the host, so the test must exercise the host path and fail if the host refuses a blank region on a non-blank part.
 
 ### DEVTEST — `dev test` keeps its fidelity (D-6)
 
@@ -140,12 +140,12 @@ Every requirement maps to exactly one phase.
 | CMP-06 | Phase 202 | Complete |
 | CMP-07 | Phase 202 | Complete |
 | CMP-08 | Phase 202 | Complete |
-| WRITE-01 | Phase 203 | Pending |
-| WRITE-02 | Phase 203 | Pending |
-| WRITE-03 | Phase 203 | Pending |
-| WRITE-04 | Phase 203 | Pending |
-| WRITE-05 | Phase 203 | Pending |
-| WRITE-06 | Phase 203 | Pending |
+| WRITE-01 | Phase 203 | Complete |
+| WRITE-02 | Phase 203 | Complete |
+| WRITE-03 | Phase 203 | Complete |
+| WRITE-04 | Phase 203 | Complete |
+| WRITE-05 | Phase 203 | Complete |
+| WRITE-06 | Phase 203 | Complete |
 | FWCMD-01 | Phase 204 | Pending |
 | FWCMD-02 | Phase 204 | Pending |
 | FWCMD-03 | Phase 204 | Pending |

@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.41
 milestone_name: Verification Moves to the Host
-current_phase: 203
-current_phase_name: The write guard moves up a layer
-status: executing
-stopped_at: Phase 203 execution started
-last_updated: "2026-09-21T10:54:55.086Z"
+current_phase: 204
+current_phase_name: The command surfaces leave the firmware
+status: planning
+stopped_at: Phase 203 complete, ready to plan Phase 204
+last_updated: "2026-09-21T14:46:21.161Z"
 last_activity: 2026-09-21
-last_activity_desc: "Phase 203 execution started — 4 sequential waves (203-01 guard path, 203-02 allowlist pinning, 203-03 write --verify, 203-04 help text). 203-03 Task 1 is a BLOCKING operator checkpoint on D-13's one-way exit-code contract and must not be auto-approved."
+last_activity_desc: "Phase 203 CLOSED 2026-09-21 — verifier 5/5, all six WRITE reqs complete. The pre-write blank check now runs on the HOST: write_blank_guard.py is a fail-closed pure predicate, GUARDED_PROTOCOL_IDS pinned to {0x06,0x07,0x08,0x0B,0x10} by a test proven RED on both narrowing and widening. `write --verify` ships the operator-confirmed D-13 contract (confirm-d13): --verify opts into 0/1/2, plain write stays 0/1, a transport failure in ANY phase exits 2. Code review found 1 Critical — CR-01, the guard read and the write could resolve to DIFFERENT boards because neither connect pinned the port — FIXED in firestarter_app 0fc6c77 and perturbation-verified. Suite 2216 -> 2306, 0 failed. WR-01/WR-02/IN-01 carried as advisory in 203-VERIFICATION.md. OUTSTANDING: /gsd-secure-phase 203 (security_enforcement on, no 203-SECURITY.md)."
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 9
   completed_plans: 9
-  percent: 17
+  percent: 33
 ---
 
 # Project State
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.41 Verification Moves to the Host ACTIVATED; its `## Current Milestone` block carries the goal, the six activation decisions and the open read-abort mechanic. v1.40's close record is at `milestones/v1.40-CLOSE-RECORD.md`)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 203 — The write guard moves up a layer. Executing 4 sequential waves; 203-03 Task 1 is a **blocking operator checkpoint** (D-13 one-way exit-code contract) and must not be auto-approved. Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, the first version-string movement since `3.0.0b48` / `3.0.0b33`.
+**Current focus:** Phase 204 — The command surfaces leave the firmware. Phase 203 is CLOSED (verifier 5/5); the host-side write guard and `write --verify` are in place, so 204 may now remove `CMD_VERIFY`/`CMD_BLANK_CHECK` from the firmware. **Ordering is a safety property** — 205 (pre-flights out) must not run before 203's guard is merged, and after 205 that guard is the ONLY protection against half-programming a non-blank UV part. OUTSTANDING on 203: `/gsd-secure-phase 203` (security_enforcement is on, no `203-SECURITY.md` exists). Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, the first version-string movement since `3.0.0b48` / `3.0.0b33`.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 203 (The write guard moves up a layer) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 203
-Last activity: 2026-09-21 — Phase 203 execution started
+Phase: 204 — The command surfaces leave the firmware
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-21 — Phase 203 complete, transitioned to Phase 204
 Next: **Plan Phase 203** — `/gsd-plan-phase 203` (The write guard moves up a layer). Phase 202 needs no UAT: its verification returned 0 human-verification items (no bench hardware in scope, `Bench: no` in the v1.41 phase table).
 
 ## Roadmap Summary (v1.38)
@@ -3688,7 +3688,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-21T08:52:31.093Z
-**Stopped at:** Phase 203 context gathered
+**Stopped at:** Phase 203 complete, ready to plan Phase 204
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
 **Was (superseded, retained for continuity):** Completed 202-03-PLAN.md — classify_fingerprint delegates to classify_streamed via a CompareAccumulator (D-02 enforced), _diff_offsets retired, D-03 12-row corpus proves whole-Fingerprint equality against a transcribed batch reference, finalise() always classifies, render_compare_lines gains the D-14 bucket line; test count 2144->2180, full suite green, mypy unchanged at 32 errors, ruff clean; no deviations
 **Was (superseded, retained for continuity):** Completed 202-02-PLAN.md — peak-allocation ceiling and runtime gates now assert CMP-03, CMP-05 engine half (coalescing/ordering/cap-honesty) completed; test count 12->33, full suite 2144 passed, mypy unchanged at 32 errors; one disclosed deviation (ceiling test traces 128 KiB not 512 KiB, see Decisions)
