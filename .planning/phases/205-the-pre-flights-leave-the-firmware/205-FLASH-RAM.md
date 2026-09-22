@@ -3,8 +3,8 @@ title: FWBLANK-05 flash/RAM measurement record — v1.41 Phase 205
 phase: 205-the-pre-flights-leave-the-firmware
 plan: "02"
 measured: 2026-09-22
-status: phase-entry baseline is AUTHORITATIVE; phase-exit is EMPTY, filled by plan 06 on the
-  post-sweep tree
+status: complete — phase-entry, plan-05 fix-cost and phase-exit sections all filled and
+  cross-checked (reclaim + cost = net, per target)
 requirements: [FWBLANK-05]
 ---
 
@@ -183,32 +183,122 @@ back onto the sweep's reclaim to state the phase's net figure.
 
 ## Phase-exit
 
-*Empty. Plan 06 fills this section from a clean `pio run -t clean` + `pio run` on the
-post-sweep tree, after every FWBLANK-01 through FWBLANK-04 removal has landed. Plan 05's
-negative-address fix (the folded firmware half of
-`2026-09-16-reject-negative-write-start-address.md`) is measured as its own line here if it
-lands before plan 06, so the sweep's own delta stays separable from a fix that adds code
-rather than removes it.*
+Method: identical to the phase-entry baseline and the plan-05 fix-cost section above —
+`pio run -t clean -e <env>` individually for `uno`, `uno328pb` and `leonardo`, then one
+`pio run -e uno -e uno328pb -e leonardo`, reading each target's `Flash:`/`RAM:` summary
+line. Reproduced a second time (full clean + rebuild) with byte-identical output before
+recording.
 
-| Target | Flash used | of | % | RAM used | of | % |
-|---|---|---|---|---|---|---|
-| `uno` | — | — | — | — | — | — |
-| `uno328pb` | — | — | — | — | — | — |
-| `leonardo` | — | — | — | — | — | — |
+**Phase-exit is the same tree as plan 05's post-fix measurement, not a new one.** No
+firmware commit landed between plan 05's task 2 and this plan — `firestarter_fw` HEAD is
+still `6e11d057b59977dd870c1ddcc588dd2f6f3ea1db` (`feat(205-05): refuse a negative wire
+address instead of clamping to 0`), which already carries every FWBLANK-01 through
+FWBLANK-04 removal (landed by plans 03/04, HEAD `9061dd1` at that point) plus plan 05's fix
+on top. Re-measuring here rather than copying plan 05's numbers is deliberate — a figure is
+only as good as the run that produced it, and this plan's own prohibition (T-205-22)
+forbids treating an earlier plan's prose as a substitute for measuring the tree that
+shipped. The re-measurement below reproduces plan 05's post-fix figures and digests exactly,
+byte for byte, which is itself the proof that no drift occurred between plans.
 
-Leonardo double-denominator (32768 / 28672): — / —
+```bash
+cd /workspaces/firestarter_fw
+pio run -t clean -e uno && pio run -t clean -e uno328pb && pio run -t clean -e leonardo
+pio run -e uno -e uno328pb -e leonardo
+```
+
+| Target | Flash used | of | % | margin | RAM used | of | % | margin |
+|---|---|---|---|---|---|---|---|---|
+| `uno` | **20956** B | 32768 | 64.0% | 11812 B | **1394** B | 2048 | 68.1% | 654 B |
+| `uno328pb` | **21000** B | 32768 | 64.1% | 11768 B | **1400** B | 2048 | 68.4% | 648 B |
+| `leonardo` | **23314** B | 32768 | 71.1% | 9454 B | **1835** B | 2560 | 71.7% | 725 B |
+
+**Leonardo against both denominators:** 23314 / 32768 = **71.1%** (9454 B margin, the
+`platformio.ini`-reported figure) = 23314 / 28672 = **81.3%** (**5358 B of true margin**)
+against the real ATmega32U4-on-Caterina ceiling — same override and same reasoning as the
+phase-entry section above: `board_upload.maximum_size = 32768` means the linker no longer
+protects the top 4096 B Caterina needs, so the reported percentage understates how close the
+image is to the real ceiling. The post-phase figure, 23314 B, is strictly below 28672.
+
+Leonardo double-denominator (32768 / 28672): 71.1% / 81.3%
 
 ### Artifact digests
 
+```bash
+for e in uno uno328pb leonardo; do
+  for x in elf hex; do sha256sum ".pio/build/$e/firestarter_$e.$x"; done
+done
+```
+
 | Target | `.elf` sha256 | `.hex` sha256 |
 |---|---|---|
-| `uno` | — | — |
-| `uno328pb` | — | — |
-| `leonardo` | — | — |
+| `uno` | `4a6278b2759299eed36c5c0589997258186f38c5a66e648a768dd4b546e3a51f` | `9ff9502d9250e592cf05423112cd0e2b2cc27d78aec0d2aed4225aad2638718c` |
+| `uno328pb` | `6b29e2cf63a8391ef195c13fd25fc09da6891aa27cbac21679b6d91ddf494cdf` | `06a0e9b81a271252a6e773056f00e77dfe41b871b693eac839a315c5af37ef66` |
+| `leonardo` | `24de25655685eb8de78d41eb16db95fe1bce114e70813e44233036c32ad74c36` | `38ed1da7f7a754472a85ec49c18341064120e8cc8c03465a82d7c1ad185db5b2` |
+
+Both `pio run` invocations at this plan (the measurement and its reproduction) produced
+these same six digests and the same six `Flash:`/`RAM:` lines, character for character —
+and all six digests are identical to the ones plan 05 recorded for its post-fix tree, which
+is expected: it is the same commit. `git status --porcelain` in `firestarter_fw` was empty
+after both builds.
+
+**Restated build configuration.** Unchanged from the phase-entry section above: `DEV_TOOLS`
+is 0 on all three AVR targets (never set outside `[env:native]`); `SERIAL_DEBUG` is
+commented out in `[env] build_flags`, so the deleted `DBG_FLAG_SKIP_BLANK` debug emit
+(retired by plan 04) contributed zero shipped bytes even before its removal; and
+`SERIAL_ON_IO` is defined for `uno`/`uno328pb` only and never appeared in `memory.cpp`, the
+file the blank-check sweep touched — CONTEXT D-10 predicted the per-target deltas "will
+legitimately differ" because of `SERIAL_ON_IO`; measurement contradicts that prediction,
+because `SERIAL_ON_IO` is nowhere in the swept file, and the delta below is in fact
+identical on all three targets.
+
+No CI leg gates image size, restated here for the exit figure the same as at entry:
+`firestarter_fw/scripts/` carries no `check_size_baseline.py` and no `size_baseline.json`
+exists anywhere in the repository. This record exists because FWBLANK-05 asks for a
+measurement, not because any gate enforces one.
 
 ## Delta
 
-*Empty. Plan 06 computes phase-exit minus phase-entry per target, per FWBLANK-05.*
+Three separate arithmetic claims, each naming the two commits it is computed between. None
+of the three is derived from another target's figure or from the research's simulation —
+every number on both sides of every subtraction below is an integer byte count `pio run`
+printed for that exact target, taken from the tables above.
+
+**1. The SWEEP's reclaim — what FWBLANK-05 asks for.** Phase-entry (`a4e002f2`, plan 02)
+minus post-sweep/pre-fix (`9061dd1`, plan 04's HEAD, recorded in plan 05's fix-cost section):
+
+| Target | Entry Flash | Post-sweep Flash | Δ Flash (reclaim) | Entry RAM | Post-sweep RAM | Δ RAM (reclaim) |
+|---|---|---|---|---|---|---|
+| `uno` | 21452 B | 20934 B | **−518 B** | 1398 B | 1394 B | **−4 B** |
+| `uno328pb` | 21496 B | 20978 B | **−518 B** | 1404 B | 1400 B | **−4 B** |
+| `leonardo` | 23810 B | 23292 B | **−518 B** | 1839 B | 1835 B | **−4 B** |
+
+Identical on all three targets, reported per target rather than as one all-three claim, per
+this plan's own instruction. This matches `205-RESEARCH.md`'s simulated −518 B / −4 B result
+exactly — the tree is what was measured here, and the simulation's agreement is corroborating
+evidence, not a substitute for this measurement.
+
+**2. The FIX's cost — plan 05, already recorded there, reproduced here for readability.**
+Post-sweep/pre-fix (`9061dd1`) minus post-fix (`6e11d05`, plan 05's task-1 commit):
+
+| Target | Post-sweep Flash | Post-fix Flash | Δ Flash (cost) | Post-sweep RAM | Post-fix RAM | Δ RAM (cost) |
+|---|---|---|---|---|---|---|
+| `uno` | 20934 B | 20956 B | **+22 B** | 1394 B | 1394 B | **+0 B** |
+| `uno328pb` | 20978 B | 21000 B | **+22 B** | 1400 B | 1400 B | **+0 B** |
+| `leonardo` | 23292 B | 23314 B | **+22 B** | 1835 B | 1835 B | **+0 B** |
+
+**3. The PHASE's net — entry minus exit, the first claim minus the second.** Phase-entry
+(`a4e002f2`) minus phase-exit (`6e11d05` — the same commit as the fix's post-fix figure,
+since no firmware commit landed between plan 05's task 2 and this plan):
+
+| Target | Entry Flash | Exit Flash | Δ Flash (net) | Entry RAM | Exit RAM | Δ RAM (net) |
+|---|---|---|---|---|---|---|
+| `uno` | 21452 B | 20956 B | **−496 B** | 1398 B | 1394 B | **−4 B** |
+| `uno328pb` | 21496 B | 21000 B | **−496 B** | 1404 B | 1400 B | **−4 B** |
+| `leonardo` | 23810 B | 23314 B | **−496 B** | 1839 B | 1835 B | **−4 B** |
+
+Arithmetic check, per target: reclaim (−518) + cost (+22) = net (−496); RAM reclaim (−4) +
+cost (+0) = net (−4). Holds identically on `uno`, `uno328pb` and `leonardo`. The phase frees
+496 B of flash and 4 B of RAM per AVR target, net of the negative-address fix's own cost.
 
 ---
 
