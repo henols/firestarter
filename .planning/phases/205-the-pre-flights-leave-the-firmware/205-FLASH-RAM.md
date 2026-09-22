@@ -108,6 +108,79 @@ same six digests and the same six `Flash:`/`RAM:` lines, character for character
 
 ---
 
+## Plan 05 — the negative-address fix's own flash/RAM cost
+
+**Why this section exists, separately.** FWBLANK-05 asks what the removal (plans 03/04, and
+plan 06's sweep completion) freed. Plan 05's fix adds code — a policy bit and a dispatch-loop
+check — on top of the same tree. Reporting the fix's cost inside the sweep's own before/after
+pair would understate the removal (if netted against the reclaim) or overstate the fix (if read
+as the sweep's whole delta) depending on which way a reader reads it. This section keeps the two
+numbers separable in both directions, per the plan's own must-have.
+
+Method: identical to the phase-entry baseline above — `pio run -t clean -e <env>` per target,
+then one `pio run -e uno -e uno328pb -e leonardo`, reading each target's `Flash:`/`RAM:` line.
+Reproduced a second time (full clean + rebuild) with byte-identical output before recording.
+Both figures below are measured directly; the delta is post-fix minus pre-fix, not estimated.
+
+**Pre-fix figures** were taken immediately before task 1's edit, at `firestarter_fw` commit
+`9061dd1` (plan 04's HEAD, the tree this plan started from) — identical to plan 02's phase-entry
+baseline for uno and uno328pb's flash, and matching plan 04's post-sweep leonardo/RAM figures.
+**Post-fix figures** were taken after task 1's commit, at `firestarter_fw` commit
+`6e11d057b59977dd870c1ddcc588dd2f6f3ea1db`.
+
+```bash
+cd /workspaces/firestarter_fw
+pio run -t clean -e uno && pio run -t clean -e uno328pb && pio run -t clean -e leonardo
+pio run -e uno -e uno328pb -e leonardo
+```
+
+| Target | pre-fix Flash | post-fix Flash | Δ Flash | pre-fix RAM | post-fix RAM | Δ RAM |
+|---|---|---|---|---|---|---|
+| `uno` | 20934 B | 20956 B | **+22 B** | 1394 B | 1394 B | **+0 B** |
+| `uno328pb` | 20978 B | 21000 B | **+22 B** | 1400 B | 1400 B | **+0 B** |
+| `leonardo` | 23292 B | 23314 B | **+22 B** | 1835 B | 1835 B | **+0 B** |
+
+**The delta is identical on all three targets**, same as the sweep's own delta pattern (plan 06's
+concern, not re-derived here) — the fix's code (one macro-derived policy bit read via
+`pgm_read_byte`, one branch, one early `return -1`) lives in `json_parse`'s dispatch loop, which
+every AVR target compiles unconditionally; nothing in it is gated by `SERIAL_ON_IO` or any other
+per-target flag. Zero RAM cost: the fix adds no new static storage, only code and a compile-time
+constant.
+
+**Leonardo against both denominators, this fix's post-fix figure:**
+23314 / 32768 = **71.1%** (the `platformio.ini`-reported figure, 9454 B margin) =
+23314 / 28672 = **81.3%** (**5358 B of true margin** against the real ATmega32U4-on-Caterina
+ceiling). This matches the build's own `bootloader_guard.py` post-build check verbatim:
+`leonardo 23314/28672 B (81.3% of the safe ceiling, 5358 B margin, 4096 B bootloader reserved)`.
+Pre-fix true margin was 5380 B (23292 B pre-fix used against 28672 B); this fix costs 22 B of
+that margin, identically on all three targets.
+
+### Artifact digests, post-fix
+
+```bash
+for e in uno uno328pb leonardo; do
+  for x in elf hex; do sha256sum ".pio/build/$e/firestarter_$e.$x"; done
+done
+```
+
+| Target | `.elf` sha256 | `.hex` sha256 |
+|---|---|---|
+| `uno` | `4a6278b2759299eed36c5c0589997258186f38c5a66e648a768dd4b546e3a51f` | `9ff9502d9250e592cf05423112cd0e2b2cc27d78aec0d2aed4225aad2638718c` |
+| `uno328pb` | `6b29e2cf63a8391ef195c13fd25fc09da6891aa27cbac21679b6d91ddf494cdf` | `06a0e9b81a271252a6e773056f00e77dfe41b871b693eac839a315c5af37ef66` |
+| `leonardo` | `24de25655685eb8de78d41eb16db95fe1bce114e70813e44233036c32ad74c36` | `38ed1da7f7a754472a85ec49c18341064120e8cc8c03465a82d7c1ad185db5b2` |
+
+Both `pio run` invocations (the initial post-fix measurement and its reproduction) produced these
+same six digests and the same six `Flash:`/`RAM:` lines, character for character.
+`git status --porcelain` in `firestarter_fw` was empty after both builds.
+
+**Firmware commit this measurement was taken at:** `6e11d057b59977dd870c1ddcc588dd2f6f3ea1db`
+(`feat(205-05): refuse a negative wire address instead of clamping to 0`), on branch
+`v1.41-verification-to-host`. Plan 06 takes the phase-exit figure — after FWBLANK-01 through
+FWBLANK-04's removal has also landed — and completes the arithmetic, adding this fix's +22 B
+back onto the sweep's reclaim to state the phase's net figure.
+
+---
+
 ## Phase-exit
 
 *Empty. Plan 06 fills this section from a clean `pio run -t clean` + `pio run` on the
