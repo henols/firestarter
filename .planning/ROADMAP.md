@@ -397,7 +397,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 205-06-PLAN.md — complete FWBLANK-05's measured number and annotate the two kept catalog ids
+- [x] 205-06-PLAN.md — complete FWBLANK-05's measured number and annotate the two kept catalog ids
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
