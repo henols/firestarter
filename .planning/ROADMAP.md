@@ -401,7 +401,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 205-07-PLAN.md — the bench: criteria 3 and 5 on silicon, the D-04 skew observed before the reflash, and the `erase -b` session cost
+- [x] 205-07-PLAN.md — the bench: criteria 3 and 5 on silicon, the D-04 skew observed before the reflash, and the `erase -b` session cost
 
 **Success criteria**:
 
