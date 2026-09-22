@@ -215,6 +215,14 @@ None — no external service configuration required.
 ## Next Phase Readiness
 FWBLANK-01's substance is now complete: the one gap `205-VERIFICATION.md` found (`gaps[0]`, truth 9) is closed, its regression matrix is pinned, and the decision to close it in-phase is recorded. Phase 206 (`dev test`/session-lease work) and Phase 207 (version bump + wiki) proceed unblocked by this gap. No blockers.
 
+## Self-Check: PASSED
+
+- `205-CR-01-DECISION.md` exists on disk: FOUND.
+- `firestarter_app/firestarter/write_blank_guard.py` exists on disk: FOUND.
+- Meta-repo SUMMARY commit `826aebc4` present in `git log --oneline --all`: FOUND.
+- Submodule task 1 commit `d78404d` present in `git log --oneline --all`: FOUND.
+- Submodule task 2 commit `2756ef0` present in `git log --oneline --all`: FOUND.
+
 ---
 *Phase: 205-the-pre-flights-leave-the-firmware*
 *Completed: 2026-09-22*
