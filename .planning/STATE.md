@@ -4,11 +4,11 @@ milestone: v1.41
 milestone_name: Verification Moves to the Host
 current_phase: 204
 current_phase_name: The command surfaces leave the firmware
-status: planned
-stopped_at: Phase 204 planned
-last_updated: "2026-09-21T22:54:19.996Z"
-last_activity: 2026-09-21
-last_activity_desc: "Phase 204 planned 2026-09-21 - research, pattern map, validation strategy and 5 plans in 5 waves committed (6ff3184f, ad2e9407, 3c8e775a, 01ea3a0b). Plan-checker returned VERIFICATION PASSED with one advisory, closed by a region-scoped amendment gate that the checkers own example fix would have passed open on. Requirements 8/8 covered, decisions 12/12 covered, 91 automated verify legs each with a stated failing direction. Spec-less probe fallback (no SPEC.md): 10 edge items = 3 authored into must_haves + 7 flagged assumptions. Next: /gsd-execute-phase 204 - wave 1 pauses once at a package-legitimacy checkpoint before the pinned 3.0.0b49 install."
+status: executing
+stopped_at: "Phase 204 executing — wave 1 of 5 (204-01)"
+last_updated: "2026-09-22T04:55:16.008Z"
+last_activity: 2026-09-22
+last_activity_desc: "Phase 204 execution started 2026-09-22 - 5 plans in 5 waves, one plan per wave, all sequential on the main checkout (no worktrees: every plan reads or writes a submodule). Planned 2026-09-21: plan-checker PASSED, requirements 8/8 and decisions 12/12 covered, 91 automated verify legs. Wave 1 (204-01) pauses once at a blocking-human package-legitimacy checkpoint before the pinned 3.0.0b49 install."
 progress:
   total_phases: 6
   completed_phases: 2
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.41 Verification Moves to the Host ACTIVATED; its `## Current Milestone` block carries the goal, the six activation decisions and the open read-abort mechanic. v1.40's close record is at `milestones/v1.40-CLOSE-RECORD.md`)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 204 — The command surfaces leave the firmware. Phase 203 is CLOSED (verifier 5/5); the host-side write guard and `write --verify` are in place, so 204 may now remove `CMD_VERIFY`/`CMD_BLANK_CHECK` from the firmware. **Ordering is a safety property** — 205 (pre-flights out) must not run before 203's guard is merged, and after 205 that guard is the ONLY protection against half-programming a non-blank UV part. OUTSTANDING on 203: `/gsd-secure-phase 203` (security_enforcement is on, no `203-SECURITY.md` exists). Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, the first version-string movement since `3.0.0b48` / `3.0.0b33`.
+**Current focus:** Phase 204 — The command surfaces leave the firmware, EXECUTING (started 2026-09-22). Phase 203 is CLOSED (verifier 5/5); the host-side write guard and `write --verify` are in place, so 204 may now remove `CMD_VERIFY`/`CMD_BLANK_CHECK` from the firmware. **Ordering is a safety property** — 205 (pre-flights out) must not run before 203's guard is merged, and after 205 that guard is the ONLY protection against half-programming a non-blank UV part. OUTSTANDING on 203: `/gsd-secure-phase 203` (security_enforcement is on, no `203-SECURITY.md` exists). Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, the first version-string movement since `3.0.0b48` / `3.0.0b33`.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 204 — The command surfaces leave the firmware
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-09-21 — Phase 204 planned: 5 plans in 5 waves, plan-checker PASSED, 8/8 requirements and 12/12 decisions covered
+Phase: 204 (The command surfaces leave the firmware) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 204
+Last activity: 2026-09-22 — Phase 204 execution started
 Next: **Execute Phase 204** — `/gsd-execute-phase 204` (The command surfaces leave the firmware). Wave 1 is a tracer slice that takes ordinal 6 through every layer and onto silicon; it pauses once at a package-legitimacy checkpoint before installing the pinned `3.0.0b49` host.
 
 ## Roadmap Summary (v1.38)
