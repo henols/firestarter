@@ -881,6 +881,14 @@ format = "Write EPROM"
 params = []
 
 [[debug.messages]]
+# Orphaned as of 3.1.0: its only emit site was the eprom_verify() wrapper
+# (LOG_DEBUG_ID_SUB(DBG_VERIFY_PROM)), retired along with the standalone
+# CMD_VERIFY command surface in 3.1.0 (v1.41 phase 204). Nothing else in
+# either repository emits this sub-id. KEPT, not retired (D-06) -- reusing
+# the number would make a replayed capture or an older firmware's log
+# stream silently misinterpreted, and retaining it costs nothing: this
+# entry has no format-string bytes on the AVR side (LOG_DEBUG_ID_SUB is
+# id-only). Not free for reuse.
 id     = 0x08
 name   = "DBG_VERIFY_PROM"
 format = "Verify PROM"
@@ -899,6 +907,14 @@ format = "Check Chip ID"
 params = []
 
 [[debug.messages]]
+# Orphaned as of 3.1.0: its only emit site was the eprom_blank_check()
+# wrapper (LOG_DEBUG_ID_SUB(DBG_BLANK_CHECK_PROM)), retired along with the
+# standalone CMD_BLANK_CHECK command surface in 3.1.0 (v1.41 phase 204).
+# Nothing else in either repository emits this sub-id. KEPT, not retired
+# (D-06) -- reusing the number would make a replayed capture or an older
+# firmware's log stream silently misinterpreted, and retaining it costs
+# nothing: this entry has no format-string bytes on the AVR side
+# (LOG_DEBUG_ID_SUB is id-only). Not free for reuse.
 id     = 0x0B
 name   = "DBG_BLANK_CHECK_PROM"
 format = "Blank check PROM"
