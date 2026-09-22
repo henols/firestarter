@@ -389,7 +389,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 205-04-PLAN.md — retire `FLAG_SKIP_BLANK_CHECK` from both ladders as a commit pair, and re-plumb `-b` as an explicit host-side signal
+- [x] 205-04-PLAN.md — retire `FLAG_SKIP_BLANK_CHECK` from both ladders as a commit pair, and re-plumb `-b` as an explicit host-side signal
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
