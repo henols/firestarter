@@ -375,7 +375,16 @@ Plans:
 
 **Goal**: The write-init and erase-end blank checks, their shared machinery and the `FLAG_SKIP_BLANK_CHECK` bit leave the firmware, and the flash that frees is a measured number rather than an estimate.
 **Requirements**: FWBLANK-01, FWBLANK-02, FWBLANK-03, FWBLANK-04, FWBLANK-05
-**Plans:** TBD (not yet planned)
+**Plans:** 7 plans
+
+Plans:
+- [ ] 205-01-PLAN.md — `erase -b` becomes a host capability, through Phase 202's `check_eprom_blank`, before the firmware loses the erase-end check
+- [ ] 205-02-PLAN.md — repair the firmware test tree's four stale path citations and take FWBLANK-05's phase-entry baseline
+- [ ] 205-03-PLAN.md — delete the four blank-check call sites, then the machinery itself, with the golden re-derived and the survivor fence migrated
+- [ ] 205-04-PLAN.md — retire `FLAG_SKIP_BLANK_CHECK` from both ladders as a commit pair, and re-plumb `-b` as an explicit host-side signal
+- [ ] 205-05-PLAN.md — the folded negative-address firmware fix, scoped to the address field, in its own commit
+- [ ] 205-06-PLAN.md — complete FWBLANK-05's measured number and annotate the two kept catalog ids
+- [ ] 205-07-PLAN.md — the bench: criteria 3 and 5 on silicon, the D-04 skew observed before the reflash, and the `erase -b` session cost
 
 **Success criteria**:
 
