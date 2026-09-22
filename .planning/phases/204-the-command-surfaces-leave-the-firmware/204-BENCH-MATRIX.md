@@ -306,5 +306,169 @@ Flash: 72.7% (used 23810 bytes from 32768 bytes)
 **Leonardo bootloader-ceiling check: 23810 B < 28672 B** — well inside the real ATmega32U4 ceiling that
 `platformio.ini`'s override exposes; the image does not encroach on the Caterina bootloader reservation.
 
-*(Task 2 complete. Task 3 — the published-host refusal legs — continues this record below in a later
-commit.)*
+## Task 3 — The published host is refused on both ordinals, and the part is unchanged
+
+### (a) Isolate the shared config
+
+`~/.firestarter/` existed at the start of this task (`config.json` containing `{"port":
+"/dev/ttyACM0"}`) — created by this plan's own task 1/2 post-204-host reads, since it did not exist at
+the *plan's* start per the orchestrator-verified rig state. Snapshotted by move to
+`/home/vscode/.local/share/gsd204-scratch/firestarter-config-snapshot` before the two old-host legs,
+restored by move immediately after (overwriting whatever the old host itself wrote there), then
+**deleted entirely at the end of this task** — see "Final state" below — so the operator's machine ends
+the phase exactly as it started: no `~/.firestarter/` at all. Never deleted mid-sequence; always moved.
+
+### (b) The published host's own help — the invocation source and the version evidence
+
+```
+$ "$HOME/.local/share/gsd-204-oldhost-venv/bin/firestarter" --version
+Firestarter, version 3.0.0b49
+
+$ "$HOME/.local/share/gsd-204-oldhost-venv/bin/firestarter" verify --help
+Usage: firestarter verify [OPTIONS] EPROM INPUT_FILE
+
+  Verifies the content of an EPROM.
+
+Options:
+  -a, --address TEXT  Verify start address in dec/hex
+  -f, --force         Force, even if the VPP or chip id doesn't match.
+  --help              Show this message and exit.
+
+$ "$HOME/.local/share/gsd-204-oldhost-venv/bin/firestarter" blank --help
+Usage: firestarter blank [OPTIONS] EPROM
+
+  Checks if an EPROM is blank.
+
+Options:
+  -f, --force  Force, even if the VPP or chip id doesn't match.
+  --help       Show this message and exit.
+```
+
+Same option shape as the post-204 host (`-f`/`--force`, positional `EPROM` and `INPUT_FILE`) — the
+invocation below is taken directly from this output, not assumed from the working tree's CLI.
+
+### (c) The verify refusal
+
+```
+$ timeout 300 "$HOME/.local/share/gsd-204-oldhost-venv/bin/firestarter" verify -f w27c512 \
+    /home/vscode/.local/share/gsd204-scratch/pre.bin
+Connecting...Connecting... OK
+Verifying /home/vscode/.local/share/gsd204-scratch/pre.bin against W27C512
+ERROR: Unknown command: 6
+Programmer error during VERIFY: Programmer error during init: Unknown command: 6
+Verify for W27C512 failed.
+```
+
+- **Exit code: 1**
+- **Duration: 3.56 s** — well inside the 300 s bounding timeout, not a stall.
+- **Non-empty output**, naming the offending ordinal (`Unknown command: 6` — `CMD_VERIFY`, retired in
+  plan 01).
+
+This is byte-for-byte the same wording plan 01's tracer captured for the same ordinal (`204-BENCH-TRACER.md`
+§ "(f) Negative control"), now against firmware where ordinal 4 is ALSO retired rather than left live as
+a control — confirming the refusal path is unchanged by the second retirement.
+
+### (d) The blank refusal
+
+```
+$ timeout 300 "$HOME/.local/share/gsd-204-oldhost-venv/bin/firestarter" blank -f w27c512
+Connecting...Connecting... OK
+Blank checking EPROM W27C512
+ERROR: Unknown command: 4
+Programmer error during BLANK_CHECK: Programmer error during init: Unknown command: 4
+```
+
+- **Exit code: 1**
+- **Duration: 3.49 s** — well inside the 300 s bounding timeout, not a stall.
+- **Non-empty output**, naming the offending ordinal (`Unknown command: 4` — `CMD_BLANK_CHECK`, retired
+  in plan 03).
+
+Where plan 01's positive control for this same ordinal reported `WARN: VPP is high` and then a served
+`Not blank, at 0x000000, v: 0x18` verdict (ordinal 4 was still live then), this transcript instead
+refuses at `init` before any VPP warning or chip interaction — this is now the SAME refusal shape ordinal
+6 already showed, because `is_memory_cmd(4)` is now false and `configure_memory` never runs, exactly as
+`204-RESEARCH.md` § "The Refusal Path, Traced End To End" describes.
+
+**D-05 cost, recorded verbatim as required:** both refusals read as "unknown command" — a message that
+would read to an operator more like a corrupt frame or garbled transport than a deliberate version
+boundary. Neither the meta catalog's format string nor the published wheel's own catalog module softens
+this; the pre-`3.1.0` host is shipped code this phase cannot change. This cost was accepted deliberately
+at design time (D-05); Phase 207 owns naming the boundary for a human in the wiki, and the verbatim text
+above is what it has to work from.
+
+### (e) Read-back equivalence — the no-side-effect half
+
+`~/.firestarter/` restored to its step-(a) snapshot, then:
+
+```
+$ cd /workspaces/firestarter_app && .venv311/bin/firestarter read -f W27C512 \
+    /home/vscode/.local/share/gsd204-scratch/post.bin
+... [same VPP-high warning as task 2's verify/blank runs; no chip-ID warning this time] ...
+Read complete (7.40s). Data saved to /home/vscode/.local/share/gsd204-scratch/post.bin
+```
+
+- **`post.bin`: 65536 bytes**
+- **SHA-256: `a094e902a30b4fa3369ee493338351e11a8b6667f7539460b63f78dce896ae43`**
+- `cmp pre.bin post.bin` exits 0, `cmp mid.bin post.bin` exits 0 — **all three whole-device reads
+  (pre-swap baseline, post-swap mid-point, post-refusal end) share one digest, over all 65536 bytes.**
+
+```
+$ python3 -c "... sha256 over pre.bin, mid.bin, post.bin ..."
+three reads, one digest: a094e902a30b4fa3369ee493338351e11a8b6667f7539460b63f78dce896ae43
+```
+
+Neither the refused `verify` nor the refused `blank` wrote or erased anything on the part. This is
+**observed on silicon** — three independent whole-device reads sharing one digest — not argued from
+where the refusal fired in the dispatch loop, per D-09. This is specifically the property that rules out
+a silent erase, the worst failure mode a blank-check ordinal retiring badly could produce.
+
+### Final state — `~/.firestarter/`
+
+```
+$ rm -rf "$HOME/.firestarter"
+$ ls -la ~/.firestarter
+ls: cannot access '/home/vscode/.firestarter': No such file or directory
+```
+
+Absent at the end, exactly as it was absent at the plan's start (per the orchestrator-verified rig
+state). Never deleted mid-sequence — only ever moved aside and restored — until this final cleanup step,
+matching plan 01's own protocol.
+
+## Coverage gap — stated, not hidden
+
+**Both skew directions in this matrix ran on a Leonardo only.** Its buffer is 1024 bytes
+(`DATA_BUFFER_SIZE=1024` in `platformio.ini`'s `[env:leonardo]`), not the Uno's 512, and the host sizes
+its write chunks from the firmware's own reported buffer size. **No Uno-class board is attached to this
+devcontainer.** A pass on this matrix demonstrates nothing about the 512-byte chunked-transfer path —
+closing that gap needs a separate board and a separate leg. This gap is inherited unchanged from plan
+01's tracer record and is not narrowed by this plan.
+
+**What the host could not tell you, at any point in this matrix:** its port probe truncates the
+prerelease suffix, so `3.0.0b33` (pre-204), the post-204 working-tree build, and any other prerelease
+are indistinguishable to it at runtime. At no point in this matrix could either host confirm which
+firmware was actually on the board — the commit shas recorded in the role table above, and the flash
+commands recorded at each step, are the only record.
+
+## Summary of what this plan proves
+
+1. **REL-02 (criterion 1):** a post-204 host performs `verify` and `blank` correctly against pre-204
+   firmware, observed on the bench — `verify` matches (exit 0), `blank` reports not-blank (exit 1 via
+   the designed abort-predicate fast path), and neither output carries an unknown-command line.
+2. **REL-03 / FWCMD-06 (criterion 2):** a published `3.0.0b49` host receives an explicit, coded refusal
+   naming the offending ordinal on BOTH retired ordinals (6 and 4) from post-204 firmware — never
+   silence, never a hang, both transcripts captured verbatim with exit code and duration.
+3. **D-09 (criterion 3):** the seated part's 65536 bytes are byte-identical across the whole matrix —
+   three reads (pre-swap, post-swap, post-refusal), one SHA-256 digest.
+4. **D-07 (criterion 4):** every role is named by commit sha or pinned version; the label substitution
+   is stated explicitly; the host's inability to read back which firmware is on the board is stated
+   explicitly.
+5. **Coverage gap (criterion 5):** the Leonardo-only limitation is stated plainly above, not papered
+   over.
+6. **Baseline for Phase 205 (criterion 6):** per-target flash and RAM figures recorded for both sides of
+   the sweep, giving Phase 205's own measurement a real Phase 204 baseline instead of a Phase 201-era
+   one.
+
+**Open question NOT resolved by this plan, carried forward:** the seated part's identity
+(`WINDOWS.md` entry 3) — see "Open question carried, not resolved" at the top of this record. Every
+claim above is chip-identity-independent by construction, but the record does not assert the part is a
+confirmed W27C512.
