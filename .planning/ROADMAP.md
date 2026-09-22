@@ -378,12 +378,29 @@ Plans:
 **Plans:** 7 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 205-01-PLAN.md — `erase -b` becomes a host capability, through Phase 202's `check_eprom_blank`, before the firmware loses the erase-end check
 - [ ] 205-02-PLAN.md — repair the firmware test tree's four stale path citations and take FWBLANK-05's phase-entry baseline
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 205-03-PLAN.md — delete the four blank-check call sites, then the machinery itself, with the golden re-derived and the survivor fence migrated
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 205-04-PLAN.md — retire `FLAG_SKIP_BLANK_CHECK` from both ladders as a commit pair, and re-plumb `-b` as an explicit host-side signal
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 205-05-PLAN.md — the folded negative-address firmware fix, scoped to the address field, in its own commit
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 205-06-PLAN.md — complete FWBLANK-05's measured number and annotate the two kept catalog ids
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 205-07-PLAN.md — the bench: criteria 3 and 5 on silicon, the D-04 skew observed before the reflash, and the `erase -b` session cost
 
 **Success criteria**:
