@@ -95,6 +95,19 @@ transfer.
 - **SHA-256: `a094e902a30b4fa3369ee493338351e11a8b6667f7539460b63f78dce896ae43`**
 - Content confirmed non-blank (not all `0xFF`); first bytes `18 18 1a 18 1c 18 1e 18 ...`
 
+**Flagged for human confirmation, per this task's own `<human-check>`:** the un-forced first read
+attempt reported `Chip ID 0x1818 does not match expected ID 0xda08` (`chip_id_value` for
+`W27C512,W27E512` in `chip_database.json` is `0x0000da08`). The most likely explanation is the same
+VPP-sensing unreliability already observed on this rig (VPP monitor readings do not route to the
+socket, per project record) — the ID-sense step needs A9 held at an elevated voltage via VPP, and the
+returned bytes (`18 18`) match the repeating low-address data pattern already present in the array
+content rather than any recognizable device-ID encoding, consistent with a read that landed on normal
+array data instead of a true ID-mode sense. This is inference, not a measured cause, and it is
+recorded here rather than silently forced past: confirm the seated part is genuinely a W27C512 before
+treating this bench run's "served"/"refused" distinction as chip-identity-independent (it is, by
+construction, since both legs address the same physical part regardless of what part that is — but
+the specific-part claim in this record's title is only as good as the operator's original placement).
+
 ## (d) Pre-3.1.0 host provisioned
 
 ```
