@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 205 (The pre-flights leave the firmware) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 205
-Last activity: 2026-09-22 — Phase 205 execution started
+Phase: 205 (The pre-flights leave the firmware) — PLANS COMPLETE, VERIFICATION FOUND GAPS
+Plan: 7 of 7 (all executed)
+Status: 7/7 plans executed; verifier returned gaps_found (8/9 must-haves). Blocked on CR-01 — is_erase_exempt is address-blind, so a protocol-0x06 write at a non-zero address is now unguarded on both sides. Phase NOT marked complete.
+Last activity: 2026-09-22 — Phase 205 executed 7/7 plans; code review 1 critical, verification gaps_found
 Next: **Plan Phase 205** — `/gsd-plan-phase 205` (FWBLANK — the in-algorithm write-init and erase-end pre-flights leave the firmware). Phase 204 is CLOSED (verifier 6/6, review clean). Ordering is a safety property: after 205 the host-side guard from Phase 203 is the ONLY protection against half-programming a non-blank UV part.
 
 ## Roadmap Summary (v1.38)
