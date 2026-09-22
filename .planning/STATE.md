@@ -5,15 +5,15 @@ milestone_name: Verification Moves to the Host
 current_phase: 204
 current_phase_name: The command surfaces leave the firmware
 status: executing
-stopped_at: Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
-last_updated: "2026-09-22T09:37:24.321Z"
+stopped_at: Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed
+last_updated: "2026-09-22T10:35:00.000Z"
 last_activity: 2026-09-22
-last_activity_desc: "Phase 204 wave 2 complete 2026-09-22 - 204-02 built the eighth house source-contract gate (FWCMD-04, containment brace-matched) and a new native Unity suite (test_verify_error_ids, 8 cases) pinning all four failure ids the amended FWCMD-05 names, each in both directions. Five planted violations observed RED for the intended reason and restored clean: two against the source-contract gate (deleted call, moved call), three transposed-id runs against the native suite. Registered with one filter line in [native_base]; pio test -e native and -e native_nodevtools both 245/245 (237 baseline + 8 new); pio run all three envs SUCCESS, leonardo unchanged at 24082 B. Next: wave 3, plan 204-03 (ordinal 4 / CMD_BLANK_CHECK retirement) can now proceed with this safety net already proven to fail on the right violations."
+last_activity_desc: "Phase 204 wave 3 complete 2026-09-22 - 204-03 retired wire ordinal 4 (CMD_BLANK_CHECK / COMMAND_BLANK_CHECK) from every firmware site and the host ladder, mirroring plan 01's ordinal-6 sweep. Task 1 collapsed the two command-keyed branches in mem_util_blank_check_region and the whole deferred emit-and-ack block in _single_step_operation_callback to the direct-emit arm write-init/erase-end already took (proven behaviour-preserving, no gate changed verdict). Task 2 deleted the blank-check arm from all five protocol configure handlers, re-anchored the region-scoped census gate from six whole-device function-pointer assignments to one, and re-derived the branch-inventory golden with its own extractor (22 sites, only 20 line values and the eprom.cpp checksum moved, positionally verified field by field) in the same commit as eprom.cpp. Task 3 deleted the #define, the is_memory_cmd arm, the dispatch arm and the eprom_blank_check wrapper; extended the verify-survival source-contract gate with four new absence legs (FWCMD-01/03), each RED observed against the pre-deletion tree via a planted violation and restored clean; re-anchored the forwarding-count and admission-count gates from eight to seven; deleted the SRAM case-group's stale blank-check assertion (Fork B); then retired COMMAND_BLANK_CHECK from the host ladder in a paired commit, repaired four stale comments, and added the host-side reserved-ordinal gate. One Rule-1 deviation: a stale literal ordinal reference the task's own verify script caught in memory_utils.h (left over from plan 01), fixed in a small follow-up commit -- four firmware commits total, not three, all four CI legs green at every boundary. Native 243/243 (245-2 from plan 02's Fork D deletions), pytest tests/ 303 passed/17 failed (all pre-existing, unrelated), pio run all three envs SUCCESS (leonardo 23810 B, down from 24082), host suite 2307 passed/2 deselected, coverage 86.12%. Next: wave 4, plan 204-04 (FWCMD-02/03 remaining scope) and plan 204-05 (bench matrix)."
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 14
-  completed_plans: 11
+  completed_plans: 12
   percent: 33
 ---
 
@@ -236,10 +236,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 204 (The command surfaces leave the firmware) — EXECUTING
-Plan: 3 of 5
-Status: Ready to execute
-Last activity: 2026-09-22 — Phase 204 execution started
-Next: **Execute Phase 204** — `/gsd-execute-phase 204` (The command surfaces leave the firmware). Wave 1 is a tracer slice that takes ordinal 6 through every layer and onto silicon; it pauses once at a package-legitimacy checkpoint before installing the pinned `3.0.0b49` host.
+Plan: 3 of 5 complete (204-01, 204-02, 204-03 done; 204-04, 204-05 remain)
+Status: Wave 3 complete — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders
+Last activity: 2026-09-22 — 204-03 landed (three-plus-one commit sweep, all four firmware CI legs green throughout)
+Next: **Execute Phase 204 wave 4** — `/gsd-execute-phase 204` (The command surfaces leave the firmware). Plan 204-04 covers the remaining FWCMD-02/FWCMD-03 scope; plan 204-05 is the four-role bench matrix.
 
 ## Roadmap Summary (v1.38)
 
@@ -2227,6 +2227,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 204 Plan 03]: Left FWCMD-01/02/03 unmarked in REQUIREMENTS.md despite this plan completing all its own declared work, per the orchestrator's explicit wave-context instruction — FWCMD-02/03 are also declared by 204-04 (not yet run), and the wave context named all three as blocked; did not independently re-derive readiness via `requirements.ready-ids` given that explicit instruction.
+- [Phase 204 Plan 03]: A Rule-1 deviation (a stale literal `CMD_VERIFY` reference in `memory_utils.h`, left over from plan 01, caught by this plan's own verify script since `include/memory_utils.h` is on the `<verify>` file list though not the prose `<files>` list) landed as a fourth firmware commit rather than being folded into the sweep's three via `git commit --amend` — amending was rejected because the meta gitlink commit already referenced the pre-fix SHA, and rewriting local history to chase a "three commits" letter-count was judged riskier than a small, clearly-documented, still-green fourth commit. The substantive property ("no bisect lands on RED") holds at every boundary regardless.
+- [Phase 204 Plan 03]: The plan's own environment-facts predicted the sweep would delete exactly one native test case in Task 3; measured, it deleted zero — the SRAM case-group's blank-check assertion (Fork B) was a sub-assertion inside an existing `RUN_TEST` function, not its own case, so removing it did not change the Unity case count (243 before and after). Recorded as a measured correction to the plan's own prediction, not a defect: the `fails_when` threshold (more than one below baseline) was not tripped.
 - [Phase 202 Plan 05]: `check_eprom_blank` and `verify_eprom` share ONE compare drive (`EpromOperator._drive_region_compare`), taking the D-04 pull callback and the `full`/`region_length` flags, rather than each carrying its own copy of the accumulator/abort/discrimination/rendering logic (D-02, extended from 202-01's single-implementation rule for `classify_fingerprint`).
 - [Phase 202 Plan 05]: D-17's region resolution and both pre-wire refusals (an explicit `--size` shorter than `verify`'s input file; a start+size region running past the chip's declared size for either command) live in the CLI tier (`cli_handlers._region_refusal_exit_code`), not inside `EpromOperator` — `_operation_context` is what opens the serial port, and the refusal must fire before that, so it cannot live downstream of it.
 - [Phase 202 Plan 05]: A malformed `--address`/`--size` string is deliberately NOT re-validated by the new CLI-tier refusal helper. `_setup_operation`'s own `parse_address`/`parse_size` `ValueError` handling already refuses it (also pre-wire, also exit 2) — the helper returns `None` (no refusal decided) and lets that existing path run, rather than parsing the string a second time with different error semantics.
@@ -3690,11 +3693,13 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 193 P05 | 20min | 3 tasks | 2 files |
 | Phase 204 P01 | 3h 59m | 3 tasks | 15 files |
 | Phase 204 P02 | ~30min | 3 tasks | 4 files |
+| Phase 204 P03 | ~45min | 3 tasks | 25 files |
 
 ## Session
 
-**Last session:** 2026-09-22T09:37:24.182Z
-**Stopped at:** Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
+**Last session:** 2026-09-22T10:35:00.000Z
+**Stopped at:** Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed
+**Was (superseded, retained for continuity):** Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
 **Was (superseded, retained for continuity):** Completed 202-03-PLAN.md — classify_fingerprint delegates to classify_streamed via a CompareAccumulator (D-02 enforced), _diff_offsets retired, D-03 12-row corpus proves whole-Fingerprint equality against a transcribed batch reference, finalise() always classifies, render_compare_lines gains the D-14 bucket line; test count 2144->2180, full suite green, mypy unchanged at 32 errors, ruff clean; no deviations
 **Was (superseded, retained for continuity):** Completed 202-02-PLAN.md — peak-allocation ceiling and runtime gates now assert CMP-03, CMP-05 engine half (coalescing/ordering/cap-honesty) completed; test count 12->33, full suite 2144 passed, mypy unchanged at 32 errors; one disclosed deviation (ceiling test traces 128 KiB not 512 KiB, see Decisions)

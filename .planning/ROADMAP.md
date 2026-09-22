@@ -347,7 +347,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 204-03-PLAN.md — the ordinal-4 sweep in three green commits: the collapses, the five protocol handlers with the golden re-derived, then both ladders (wave 3)
+- [x] 204-03-PLAN.md — the ordinal-4 sweep: the collapses, the five protocol handlers with the golden re-derived, then both ladders, plus one small Rule-1 follow-up commit (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
