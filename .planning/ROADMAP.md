@@ -339,7 +339,7 @@ Plans:
 
 **Goal**: Ordinals 4 and 6 leave the firmware with every in-algorithm verify provably intact, and both host-firmware compatibility directions are demonstrated on the bench rather than reasoned about.
 **Requirements**: FWCMD-01, FWCMD-02, FWCMD-03, FWCMD-04, FWCMD-05, FWCMD-06, REL-02, REL-03
-**Plans:** 5 plans
+**Plans:** 5/5 plans complete
 
 Plans:
 **Wave 1**
@@ -360,7 +360,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 204-05-PLAN.md — the four-role bench matrix: both skew directions on silicon, three matching whole-device digests, and the D-07 sha record (wave 5)
+- [x] 204-05-PLAN.md — the four-role bench matrix: both skew directions on silicon, three matching whole-device digests, and the D-07 sha record (wave 5)
 
 **Success criteria**:
 

@@ -67,7 +67,7 @@ golden.
 - [x] **FWCMD-03**: ordinals 4 and 6 are recorded as reserved and never reused, with the reason stated where a future author will read it before reaching for a free slot.
 - [x] **FWCMD-04**: `memory_verify_execute` still exists and is still called for `VERIFY_PER_PULSE_PLUS_FINAL` on protocols `0x07` / `0x08`; a test fails if that call disappears.
 - [x] **FWCMD-05**: each in-algorithm verify still raises its own failure id on failure, proven by test and not by inspection: `memory_verify_execute` and `eeprom28c_verify_page_readback` raise `MSG_ERR_VERIFY` (0xAF); the per-pulse verify's budget exits raise `MSG_ERR_MAX_PULSES` (0xBD) and `MSG_ERR_ENERGY_CAP` (0xBE); `flash_util_verify_operation` is a DQ7 data-poll wait and raises `MSG_ERR_OP_TIMEOUT` (0xB7) — it can never raise 0xAF, and asserting that it does would be a false pin. Each assertion names the id, not merely a generic error response code (operator decision, 2026-09-21, recorded as D-03 in `phases/204-the-command-surfaces-leave-the-firmware/204-CONTEXT.md`; this requirement previously claimed `MSG_ERR_VERIFY` (0xAF) was still raised by all three named sites — measurement against the live source showed only `eeprom28c_verify_page_readback` actually raises 0xAF, the per-pulse verify's budget exits raise two different ids, and `flash_util_verify_operation` has no compare-and-report path at all and can never raise 0xAF).
-- [ ] **FWCMD-06**: a host that sends ordinal 4 or 6 to `3.1.0b1` firmware receives an explicit refusal with no hardware side effect — never silence, never a hang.
+- [x] **FWCMD-06**: a host that sends ordinal 4 or 6 to `3.1.0b1` firmware receives an explicit refusal with no hardware side effect — never silence, never a hang. Proven on real hardware in `phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the published `3.0.0b49` host is refused with `Unknown command: 6` and `Unknown command: 4` against post-204 firmware, both promptly (~3.5s), both non-empty; three whole-device reads before and after both refusals share one SHA-256 digest, ruling out a silent erase. Per D-07, neither side carries the literal `3.1.0b1` string yet — that bump is Phase 207's — so this is proven via the documented label substitution, not against a build carrying that exact version.
 
 ### FWBLANK — the in-algorithm pre-flights leave the firmware (D-1, D-2)
 
@@ -100,8 +100,8 @@ golden.
 ### REL — version, compatibility and the record (D-4, D-5)
 
 - [ ] **REL-01**: both repositories carry `3.1.0b1`, and the two version strings are bumped in the same commit pair.
-- [ ] **REL-02**: a `3.1.0b1` host against pre-`3.1.0` firmware performs `verify` and `blank` correctly, because it only sends `CMD_READ`. Proven, not assumed.
-- [ ] **REL-03**: a pre-`3.1.0` host against `3.1.0b1` firmware fails `verify` and `blank` with a refusal the user can act on, and with no hardware side effect.
+- [x] **REL-02**: a `3.1.0b1` host against pre-`3.1.0` firmware performs `verify` and `blank` correctly, because it only sends `CMD_READ`. Proven, not assumed. Proven on real hardware in `phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the post-204 host's `verify` matches (exit 0) and `blank` reports not-blank (exit 1, via the documented abort-predicate fast path) against pre-204 firmware, with no unknown-command line in either output. Per D-07, "3.1.0b1" here means the post-204 host label, not the literal version string, which is Phase 207's bump.
+- [x] **REL-03**: a pre-`3.1.0` host against `3.1.0b1` firmware fails `verify` and `blank` with a refusal the user can act on, and with no hardware side effect. Proven on real hardware in `phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the published `3.0.0b49` host is refused with `Unknown command: 6` and `Unknown command: 4` against post-204 firmware, both captured verbatim with exit code and duration; three whole-device reads share one digest, proving no hardware side effect. Per D-07, "3.1.0b1" here means the post-204 firmware label, not the literal version string, which is Phase 207's bump.
 - [ ] **REL-04**: the breaking change and the `write --verify` / `--full` surfaces are documented in the wiki, which is the only documentation home.
 
 ## Future Requirements
@@ -151,9 +151,9 @@ Every requirement maps to exactly one phase.
 | FWCMD-03 | Phase 204 | Complete |
 | FWCMD-04 | Phase 204 | Complete |
 | FWCMD-05 | Phase 204 | Complete |
-| FWCMD-06 | Phase 204 | Pending |
-| REL-02 | Phase 204 | Pending |
-| REL-03 | Phase 204 | Pending |
+| FWCMD-06 | Phase 204 | Complete |
+| REL-02 | Phase 204 | Complete |
+| REL-03 | Phase 204 | Complete |
 | FWBLANK-01 | Phase 205 | Pending |
 | FWBLANK-02 | Phase 205 | Pending |
 | FWBLANK-03 | Phase 205 | Pending |
