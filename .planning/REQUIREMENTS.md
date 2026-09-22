@@ -71,11 +71,11 @@ golden.
 
 ### FWBLANK — the in-algorithm pre-flights leave the firmware (D-1, D-2)
 
-- [ ] **FWBLANK-01**: the write-init blank check is removed from `eprom.cpp`, `flash_intel.cpp` and `flash_nor_unlock.cpp`.
-- [ ] **FWBLANK-02**: the erase-end blank check is removed from `eprom.cpp`.
-- [ ] **FWBLANK-03**: `mem_util_blank_check`, `mem_util_blank_check_region`, `blank_check_saved_address` and `BLANK_CHECK_CHUNK_SIZE` are deleted, and no caller remains.
-- [ ] **FWBLANK-04**: `FLAG_SKIP_BLANK_CHECK` (`0x08`) is retired from the firmware and from `constants.py`, and the bit is recorded as reserved on both sides.
-- [ ] **FWBLANK-05**: the flash and RAM freed is measured per AVR target (uno, uno328pb, leonardo) and reported as a number, not an estimate.
+- [x] **FWBLANK-01**: the write-init blank check is removed from `eprom.cpp`, `flash_intel.cpp` and `flash_nor_unlock.cpp`.
+- [x] **FWBLANK-02**: the erase-end blank check is removed from `eprom.cpp`.
+- [x] **FWBLANK-03**: `mem_util_blank_check`, `mem_util_blank_check_region`, `blank_check_saved_address` and `BLANK_CHECK_CHUNK_SIZE` are deleted, and no caller remains.
+- [x] **FWBLANK-04**: `FLAG_SKIP_BLANK_CHECK` (`0x08`) is retired from the firmware and from `constants.py`, and the bit is recorded as reserved on both sides.
+- [x] **FWBLANK-05**: the flash and RAM freed is measured per AVR target (uno, uno328pb, leonardo) and reported as a number, not an estimate.
 
 ### WRITE — the host takes over the write guard (D-2, D-3)
 
@@ -154,11 +154,11 @@ Every requirement maps to exactly one phase.
 | FWCMD-06 | Phase 204 | Complete |
 | REL-02 | Phase 204 | Complete |
 | REL-03 | Phase 204 | Complete |
-| FWBLANK-01 | Phase 205 | Pending |
-| FWBLANK-02 | Phase 205 | Pending |
-| FWBLANK-03 | Phase 205 | Pending |
-| FWBLANK-04 | Phase 205 | Pending |
-| FWBLANK-05 | Phase 205 | Pending |
+| FWBLANK-01 | Phase 205 | Complete |
+| FWBLANK-02 | Phase 205 | Complete |
+| FWBLANK-03 | Phase 205 | Complete |
+| FWBLANK-04 | Phase 205 | Complete |
+| FWBLANK-05 | Phase 205 | Complete |
 | DEVTEST-01 | Phase 206 | Pending |
 | DEVTEST-02 | Phase 206 | Pending |
 | DEVTEST-03 | Phase 206 | Pending |

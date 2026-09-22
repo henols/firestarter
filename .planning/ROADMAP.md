@@ -375,7 +375,7 @@ Plans:
 
 **Goal**: The write-init and erase-end blank checks, their shared machinery and the `FLAG_SKIP_BLANK_CHECK` bit leave the firmware, and the flash that frees is a measured number rather than an estimate.
 **Requirements**: FWBLANK-01, FWBLANK-02, FWBLANK-03, FWBLANK-04, FWBLANK-05
-**Plans:** 8 plans
+**Plans:** 8/8 plans complete
 
 Plans:
 **Wave 1**
