@@ -232,7 +232,12 @@ first mismatch" saving is therefore temporal, not merely diagnostic. See
 the measured one-second-per-abort cost, and the four-condition discrimination that keeps the
 deliberate stop from ever being mistaken for a fault. A protocol-level abort remains filed as
 **CMP-F1**, though the deferred one-line firmware change (a `DONE`-based clean stop, phase 204) is a
-cheaper route to it than the abort CMP-F1 originally assumed.
+cheaper route to it than the abort CMP-F1 originally assumed. **Offered at Phase 204 and declined
+there (D-12).** The firmware half is genuinely one line, but the host half is not — the change would
+also rework `_drive_region_compare`'s timeout-keyed discrimination, and that surface is the one
+Phase 202 had just built. See `.planning/phases/204-the-command-surfaces-leave-the-firmware/204-CONTEXT.md`
+D-12 for the full reasoning and the measured forward-compatibility finding, also recorded on CMP-F1
+in `.planning/REQUIREMENTS.md`.
 
 ### Phases
 
