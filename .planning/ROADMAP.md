@@ -343,7 +343,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 204-02-PLAN.md — the two proof instruments: the eighth source-contract gate and the native id-asserting suite, both with their RED seen (wave 2)
+- [x] 204-02-PLAN.md — the two proof instruments: the eighth source-contract gate and the native id-asserting suite, both with their RED seen (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 

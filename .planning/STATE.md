@@ -5,15 +5,15 @@ milestone_name: Verification Moves to the Host
 current_phase: 204
 current_phase_name: The command surfaces leave the firmware
 status: executing
-stopped_at: Completed 204-01-PLAN.md — ordinal 6 retired, upload proven, bench tracer observed
-last_updated: "2026-09-22T09:06:48.632Z"
+stopped_at: Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
+last_updated: "2026-09-22T09:37:24.321Z"
 last_activity: 2026-09-22
-last_activity_desc: "Phase 204 wave 1 complete 2026-09-22 - 204-01 retired wire ordinal 6 from firmware and host as a lockstep commit pair, amended FWCMD-05 and ROADMAP criterion 3 to name the three real failure ids (D-03), and proved the refusal on silicon: pio run -e leonardo -t upload succeeded from this devcontainer for the first time (24082 B), the published 3.0.0b49 host was refused with Unknown command: 6 in 3.55 s while its blank on ordinal 4 was still served, and the W27C512 read back byte-identical (SHA-256 a094e902). OPEN: chip-ID readback 0x1818 vs expected 0xda08 - WINDOWS.md entry 3, needs operator confirmation. Next: wave 2, plan 204-02."
+last_activity_desc: "Phase 204 wave 2 complete 2026-09-22 - 204-02 built the eighth house source-contract gate (FWCMD-04, containment brace-matched) and a new native Unity suite (test_verify_error_ids, 8 cases) pinning all four failure ids the amended FWCMD-05 names, each in both directions. Five planted violations observed RED for the intended reason and restored clean: two against the source-contract gate (deleted call, moved call), three transposed-id runs against the native suite. Registered with one filter line in [native_base]; pio test -e native and -e native_nodevtools both 245/245 (237 baseline + 8 new); pio run all three envs SUCCESS, leonardo unchanged at 24082 B. Next: wave 3, plan 204-03 (ordinal 4 / CMD_BLANK_CHECK retirement) can now proceed with this safety net already proven to fail on the right violations."
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 14
-  completed_plans: 10
+  completed_plans: 11
   percent: 33
 ---
 
@@ -236,7 +236,7 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 204 (The command surfaces leave the firmware) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-09-22 — Phase 204 execution started
 Next: **Execute Phase 204** — `/gsd-execute-phase 204` (The command surfaces leave the firmware). Wave 1 is a tracer slice that takes ordinal 6 through every layer and onto silicon; it pauses once at a package-legitimacy checkpoint before installing the pinned `3.0.0b49` host.
@@ -3239,6 +3239,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 193]: The repository-structure paragraph's tools/ inventory sentence, falsified by this phase's own tools/adoption/ addition, was corrected in the same edit that added the archaeology pointer depending on it, rather than deferred.
 - [Phase 204]: Ordinal 6 retired end-to-end (204-01); tracer scope is ordinal 6 only, ordinal 4 stays live for plan 03's positive control — Fork B: the CMD_VERIFY define must be the last reference deleted, so a thin slice necessarily retires one ordinal at a time; this also buys the served/refused bench control pair
 - [Phase 204]: pio run -e leonardo -t upload proven from this devcontainer for the first time (204-01 task 3) — Every REL-02/REL-03 bench leg in Phase 204 depends on this path; discovering a failure here costs one task instead of the whole phase
+- [Phase 204]: 204-02: the energy-cap budget test uses protocol 0x0B (max_pulses=255, energy_cap_us=50000), not one of the two plus-final protocols -- CLAUDE.md's own measured fact states MSG_ERR_ENERGY_CAP is structurally unreachable on 0x07/0x08. pulse_delay=6000us chosen so the energy cap exhausts at 9 of 255 pulses.
+- [Phase 204]: 204-02: all four id groups in the new native suite reuse one settable, address-independent rurp_read_data_buffer() stub -- no per-address tracking was needed since every case asks only which id a site raises, never which address mismatched.
 
 ## Performance Metrics
 
@@ -3687,11 +3689,12 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 193 P02 | 7min | 2 tasks | 1 files |
 | Phase 193 P05 | 20min | 3 tasks | 2 files |
 | Phase 204 P01 | 3h 59m | 3 tasks | 15 files |
+| Phase 204 P02 | ~30min | 3 tasks | 4 files |
 
 ## Session
 
-**Last session:** 2026-09-22T09:06:37.932Z
-**Stopped at:** Completed 204-01-PLAN.md — ordinal 6 retired, upload proven, bench tracer observed
+**Last session:** 2026-09-22T09:37:24.182Z
+**Stopped at:** Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
 **Was (superseded, retained for continuity):** Completed 202-03-PLAN.md — classify_fingerprint delegates to classify_streamed via a CompareAccumulator (D-02 enforced), _diff_offsets retired, D-03 12-row corpus proves whole-Fingerprint equality against a transcribed batch reference, finalise() always classifies, render_compare_lines gains the D-14 bucket line; test count 2144->2180, full suite green, mypy unchanged at 32 errors, ruff clean; no deviations
 **Was (superseded, retained for continuity):** Completed 202-02-PLAN.md — peak-allocation ceiling and runtime gates now assert CMP-03, CMP-05 engine half (coalescing/ordering/cap-honesty) completed; test count 12->33, full suite 2144 passed, mypy unchanged at 32 errors; one disclosed deviation (ceiling test traces 128 KiB not 512 KiB, see Decisions)

@@ -65,8 +65,8 @@ golden.
 - [ ] **FWCMD-01**: `CMD_VERIFY` (6) and `CMD_BLANK_CHECK` (4) are gone from the `firestarter.cpp` dispatch switch, from `is_memory_cmd`, and from `configure_memory`'s switch.
 - [ ] **FWCMD-02**: the `eprom_verify()` and `eprom_blank_check()` wrappers and their declarations are deleted.
 - [ ] **FWCMD-03**: ordinals 4 and 6 are recorded as reserved and never reused, with the reason stated where a future author will read it before reaching for a free slot.
-- [ ] **FWCMD-04**: `memory_verify_execute` still exists and is still called for `VERIFY_PER_PULSE_PLUS_FINAL` on protocols `0x07` / `0x08`; a test fails if that call disappears.
-- [ ] **FWCMD-05**: each in-algorithm verify still raises its own failure id on failure, proven by test and not by inspection: `memory_verify_execute` and `eeprom28c_verify_page_readback` raise `MSG_ERR_VERIFY` (0xAF); the per-pulse verify's budget exits raise `MSG_ERR_MAX_PULSES` (0xBD) and `MSG_ERR_ENERGY_CAP` (0xBE); `flash_util_verify_operation` is a DQ7 data-poll wait and raises `MSG_ERR_OP_TIMEOUT` (0xB7) — it can never raise 0xAF, and asserting that it does would be a false pin. Each assertion names the id, not merely a generic error response code (operator decision, 2026-09-21, recorded as D-03 in `phases/204-the-command-surfaces-leave-the-firmware/204-CONTEXT.md`; this requirement previously claimed `MSG_ERR_VERIFY` (0xAF) was still raised by all three named sites — measurement against the live source showed only `eeprom28c_verify_page_readback` actually raises 0xAF, the per-pulse verify's budget exits raise two different ids, and `flash_util_verify_operation` has no compare-and-report path at all and can never raise 0xAF).
+- [x] **FWCMD-04**: `memory_verify_execute` still exists and is still called for `VERIFY_PER_PULSE_PLUS_FINAL` on protocols `0x07` / `0x08`; a test fails if that call disappears.
+- [x] **FWCMD-05**: each in-algorithm verify still raises its own failure id on failure, proven by test and not by inspection: `memory_verify_execute` and `eeprom28c_verify_page_readback` raise `MSG_ERR_VERIFY` (0xAF); the per-pulse verify's budget exits raise `MSG_ERR_MAX_PULSES` (0xBD) and `MSG_ERR_ENERGY_CAP` (0xBE); `flash_util_verify_operation` is a DQ7 data-poll wait and raises `MSG_ERR_OP_TIMEOUT` (0xB7) — it can never raise 0xAF, and asserting that it does would be a false pin. Each assertion names the id, not merely a generic error response code (operator decision, 2026-09-21, recorded as D-03 in `phases/204-the-command-surfaces-leave-the-firmware/204-CONTEXT.md`; this requirement previously claimed `MSG_ERR_VERIFY` (0xAF) was still raised by all three named sites — measurement against the live source showed only `eeprom28c_verify_page_readback` actually raises 0xAF, the per-pulse verify's budget exits raise two different ids, and `flash_util_verify_operation` has no compare-and-report path at all and can never raise 0xAF).
 - [ ] **FWCMD-06**: a host that sends ordinal 4 or 6 to `3.1.0b1` firmware receives an explicit refusal with no hardware side effect — never silence, never a hang.
 
 ### FWBLANK — the in-algorithm pre-flights leave the firmware (D-1, D-2)
@@ -149,8 +149,8 @@ Every requirement maps to exactly one phase.
 | FWCMD-01 | Phase 204 | Pending |
 | FWCMD-02 | Phase 204 | Pending |
 | FWCMD-03 | Phase 204 | Pending |
-| FWCMD-04 | Phase 204 | Pending |
-| FWCMD-05 | Phase 204 | Pending |
+| FWCMD-04 | Phase 204 | Complete |
+| FWCMD-05 | Phase 204 | Complete |
 | FWCMD-06 | Phase 204 | Pending |
 | REL-02 | Phase 204 | Pending |
 | REL-03 | Phase 204 | Pending |
