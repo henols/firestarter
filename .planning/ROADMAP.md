@@ -361,7 +361,7 @@ Plans:
 
 1. `CMD_VERIFY` and `CMD_BLANK_CHECK` appear nowhere in the dispatch switch, `is_memory_cmd` or `configure_memory`, and both wrappers and their declarations are gone.
 2. A test fails if `eprom.cpp` stops calling `memory_verify_execute` for the `VERIFY_PER_PULSE_PLUS_FINAL` arm.
-3. The per-pulse verify, `eeprom28c_verify_page_readback` and `flash_util_verify_operation` each still raise `MSG_ERR_VERIFY` on a mismatch, proven by test and not by inspection.
+3. Each in-algorithm verify still raises its own failure id on failure, proven by test and not by inspection: `memory_verify_execute` and `eeprom28c_verify_page_readback` raise `MSG_ERR_VERIFY` (0xAF); the per-pulse verify's budget exits raise `MSG_ERR_MAX_PULSES` (0xBD) and `MSG_ERR_ENERGY_CAP` (0xBE); `flash_util_verify_operation` is a DQ7 data-poll wait and raises `MSG_ERR_OP_TIMEOUT` (0xB7) — it can never raise 0xAF, and asserting that it does would be a false pin. *(Amended 2026-09-21 per 204-CONTEXT.md D-03; previously claimed all three named sites still raise `MSG_ERR_VERIFY` — measurement against the live source showed only `eeprom28c_verify_page_readback` actually does, the per-pulse verify's budget exits raise two different ids, and `flash_util_verify_operation` has no compare-and-report path at all and can never raise 0xAF.)*
 4. A `3.1.0b1` host performs `verify` and `blank` correctly against pre-`3.1.0` firmware, observed on the bench.
 5. A pre-`3.1.0` host against `3.1.0b1` firmware receives an actionable refusal on both commands with no hardware side effect, observed on the bench.
 6. The `protocol_branch_inventory.json` golden is re-derived and diffed field-by-field keyed on `line`, never accepted on its truthiness gate.
