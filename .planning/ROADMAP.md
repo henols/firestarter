@@ -405,7 +405,7 @@ Plans:
 
 **Wave 7** *(gap closure — CR-01, from 205-VERIFICATION.md)*
 
-- [ ] 205-08-PLAN.md — make the host write guard's erase exemption address-aware for protocol `0x06`, pin the address dimension, and record the decision
+- [x] 205-08-PLAN.md — make the host write guard's erase exemption address-aware for protocol `0x06`, pin the address dimension, and record the decision
 
 **Success criteria**:
 
