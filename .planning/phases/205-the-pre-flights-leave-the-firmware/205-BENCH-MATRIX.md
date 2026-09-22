@@ -307,5 +307,283 @@ part would exercise it; the silicon itself is not UV-erasable-only.
 
 ---
 
-*(This record continues with B4 through B7, the coverage-gaps section and the closing digest chain
-in this plan's second commit.)*
+## B4 — flash post-205 firmware
+
+```
+$ cd /workspaces/firestarter_fw && git status --porcelain && git rev-parse --short HEAD
+6e11d05
+
+$ pio run -e leonardo -t upload
+...
+avrdude: 23314 bytes of flash written
+avrdude: verifying flash memory against .pio/build/leonardo/firestarter_leonardo.hex:
+avrdude: 23314 bytes of flash verified
+avrdude done.  Thank you.
+========================= [SUCCESS] Took 5.90 seconds =========================
+
+$ sha256sum .pio/build/leonardo/firestarter_leonardo.hex
+38ed1da7f7a754472a85ec49c18341064120e8cc8c03465a82d7c1ad185db5b2  .pio/build/leonardo/firestarter_leonardo.hex
+```
+
+**Exit 0.** No avrdude verification mismatch. `.hex` digest matches `205-FLASH-RAM.md`'s phase-exit
+leonardo digest exactly. Live tree porcelain empty before and after; branch and HEAD unchanged
+(`6e11d057b59977dd870c1ddcc588dd2f6f3ea1db`, `v1.41-verification-to-host`).
+
+**Label substitution, restated:** "post-205 firmware" means commit
+`6e11d057b59977dd870c1ddcc588dd2f6f3ea1db`. Like the pre-205 build, it carries no `3.1.0b1` string —
+the commit sha and this `.hex` digest are the only record.
+
+**A limit stated plainly, not glossed over:** no whole-device read was taken between B3 (the last
+chip-content-affecting event, on pre-205 firmware) and this reflash. Chip content on an EEPROM is not
+expected to be affected by an AVR firmware flash — the flash operation addresses the ATmega32U4's own
+program memory, not the external RURP-bus-driven part — but this record does not assert survival by
+inference where a read-back could have proven it. B5 below re-establishes what matters for criterion
+3 regardless: it targets the same address B2/B3 already established as non-blank, and its own
+pre-condition (a refusal on B3, an acceptance on B5) does not depend on whether the exact byte values
+survived the intervening reflash unread.
+
+**Exit 0. Duration: 5.90s** (`pio run -t upload`, no separate clean build needed — `.pio/build`
+cache from the live tree's own prior build already matched).
+
+## B5 — criterion 3, the UV leg
+
+Against the same target address (`0x000000`) B2/B3 already exercised, the identical `write -b`
+invocation B3 ran, with `--skip-erase`, on post-205 firmware. **PROXY leg** — W27C512 riding the UV
+handler, protocol `0x07`, the file FWBLANK-01/FWBLANK-04 both change; the code path is the one under
+test, the silicon is not UV.
+
+```
+$ firestarter -p /dev/ttyACM0 write w27c512 patB.bin -a 0x000000 -b --skip-erase -f
+Connecting...Connecting... OK
+Writing patB.bin to W27C512
+WARN: VPP is high: 13.0V > 12.0V
+Programmer warning: VPP is high: 13.0V > 12.0V
+  [progress bar elided, denominator 0x0040]
+Write to W27C512 successful (0.81s).
+```
+
+- **Exit code: 0.** **Duration: 4.27s** (wall-clock; command's own reported time 0.81s).
+- **Reaches the firmware UNREFUSED** — the write-init blank check FWBLANK-01 removes no longer
+  exists on this firmware at all (not merely bypassed by a flag), so `-b`'s host-side skip signal and
+  the firmware's now-total absence of the check agree, and the write proceeds against a target region
+  that is genuinely non-blank (still `patA.bin`'s `0x11223344` content from B2, unless the untested
+  reflash-survival question above resolved otherwise — either way, the write programmed the region it
+  was given).
+
+**Read-back proof — the region now holds exactly what was written:**
+
+```
+$ firestarter -p /dev/ttyACM0 verify w27c512 patB.bin -a 0x000000 -f
+Connecting...Connecting... OK
+Verifying patB.bin against W27C512
+match, 0 bad of 64 compared of 64 (0x000000-0x00003F)
+Verify for W27C512 successful (0.30s).
+```
+
+- **Exit code: 0. Duration: 3.76s** (wall-clock; command's own reported time 0.30s). Clean match,
+  0 bad of 64 compared — the region reads back exactly `patB.bin`'s content.
+
+**Whole-device digest:**
+
+```
+$ firestarter -p /dev/ttyACM0 read w27c512 b5_wholedevice.bin -f
+...
+Read complete (7.40s). Data saved to b5_wholedevice.bin
+
+$ sha256sum b5_wholedevice.bin
+88fc2b445d991d23f78f2ea7338f22de0b9aa9d4867a06779fdfeb793c880fdd  b5_wholedevice.bin
+```
+
+- **65536 bytes.** First 64 bytes: `aa bb cc dd` x16 (`patB.bin`'s content). Remaining 65472 bytes:
+  `0xFF`. Non-`0xFF` byte count: 64 — exactly the target region, and no more.
+- **This digest DIFFERS from B2/B3's anchor (`839017bc...`) — expected, and exactly the difference
+  criterion 3 predicts:** the target region's content changed from `patA.bin` to `patB.bin`; nothing
+  outside it moved. **Exit 0. Duration: 10.82s** (command's own reported time 7.40s).
+
+**This is the leg criterion 3 rests on.** A write to a non-blank target region on the UV handler now
+reaches the firmware unrefused and programs the region it was given — observed here on silicon via a
+read-back match and a whole-device digest showing exactly the expected, and only the expected,
+change — not argued from where the check used to live in the dispatch loop.
+
+## B6 — criterion 5, the erasable leg
+
+The same part, plain `write` (no `-b`, no `--skip-erase`) — the `FLAG_CAN_ERASE` exemption path.
+**PROXY leg**, same coverage limit as B5.
+
+```
+$ firestarter -p /dev/ttyACM0 write w27c512 patC.bin -a 0x000000 -f
+Connecting...Connecting... OK
+Writing patC.bin to W27C512
+WARN: VPP is high: 13.0V > 12.0V
+Programmer warning: VPP is high: 13.0V > 12.0V
+  [progress bar elided, denominator 0x0040]
+Write to W27C512 successful (1.11s).
+```
+
+- **Exit code: 0. Duration: 4.68s** (wall-clock; command's own reported time 1.11s). No refusal, no
+  visible separate erase step in the CLI output — the erase-capable part's own auto-erase-before-write
+  behaviour is unchanged from what an erasable part has always done on this path, and this leg's
+  entire value is in having been run, since criterion 5 is a claim about an ABSENCE of a behaviour
+  change.
+
+**Whole-device digest:**
+
+```
+$ firestarter -p /dev/ttyACM0 read w27c512 b6_wholedevice.bin -f
+...
+Read complete (7.40s). Data saved to b6_wholedevice.bin
+
+$ sha256sum b6_wholedevice.bin
+1d3dd56a00aac3c057d6f20bd87d35059458df3192eb78a09ea8f450a203411b  b6_wholedevice.bin
+```
+
+- **65536 bytes.** First 64 bytes: `77 66 55 44` x16 (`patC.bin`'s content). Remaining 65472 bytes:
+  `0xFF`. Non-`0xFF` byte count: 64.
+- **Differs from B5's digest** (`88fc2b44...`) — expected: only the target region's content changed
+  again, from `patB.bin` to `patC.bin`. `cmp` confirms the two files differ starting at byte 1 (the
+  region's own first byte), nothing else. The erase-exempt behaviour this leg exercises shows **no
+  behaviour change other than where a refusal would have come from on pre-205 firmware** — there was
+  never a refusal on this path either before or after this phase, because `FLAG_CAN_ERASE` parts were
+  always exempted (Phase 203's `test_write_on_erase_exempt_part_pays_no_guard_read` and siblings, host
+  side; the firmware's own erase-before-check ordering, firmware side, now simply removed rather than
+  bypassed).
+
+## B7 — `erase -b` end to end, and the session-cost measurement
+
+`erase -b`'s full contract (Phase 205 Plan 01, FWBLANK-02) exercised end to end against real silicon,
+then timed against plain `erase` to measure the added wall-clock D-01's second port open costs. Full
+timing detail, the derivation over Phase 203's cited medians, and the "why the measured figure is
+larger than the connect-term derivation" explanation live in `205-SESSION-COST.md`; this section
+carries the bench transcript itself.
+
+```
+$ firestarter -p /dev/ttyACM0 erase w27c512 -b -f      [x3 runs]
+Connecting...Connecting... OK
+Erasing EPROM W27C512
+WARN: VPP is high: 13.0V > 12.0V
+Programmer warning: VPP is high: 13.0V > 12.0V
+Erase for W27C512 successful (0.58s). (main done)
+Connecting...Connecting... OK
+Blank checking EPROM W27C512
+WARN: VPP is high: 13.0V > 12.0V
+Programmer warning: VPP is high: 13.0V > 12.0V
+  [progress bar elided]
+blank/contact, 0 bad of 65536 compared of 65536 (0x000000-0x00FFFF)
+Blank check for W27C512 successful (7.40s).
+```
+
+- **All three runs: exit 0.** Erased, then a whole-device host-side check (the second port open, D-01)
+  confirms blank across all 65536 bytes — `erase -b` running end to end, on real silicon, three times,
+  with the check itself being the only post-erase check in the system (probe A2's own reading, this
+  plan's `<probe_disposition>`).
+- **Timing (wall-clock, `time` around the subprocess), plain `erase` vs. `erase -b`, alternated
+  before/after (all plain runs first, then all `-b` runs), same part, same board, no reflash between:**
+
+| | Plain `erase` | `erase -b` |
+|---|---|---|
+| Run 1 | 4.138s | 14.753s |
+| Run 2 | 3.946s | 14.543s |
+| Run 3 | 3.929s | 14.578s |
+| Median | **3.946s** | **14.578s** |
+
+**MEASURED added wall-clock: 10.632s (Leonardo-class, N=3, this 64 KiB PROXY part).** Full derivation
+and provenance in `205-SESSION-COST.md`.
+
+**Closing whole-device digest:**
+
+```
+$ firestarter -p /dev/ttyACM0 read w27c512 b7_wholedevice.bin -f
+...
+Read complete (7.40s). Data saved to b7_wholedevice.bin
+
+$ sha256sum b7_wholedevice.bin
+71189f7fb6aed638640078fba3a35fda6c39c8962e74dcc75935aac948da9063  b7_wholedevice.bin
+```
+
+- **All 65536 bytes are `0xFF`** — the whole-device erase left the part genuinely blank, confirmed by
+  an independent `read` (not only the `erase -b` check's own verdict), closing the digest chain on an
+  erased, blank part.
+
+## Digest chain, closed
+
+| Step | Digest | Relative to prior | Why |
+|---|---|---|---|
+| B2 (anchor) | `839017bc0a27...df1d7` | — | patA at `0x000000`, rest blank |
+| B3 (post-refusal) | `839017bc0a27...df1d7` | **same as B2** | refused write had no side effect |
+| B5 (post-write) | `88fc2b445d99...80fdd` | **differs from B2/B3** | expected — patB overwrote the target region on post-205 firmware, nothing else moved |
+| B6 (post-write) | `1d3dd56a00aa...3411b` | **differs from B5** | expected — patC overwrote the same target region again, exercising the erase-exempt path |
+| B7 (post-erase) | `71189f7fb6ae...9063` | **all-0xFF, differs from B6** | expected — whole-chip erase, confirmed independently by a `read`, not only by `erase -b`'s own verdict |
+
+No digest is unaccounted for; every difference above is one this record predicted before taking the
+read, and every "unchanged" digest (B3 vs. B2) is the one place a silent side effect would have shown
+up and did not.
+
+## Stated coverage gaps
+
+**1. An erasable part stood in for a UV one on every UV-handler leg (B2, B3, B5, B7).** No true UV
+part is available on this bench (per the operator's Task 1 decision, `205-RESEARCH.md` § "Bench
+parts"). The seated W27C512 is electrically erasable (`FLAG_CAN_ERASE` set) and rides the UV handler
+(`eprom.cpp`, protocol `0x07`) — the file FWBLANK-01 and FWBLANK-02 both change — via the Phase 201-06
+`--skip-erase` rehearsal mechanism, so the CODE PATH under test is identical to what a true UV part
+would exercise. **The silicon is not.** Every UV-handler leg above is marked PROXY for this reason.
+
+**2. `flash_intel.cpp` (protocol `0x10`) has zero validated chips in the registry and cannot be
+benched at all, regardless of parts on hand.** `VALIDATED-EPROMS.md`'s Families table lists no
+`PROTO_FLASH_INTEL` row — the protocol has no validated member. Its whole-device write-init call
+(FWBLANK-01) is proven removed by native test (`test_val_flash_intel`) and the source-contract gate
+only, never on silicon.
+
+**3. `flash_nor_unlock.cpp` (protocol `0x06`) has exactly one validated part, `SST39SF020`, which is
+not seated on this bench.** `VALIDATED-EPROMS.md` line 16 confirms it as the family's sole validated
+member. Its whole-device write-init call (FWBLANK-01) is likewise proven removed by native test
+(`test_val_nor_unlock`) and the source-contract gate only.
+
+Quoted rather than re-derived, because it is the reasoning that makes removing that site safe rather
+than risky — `.planning/notes/201-region-blank-check-latency-and-divergence.md` § 1, verbatim:
+
+> "**Named non-claim: these two sites are not safely latent. They are one flag deep.**
+> `firestarter write --skip-erase` sets `FLAG_SKIP_ERASE`... Passing `--skip-erase` against an
+> electrically-erasable part on either of these two protocols suppresses the erase and makes the
+> identical whole-device `mem_util_blank_check` refusal fire on a genuinely non-blank part — the exact
+> defect BLANK-01/BLANK-02 fix on `eprom.cpp`, unfixed here by design... Of the four [validated
+> Flash/EEPROM chips], only `SST39SF020` sits on one of D-11's two named sites
+> (`firestarter_fw/src/proms/flash_nor_unlock.cpp:105`) and is reachable by it today."
+
+That finding was about the LATENCY these two sites carried before this phase deleted them outright;
+it is quoted here as the reasoning basis for treating their removal (rather than their region-scoping,
+as `0x07`'s eprom.cpp site received in Phase 201) as safe — a full deletion of a site that was never
+observed to be "safely latent" removes the latency rather than papering over it.
+
+**4. No Uno-class board is attached to this devcontainer.** Every leg in this bench matrix ran on the
+Leonardo (`DATA_BUFFER_SIZE=1024`, per `platformio.ini`'s `[env:leonardo]`), matching Phase 204's own
+recorded gap. A pass here demonstrates nothing about the Uno's 512-byte chunked-transfer path — closing
+that gap needs a separate board and a separate bench session. This gap is inherited unchanged from
+Phase 204's bench matrix and is not narrowed by this plan.
+
+## Chip-identity independence, stated per claim
+
+Following `204-BENCH-MATRIX.md`'s discipline: every substantive claim above is evaluated against
+whether it depends on the seated part's species being genuinely a W27C512, as opposed to depending
+only on "the same physical part occupied the same socket throughout."
+
+- **B0/B1 (rig, firmware roles):** chip-identity-independent — no chip content is involved.
+- **B2 (non-blank setup), B3 (refusal), B5 (acceptance), B6 (erasable leg), B7 (erase -b):**
+  chip-identity-independent by construction. Every claim is about behaviour observed against
+  whichever physical part occupies the socket — a refusal, an acceptance, a digest match or mismatch —
+  not about a chip-ID value. The `FLAG_CAN_ERASE` bit and the UV-handler code path (`eprom.cpp`,
+  protocol `0x07`) are properties the host database assigns from the resolved chip name
+  (`w27c512`, as typed on every command line above), not from a firmware-read chip-ID — so even if the
+  firmware-reported chip-ID (`0x1818`, per the open item in "Rig identity") turned out to name a
+  different part entirely, every command above still dispatched through the identical protocol
+  handler and identical flag set, because the host resolves those from the CLI argument, not from the
+  firmware's chip-ID read.
+- **The one claim that IS chip-identity-DEPENDENT:** the PROXY characterization itself ("this is a
+  W27C512, therefore FLAG_CAN_ERASE and protocol 0x07 apply") rests on the operator's Task 1
+  statement and the CLI argument `w27c512` typed on every command — not on the firmware's own
+  chip-ID probe, which (per the open item above) does not currently corroborate it. This is recorded
+  as the record's one load-bearing identity assumption, distinct from every behavioural claim listed
+  above, which would hold regardless of which part actually occupies the socket.
+
+---
+*Phase: 205-the-pre-flights-leave-the-firmware*
+*Bench session: 2026-09-22*
