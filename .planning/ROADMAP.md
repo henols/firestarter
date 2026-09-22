@@ -393,7 +393,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 205-05-PLAN.md — the folded negative-address firmware fix, scoped to the address field, in its own commit
+- [x] 205-05-PLAN.md — the folded negative-address firmware fix, scoped to the address field, in its own commit
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
