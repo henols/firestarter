@@ -1,14 +1,14 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.41
-milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
+milestone_name: Verification Moves to the Host
 current_phase: 204
 current_phase_name: The command surfaces leave the firmware
 status: executing
 stopped_at: Completed 204-01-PLAN.md — ordinal 6 retired, upload proven, bench tracer observed
 last_updated: "2026-09-22T09:06:48.632Z"
 last_activity: 2026-09-22
-last_activity_desc: "Phase 204 execution started 2026-09-22 - 5 plans in 5 waves, one plan per wave, all sequential on the main checkout (no worktrees: every plan reads or writes a submodule). Planned 2026-09-21: plan-checker PASSED, requirements 8/8 and decisions 12/12 covered, 91 automated verify legs. Wave 1 (204-01) pauses once at a blocking-human package-legitimacy checkpoint before the pinned 3.0.0b49 install."
+last_activity_desc: "Phase 204 wave 1 complete 2026-09-22 - 204-01 retired wire ordinal 6 from firmware and host as a lockstep commit pair, amended FWCMD-05 and ROADMAP criterion 3 to name the three real failure ids (D-03), and proved the refusal on silicon: pio run -e leonardo -t upload succeeded from this devcontainer for the first time (24082 B), the published 3.0.0b49 host was refused with Unknown command: 6 in 3.55 s while its blank on ordinal 4 was still served, and the W27C512 read back byte-identical (SHA-256 a094e902). OPEN: chip-ID readback 0x1818 vs expected 0xda08 - WINDOWS.md entry 3, needs operator confirmation. Next: wave 2, plan 204-02."
 progress:
   total_phases: 6
   completed_phases: 2
