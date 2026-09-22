@@ -5,14 +5,14 @@ milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
 current_phase: 205
 current_phase_name: The pre-flights leave the firmware
 status: executing
-stopped_at: Phase 205 context gathered
-last_updated: "2026-09-22T14:53:18.156Z"
+stopped_at: Phase 205 gap-closure plan 205-08 created
+last_updated: "2026-09-22T19:32:52.183Z"
 last_activity: 2026-09-22
 last_activity_desc: "Phase 204 CLOSED 2026-09-22 - verifier PASSED 6/6 success criteria and 8/8 requirements (FWCMD-01..06, REL-02, REL-03); code review clean (0 blocker, 0 warning, 1 info). Wire ordinals 6 (CMD_VERIFY) and 4 (CMD_BLANK_CHECK) retired from firmware and host as lockstep commit pairs, both ladders carrying reserved-ordinal notes at both gaps. Every in-algorithm verify survives and is now gate-pinned: memory_verify_execute still called from eprom.cpp VERIFY_PER_PULSE_PLUS_FINAL, proven by a brace-matched source-contract gate whose RED was observed 3x independently. FWCMD-05 amended (D-03) to name the three real failure ids. Both skew directions proven on silicon: published 3.0.0b49 host refused Unknown command: 6 and 4 (~3.5s each, no hang), post-204 host correct against pre-204 firmware, three whole-device reads one digest a094e902. Leonardo 24134->23810 B. blank-check machinery SURVIVES for Phase 205. OPEN: seated part chip-ID 0x1818 vs expected 0xda08 - WINDOWS.md entry 3, needs operator confirmation; all matrix claims are chip-identity-independent. Nothing pushed. Next: /gsd-plan-phase 205. Phase 205 execution started 2026-09-22."
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 21
+  total_plans: 22
   completed_plans: 14
   percent: 0
 ---
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 205 (The pre-flights leave the firmware) — PLANS COMPLETE, VERIFICATION FOUND GAPS
-Plan: 7 of 7 (all executed)
-Status: 7/7 plans executed; verifier returned gaps_found (8/9 must-haves). Blocked on CR-01 — is_erase_exempt is address-blind, so a protocol-0x06 write at a non-zero address is now unguarded on both sides. Phase NOT marked complete.
-Last activity: 2026-09-22 — Phase 205 executed 7/7 plans; code review 1 critical, verification gaps_found
-Next: **Plan Phase 205** — `/gsd-plan-phase 205` (FWBLANK — the in-algorithm write-init and erase-end pre-flights leave the firmware). Phase 204 is CLOSED (verifier 6/6, review clean). Ordering is a safety property: after 205 the host-side guard from Phase 203 is the ONLY protection against half-programming a non-blank UV part.
+Phase: 205 (The pre-flights leave the firmware) — READY TO EXECUTE
+Plan: 7 of 8 executed — 205-08 (gap closure) pending
+Status: 7/7 original plans executed; verifier returned gaps_found (8/9 must-haves). Gap-closure plan 205-08 (wave 7) is planned and checker-verified, closing CR-01 — is_erase_exempt is address-blind, so a protocol-0x06 write at a non-zero address is unguarded on both sides. Phase NOT marked complete.
+Last activity: 2026-09-22 — Phase 205 gap-closure planning: 205-08 created and verified (VERIFICATION PASSED, 0 issues)
+Next: **Execute the gap-closure plan** — `/gsd-execute-phase 205 --gaps-only` (runs 205-08 only, the `gap_closure: true` plan). It makes `write_blank_guard.is_erase_exempt` address-aware for protocol 0x06, pins the address dimension WR-02 left uncovered, and records the CR-01 decision. Host-side Python only — no firmware change, no bench work.
 
 ## Roadmap Summary (v1.38)
 

@@ -375,7 +375,7 @@ Plans:
 
 **Goal**: The write-init and erase-end blank checks, their shared machinery and the `FLAG_SKIP_BLANK_CHECK` bit leave the firmware, and the flash that frees is a measured number rather than an estimate.
 **Requirements**: FWBLANK-01, FWBLANK-02, FWBLANK-03, FWBLANK-04, FWBLANK-05
-**Plans:** 7 plans
+**Plans:** 8 plans
 
 Plans:
 **Wave 1**
@@ -402,6 +402,10 @@ Plans:
 **Wave 6** *(blocked on Wave 5 completion)*
 
 - [x] 205-07-PLAN.md — the bench: criteria 3 and 5 on silicon, the D-04 skew observed before the reflash, and the `erase -b` session cost
+
+**Wave 7** *(gap closure — CR-01, from 205-VERIFICATION.md)*
+
+- [ ] 205-08-PLAN.md — make the host write guard's erase exemption address-aware for protocol `0x06`, pin the address dimension, and record the decision
 
 **Success criteria**:
 
