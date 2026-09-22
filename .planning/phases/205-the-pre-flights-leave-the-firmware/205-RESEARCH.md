@@ -1196,6 +1196,51 @@ categories do not apply.
 
 ---
 
+## Open Questions — RESOLVED at plan time (2026-09-22)
+
+All five are closed. The planner treats these as binding, exactly as it treats CONTEXT.md's
+locked decisions. Where a resolution contradicts CONTEXT, the resolution wins and the plan says so.
+
+**OQ-1 — `erase -s <addr> -b` → REFUSE the combination. (OPERATOR DECISION.)**
+The command exits non-zero with one stated line saying the blank check is whole-device and cannot
+follow a sector erase. It does not run the erase. Rationale: on protocol `0x06` a non-zero address
+selects a *sector* erase (`flash_nor_unlock.cpp:118-126`), a whole-device post-check after it fails
+by construction, and the host has no sector-size knowledge to scope the check with — so refusing is
+the only disposition that is neither silently wrong nor a false negative. This is a **user-facing
+contract change**: it needs a `--help` line, a `test_help_erase` snapshot update, and a line in the
+Phase 207 wiki breaking-change page alongside D-02 and D-04.
+
+**OQ-2 — `test_blank_check_region_source_contract.py` → RETIRE **and** MIGRATE, one commit.**
+Settled by Phase 204's precedent, which created `test_verify_survival_source_contract.py` for exactly
+this purpose. Move `test_operation_end_is_defined_exactly_once_and_reads_both_members` plus its two
+anti-vacuity legs (`test_scan_targets_are_non_vacuous`,
+`test_this_module_cannot_be_silently_skipped`) into that module in the **same commit** as the
+deletion. A plain delete would drop the only mechanical fence around a survivor.
+
+**OQ-3 — negative-address refusal → SCOPE TO THE ADDRESS FIELD ONLY.**
+`simple_strtoul` has 8 call sites spanning `ctrl_flags` and bus config. A blanket change is a wire
+behaviour change for six other fields that no requirement asks for. The plan states the scope
+explicitly and the native cases assert the other fields are untouched.
+
+**OQ-4 — `set_`/`clear_operation_in_progress` and the now-inert guards → DO NOT SWEEP.**
+Outside FWBLANK-01…05, zero flash gain, real control-flow risk in `operation_utils.cpp`. Record the
+latency in the phase record, rewrite the guards' comments so they state honestly that
+`OPERATION_IN_PROGRESS` is never set post-205, and file the removal for a later phase. **The measured
+−518 B flash / −4 B RAM delta assumes these stay** — it does not need revising.
+
+**OQ-5 — the 17-failure firmware `tests/` baseline → REPAIR IT, first firmware task.**
+`/workspaces/CLAUDE.md`'s never-accept-staleness rule settles it: four string literals in
+`tests/test_flash_path_record_sync.py` (`:77`, `:363`, `:1092`, `:1094`), `.planning/` →
+`.planning/milestones/`. Cheap, and without it no firmware task can honestly assert a green tree.
+Repair in its own commit **before** any sweep commit, so the sweep's own RED is unambiguous.
+
+**Bench parts (OPERATOR DECISION, same session):** a **W27C512** is seated. No true UV part is
+available. The erasable part rides the UV handler as the **firmware proxy** for every UV leg, per
+this project's established practice. Each proxy leg must record that it ran on a proxy rather than
+on UV silicon, so the phase record does not overclaim criterion 3.
+
+---
+
 ## Sources
 
 ### Primary (HIGH confidence) — the live trees, read this session
