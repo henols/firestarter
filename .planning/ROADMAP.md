@@ -380,8 +380,8 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 205-01-PLAN.md — `erase -b` becomes a host capability, through Phase 202's `check_eprom_blank`, before the firmware loses the erase-end check
-- [ ] 205-02-PLAN.md — repair the firmware test tree's four stale path citations and take FWBLANK-05's phase-entry baseline
+- [x] 205-01-PLAN.md — `erase -b` becomes a host capability, through Phase 202's `check_eprom_blank`, before the firmware loses the erase-end check
+- [x] 205-02-PLAN.md — repair the firmware test tree's four stale path citations and take FWBLANK-05's phase-entry baseline
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
