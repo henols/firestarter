@@ -356,7 +356,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 204-04-PLAN.md — the record: the two orphaned catalog ids kept and annotated, five stale firmware citations repaired, and CMP-F1's deferral finding (wave 4)
+- [x] 204-04-PLAN.md — the record: the two orphaned catalog ids kept and annotated, five stale firmware citations repaired, and CMP-F1's deferral finding (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
