@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.41
 milestone_name: Verification Moves to the Host
-current_phase: 204
-current_phase_name: The command surfaces leave the firmware
-status: executing
-stopped_at: "Completed 204-05-PLAN.md — the four-role bench matrix ran on real hardware: both skew directions proven, both retired ordinals refused, three whole-device digests match, FWCMD-06/REL-02/REL-03 reconciled to Complete"
-last_updated: "2026-09-22T11:15:00.000Z"
+current_phase: 205
+current_phase_name: The pre-flights leave the firmware
+status: planning
+stopped_at: Phase 204 complete, ready to plan Phase 205
+last_updated: "2026-09-22T11:21:38.834Z"
 last_activity: 2026-09-22
-last_activity_desc: "Phase 204 wave 5 (final plan) complete 2026-09-22 - 204-05 ran the full four-role bench matrix on the attached Leonardo, closing out FWCMD-06/REL-02/REL-03. Task 1 built pre-204 firmware (e5842d8) from a detached firestarter_fw worktree, flashed it, and baselined the seated part (65536 bytes, non-blank, digest matches plan 01's tracer read exactly). Task 2 proved REL-02 on the bench: the post-204 host's verify matched (exit 0) and blank reported not-blank via the documented abort-predicate fast path (exit 1), neither output carrying an unknown-command line; swapped to post-204 firmware (24e3fdf) and proved the part survived the flash byte-for-byte; recorded pre/post-sweep flash and RAM for uno/uno328pb/leonardo (leonardo 24134->23810 B, well under the 28672 B ceiling). Task 3 proved REL-03/FWCMD-06: the published 3.0.0b49 host was refused with 'Unknown command: 6' and 'Unknown command: 4' against post-204 firmware, both promptly (~3.5s) and non-empty; three whole-device reads (pre-swap, post-swap, post-refusal) share one SHA-256 digest, ruling out a silent erase; ~/.firestarter/ restored to absent. 204-BENCH-MATRIX.md carries the full D-07 role table, the label-substitution statement, and the Leonardo-only coverage gap stated plainly. The seated part's identity stays UNCONFIRMED (WINDOWS.md entry 3, open) -- every claim in the matrix is chip-identity-independent by construction and the record says so explicitly; not resolved by this plan, left for operator/UAT sign-off. FWCMD-06/REL-02/REL-03 reconciled Pending->Complete in REQUIREMENTS.md. No branch touched beta; nothing pushed; pre-204 worktree removed and pruned; all three repos on v1.41-verification-to-host with matching gitlinks. Phase 204 (all 5 plans) is now plan-complete; phase-level verification/close is a separate next step."
+last_activity_desc: "Phase 204 CLOSED 2026-09-22 - verifier PASSED 6/6 success criteria and 8/8 requirements (FWCMD-01..06, REL-02, REL-03); code review clean (0 blocker, 0 warning, 1 info). Wire ordinals 6 (CMD_VERIFY) and 4 (CMD_BLANK_CHECK) retired from firmware and host as lockstep commit pairs, both ladders carrying reserved-ordinal notes at both gaps. Every in-algorithm verify survives and is now gate-pinned: memory_verify_execute still called from eprom.cpp VERIFY_PER_PULSE_PLUS_FINAL, proven by a brace-matched source-contract gate whose RED was observed 3x independently. FWCMD-05 amended (D-03) to name the three real failure ids. Both skew directions proven on silicon: published 3.0.0b49 host refused Unknown command: 6 and 4 (~3.5s each, no hang), post-204 host correct against pre-204 firmware, three whole-device reads one digest a094e902. Leonardo 24134->23810 B. blank-check machinery SURVIVES for Phase 205. OPEN: seated part chip-ID 0x1818 vs expected 0xda08 - WINDOWS.md entry 3, needs operator confirmation; all matrix claims are chip-identity-independent. Nothing pushed. Next: /gsd-plan-phase 205."
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 14
   completed_plans: 14
-  percent: 33
+  percent: 50
 ---
 
 # Project State
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 204 (The command surfaces leave the firmware) — all 5 plans complete
-Plan: 5 of 5 complete (204-01 through 204-05 done)
-Status: Wave 5 complete — four-role bench matrix run on real hardware; FWCMD-06/REL-02/REL-03 proven
-Last activity: 2026-09-22 — 204-05 landed (204-BENCH-MATRIX.md: both skew directions proven, both refusals captured, three digests match)
-Next: **Verify and close Phase 204** — `/gsd-verify-work 204`, then `/gsd-plan-phase 205` (FWBLANK — the in-algorithm pre-flights leave the firmware).
+Phase: 205 — The pre-flights leave the firmware
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-22 — Phase 204 complete, transitioned to Phase 205
+Next: **Plan Phase 205** — `/gsd-plan-phase 205` (FWBLANK — the in-algorithm write-init and erase-end pre-flights leave the firmware). Phase 204 is CLOSED (verifier 6/6, review clean). Ordering is a safety property: after 205 the host-side guard from Phase 203 is the ONLY protection against half-programming a non-blank UV part.
 
 ## Roadmap Summary (v1.38)
 
@@ -3700,7 +3700,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-22T11:15:00.000Z
-**Stopped at:** Completed 204-05-PLAN.md — the four-role bench matrix ran on real hardware: both skew directions proven, both retired ordinals refused, three whole-device digests match, FWCMD-06/REL-02/REL-03 reconciled to Complete
+**Stopped at:** Phase 204 complete, ready to plan Phase 205
 **Was (superseded, retained for continuity):** Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed
 **Was (superseded, retained for continuity):** Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
