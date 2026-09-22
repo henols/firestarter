@@ -168,5 +168,143 @@ that would otherwise abort the read at the chip-ID check before any array data t
 it is safe for a plain read — chip-ID sensing is the only VPP-dependent step in the read path and does
 not gate array-content transfer.
 
-*(Task 1 complete. Task 2 — the new-host-against-old-firmware direction, then the firmware swap — and
-task 3 — the published-host refusal legs — continue this record below in later commits.)*
+## Task 2 — The new-host-against-old-firmware direction, then swap the firmware
+
+### (a) The new-host leg — criterion 4 and REL-02
+
+Both commands were run with `-f`/`--force`, for the identical documented reason task 1's read needed
+it: the rig's VPP monitor is a known-noisy proxy that does not route to the socket, and its false
+low/high readings would otherwise abort the command before any chip-content exchange happens. Forcing
+past the VPP precheck changes nothing about which ordinal is sent on the wire — it is a host-side
+precondition gate, not a protocol substitution.
+
+**`verify` against the pre-204-firmware-baselined image:**
+
+```
+$ cd /workspaces/firestarter_app && timeout 300 .venv311/bin/firestarter verify -f w27c512 \
+    /home/vscode/.local/share/gsd204-scratch/pre.bin
+Connecting...Connecting... OK
+Verifying /home/vscode/.local/share/gsd204-scratch/pre.bin against W27C512
+WARN: VPP is high: 13.1V > 12.0V
+Programmer warning: VPP is high: 13.1V > 12.0V
+... [progress bar elided] ...
+match, 0 bad of 65536 compared of 65536 (0x000000-0x00FFFF)
+Verify for W27C512 successful (7.40s).
+```
+
+- **Exit code: 0**
+- **Duration: 11.00 s** (wall-clock around the subprocess; the command's own reported internal time is
+  7.40s)
+- **Match, 0 bad of 65536 compared of 65536.**
+- No `-f`-less first attempt: an un-forced run (recorded, not silently discarded) hit the VPP precheck
+  and exited 2 with `ERROR: VPP is high: 13.1V > 12.0V` before any chip content was exchanged — the
+  same rig-noise VPP-sensing unreliability already on record project-wide, not a protocol event.
+
+**`blank` against the same firmware:**
+
+```
+$ cd /workspaces/firestarter_app && timeout 300 .venv311/bin/firestarter blank -f w27c512
+Connecting...Connecting... OK
+Blank checking EPROM W27C512
+WARN: VPP is high: 13.1V > 12.0V
+Programmer warning: VPP is high: 13.1V > 12.0V
+  2%|▏ | 0x0400/0x10000 bytes  Read stopped in flight at 0x000400 (abort predicate fired).
+                                ERROR: Timeout
+Programmer error during READ: Programmer error during read: Timeout
+Mismatch 0x000000-0x0003FF (1024 bytes)
+indeterminate, 1024 bad of 1024 compared of 65536 (0x000000-0x0003FF)
+Blank check for W27C512 failed.
+```
+
+- **Exit code: 1** (the CLI's "not blank" convention, not a refusal)
+- **Duration: 4.92 s** (reproduced on a second run: 4.85 s, byte-identical transcript)
+- Reports the part as **not blank**, which is the correct verdict for a part carrying non-blank content.
+- The "abort predicate fired" / "ERROR: Timeout" sequence is the **designed early-stop mechanism**
+  documented in `firestarter_app/firestarter/eprom_operations.py` `_main_phase_read_data` (202-04 D-06):
+  once a mismatch is found and `--full` was not requested, the host stops acking further chunks; the
+  firmware's own 1-second `op_wait_for_ack` then times out, `command_done()` still runs to leave the
+  port clean, and the host reports the mismatch it already found. This is NOT a protocol failure and is
+  NOT an unknown-command condition — it is the intended fast-exit path for a non-blank part, confirmed
+  by reading the source before treating the transcript as evidence.
+
+**Assertion, explicit:** neither output contains an "unknown command" line.
+
+```
+$ grep -i "unknown command" task2-verify-f.out task2-blank.out; echo "exit: $?"
+exit: 1
+```
+
+Both outcomes are the "correct" outcomes REL-02 requires — the post-204 host only ever sends the read
+ordinal, old firmware serves it normally either way, and what would have falsified the claim (an
+unknown-command line, a protocol failure, or a stall) did not occur. Per D-11, this leg proves an
+ABSENCE, and its whole value is in having been run on real silicon rather than argued from code
+structure.
+
+### (b) Swap the firmware
+
+```
+$ cd /workspaces/firestarter_fw && git rev-parse HEAD
+24e3fdf9bc78446761244ae08dc42225881dde31
+$ timeout 60 pio run -e leonardo -t upload
+...
+avrdude: writing flash (23810 bytes):
+avrdude: 23810 bytes of flash written
+avrdude: verifying flash memory against .pio/build/leonardo/firestarter_leonardo.hex:
+avrdude: 23810 bytes of flash verified
+avrdude done.  Thank you.
+========================= [SUCCESS] Took 5.97 seconds =========================
+```
+
+Post-204 firmware sha: `24e3fdf9bc78446761244ae08dc42225881dde31`. No chip removal — the Leonardo is
+exempt from the chip-out-before-sideload rule, and the part stayed seated throughout.
+
+### (c) Isolate the firmware swap from the refusal legs
+
+```
+$ cd /workspaces/firestarter_app && .venv311/bin/firestarter read -f W27C512 \
+    /home/vscode/.local/share/gsd204-scratch/mid.bin
+... [same VPP-low / chip-ID warnings as task 1's baseline read] ...
+Read complete (7.40s). Data saved to /home/vscode/.local/share/gsd204-scratch/mid.bin
+```
+
+- **`mid.bin`: 65536 bytes**
+- **SHA-256: `a094e902a30b4fa3369ee493338351e11a8b6667f7539460b63f78dce896ae43`** — identical to `pre.bin`
+- `cmp pre.bin mid.bin` exits 0: **content survived the firmware swap, byte-for-byte over all 65536
+  bytes.**
+
+This isolates the firmware swap itself from the refusal legs task 3 runs next: whatever happens there,
+this digest proves the flash operation alone changed nothing on the part.
+
+### (d) Per-target flash and RAM figures — pre-sweep vs. post-sweep
+
+Pre-sweep figures are from task 1's pre-204 worktree build (`e5842d8`). Post-sweep figures are a clean
+rebuild of the post-204 working tree (`24e3fdf`) for all three AVR targets:
+
+```
+$ cd /workspaces/firestarter_fw && pio run -e uno -e uno328pb -e leonardo -t clean
+$ pio run -e uno -e uno328pb -e leonardo
+...
+bootloader-guard: uno 21452/32256 B (66.5% of the safe ceiling, 10804 B margin, 512 B bootloader reserved)
+RAM:   68.3% (used 1398 bytes from 2048 bytes)
+Flash: 65.5% (used 21452 bytes from 32768 bytes)
+...
+bootloader-guard: uno328pb 21496/32384 B (66.4% of the safe ceiling, 10888 B margin, 384 B bootloader reserved)
+RAM:   68.6% (used 1404 bytes from 2048 bytes)
+Flash: 65.6% (used 21496 bytes from 32768 bytes)
+...
+bootloader-guard: leonardo 23810/28672 B (83.0% of the safe ceiling, 4862 B margin, 4096 B bootloader reserved)
+RAM:   71.8% (used 1839 bytes from 2560 bytes)
+Flash: 72.7% (used 23810 bytes from 32768 bytes)
+```
+
+| Target | Pre-sweep Flash | Pre-sweep RAM | Post-sweep Flash | Post-sweep RAM | Flash delta |
+|---|---|---|---|---|---|
+| uno | 21850 / 32768 B | 1398 / 2048 B | 21452 / 32768 B | 1398 / 2048 B | −398 B |
+| uno328pb | 21894 / 32768 B | 1404 / 2048 B | 21496 / 32768 B | 1404 / 2048 B | −398 B |
+| leonardo | 24134 / 32768 B (24082 in plan 01's single-ordinal 268d844 build) | 1839 / 2560 B | 23810 / 32768 B | 1839 / 2560 B | −324 B |
+
+**Leonardo bootloader-ceiling check: 23810 B < 28672 B** — well inside the real ATmega32U4 ceiling that
+`platformio.ini`'s override exposes; the image does not encroach on the Caterina bootloader reservation.
+
+*(Task 2 complete. Task 3 — the published-host refusal legs — continues this record below in a later
+commit.)*
