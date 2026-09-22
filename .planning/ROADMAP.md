@@ -385,7 +385,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 205-03-PLAN.md — delete the four blank-check call sites, then the machinery itself, with the golden re-derived and the survivor fence migrated
+- [x] 205-03-PLAN.md — delete the four blank-check call sites, then the machinery itself, with the golden re-derived and the survivor fence migrated
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
