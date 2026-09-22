@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 0
+open_count: 1
 waived_count: 0
 fixed_count: 2
-total_count: 2
-last_updated: 2026-09-21T13:50:15.421Z
+total_count: 3
+last_updated: 2026-09-22T09:04:23.280Z
 ---
 
 # Broken Windows Ledger
@@ -17,6 +17,7 @@ last_updated: 2026-09-21T13:50:15.421Z
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
 | 1 | 202 | deviation | firestarter_app/firestarter/eprom_operations.py |  | verify_eprom bounds its COMMAND_READ to the file's length by reusing _setup_operation's COMMAND_READ+size override (passing region_length as a string) ahead of --size landing for verify in 202-05. 202-05 should reconcile this with the real --size/-a option and D-17's explicit region-resolution rules. | fixed |  | 2026-09-20T16:22:24.576Z | 2026-09-20T19:21:05.488Z |
 | 2 | 203 | deviation | firestarter_app/tests/test_characterization.py |  | test_help_write and test_no_blank_check_polarity (write --help snapshots) are known-red at 203-03 close by plan design -- write --verify/--full landed and changed the help text; hand-editing the two syrupy snapshot blocks is explicitly 203-04's job (203-03-PLAN.md verification block). Never run --snapshot-update. | fixed | Both write --help snapshot blocks hand-edited in 203-04 (never --snapshot-update) to match the rewritten host-side blank-check help text; both tests green, full suite 2304 passed / 0 failed, 36/36 snapshots passing. | 2026-09-21T13:34:28.036Z | 2026-09-21T13:50:15.421Z |
+| 3 | 204 | unmet-truth | .planning/phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-TRACER.md |  | Task 3's <human-check> asked to confirm the seated part is a W27C512; the un-forced read reported Chip ID 0x1818 vs the database's expected 0xda08 for W27C512,W27E512. Most likely explained by the rig's known VPP-sensing unreliability, but not independently confirmed — needs operator/UAT sign-off. | open |  | 2026-09-22T09:04:23.280Z |  |
 
 ````json
 [
@@ -43,6 +44,18 @@ last_updated: 2026-09-21T13:50:15.421Z
     "reason": "Both write --help snapshot blocks hand-edited in 203-04 (never --snapshot-update) to match the rewritten host-side blank-check help text; both tests green, full suite 2304 passed / 0 failed, 36/36 snapshots passing.",
     "recorded_at": "2026-09-21T13:34:28.036Z",
     "resolved_at": "2026-09-21T13:50:15.421Z"
+  },
+  {
+    "id": 3,
+    "kind": "unmet-truth",
+    "phase": "204",
+    "file": ".planning/phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-TRACER.md",
+    "line": null,
+    "description": "Task 3's <human-check> asked to confirm the seated part is a W27C512; the un-forced read reported Chip ID 0x1818 vs the database's expected 0xda08 for W27C512,W27E512. Most likely explained by the rig's known VPP-sensing unreliability, but not independently confirmed — needs operator/UAT sign-off.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-22T09:04:23.280Z",
+    "resolved_at": null
   }
 ]
 ````

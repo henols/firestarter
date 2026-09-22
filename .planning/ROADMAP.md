@@ -339,7 +339,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 204-01-PLAN.md — tracer: ordinal 6 leaves both ladders and a published `3.0.0b49` host is refused on silicon, with ordinal 4 still live as the control (wave 1, has the package-legitimacy checkpoint)
+- [x] 204-01-PLAN.md — tracer: ordinal 6 leaves both ladders and a published `3.0.0b49` host is refused on silicon, with ordinal 4 still live as the control (wave 1, has the package-legitimacy checkpoint)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.41
-milestone_name: Verification Moves to the Host
+milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
 current_phase: 204
 current_phase_name: The command surfaces leave the firmware
 status: executing
-stopped_at: "Phase 204 executing — wave 1 of 5 (204-01)"
-last_updated: "2026-09-22T04:55:16.008Z"
+stopped_at: Completed 204-01-PLAN.md — ordinal 6 retired, upload proven, bench tracer observed
+last_updated: "2026-09-22T09:06:48.632Z"
 last_activity: 2026-09-22
 last_activity_desc: "Phase 204 execution started 2026-09-22 - 5 plans in 5 waves, one plan per wave, all sequential on the main checkout (no worktrees: every plan reads or writes a submodule). Planned 2026-09-21: plan-checker PASSED, requirements 8/8 and decisions 12/12 covered, 91 automated verify legs. Wave 1 (204-01) pauses once at a blocking-human package-legitimacy checkpoint before the pinned 3.0.0b49 install."
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 14
-  completed_plans: 9
+  completed_plans: 10
   percent: 33
 ---
 
@@ -236,8 +236,8 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 204 (The command surfaces leave the firmware) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 204
+Plan: 2 of 5
+Status: Ready to execute
 Last activity: 2026-09-22 — Phase 204 execution started
 Next: **Execute Phase 204** — `/gsd-execute-phase 204` (The command surfaces leave the firmware). Wave 1 is a tracer slice that takes ordinal 6 through every layer and onto silicon; it pauses once at a package-legitimacy checkpoint before installing the pinned `3.0.0b49` host.
 
@@ -3237,6 +3237,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 193]: GATE-02's mechanism is cited in CLAUDE.md by path and section heading (999.9-repo-rename-impact-analysis.md, "Standing rule this must produce"), not restated in full, so there is one source of truth for the PEP 440 version-parsing argument.
 - [Phase 193]: GATE-03's .gitmodules archaeology pointer lives in CLAUDE.md's repository-structure area, not the close section, because that is where an archaeology session actually starts. The pointer names the note and states the trap does not bite today.
 - [Phase 193]: The repository-structure paragraph's tools/ inventory sentence, falsified by this phase's own tools/adoption/ addition, was corrected in the same edit that added the archaeology pointer depending on it, rather than deferred.
+- [Phase 204]: Ordinal 6 retired end-to-end (204-01); tracer scope is ordinal 6 only, ordinal 4 stays live for plan 03's positive control — Fork B: the CMD_VERIFY define must be the last reference deleted, so a thin slice necessarily retires one ordinal at a time; this also buys the served/refused bench control pair
+- [Phase 204]: pio run -e leonardo -t upload proven from this devcontainer for the first time (204-01 task 3) — Every REL-02/REL-03 bench leg in Phase 204 depends on this path; discovering a failure here costs one task instead of the whole phase
 
 ## Performance Metrics
 
@@ -3684,11 +3686,12 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 193 P03 | 12min | 3 tasks | 4 files |
 | Phase 193 P02 | 7min | 2 tasks | 1 files |
 | Phase 193 P05 | 20min | 3 tasks | 2 files |
+| Phase 204 P01 | 3h 59m | 3 tasks | 15 files |
 
 ## Session
 
-**Last session:** 2026-09-21T21:30:30.547Z
-**Stopped at:** Phase 204 context gathered
+**Last session:** 2026-09-22T09:06:37.932Z
+**Stopped at:** Completed 204-01-PLAN.md — ordinal 6 retired, upload proven, bench tracer observed
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
 **Was (superseded, retained for continuity):** Completed 202-03-PLAN.md — classify_fingerprint delegates to classify_streamed via a CompareAccumulator (D-02 enforced), _diff_offsets retired, D-03 12-row corpus proves whole-Fingerprint equality against a transcribed batch reference, finalise() always classifies, render_compare_lines gains the D-14 bucket line; test count 2144->2180, full suite green, mypy unchanged at 32 errors, ruff clean; no deviations
 **Was (superseded, retained for continuity):** Completed 202-02-PLAN.md — peak-allocation ceiling and runtime gates now assert CMP-03, CMP-05 engine half (coalescing/ordering/cap-honesty) completed; test count 12->33, full suite 2144 passed, mypy unchanged at 32 errors; one disclosed deviation (ceiling test traces 128 KiB not 512 KiB, see Decisions)
@@ -3779,7 +3782,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/204-the-command-surfaces-leave-the-firmware/204-CONTEXT.md
+**Resume file:** None
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
