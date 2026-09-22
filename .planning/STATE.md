@@ -1,20 +1,20 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.41
-milestone_name: Verification Moves to the Host
+milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
 current_phase: 205
 current_phase_name: The pre-flights leave the firmware
 status: planning
-stopped_at: Phase 204 complete, ready to plan Phase 205
-last_updated: "2026-09-22T11:21:38.834Z"
+stopped_at: Phase 205 context gathered
+last_updated: "2026-09-22T12:51:42.045Z"
 last_activity: 2026-09-22
 last_activity_desc: "Phase 204 CLOSED 2026-09-22 - verifier PASSED 6/6 success criteria and 8/8 requirements (FWCMD-01..06, REL-02, REL-03); code review clean (0 blocker, 0 warning, 1 info). Wire ordinals 6 (CMD_VERIFY) and 4 (CMD_BLANK_CHECK) retired from firmware and host as lockstep commit pairs, both ladders carrying reserved-ordinal notes at both gaps. Every in-algorithm verify survives and is now gate-pinned: memory_verify_execute still called from eprom.cpp VERIFY_PER_PULSE_PLUS_FINAL, proven by a brace-matched source-contract gate whose RED was observed 3x independently. FWCMD-05 amended (D-03) to name the three real failure ids. Both skew directions proven on silicon: published 3.0.0b49 host refused Unknown command: 6 and 4 (~3.5s each, no hang), post-204 host correct against pre-204 firmware, three whole-device reads one digest a094e902. Leonardo 24134->23810 B. blank-check machinery SURVIVES for Phase 205. OPEN: seated part chip-ID 0x1818 vs expected 0xda08 - WINDOWS.md entry 3, needs operator confirmation; all matrix claims are chip-identity-independent. Nothing pushed. Next: /gsd-plan-phase 205."
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 1
   total_plans: 14
   completed_plans: 14
-  percent: 50
+  percent: 17
 ---
 
 # Project State
@@ -3699,8 +3699,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-22T11:15:00.000Z
-**Stopped at:** Phase 204 complete, ready to plan Phase 205
+**Last session:** 2026-09-22T12:51:41.880Z
+**Stopped at:** Phase 205 context gathered
 **Was (superseded, retained for continuity):** Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed
 **Was (superseded, retained for continuity):** Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
@@ -3793,7 +3793,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** None
+**Resume file:** .planning/phases/205-the-pre-flights-leave-the-firmware/205-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
