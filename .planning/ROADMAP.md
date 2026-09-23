@@ -419,7 +419,13 @@ Plans:
 
 **Goal**: The `dev test` verify and blank steps route through the host engine without changing what a verdict means, and a plan uses one leased serial link instead of one port open per call.
 **Requirements**: DEVTEST-01, DEVTEST-02, DEVTEST-03, SESS-01, SESS-02
-**Plans:** TBD (not yet planned)
+**Plans:** 4 plans
+
+Plans:
+- [ ] 206-01-PLAN.md — a transport-failed cycle-block step exits 2, and the two `== 0` adapters learn the third verdict
+- [ ] 206-02-PLAN.md — additive blank-check compare evidence outside the hash, plus the empty-default `cmp=host` discriminator
+- [ ] 206-03-PLAN.md — `setup_command` extracted, then one leased serial link per `dev test` plan, default off and revertible whole
+- [ ] 206-04-PLAN.md — the bench measurement, the pre-registered threshold applied, and `206-SESSION-COST.md`
 
 **Success criteria**:
 
