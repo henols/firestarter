@@ -456,7 +456,17 @@ Plans:
 
 **Goal**: Both repositories carry `3.1.0b1` in one commit pair, and the wiki documents the breaking change alongside the two new user-facing surfaces.
 **Requirements**: REL-01, REL-04
-**Plans:** TBD (not yet planned)
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 207-01-PLAN.md — merge `origin/beta` into both sub-repo milestone branches (D-01), bump `3.0.0b35` / `3.0.0b50` to `3.1.0b1` in a single-file commit pair, correct the app README's mixed-version sentence, advance the meta gitlinks, and prove `DRY_RUN: 3.1.0b1` and a conflict-free ship merge in both repos (REL-01)
+- [ ] 207-02-PLAN.md — author the wiki record locally on top of `f967398` (D-02): the Breaking-Changes 3.1.0b1 entry, the new Writing-and-Verifying page with its navigation, and the Install-Beta / Testing-Chips version-pairing notes, every statement labelled from 3.1.0b1 (D-03) (REL-04)
+
+**Wave 2** *(blocked on Wave 1 completion; operator checkpoint)*
+
+- [ ] 207-03-PLAN.md — pre-flight the exact outgoing wiki tree, operator `checkpoint:human-action` naming `f967398`, fast-forward push, fresh-clone proof, and the closing criterion-4 check (no Release, no tag, no sub-repo push) (REL-04)
 
 **Success criteria**:
 
