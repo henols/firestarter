@@ -5,15 +5,15 @@ milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
 current_phase: 206
 current_phase_name: "`dev test` keeps its fidelity, on one session"
 status: executing
-stopped_at: Completed 206-01-PLAN.md
-last_updated: "2026-09-23T08:31:05.493Z"
+stopped_at: Completed 206-02-PLAN.md
+last_updated: "2026-09-23T09:30:42.601Z"
 last_activity: 2026-09-23
 last_activity_desc: "Phase 206 execution started 2026-09-23 (4 plans, 4 serial waves). PRIOR: Phase 205 CLOSED 2026-09-22 - verifier PASSED 9/9 must-have truths on re-verification (previous run was 8/9, gaps_found). Gap-closure plan 205-08 closed CR-01: the host write guard's erase exemption is now address-aware, so a protocol-0x06 (AMD/JEDEC NOR-unlock) `write -a <non-zero>` no longer skips every blank check. is_erase_exempt/requires_blank_check took a keyword-only address param (default 0, behaviour-preserving); write_eprom resolves its own start address via parse_address and threads it to the single call site. A non-zero-address write falls back to the region-scoped host blank check - checked, not refused - so a blank region still writes; -b still bypasses. The 0x06-only narrowing was confirmed against firmware source by two independent agents: flash_nor_unlock_erase_execute branches on handle->address != 0, while flash_intel_erase_execute and eprom_internal_erase both hard-code address 0, so 0x10/0x07/0x08/0x0B are genuinely unaffected. Code review 0 critical / 0 warning / 1 info, and mutation-tested: reverting only the new address branch reddens exactly the 5 CR-01 tests. Regression gate green across both sub-repos - app 2333 passed on py3.11.16 + ruff clean, fw 316 pytest + 244/244 native + 244/244 native_nodevtools. FWBLANK-01..05 all marked Complete. Advisory carried forward: firestarter_fw/CLAUDE.md states 320 collected tests in its `tests/` tree; live collection is 316 - documentation drift, no must-have truth depends on it. Phase 205 has no SECURITY.md while the security capability is active."
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 26
-  completed_plans: 23
+  completed_plans: 24
   percent: 67
 ---
 
@@ -236,7 +236,7 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 206 (`dev test` keeps its fidelity, on one session) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-09-23 — Phase 206 execution started
 Next: **Execute Phase 206** — `/gsd-execute-phase 206` (4 plans, 4 serial waves). Waves 2 and 4 are `autonomous: false`: wave 2 gates the one-way `cmp=host` dedup discriminator, wave 4 is the operator bench measurement for SESS-02. Phase 205 is CLOSED — its gap-closure plan already ran.
@@ -3246,6 +3246,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 204]: 204-02: all four id groups in the new native suite reuse one settable, address-independent rurp_read_data_buffer() stub -- no per-address tracking was needed since every case asks only which id a site raises, never which address mismatched.
 - [Phase 204]: The seated part is expected to be a W27C512 by database chip-ID lookup, but its own ID-sense readback (0x1818) does not match the expected 0xda08 -- tracked as an open item (WINDOWS.md entry 3) rather than asserted as confirmed; every claim in 204-BENCH-MATRIX.md is chip-identity-independent by construction.
 - [Phase 206]: D-01: verdict 2 lands on VERDICT_SKIPPED + STATUS_ERROR at both the blank-check and verify dispatch arms (Phase 206 Plan 01) — Same two-axis vocabulary _run_step_untimed's transport arm already uses; avoids a sixth verdict, which the ROADMAP forbids.
+- [Phase 206]: checkpoint:decision (Task 2) answered land-as-specified — the empty-default cmp=host tag lands exactly as D-03 specified; the 43 measured ALLOW chips' count_agreeing ladder restarts for host-path reports (second reset in two milestones, after v1.30's SDP leg).
 
 ## Performance Metrics
 
@@ -3698,11 +3699,12 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 204 P03 | ~45min | 3 tasks | 25 files |
 | Phase 204 P05 | 1h 10m | 3 tasks | 1 files |
 | Phase 206 P01 | 62min | 2 tasks | 4 files |
+| Phase 206 P02 | 28min | 2 tasks | 10 files |
 
 ## Session
 
-**Last session:** 2026-09-23T08:31:05.349Z
-**Stopped at:** Completed 206-01-PLAN.md
+**Last session:** 2026-09-23T09:30:42.363Z
+**Stopped at:** Completed 206-02-PLAN.md
 **Was (superseded, retained for continuity):** Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed
 **Was (superseded, retained for continuity):** Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)

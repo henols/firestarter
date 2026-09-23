@@ -428,7 +428,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 206-02-PLAN.md — additive blank-check compare evidence outside the hash, plus the empty-default `cmp=host` discriminator
+- [x] 206-02-PLAN.md — additive blank-check compare evidence outside the hash, plus the empty-default `cmp=host` discriminator
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
