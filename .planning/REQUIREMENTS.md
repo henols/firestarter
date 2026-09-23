@@ -95,7 +95,7 @@ golden.
 ### SESS — one leased serial session per plan (D-6, seed R4)
 
 - [x] **SESS-01**: a `dev test` plan opens one validated serial link and reuses it across its steps, instead of one open and teardown per call.
-- [ ] **SESS-02**: the wall-clock saving is measured on a real run and reported as a number; if it is not worth the structural change, that is recorded and the change is reverted rather than kept on principle.
+- [x] **SESS-02**: the wall-clock saving is measured on a real run and reported as a number; if it is not worth the structural change, that is recorded and the change is reverted rather than kept on principle.
 
 ### REL — version, compatibility and the record (D-4, D-5)
 
@@ -163,7 +163,7 @@ Every requirement maps to exactly one phase.
 | DEVTEST-02 | Phase 206 | Complete |
 | DEVTEST-03 | Phase 206 | Complete |
 | SESS-01 | Phase 206 | Complete |
-| SESS-02 | Phase 206 | Pending |
+| SESS-02 | Phase 206 | Complete |
 | REL-01 | Phase 207 | Pending |
 | REL-04 | Phase 207 | Pending |
 

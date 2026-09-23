@@ -5,15 +5,15 @@ milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
 current_phase: 206
 current_phase_name: "`dev test` keeps its fidelity, on one session"
 status: executing
-stopped_at: Completed 206-03-PLAN.md
-last_updated: "2026-09-23T10:25:00.000Z"
+stopped_at: Completed 206-04-PLAN.md
+last_updated: "2026-09-23T11:52:08.000Z"
 last_activity: 2026-09-23
-last_activity_desc: "Phase 206 plan 03 complete 2026-09-23: SerialCommunicator.setup_command extracted from _probe_port (fa6c8e8, permanent, kept regardless of SESS-02's outcome) and EpromOperator.lease() landed default-off, one call site (3853b55, the SESS-02 revert target sha) - a dev test plan now opens one validated serial link and reuses it across its EpromOperator calls instead of one open/teardown per call (SESS-01 complete). D-06 failure policy: a SerialError inside a leased setup drops the held link but leaves the lease active, so the next operation cold-connects and run_plan's per-step invariant survives. D-05: HardwareManager stays outside the lease, capping the measurable saving. The lease commit is machine-verified as exactly 3 paths (cli_handlers.py, eprom_operations.py, tests/test_session_lease.py) and its revert was rehearsed clean (2357 passed on the reverted tree) BEFORE a required third test-infrastructure commit (d723cf7) landed separately, precisely so that revert-target sha stays exactly the shape SESS-02 depends on. Full suite 2363 passed, ruff/mypy clean. PRIOR: Phase 205 CLOSED 2026-09-22 - verifier PASSED 9/9 must-have truths on re-verification (previous run was 8/9, gaps_found). Gap-closure plan 205-08 closed CR-01: the host write guard's erase exemption is now address-aware, so a protocol-0x06 (AMD/JEDEC NOR-unlock) `write -a <non-zero>` no longer skips every blank check. is_erase_exempt/requires_blank_check took a keyword-only address param (default 0, behaviour-preserving); write_eprom resolves its own start address via parse_address and threads it to the single call site. A non-zero-address write falls back to the region-scoped host blank check - checked, not refused - so a blank region still writes; -b still bypasses. The 0x06-only narrowing was confirmed against firmware source by two independent agents: flash_nor_unlock_erase_execute branches on handle->address != 0, while flash_intel_erase_execute and eprom_internal_erase both hard-code address 0, so 0x10/0x07/0x08/0x0B are genuinely unaffected. Code review 0 critical / 0 warning / 1 info, and mutation-tested: reverting only the new address branch reddens exactly the 5 CR-01 tests. Regression gate green across both sub-repos - app 2333 passed on py3.11.16 + ruff clean, fw 316 pytest + 244/244 native + 244/244 native_nodevtools. FWBLANK-01..05 all marked Complete. Advisory carried forward: firestarter_fw/CLAUDE.md states 320 collected tests in its `tests/` tree; live collection is 316 - documentation drift, no must-have truth depends on it. Phase 205 has no SECURITY.md while the security capability is active."
+last_activity_desc: "Phase 206 plan 04 complete 2026-09-23 (last plan of Phase 206): SESS-02 measured on real silicon and MET. Bench rig: Arduino Leonardo (/dev/ttyACM0, VID 0x2341 PID 0x8036), W27C512 seated, shield Rev 2.0, VPP confirmed 12.0V in-range before dispatch (an earlier 13.0V fault had already been trimmed by the operator). Both arms ran `firestarter dev test w27c512` (no --fast, never --submit) to completion N=3 each, timed with `time` around the whole subprocess: leased-arm median 228.283s (min 227.836s, max 229.758s), cold-arm median 268.992s (min 268.731s, max 269.706s). Removed time 40.709s = 15.134% unrounded, 15.1% rounded half-up -- clears D-07's pre-registered 15.0% threshold (clause 1). Wider-arm (leased) spread 1.922s, 5x=9.610s, well under the 40.709s removed (clause 2). All six runs report run_status COMPLETE and chip_id_actual 0xDA08 with identical per-step verdicts in both arms (clause 3). All three clauses pass -- the session lease (firestarter_app 3853b55) is KEPT, no revert committed; the cold arm was produced by applying `git revert --no-commit d723cf7 3853b55` (zero conflicts) to a scratch tree and restoring via `git checkout HEAD --`, never committing the revert. firestarter_app remains at HEAD d723cf7 on v1.41-verification-to-host, full suite re-verified green after restore (2363 passed, 0 failed), ruff clean. 206-SESSION-COST.md now carries all six sections filled and labelled measured-or-derived, superseding no prior session-cost document. Phase 206 (4/4 plans) is now fully executed; not yet verified/closed. PRIOR: Phase 206 plan 03 complete 2026-09-23: SerialCommunicator.setup_command extracted from _probe_port (fa6c8e8, permanent) and EpromOperator.lease() landed default-off, one call site (3853b55) -- a dev test plan opens one validated serial link and reuses it across its EpromOperator calls instead of one open/teardown per call (SESS-01 complete). Phase 205 CLOSED 2026-09-22 - verifier PASSED 9/9 must-have truths on re-verification."
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 26
-  completed_plans: 25
+  completed_plans: 26
   percent: 67
 ---
 
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 206 (`dev test` keeps its fidelity, on one session) — EXECUTING
-Plan: 4 of 4
-Status: Ready to execute
-Last activity: 2026-09-23 — Phase 206 plan 03 complete (setup_command extraction + EpromOperator.lease(), SESS-01 done)
-Next: **Execute Phase 206 plan 04** — `/gsd-execute-phase 206` (the bench measurement, wave 4, `autonomous: false` — operator-initiated hardware measurement for SESS-02, applying the pre-registered threshold against the lease sha `3853b55` recorded in `206-03-SUMMARY.md`). Phase 205 is CLOSED — its gap-closure plan already ran.
+Phase: 206 (`dev test` keeps its fidelity, on one session) — ALL PLANS EXECUTED, NOT YET VERIFIED
+Plan: 4 of 4 (complete)
+Status: Ready for verification
+Last activity: 2026-09-23 — Phase 206 plan 04 complete (SESS-02 measured on real silicon, session lease KEPT — 15.1% saving, all three D-07 clauses passed)
+Next: **Verify Phase 206** — `/gsd-verify-work 206`, then `/gsd-plan-phase 207` for the version-and-record phase. Phase 206's four plans are all executed: SESS-01 (lease landed) and SESS-02 (lease measured and kept) are both Complete in REQUIREMENTS.md. Phase 205 is CLOSED — its gap-closure plan already ran.
 
 ## Roadmap Summary (v1.38)
 
@@ -2227,6 +2227,8 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Decisions
 
+- [Phase 206 Plan 04]: D-07's pre-registered keep-or-revert threshold was applied exactly as written to the measured bench numbers (W27C512, Leonardo, N=3 per arm): 15.1% rounded saving (clause 1 pass), removed time 40.709s against a 9.610s five-times-spread bar (clause 2 pass), zero verdict divergence across all six runs (clause 3 pass). All three clauses passed, so the session lease (`firestarter_app` `3853b55`) is KEPT — no `git revert` was committed. The cold arm was produced by applying the corrected two-sha revert recipe (`git revert --no-commit d723cf7 3853b55`, zero conflicts) to a scratch working tree and restoring it afterward with `git checkout HEAD --`, never committing the revert; `firestarter_app` remains at HEAD `d723cf7` throughout.
+- [Phase 206 Plan 04]: `.planning/ROADMAP.md`'s Phase 206 Bench cell, previously `no`, was corrected to `**yes**` (D-08) — it contradicted the phase's own success criterion 5 and SESS-02's requirement text; the contradiction was resolved in favour of the requirement.
 - [Phase 206 Plan 03]: `setup_command`'s internal `is_connected()` guard was dropped (task 1's `<behavior>` prose said "called on a link that is not connected returns falsy rather than raising", but implementing that literally broke 12 pinned tests across `test_hw_revision_gate.py`/`test_fw_update_path_gate.py`/`test_fwguard.py` that patch `SerialCommunicator.__init__` to a no-op never setting `self.connection`). Resolved by documenting that `send_bytes` already raises `SerialError("Not connected.")` for that case (pre-existing, unchanged), and both production callers only ever invoke `setup_command` on a link they have just confirmed open.
 - [Phase 206 Plan 03]: The lease's own commit (`3853b55`) is machine-verified as touching EXACTLY three paths (`cli_handlers.py`, `eprom_operations.py`, `tests/test_session_lease.py`) per the plan's explicit requirement, so its revert stays a clean single-commit take-back for SESS-02. A third, necessary test-infrastructure commit (`d723cf7` — `Mock(spec=EpromOperator)`'s `.lease` needing `contextlib.nullcontext()`, `FakeChip.lease()`, and `test_write_verify.py`'s return-count pin moving 3→4) was deliberately kept SEPARATE and landed AFTER rehearsing the lease commit's revert, in that order, so the rehearsal measured the lease commit alone rather than a bundle.
 - [Phase 206 Plan 03]: `_decode_id_frame`'s ack-repopulation is confirmed complete — `firmware_max_chunk`/`hw_revision`/`firmware_identity`/`write_block_budget_s` are unconditionally reassigned by the same instance method on every successfully-decoded `MSG_OK_READY`, so a second `setup_command` on an already-open link repopulates all four fields; none goes stale under a lease.
@@ -3704,11 +3706,13 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 206 P01 | 62min | 2 tasks | 4 files |
 | Phase 206 P02 | 28min | 2 tasks | 10 files |
 | Phase 206 P03 | ~95min | 2 tasks | 7 files |
+| Phase 206 P04 | ~70min | 3 tasks | 2 files |
 
 ## Session
 
-**Last session:** 2026-09-23T10:25:00.000Z
-**Stopped at:** Completed 206-03-PLAN.md
+**Last session:** 2026-09-23T11:52:08.000Z
+**Stopped at:** Completed 206-04-PLAN.md
+**Was (superseded, retained for continuity):** Completed 206-03-PLAN.md — SerialCommunicator.setup_command extracted from the port probe (fa6c8e8, permanent), EpromOperator.lease() landed default-off at one call site (3853b55, the SESS-02 revert target sha), SESS-01 complete
 **Was (superseded, retained for continuity):** Completed 206-02-PLAN.md — blank-check step carries compare evidence outside the hash (StepResult.compare_evidence, additive), plus the empty-default `cmp=host` discriminator distinguishing a host-path comparison from a firmware-path one; all 19 frozen dedup_fingerprint literals provably unmoved
 **Was (superseded, retained for continuity):** Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed
 **Was (superseded, retained for continuity):** Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
