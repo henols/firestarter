@@ -456,7 +456,7 @@ Plans:
 
 **Goal**: Both repositories carry `3.1.0b1` in one commit pair, and the wiki documents the breaking change alongside the two new user-facing surfaces.
 **Requirements**: REL-01, REL-04
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
