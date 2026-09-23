@@ -36,9 +36,10 @@ directly against the working tree at `/workspaces/firestarter.wiki`
 
 **Files modified:** `firestarter.wiki/Testing-Chips.md` (in the separate
 `firestarter.wiki` repository, not the meta repo)
-**Commit:** `13571d2` in `firestarter.wiki` (branch `master`) — **committed
-locally only, not pushed.** `origin/master` is unchanged; the wiki is
-therefore not yet published with this fix. A push is an operator decision.
+**Commit:** `13571d2` in `firestarter.wiki` (branch `master`), pushed at 2026-09-23T20:25:36Z.
+`13571d2` is `origin/master`, so the live wiki carries this fix (wiki clone reflog:
+`refs/remotes/origin/master@{2026-09-23T20:25:36Z}: update by push`). Corrected in Phase 207.1
+(D-14); this line first recorded the commit as unpublished.
 **Applied fix:** Replaced every "twice" / "two passes" occurrence (lines 39,
 43, 48-50, 51-52, 60) with "three times" / "three passes", matching the
 actual `_DEFAULT_RUNS = 3` default in `firestarter_app/firestarter/
