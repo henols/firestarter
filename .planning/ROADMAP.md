@@ -422,9 +422,20 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 206-01-PLAN.md — a transport-failed cycle-block step exits 2, and the two `== 0` adapters learn the third verdict
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 206-02-PLAN.md — additive blank-check compare evidence outside the hash, plus the empty-default `cmp=host` discriminator
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 206-03-PLAN.md — `setup_command` extracted, then one leased serial link per `dev test` plan, default off and revertible whole
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 206-04-PLAN.md — the bench measurement, the pre-registered threshold applied, and `206-SESSION-COST.md`
 
 **Success criteria**:

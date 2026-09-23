@@ -4,15 +4,15 @@ milestone: v1.41
 milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
 current_phase: 206
 current_phase_name: "`dev test` keeps its fidelity, on one session"
-status: planning
-stopped_at: Phase 205 complete, ready to plan Phase 206
-last_updated: "2026-09-22T21:43:16.979Z"
-last_activity: 2026-09-22
+status: planned
+stopped_at: Phase 206 planned (4 plans, 4 waves), ready to execute
+last_updated: "2026-09-23T07:52:56.490Z"
+last_activity: 2026-09-23
 last_activity_desc: "Phase 205 CLOSED 2026-09-22 - verifier PASSED 9/9 must-have truths on re-verification (previous run was 8/9, gaps_found). Gap-closure plan 205-08 closed CR-01: the host write guard's erase exemption is now address-aware, so a protocol-0x06 (AMD/JEDEC NOR-unlock) `write -a <non-zero>` no longer skips every blank check. is_erase_exempt/requires_blank_check took a keyword-only address param (default 0, behaviour-preserving); write_eprom resolves its own start address via parse_address and threads it to the single call site. A non-zero-address write falls back to the region-scoped host blank check - checked, not refused - so a blank region still writes; -b still bypasses. The 0x06-only narrowing was confirmed against firmware source by two independent agents: flash_nor_unlock_erase_execute branches on handle->address != 0, while flash_intel_erase_execute and eprom_internal_erase both hard-code address 0, so 0x10/0x07/0x08/0x0B are genuinely unaffected. Code review 0 critical / 0 warning / 1 info, and mutation-tested: reverting only the new address branch reddens exactly the 5 CR-01 tests. Regression gate green across both sub-repos - app 2333 passed on py3.11.16 + ruff clean, fw 316 pytest + 244/244 native + 244/244 native_nodevtools. FWBLANK-01..05 all marked Complete. Advisory carried forward: firestarter_fw/CLAUDE.md states 320 collected tests in its `tests/` tree; live collection is 316 - documentation drift, no must-have truth depends on it. Phase 205 has no SECURITY.md while the security capability is active."
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 22
+  total_plans: 26
   completed_plans: 22
   percent: 67
 ---
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 206 — `dev test` keeps its fidelity, on one session
+Phase: 206 (`dev test` keeps its fidelity, on one session) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-22 — Phase 205 complete, transitioned to Phase 206
-Next: **Execute the gap-closure plan** — `/gsd-execute-phase 205 --gaps-only` (runs 205-08 only, the `gap_closure: true` plan). It makes `write_blank_guard.is_erase_exempt` address-aware for protocol 0x06, pins the address dimension WR-02 left uncovered, and records the CR-01 decision. Host-side Python only — no firmware change, no bench work.
+Status: Ready to execute
+Last activity: 2026-09-23 — Phase 205 complete, transitioned to Phase 206
+Next: **Execute Phase 206** — `/gsd-execute-phase 206` (4 plans, 4 serial waves). Waves 2 and 4 are `autonomous: false`: wave 2 gates the one-way `cmp=host` dedup discriminator, wave 4 is the operator bench measurement for SESS-02. Phase 205 is CLOSED — its gap-closure plan already ran.
 
 ## Roadmap Summary (v1.38)
 
