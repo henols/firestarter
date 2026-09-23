@@ -487,7 +487,7 @@ Plans:
 **Wave 1**
 
 - [x] 207.1-01-PLAN.md — write-path diagnostics tell the truth: D-08 negative-address gate before page alignment (both tiers), D-07 no fabricated byte on an incomplete guard read, D-06 own line for a landed write with an unacknowledged `--skip-sdp-unlock` (203 WR-01, WR-02, IN-01) — **done 2026-09-23: app RED/GREEN pairs D-08 `6d0e859`/`69426b1`, D-07 `3b3845c`/`e2603b5` (+`a7d38f5` helper extraction for ruff format), D-06 `bb9a018`/`4f28468` (+`b1a0a25` comment reflow), `c02b23f` format fix; no exit code, verdict, help text or snapshot changed; SUMMARY `01dee851`. Nothing pushed.**
-- [ ] 207.1-04-PLAN.md — D-16 connect-cost log kept as 206 evidence, D-15 fw `tests/` count, D-17 per-clone ignore for the kept datasheet
+- [x] 207.1-04-PLAN.md — D-16 connect-cost log kept as 206 evidence, D-15 fw `tests/` count, D-17 per-clone ignore for the kept datasheet — **done 2026-09-23: D-16 log committed as 206 evidence `35feaea0` (blob sha256 proven, app copy removed); D-15 fw `4b14111` (316 collected, 316 passed); D-17 per-clone exclude line, no commit; SUMMARY `4adfa249`. Nothing pushed.**
 - [ ] 207.1-05-PLAN.md — D-01 WINDOWS entry 3 closed on evidence, D-14 207 record drift corrected by hand
 
 **Wave 2** *(blocked on Wave 1 completion)*
