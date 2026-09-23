@@ -4,15 +4,15 @@ milestone: v1.41
 milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
 current_phase: 207
 current_phase_name: The version and the record
-status: ready
-stopped_at: Phase 206 complete, ready to plan Phase 207
-last_updated: "2026-09-23T13:10:27.901Z"
+status: planned
+stopped_at: Phase 207 planned, ready to execute
+last_updated: "2026-09-23T14:29:03.418Z"
 last_activity: 2026-09-23
-last_activity_desc: "Phase 206 CLOSED 2026-09-23: verifier passed 10/10 (DEVTEST-01..03, SESS-01..02), UAT 10/10, code review 0 critical / 2 warning (WR-01, WR-02, advisory) / 2 info, regression gate 2363 passed on Python 3.11 with 86.38% coverage. Session lease KEPT (15.1% saving vs 15.0% pre-registered bar). Transitioned to Phase 207."
+last_activity_desc: "Phase 207 PLANNED 2026-09-23: 3 plans in 2 waves (207-01 beta sync + 3.1.0b1 bump + gitlinks; 207-02 wiki content local; 207-03 wiki push behind an operator checkpoint, autonomous false). Operator decisions D-01..D-03 recorded in 207-CONTEXT.md. Earlier: Phase 206 CLOSED 2026-09-23: verifier passed 10/10 (DEVTEST-01..03, SESS-01..02), UAT 10/10, code review 0 critical / 2 warning (WR-01, WR-02, advisory) / 2 info, regression gate 2363 passed on Python 3.11 with 86.38% coverage. Session lease KEPT (15.1% saving vs 15.0% pre-registered bar). Transitioned to Phase 207."
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 26
+  total_plans: 29
   completed_plans: 26
   percent: 83
 ---
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.41 Verification Moves to the Host ACTIVATED; its `## Current Milestone` block carries the goal, the six activation decisions and the open read-abort mechanic. v1.40's close record is at `milestones/v1.40-CLOSE-RECORD.md`)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 207 — The version and the record, READY TO PLAN (`/gsd-plan-phase 207`: `3.1.0b1` in both repos in one commit pair, wiki documents the breaking change). Phase 206 is CLOSED and verified 2026-09-23 (verifier 10/10, UAT 10/10; session lease KEPT at a measured 15.1% saving). Phases 202–206 are closed; `/gsd-secure-phase 206` is outstanding. Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, the first version-string movement since `3.0.0b48` / `3.0.0b33`.
+**Current focus:** Phase 207 — The version and the record, PLANNED, READY TO EXECUTE (`/gsd-execute-phase 207`, no `--auto`: `3.1.0b1` in both repos in one commit pair, wiki documents the breaking change). Phase 206 is CLOSED and verified 2026-09-23 (verifier 10/10, UAT 10/10; session lease KEPT at a measured 15.1% saving). Phases 202–206 are closed; `/gsd-secure-phase 206` is outstanding. Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, the first version-string movement since `3.0.0b48` / `3.0.0b33`.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 207 — The version and the record
+Phase: 207 (The version and the record) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-23 — Phase 206 complete, transitioned to Phase 207
-Next: **Plan Phase 207** — `/gsd-plan-phase 207` (the version and the record: `3.1.0b1` in both repos, wiki). Phase 206 is CLOSED and verified; `/gsd-secure-phase 206` is outstanding (security enforcement on, no `206-SECURITY.md`).
+Status: Ready to execute
+Last activity: 2026-09-23 — Phase 207 planned (3 plans, 2 waves)
+Next: **Execute Phase 207** — `/gsd-execute-phase 207` WITHOUT `--auto`/`--chain` (207-03 publishes the wiki behind an operator checkpoint). Phase 206 is CLOSED and verified; `/gsd-secure-phase 206` is outstanding (security enforcement on, no `206-SECURITY.md`).
 
 ## Roadmap Summary (v1.38)
 
@@ -3711,7 +3711,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-23T13:30:00.000Z
-**Stopped at:** Phase 206 complete, ready to plan Phase 207
+**Stopped at:** Phase 207 planned, ready to execute
 **Was (superseded, retained for continuity):** Completed 206-03-PLAN.md — SerialCommunicator.setup_command extracted from the port probe (fa6c8e8, permanent), EpromOperator.lease() landed default-off at one call site (3853b55, the SESS-02 revert target sha), SESS-01 complete
 **Was (superseded, retained for continuity):** Completed 206-02-PLAN.md — blank-check step carries compare evidence outside the hash (StepResult.compare_evidence, additive), plus the empty-default `cmp=host` discriminator distinguishing a host-path comparison from a firmware-path one; all 19 frozen dedup_fingerprint literals provably unmoved
 **Was (superseded, retained for continuity):** Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed

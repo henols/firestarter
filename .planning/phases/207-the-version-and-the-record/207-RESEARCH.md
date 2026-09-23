@@ -544,13 +544,13 @@ git -C /workspaces/firestarter_app merge --no-ff origin/beta -m "Merge origin/be
 | A5 | Merging `origin/beta` into a milestone branch (F1(A)) is acceptable to the operator. | F1 | If it is not, use F1(B) with the checklist line. |
 | A6 | A wiki page named `Writing-and-Verifying` is a suitable home (F3). The name and the split are a judgement call. | F3 | Cosmetic. The operator reviews at the checkpoint. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Does the operator want `f967398` published with the 3.1.0b1 docs?** It fixes a live routing defect. Recommend yes (F7). It needs an explicit answer at the push checkpoint.
-2. **F1 — merge `beta` in now, or resolve at ship?** Recommend now. This is the only fork where a wrong choice burns a PyPI version.
-3. **Should STATE.md's stale v1.40 claims ("unmerged", "`v1.40` tag local-only", "held gh#70/66/71 answers … release at merge") be corrected?** This is not phase work. Hand it to the orchestrator. The held-answers note may itself be actionable, since the merge already happened on 2026-09-20.
-4. **Should the `devtest-triage` skill learn that `Unknown command: 6` / `Unknown command: 4` in a report means host/firmware skew, not a chip fault?** `.claude/skills/devtest-triage/SKILL.md` has no such rule (grep found nothing). Out of scope. Worth a todo.
-5. **Should the existing `v1.32` / `v1.20` / `v1.10` headings be relabelled to product versions?** Out of scope (F4). Offer it to the operator.
+1. **Does the operator want `f967398` published with the 3.1.0b1 docs?** It fixes a live routing defect. Recommend yes (F7). It needs an explicit answer at the push checkpoint. RESOLVED: yes, operator decision D-02 (207-CONTEXT.md); 207-03's push checkpoint names it.
+2. **F1 — merge `beta` in now, or resolve at ship?** Recommend now. This is the only fork where a wrong choice burns a PyPI version. RESOLVED: merge now, operator decision D-01 (207-CONTEXT.md).
+3. **Should STATE.md's stale v1.40 claims ("unmerged", "`v1.40` tag local-only", "held gh#70/66/71 answers … release at merge") be corrected?** This is not phase work. Hand it to the orchestrator. The held-answers note may itself be actionable, since the merge already happened on 2026-09-20. RESOLVED: deferred to orchestrator housekeeping (207-CONTEXT.md Deferred Ideas).
+4. **Should the `devtest-triage` skill learn that `Unknown command: 6` / `Unknown command: 4` in a report means host/firmware skew, not a chip fault?** `.claude/skills/devtest-triage/SKILL.md` has no such rule (grep found nothing). Out of scope. Worth a todo. RESOLVED: deferred (207-CONTEXT.md Deferred Ideas).
+5. **Should the existing `v1.32` / `v1.20` / `v1.10` headings be relabelled to product versions?** Out of scope (F4). Offer it to the operator. RESOLVED: excluded from Phase 207 scope; offered to the operator at plan completion.
 
 ## Environment Availability
 
