@@ -461,7 +461,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 207-01-PLAN.md — merge `origin/beta` into both sub-repo milestone branches (D-01), bump `3.0.0b35` / `3.0.0b50` to `3.1.0b1` in a single-file commit pair, correct the app README's mixed-version sentence, advance the meta gitlinks, and prove `DRY_RUN: 3.1.0b1` and a conflict-free ship merge in both repos (REL-01)
+- [x] 207-01-PLAN.md — merge `origin/beta` into both sub-repo milestone branches (D-01), bump `3.0.0b35` / `3.0.0b50` to `3.1.0b1` in a single-file commit pair, correct the app README's mixed-version sentence, advance the meta gitlinks, and prove `DRY_RUN: 3.1.0b1` and a conflict-free ship merge in both repos (REL-01) — **done 2026-09-23: `origin/beta` merged into both milestone branches first (fw `00c90fc`, app `610fb96`), then the single-file bump pair fw `a55f2d8` / app `67f93e2` to `3.1.0b1`; README upgrade-order fix `2a08c7d`; meta gitlinks `d347dd3f`. Both publishers print `DRY_RUN: 3.1.0b1`; the ship merge is conflict-free; app 2363 passed on Python 3.11, fw tests 316 passed. Nothing pushed.**
 - [ ] 207-02-PLAN.md — author the wiki record locally on top of `f967398` (D-02): the Breaking-Changes 3.1.0b1 entry, the new Writing-and-Verifying page with its navigation, and the Install-Beta / Testing-Chips version-pairing notes, every statement labelled from 3.1.0b1 (D-03) (REL-04)
 
 **Wave 2** *(blocked on Wave 1 completion; operator checkpoint)*

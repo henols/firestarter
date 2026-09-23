@@ -99,7 +99,7 @@ golden.
 
 ### REL — version, compatibility and the record (D-4, D-5)
 
-- [ ] **REL-01**: both repositories carry `3.1.0b1`, and the two version strings are bumped in the same commit pair.
+- [x] **REL-01**: both repositories carry `3.1.0b1`, and the two version strings are bumped in the same commit pair. Delivered by plan 207-01: firmware `a55f2d8` and app `67f93e2`, each a single-file commit on top of a merge of `origin/beta`. Both repos' own `update_version.py --dry-run` print `DRY_RUN: 3.1.0b1`.
 - [x] **REL-02**: a `3.1.0b1` host against pre-`3.1.0` firmware performs `verify` and `blank` correctly, because it only sends `CMD_READ`. Proven, not assumed. Proven on real hardware in `phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the post-204 host's `verify` matches (exit 0) and `blank` reports not-blank (exit 1, via the documented abort-predicate fast path) against pre-204 firmware, with no unknown-command line in either output. Per D-07, "3.1.0b1" here means the post-204 host label, not the literal version string, which is Phase 207's bump.
 - [x] **REL-03**: a pre-`3.1.0` host against `3.1.0b1` firmware fails `verify` and `blank` with a refusal the user can act on, and with no hardware side effect. Proven on real hardware in `phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the published `3.0.0b49` host is refused with `Unknown command: 6` and `Unknown command: 4` against post-204 firmware, both captured verbatim with exit code and duration; three whole-device reads share one digest, proving no hardware side effect. Per D-07, "3.1.0b1" here means the post-204 firmware label, not the literal version string, which is Phase 207's bump.
 - [ ] **REL-04**: the breaking change and the `write --verify` / `--full` surfaces are documented in the wiki, which is the only documentation home.
@@ -164,7 +164,7 @@ Every requirement maps to exactly one phase.
 | DEVTEST-03 | Phase 206 | Complete |
 | SESS-01 | Phase 206 | Complete |
 | SESS-02 | Phase 206 | Complete |
-| REL-01 | Phase 207 | Pending |
+| REL-01 | Phase 207 | Complete |
 | REL-04 | Phase 207 | Pending |
 
 **Coverage:**
