@@ -249,6 +249,7 @@ in `.planning/REQUIREMENTS.md`.
 | 205 | The pre-flights leave the firmware | FWBLANK-01…05 | both | **yes** |
 | 206 | `dev test` keeps its fidelity, on one session | DEVTEST-01…03, SESS-01…02 | app | **yes** |
 | 207 | The version and the record | REL-01, REL-04 | both | no |
+| 207.1 | Address v1.41 tech debt (INSERTED) | — (audit debt) | both | no |
 
 **Dependencies.** 202 is first and blocks everything: it is the engine the other five either use or
 remove the alternative to. 203 needs 202 for `write --verify`. 204 needs 202, because a host that
@@ -474,6 +475,36 @@ Plans:
 2. The wiki states that ordinals 4 and 6 are retired, what a pre-`3.1.0` host does against `3.1.0b1` firmware, and what a user does about it.
 3. `write --verify`, `--full` and the unchanged-but-now-host-side `-b` semantics are documented where a user will find them.
 4. No GitHub Release is cut from the meta repository and the milestone tag stays bare — a `v1.41` tag parses as PEP 440 `1.41`, which would report every stranded CLI as already up to date.
+
+### Phase 207.1: Address v1.41 tech debt (INSERTED)
+
+**Goal**: Every open item in the v1.41 close-time audit is either resolved or explicitly accepted by the operator before the milestone ships. The list is the `tech_debt` frontmatter of `.planning/milestones/v1.41-MILESTONE-AUDIT.md`: 26 open items, of which 4 need an operator decision (§ Tech Debt by Phase).
+**Requirements**: TBD — no v1.41 requirement is open (34/34 satisfied); this phase carries audit debt, not requirements
+**Depends on:** Phase 207
+**Plans:** 7 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 207.1-01-PLAN.md — write-path diagnostics tell the truth: D-08 negative-address gate before page alignment (both tiers), D-07 no fabricated byte on an incomplete guard read, D-06 own line for a landed write with an unacknowledged `--skip-sdp-unlock` (203 WR-01, WR-02, IN-01)
+- [ ] 207.1-04-PLAN.md — D-16 connect-cost log kept as 206 evidence, D-15 fw `tests/` count, D-17 per-clone ignore for the kept datasheet
+- [ ] 207.1-05-PLAN.md — D-01 WINDOWS entry 3 closed on evidence, D-14 207 record drift corrected by hand
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 207.1-02-PLAN.md — D-11 `setup_command` asserts an open link (206 IN-02), D-05 read-abort window boundary legs plus the accepted-outcome note (202 WR-01), D-10 measured lease figure (206 IN-01)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 207.1-03-PLAN.md — D-12 format-only `update_version.py`, D-03 / D-09 keep-decision comments, the CI-equivalent app gate on Python 3.11, and the two folded todos closed
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 207.1-06-PLAN.md — D-02 `/gsd-secure-phase` 202, 204, 205 at operator checkpoints, then verified (autonomous false)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 207.1-07-PLAN.md — D-13 both gitlinks advanced once, the closing ledger (all 26 items plus 202 WR-02, D-04 count, D-18 / D-19 / D-20), no-push proof
 
 ## v1.40 — Program-Parameter Fidelity (CLOSED 2026-09-20 — 19/24 requirements; the three held issue answers (PULSE-04, VOLT-04, RAIL-05) release at the beta cut, RAIL-03 is honestly unmet and OVR-03 is test-enforced only; tagged `v1.40` — bare tag, no GitHub Release; **not shipped**)
 

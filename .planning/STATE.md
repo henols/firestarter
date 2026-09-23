@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.41
 milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
-current_phase: 207
-current_phase_name: The version and the record
-status: completed
-stopped_at: Phase 207 complete — all phases complete
-last_updated: "2026-09-23T16:19:16.652Z"
+current_phase: "207.1"
+current_phase_name: Address v1.41 tech debt
+status: planned
+stopped_at: Phase 207.1 planned — 7 plans in 5 waves
+last_updated: "2026-09-23T22:56:13.413Z"
 last_activity: 2026-09-23
-last_activity_desc: "Phase 207 CLOSED 2026-09-23: verifier passed 4/4 (REL-01, REL-04). Both sub-repos at 3.1.0b1 after a local merge of origin/beta (fw a55f2d8 on 00c90fc, app 67f93e2 on 610fb96); README upgrade-order fix 2a08c7d; gitlinks d347dd3f. Wiki published by operator-approved fast-forward 81229d8..880a59b, carrying f967398 plus the three 3.1.0b1 commits, proven from a fresh clone. Criterion 4 holds: 0 Releases, no v1.41 tag, nothing pushed from meta or either sub-repo. Code review 0 critical / 1 warning (WR-01: live Testing-Chips page says dev test runs twice; default is three since b596249, pre-existing) / 0 info. Regression gate: app 2363 passed on Python 3.11.16, fw tests 316 passed. All six v1.41 phases complete; /gsd-secure-phase 206 and 207 outstanding. Earlier: Phase 207 PLANNED 2026-09-23: 3 plans in 2 waves (207-01 beta sync + 3.1.0b1 bump + gitlinks; 207-02 wiki content local; 207-03 wiki push behind an operator checkpoint, autonomous false). Operator decisions D-01..D-03 recorded in 207-CONTEXT.md. Earlier: Phase 206 CLOSED 2026-09-23: verifier passed 10/10 (DEVTEST-01..03, SESS-01..02), UAT 10/10, code review 0 critical / 2 warning (WR-01, WR-02, advisory) / 2 info, regression gate 2363 passed on Python 3.11 with 86.38% coverage. Session lease KEPT (15.1% saving vs 15.0% pre-registered bar). Transitioned to Phase 207."
+last_activity_desc: "Phase 207.1 PLANNED 2026-09-23: 7 plans in 5 waves covering all 26 v1.41 audit items plus 202 WR-02 (D-01..D-20); plan-checker passed, decision coverage 20/20; plan 06 (the three /gsd-secure-phase runs) is autonomous false. D-04 count recorded in research: 9 filed reports in 7 issues carry runs=1. Earlier: Phase 207 CLOSED 2026-09-23: verifier passed 4/4 (REL-01, REL-04). Both sub-repos at 3.1.0b1 after a local merge of origin/beta (fw a55f2d8 on 00c90fc, app 67f93e2 on 610fb96); README upgrade-order fix 2a08c7d; gitlinks d347dd3f. Wiki published by operator-approved fast-forward 81229d8..880a59b, carrying f967398 plus the three 3.1.0b1 commits, proven from a fresh clone. Criterion 4 holds: 0 Releases, no v1.41 tag, nothing pushed from meta or either sub-repo. Code review 0 critical / 1 warning (WR-01: live Testing-Chips page says dev test runs twice; default is three since b596249, pre-existing) / 0 info. Regression gate: app 2363 passed on Python 3.11.16, fw tests 316 passed. All six v1.41 phases complete; /gsd-secure-phase 206 and 207 outstanding. Earlier: Phase 207 PLANNED 2026-09-23: 3 plans in 2 waves (207-01 beta sync + 3.1.0b1 bump + gitlinks; 207-02 wiki content local; 207-03 wiki push behind an operator checkpoint, autonomous false). Operator decisions D-01..D-03 recorded in 207-CONTEXT.md. Earlier: Phase 206 CLOSED 2026-09-23: verifier passed 10/10 (DEVTEST-01..03, SESS-01..02), UAT 10/10, code review 0 critical / 2 warning (WR-01, WR-02, advisory) / 2 info, regression gate 2363 passed on Python 3.11 with 86.38% coverage. Session lease KEPT (15.1% saving vs 15.0% pre-registered bar). Transitioned to Phase 207."
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
-  total_plans: 29
+  total_plans: 36
   completed_plans: 29
-  percent: 100
+  percent: 81
 ---
 
 # Project State
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 207 (The version and the record) — COMPLETE
-Plan: 3 of 3 complete
-Status: All six v1.41 phases complete
-Last activity: 2026-09-23 — Phase 207 closed: verifier 4/4, wiki published at 880a59b, both repos at 3.1.0b1 (unpushed)
-Next: **Execute Phase 207** — `/gsd-execute-phase 207` WITHOUT `--auto`/`--chain` (207-03 publishes the wiki behind an operator checkpoint). Phase 206 is CLOSED and verified; `/gsd-secure-phase 206` is outstanding (security enforcement on, no `206-SECURITY.md`).
+Phase: 207.1 (Address v1.41 tech debt) — READY TO EXECUTE
+Plan: 0 of 7 complete
+Status: Ready to execute — 7 plans in 5 waves; plan 06 stops at operator checkpoints for `/gsd-secure-phase` 202, 204, 205
+Last activity: 2026-09-23 — Phase 207.1 planned: 7 plans, plan-checker passed, decision coverage 20/20
+Next: **Execute Phase 207.1** — `/gsd-execute-phase 207.1` WITHOUT `--auto`/`--chain` (plan 06 needs the operator to run `/gsd-secure-phase` 202, 204 and 205). No bench, no push.
 
 ## Roadmap Summary (v1.38)
 
@@ -2220,6 +2220,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - Phase 104 added: Rename protocol header and .cpp files to descriptive protocol-type names (replace hard-to-read flash type N naming)
 - Phase 115 added: Beta install & firmware-flash bench validation (community onboarding) — hardware-gated capstone of v1.21
 - Phase 153 added: Write-Path Erase Policy (D-07) — runs BEFORE Phase 152 per D-08; blocks the outward-facing close
+- Phase 207.1 inserted after Phase 207: Address v1.41 tech debt (URGENT)
 
 ## Operator Next Steps
 
@@ -3713,8 +3714,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-23T16:30:00.000Z
-**Stopped at:** Phase 207 complete — all phases complete
+**Last session:** 2026-09-23T21:20:00.000Z
+**Stopped at:** Phase 207.1 planned — 7 plans in 5 waves
+**Was (superseded, retained for continuity):** Phase 207 complete — all phases complete
 **Was (superseded, retained for continuity):** Phase 207 planned, ready to execute
 **Was (superseded, retained for continuity):** Completed 206-03-PLAN.md — SerialCommunicator.setup_command extracted from the port probe (fa6c8e8, permanent), EpromOperator.lease() landed default-off at one call site (3853b55, the SESS-02 revert target sha), SESS-01 complete
 **Was (superseded, retained for continuity):** Completed 206-02-PLAN.md — blank-check step carries compare evidence outside the hash (StepResult.compare_evidence, additive), plus the empty-default `cmp=host` discriminator distinguishing a host-path comparison from a firmware-path one; all 19 frozen dedup_fingerprint literals provably unmoved
@@ -3810,7 +3812,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** None
+**Resume file:** .planning/phases/207.1-address-v1-41-tech-debt/207.1-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
