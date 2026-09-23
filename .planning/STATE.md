@@ -3252,6 +3252,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 204]: The seated part is expected to be a W27C512 by database chip-ID lookup, but its own ID-sense readback (0x1818) does not match the expected 0xda08 -- tracked as an open item (WINDOWS.md entry 3) rather than asserted as confirmed; every claim in 204-BENCH-MATRIX.md is chip-identity-independent by construction.
 - [Phase 206]: D-01: verdict 2 lands on VERDICT_SKIPPED + STATUS_ERROR at both the blank-check and verify dispatch arms (Phase 206 Plan 01) — Same two-axis vocabulary _run_step_untimed's transport arm already uses; avoids a sixth verdict, which the ROADMAP forbids.
 - [Phase 206]: checkpoint:decision (Task 2) answered land-as-specified — the empty-default cmp=host tag lands exactly as D-03 specified; the 43 measured ALLOW chips' count_agreeing ladder restarts for host-path reports (second reset in two milestones, after v1.30's SDP leg).
+- [Phase 207]: D-01 held in practice. `origin/beta` was merged into both milestone branches before the bump: fw `00c90fc` brought in `3.0.0b35`, and app `610fb96` brought in `3.0.0b50`. The single-file bump pair then went to `3.1.0b1` (fw `a55f2d8`, app `67f93e2`). `git merge-tree` against `origin/beta` prints one line in both repos, so the ship PR cannot conflict on the version line and cannot burn a PyPI version by taking beta's side.
+- [Phase 207]: The wiki was published in-phase, behind a checkpoint:human-action (D-03). The operator's verbatim reply `you acn push` was read as `push approved`. Fast-forward `81229d8..880a59b` also published `f967398`, the 2026-09-15 PR-routing fix (D-02). Proof was taken from a fresh clone, never the edited working copy.
+- [Phase 207]: Code-review WR-01 is pre-existing and not fixed in-phase. The live Testing-Chips page says `dev test` runs the write-and-verify block twice. `_DEFAULT_RUNS = 3` since `b596249` (2026-09-17). Fixing it needs another public wiki push, which is the operator's call.
 
 ## Performance Metrics
 
@@ -3710,8 +3713,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-23T13:30:00.000Z
+**Last session:** 2026-09-23T16:30:00.000Z
 **Stopped at:** Phase 207 complete — all phases complete
+**Was (superseded, retained for continuity):** Phase 207 planned, ready to execute
 **Was (superseded, retained for continuity):** Completed 206-03-PLAN.md — SerialCommunicator.setup_command extracted from the port probe (fa6c8e8, permanent), EpromOperator.lease() landed default-off at one call site (3853b55, the SESS-02 revert target sha), SESS-01 complete
 **Was (superseded, retained for continuity):** Completed 206-02-PLAN.md — blank-check step carries compare evidence outside the hash (StepResult.compare_evidence, additive), plus the empty-default `cmp=host` discriminator distinguishing a host-path comparison from a firmware-path one; all 19 frozen dedup_fingerprint literals provably unmoved
 **Was (superseded, retained for continuity):** Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed

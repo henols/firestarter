@@ -43,6 +43,8 @@
 **Activated:** 2026-09-20 · **Phases continue at 202** (v1.40 ran 197–201; the vacated **150** slot and
 the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving)
 
+**Status (2026-09-23): all 6 phases (202–207) COMPLETE, 29/29 plans.** Phase 207 closed with verifier 4/4 (REL-01, REL-04). Both sub-repos carry `3.1.0b1` in one single-file commit pair, fw `a55f2d8` and app `67f93e2`. Each sits on a local merge of `origin/beta`, so the ship PR merges with no conflict on the version line. Both publishers' own dry run prints `DRY_RUN: 3.1.0b1`. **Nothing is pushed from either sub-repo; the `beta` push at ship time is what publishes.** The wiki record (the Breaking-Changes 3.1.0b1 entry and the new Writing-and-Verifying page) is live at `880a59b`, by an operator-approved fast-forward that also published the 2026-09-15 fix `f967398`. Criterion 4 holds: no GitHub Release and no `v1.41` tag. Outstanding before the close: `/gsd-secure-phase 206` and `207`, and code-review WR-01, a pre-existing error: the live Testing-Chips page says `dev test` runs twice, but the default has been three since `b596249`.
+
 **Goal:** The Arduino stops deciding whether a chip is blank or matches an image. The host reads the
 chip and compares in Python — one comparison implementation, a named diagnosis instead of a single
 address, and the flash the removed command surfaces were costing.
