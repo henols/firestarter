@@ -247,7 +247,7 @@ in `.planning/REQUIREMENTS.md`.
 | 203 | The write guard moves up a layer | WRITE-01…06 | app | no |
 | 204 | The command surfaces leave the firmware | FWCMD-01…06, REL-02, REL-03 | both | **yes** |
 | 205 | The pre-flights leave the firmware | FWBLANK-01…05 | both | **yes** |
-| 206 | `dev test` keeps its fidelity, on one session | DEVTEST-01…03, SESS-01…02 | app | no |
+| 206 | `dev test` keeps its fidelity, on one session | DEVTEST-01…03, SESS-01…02 | app | **yes** |
 | 207 | The version and the record | REL-01, REL-04 | both | no |
 
 **Dependencies.** 202 is first and blocks everything: it is the engine the other five either use or
@@ -266,6 +266,12 @@ depended on — and a bisect across a combined phase could not tell which one br
 over these surfaces, plus the `protocol_branch_inventory.json` golden — which re-derives lossily, so it
 must be diffed field-by-field keyed on `line` rather than trusted to its truthiness gate. Phases 204
 and 205 each own their own share; neither may defer it to the other.
+
+**Phase 206's Bench cell was corrected from `no` to `**yes**` in plan 04 (D-08).** The prior value
+contradicted this same phase's own success criterion 5 above (SESS-02's saving "is measured on a real
+run") and SESS-02's requirement text, which forbids satisfying the requirement by derivation. The cell
+was written before the requirement wording was finalised; the contradiction is resolved in favour of the
+requirement.
 
 ## Phase Details
 
