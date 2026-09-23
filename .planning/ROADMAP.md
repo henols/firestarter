@@ -425,7 +425,7 @@ Plans:
 
 **Goal**: The `dev test` verify and blank steps route through the host engine without changing what a verdict means, and a plan uses one leased serial link instead of one port open per call.
 **Requirements**: DEVTEST-01, DEVTEST-02, DEVTEST-03, SESS-01, SESS-02
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**

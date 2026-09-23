@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.41
 milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
-current_phase: 206
-current_phase_name: "`dev test` keeps its fidelity, on one session"
-status: executing
-stopped_at: Completed 206-04-PLAN.md
-last_updated: "2026-09-23T11:52:08.000Z"
+current_phase: 207
+current_phase_name: The version and the record
+status: ready
+stopped_at: Phase 206 complete, ready to plan Phase 207
+last_updated: "2026-09-23T13:10:27.901Z"
 last_activity: 2026-09-23
-last_activity_desc: "Phase 206 plan 04 complete 2026-09-23 (last plan of Phase 206): SESS-02 measured on real silicon and MET. Bench rig: Arduino Leonardo (/dev/ttyACM0, VID 0x2341 PID 0x8036), W27C512 seated, shield Rev 2.0, VPP confirmed 12.0V in-range before dispatch (an earlier 13.0V fault had already been trimmed by the operator). Both arms ran `firestarter dev test w27c512` (no --fast, never --submit) to completion N=3 each, timed with `time` around the whole subprocess: leased-arm median 228.283s (min 227.836s, max 229.758s), cold-arm median 268.992s (min 268.731s, max 269.706s). Removed time 40.709s = 15.134% unrounded, 15.1% rounded half-up -- clears D-07's pre-registered 15.0% threshold (clause 1). Wider-arm (leased) spread 1.922s, 5x=9.610s, well under the 40.709s removed (clause 2). All six runs report run_status COMPLETE and chip_id_actual 0xDA08 with identical per-step verdicts in both arms (clause 3). All three clauses pass -- the session lease (firestarter_app 3853b55) is KEPT, no revert committed; the cold arm was produced by applying `git revert --no-commit d723cf7 3853b55` (zero conflicts) to a scratch tree and restoring via `git checkout HEAD --`, never committing the revert. firestarter_app remains at HEAD d723cf7 on v1.41-verification-to-host, full suite re-verified green after restore (2363 passed, 0 failed), ruff clean. 206-SESSION-COST.md now carries all six sections filled and labelled measured-or-derived, superseding no prior session-cost document. Phase 206 (4/4 plans) is now fully executed; not yet verified/closed. PRIOR: Phase 206 plan 03 complete 2026-09-23: SerialCommunicator.setup_command extracted from _probe_port (fa6c8e8, permanent) and EpromOperator.lease() landed default-off, one call site (3853b55) -- a dev test plan opens one validated serial link and reuses it across its EpromOperator calls instead of one open/teardown per call (SESS-01 complete). Phase 205 CLOSED 2026-09-22 - verifier PASSED 9/9 must-have truths on re-verification."
+last_activity_desc: "Phase 206 CLOSED 2026-09-23: verifier passed 10/10 (DEVTEST-01..03, SESS-01..02), UAT 10/10, code review 0 critical / 2 warning (WR-01, WR-02, advisory) / 2 info, regression gate 2363 passed on Python 3.11 with 86.38% coverage. Session lease KEPT (15.1% saving vs 15.0% pre-registered bar). Transitioned to Phase 207."
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 26
   completed_plans: 26
-  percent: 67
+  percent: 83
 ---
 
 # Project State
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 206 (`dev test` keeps its fidelity, on one session) — ALL PLANS EXECUTED, NOT YET VERIFIED
-Plan: 4 of 4 (complete)
-Status: Ready for verification
-Last activity: 2026-09-23 — Phase 206 plan 04 complete (SESS-02 measured on real silicon, session lease KEPT — 15.1% saving, all three D-07 clauses passed)
-Next: **Verify Phase 206** — `/gsd-verify-work 206`, then `/gsd-plan-phase 207` for the version-and-record phase. Phase 206's four plans are all executed: SESS-01 (lease landed) and SESS-02 (lease measured and kept) are both Complete in REQUIREMENTS.md. Phase 205 is CLOSED — its gap-closure plan already ran.
+Phase: 207 — The version and the record
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-23 — Phase 206 complete, transitioned to Phase 207
+Next: **Plan Phase 207** — `/gsd-plan-phase 207` (the version and the record: `3.1.0b1` in both repos, wiki). Phase 206 is CLOSED and verified; `/gsd-secure-phase 206` is outstanding (security enforcement on, no `206-SECURITY.md`).
 
 ## Roadmap Summary (v1.38)
 
@@ -3711,7 +3711,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 ## Session
 
 **Last session:** 2026-09-23T11:52:08.000Z
-**Stopped at:** Completed 206-04-PLAN.md
+**Stopped at:** Phase 206 complete, ready to plan Phase 207
 **Was (superseded, retained for continuity):** Completed 206-03-PLAN.md — SerialCommunicator.setup_command extracted from the port probe (fa6c8e8, permanent), EpromOperator.lease() landed default-off at one call site (3853b55, the SESS-02 revert target sha), SESS-01 complete
 **Was (superseded, retained for continuity):** Completed 206-02-PLAN.md — blank-check step carries compare evidence outside the hash (StepResult.compare_evidence, additive), plus the empty-default `cmp=host` discriminator distinguishing a host-path comparison from a firmware-path one; all 19 frozen dedup_fingerprint literals provably unmoved
 **Was (superseded, retained for continuity):** Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed
