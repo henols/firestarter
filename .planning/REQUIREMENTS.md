@@ -90,7 +90,7 @@ golden.
 
 - [ ] **DEVTEST-01**: `OP_VERIFY` and `OP_BLANK_CHECK` route through the rewritten host methods and produce a fingerprint at least as informative as today's.
 - [ ] **DEVTEST-02**: a report from the host-side comparison path is distinguishable from one produced by the firmware path, using the established empty-default discriminator discipline, so no already-filed `dedup_fingerprint` group is silently re-keyed and no two mechanically different runs silently merge.
-- [ ] **DEVTEST-03**: `dev test`'s step verdicts for a physically identical outcome do not change meaning; where a classification does change, the change is stated and justified rather than absorbed.
+- [x] **DEVTEST-03**: `dev test`'s step verdicts for a physically identical outcome do not change meaning; where a classification does change, the change is stated and justified rather than absorbed.
 
 ### SESS — one leased serial session per plan (D-6, seed R4)
 
@@ -161,7 +161,7 @@ Every requirement maps to exactly one phase.
 | FWBLANK-05 | Phase 205 | Complete |
 | DEVTEST-01 | Phase 206 | Pending |
 | DEVTEST-02 | Phase 206 | Pending |
-| DEVTEST-03 | Phase 206 | Pending |
+| DEVTEST-03 | Phase 206 | Complete |
 | SESS-01 | Phase 206 | Pending |
 | SESS-02 | Phase 206 | Pending |
 | REL-01 | Phase 207 | Pending |

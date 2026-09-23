@@ -424,7 +424,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 206-01-PLAN.md — a transport-failed cycle-block step exits 2, and the two `== 0` adapters learn the third verdict
+- [x] 206-01-PLAN.md — a transport-failed cycle-block step exits 2, and the two `== 0` adapters learn the third verdict
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

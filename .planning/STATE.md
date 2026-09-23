@@ -4,17 +4,17 @@ milestone: v1.41
 milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
 current_phase: 206
 current_phase_name: "`dev test` keeps its fidelity, on one session"
-status: planned
-stopped_at: Phase 206 planned (4 plans, 4 waves), ready to execute
-last_updated: "2026-09-23T07:52:56.490Z"
+status: executing
+stopped_at: Completed 206-01-PLAN.md
+last_updated: "2026-09-23T08:31:05.493Z"
 last_activity: 2026-09-23
-last_activity_desc: "Phase 205 CLOSED 2026-09-22 - verifier PASSED 9/9 must-have truths on re-verification (previous run was 8/9, gaps_found). Gap-closure plan 205-08 closed CR-01: the host write guard's erase exemption is now address-aware, so a protocol-0x06 (AMD/JEDEC NOR-unlock) `write -a <non-zero>` no longer skips every blank check. is_erase_exempt/requires_blank_check took a keyword-only address param (default 0, behaviour-preserving); write_eprom resolves its own start address via parse_address and threads it to the single call site. A non-zero-address write falls back to the region-scoped host blank check - checked, not refused - so a blank region still writes; -b still bypasses. The 0x06-only narrowing was confirmed against firmware source by two independent agents: flash_nor_unlock_erase_execute branches on handle->address != 0, while flash_intel_erase_execute and eprom_internal_erase both hard-code address 0, so 0x10/0x07/0x08/0x0B are genuinely unaffected. Code review 0 critical / 0 warning / 1 info, and mutation-tested: reverting only the new address branch reddens exactly the 5 CR-01 tests. Regression gate green across both sub-repos - app 2333 passed on py3.11.16 + ruff clean, fw 316 pytest + 244/244 native + 244/244 native_nodevtools. FWBLANK-01..05 all marked Complete. Advisory carried forward: firestarter_fw/CLAUDE.md states 320 collected tests in its `tests/` tree; live collection is 316 - documentation drift, no must-have truth depends on it. Phase 205 has no SECURITY.md while the security capability is active."
+last_activity_desc: "Phase 206 execution started 2026-09-23 (4 plans, 4 serial waves). PRIOR: Phase 205 CLOSED 2026-09-22 - verifier PASSED 9/9 must-have truths on re-verification (previous run was 8/9, gaps_found). Gap-closure plan 205-08 closed CR-01: the host write guard's erase exemption is now address-aware, so a protocol-0x06 (AMD/JEDEC NOR-unlock) `write -a <non-zero>` no longer skips every blank check. is_erase_exempt/requires_blank_check took a keyword-only address param (default 0, behaviour-preserving); write_eprom resolves its own start address via parse_address and threads it to the single call site. A non-zero-address write falls back to the region-scoped host blank check - checked, not refused - so a blank region still writes; -b still bypasses. The 0x06-only narrowing was confirmed against firmware source by two independent agents: flash_nor_unlock_erase_execute branches on handle->address != 0, while flash_intel_erase_execute and eprom_internal_erase both hard-code address 0, so 0x10/0x07/0x08/0x0B are genuinely unaffected. Code review 0 critical / 0 warning / 1 info, and mutation-tested: reverting only the new address branch reddens exactly the 5 CR-01 tests. Regression gate green across both sub-repos - app 2333 passed on py3.11.16 + ruff clean, fw 316 pytest + 244/244 native + 244/244 native_nodevtools. FWBLANK-01..05 all marked Complete. Advisory carried forward: firestarter_fw/CLAUDE.md states 320 collected tests in its `tests/` tree; live collection is 316 - documentation drift, no must-have truth depends on it. Phase 205 has no SECURITY.md while the security capability is active."
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 0
   total_plans: 26
-  completed_plans: 22
-  percent: 67
+  completed_plans: 23
+  percent: 0
 ---
 
 # Project State
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.41 Verification Moves to the Host ACTIVATED; its `## Current Milestone` block carries the goal, the six activation decisions and the open read-abort mechanic. v1.40's close record is at `milestones/v1.40-CLOSE-RECORD.md`)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 205 — The pre-flights leave the firmware, EXECUTING (started 2026-09-22). Phase 204 is CLOSED (verifier 6/6, review clean); `CMD_VERIFY`/`CMD_BLANK_CHECK` are gone from firmware and host, and the blank-check machinery survived deliberately for 205 to remove. **Ordering is a safety property** — 205 (pre-flights out) must not run before 203's guard is merged, and after 205 that guard is the ONLY protection against half-programming a non-blank UV part. OUTSTANDING on 203: `/gsd-secure-phase 203` (security_enforcement is on, no `203-SECURITY.md` exists). Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, the first version-string movement since `3.0.0b48` / `3.0.0b33`.
+**Current focus:** Phase 206 — `dev test` keeps its fidelity, on one session, EXECUTING (started 2026-09-23; 4 plans, 4 serial waves; waves 2 and 4 are `autonomous: false`). Phase 205 is CLOSED (verifier 9/9 on re-verification). OUTSTANDING on 203: `/gsd-secure-phase 203` (security_enforcement is on, no `203-SECURITY.md` exists). Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70` all target `beta` and all are open, so nothing is published and no PyPI version is burned. The merge IS the publish and stays operator-gated; it is also what releases the three held gh#70 / gh#66 / gh#71 answers — read `197-GH70-ANSWER.md` § "Held-pending deferral" before merging. The bare `v1.40` tag is local-only and must never become a GitHub Release. v1.41 bumps both repos to `3.1.0b1`, the first version-string movement since `3.0.0b48` / `3.0.0b33`.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,10 +235,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 206 (`dev test` keeps its fidelity, on one session) — READY TO EXECUTE
-Plan: Not started
+Phase: 206 (`dev test` keeps its fidelity, on one session) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-09-23 — Phase 205 complete, transitioned to Phase 206
+Last activity: 2026-09-23 — Phase 206 execution started
 Next: **Execute Phase 206** — `/gsd-execute-phase 206` (4 plans, 4 serial waves). Waves 2 and 4 are `autonomous: false`: wave 2 gates the one-way `cmp=host` dedup discriminator, wave 4 is the operator bench measurement for SESS-02. Phase 205 is CLOSED — its gap-closure plan already ran.
 
 ## Roadmap Summary (v1.38)
@@ -3245,6 +3245,7 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 - [Phase 204]: 204-02: the energy-cap budget test uses protocol 0x0B (max_pulses=255, energy_cap_us=50000), not one of the two plus-final protocols -- CLAUDE.md's own measured fact states MSG_ERR_ENERGY_CAP is structurally unreachable on 0x07/0x08. pulse_delay=6000us chosen so the energy cap exhausts at 9 of 255 pulses.
 - [Phase 204]: 204-02: all four id groups in the new native suite reuse one settable, address-independent rurp_read_data_buffer() stub -- no per-address tracking was needed since every case asks only which id a site raises, never which address mismatched.
 - [Phase 204]: The seated part is expected to be a W27C512 by database chip-ID lookup, but its own ID-sense readback (0x1818) does not match the expected 0xda08 -- tracked as an open item (WINDOWS.md entry 3) rather than asserted as confirmed; every claim in 204-BENCH-MATRIX.md is chip-identity-independent by construction.
+- [Phase 206]: D-01: verdict 2 lands on VERDICT_SKIPPED + STATUS_ERROR at both the blank-check and verify dispatch arms (Phase 206 Plan 01) — Same two-axis vocabulary _run_step_untimed's transport arm already uses; avoids a sixth verdict, which the ROADMAP forbids.
 
 ## Performance Metrics
 
@@ -3696,11 +3697,12 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 | Phase 204 P02 | ~30min | 3 tasks | 4 files |
 | Phase 204 P03 | ~45min | 3 tasks | 25 files |
 | Phase 204 P05 | 1h 10m | 3 tasks | 1 files |
+| Phase 206 P01 | 62min | 2 tasks | 4 files |
 
 ## Session
 
-**Last session:** 2026-09-22T12:51:41.880Z
-**Stopped at:** Phase 205 complete, ready to plan Phase 206
+**Last session:** 2026-09-23T08:31:05.349Z
+**Stopped at:** Completed 206-01-PLAN.md
 **Was (superseded, retained for continuity):** Completed 204-03-PLAN.md — ordinal 4 (CMD_BLANK_CHECK) retired from both ladders, three-commit sweep landed
 **Was (superseded, retained for continuity):** Completed 204-02-PLAN.md — both verify-survival instruments built, RED seen five times, all green
 **Was (superseded, retained for continuity):** Completed 202-04-PLAN.md — _main_phase_read_data gains an additive abort_predicate keyword, verify_eprom's default path stops the read in flight at the first mismatch (CMP-04, D-06), D-08's four-condition discrimination keeps the abort from being mistaken for a fault, a zero-length-region false-clean-pass bug was found and fixed, 202-READ-ABORT-ANSWER.md answers phase success criterion 5 and corrects the ROADMAP's premise; full suite green, mypy unchanged at 32 errors, ruff clean; one disclosed deviation (zero-length fix outside Task 3's declared file list)
@@ -3793,7 +3795,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/205-the-pre-flights-leave-the-firmware/205-CONTEXT.md
+**Resume file:** None
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
