@@ -4,7 +4,7 @@ verified: 2026-09-23T13:15:00Z
 status: passed
 score: 10/10 must-haves verified
 covered_files: [".planning/REQUIREMENTS.md", ".planning/ROADMAP.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-01-PLAN.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-01-SUMMARY.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-02-PLAN.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-02-SUMMARY.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-03-PLAN.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-03-SUMMARY.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-04-PLAN.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-04-SUMMARY.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-REVIEW.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-SESSION-COST.md", ".planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/206-UAT.md"]
-covered_digest: "v1:sha256:192771cabf9f019d51d4e6895a4e0002678a4f4bfc1db0e9279f6860ded798a0"
+covered_digest: "v1:sha256:97ca6624a74c891db2cfb2d1124d28ef9227da040c12c2639e3f68d469f7b3d7"
 behavior_unverified: 0
 overrides_applied: 0
 ---
