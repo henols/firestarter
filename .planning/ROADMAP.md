@@ -466,7 +466,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion; operator checkpoint)*
 
-- [ ] 207-03-PLAN.md — pre-flight the exact outgoing wiki tree, operator `checkpoint:human-action` naming `f967398`, fast-forward push, fresh-clone proof, and the closing criterion-4 check (no Release, no tag, no sub-repo push) (REL-04)
+- [x] 207-03-PLAN.md — pre-flight the exact outgoing wiki tree, operator `checkpoint:human-action` naming `f967398`, fast-forward push, fresh-clone proof, and the closing criterion-4 check (no Release, no tag, no sub-repo push) (REL-04) — **done 2026-09-23: operator approved at the human-action gate (verbatim `you acn push`); wiki master fast-forwarded `81229d8..880a59b`, publishing `f967398` + the three 3.1.0b1 commits; proven from a fresh clone (`POSTPUSH PASS`); criterion 4 re-proven (0 Releases, no tags, no sub-repo push).**
 
 **Success criteria**:
 
