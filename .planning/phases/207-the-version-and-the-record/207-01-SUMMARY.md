@@ -135,7 +135,7 @@ Each task was committed atomically, across three repositories:
 5. `firestarter_app` `2a08c7d` — `docs(207-01): tell readers to upgrade the CLI before the firmware` (docs)
 6. `/workspaces` (meta) `d347dd3f` — `chore(207-01): advance firestarter_fw and firestarter_app gitlinks` (chore)
 
-**Plan metadata:** `<meta-summary-commit-sha>` (docs: complete 207-01 plan) — recorded after this file is committed.
+**Plan metadata:** `350bb121` (docs: complete 207-01 plan)
 
 _Note: no TDD tasks in this plan; each commit above is a single production step._
 
