@@ -38,47 +38,67 @@ a dry run or a mock.
 
 ## 2. The measured wall-clock (both arms)
 
-**pending** — this section is filled by plan 04's task 3, after the operator-initiated bench
-checkpoint (task 2) reports its numbers. The table shape is seeded here so the bench task fills a
-form rather than inventing a layout under time pressure, following `205-SESSION-COST.md` §2's
-method: `time` around the whole `firestarter dev test <chip>` subprocess, an ODD N of at least 3
-per arm, alternating nothing — one arm run to completion, then the other, same part, same board, no
-reflash or reseat between them, figures to three decimal places.
+Measured 2026-09-23, bench rig: Arduino Leonardo (ATmega32U4, VID `0x2341`, PID `0x8036`,
+Arduino LLC, `/dev/ttyACM0`). Operator-confirmed seated part **W27C512**; operator-confirmed
+shield revision **Rev 2.0** (the auto-capture field independently read back `Rev 2.0-class,
+Override HW: Rev 2.0-class`, consistent — `hw_revision` cannot distinguish the operator's three
+shields on its own and was asked, never assumed). VPP confirmed in range immediately before the
+run: 12.0 V (accepted window 11.4–12.5 V), internal VCC 5.5 V — an earlier 13.0 V fault (above the
+firmware's 12.0 V gate) had already been corrected by the operator trimming the pot, verified by
+one bounded confirmatory read taken before dispatch.
 
-**Cold arm (lease commit `3853b55` reverted, i.e. `d723cf7` + `3853b55` both reverted per § 5's
-corrected recipe — see below):**
+Both arms ran `firestarter -p /dev/ttyACM0 dev test w27c512` (no `--fast`, **never `--submit`**) to
+completion, timed with `time` around the whole subprocess, same part, same board, same session, no
+reflash or reseat between them. The leased arm ran first (three consecutive runs); the lease was
+then reverted (the corrected two-sha recipe, § 5 below) for the cold arm (three consecutive runs);
+the tree was then restored to its kept (leased) state — see § 5 for the restore method.
 
-| Run | Wall clock |
-|---|---|
-| 1 | pending |
-| 2 | pending |
-| 3 | pending |
-| **Median** | pending |
-| Min | pending |
-| Max | pending |
-
-**Leased arm (lease commit `3853b55` present, at its current HEAD):**
+**Leased arm (lease commit `3853b55` present, at HEAD `d723cf7`):**
 
 | Run | Wall clock |
 |---|---|
-| 1 | pending |
-| 2 | pending |
-| 3 | pending |
-| **Median** | pending |
-| Min | pending |
-| Max | pending |
+| 1 | 228.283s |
+| 2 | 227.836s |
+| 3 | 229.758s |
+| **Median** | **228.283s** |
+| Min | 227.836s |
+| Max | 229.758s |
 
-**Re-anchored connect-cost median (this session, this rig):** pending — `firestarter dev ...
---mode connect-cost --samples 10` against the confirmed port, per `206-RESEARCH.md` Q6, replacing
-a citation of the 2026-09-04 Phase 203 figure with a current one.
+**Cold arm (lease commit `3853b55` + follow-up `d723cf7` both reverted, via `git revert
+--no-commit d723cf7 3853b55` — applied with zero conflicts, exactly as this document's corrected
+recipe, § 5, predicted):**
 
-**Part, shield revision, and port identity confirmed by the operator:** pending — asked at the
-bench, never assumed. `hw_revision` cannot distinguish the three shields the operator owns
-(`user_shield_revisions`); `ttyACM*` numbers shuffle across a replug
-(`feedback_verify_port_identity_each_task`).
+| Run | Wall clock |
+|---|---|
+| 1 | 268.992s |
+| 2 | 269.706s |
+| 3 | 268.731s |
+| **Median** | **268.992s** |
+| Min | 268.731s |
+| Max | 269.706s |
 
-**Per-step verdict diff (clause 3):** pending — one run in each arm, per-step verdict and status
-table captured and diffed.
+**Re-anchored connect-cost median (this session, this rig):** measured 2026-09-23 at 11:00:29,
+`firestarter dev fault-inject w27c512 --mode connect-cost --samples 10` against the confirmed port
+(`/dev/ttyACM0`, `restrict_to_port=True`): median **2.613s**, min 2.607s, max 2.746s, N=10,
+structural floor 2.500s, remainder 0.113s, zero decode failures / probe timeouts / resync errors.
+This sample predates the VPP-fault diagnosis in this session but is unaffected by it — the
+connect-cost harness never drives VPP. Artifact:
+`firestarter_app/connect-cost-2026-09-23-110029/connect-cost-log.txt`. This closely tracks (without
+being identical to — a genuine re-measurement, not the same instrument re-run) the cited
+2026-09-04 Phase 203 figure of 2.607s.
+
+**Part, shield revision, and port identity confirmed by the operator:** part is **W27C512**;
+shield revision is **Rev 2.0**; port is `/dev/ttyACM0`, VID `0x2341`, PID `0x8036`, Arduino LLC,
+Arduino Leonardo — re-enumerated at run time (`pyserial` port listing, immediately before the
+bench task), never inherited from `206-RESEARCH.md`.
+
+**Per-step verdict diff (clause 3):** captured from every one of the six runs (three leased, three
+cold), not merely one per arm. Leased arm, every run: `id OK x1`, `read OK x3`, `write OK x3`,
+`verify OK x3`, `erase OK x3`, `blank-check OK x3`, `run_status: COMPLETE`, `chip_id_actual: 55816`
+(0xDA08, matching `chip_id_expected`). Cold arm, every run: identical — `id OK x1`, `read OK x3`,
+`write OK x3`, `verify OK x3`, `erase OK x3`, `blank-check OK x3`, `run_status: COMPLETE`,
+`chip_id_actual: 55816` (0xDA08). **No step's verdict differs between the two arms for the same
+physical outcome across any of the six runs.**
 
 ## 3. The derivation over the connect census (labelled as a derivation, not a measurement)
 
@@ -136,13 +156,34 @@ term.
 
 ## 4. Explicit non-measurement statement — what this record does NOT claim
 
-**pending** — stubbed here for plan 04's task 3 to complete once the bench arm is measured. Per
-`205-SESSION-COST.md` § 6's discipline, this section must name: which part and shield revision were
-actually measured and which families and board classes therefore remain uncovered; that
-`HardwareManager`'s connects (the pre-plan identity read, the sampler) stayed outside the lease, so
-the measured figure is a lower bound on what a wider lease (Fork F5 option (b)) could save, not a
-projection of it; and that this document supersedes nothing in `205-SESSION-COST.md` or
-`203-SESSION-COST.md` — their own measured connect medians are cited here, not re-measured.
+- **Only one part and one board class were measured.** The reference part is **W27C512** (a
+  UV-EPROM family part riding the erasable/UV handler,
+  `reference_erasable_parts_are_uv_firmware_proxies`), on a **Leonardo-class** board (ATmega32U4,
+  `/dev/ttyACM0`). No Uno-class board was measured — the Uno-class connect median cited in
+  `203-SESSION-COST.md`/`205-SESSION-COST.md` (2.518s) is neither re-anchored nor exercised here,
+  and this document's saving figure does not generalise to Uno-class boards without its own
+  measurement. No SDP-family part (e.g. AT28C256, this plan's second-choice reference part) was
+  measured, so the overhead-dominated outlier case the plan names — where a lease should pay
+  most — is uncovered by this document.
+- **`HardwareManager`'s connects stayed outside the lease** (D-05/Fork F5, unaffected by this
+  measurement): the pre-plan identity read and the two write-step voltage samplers
+  (`sample_vpp_mv` + `sample_vpe_mv`, 4 connects per write cycle, 12 across the three cycles this
+  rig ran) are not collapsed by the lease. **The measured 40.709s / 15.1% saving is a genuine bench
+  figure for THIS configuration (W27C512, Leonardo, `runs=3`), not a projection of what a wider
+  lease (Fork F5 option (b)) could save** — it is a lower bound on that wider number, stated as the
+  structural observation it is, never as a prediction.
+- **This document supersedes nothing in `205-SESSION-COST.md` or `203-SESSION-COST.md`.** Their own
+  measured connect medians (2.607s Leonardo-class, 2.518s Uno-class, both 2026-09-04) are cited
+  here, not re-measured as a replacement — this document's own re-anchor (§2 above) confirms rather
+  than revises the cited Leonardo-class figure.
+- **The measured saving (15.1%) landed close to, not far above, the pre-registered 15.0%
+  threshold — and well below § 3's derived ~44–52s theoretical ceiling.** This is exactly the shape
+  § 3 predicted: roughly a third of a plan's connects (the `HardwareManager` sampler connects) sit
+  outside the lease and are unaffected by it, and the remainder of the plan's wall clock is
+  read/write/verify/blank-check payload traffic the lease does not touch. The measured 40.709s
+  saving is well under the ~44–52s ceiling, and the percentage is driven down further by this
+  configuration's substantial payload time — consistent with, not contradicting,
+  `205-SESSION-COST.md` § 5's own pre-registered expectation.
 
 ## 5. The keep-or-revert application (D-07)
 
@@ -227,26 +268,72 @@ that `206-03-SUMMARY.md`'s own rehearsal used, and because the underlying facts 
 independently visible from `git show --name-only d723cf7` and `git show --name-only 3853b55`
 without running the revert itself.
 
-**§ 5's outcome — filled by plan 04's task 3 once § 2 is measured:** pending. This is where the
-three clauses above are evaluated against the measured numbers, with computed values and a
-pass-or-fail verdict for each, and where the kept-or-reverted action is recorded.
+**§ 5's outcome — measured 2026-09-23, against `firestarter_app@d723cf7` (leased arm) and the
+two-sha revert applied uncommitted (cold arm), same rig, same part, same session:**
+
+- **Cold-arm median:** 268.992s (N=3, min 268.731s, max 269.706s)
+- **Leased-arm median:** 228.283s (N=3, min 227.836s, max 229.758s)
+- **Removed time (unrounded):** 268.992 − 228.283 = **40.709s**
+- **Percentage (unrounded):** 40.709 / 268.992 × 100 = **15.134%**
+- **Percentage (rounded half-up to one decimal):** **15.1%**
+
+**Clause 1 — at least 15.0 percent removed, comparison made on the rounded value:** 15.1% ≥ 15.0%
+→ **PASS.**
+
+**Clause 2 — removed time at least five times the wider arm's spread, inclusive:** leased-arm
+spread = 229.758 − 227.836 = 1.922s; cold-arm spread = 269.706 − 268.731 = 0.975s; the wider spread
+is the leased arm's **1.922s**. Five times that spread = 9.610s. The unrounded removed time
+(40.709s) is compared against it: 40.709 ≥ 9.610 → **PASS**, by more than 4× the required margin.
+
+**Clause 3 — no step's verdict differs between arms for the same physical outcome:** both arms
+report `run_status: COMPLETE`, `chip_id_actual: 55816` (0xDA08, matching `chip_id_expected` both
+times), and identical per-step verdicts (`id`/`read`/`write`/`verify`/`erase`/`blank-check`, all
+`OK`) across every one of the six runs, not merely the two captured for the diff in § 2. → **PASS.**
+
+**All three clauses pass. The lease is KEPT.** No `git revert` was committed. The cold arm was
+produced by applying `git revert --no-commit d723cf7 3853b55` (zero conflicts, exactly as this
+section's corrected recipe predicted) to a clean tree at HEAD `d723cf7`, running the three
+cold-arm samples against the resulting (uncommitted, staged) working tree, and then restoring the
+leased tree with `git checkout HEAD -- firestarter/cli_handlers.py
+firestarter/eprom_operations.py tests/fake_chip.py tests/test_dev_test_cmd.py
+tests/test_session_lease.py tests/test_write_verify.py` followed by `git reset` — a working-tree
+restore to the committed HEAD, not a second revert, since the revert was never committed.
+`firestarter_app` remains at HEAD `d723cf7` on `v1.41-verification-to-host`, unchanged from where
+plan 03 left it.
+
+After the restore, the full host suite was re-run on the kept tree: `pytest tests/ -o addopts=""
+-p no:cacheprovider -q` — **2363 passed, 0 failed**, the same count as `206-03-SUMMARY.md`'s own
+baseline. `ruff check firestarter/ tests/` and `ruff format --check firestarter/ tests/` both
+exit 0.
+
+**SESS-02 status: MET.** The requirement's own wording
+(`.planning/REQUIREMENTS.md`: "the wall-clock saving is measured on a real run and reported as a
+number; if it is not worth the structural change, that is recorded and the change is reverted
+rather than kept on principle") is satisfied on both clauses: the saving is measured — 40.709s,
+15.1%, N=3 per arm, min/max recorded, never derived or inferred from the connect-cost model — and
+the lease is kept as a direct, recorded consequence of that measurement clearing the
+pre-registered threshold on all three clauses, not retained on the strength of the argument that
+motivated building it.
 
 ## Provenance table
 
 | Term | Value | Measured or derived | Source |
 |---|---|---|---|
 | Leonardo-class connect median (cited, 2026-09-04) | 2.607 s (min 2.606s, max 2.676s, N=10) | measured, cited from Phase 203 | `203-SESSION-COST.md` §2, `176-MEASUREMENT.md` §4b |
-| Leonardo-class connect median (re-anchored, this session) | pending | measured (to be re-anchored) | § 2 above, `EpromOperator.measure_connect_cost` |
+| Leonardo-class connect median (re-anchored, this session) | 2.613 s (min 2.607s, max 2.746s, N=10) | measured | § 2 above, `EpromOperator.measure_connect_cost`, `firestarter_app/connect-cost-2026-09-23-110029/connect-cost-log.txt` |
 | Connect census (structure) | see § 3 table | derived (structure verified by reading call sites) | `206-RESEARCH.md` Q5 |
 | Derived total connects per plan, `runs=3` | ~29–33 | derived (re-scaled from `runs=2`) | this document § 3, `.planning/notes/dev-test-sequence-cost-model.md` (stale absolute seconds, connect counts only) |
 | Connects surviving the lease (`HardwareManager`, D-05/F5) | ~12 (+1 pre-plan) | derived | this document § 3, `206-RESEARCH.md` Q5 Fork F5 |
 | Derived connect-term saving ceiling, Leonardo-class | ~44–52 s | derived | this document § 3 |
-| Cold-arm plan median (this rig, this part) | pending | measured | this document § 2 |
-| Leased-arm plan median (this rig, this part) | pending | measured | this document § 2 |
-| Measured saving (cold − leased) | pending | measured | this document § 2, § 5 |
-| Measured saving, percent of cold median, rounded half-up | pending | measured (computed from two measured medians) | this document § 5 |
-| Lease revert target — corrected recipe | `git revert d723cf7 3853b55` | derived (mechanical git-history fact; re-measured by the orchestrator, see § 5) | this document § 5, `206-03-SUMMARY.md` (superseded single-sha instruction), orchestrator finding 2026-09-23 |
-| SESS-02 status | pending | n/a | this document § 5, `.planning/REQUIREMENTS.md` |
+| Cold-arm plan median (this rig, W27C512, Leonardo) | 268.992 s (min 268.731s, max 269.706s, N=3) | measured | this document § 2 |
+| Leased-arm plan median (this rig, W27C512, Leonardo) | 228.283 s (min 227.836s, max 229.758s, N=3) | measured | this document § 2 |
+| Measured saving (cold − leased) | 40.709 s | measured (computed from two measured medians) | this document § 2, § 5 |
+| Measured saving, percent of cold median, rounded half-up | 15.134% unrounded → **15.1%** rounded | measured (computed from two measured medians) | this document § 5 |
+| Clause 2 spread check | wider spread 1.922s (leased arm); 5× = 9.610s; removed time 40.709s | measured (computed from measured min/max) | this document § 5 |
+| Clause 3 verdict diff | none — all six runs `run_status: COMPLETE`, `chip_id_actual: 55816`, all per-step verdicts `OK` in both arms | measured | this document § 2, § 5 |
+| Lease revert target — corrected recipe | `git revert d723cf7 3853b55` | derived (mechanical git-history fact; re-measured by the orchestrator, see § 5); **applied uncommitted for the cold-arm measurement in this document, confirmed zero-conflict** | this document § 5, `206-03-SUMMARY.md` (superseded single-sha instruction), orchestrator finding 2026-09-23 |
+| Keep-or-revert outcome | **KEPT** — all three clauses passed | measured (decision applies § 5's pre-registered rule to the measured numbers) | this document § 5 |
+| SESS-02 status | **MET** | n/a | this document § 5, `.planning/REQUIREMENTS.md` |
 
 ---
 *Phase: 206-dev-test-keeps-its-fidelity-on-one-session*
