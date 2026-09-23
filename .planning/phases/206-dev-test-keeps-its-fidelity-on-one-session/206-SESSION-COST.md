@@ -83,7 +83,7 @@ recipe, § 5, predicted):**
 structural floor 2.500s, remainder 0.113s, zero decode failures / probe timeouts / resync errors.
 This sample predates the VPP-fault diagnosis in this session but is unaffected by it — the
 connect-cost harness never drives VPP. Artifact:
-`firestarter_app/connect-cost-2026-09-23-110029/connect-cost-log.txt`. This closely tracks (without
+`.planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/evidence/connect-cost-2026-09-23-110029-connect-cost-log.txt`. This closely tracks (without
 being identical to — a genuine re-measurement, not the same instrument re-run) the cited
 2026-09-04 Phase 203 figure of 2.607s.
 
@@ -320,7 +320,7 @@ motivated building it.
 | Term | Value | Measured or derived | Source |
 |---|---|---|---|
 | Leonardo-class connect median (cited, 2026-09-04) | 2.607 s (min 2.606s, max 2.676s, N=10) | measured, cited from Phase 203 | `203-SESSION-COST.md` §2, `176-MEASUREMENT.md` §4b |
-| Leonardo-class connect median (re-anchored, this session) | 2.613 s (min 2.607s, max 2.746s, N=10) | measured | § 2 above, `EpromOperator.measure_connect_cost`, `firestarter_app/connect-cost-2026-09-23-110029/connect-cost-log.txt` |
+| Leonardo-class connect median (re-anchored, this session) | 2.613 s (min 2.607s, max 2.746s, N=10) | measured | § 2 above, `EpromOperator.measure_connect_cost`, `.planning/phases/206-dev-test-keeps-its-fidelity-on-one-session/evidence/connect-cost-2026-09-23-110029-connect-cost-log.txt` |
 | Connect census (structure) | see § 3 table | derived (structure verified by reading call sites) | `206-RESEARCH.md` Q5 |
 | Derived total connects per plan, `runs=3` | ~29–33 | derived (re-scaled from `runs=2`) | this document § 3, `.planning/notes/dev-test-sequence-cost-model.md` (stale absolute seconds, connect counts only) |
 | Connects surviving the lease (`HardwareManager`, D-05/F5) | ~12 (+1 pre-plan) | derived | this document § 3, `206-RESEARCH.md` Q5 Fork F5 |
