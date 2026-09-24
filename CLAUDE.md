@@ -52,6 +52,29 @@ The serial link runs at 250000 baud. The host sends each command as COBS-framed 
 The firmware sends INIT, MAIN, END and status messages as catalog message ID frames. It still sends
 `OK:` and `DATA:` as text lines.
 
+## Writing Style (ASD-STE100)
+
+Use the `asd-ste100` skill when you write or change the text below. Do not use it for `.planning/`.
+
+- **Strict mode:**
+  - The `CLAUDE.md` files in all three repositories.
+  - Message text in `tools/catalog/messages.toml`.
+  - CLI `--help` text, which includes Click docstrings.
+  - Error and log strings in product source.
+  - Skill, agent and command prompts in `.claude/`.
+- **STE-flavored mode:** `README.md`, `CONTRIBUTING.md`, the issue templates, wiki pages, and PR
+  descriptions.
+
+Before you commit the text, run the linter on each changed file:
+
+```bash
+python3 .claude/skills/asd-ste100/scripts/ste-lint.py <file>
+```
+
+The linter can flag a word that has a different function, for example "fixed" as an adjective, or
+"verify" as a command name. Examine each finding. Do not change accurate text only to make the
+linter pass.
+
 ## Development Commands
 
 The `CLAUDE.md` file of each sub-repo gives its build, test and CI commands. Do not copy them here.
