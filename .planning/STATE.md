@@ -6,15 +6,15 @@ current_phase: "207.1"
 current_phase_name: Address v1.41 tech debt
 status: executing
 stopped_at: Phase 207.1 planned — 7 plans in 5 waves
-last_updated: "2026-09-23T23:18:34.573Z"
-last_activity: 2026-09-23
+last_updated: "2026-09-24T09:53:17.615Z"
+last_activity: 2026-09-24
 last_activity_desc: "Phase 207.1 EXECUTING 2026-09-23: execute-phase started, plans run sequentially (use_worktrees false); branch creation skipped because the computed gsd/v1.41-verification-moves-to-the-host-activated-2026-09-20 is a fully merged stray 149 commits behind HEAD and all three repos are already on v1.41-verification-to-host. Earlier: Phase 207.1 PLANNED 2026-09-23: 7 plans in 5 waves covering all 26 v1.41 audit items plus 202 WR-02 (D-01..D-20); plan-checker passed, decision coverage 20/20; plan 06 (the three /gsd-secure-phase runs) is autonomous false. D-04 count recorded in research: 9 filed reports in 7 issues carry runs=1. Earlier: Phase 207 CLOSED 2026-09-23: verifier passed 4/4 (REL-01, REL-04). Both sub-repos at 3.1.0b1 after a local merge of origin/beta (fw a55f2d8 on 00c90fc, app 67f93e2 on 610fb96); README upgrade-order fix 2a08c7d; gitlinks d347dd3f. Wiki published by operator-approved fast-forward 81229d8..880a59b, carrying f967398 plus the three 3.1.0b1 commits, proven from a fresh clone. Criterion 4 holds: 0 Releases, no v1.41 tag, nothing pushed from meta or either sub-repo. Code review 0 critical / 1 warning (WR-01: the Testing-Chips page said dev test runs twice; the default is three since b596249; fixed afterwards by wiki 13571d2, pushed 2026-09-23T20:25:36Z) / 0 info. Regression gate: app 2363 passed on Python 3.11.16, fw tests 316 passed. All six v1.41 phases complete; /gsd-secure-phase 206 and 207 since done (d5dfe54d, 6326b92e). Earlier: Phase 207 PLANNED 2026-09-23: 3 plans in 2 waves (207-01 beta sync + 3.1.0b1 bump + gitlinks; 207-02 wiki content local; 207-03 wiki push behind an operator checkpoint, autonomous false). Operator decisions D-01..D-03 recorded in 207-CONTEXT.md. Earlier: Phase 206 CLOSED 2026-09-23: verifier passed 10/10 (DEVTEST-01..03, SESS-01..02), UAT 10/10, code review 0 critical / 2 warning (WR-01, WR-02, advisory) / 2 info, regression gate 2363 passed on Python 3.11 with 86.38% coverage. Session lease KEPT (15.1% saving vs 15.0% pre-registered bar). Transitioned to Phase 207."
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 36
-  completed_plans: 29
-  percent: 81
+  completed_plans: 34
+  percent: 86
 ---
 
 # Project State
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.41 Verification Moves to the Host ACTIVATED; its `## Current Milestone` block carries the goal, the six activation decisions and the open read-abort mechanic. v1.40's close record is at `milestones/v1.40-CLOSE-RECORD.md`)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 207.1 — Address v1.41 tech debt, EXECUTING (`/gsd-execute-phase 207.1` started 2026-09-23, no `--auto`). v1.41 — all six phases (202–207) complete 2026-09-23. Phase 207 CLOSED: `3.1.0b1` in both sub-repos in one commit pair on top of a local merge of `origin/beta` (unpushed — the ship PR publishes), wiki record live at `13571d2`. Done since: `/gsd-secure-phase 206` (`d5dfe54d`), `/gsd-secure-phase 207` (`6326b92e`), WR-01 (wiki `13571d2`, pushed 2026-09-23T20:25:36Z) and the close-time `/gsd-audit-milestone` (`4bab20c9`, status `tech_debt`). Outstanding before the close: Phase 207.1 (the audit's tech debt), then a hand-archived close. Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70`.
+**Current focus:** Phase 207.1 — Address v1.41 tech debt, EXECUTING (`/gsd-execute-phase 207.1` started 2026-09-23, resumed 2026-09-24 at wave 4, no `--auto`). v1.41 — all six phases (202–207) complete 2026-09-23. Phase 207 CLOSED: `3.1.0b1` in both sub-repos in one commit pair on top of a local merge of `origin/beta` (unpushed — the ship PR publishes), wiki record live at `13571d2`. Done since: `/gsd-secure-phase 206` (`d5dfe54d`), `/gsd-secure-phase 207` (`6326b92e`), WR-01 (wiki `13571d2`, pushed 2026-09-23T20:25:36Z) and the close-time `/gsd-audit-milestone` (`4bab20c9`, status `tech_debt`). Outstanding before the close: Phase 207.1 (the audit's tech debt), then a hand-archived close. Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70`.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -236,10 +236,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 ## Current Position
 
 Phase: 207.1 (Address v1.41 tech debt) — EXECUTING
-Plan: 1 of 7
-Status: Executing — 7 plans in 5 waves, run sequentially; plan 06 stops at operator checkpoints for `/gsd-secure-phase` 202, 204, 205
-Last activity: 2026-09-23 — Phase 207.1 execution started
-Next: **Execute Phase 207.1** — `/gsd-execute-phase 207.1` WITHOUT `--auto`/`--chain` (plan 06 needs the operator to run `/gsd-secure-phase` 202, 204 and 205). No bench, no push.
+Plan: 6 of 7
+Status: Executing — 7 plans in 5 waves, run sequentially; waves 1–3 (plans 01–05) complete; wave 4 is plan 06, which stops at operator checkpoints for `/gsd-secure-phase` 204 and 205 (202 was secured out-of-band at `105c2523`)
+Last activity: 2026-09-24 — Phase 207.1 execution resumed at wave 4 (plan 06); plans 01–05 complete
+Next: **Execute Phase 207.1** — `/gsd-execute-phase 207.1` WITHOUT `--auto`/`--chain` (plan 06 needs the operator to run `/gsd-secure-phase` 204 and 205; 202 is secured at `105c2523`). No bench, no push.
 
 ## Roadmap Summary (v1.38)
 
