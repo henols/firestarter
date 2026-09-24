@@ -5,7 +5,11 @@ area: host
 resolves_phase: null
 source: .planning/phases/202-one-comparison-engine-on-the-host/202-REVIEW.md § IN-01
 files:
+
   - firestarter_app/firestarter/compare.py (CompareAccumulator.feed, the `if not offs:` branch after the per-offset comprehension)
+
+completed: 2026-09-24
+status: completed
 ---
 
 ## Problem

@@ -5,8 +5,12 @@ area: host
 resolves_phase: null
 source: .planning/phases/202-one-comparison-engine-on-the-host/202-REVIEW.md § WR-01
 files:
+
   - firestarter_app/firestarter/eprom_operations.py (READ_ABORT_ACCEPTANCE_WINDOW_S, and _drive_region_compare's four-condition D-08 discrimination)
   - firestarter_app/tests/test_eprom_operations.py (TestVerifyEpromReadAbort — where the boundary leg would go)
+
+completed: 2026-09-24
+status: completed
 ---
 
 ## Problem
