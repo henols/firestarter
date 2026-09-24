@@ -504,7 +504,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 207.1-07-PLAN.md — D-13 both gitlinks advanced once, the closing ledger (all 26 items plus 202 WR-02, D-04 count, D-18 / D-19 / D-20), no-push proof
+- [x] 207.1-07-PLAN.md — D-13 both gitlinks advanced once, the closing ledger (all 26 items plus 202 WR-02, D-04 count, D-18 / D-19 / D-20), no-push proof — **done 2026-09-24: gitlinks advanced once `3f46a284` (app `5302f63`, fw `4b14111`); closing ledger `466f84fd` (27 rows, 23 cited shas all resolving, D-01..D-20 present); PASS-207.1-07-D13, PASS-207.1-07-LEDGER, PASS-207.1-NO-PUSH; SUMMARY `18ab5e48`. Post-merge gate: app 2373 passed on Python 3.11.16 (coverage 86.40%, ruff clean), fw `tests/` 316 passed. Nothing pushed.**
 
 ## v1.40 — Program-Parameter Fidelity (CLOSED 2026-09-20 — 19/24 requirements; the three held issue answers (PULSE-04, VOLT-04, RAIL-05) release at the beta cut, RAIL-03 is honestly unmet and OVR-03 is test-enforced only; tagged `v1.40` — bare tag, no GitHub Release; **not shipped**)
 
