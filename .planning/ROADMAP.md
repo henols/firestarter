@@ -500,7 +500,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 207.1-06-PLAN.md — D-02 `/gsd-secure-phase` 202, 204, 205 at operator checkpoints, then verified (autonomous false)
+- [x] 207.1-06-PLAN.md — D-02 `/gsd-secure-phase` 202, 204, 205 at operator checkpoints, then verified (autonomous false) — **done 2026-09-24: 202 `105c2523` and 204 `c6116726` secured by the operator out-of-band; 205 `db82425e` secured in the main session at the operator's direction, where the operator chose "Accept all open" for the five accept-disposition threats (two high, T-205-10 and T-205-16, under 205 D-04; AR-205-01..05); all three verified `status: verified` / `threats_open: 0` / `asvs_level: 1`, PASS-207.1-06-D02; SUMMARY `10591469`. Nothing pushed.**
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
