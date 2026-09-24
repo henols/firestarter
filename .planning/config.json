@@ -8,7 +8,7 @@
     "plan_check": true,
     "verifier": true,
     "code_review": true,
-    "nyquist_validation": false,
+    "nyquist_validation": true,
     "pattern_mapper": true,
     "ui_phase": false,
     "ui_safety_gate": false,
