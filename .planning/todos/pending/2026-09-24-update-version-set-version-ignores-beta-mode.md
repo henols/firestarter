@@ -37,3 +37,10 @@ def is_beta_mode(args) -> bool:
 
 Add a test that runs the script with `--set-version` on a non-beta ref and asserts that either a
 beta version or a refusal is the result, never a stable patch bump.
+
+## Status (2026-09-24)
+
+The code fix is in `firestarter_app` `11c9a8c`. `is_beta_mode` now returns True for an explicit
+`--set-version`. A manual `--dry-run --set-version 3.0.0b99` run on a non-beta ref printed
+`3.0.0b99`. The automated test that this todo asks for is not written yet. That test is the only
+open item.
