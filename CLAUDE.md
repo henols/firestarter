@@ -65,6 +65,10 @@ Use the `asd-ste100` skill when you write or change the text below. Do not use i
 - **STE-flavored mode:** `README.md`, `CONTRIBUTING.md`, the issue templates, wiki pages, and PR
   descriptions.
 
+The skill is not in this repository. It is installed on the development machine from the GitHub
+repository `danyuchn/asd-ste100-skill`. If `.claude/skills/asd-ste100/` does not exist, install
+the skill first.
+
 Before you commit the text, run the linter on each changed file:
 
 ```bash
