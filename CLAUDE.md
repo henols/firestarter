@@ -1,89 +1,101 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file gives guidance to Claude Code (claude.ai/code) for work in this repository.
 
 ## Repository Structure
 
-This is the meta repository for the Firestarter EPROM programmer project. The code lives in two
+This is the meta repository for the Firestarter EPROM programmer project. The code is in two
 submodules:
 
-- `firestarter_fw/` — Arduino C++ firmware (PlatformIO). See `firestarter_fw/CLAUDE.md`.
-- `firestarter_app/` — Python host CLI application (pip package). See `firestarter_app/CLAUDE.md`.
+- `firestarter_fw/` — Arduino C++ firmware (PlatformIO). Read `firestarter_fw/CLAUDE.md`.
+- `firestarter_app/` — Python host CLI application (pip package). Read `firestarter_app/CLAUDE.md`.
 
-This repository tracks the submodule pointers, `.planning/` (GSD project management artifacts),
-`.claude/` (project settings), `tools/catalog/` (messages codegen and sub-repo sync),
-`.github/` (issue templates and `CONTRIBUTING.md`, no CI), `.devcontainer/`, `.vscode/`,
-`README.md` and `VALIDATED-EPROMS.md`.
+This repository tracks these items:
 
-User documentation lives only in the `firestarter` GitHub wiki. `README.md` points there.
+- The two submodule pointers.
+- `.planning/` — GSD project management artifacts.
+- `.claude/` — project settings.
+- `tools/catalog/` — the messages codegen and the sub-repo sync script.
+- `.github/` — issue templates and `CONTRIBUTING.md`. This repository has no CI.
+- `.devcontainer/`, `.vscode/`, `README.md` and `VALIDATED-EPROMS.md`.
 
-Comments in product source are allowed in both sub-repos. `.planning/` still contains many
-mentions of an old no-comments rule. The rule was removed on 2026-09-19, so ignore those mentions.
+User documentation is only in the `firestarter` GitHub wiki. `README.md` links to it.
 
-`.gitmodules` records a submodule URL per commit. This repository's `main`, and every ref from
-before the firmware rename (such as `v1.35`), still has the firmware at path `firestarter` with the
-old URL. A plain `git submodule update --init` at such a ref clones *this* repository and fails with
-exit 128. Set the override BEFORE the first update, because once a clone has failed the override
-alone does not recover it. See `.planning/notes/gitmodules-archaeology-trap.md` for the workarounds
-and the `git submodule sync` hazard.
+You can write comments in product source in both sub-repos. Many files in `.planning/` refer to an
+old rule that did not allow comments. The operator removed that rule on 2026-09-19. Ignore those
+references.
+
+### Submodule URLs at old refs
+
+`.gitmodules` records a submodule URL in each commit. Two kinds of ref still put the firmware at the
+path `firestarter` with the old URL:
+
+- The `main` branch of this repository.
+- Each ref from before the firmware rename, for example `v1.35`.
+
+At such a ref, a plain `git submodule update --init` clones *this* repository and stops with exit
+code 128. Set the URL override BEFORE the first update. After a clone fails, the override alone does
+not recover it. `.planning/notes/gitmodules-archaeology-trap.md` gives the workarounds and the
+`git submodule sync` hazard.
 
 ## System Overview
 
-Firestarter is a two-part system for programming EPROMs, Flash, and SRAM devices using an
-Arduino-based RURP (Relatively-Universal-ROM-Programmer) shield:
+Firestarter programs EPROM, Flash and SRAM devices. It uses an Arduino and the RURP
+(Relatively-Universal-ROM-Programmer) shield. The system has two parts:
 
-1. **Python CLI** (`firestarter_app/`) — runs on the host PC; parses user commands, looks up chip
-   specs from a JSON database, and orchestrates operations via serial.
-2. **Arduino firmware** (`firestarter_fw/`) — runs on the Arduino; receives commands, drives the
-   hardware bus, and streams data back through a three-phase state machine (INIT → MAIN → END).
+1. **Python CLI** (`firestarter_app/`) — runs on the host PC. It parses user commands, finds chip
+   specs in a JSON database, and controls each operation over serial.
+2. **Arduino firmware** (`firestarter_fw/`) — runs on the Arduino. It receives commands, drives
+   the hardware bus, and sends data back through a three-phase state machine (INIT → MAIN → END).
 
-The link runs at 250000 baud. The host sends each command as COBS-framed JSON with a CRC8. The
-firmware sends status and INIT/MAIN/END as catalog message ID frames, and still sends `OK:` and
-`DATA:` as text prefixes.
+The serial link runs at 250000 baud. The host sends each command as COBS-framed JSON with a CRC8.
+The firmware sends INIT, MAIN, END and status messages as catalog message ID frames. It still sends
+`OK:` and `DATA:` as text lines.
 
 ## Development Commands
 
-Each sub-repo's own `CLAUDE.md` owns its build, test and CI commands. Do not copy them here.
+The `CLAUDE.md` file of each sub-repo gives its build, test and CI commands. Do not copy them here.
 
 ## Cross-repo obligations
 
-These facts span both sub-repos, and neither can state them alone.
+Each item below applies to both sub-repos. Neither sub-repo can state it alone.
 
-- **Serial protocol changes** must stay in sync between `firestarter_app/firestarter/serial_comm.py`
-  and `firestarter_fw/src/firestarter.cpp`.
-- **Constants and flag bits** are duplicated between `firestarter_app/firestarter/constants.py` and
-  three firmware headers. `firestarter_app/CLAUDE.md` § Constants carries the per-block table.
-  Change both sides in the same commit pair.
-- **Messages are generated here and consumed there.** `tools/catalog/messages.toml` is the source of
-  truth. Codegen runs in this repo only. Both sub-repos consume synced artifacts, so never
-  regenerate or hand-edit `messages.h` or `messages.py` inside a sub-repo.
-- **The data buffer size is set per board in the firmware** (`DATA_BUFFER_SIZE`: 512 by default,
-  1024 on Leonardo). The firmware reports it in its `MSG_OK_READY` ack, and the host sizes its chunks
-  from that report. When no size is reported, the host falls back to 512.
+- **Serial protocol.** Keep `firestarter_app/firestarter/serial_comm.py` and
+  `firestarter_fw/src/firestarter.cpp` the same when you change the protocol.
+- **Constants and flag bits.** `firestarter_app/firestarter/constants.py` duplicates values from
+  firmware headers and from `firestarter_fw/src/json_parser.c`. The Constants section of
+  `firestarter_app/CLAUDE.md` has the table. Change both sides in the same pair of commits.
+- **Messages.** `tools/catalog/messages.toml` is the source of truth. Codegen runs only in this
+  repository. Both sub-repos use the synced output. Never generate or edit `messages.h` or
+  `messages.py` inside a sub-repo.
+- **Data buffer size.** The firmware sets `DATA_BUFFER_SIZE` for each board: 512 by default, 1024
+  on Leonardo. The firmware sends the value in its `MSG_OK_READY` ack. The host sizes its chunks
+  from that value. If the ack has no value, the host uses 512.
 
 ## Milestone close and branch protection
 
-- **Milestone work forks off `beta` in all three repositories**, on a branch named `v1.X-slug`. If the
-  previous milestone's PRs are still unmerged, fork off the previous milestone's branch instead.
+- **Start milestone work from `beta` in all three repositories.** Name the branch `v1.X-slug`. If
+  the PRs of the previous milestone are not merged, start from the branch of that milestone.
   Never commit to `beta` or `main` directly.
-- **A push to `beta` in either sub-repo PUBLISHES. Treat it as a release, not a merge.**
-  - `firestarter_fw` — `beta-build.yml` cuts a GitHub pre-release carrying the `.hex` assets.
-  - `firestarter_app` — `beta-release.yml` cuts a GitHub pre-release, then its `pypi` job calls
-    `publish.yml` directly with `secrets: inherit` and **uploads to PyPI**.
-  - Neither workflow has a path filter, so a documentation-only push publishes too.
-  - A PyPI version can never be reused. Decide the scope of a beta push before making it.
-- **`beta` has no protection in any of the three repositories.** A direct push, a force-push and a
-  deletion all succeed. Only the publishing consequence above stands between you and a release.
-- **`main` is protected in all three repositories** by the "Protect main" ruleset: pull request
-  required, no force-push, no deletion. Only a deploy key can bypass it.
-- **This project's close targets `beta`, not `main`.** `.planning/config.json` sets
-  `git.base_branch` to `beta`, so `/gsd-complete-milestone` and `/gsd-ship` both point there.
-- **Before running `/gsd-ship`, recreate local `beta` from `origin/beta`.** `workflows/ship.md`
-  anchors its audit range on `RANGE_BASE=$(git merge-base "${BASE_BRANCH}" HEAD)`, and a stale
-  local `beta` widens that range.
-- **The meta repository must never publish a GitHub Release — bare milestone tags only.** A tag like
-  `v1.36` parses as PEP 440 `1.36`, so `Version("3.0.0b29") >= Version("1.36")` reads true and `fw`
-  reports the firmware as up to date for every stranded CLI. See
-  `.planning/notes/999.9-repo-rename-impact-analysis.md` § "Standing rule this must produce".
-- The close mechanics and the blocked stable-release route are in
-  `.planning/notes/v135-close-procedure-under-protection.md`.
+- **A push to `beta` in a sub-repo PUBLISHES. Treat it as a release, not a merge.**
+  - `firestarter_fw` — `beta-build.yml` creates a GitHub pre-release with the `.hex` assets.
+  - `firestarter_app` — `beta-release.yml` creates a GitHub pre-release. Its `pypi` job then calls
+    `publish.yml` directly and **uploads to PyPI**.
+  - Neither workflow has a path filter. A documentation-only push publishes too.
+  - PyPI never accepts the same version two times. Decide the scope of a beta push before you push.
+- **A push to `main` in `firestarter_fw` publishes a stable release.** `build.yml` does this.
+- **No rule protects `beta` in any of the three repositories.** A direct push, a force-push and a
+  deletion all succeed. Only the publish consequence above stops a mistake.
+- **The "Protect main" ruleset protects `main` in all three repositories.** It requires a pull
+  request and blocks force-push and deletion. Only a deploy key can bypass it.
+- **The milestone close targets `beta`, not `main`.** `.planning/config.json` sets
+  `git.base_branch` to `beta`, so `/gsd-complete-milestone` and `/gsd-ship` both use `beta`.
+- **Before you run `/gsd-ship`, make local `beta` again from `origin/beta`.** `workflows/ship.md`
+  sets its audit range with `RANGE_BASE=$(git merge-base "${BASE_BRANCH}" HEAD)`. A stale local
+  `beta` makes that range too wide.
+- **Never publish a GitHub Release from the meta repository. Push bare milestone tags only.** PEP
+  440 reads a tag like `v1.36` as `1.36`. `Version("3.0.0b29") >= Version("1.36")` is then true, so
+  `fw` tells each stranded CLI that its firmware is up to date. Read
+  `.planning/notes/999.9-repo-rename-impact-analysis.md`, section "Standing rule this must produce".
+- `.planning/notes/v135-close-procedure-under-protection.md` gives the close procedure and the
+  blocked route to a stable release.
