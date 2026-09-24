@@ -481,7 +481,7 @@ Plans:
 **Goal**: Every open item in the v1.41 close-time audit is either resolved or explicitly accepted by the operator before the milestone ships. The list is the `tech_debt` frontmatter of `.planning/milestones/v1.41-MILESTONE-AUDIT.md`: 26 open items, of which 4 need an operator decision (§ Tech Debt by Phase).
 **Requirements**: TBD — no v1.41 requirement is open (34/34 satisfied); this phase carries audit debt, not requirements
 **Depends on:** Phase 207
-**Plans:** 7 plans
+**Plans:** 7/7 plans complete
 
 Plans:
 **Wave 1**
