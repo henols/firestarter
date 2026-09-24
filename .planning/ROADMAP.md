@@ -492,7 +492,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 207.1-02-PLAN.md — D-11 `setup_command` asserts an open link (206 IN-02), D-05 read-abort window boundary legs plus the accepted-outcome note (202 WR-01), D-10 measured lease figure (206 IN-01)
+- [x] 207.1-02-PLAN.md — D-11 `setup_command` asserts an open link (206 IN-02), D-05 read-abort window boundary legs plus the accepted-outcome note (202 WR-01), D-10 measured lease figure (206 IN-01) — **done 2026-09-24: D-11 RED `861a3d3` / GREEN `121de14` (three probe harnesses given a connected fixture); D-05 boundary legs + accepted-outcome note and D-10 measured 15.1 % `45aff92`; app suite 2371 passed on Python 3.11; SUMMARY `dcef8548`. Nothing pushed.**
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
