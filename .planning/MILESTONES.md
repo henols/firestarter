@@ -1,5 +1,25 @@
 # Milestones
 
+## v1.41 Verification Moves to the Host (Closed: 2026-09-24)
+
+**7 phases (202–207 plus the inserted 207.1) · 36 plans · 95 tasks · 34/34 requirements · `override_closeout` · tagged `v1.41` — a bare tag, never a GitHub Release.**
+
+Full close record: [`v1.41-CLOSE-RECORD.md`](milestones/v1.41-CLOSE-RECORD.md).
+
+**The host now decides, and no user has it yet.** Nothing from this milestone is on any remote: 235 meta, 67 host and 18 firmware commits ahead of `origin/beta`, measured after a live fetch and by `git cherry`. Unlike the v1.39 and v1.40 closes, the version strings do separate the two states — both sub-repos read `3.1.0b1` at the tip, against app `3.0.0b51` and firmware `3.0.0b35` on `beta`.
+
+**The Arduino stopped deciding whether a chip is blank or matches an image.** `firestarter verify` and `firestarter blank` send `COMMAND_READ` and compare on the host through one streaming engine, `firestarter/compare.py`: first mismatch by default, every mismatching range under `--full`, a `classify_fingerprint` diagnosis instead of one address, and exit codes 0 / 1 / 2 so a transport fault is not reported as a mismatch. Peak host memory for a full 512 KiB compare measured under 18 KB. The read-abort question the activation left open was answered in writing: the firmware's teardown runs on the abort's error path, so a first-mismatch stop leaves the port clean at a measured cost of about one second.
+
+**Ordering was the safety property, and it held.** The host gained each capability before the firmware lost it. Phase 203's write guard covers exactly the five protocol families the firmware's write-init used to check, pinned by a test that fails if the set narrows or widens; only then did 205 remove the firmware pre-flights. `CMD_VERIFY` (6) and `CMD_BLANK_CHECK` (4) are gone with their ordinals reserved, and so are `mem_util_blank_check{,_region}` and `FLAG_SKIP_BLANK_CHECK`. `memory_verify_execute` and every in-algorithm verify survive, pinned by a source contract whose RED was reproduced three times. Leonardo flash went **24134 → 23314 B (−820 B)**; Phase 205 alone netted **−496 B flash and −4 B RAM** on each AVR target, measured, with the command for every figure.
+
+**Two findings changed the work rather than being recorded against it.** FWCMD-05 was amended by measurement: `flash_util_verify_operation` is a DQ7 poll that can never raise `MSG_ERR_VERIFY`, so pinning it there would have been a false pin. And Phase 205's code review found a Critical — protocol `0x06`'s erase exemption skipped the guard at a non-zero address, a silent irreversible overwrite on all 190 `0x06` rows — which was fixed inside the phase instead of being carried as an accepted risk window.
+
+**The session lease was kept on a measurement:** 15.1 % wall-clock saving against a pre-registered 15.0 % threshold, N=3 per arm on real silicon, identical verdicts in both arms. Inserted Phase 207.1 dispositioned every one of the 26 close-time audit items plus 202 WR-02: 14 fixed, 11 accepted, 2 closed on evidence.
+
+**The override is not about requirements.** All 34 are Complete and every phase has a passing VERIFICATION.md and a verified SECURITY.md. `init.manager` reads all seven phase digests as `stale` (accepted as D-19), and three Phase 207.1 code-review warnings are open — WR-02 is a real edge-case defect (a lease drain failure leaves a dead link leased on a mid-run unplug), WR-03 is a publish-path script that can make a stable bump by accident. All three were unfiled; this close filed them as todos.
+
+**Not claimed:** every hardware result is one Leonardo, one Rev 2.0 shield and one W27C512 — no Uno-class board, no Intel or NOR flash part, and no true UV part on the guard's UV leg; the lease cleared its threshold by 0.1 point; the host guard is the only safety net against half-programming a non-blank UV part, as accepted at activation. `milestone.complete` was not run — hand-archived, as v1.35 through v1.40 were. `audit-open acknowledge` was not run either; **91** open artifacts are disclosed in `STATE.md` by hand, with **0** suppressed.
+
 ## v1.40 Program-Parameter Fidelity (Closed: 2026-09-20)
 
 **5 phases (197-201) · 26 plans · 65 tasks · 19/24 requirements · `override_closeout` · tagged `v1.40` — a bare tag, never a GitHub Release.**

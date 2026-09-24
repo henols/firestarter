@@ -1,14 +1,14 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.41
-milestone_name: Verification Moves to the Host (ACTIVATED 2026-09-20)
+milestone_name: Verification Moves to the Host (CLOSED 2026-09-24 — 34/34 requirements, override_closeout, tagged v1.41 as a bare tag; NOT shipped — nothing is on any remote in any of the three repositories)
 current_phase: "207.1"
 current_phase_name: Address v1.41 tech debt
-status: completed
-stopped_at: Phase 207.1 complete — all phases complete
-last_updated: "2026-09-24T18:45:55.000Z"
+status: milestone_complete
+stopped_at: v1.41 CLOSED and archived 2026-09-24 — next is /gsd-ship (operator-gated), then /gsd-new-milestone at phase 208
+last_updated: "2026-09-24T23:00:00.000Z"
 last_activity: 2026-09-24
-last_activity_desc: "Phase 207.1 COMPLETE 2026-09-24: verifier passed 22/22 (all 26 v1.41 audit items plus 202 WR-02 dispositioned in 207.1-LEDGER.md; D-01..D-20 accounted for). Plan 06: 205-SECURITY.md db82425e written by /gsd-secure-phase in the main session at the operator's direction, the operator chose Accept all open for five accept-disposition threats (T-205-10 and T-205-16 high, under 205 D-04); 202 105c2523 and 204 c6116726 were operator runs out-of-band; SUMMARY 10591469. Plan 07: gitlinks 3f46a284 (app 5302f63, fw 4b14111), closing ledger 466f84fd, SUMMARY 18ab5e48. Code review 231dca1c: 0 critical / 3 warning (WR-01 the D-03 comment names one of two runs=1 routes; WR-02 206 lease drain sits outside the SerialError try; WR-03 update_version --set-version without beta mode writes a stable version) / 6 info, advisory. Gates: app 2373 passed on Python 3.11.16, coverage 86.40%, ruff clean; fw tests 316 passed. After the phase, a parallel operator session committed CLAUDE.md-only rewrites (app b8b920c, fw dbdf9c8, meta eca1408f and a81626b9); the meta gitlinks lag those two sub-repo commits. /gsd-secure-phase 207.1 is owed. Nothing pushed. Earlier: Phase 207.1 EXECUTING 2026-09-23: execute-phase started, plans run sequentially (use_worktrees false); branch creation skipped because the computed gsd/v1.41-verification-moves-to-the-host-activated-2026-09-20 is a fully merged stray 149 commits behind HEAD and all three repos are already on v1.41-verification-to-host. Earlier: Phase 207.1 PLANNED 2026-09-23: 7 plans in 5 waves covering all 26 v1.41 audit items plus 202 WR-02 (D-01..D-20); plan-checker passed, decision coverage 20/20; plan 06 (the three /gsd-secure-phase runs) is autonomous false. D-04 count recorded in research: 9 filed reports in 7 issues carry runs=1. Earlier: Phase 207 CLOSED 2026-09-23: verifier passed 4/4 (REL-01, REL-04). Both sub-repos at 3.1.0b1 after a local merge of origin/beta (fw a55f2d8 on 00c90fc, app 67f93e2 on 610fb96); README upgrade-order fix 2a08c7d; gitlinks d347dd3f. Wiki published by operator-approved fast-forward 81229d8..880a59b, carrying f967398 plus the three 3.1.0b1 commits, proven from a fresh clone. Criterion 4 holds: 0 Releases, no v1.41 tag, nothing pushed from meta or either sub-repo. Code review 0 critical / 1 warning (WR-01: the Testing-Chips page said dev test runs twice; the default is three since b596249; fixed afterwards by wiki 13571d2, pushed 2026-09-23T20:25:36Z) / 0 info. Regression gate: app 2363 passed on Python 3.11.16, fw tests 316 passed. All six v1.41 phases complete; /gsd-secure-phase 206 and 207 since done (d5dfe54d, 6326b92e). Earlier: Phase 207 PLANNED 2026-09-23: 3 plans in 2 waves (207-01 beta sync + 3.1.0b1 bump + gitlinks; 207-02 wiki content local; 207-03 wiki push behind an operator checkpoint, autonomous false). Operator decisions D-01..D-03 recorded in 207-CONTEXT.md. Earlier: Phase 206 CLOSED 2026-09-23: verifier passed 10/10 (DEVTEST-01..03, SESS-01..02), UAT 10/10, code review 0 critical / 2 warning (WR-01, WR-02, advisory) / 2 info, regression gate 2363 passed on Python 3.11 with 86.38% coverage. Session lease KEPT (15.1% saving vs 15.0% pre-registered bar). Transitioned to Phase 207."
+last_activity_desc: "Closed and hand-archived milestone v1.41 Verification Moves to the Host — 7 phases (202-207 plus 207.1), 36 plans, 95 tasks, 34/34 requirements, override_closeout. Archive at .planning/milestones/v1.41-{CLOSE-RECORD,ROADMAP,REQUIREMENTS}.md and v1.41-phases/. milestone.complete and audit-open acknowledge both deliberately not run; 91 open artifacts disclosed by hand with 0 suppressed; 207.1-REVIEW WR-01..03 filed as todos."
 progress:
   total_phases: 7
   completed_phases: 7
@@ -20,14 +20,14 @@ progress:
 # Project State
 
 **Project:** Firestarter — Protocol-Aware Programming Architecture
-**Updated:** 2026-09-20
+**Updated:** 2026-09-24
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-09-20 — v1.41 Verification Moves to the Host ACTIVATED; its `## Current Milestone` block carries the goal, the six activation decisions and the open read-abort mechanic. v1.40's close record is at `milestones/v1.40-CLOSE-RECORD.md`)
+See: `.planning/PROJECT.md` (updated 2026-09-24 — v1.41 Verification Moves to the Host CLOSED; its outcome block and footer carry the close, and `milestones/v1.41-CLOSE-RECORD.md` is the full record)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** Phase 207.1 — Address v1.41 tech debt, COMPLETE 2026-09-24 (verifier passed 22/22); v1.41 is ready for its milestone close. v1.41 — all six phases (202–207) complete 2026-09-23. Phase 207 CLOSED: `3.1.0b1` in both sub-repos in one commit pair on top of a local merge of `origin/beta` (unpushed — the ship PR publishes), wiki record live at `13571d2`. Done since: `/gsd-secure-phase 206` (`d5dfe54d`), `/gsd-secure-phase 207` (`6326b92e`), WR-01 (wiki `13571d2`, pushed 2026-09-23T20:25:36Z) and the close-time `/gsd-audit-milestone` (`4bab20c9`, status `tech_debt`). Outstanding before the close: Phase 207.1 (the audit's tech debt), then a hand-archived close. Dual-repo lockstep on branch `v1.41-verification-to-host` in all three repos. **v1.40 is still unmerged** — `henols/firestarter#91`, `henols/firestarter_app#72`, `henols/firestarter_fw#70`.
+**Current focus:** v1.41 CLOSED 2026-09-24 — nothing shipped. Next: `/gsd-ship` (operator-gated). Before it: decide the uncommitted Nyquist edit in `.planning/config.json`, settle the unrelated working-tree edits, rebuild local `beta` from `origin/beta`, and expect a `CLAUDE.md` conflict on the meta PR (`beta` carries #97). Then `/gsd-new-milestone`. Phases continue at **208**.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,11 +235,11 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: 207.1 (Address v1.41 tech debt) — COMPLETE
-Plan: 7 of 7
-Status: Complete 2026-09-24 — all 7 plans executed, verifier passed 22/22; code review 0 critical / 3 warning / 6 info (advisory, `207.1-REVIEW.md`)
-Last activity: 2026-09-24 — Phase 207.1 complete (plan 06: 205 secured in the main session; plan 07: gitlinks and closing ledger)
-Next: **v1.41 milestone close** — `/gsd-secure-phase 207.1` is owed (security enforcement is on); settle `207.1-REVIEW.md` WR-01..03 (`/gsd-code-review 207.1 --fix`, or file them); advance both gitlinks over the parallel session's CLAUDE.md commits (app `b8b920c`, fw `dbdf9c8`); then `/gsd-audit-milestone` and `/gsd-complete-milestone`. No push until `/gsd-ship`.
+Milestone: v1.41 Verification Moves to the Host — CLOSED 2026-09-24 (hand-archived; `override_closeout`; tagged `v1.41`, bare)
+Phase: none active — 202–207.1 archived to `.planning/milestones/v1.41-phases/`
+Status: Milestone complete — 34/34 requirements, 7/7 phases with passing VERIFICATION.md and verified SECURITY.md; override on stale phase digests (D-19) and three open 207.1 review warnings, all three filed as todos
+Last activity: 2026-09-24 — v1.41 milestone close (record: `milestones/v1.41-CLOSE-RECORD.md`)
+Next: **`/gsd-ship`** (operator-gated; nothing from v1.41 is on any remote), then `/gsd-new-milestone` at phase **208**. No push until `/gsd-ship`.
 
 ## Roadmap Summary (v1.38)
 
@@ -1143,6 +1143,84 @@ not hold (the v1.22 C-5 overclaim class).
 gate-hardening v1.23 left OPEN (fail-open `tools/check_mypy_watermark.py` + 69 hidden inherited
 errors → `firestarter_app`'s primary `ci` job is RED), and 999.15 / gh#8 dev-tools channel gating.
 Plus the owed gh#12 outward follow-up, behind operator wording review.
+
+## Deferred Items — disclosed at v1.41 milestone close (2026-09-24)
+
+`gsd_run query audit-open` reported **88 open items** before the v1.41 close and **91** after it.
+**Every one is disclosed here and NONE is suppressed.** `gsd_run query audit-open acknowledge` was
+deliberately not run: it destroys the artifacts it annotates (backlog **999.49**). This table is a
+**disclosure record, not a suppression mechanism** — every item resurfaces at the next `audit-open`,
+which is honest, because they are all still open. `acknowledged.total` reads **0**, as it has at every
+close since v1.23.
+
+**Three of the 91 were filed by this close, not inherited.** Phase 207.1's code review raised three
+warnings and the phase closed with none filed — the same gap the v1.40 close found with Phase 200's
+CR-01. The close filed them as `todos/pending/2026-09-24-lease-drain-failure-leaves-dead-link-leased.md`
+(WR-02, major), `todos/pending/2026-09-24-update-version-set-version-ignores-beta-mode.md` (WR-03,
+major, needs an operator disposition) and `todos/pending/2026-09-24-d03-comment-names-one-of-two-runs1-routes.md`
+(WR-01, minor). None of the other 88 originates in v1.41; the oldest UAT gap is Phase 08, archived at v1.2.
+
+**Treat 91 as a floor.** The scanner under-reported at the v1.39 and v1.40 closes. Phase 205's own
+`deferred-items.md` (now under `milestones/v1.41-phases/205-…/`) holds three entries, all
+`status: resolved` in plan 205-06, so its absence from the table is correct this time.
+
+**Also open, and outside the scanner's categories:** the uncommitted `workflow.nyquist_validation: true`
+edit in `.planning/config.json` (`HEAD` says `false`). The v1.41 re-audit asked for it to be committed
+or reverted; the close did neither, because that is the operator's decision, and did not stage it.
+
+| Category | Item | Status | Disclosed At | Milestone |
+|----------|------|--------|--------------|-----------|
+| debug_sessions | knowledge-base | unknown | 2026-09-24 | v1.41 |
+| debug_sessions | w27c512-devtest-all-bad | investigating | 2026-09-24 | v1.41 |
+| quick_tasks | 260820-a7w-make-the-flash-limit-guards-to-be-the-ac | unknown | 2026-09-24 | v1.41 |
+| quick_tasks | 260916-nbb-capture-the-actual-error-and-warn-log-lines-the-host-app-and | unknown | 2026-09-24 | v1.41 |
+| uat_gaps | Phase 191/191-UAT.md (archived v1.38) | passed — 0 open scenario(s) | 2026-09-24 | v1.41 |
+| uat_gaps | Phase 186/186-UAT.md (archived v1.37) | passed — 0 open scenario(s) | 2026-09-24 | v1.41 |
+| uat_gaps | Phase 43/43-HUMAN-UAT.md (archived v1.8) | partial — 2 open scenario(s) | 2026-09-24 | v1.41 |
+| uat_gaps | Phase 31/31-HUMAN-UAT.md (archived v1.7) | partial — 4 open scenario(s) | 2026-09-24 | v1.41 |
+| uat_gaps | Phase 34/34-HUMAN-UAT.md (archived v1.7) | partial — 3 open scenario(s) | 2026-09-24 | v1.41 |
+| uat_gaps | Phase 28/28-HUMAN-UAT.md (archived v1.6) | partial — 1 open scenario(s) | 2026-09-24 | v1.41 |
+| uat_gaps | Phase 30/30-HUMAN-UAT.md (archived v1.6) | passed — 2 open scenario(s) | 2026-09-24 | v1.41 |
+| uat_gaps | Phase 20/20-HUMAN-UAT.md (archived v1.4) | passed — 0 open scenario(s) | 2026-09-24 | v1.41 |
+| uat_gaps | Phase 08/08-HUMAN-UAT.md (archived v1.2) | partial — 0 open scenario(s) | 2026-09-24 | v1.41 |
+| verification_gaps | Phase 84/84-VERIFICATION.md (archived v1.15) | human_needed | 2026-09-24 | v1.41 |
+| verification_gaps | Phase 31/31-VERIFICATION.md (archived v1.7) | human_needed | 2026-09-24 | v1.41 |
+| verification_gaps | Phase 34/34-VERIFICATION.md (archived v1.7) | human_needed | 2026-09-24 | v1.41 |
+| verification_gaps | Phase 28/28-VERIFICATION.md (archived v1.6) | human_needed | 2026-09-24 | v1.41 |
+| verification_gaps | Phase 08/08-VERIFICATION.md (archived v1.2) | human_needed | 2026-09-24 | v1.41 |
+| verification_gaps | Phase 09/09-VERIFICATION.md (archived v1.2) | human_needed | 2026-09-24 | v1.41 |
+| deferred_items | Phase 182/deferred-items.md (archived v1.37): Pre-existing `ruff check` failures in `firestarter_app/tools/audit_coverage_matrix.py`, `firestarter_app/tools/build_devtest_issue_corpus.py`, `firest… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 183/deferred-items.md (archived v1.37): `make_write_handle_with_data()`'s inline comment in `firestarter/test/native/avr/test_val_5v_page/test_val_5v_page.cpp` (line ~222) claims "flash_5v_p… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 181/deferred-items.md (archived v1.36): `tests/test_blast_radius_invariance.py:565` fails `ruff format --check` (a wrapped multi-line expression the formatter would reshape differently). sta… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 168/deferred-items.md (archived v1.35): Plan 168-04, Task 1 — two orphaned C++ fixture files Deleting `firestarter_app/tests/test_dispatch_mirror.py` (its sole consumer) leaves two committed… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): `test_diagnostic_range_unchanged_with_phase_151_comment` → `test_diagnostic_range_unchanged_with_stated_choice_comment`; `_PHASE_151_LOOKBACK_CHARS` →… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): `assert "Phase 151" in preceding_text` → `assert not _missing_stated_choice_phrases(...)` over a **four-phrase conjunction**, ALL of which must be pre… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): **Proven strictly stronger, not merely different.** Against a planted `// Phase 151 touched this block.` replacing the whole comment block, the OLD pi… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): A committed checkable negative was added as **leg 5** (`test_non_vacuity_control_reports_absent_stated_choice`), mirroring the module's own leg-4 synt… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): Original filing (kept verbatim for the record) `firestarter_app/tests/test_parse_gate_admission.py::test_diagnostic_range_unchanged_with_phase_151_com… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): D9 — Pre-existing `ruff check` findings in `firestarter_app/tools` (unrelated to the sweep) **Found during:** Plan 10, Task 2 (ruff sanity check after… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): before plan 07 — **203** | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): after plan 07 — **152** | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): `#`-comment lines carrying a D-01 token NOT adjacent to the opener — **313** — **236** — outside the survey regex (it requires adjacency); 77 fell inc… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 154/deferred-items.md (archived v1.33): Token occurrences on non-`#` lines (docstrings + string literals) — **335** across 22 files — **335**, unchanged — outside the corpus by definition; p… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 153/deferred-items.md (archived v1.32): 153-10 - **`ruff check .` (whole-tree, run to confirm plan-scoped files) surfaces 4 pre-existing errors in `tools/` files not touched by this plan**: … | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 133/deferred-items.md (archived v1.30): From plan 133-06 - **Pre-existing `ruff check` failures in three unrelated files**, discovered while running the plan's phase-wide verification comman… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 121/deferred-items.md (archived v1.22): 121-08 - **Pre-existing untracked file in the firmware submodule**: `git -C /workspaces/firestarter status --porcelain` shows `?? firestarter/include/… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 111/deferred-items.md (archived v1.21): 111-01: Pre-existing ruff F841 unmasked in test_diagnostic_report.py (out of scope) - **File:** `firestarter_app/tests/test_diagnostic_report.py:519` … | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 111/deferred-items.md (archived v1.21): 111-UAT: Before/after write-step voltage capture → Phase 112 re-verify - **What:** SC2's destructive-run half — confirm `vpp_before_mv`/`vpp_after_mv`… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 106/deferred-items.md (archived v1.20): From Plan 106-01 - **`tests/test_audit_coverage_matrix.py::TestAuditCoverageMatrix::test_golden_file_matches`** — FAILS identically on a clean pre-106… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 102/deferred-items.md (archived v1.19): Out-of-scope pre-existing failure (not fixed — scope boundary) **`tests/test_audit_coverage_matrix.py::TestAuditCoverageMatrix::test_golden_file_match… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 98/deferred-items.md (archived v1.18): Out-of-scope pre-existing test failure - **Test:** `tests/test_audit_coverage_matrix.py::TestAuditCoverageMatrix::test_golden_file_matches` - **Found … | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 98/deferred-items.md (archived v1.18): Plan 98-05 — pre-existing blanket `ruff check .` failures (out of scope) - **Found during:** Plan 98-05 Task 3 (full-repo `ruff check .` run as a scop… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 99/deferred-items.md (archived v1.18): Pre-existing ruff findings in check_ledger.py / test_check_ledger.py (out of scope) **Found during:** Task 3 (REFACTOR) ruff-clean verification. **Fin… | open | 2026-09-24 | v1.41 |
+| deferred_items | Phase 79/deferred-items.md (archived v1.14): Pre-existing ruff errors/format issues in firestarter_app (py39 target) Confirmed pre-existing by stashing the 79-02 changes — these 4 errors and 4 fo… | open | 2026-09-24 | v1.41 |
+| todos | 2026-06-24-skip-vpp-error-and-warning-checks-when-vpp-unused-on-reads.md | (presence-only) | 2026-09-24 | v1.41 |
+| todos | 2026-08-27-safe-state-outputs-on-powerup-and-fault.md | (presence-only) | 2026-09-24 | v1.41 |
+| todos | 2026-08-30-dev-test-flag-to-auto-file-issue.md | (presence-only) | 2026-09-24 | v1.41 |
+| todos | 2026-08-30-sync-to-subrepos-self-diff-asserts-nothing.md | (presence-only) | 2026-09-24 | v1.41 |
+| todos | 2026-08-31-jp4-third-position-vpp-destination-pin.md | (presence-only) | 2026-09-24 | v1.41 |
+| todos |  | (presence-only) | 2026-09-24 | v1.41 |
+| todos | … and 41 more pending todos — the scanner caps this list at 5 per scan; the 3 filed by this close are named above the table | (presence-only) | 2026-09-24 | v1.41 |
 
 ## Deferred Items — disclosed at v1.40 milestone close (2026-09-20)
 
@@ -3717,8 +3795,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-24T18:45:55.000Z
-**Stopped at:** Phase 207.1 complete — all phases complete
+**Last session:** 2026-09-24T23:00:00.000Z
+**Stopped at:** v1.41 CLOSED and archived 2026-09-24 — next is /gsd-ship
+**Was (superseded, retained for continuity):** Phase 207.1 complete — all phases complete
 **Was (superseded, retained for continuity):** Phase 207.1 planned — 7 plans in 5 waves
 **Was (superseded, retained for continuity):** Phase 207 complete — all phases complete
 **Was (superseded, retained for continuity):** Phase 207 planned, ready to execute
@@ -3816,7 +3895,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/phases/207.1-address-v1-41-tech-debt/207.1-CONTEXT.md
+**Resume file:** .planning/milestones/v1.41-phases/207.1-address-v1-41-tech-debt/207.1-CONTEXT.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing

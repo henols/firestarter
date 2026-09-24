@@ -3,7 +3,7 @@ created: 2026-09-20T00:00:00Z
 title: CompareAccumulator.feed()'s post-offset empty check is unreachable
 area: host
 resolves_phase: null
-source: .planning/phases/202-one-comparison-engine-on-the-host/202-REVIEW.md § IN-01
+source: .planning/milestones/v1.41-phases/202-one-comparison-engine-on-the-host/202-REVIEW.md § IN-01
 files:
 
   - firestarter_app/firestarter/compare.py (CompareAccumulator.feed, the `if not offs:` branch after the per-offset comprehension)

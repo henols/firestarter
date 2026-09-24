@@ -3,7 +3,7 @@ created: 2026-09-20T00:00:00Z
 title: The 3.0 s read-abort acceptance window is untested at its true failure boundary
 area: host
 resolves_phase: null
-source: .planning/phases/202-one-comparison-engine-on-the-host/202-REVIEW.md § WR-01
+source: .planning/milestones/v1.41-phases/202-one-comparison-engine-on-the-host/202-REVIEW.md § WR-01
 files:
 
   - firestarter_app/firestarter/eprom_operations.py (READ_ABORT_ACCEPTANCE_WINDOW_S, and _drive_region_compare's four-condition D-08 discrimination)

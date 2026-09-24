@@ -3,7 +3,7 @@ created: 2026-09-20T00:00:00Z
 title: A transport failure during dev test's blank-check step reads as VERDICT_BAD, not a hardware verdict
 area: host
 resolves_phase: 206
-source: .planning/phases/202-one-comparison-engine-on-the-host/202-REVIEW.md § WR-02
+source: .planning/milestones/v1.41-phases/202-one-comparison-engine-on-the-host/202-REVIEW.md § WR-02
 files:
   - firestarter_app/firestarter/chip_test.py (_dispatch_step's OP_BLANK_CHECK arm, and the comment that defers the 3-way verdict to phase 206)
   - firestarter_app/firestarter/eprom_operations.py (check_eprom_blank's 0/1/2 return contract)
