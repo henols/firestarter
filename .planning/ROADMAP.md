@@ -496,7 +496,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 207.1-03-PLAN.md — D-12 format-only `update_version.py`, D-03 / D-09 keep-decision comments, the CI-equivalent app gate on Python 3.11, and the two folded todos closed
+- [x] 207.1-03-PLAN.md — D-12 format-only `update_version.py`, D-03 / D-09 keep-decision comments, the CI-equivalent app gate on Python 3.11, and the two folded todos closed — **done 2026-09-24: D-12 format-only `f8311ac` (AST-equal); D-03 / D-09 keep comments `5302f63` (AST-equal); CI-equivalent gate on Python 3.11: 2373 passed, 86.40 % coverage, 36 snapshots; todos closed `5b51463a`; SUMMARY `eadc8b8b`. Nothing pushed.**
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
