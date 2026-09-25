@@ -121,12 +121,41 @@ Which phases cover which requirements. Filled by the roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| PROBE-01 | Phase 208 | Pending |
+| PROBE-02 | Phase 208 | Pending |
+| PROBE-03 | Phase 208 | Pending |
+| JMP-01 | Phase 209 | Pending |
+| JMP-02 | Phase 209 | Pending |
+| JMP-03 | Phase 209 | Pending |
+| JMP-04 | Phase 209 | Pending |
+| JMP-05 | Phase 209 | Pending |
+| JMP-06 | Phase 209 | Pending |
+| JMP-07 | Phase 209 | Pending |
+| JMP-08 | Phase 209 | Pending |
+| INFO-01 | Phase 209 | Pending |
+| INFO-02 | Phase 209 | Pending |
+| INFO-03 | Phase 209 | Pending |
+| DBSAFE-01 | Phase 210 | Pending |
+| DBSAFE-02 | Phase 210 | Pending |
+| DBSAFE-03 | Phase 210 | Pending |
+| DBSAFE-04 | Phase 210 | Pending |
+| PGM-01 | Phase 211 | Pending |
+| PGM-02 | Phase 211 | Pending |
+| PGM-03 | Phase 211 | Pending |
+| PGM-04 | Phase 211 | Pending |
+| TMS-01 | Phase 212 | Pending |
+| TMS-02 | Phase 212 | Pending |
+| TMS-03 | Phase 212 | Pending |
+| JWIKI-01 | Phase 213 | Pending |
+| JWIKI-02 | Phase 213 | Pending |
+| JREL-01 | Phase 211 | Pending |
+| JREL-02 | Phase 211 | Pending |
 
 **Coverage:**
 
 - v1 requirements: 29 total
-- Mapped to phases: 0
-- Unmapped: 29 ⚠️
+- Mapped to phases: 29
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-25*

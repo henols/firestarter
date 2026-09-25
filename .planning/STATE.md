@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-09-25T08:16:34.500Z"
 last_activity: 2026-09-25
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -231,10 +231,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 208 (Bench evidence: Rev 2.0/2.1 and Rev 2.2 jumper probes) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-09-25 — Milestone v1.42 started
+Status: Roadmap created; ready to discuss/plan Phase 208
+Last activity: 2026-09-25 — v1.42 roadmap created (6 phases, 29 requirements)
 
 ## Roadmap Summary (v1.38)
 
