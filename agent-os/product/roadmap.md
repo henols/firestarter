@@ -1,8 +1,9 @@
 # Product Roadmap
 
-Current version: `3.1.0b1` in both sub-repos, published on the beta channel. The stable channel is
-still on the 2.0.x line (PyPI stable `2.0.9`). The operator alone decides when a 3.x stable release
-happens.
+Current version: `3.1.0b2` in both sub-repos, published on the beta channel 2026-09-25. The stable
+channel is still on the 2.0.x line: PyPI `2.0.9`, firmware `2.0.6` (2025-11-16). No stable 3.x tag
+has ever existed. The operator alone decides when a 3.x stable release happens; `RELEASING.md` in
+the meta repo is the runbook for it.
 
 ## Implemented
 
@@ -50,9 +51,11 @@ happens.
 
 **Release and docs**
 - Beta channel: a push to `beta` publishes a PyPI pre-release and a GitHub pre-release with a `.hex`
-  for each board. Stable channel: a push to `main`.
-- User documentation is on the `firestarter` GitHub wiki. Validated chips are in
-  `VALIDATED-EPROMS.md`.
+  for each board. **The stable channel does not publish from a push to `main`** — the version-bump
+  auto-commit is rejected by the `Protect main` ruleset and aborts the job. See `RELEASING.md`.
+- User documentation is on the `firestarter` GitHub wiki, plus `firestarter_app/CHANGELOG.md`.
+  Validated chips are in `VALIDATED-EPROMS.md`; all 11 rows are 3.0.0bNN evidence and none has been
+  re-run on the 3.1.x line.
 
 ## In Progress — Jumper display correctness and the 2716 class
 
@@ -72,8 +75,9 @@ happens.
    2516/2532/2716 datasheets go into the repo. The `DIP24_2716` pulse width comes from the datasheet.
 5. Firmware `0x0B` fix for 24-pin parts with VPP on pin 21. PGM is active high, and VPP = VCC during
    read. Today the polarity is inverted for all `DIP24_2716` rows. Native trace tests must prove the
-   fix before any write to a real part. The host refuses the write on older firmware. Version
-   `3.1.0b2`.
+   fix before any write to a real part. The host refuses the write on older firmware. **Not in
+   `3.1.0b2`** — that release carried the jumper-display work only, so this lands in `3.1.0b3` or
+   later.
 6. TMS2516 bench on Rev 2.2: N≥3 stable reads, then a bit-masked write. The measured VPP is recorded
    against the 24 V minimum.
 7. Per-revision jumper tables and shield photographs on the wiki.
@@ -116,6 +120,12 @@ happens.
 - `dev test` session reuse. It measured 50–80 s saved per run.
 - An OLED status display on the RURP connector (gh#37).
 - Python 3.11 reaches EOL on 2027-10-31. The version guard does not run from the console script.
-- A path for the stable-release version bump. The `Protect main` rulesets block it in both
-  sub-repos.
+- A path for the stable-release version bump. **Observed, not predicted:** the auto-commit is
+  rejected with `GH013` in `firestarter_app` run `34784468070`, and the identical `Protect main`
+  ruleset is on all **three** repos, the meta repo included. Because the bump is upstream of the
+  publish steps, a push to `main` in `firestarter_fw` currently publishes nothing rather than
+  cutting a surprise stable release — and that protection disappears the moment the bump is
+  unblocked. Options are compared in `RELEASING.md` §1.5.
 - Wiki content that is not written yet: a compatibility matrix and pages for each family.
+- Reverse firmware-pairing check: a CLI newer than the firmware on the board. The forward direction
+  is gated by `firestarter/fw_release_gate.py`; this direction is not.
