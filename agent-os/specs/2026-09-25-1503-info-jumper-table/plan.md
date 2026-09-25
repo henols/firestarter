@@ -225,11 +225,14 @@ The plan was executed. The points below record where the result differs from the
 
 - **Block titles** are "Rev 0 & 1", "Rev 2.0 & 2.1" and "Rev 2.2 & 2.3", not "0/1", "2.0/2.1" and
   "2.2/2.3". So the printer can use `f"Rev {key}"` for all three blocks.
-- **Drawings in place of glyph lines (operator request, after Task 3).** Each block draws its headers
-  the way they sit on the board, with the silkscreen pin names. A jumper (`═` or `║`) is drawn only
-  where the chip needs one, with a one-line instruction ("Bridge B to A13.", "Fit the jumper on
-  the 28-pin pole."). The layouts come from the Phase 182 photos (see `visuals/`). They are not yet
-  confirmed on the boards. Each block is `{"jumpers", "drawing", "notes"}`.
+- **Rev 2.2/2.3 JP4 glyph (operator request).** Drawings of all headers were built (`f0e23b7`) and
+  then reverted at the operator's request: the one-line glyphs are kept for Rev 0/1 and Rev 2.0/2.1.
+  The Rev 2.2/2.3 JP4 gets a two-line glyph in the same cap language. It shows the L of pads as they
+  sit with the board title upright: the square common pad at the corner, the 28-pin pole to its left
+  and the 24-pin pole below it. `(● ■)` over `●` is the 28-pin pole, `●┌■┐` over `└●┘` is the
+  24-pin pole, and `● ■` over `●` is no jumper. The pole labels are "28-pin pole" and "24-pin
+  pole". The first version was drawn a quarter turn counter-clockwise, and the operator corrected
+  it from the board.
 - **JP5 note.** DIP32_27C801 (pin 1 = A19) gets a note in both Rev 2.x blocks. The note quotes
   "Cut for ROMs with A19 on P1".
 - **Task 4/5 modules.** They are `firestarter/vpp_display.py` (`shows_programming_vpp`) and
@@ -246,7 +249,7 @@ Commits:
 | Repo | Commits |
 |---|---|
 | meta (`experiment/agent-os`) | `58e4e785` spec, `17ed91c4` CLAUDE.md |
-| `firestarter_app` (`v1.42-jumper-display`) | `49cf199` table + INFO, `f0e23b7` drawings, `580ebc3` clean-up |
+| `firestarter_app` (`v1.42-jumper-display`) | `49cf199` table + INFO, `f0e23b7` drawings (reverted), `580ebc3` clean-up, Rev 2.2 glyph (not committed) |
 | `firestarter_fw` (`v1.42-jumper-display`) | `296b0a8` routing docs, `6db9688` comment clean-up |
 
 Verification: ruff, format and mypy (new modules) are clean. 2441 tests pass on Python 3.11, and a
@@ -255,4 +258,3 @@ fresh-clone run passes too. STE100 lint: 0 violations. Nothing is pushed.
 Open:
 
 - PROBE-01. It corrects the 7 `probe_pending` pin maps.
-- A check of the drawn header layouts on the Rev 0, Rev 2.0 and Rev 2.2 boards.
