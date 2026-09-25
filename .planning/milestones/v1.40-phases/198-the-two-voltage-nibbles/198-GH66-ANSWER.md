@@ -6,7 +6,9 @@ internal project bookkeeping and must never be pasted onto the issue.**
 
 ## Status
 
-**DRAFT — APPROVED, HELD PENDING THE BETA CUT. NOT POSTED.**
+**POSTED 2026-09-20 — the hold is discharged.** (Was: DRAFT — APPROVED, HELD PENDING
+THE BETA CUT, NOT POSTED.) See "HOLD RELEASED — POSTED" at the end of this file for the
+comment URL and the version named.
 
 Operator decision recorded 2026-09-18, carried forward from the ruling on gh#70 without
 re-asking:
@@ -21,7 +23,7 @@ re-asking:
    the comment body is true at the moment it posts — the identical reasoning the operator applied
    to gh#70.
 
-**Nothing has been posted.** See "Held-pending deferral" near the end of this file for what
+**Superseded — this has now been posted; see the final section of this file.** The original note read: "Nothing has been posted." See "Held-pending deferral" near the end of this file for what
 releases this hold and exactly what to do at that point.
 
 ## Internal provenance (project bookkeeping only — do not post)
@@ -117,3 +119,18 @@ instructions for this draft specifically so either file is a complete entry poin
   to the milestone close, to be satisfied when the comment above actually posts, per the steps
   above. The artifact carrying it is this file:
   `.planning/phases/198-the-two-voltage-nibbles/198-GH66-ANSWER.md`.
+
+---
+
+## HOLD RELEASED — POSTED 2026-09-20
+
+**The hold described above is discharged. This draft's `## Comment Body` was posted to gh#66.**
+
+- **Comment URL:** https://github.com/henols/firestarter/issues/66#issuecomment-5749346372
+- **Version named:** `firestarter` 3.0.0b49 — the release in which the correction first shipped, verified
+  against the published artifact rather than assumed.
+- **Requirement VOLT-04:** marked Complete in `.planning/REQUIREMENTS.md` and
+  `.planning/milestones/v1.40-REQUIREMENTS.md`.
+- **Released by:** the v1.40 beta cut — `firestarter_app` 3.0.0b49 (on PyPI) and
+  `firestarter_fw` 3.0.0b34 (pre-release, four `.hex` assets attached and verified).
+- The no-over-claim and no-attribution checks were re-run against the final posted text.
