@@ -20,6 +20,12 @@ Firestarter programs EPROM, Flash and SRAM devices. It uses an Arduino and the R
 1. **Python CLI** (`firestarter_app/`)
 2. **Arduino firmware** (`firestarter_fw/`)
 
+## Standards
+
+Before you change protocol, chip-database, firmware, host or test code, read the relevant standard
+in `agent-os/standards/` (index: `agent-os/standards/index.yml`). The submodule CLAUDE.md files
+point to these standards and do not repeat them.
+
 ## Writing Style (ASD-STE100)
 
 Use the `asd-ste100` skill when it is relevant.
