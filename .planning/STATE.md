@@ -5,8 +5,8 @@ milestone_name: Verification Moves to the Host (CLOSED 2026-09-24 — 34/34 requ
 current_phase: "207.1"
 current_phase_name: Address v1.41 tech debt
 status: milestone_complete
-stopped_at: v1.41 CLOSED and archived 2026-09-24 — next is /gsd-ship (operator-gated), then /gsd-new-milestone at phase 208
-last_updated: "2026-09-24T23:00:00.000Z"
+stopped_at: Milestone v1.41 summary generated 2026-09-25 (v1.41 CLOSED 2026-09-24) — next is /gsd-ship (operator-gated), then /gsd-new-milestone at phase 208
+last_updated: "2026-09-25T00:00:00.000Z"
 last_activity: 2026-09-24
 last_activity_desc: "Closed and hand-archived milestone v1.41 Verification Moves to the Host — 7 phases (202-207 plus 207.1), 36 plans, 95 tasks, 34/34 requirements, override_closeout. Archive at .planning/milestones/v1.41-{CLOSE-RECORD,ROADMAP,REQUIREMENTS}.md and v1.41-phases/. milestone.complete and audit-open acknowledge both deliberately not run; 91 open artifacts disclosed by hand with 0 suppressed; 207.1-REVIEW WR-01..03 filed as todos."
 progress:
@@ -3795,8 +3795,9 @@ Bench cleanup done: `firestarter_app#43` (the misfiled `fm1608` report) closed w
 
 ## Session
 
-**Last session:** 2026-09-24T23:00:00.000Z
-**Stopped at:** v1.41 CLOSED and archived 2026-09-24 — next is /gsd-ship
+**Last session:** 2026-09-25T00:00:00.000Z
+**Stopped at:** Milestone v1.41 summary generated — next is /gsd-ship (operator-gated), then /gsd-new-milestone at phase 208
+**Was (superseded, retained for continuity):** v1.41 CLOSED and archived 2026-09-24 — next is /gsd-ship
 **Was (superseded, retained for continuity):** Phase 207.1 complete — all phases complete
 **Was (superseded, retained for continuity):** Phase 207.1 planned — 7 plans in 5 waves
 **Was (superseded, retained for continuity):** Phase 207 complete — all phases complete
@@ -3895,7 +3896,7 @@ all eight traceability rows now read Complete. Firmware HEAD `2ccda8d`, tree cle
 **Handoffs to Phase 159 (REMAP-01..05):** the citation line-shifts this phase created, the gitlink sha pairs
 (`firestarter` `2ad5b322` -> `2ccda8d`), and the close-blocking `.planning/milestones/v1.33-artifacts/CITATIONS-STALE.md`, all left
 byte-unchanged and recorded as residuals in `158-07-SUMMARY.md`.
-**Resume file:** .planning/milestones/v1.41-phases/207.1-address-v1-41-tech-debt/207.1-CONTEXT.md
+**Resume file:** .planning/reports/MILESTONE_SUMMARY-v1.41.md
 
 **Was (superseded, retained for continuity):** Phase 157 Plan 02 complete -- `firestarter/src/json_parser.c`'s `key_parsers[]`
 rewritten as a compiler-derived `{key, clamp, offset, width}` field table (`19df431`), replacing
