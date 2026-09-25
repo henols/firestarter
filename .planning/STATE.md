@@ -5,10 +5,10 @@ milestone_name: Verification Moves to the Host (CLOSED 2026-09-24 — 34/34 requ
 current_phase: "207.1"
 current_phase_name: Address v1.41 tech debt
 status: milestone_complete
-stopped_at: Milestone v1.41 summary generated 2026-09-25 (v1.41 CLOSED 2026-09-24) — next is /gsd-ship (operator-gated), then /gsd-new-milestone at phase 208
+stopped_at: v1.41 ship PRs opened 2026-09-25 — meta #98, app #77, fw #72 to beta; merge is operator-gated (merge commits, app+fw first, then meta; then push bare tag v1.41), then /gsd-new-milestone at phase 208
 last_updated: "2026-09-25T00:00:00.000Z"
-last_activity: 2026-09-24
-last_activity_desc: "Closed and hand-archived milestone v1.41 Verification Moves to the Host — 7 phases (202-207 plus 207.1), 36 plans, 95 tasks, 34/34 requirements, override_closeout. Archive at .planning/milestones/v1.41-{CLOSE-RECORD,ROADMAP,REQUIREMENTS}.md and v1.41-phases/. milestone.complete and audit-open acknowledge both deliberately not run; 91 open artifacts disclosed by hand with 0 suppressed; 207.1-REVIEW WR-01..03 filed as todos."
+last_activity: 2026-09-25
+last_activity_desc: "Opened the v1.41 ship PRs to beta: meta #98, app #77, fw #72. Both sub-repo publishers dry-run to 3.1.0b1. Not merged."
 progress:
   total_phases: 7
   completed_phases: 7
@@ -238,7 +238,7 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 Milestone: v1.41 Verification Moves to the Host — CLOSED 2026-09-24 (hand-archived; `override_closeout`; tagged `v1.41`, bare)
 Phase: none active — 202–207.1 archived to `.planning/milestones/v1.41-phases/`
 Status: Milestone complete — 34/34 requirements, 7/7 phases with passing VERIFICATION.md and verified SECURITY.md; override on stale phase digests (D-19) and three open 207.1 review warnings, all three filed as todos
-Last activity: 2026-09-24 — v1.41 milestone close (record: `milestones/v1.41-CLOSE-RECORD.md`)
+Last activity: 2026-09-25 — v1.41 ship: PRs open to beta — meta #98, app #77, fw #72 (2026-09-25); not merged, merge with merge commits, app+fw first
 Next: **`/gsd-ship`** (operator-gated; nothing from v1.41 is on any remote), then `/gsd-new-milestone` at phase **208**. No push until `/gsd-ship`.
 
 ## Roadmap Summary (v1.38)
