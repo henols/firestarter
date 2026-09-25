@@ -1,20 +1,16 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.41
-milestone_name: Verification Moves to the Host (CLOSED 2026-09-24 — 34/34 requirements, override_closeout, tagged v1.41 as a bare tag; NOT shipped — nothing is on any remote in any of the three repositories)
-current_phase: "207.1"
-current_phase_name: Address v1.41 tech debt
-status: milestone_complete
-stopped_at: v1.41 ship PRs opened 2026-09-25 — meta #98, app #77, fw #72 to beta; merge is operator-gated (merge commits, app+fw first, then meta; then push bare tag v1.41), then /gsd-new-milestone at phase 208
-last_updated: "2026-09-25T00:00:00.000Z"
+milestone: v1.42
+milestone_name: Jumper Display Correctness & Rev 2.2 3-Pin Header
+status: planning
+last_updated: "2026-09-25T08:16:34.500Z"
 last_activity: 2026-09-25
-last_activity_desc: "Opened the v1.41 ship PRs to beta: meta #98, app #77, fw #72. Both sub-repo publishers dry-run to 3.1.0b1. Not merged."
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 36
-  completed_plans: 36
-  percent: 100
+  total_phases: 6
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -27,7 +23,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-09-24 — v1.41 Verification Moves to the Host CLOSED; its outcome block and footer carry the close, and `milestones/v1.41-CLOSE-RECORD.md` is the full record)
 
 **Core value:** Algorithm-first dispatch — the minipro `protocol_id` (`algorithm`) is the single authoritative dispatch key end to end. **Corrected 2026-08-31 (Phase 168 close): the prior sentence here asserting a product-code-free milestone was false and is retracted.** It changes documentation, repository configuration and check tooling, plus a bounded, named set of product-source edits: the chip-database generator (`firestarter_app/tools/build_db.py`, one emitted-string repoint, D-14), its shipped output (`firestarter_app/firestarter/data/chip_database.json`, 9 rows regenerated, sha256-16 `ccbc8d2c4866a5af`), and two firmware source files that had a comment block deleted outright rather than repointed, per the no-comments rule (`firestarter/include/proto_constants.h`'s provenance header; `firestarter/test/native/avr/test_loop_eprom_v131/test_loop_eprom_v131.cpp`'s doc-citing block, whose substantive content is preserved in `168-07-SUMMARY.md` rather than in source). Narrower in kind, also touched: comment/docstring-only edits repointing a retired `doc/` reference in five `firestarter_app/firestarter/` modules and two `firestarter_app/tools/` scripts, with no behavior changed in any of them (`168-06-SUMMARY.md`). None of this touches dispatch logic, chip *values*, or the algorithm-first invariant itself — the core value is behaviorally untouched — but it is product source, and the prior blanket claim otherwise was the exact kind of false statement this milestone exists to catch, in its own state file. The milestone's own value is a different one: **one front door, one documentation home, and no page that claims more than the code can back.**
-**Current focus:** v1.41 CLOSED 2026-09-24 — nothing shipped. Next: `/gsd-ship` (operator-gated). Before it: rebuild local `beta` from `origin/beta`, and resolve the predicted merge conflicts (meta `REQUIREMENTS.md` / `STATE.md`, app `__init__.py`) in favour of the milestone branch — no `CLAUDE.md` conflict, both sides hold the same blob. Then `/gsd-new-milestone`. Phases continue at **208**.
+**Current focus:** v1.42 Jumper Display Correctness & Rev 2.2 3-Pin Header — ACTIVATED 2026-09-25, defining requirements. Phases continue at **208**. v1.41 SHIPPED to `beta` 2026-09-25 (meta #98, app #77, fw #72 merged; PyPI `3.1.0b1`); the bare tag `v1.41` is still local-only, and pushing it is operator-gated.
 
 **v1.35 Documentation Consolidation & Wiki Migration** — ACTIVATED 2026-08-30. Phases continue at **167**
 (v1.34 ran 160–166; the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every
@@ -235,11 +231,10 @@ the reporter for a fresh run — now answerable, because F-01's fix makes that r
 
 ## Current Position
 
-Milestone: v1.41 Verification Moves to the Host — CLOSED 2026-09-24 (hand-archived; `override_closeout`; tagged `v1.41`, bare)
-Phase: none active — 202–207.1 archived to `.planning/milestones/v1.41-phases/`
-Status: Milestone complete — 34/34 requirements, 7/7 phases with passing VERIFICATION.md and verified SECURITY.md; override on stale phase digests (D-19) and three open 207.1 review warnings, all three filed as todos
-Last activity: 2026-09-25 — v1.41 ship: PRs open to beta — meta #98, app #77, fw #72 (2026-09-25); not merged, merge with merge commits, app+fw first
-Next: **`/gsd-ship`** (operator-gated; nothing from v1.41 is on any remote), then `/gsd-new-milestone` at phase **208**. No push until `/gsd-ship`.
+Phase: 208 (Bench evidence: Rev 2.0/2.1 and Rev 2.2 jumper probes) — not started
+Plan: —
+Status: Roadmap created; ready to discuss/plan Phase 208
+Last activity: 2026-09-25 — v1.42 roadmap created (6 phases, 29 requirements)
 
 ## Roadmap Summary (v1.38)
 

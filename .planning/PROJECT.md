@@ -38,6 +38,76 @@
 **v1.30 shipped:** 2026-08-05 (SDP Surface Retirement & Behavioral Lock Proof — 7 phases (131–134, 136, 136.1, 137), 48 plans, 125 tasks; **55/56 requirements, CLOSE-06 held open by design**; host-only, no firmware change. Retired v1.22's unverifiable standalone `dev sdp <chip> enable|disable` and moved the proof into a six-step `dev test` leg whose oracle is read-back equality against a baseline pattern, never an exit code; hardened `check_mypy_watermark.py` from fail-open to fail-closed and certified `firestarter_app`'s primary `ci` job GREEN for the first time in two months (run `30856059940`, mypy 32 against an unratcheted watermark of 35); landed gh#8's stable-channel `dev` narrowing. **Phase 135 (`write --sdp-relock`) deferred out to Backlog 999.28** by operator decision, number not reused — so v1.30 ships the deletion and the behavioral proof and **withdraws** the deliberate-protection surface with **no replacement** (RELOCK-01…06 left v1 scope, 56 → 50 reqs; RELOCK-07 re-homed to Phase 137). Evidence ceiling honoured throughout: **no AT28C part in inventory, no hardware ran** — emission, plan-derivation and read-back-comparison logic are proven; the causal claim "the lock inhibited the write" is not, and did not gate the close. Seventh consecutive `override_closeout`. **⚠ `firestarter_app`'s `gsd/v1.30-sdp-surface-retirement` was never merged to `origin/beta`** — the PR was staged but not opened; v1.31 Phase 138 lands it. See `.planning/MILESTONES.md` §v1.30.)
 
 **v1.31 shipped:** 2026-08-18 (27C Programming-Algorithm Fidelity — 9 phases (138–146), 74 plans, 164 tasks; **45/45 v1 requirements**; firmware-touching, dual-repo lockstep. Implements [gh#15](https://github.com/henols/firestarter_prom/issues/15) **as corrected, not as filed** — two wrong numbers and one inverted premise, all three corrected *publicly and before implementation* (comment `#5233463320`): `0x0B`'s pulse is **500 µs**, not `50000 us`; pulse width is a **database datum**, not a per-protocol constant (re-derived live through the production parser — 170/127/32 chips); and the safe 32-bit delay helper is for the overprogram pulse, not any bare pulse. Delivered: **one shared per-byte pulse-to-verify loop** driven by a `const` PROGMEM `eprom_params_t` table keyed on `protocol_id` (**D-01** — protocol owns *shape*, the database owns the *pulse*), **not** gh#15's three state machines; fixed-width pulses that never grow between attempts; hard-fail at `max_pulses` reporting the failing **address and pulse count**; one shared `eprom_hv_route_mask()` with every **error** exit disabling every HV route through a single-exit wrapper; `write --pulse-us N` bounded 1..65535 and pre-validated before a serial byte, riding the existing wire field with **no new DB field and no second algorithm selector**; plus a host long-write timeout fix and intra-block progress, scoped to the `leonardo` class only — on `SERIAL_ON_IO` boards the emission is compiled out **structurally**, because a buffered progress frame there could displace a later `MSG_ERR_MAX_PULSES` and convert a program failure into a transport timeout. **Bench-validated on real silicon:** three full 65536-byte write→read→verify cycles on a Winbond **W27C512** (`0xda08`), **Leonardo**, shield **Rev 2.0** — three distinct images, nine clean oracle cells, read stability N=3 at one SHA each, write timing consistent to **0.37 s**. A firmware defect this milestone itself introduced (Phase 141 deleted the only `CTRL_VPE_ENABLE` assert) failed the **first** bench cycle on byte 0; it was root-caused by a debug session, fixed, and **stands in the record with its cause** rather than being counted out. **Evidence Ceiling stands: the ~6.25 V program-VCC rail all four vendor algorithms assume is unreachable on every shield revision this project owns** — so this milestone claims **fidelity, not improvement**, with no comparative claim, no control run, and no datasheet-conformance claim in either direction. `0x08` (AM27C020) and `0x0B` (M2716/M2732) are **skipped-with-reason** with the missing parts named, never inferred from `0x07`. Twelve items carry forward with the literal phrase `no v1.31 owner`; **MERGE-05's +96 B leonardo band breach is open and un-adjudicated** with the operator as its named owner. Eighth consecutive `override_closeout` (9 carry-forward items, none originating in v1.31). Closed via **PRs to `beta` in all three repos, not direct merges**, per operator decision — meta tagged `v1.31`, gitlinks re-pinned; **no beta cut yet**, and stable stays operator-gated. See `.planning/MILESTONES.md` §v1.31.)
+## Current Milestone: v1.42 Jumper Display Correctness & Rev 2.2 3-Pin Header
+
+**Activated:** 2026-09-25 · **Phases continue at 208** (v1.41 ran 202–207 plus the inserted 207.1;
+the vacated **150** slot and the v1.24–v1.29 version slots stay unreused so every by-number
+cross-reference keeps resolving) · **Branch:** `v1.42-jumper-display` in all three repositories, cut
+from `origin/beta` after the v1.41 ship PRs (meta #98, app #77, fw #72) merged on 2026-09-25.
+
+**Goal:** `firestarter info` prints the jumper configuration each shield revision actually needs for
+the chip in question — including JP4's third (24-pin) position on Rev 2.2 and later — and the TI 2516
+becomes programmable through that position.
+
+**Why now.** The jumper block is the one part of `info` an operator acts on with a soldering iron or a
+jumper cap, and it is still derived from a pin-count heuristic
+(`firestarter_app/firestarter/ic_layout.py` `build_specifications`, the `has_vpp_pin_on_map` branch)
+that collapses 16 pin maps into three branches. The ground truth has been measured and sitting in
+`.planning/notes/jumper-display-ground-truth.md` since Phase 182 (2026-09-10): JP4 on Rev 2.2+ is a
+3-pad selector whose socket-facing pole exports socket pin 1 to socket pin 3 (a 28-pin part's pin 1)
+and whose periphery-facing pole exports it to socket pin 25 (a 24-pin part's pin 21). Nothing the tool
+prints reflects that. Known wrong output today: the 45 `DIP28_27512` chips (VPP on pin 22, pin 1 is
+A15) and the eight corrected 8 Mbit `DIP32_27C801` parts are told `JP4 = Closed`; the 24-pin VPP maps
+get no JP4 guidance at all; JP4's labels are copy-pasted JP3 text; and the Rev 2.0/2.1 block is
+labelled as if it covered the 3-pole revisions.
+
+**Target features:**
+
+- **Per-pin-map jumper derivation.** An explicit table keyed on the pin map (where it puts VPP, and
+  what it puts on socket pin 1), replacing the pin-count heuristic, with a fail-closed coverage test
+  over every pin map in `pinouts.json`. A "this jumper does not matter for this chip" line wherever
+  that is the truth.
+- **Correct revision blocks, all printed.** Rev 0/1 (JP1–JP3, corrected from the committed rev1 PDF
+  schematic — no bench probe), Rev 2.0/2.1 (2-pin JP4), Rev 2.2/2.3 (3-position JP4: 32 / 28 / 24-pin,
+  named by the operator-visible pole). Every block stays visible, because the shield revision cannot
+  be read reliably from the board. JP4 text is written to its own silkscreen rule, *"Only for ROMs with
+  VPP on P1"*, and never reproduces the two-state *"Open for 32 pin ROMs, Closed for 28 pin ROMs"*
+  clause.
+- **24-pin VPP on older shields (Backlog 999.55).** For parts whose VPP pin lands on socket pin 25,
+  `info` states that programming needs a Rev 2.2+ shield with JP4 in the 24-pin position. Write
+  behaviour is unchanged.
+- **TI 2516 support (seed `rev22-3pin-header-2516-family-support`).** A chip-database distinguisher
+  for the TI 25xx parts, produced by `build_db.py`, never hand-edited into `chip_database.json`;
+  confirm against the datasheet, and fix if wrong, which pin firmware protocol `0x0B` strobes for
+  PGM; bench-prove it on the operator's TMS2516 on a Rev 2.2 shield.
+- **Rev 2.0 JP4 probe.** An unpowered continuity probe on the operator's Rev 2.0 board settles where
+  its "Closed" pole goes — still `PROBE-PENDING` in the ground-truth note.
+- **`info` VPP label (Backlog 999.65).** `info` stops presenting a WP-pin voltage as a programming VPP
+  on 5V-only parts, and its "Can be erased" line stops contradicting the erase refusal.
+- **Wiki jumper tables (the other half of Backlog 999.58).** Per-revision jumper tables and
+  re-exported shield photographs on the `firestarter` wiki, matching what `info` prints.
+
+**Decisions taken at activation** (operator, 2026-09-25):
+
+- **D-1 — Display plus TI 2516 support.** Not display-only: the 3-pin work carries the database field
+  and the firmware `0x0B` strobe question through to silicon.
+- **D-2 — All revision blocks, split correctly.** No filtering by detected revision.
+- **D-3 — Info note only for unreachable 24-pin VPP** on Rev 0–2.1. No write gate, no confirm prompt.
+- **D-4 — Rev 0/1 corrected from the rev1 PDF**, not probed.
+- **D-5 — Bench part is a TMS2516.** No TMS2532 is available, so the 2532 row (`DIP24_2532`) is
+  covered by the database and display work only and must not be claimed as silicon-proven.
+
+**Measured starting state** (2026-09-25): TI rows are `TEXAS INSTRUMENTS 2516` on `DIP24_2716` and
+`TEXAS INSTRUMENTS 2532` on `DIP24_2532`, both `algorithm: 11` (`0x0B`), `vpp_mv: 25000`,
+`support_status: supported`; both pin maps declare `vpp-pin: [21]`. Rows with a non-zero VPP on a
+24-pin map: `DIP24_2716` 15, `DIP24_2732` 16, `DIP24_2532` 1, `DIP24_2816` 19, `DIP24_6116` 7 — the
+last two are the 999.65 display class, not programming VPPs, and are the first thing the derivation
+must not mistake for JP4 candidates.
+
+**Not in scope:** reading JP4 or JP5 state from the board (impossible — neither is sensed); a gate for
+the mirrored JP4 hazard (999.56, needs its own damage-capability trace); the TMS2532 on silicon; the
+255-row `DIP32_SST39SF040` A18-on-pin-1 remainder (999.59).
+
 ## v1.41 Archive: Verification Moves to the Host — Closed 2026-09-24 (closed, not shipped)
 
 **Outcome:** 7 phases (202–207 plus the inserted 207.1), 36 plans, 95 tasks, **34/34 requirements**,
@@ -2402,6 +2472,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+
+*Last updated: 2026-09-25 — **v1.42 Jumper Display Correctness & Rev 2.2 3-Pin Header ACTIVATED.** Phases continue at 208. `firestarter info`'s jumper block moves from a pin-count heuristic to a per-pin-map derivation; Rev 2.2+ JP4 gains its third (24-pin) position; the TI 2516 is carried through database, firmware `0x0B` and a TMS2516 bench run. Branch `v1.42-jumper-display` in all three repositories, cut from `origin/beta` after the v1.41 PRs merged.*
 
 *Last updated: 2026-09-24 — **v1.41 (Verification Moves to the Host) CLOSED**, 34/34 requirements, `override_closeout`, tagged `v1.41` — a bare tag that must never become a GitHub Release. 7 phases (202–207 plus the inserted 207.1), 36 plans, 95 tasks. **The Arduino stopped deciding whether a chip is blank or matches an image.** `verify` and `blank` send `COMMAND_READ` and compare on the host through one streaming engine, `firestarter/compare.py`, with a `classify_fingerprint` diagnosis instead of one address and exit codes 0 / 1 / 2 so a transport fault is not a mismatch; peak host memory for a full 512 KiB compare measured under 18 KB. **Ordering was the safety property and it held**: the host write guard (Phase 203) covers exactly the five protocol families the firmware write-init used to check, pinned by a test that fails if the set narrows or widens, and only then did Phase 205 remove the firmware pre-flights; `CMD_VERIFY` (6) and `CMD_BLANK_CHECK` (4) went in Phase 204 with their ordinals reserved, while `memory_verify_execute` and every in-algorithm verify survive under a source contract. Leonardo flash went **24134 → 23314 B**, and Phase 205 netted **−496 B flash / −4 B RAM** on each AVR target, every figure with its command. Two findings changed the work: FWCMD-05 was amended because `flash_util_verify_operation` can never raise `MSG_ERR_VERIFY`, and 205's Critical CR-01 (protocol `0x06` skipping the guard at a non-zero address — a silent overwrite on all 190 rows) was fixed inside the phase rather than carried as a risk window. The session lease was **kept on a measured 15.1 %** against a pre-registered 15.0 %, N=3 per arm on real silicon. Inserted Phase 207.1 dispositioned all 26 close-time audit items plus 202 WR-02 (14 fixed, 11 accepted, 2 closed on evidence). **It has not shipped** — 235 meta / 67 host / 18 firmware commits ahead of `origin/beta` — but both sub-repos read `3.1.0b1` at the tip against `3.0.0b51` / `3.0.0b35` on `beta`, so the version strings separate the two states this time. **The override is not about requirements**: all seven phase digests read `stale` in `init.manager` (D-19, accepted) and three Phase 207.1 code-review warnings are open — WR-02 a real edge-case lease defect, WR-03 a publish-path script that can make a stable bump by accident — all three filed as todos by the close. **Not claimed:** every hardware result is one Leonardo, one Rev 2.0 shield and one W27C512; the lease cleared its threshold by 0.1 point; the host guard is the only safety net against half-programming a non-blank UV part. Hand-archived; `milestone.complete` and `audit-open acknowledge` both deliberately not run — **91** open artifacts disclosed in `STATE.md` with **0** suppressed. Full record: [`milestones/v1.41-CLOSE-RECORD.md`](milestones/v1.41-CLOSE-RECORD.md). Prior footer retained below.*
 

@@ -1,178 +1,162 @@
-# Requirements: Firestarter — v1.41 Verification Moves to the Host
+# Requirements: Firestarter — v1.42 Jumper Display Correctness & Rev 2.2 3-Pin Header
 
-**Defined:** 2026-09-20
-**Milestone:** v1.41 — "The Arduino programs; the host decides whether it worked"
-**Core Value (this milestone):** Every comparison the product makes runs in one place, on the host,
-where it can say *why* a chip failed instead of naming one address — and the firmware keeps only the
-verification its programming algorithms cannot run without.
+**Defined:** 2026-09-25
+**Milestone:** v1.42 — "Tell the operator the jumper setting the board and the chip actually need"
+**Core Value (this milestone):** `firestarter info` prints, for every chip and every shield revision,
+the jumper configuration that the hardware actually requires — derived from where the chip's pin map
+puts VPP, never from its pin count — and the 24-pin parts that JP4's Rev 2.2 third position exists for
+are programmed with the polarity their datasheets specify.
 
-**Scope:** The host comparison path (`firestarter_app/firestarter/eprom_operations.py`,
-`cli_handlers.py`, `chip_test.py`, `diagnostic_report.py`), the firmware command surfaces and
-in-algorithm pre-flight blank checks (`firestarter_fw/src/firestarter.cpp`, `eprom_operations.cpp`,
-`proms/memory.cpp`, `proms/eprom.cpp`, `proms/flash_intel.cpp`, `proms/flash_nor_unlock.cpp`,
-`include/firestarter.h`, `include/memory_utils.h`), and a version bump in both repositories. No
-protocol dispatch changes beyond the retirement of two command ordinals. No chip database change.
+**Scope:** The host jumper display (`firestarter_app/firestarter/ic_layout.py`, `eprom_info.py`), the
+host bus-config guard (`database.py`), the generator (`firestarter_app/tools/build_db.py`,
+`tools/datasheet_overrides.json`, `tools/extra_chips.json`), the firmware `0x0B` write and read path
+for 24-pin VPP-on-pin-21 parts (`firestarter_fw/src/proms/memory.cpp`, `eprom.cpp`), a version bump in
+both repositories, bench evidence on the operator's Rev 2.0 and Rev 2.2 shields and TMS2516, and the
+`firestarter` wiki. No change to any other protocol's firmware path.
 
-**Provenance:** Pending todo
-[`2026-08-30-remove-cmd-verify-from-firmware-compare-in-app.md`](todos/pending/2026-08-30-remove-cmd-verify-from-firmware-compare-in-app.md)
-(filed 2026-08-30) scoped the verify half and named the constraint that governs this whole milestone:
-`memory_verify_execute` must survive, because `eprom.cpp` calls it for `VERIFY_PER_PULSE_PLUS_FINAL`.
-The blank-check half is provoked by
-[`2026-08-30-write-init-blank-check-is-whole-device.md`](todos/pending/2026-08-30-write-init-blank-check-is-whole-device.md)
-and by v1.40 Phase 201's review finding
-[`2026-09-20-blank-check-region-fails-open-on-start-greater-than-end.md`](todos/pending/2026-09-20-blank-check-region-fails-open-on-start-greater-than-end.md),
-which observed that the blank check's safety property was enforced in a different function in a
-different file from the one that needed it. Moving the whole check to the host settles that by
-removing the split rather than patching it. Seed
-[`dev-test-adaptive-sequencing`](seeds/dev-test-adaptive-sequencing.md) R4 is pulled in because this
-milestone provokes it: a pre-write blank check, a write and a `--verify` are three separate serial
-port opens under today's `EpromOperator.comm`-is-`None`-after-every-call shape.
+**Provenance:** Backlog 999.58 (the D-09 phase), 999.55 and 999.65; seed
+[`rev22-3pin-header-2516-family-support`](seeds/rev22-3pin-header-2516-family-support.md); todos
+[`fix-jp4-labels-and-rev2-revision-block`](todos/pending/fix-jp4-labels-and-rev2-revision-block.md) and
+[`2026-08-31-jp4-third-position-vpp-destination-pin`](todos/pending/2026-08-31-jp4-third-position-vpp-destination-pin.md);
+the Phase 182 ground truth in [`notes/jumper-display-ground-truth.md`](notes/jumper-display-ground-truth.md);
+and the activation research in [`research/SUMMARY.md`](research/SUMMARY.md), which **falsified the
+seed's premise** — the TMS2516 strobes on pin 18 like the Intel 2716, so no TI database distinguisher is
+needed — and found instead that firmware `0x0B` pulses the whole `DIP24_2716` class with inverted
+polarity.
 
-**Measured today:** the firmware's `memory_verify_execute` aborts at the first mismatching byte and
-reports one address. The host's `classify_fingerprint` / `_diff_offsets` in `chip_test.py` already
-name *why* a compare failed across four buckets and count total against bad — so `dev test` has been
-strictly more informative than `firestarter verify` since v1.21. Test surfaces that move with this
-change: **13 firmware test files, 17 app test files**, and the `protocol_branch_inventory.json`
-golden.
+## Decisions taken at activation (operator, 2026-09-25)
 
-## Decisions taken at activation (operator, 2026-09-20)
-
-| | Decision |
-|---|---|
-| **D-1** | **All of it, both halves.** The standalone `CMD_BLANK_CHECK` / `CMD_VERIFY` command surfaces AND the in-algorithm write-init and erase-end pre-flight blank checks leave the firmware. This retires `mem_util_blank_check_region` five weeks after Phase 201 created it, and re-lands the region property on the host. |
-| **D-2** | **The host pre-write blank check is exempt on erasable parts.** A part carrying `FLAG_CAN_ERASE` is erased immediately before the write, so the check has always passed trivially. Only UV parts pay the read. The consequence is accepted deliberately: with the device-side refusal gone, this host check is the whole safety net, with no second line of defence. Its reasoning must be explicit in the code and pinned by a test, not left as a remembered argument. |
-| **D-3** | **Post-write verify is opt-in.** `write --verify` chains a read-back compare of the written region. Default write time is unchanged. |
-| **D-4** | **Clean break on the protocol.** Ordinals 4 and 6 are retired outright, not deprecated. A new host against old firmware is safe without a version gate, because it only ever sends `CMD_READ`. |
-| **D-5** | **`3.1.0b1` in both repositories.** A minor bump, beta series, stable line untouched. The first version-string movement since `3.0.0b48` / `3.0.0b33`. |
-| **D-6** | **Seed R4 rides along.** One leased serial session per `dev test` plan instead of one open per call. |
-| **D-7** | **Removing a command surface is not removing verification.** The per-pulse verify inside the EPROM program loop, `eeprom28c_verify_page_readback`, `flash_util_verify_operation` and `MSG_ERR_VERIFY` (0xAF) are load-bearing and untouched. A UV program loop cannot decide whether to pulse again without its verify. |
+- **D-1 — Display plus the 2716-class programming fix** (re-scoped after research). The TI distinguisher
+  is dropped. Firmware `0x0B` is corrected for every 24-pin part with VPP on pin 21: active-high PGM,
+  VPP = VCC in read.
+- **D-2 — All revision blocks, split correctly.** No filtering by detected revision, because the shield
+  revision cannot be read reliably from the board.
+- **D-3 — Info note only** for 24-pin VPP unreachable on Rev 0–2.1. No write gate, no confirm prompt.
+- **D-4 — Rev 0/1 corrected from the committed rev1 PDF**, not probed.
+- **D-5 — Bench part is a TMS2516.** No TMS2532 is available; the 2532 is covered by the fail-closed
+  guard only and is never claimed as working or silicon-proven.
+- **D-6 — TMS2516 bench goes to a masked write.** An N≥3 stable read first, then a bit-masked (1→0
+  only) write, verified, with the measured VPP disclosed against the part's 24 V minimum. The shield's
+  ~22.5 V ceiling makes this best-effort below spec, accepted as the v1.14 Phase 79 25 V NMOS stance.
+- **D-7 — All four database/host safety items are in:** TMS2716 off `supported`, the 2532 fail-closed,
+  the datasheets vendored, and the 2716-class pulse width set from the datasheet.
 
 ## v1 Requirements
 
-### CMP — one comparison engine, on the host (D-1, D-7)
+### PROBE — shield evidence, measured before code (D-4)
 
-- [x] **CMP-01**: `firestarter verify <chip> <file>` compares the chip against the file by reading the chip; no `CMD_VERIFY` is sent on the wire.
-- [x] **CMP-02**: `firestarter blank <chip>` compares the chip against a constant `0xFF` through that same engine; no `CMD_BLANK_CHECK` is sent on the wire.
-- [x] **CMP-03**: the comparison runs on each chunk as it arrives; the device image is never materialised whole in host memory, and peak host memory for a compare is bounded independently of device size.
-- [x] **CMP-04**: by default the comparison stops at the first mismatching byte — the host breaks the read in flight rather than draining it — and reports that mismatch as a single `start–end` range with a byte count, in the same one-line form `--full` uses. **No expected or actual byte values are printed** (operator decision, 2026-09-20, recorded as D-13 in `milestones/v1.41-phases/202-one-comparison-engine-on-the-host/202-CONTEXT.md`; this requirement previously asked for the expected value and the value read).
-- [x] **CMP-05**: `--full` scans the whole region and reports every mismatching span as a coalesced `start–end` range with a byte count, instead of one address.
-- [x] **CMP-06**: a failed comparison is classified through the existing `classify_fingerprint`, naming one of its honest buckets with total and bad counts — computed from streamed accumulation, never from a materialised image.
-- [x] **CMP-07**: `verify` and `blank` keep their exit-code contract — `0` on match, `1` on mismatch — and a hardware or transport failure is distinguishable from a mismatch.
-- [x] **CMP-08**: both accept `--address` and `--size`, and a region-scoped comparison reads and compares only that region.
+- [ ] **PROBE-01**: An unpowered, empty-socket continuity probe on the operator's Rev 2.0 board records, for each JP4 pad, which of socket pins 1, 3 and 25 it reaches, settling the Rev 2.0/2.1 "Closed" destination that `notes/jumper-display-ground-truth.md` marks PROBE-PENDING
+- [ ] **PROBE-02**: A diode test on the operator's Rev 2.2 board records whether D34 blocks the VPE rail from reaching the A11 latch output at socket pin 25
+- [ ] **PROBE-03**: On the Rev 2.2 board, with JP4 on the 24-pin (periphery-facing) pole and the socket empty, the VPE voltage at socket pin 25 is measured at pot maximum and recorded against the TMS2516's 24 V programming minimum
 
-### FWCMD — the command surfaces leave the firmware (D-1, D-4, D-7)
+### JMP — the `info` jumper block (D-2, D-3, D-4)
 
-- [x] **FWCMD-01**: `CMD_VERIFY` (6) and `CMD_BLANK_CHECK` (4) are gone from the `firestarter.cpp` dispatch switch, from `is_memory_cmd`, and from `configure_memory`'s switch.
-- [x] **FWCMD-02**: the `eprom_verify()` and `eprom_blank_check()` wrappers and their declarations are deleted.
-- [x] **FWCMD-03**: ordinals 4 and 6 are recorded as reserved and never reused, with the reason stated where a future author will read it before reaching for a free slot.
-- [x] **FWCMD-04**: `memory_verify_execute` still exists and is still called for `VERIFY_PER_PULSE_PLUS_FINAL` on protocols `0x07` / `0x08`; a test fails if that call disappears.
-- [x] **FWCMD-05**: each in-algorithm verify still raises its own failure id on failure, proven by test and not by inspection: `memory_verify_execute` and `eeprom28c_verify_page_readback` raise `MSG_ERR_VERIFY` (0xAF); the per-pulse verify's budget exits raise `MSG_ERR_MAX_PULSES` (0xBD) and `MSG_ERR_ENERGY_CAP` (0xBE); `flash_util_verify_operation` is a DQ7 data-poll wait and raises `MSG_ERR_OP_TIMEOUT` (0xB7) — it can never raise 0xAF, and asserting that it does would be a false pin. Each assertion names the id, not merely a generic error response code (operator decision, 2026-09-21, recorded as D-03 in `milestones/v1.41-phases/204-the-command-surfaces-leave-the-firmware/204-CONTEXT.md`; this requirement previously claimed `MSG_ERR_VERIFY` (0xAF) was still raised by all three named sites — measurement against the live source showed only `eeprom28c_verify_page_readback` actually raises 0xAF, the per-pulse verify's budget exits raise two different ids, and `flash_util_verify_operation` has no compare-and-report path at all and can never raise 0xAF).
-- [x] **FWCMD-06**: a host that sends ordinal 4 or 6 to `3.1.0b1` firmware receives an explicit refusal with no hardware side effect — never silence, never a hang. Proven on real hardware in `milestones/v1.41-phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the published `3.0.0b49` host is refused with `Unknown command: 6` and `Unknown command: 4` against post-204 firmware, both promptly (~3.5s), both non-empty; three whole-device reads before and after both refusals share one SHA-256 digest, ruling out a silent erase. Per D-07, neither side carries the literal `3.1.0b1` string yet — that bump is Phase 207's — so this is proven via the documented label substitution, not against a build carrying that exact version.
+- [ ] **JMP-01**: The jumper settings `firestarter info` prints are derived from an explicit per-pin-map table keyed on where the pin map's resolved VPP lands (socket pin 1, socket pin 3, socket pin 25, the OE line, or none) and what socket pin 1 carries; the pin-count and `"vpp-pin" in pin_map` heuristic in `ic_layout.py` is removed
+- [ ] **JMP-02**: A test driven by `pinouts.json` fails when any pin map lacks a jumper entry for any revision family, so a new pin map cannot ship with an undefined jumper display
+- [ ] **JMP-03**: `firestarter info` prints three revision blocks — Rev 0/1 (JP1–JP3), Rev 2.0/2.1 (two-position JP4) and Rev 2.2/2.3 (three-position JP4: no jumper, 28-pin socket-facing pole, 24-pin periphery-facing pole) — for every chip
+- [ ] **JMP-04**: JP4's text is written to its silkscreen rule "Only for ROMs with VPP on P1"; no operator-facing string reproduces "Open for 32 pin ROMs, Closed for 28 pin ROMs", and the `28pin`/`32pin` labels copied from JP3 are gone from JP4
+- [ ] **JMP-05**: The known wrong outputs are corrected: the 45 `DIP28_27512` rows and the 8 `DIP32_27C801` rows are no longer told JP3 `28pin`/`32pin` or JP4 `Closed`, and the 158 `DIP32_STD` / `DIP32_27C020` rows are told JP4 `Open` on Rev 2.0/2.1
+- [ ] **JMP-06**: For pin maps whose VPP lands on socket pin 25 (`DIP24_2716`), the Rev 2.2/2.3 block names the 24-pin pole, and the Rev 0/1 and Rev 2.0/2.1 blocks state that the VPP pin is unreachable on that revision and programming needs a Rev 2.2 or later shield (Backlog 999.55); `write` behaviour is unchanged
+- [ ] **JMP-07**: A "this jumper does not matter" line appears only where the table says so; on Rev 2.2/2.3 a 28- or 32-pin part that needs no JP4 is told "no jumper", never "does not matter", because the 24-pin pole joins socket pin 1 to a live pin on those parts (Backlog 999.56)
+- [ ] **JMP-08**: The Rev 0/1 block's JP1, JP2 and JP3 values match `firestarter_fw/document/rurp_schematics_rev1.pdf` for every pin map, with the per-map values recorded in the table's source
 
-### FWBLANK — the in-algorithm pre-flights leave the firmware (D-1, D-2)
+### INFO — the rest of `info`'s text (Backlog 999.65)
 
-- [x] **FWBLANK-01**: the write-init blank check is removed from `eprom.cpp`, `flash_intel.cpp` and `flash_nor_unlock.cpp`.
-- [x] **FWBLANK-02**: the erase-end blank check is removed from `eprom.cpp`.
-- [x] **FWBLANK-03**: `mem_util_blank_check`, `mem_util_blank_check_region`, `blank_check_saved_address` and `BLANK_CHECK_CHUNK_SIZE` are deleted, and no caller remains.
-- [x] **FWBLANK-04**: `FLAG_SKIP_BLANK_CHECK` (`0x08`) is retired from the firmware and from `constants.py`, and the bit is recorded as reserved on both sides.
-- [x] **FWBLANK-05**: the flash and RAM freed is measured per AVR target (uno, uno328pb, leonardo) and reported as a number, not an estimate.
+- [ ] **INFO-01**: `firestarter info` does not present a WP-pin voltage as a programming VPP on the 5V-only rows that `check_dispatch.py`'s WP-pin carve-out already exempts (301 rows measured in v1.37 Phase 183)
+- [ ] **INFO-02**: `firestarter info`'s "Can be erased" line agrees with whether `firestarter erase` accepts the chip, instead of being derived from `electrical.type` alone
+- [ ] **INFO-03**: The protocol `0x0B` description no longer says every part shares OE and VPP (true only for `DIP24_2732`), and `firestarter_fw/PROTOCOLS.md`'s "via JP4 jumper routing" wording and `firestarter_fw/CLAUDE.md`'s note that project documents disagree about the jumper are corrected to the measured routing
 
-### WRITE — the host takes over the write guard (D-2, D-3)
+### DBSAFE — database and host safety (D-5, D-7)
 
-- [x] **WRITE-01**: before writing to a part that does not carry `FLAG_CAN_ERASE`, the host reads the target region and refuses the write if it is not blank, naming the first non-blank address and its value.
-- [x] **WRITE-02**: the guard applies to exactly the protocol families whose firmware write-init blank-checks today — `0x07`, `0x08`, `0x0B`, `0x06`, `0x10` — and within those, a part whose erase actually ran is exempt from the read; SRAM/FRAM and protocol `0x05` are named exemptions whose reasoning is stated at the exemption site, and a test pins that exact guarded set and fails if it **narrows or widens** (operator decision, 2026-09-21, recorded as D-01/D-02 in `milestones/v1.41-phases/203-the-write-guard-moves-up-a-layer/203-CONTEXT.md`; this requirement previously exempted any part carrying `FLAG_CAN_ERASE` and pinned only against widening beyond that flag — measurement across every firmware write-init path showed that wording would make the host start refusing non-blank writes on protocol `0x05` and on every SRAM/FRAM part, families the firmware has never checked).
-- [x] **WRITE-03**: `write -b` / `--no-blank-check` skips the host check and still does not skip erase.
-- [x] **WRITE-04**: `write --verify` runs a read-back comparison of the written region through the CMP engine, and reports through it.
-- [x] **WRITE-05**: a `write --verify` whose comparison fails exits non-zero and says the write landed but did not verify — never "successful".
-- [x] **WRITE-06**: a non-blank, non-erasable part accepts a region write into a blank region — and still does after the firmware check is gone. v1.40 Phase 201 already region-scoped the firmware pre-flight, so this passes today; the 2026-08-30 todo's "must be seen RED first" framing predates that fix and does not apply. The risk this pins is **silent re-breakage** when the guard moves to the host, so the test must exercise the host path and fail if the host refuses a blank region on a non-blank part.
+- [ ] **DBSAFE-01**: The three-supply `TI/TMS2716` (VBB −5 V on pin 21, VDD +12 V on pin 19) is no longer `support_status: supported`, through `build_db.py` / `datasheet_overrides.json` with a datasheet citation; `chip_database.json` is regenerated, never hand-edited
+- [ ] **DBSAFE-02**: The host refuses to build a bus config whose address-bus pins resolve to the `ROM_CE` or `ROM_OE` sentinel, with an operator-facing message, and the `DIP24_2532` row stops being `supported` until a 2532 firmware mode exists
+- [ ] **DBSAFE-03**: The TMS2516, TMS2532 and Intel 2716 datasheets are committed to `firestarter_app`, and every datasheet path `tools/extra_chips.json` names for these parts resolves to a committed file
+- [ ] **DBSAFE-04**: The program pulse for the `DIP24_2716` class is set through the generator from the datasheet (a 45–55 ms single pulse, or iterative pulses under the firmware's energy cap), with the citation and the reason for the choice recorded
 
-### DEVTEST — `dev test` keeps its fidelity (D-6)
+### PGM — firmware `0x0B` for the 2716 class (D-1)
 
-- [x] **DEVTEST-01**: `OP_VERIFY` and `OP_BLANK_CHECK` route through the rewritten host methods and produce a fingerprint at least as informative as today's.
-- [x] **DEVTEST-02**: a report from the host-side comparison path is distinguishable from one produced by the firmware path, using the established empty-default discriminator discipline, so no already-filed `dedup_fingerprint` group is silently re-keyed and no two mechanically different runs silently merge.
-- [x] **DEVTEST-03**: `dev test`'s step verdicts for a physically identical outcome do not change meaning; where a classification does change, the change is stated and justified rather than absorbed.
+- [ ] **PGM-01**: For 24-pin parts with VPP on pin 21, the firmware holds the PGM line (the shield's CE line, socket pin 22) low while the VPP route is up, changes address and data only while it is low, and pulses it high for the pulse width with OE high
+- [ ] **PGM-02**: For the same class, read and verify hold pin 21 at VCC rather than at about 0 V
+- [ ] **PGM-03**: Native trace tests record the CE level at every register write while the VPP route is up; they fail on the pre-fix firmware and pass after it for `DIP24_2716`, and prove `DIP24_2732` and every 28- and 32-pin path unchanged
+- [ ] **PGM-04**: Every AVR build target stays within its flash and RAM ceiling, and the size delta against the milestone's starting build is recorded
 
-### SESS — one leased serial session per plan (D-6, seed R4)
+### TMS — the TMS2516 on silicon (D-5, D-6)
 
-- [x] **SESS-01**: a `dev test` plan opens one validated serial link and reuses it across its steps, instead of one open and teardown per call.
-- [x] **SESS-02**: the wall-clock saving is measured on a real run and reported as a number; if it is not worth the structural change, that is recorded and the change is reverted rather than kept on principle.
+- [ ] **TMS-01**: On the Rev 2.2 shield (`firestarter config --rev 4`, JP4 on the 24-pin pole), N≥3 consecutive reads of the operator's TMS2516 return an identical SHA-256
+- [ ] **TMS-02**: A bit-masked write to the TMS2516 that only clears bits (1→0) verifies byte-exact, and the VPP measured during it is recorded beside the part's 24 V minimum and disclosed as below specification
+- [ ] **TMS-03**: `VALIDATED-EPROMS.md` records the TMS2516 result with its shield revision, board and measured VPP, and makes no claim for the TMS2532
 
-### REL — version, compatibility and the record (D-4, D-5)
+### JWIKI — the wiki (Backlog 999.58)
 
-- [x] **REL-01**: both repositories carry `3.1.0b1`, and the two version strings are bumped in the same commit pair. Delivered by plan 207-01: firmware `a55f2d8` and app `67f93e2`, each a single-file commit on top of a merge of `origin/beta`. Both repos' own `update_version.py --dry-run` print `DRY_RUN: 3.1.0b1`.
-- [x] **REL-02**: a `3.1.0b1` host against pre-`3.1.0` firmware performs `verify` and `blank` correctly, because it only sends `CMD_READ`. Proven, not assumed. Proven on real hardware in `milestones/v1.41-phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the post-204 host's `verify` matches (exit 0) and `blank` reports not-blank (exit 1, via the documented abort-predicate fast path) against pre-204 firmware, with no unknown-command line in either output. Per D-07, "3.1.0b1" here means the post-204 host label, not the literal version string, which is Phase 207's bump.
-- [x] **REL-03**: a pre-`3.1.0` host against `3.1.0b1` firmware fails `verify` and `blank` with a refusal the user can act on, and with no hardware side effect. Proven on real hardware in `milestones/v1.41-phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the published `3.0.0b49` host is refused with `Unknown command: 6` and `Unknown command: 4` against post-204 firmware, both captured verbatim with exit code and duration; three whole-device reads share one digest, proving no hardware side effect. Per D-07, "3.1.0b1" here means the post-204 firmware label, not the literal version string, which is Phase 207's bump.
-- [x] **REL-04**: the breaking change and the `write --verify` / `--full` surfaces are documented in the wiki, which is the only documentation home. Delivered by plans 207-02 and 207-03: the Breaking-Changes 3.1.0b1 entry and the new Writing-and-Verifying page are live on the wiki at `880a59b`, a fast-forward from `81229d8` approved by the operator. This was proven from a fresh clone.
+- [ ] **JWIKI-01**: The `firestarter` wiki carries a jumper table per shield revision covering every pin map, whose values match what `firestarter info` prints, and no wiki text reproduces the two-state JP4 silkscreen clause
+- [ ] **JWIKI-02**: The Rev 0 modified, Rev 2 and Rev 2.2 shield photographs are re-exported from the originals at publication resolution and published on the wiki
+
+### JREL — release (D-1)
+
+- [ ] **JREL-01**: Both `firestarter_app` and `firestarter_fw` bump to `3.1.0b2`
+- [ ] **JREL-02**: The host refuses a write to a `DIP24_2716`-class part when the attached firmware predates the PGM polarity fix, so a new CLI on old firmware cannot pulse the part inverted
 
 ## Future Requirements
 
-Tracked, not in this milestone.
+Deferred. Tracked but not in this roadmap.
 
-| ID | Requirement | Why deferred |
-|---|---|---|
-| **CMP-F1** | A protocol-level abort for a read in flight, so a first-mismatch stop saves time and not only output | No abort message exists and the END phase must still run to leave the port clean. Adding one is a protocol change of its own, and this milestone is already retiring two ordinals. **Measured at Phase 204 (D-12):** a cheaper `DONE`-based clean stop was offered there and declined. The firmware half genuinely is one line — `op_wait_for_ack` returns on `OP_MSG_ACK` and `OP_MSG_ERROR`, and `OP_MSG_DONE` falls through to the retry delay and the existing one-second timeout. The host half is not one line — today's host aborts by withholding acknowledgements, sending nothing at all, and `_drive_region_compare`'s four-condition discrimination keys on `last_firmware_error_code == MSG_ERR_TIMEOUT`, a code a clean stop would no longer produce; both sides must move together, and the surface they would rework is `verify`, the one Phase 202 had just built. What makes deferring free: pre-`3.1.0` firmware's `op_get_message` already parses `"DONE"` into its own `OP_MSG_DONE` enumeration value and `op_wait_for_ack` already ignores it, so a future host that sends it to pre-`3.1.0` firmware degrades to exactly today's one-second timeout path. The change is forward-compatible by construction and can land in any later phase with the same properties |
-| **CMP-F2** | Reach or retire `classify_fingerprint`'s `transport` bucket | Dead code because `_dispatch_multi_run` is always called with `runs=1`; it belongs to the Phase 178 fault-attribution design, not here |
-| **PROTO-F1** | Replace the jsmn/JSON command layer with fixed-layout binary frames | Seed `binary-command-protocol` triggered on this milestone and was deliberately left planted — ~512 B RAM and ~1–1.5 KB flash, but its own milestone, not a rider |
+- **TMS2532 firmware mode** — the CE line carries A11 and the OE line is an active-low PGM. Needs a new firmware mode and a wire signal; no bench part is available (D-5).
+- **The 13 non-TI `DIP24_2716` rows' VPP values** — only the Intel 2716 and NMC27C16 are datasheet-confirmed; the database's 12–18 V values disagree with the NMC27C16 sheet's 25 V.
+- **A gate for the mirrored JP4 hazard** (Backlog 999.56) — needs its own damage-capability trace.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Removing any in-algorithm verify | D-7. A UV program loop cannot decide whether to pulse again without its verify; `eprom.cpp` calls `memory_verify_execute` directly |
-| Removing `MSG_ERR_VERIFY` (0xAF) | Still raised by three surviving in-algorithm verifies. `messages.h` is codegen-generated from meta's `messages.toml` and is never hand-edited |
-| A deprecation window for ordinals 4 and 6 | D-4. Keeping them working keeps the flash, which is the thing being reclaimed |
-| A host firmware-version gate on `verify` / `blank` | Unnecessary in the direction that matters, and the host structurally cannot read a firmware pre-release suffix anyway |
-| Making `write --verify` the default | D-3 |
-| Chip database or generator changes | v1.40 owns that axis; nothing here reads a decoded parameter |
-| A stable `3.1.0` release | D-5. Stable stays operator-gated |
+| Reading JP4 or JP5 state from the board | Neither jumper is sensed by any shield revision |
+| A TI manufacturer-keyed database distinguisher | Research falsified its premise; it would also sweep in the three-supply TMS2716 |
+| Hardware change to reach 25 V VPP | Standing stance since v1.14 Phase 79: 25 V NMOS is best-effort, no hardware change |
+| Filtering revision blocks by detected revision | The revision byte cannot tell Rev 2.0 from Rev 2.2 (D-2) |
+| The 255-row `DIP32_SST39SF040` A18-on-pin-1 remainder | Backlog 999.59, deliberately not gated |
+| A write gate for 24-pin parts on Rev 0–2.1 | D-3: note only |
 
 ## Traceability
 
-Every requirement maps to exactly one phase.
+Which phases cover which requirements. Filled by the roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CMP-01 | Phase 202 | Complete |
-| CMP-02 | Phase 202 | Complete |
-| CMP-03 | Phase 202 | Complete |
-| CMP-04 | Phase 202 | Complete |
-| CMP-05 | Phase 202 | Complete |
-| CMP-06 | Phase 202 | Complete |
-| CMP-07 | Phase 202 | Complete |
-| CMP-08 | Phase 202 | Complete |
-| WRITE-01 | Phase 203 | Complete |
-| WRITE-02 | Phase 203 | Complete |
-| WRITE-03 | Phase 203 | Complete |
-| WRITE-04 | Phase 203 | Complete |
-| WRITE-05 | Phase 203 | Complete |
-| WRITE-06 | Phase 203 | Complete |
-| FWCMD-01 | Phase 204 | Complete |
-| FWCMD-02 | Phase 204 | Complete |
-| FWCMD-03 | Phase 204 | Complete |
-| FWCMD-04 | Phase 204 | Complete |
-| FWCMD-05 | Phase 204 | Complete |
-| FWCMD-06 | Phase 204 | Complete |
-| REL-02 | Phase 204 | Complete |
-| REL-03 | Phase 204 | Complete |
-| FWBLANK-01 | Phase 205 | Complete |
-| FWBLANK-02 | Phase 205 | Complete |
-| FWBLANK-03 | Phase 205 | Complete |
-| FWBLANK-04 | Phase 205 | Complete |
-| FWBLANK-05 | Phase 205 | Complete |
-| DEVTEST-01 | Phase 206 | Complete |
-| DEVTEST-02 | Phase 206 | Complete |
-| DEVTEST-03 | Phase 206 | Complete |
-| SESS-01 | Phase 206 | Complete |
-| SESS-02 | Phase 206 | Complete |
-| REL-01 | Phase 207 | Complete |
-| REL-04 | Phase 207 | Complete |
+| PROBE-01 | Phase 208 | Pending |
+| PROBE-02 | Phase 208 | Pending |
+| PROBE-03 | Phase 208 | Pending |
+| JMP-01 | Phase 209 | Pending |
+| JMP-02 | Phase 209 | Pending |
+| JMP-03 | Phase 209 | Pending |
+| JMP-04 | Phase 209 | Pending |
+| JMP-05 | Phase 209 | Pending |
+| JMP-06 | Phase 209 | Pending |
+| JMP-07 | Phase 209 | Pending |
+| JMP-08 | Phase 209 | Pending |
+| INFO-01 | Phase 209 | Pending |
+| INFO-02 | Phase 209 | Pending |
+| INFO-03 | Phase 209 | Pending |
+| DBSAFE-01 | Phase 210 | Pending |
+| DBSAFE-02 | Phase 210 | Pending |
+| DBSAFE-03 | Phase 210 | Pending |
+| DBSAFE-04 | Phase 210 | Pending |
+| PGM-01 | Phase 211 | Pending |
+| PGM-02 | Phase 211 | Pending |
+| PGM-03 | Phase 211 | Pending |
+| PGM-04 | Phase 211 | Pending |
+| TMS-01 | Phase 212 | Pending |
+| TMS-02 | Phase 212 | Pending |
+| TMS-03 | Phase 212 | Pending |
+| JWIKI-01 | Phase 213 | Pending |
+| JWIKI-02 | Phase 213 | Pending |
+| JREL-01 | Phase 211 | Pending |
+| JREL-02 | Phase 211 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 34 total
-- Mapped to phases: 34
+- v1 requirements: 29 total
+- Mapped to phases: 29
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-09-20*
-*Last updated: 2026-09-20 at milestone activation*
+*Requirements defined: 2026-09-25*
+*Last updated: 2026-09-25 at milestone activation*
