@@ -218,3 +218,41 @@ In `firestarter_app/tests/`. All tests read only this repo, and all tests call p
    - AE29F1008 (0x05 flash4): "Can be erased: no (erase not supported…)"
 4. Run `.agents/skills/asd-ste100/scripts/ste-lint.py` over the new text constants.
 5. Run `git -C firestarter_fw diff` and check that it is docs only.
+
+## As built (2026-09-25)
+
+The plan was executed. The points below record where the result differs from the text above.
+
+- **Block titles** are "Rev 0 & 1", "Rev 2.0 & 2.1" and "Rev 2.2 & 2.3", not "0/1", "2.0/2.1" and
+  "2.2/2.3". So the printer can use `f"Rev {key}"` for all three blocks.
+- **Drawings in place of glyph lines (operator request, after Task 3).** Each block draws its headers
+  the way they sit on the board, with the silkscreen pin names. A jumper (`═` or `║`) is drawn only
+  where the chip needs one, with a one-line instruction ("Bridge B to A13.", "Fit the jumper on
+  the 28-pin pole."). The layouts come from the Phase 182 photos (see `visuals/`). They are not yet
+  confirmed on the boards. Each block is `{"jumpers", "drawing", "notes"}`.
+- **JP5 note.** DIP32_27C801 (pin 1 = A19) gets a note in both Rev 2.x blocks. The note quotes
+  "Cut for ROMs with A19 on P1".
+- **Task 4/5 modules.** They are `firestarter/vpp_display.py` (`shows_programming_vpp`) and
+  `firestarter/erase_support.py` (`erase_accepted`). Both are on the mypy strict list, with
+  `jumper_table.py`.
+- **Task 6 extra.** `PROTOCOLS.md` also had two wrong 2732 VPP-pin statements in its 0x0B section.
+  They are corrected: VPP shares OE on pin 20.
+- **Related clean-up (not in this plan).** Comments in both sub-repos cited checks that no longer
+  exist. They are removed: `firestarter_fw` `6db9688` and `firestarter_app` `580ebc3`, which also
+  deletes the dead text scan in `test_dfu_opcode_anchors.py`.
+
+Commits:
+
+| Repo | Commits |
+|---|---|
+| meta (`experiment/agent-os`) | `58e4e785` spec, `17ed91c4` CLAUDE.md |
+| `firestarter_app` (`v1.42-jumper-display`) | `49cf199` table + INFO, `f0e23b7` drawings, `580ebc3` clean-up |
+| `firestarter_fw` (`v1.42-jumper-display`) | `296b0a8` routing docs, `6db9688` comment clean-up |
+
+Verification: ruff, format and mypy (new modules) are clean. 2441 tests pass on Python 3.11, and a
+fresh-clone run passes too. STE100 lint: 0 violations. Nothing is pushed.
+
+Open:
+
+- PROBE-01. It corrects the 7 `probe_pending` pin maps.
+- A check of the drawn header layouts on the Rev 0, Rev 2.0 and Rev 2.2 boards.

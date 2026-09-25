@@ -37,6 +37,11 @@ Requirements: `.planning/REQUIREMENTS.md` JMP-01..08 and INFO-01..03 (roadmap Ph
   - The table is a Python module, not JSON.
   - The list/search VPP column uses the same predicate as `info`.
   - One erase predicate feeds both `FLAG_CAN_ERASE` and the `info` erase line.
+- **D-G. Board drawings (operator, after the first build).** Each header is drawn with its silkscreen pin
+  names, and the jumper is drawn only where the chip needs one. The layouts come from the Phase 182
+  photos, and the operator must confirm them on the boards.
+- **D-H.** The block titles are "Rev 0 & 1", "Rev 2.0 & 2.1" and "Rev 2.2 & 2.3".
+- **D-I.** DIP32_27C801 gets a JP5 note ("Cut for ROMs with A19 on P1") in the Rev 2.x blocks.
 - Shield revision cannot be read reliably from the board (REQUIREMENTS D-2). So `info` always shows
   all three blocks.
 - The Rev 0/1 values come from `rurp_schematics_rev1.pdf`, not from a probe (REQUIREMENTS D-4).
@@ -44,7 +49,8 @@ Requirements: `.planning/REQUIREMENTS.md` JMP-01..08 and INFO-01..03 (roadmap Ph
 ## Context
 
 - **Visuals:** `visuals/` has three shield photographs from the v1.37 Phase 182 bench (Rev 2, Rev
-  2.2 and the modified Rev 0), and the upstream Rev 2.3 board render.
+  2.2 and the modified Rev 0), and the upstream Rev 2.3 board render. The three photographs are
+  also the source of the drawn header layouts (D-G).
 - **References:** see `references.md`.
 - **Product alignment:** the Mission's "honest claims" rule, so unmeasured cells are marked. The
   scope is DIP 24/28/32 only. No shield senses JP4 or JP5. Every new check has a test that proves
