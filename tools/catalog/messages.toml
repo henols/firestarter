@@ -732,6 +732,14 @@ params      = [
 ]
 wire_format = "id_frame"
 
+[[messages]]
+id          = 0xC1
+name        = "MSG_ERR_INVALID_REV"
+severity    = "ERROR"
+format      = "Hardware revision refused -- use 0 to 5, or 255 to remove the override"
+params      = []
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # DATA (0xE0..0xEF)
 # ---------------------------------------------------------------------------
