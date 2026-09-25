@@ -52,6 +52,7 @@
   **Known gaps carried, not hidden:** the evidence ceiling (accepted debt); **`leonardo` MERGE-05 flash headroom is 0 B** at `+724 B` against BASE-01, exactly the four-term allowance, and **separately the Caterina USB-bootloader cliff at 28672 B has 1042 B left and is UNGUARDED** — `board_upload.maximum_size` does not enforce it, so nothing in the build stops a future change silently overwriting the bootloader region (a split-or-trimmed-build phase was raised and deliberately deferred; it is on no roadmap); the protection-class counting ambiguity, stated rather than collapsed (Method A 664/82 vs Method B 665/81, with Phase 151's published 406/111/39 reproducing under neither — only 665/81 plus the method-invariant `no_mechanism` 405 / `not_implemented` 40 are citable); the 20 ms `t_EC` wait being an Atmel-family maximum applied to a multi-vendor 84-row bucket, with **no** native test able to prove the wall-clock wait is honoured (the stubs never stub `delay()`); and one already-published part-name misattribution (W29C020 vs W29C040) that this project's own discipline forbids editing in place. Seven todos were filed by this milestone's own work. Full detail in `.planning/MILESTONES.md` §v1.32 + [`.planning/milestones/v1.32-ROADMAP.md`](milestones/v1.32-ROADMAP.md); honesty ledger at [`152-LEDGER.md`](phases/152-outward-facing-close-operator-gated/152-LEDGER.md); erase-policy record at [`153-RECORD.md`](phases/153-write-path-erase-policy/153-RECORD.md); merge record at [`152-MERGE-RECORD.md`](phases/152-outward-facing-close-operator-gated/152-MERGE-RECORD.md).
   **Milestone-level non-claim, in this milestone's own canonical wording: no AT28C part was tested, at any point, by any phase — protocol `0x0D` stays UNVERIFIED in PROTOCOL-LEDGER exactly as it stood at the open, and every write-path change v1.32 shipped is software-proven and unvalidated on silicon.**
 
+- ✅ **v1.41 Verification Moves to the Host** — Phases 202–207 + inserted 207.1 (**CLOSED 2026-09-24** — 34/34 requirements, `override_closeout`, tagged `v1.41` (bare tag, never a GitHub Release); **NOT SHIPPED** — nothing from this milestone is on any remote in any of the three repositories. Activated 2026-09-20 — 34 requirements across CMP/WRITE/FWCMD/FWBLANK/DEVTEST/SESS/REL; host first, firmware second, bench-gated at 204 and 205; both repos bump to `3.1.0b1`). The Arduino stops deciding whether a chip is blank or matches an image. `CMD_VERIFY` (6) and `CMD_BLANK_CHECK` (4) leave the firmware outright (**D-4**, clean break, ordinals reserved and never reused), and so do the in-algorithm write-init and erase-end pre-flight blank checks — retiring `mem_util_blank_check{,_region}` and the `FLAG_SKIP_BLANK_CHECK` bit **five weeks after v1.40 Phase 201 created the region form** (**D-1**). That is not a reversal of 201's finding but a decision that the gate belongs a layer up, exactly where 201's own code review pointed: its WR-02 observed the safety property being enforced in a different function in a different file from the one that needed it. The host reads and compares instead, streamed per chunk, stopping at the first mismatch by default and under `--full` reporting every mismatching range — diagnosed through the existing `classify_fingerprint` / `_diff_offsets`, which have named *why* a compare failed across four honest buckets since v1.21 while `memory_verify_execute` has only ever named one address. **What is NOT removed is the point** (**D-7**): `memory_verify_execute` stays because `eprom.cpp` calls it for `VERIFY_PER_PULSE_PLUS_FINAL`, and the per-pulse verify, `eeprom28c_verify_page_readback`, `flash_util_verify_operation` and `MSG_ERR_VERIFY` (0xAF) are load-bearing — a UV program loop has no other way to decide whether to pulse again. The device-side write refusal is replaced by a host pre-write blank check **exempt on parts carrying `FLAG_CAN_ERASE`** (**D-2**), because the erase above it already guarantees blank — which is why the whole-device variant of this defect stayed latent on every EEPROM and flash part ever swept. `write --verify` is opt-in (**D-3**). Seed `dev-test-adaptive-sequencing` R4 rides along (**D-6**) because this milestone provokes it: a pre-write check, a write and a `--verify` are three separate port opens today. **Ordering is a safety property** — the host gains each capability before the firmware loses it, so no phase boundary leaves neither side checking. **CLOSE (2026-09-24).** 7 phases (202–207 plus the inserted 207.1), 36 plans, 95 tasks. `firestarter verify` and `firestarter blank` now read the chip and compare on the host through one streaming engine (`firestarter/compare.py`): first mismatch by default, every mismatching range under `--full`, a `classify_fingerprint` diagnosis, and exit codes 0 / 1 / 2 so a transport fault is not reported as a mismatch. `CMD_VERIFY` (6) and `CMD_BLANK_CHECK` (4) are gone from the firmware and their ordinals are reserved; the write-init and erase-end pre-flight blank checks, `mem_util_blank_check{,_region}` and `FLAG_SKIP_BLANK_CHECK` are gone too. Measured flash: leonardo **24134 → 23314 B (−820 B)** across 204 and 205, and **−496 B flash / −4 B RAM** on each of uno, uno328pb and leonardo for 205 alone. The host write guard replaced the device-side refusal on exactly the five protocol families the firmware used to check, pinned by a test that fails if the set narrows or widens; 205's CR-01 withdrew protocol `0x06`'s erase exemption at a non-zero address rather than carry a silent-overwrite window. The session lease was **KEPT on a measured 15.1 %** against a pre-registered 15.0 % threshold (N=3 per arm, real silicon). Both repos carry `3.1.0b1`, so unlike the v1.39 and v1.40 closes the version on `beta` (app `3.0.0b51`, fw `3.0.0b35`) and the version at the tip differ. Inserted Phase 207.1 dispositioned all 26 close-time audit items plus 202 WR-02 (14 fixed, 11 accepted, 2 closed on evidence). **The override is not about requirements.** It is driven by `init.manager` reading every phase digest as `stale` (the accepted D-19 mechanism; all seven VERIFICATION.md files say `passed`) and by three open 207.1 code-review warnings, one of them a real edge-case defect (WR-02: a lease drain failure leaves a dead link leased) — all three filed as todos at the close. Full record: [`v1.41-CLOSE-RECORD.md`](milestones/v1.41-CLOSE-RECORD.md).
 - ✅ **v1.40 Program-Parameter Fidelity** — Phases 197–201 (**CLOSED 2026-09-20** — 19/24 requirements, `override_closeout`, tagged `v1.40` (bare tag, never a GitHub Release); **NOT SHIPPED** — nothing is on `beta` in any of the three repositories, so no user has any of it. Activated 2026-09-18 — 24 requirements across OVR/PULSE/VOLT/RAIL/VCC/BLANK; generator and host first, one firmware change in the write-init blank check; bench-gated at Phase 199). Promotes three community reports that each arrived with the reporter's own datasheet attached, and that together prove the parameters are wrong at **fleet scale rather than per chip**: [gh#70](https://github.com/henols/firestarter/issues/70) (`MBM27C1000` programmed with a 100 µs pulse against a 475 µs datasheet floor — five times short, and **217 of the 297** algorithm 7/8 rows carry that same 100 µs), [gh#66](https://github.com/henols/firestarter/issues/66) (`MBM27C4001` asked for 12.0 V against a 12.2 V family floor, with the rail measuring 12.1 V and the accepted −5 %/+500 mV window calling that in band — **563 of 746** rows carry `vpp_mv: 12000`, while the sibling `MBM27C1000` correctly carries 12500), and [gh#71](https://github.com/henols/firestarter/issues/71) (`MBM27128` needs 21 V ± 0.5 where the VPP rail measured 17.8 V and the VPE rail measured 22.7 V — **30 rows ask 18 V or more, 8 of them 21–25 V, and every one is `support_status: supported`** under a `RURP_VPP_CEILING_MV` of 25 V that is a regulator figure, not a socket measurement). **Two operator constraints shape the whole milestone**: `infoic.xml` stays the single baseline and nothing part-specific may be hardcoded in the generator (**D-1**), and every datasheet correction moves into one override file that holds **only the changed fields**, small enough for a person to read and see the full picture (**D-3**) — which also evacuates the three part-specific hardcodes already in `build_db.py`. **When the shield cannot reach a part's required voltage the operation proceeds with a warning naming both numbers, rather than refusing silently or attempting silently** (**D-4**, operator 2026-09-18) — the decision that keeps voltage-reading calibration out of scope, since a refusal threshold would have needed a trustworthy ADC and a warning does not (**D-5**; 999.38 and the white-box calibration seed stay filed). Closes with backlog **999.44**'s live firmware half, because every bench re-run in the four phases before it is a 256-byte UV slot write that today one non-blank byte anywhere on the part can refuse. **CLOSE (2026-09-20).** 5 phases, 26 plans, 65 tasks. The override mechanism exists and is fail-closed (`tools/datasheet_overrides.json`), all three of `build_db.py`'s part-specific hardcodes are gone, and 13 rows changed across the milestone with **0** `support_status` changes. The VPP decode table's `0xF0` mask was completed so 25 V and 21 V stopped collapsing onto 18 V; `DECODE-NOTES.md` § 9 records the general finding that the voltage word's two nibbles select a **programmer rail index, not a chip requirement**. The rails were measured rather than assumed — **17380 mV** on the drop path, **22140 mV** direct VPE at socket pin 1 — and the shortfall for ten algorithm 0x07/0x08 rows was removed by **routing in firmware** rather than by warning about it (D-22, decided on path capability, reading no voltage). 999.44's firmware half landed: `region-end` travels host → wire → `mem_util_blank_check_region`, proven RED→GREEN and then confirmed on real silicon (ST M27C512, operator-substituted for the unavailable TMS27C512). **Five requirements stay Pending, all by decision:** PULSE-04, VOLT-04 and RAIL-05 are the three held gh#70/gh#66/gh#71 answers, drafted and committed but deliberately unposted until a version exists to name — they release at the v1.40 beta cut, and `197-GH70-ANSWER.md` § "Held-pending deferral" is the single list of what to do. RAIL-03 is honestly unmet: the only shortfall signal is the pre-existing `MSG_WARN_VPP_LOW`, whose 5 % window is narrower than the measured +7.6 %/+8.0 % ADC-vs-meter discrepancy, so it stays silent for 9 of the 10 rescued rows. OVR-03 is Pending because the citation contract is enforced by the test suite and not by `build_db.py` itself. Five backlog items filed (999.69–999.73) and three todos (two Phase 201 code-review warnings, plus Phase 200's CR-01). Full record: [`v1.40-CLOSE-RECORD.md`](milestones/v1.40-CLOSE-RECORD.md).
 - ✅ **v1.39 Protocol 0x05 Write Correctness** — Phases 194–196 (**CLOSED 2026-09-17** — **7/8 requirements**, `override_closeout`; tagged `v1.39`, a bare tag with no GitHub Release. **Both defects were fixed by refusing, not by read-modify-write** — the fix shape D-2 permitted and the one a firmware page-staging buffer could not afford, measured at 142 bytes of RAM left on `uno` for the entire call stack. Both refusals are proved on real silicon on a `W29C020`: a pre-fix build reproduced both loss directions and printed `successful` over the erased bytes, and the post-fix build refused the identical commands with a named error, a non-zero exit and a `sha256`-identical read-back. **PAGE-03's hardware leg is deliberately open, not overlooked** — its bench part must be one of the **9** under-sized parts, the ordered `W29C512` has not arrived, and `W29C020` is one of the **18** that were already correct, so the record reads *0 of 9 on hardware, 9 of 9 on the database comparison* in three places and conflates them in none. Originally activated 2026-09-15; firmware and host in dual-repo lockstep, plus one meta tidy). Promotes two untracked defects on protocol `0x05`, both filed by the operator on 2026-09-11 with bench evidence and covered by no milestone until now. [gh#68](https://github.com/henols/firestarter/issues/68): a partial or unaligned write erases every byte of the touched physical page that was not part of the write — **in both directions**, before the start address as well as after the end — and reports `successful`; there is no read-modify-write anywhere on the path, and it affects **all 27** protocol-`0x05` parts including the four validated ones. [gh#67](https://github.com/henols/firestarter/issues/67): `flash_5v_page_page_size()` derives a page size from total device size rather than reading the part's real page from the database, and on **9 of the 27** that derivation is undersized, so a contiguous write runs two page cycles into one physical page and the second erases the first. Both reproduced on a **W29C020** — a part whose derived page size is *correct*, which is what isolates the two. **Ordering inverts severity deliberately**: Phase 194 fixes gh#67 first, because a read-modify-write built on a derived page size would still corrupt those 9 parts. Refusing an unsafe write is an accepted fix shape (**D-2**) — the milestone fixes the outcome, not the mechanism. Bench validation on real silicon is required, not optional (**D-4**). The stable firmware channel — `/releases/latest` serving 2.0.6 against a current `3.0.0b30` — is **out of scope** (**D-5**), an operator-gated release decision.
 - ✅ **v1.38 Repository Rename** — Phases 189–193 (**CLOSED 2026-09-15** — 15/15 requirements; merged to `beta` in all three repos; tagged `v1.38`, a bare tag with no GitHub Release. **The deferred claim fired ahead of its own trigger**: the operator directed the `firestarter_prom` → `firestarter` rename on 2026-09-14 with the adoption gate reading 12.8% against a 90% threshold and 116 at-risk downloads against a ceiling of 10 — recorded in `seeds/SEED-claim-firestarter-slug.md`, which keeps its trigger text unchanged as the bar that was set and not cleared, and in `notes/gitmodules-archaeology-trap.md`, whose "does not bite today" limits that act retired. Originally activated 2026-09-13; infrastructure only — no firmware source, no protocol, no dual-repo behavioural lockstep, no bench leg). Promotes Backlog **999.9** (gh#2), the highest-blast-radius item in the 2026-07-27 import and a hazard **v1.35 accepted rather than solved**. Renames `firestarter` → `firestarter_fw` and **stops there**: claiming `henols/firestarter` for the meta repo is the one destructive act in 999.9 — it is what deletes the firmware repo's redirect — and it is deferred to [`seeds/SEED-claim-firestarter-slug.md`](seeds/SEED-claim-firestarter-slug.md) behind an *adoption* trigger rather than a date (**D-1**). **Scoped from measurement, not estimate** (2026-09-13): the front door has **0 stars / 0 forks / 0 watchers** six weeks after v1.35 made it the documented entry point, against **75** on the two components; `pip install firestarter` resolves to **2.0.7**, so `origin/main` — **948 commits** behind `beta` — is the branch that reaches users, and 999.9's own clean-environment validation would have exercised it while only `beta` got fixed (**D-3**, and the sole reason the STABLE strand exists); the three hardcoded endpoints are consumed **only** by `firmware.py`, so a stranded CLI loses `fw` alone and keeps read/write/verify/erase/`dev test`; **no workflow in any of the three repos hardcodes a repo slug**, making 999.9's "CI/release workflows" clause a no-op; and **672 of 778** firmware-slug references sit in `.planning/milestones/`, historical-by-intent and deliberately not swept (**D-5**). **Standing rule established here:** the meta repo must never publish a GitHub Release — it has **0** today, which is what keeps a post-claim failure a clean 404 instead of `_compare_versions` parsing `v1.36` as PEP 440 `1.36`, judging `3.0.0b29` newer, and reporting firmware current forever (**D-4**). Full analysis: [`notes/999.9-repo-rename-impact-analysis.md`](notes/999.9-repo-rename-impact-analysis.md).
@@ -170,6 +171,340 @@ Full detail: [`.planning/milestones/v1.16-ROADMAP.md`](milestones/v1.16-ROADMAP.
 **Full phase detail:** [`.planning/milestones/v1.22-ROADMAP.md`](milestones/v1.22-ROADMAP.md) · **shipped record:** `.planning/MILESTONES.md` §v1.22 · **honesty ledger:** `.planning/phases/122-close-honesty-ledger-community-ask-release-decision/122-LEDGER.md`
 
 </details>
+
+## v1.41 — Verification Moves to the Host (CLOSED 2026-09-24 — 34/34 requirements, `override_closeout` on stale phase digests and three open 207.1 review warnings, not on requirements; tagged `v1.41` — bare tag, no GitHub Release; **not shipped**)
+
+**Milestone goal:** The Arduino stops deciding whether a chip is blank or matches an image. The host
+reads the chip and compares in Python — one comparison implementation, a named diagnosis instead of a
+single address, and the flash the removed command surfaces were costing.
+
+**Why now.** Verification has been in the wrong place since the beginning, and the cost of that is now
+measurable in two directions. On diagnosis: `memory_verify_execute` aborts at the *first* mismatching
+byte, so a user learns one address and nothing about the shape of the failure, while the host's
+`classify_fingerprint` / `_diff_offsets` have named *why* a compare failed across four honest buckets —
+blank/contact, address-line, match, indeterminate — with total and bad counts since v1.21. `dev test`
+has been strictly more informative than `firestarter verify` for four milestones, using code that is
+already written and already tested. On flash: AVR flash is the scarce resource — the whole v1.33
+premise — and `CMD_VERIFY` and `CMD_BLANK_CHECK` are a dispatch case, a wrapper, a configure case and a
+header declaration each, all to run a byte comparison the host can run for free. Wire volume barely
+moves: verify pushes the whole image down today, and read pulls the whole image back instead.
+
+**Two removals, not one** (**D-1**, operator 2026-09-20). The standalone command surfaces are the
+obvious half. The in-algorithm pre-flight blank checks are the other, and they are the reason this is a
+milestone rather than a quick task: they sit inside `eprom.cpp`'s write-init, `eprom.cpp`'s erase-end,
+`flash_intel.cpp` and `flash_nor_unlock.cpp`, and removing them retires
+`mem_util_blank_check_region` **five weeks after Phase 201 created it**. That is not a reversal of
+Phase 201's finding — 201 was right that a partial write must be gated on its own region — it is a
+decision that the gate belongs a layer up, where Phase 201's own code review already pointed: the
+review's WR-02 observed that a blank check's safety property was being enforced in a different function
+in a different file from the one that needed it. Moving the whole check to the host settles that by
+removing the split rather than patching it.
+
+**What must NOT be removed** (**D-7**). `memory_verify_execute` stays: `eprom.cpp` calls it for the
+`VERIFY_PER_PULSE_PLUS_FINAL` arm on protocols `0x07` / `0x08`, and `memory_utils.h` exposes it
+precisely so `eprom.cpp` need not carry a byte-identical copy. The in-algorithm verifies are
+load-bearing — the per-pulse verify inside the EPROM program loop cannot be removed because a UV
+program loop has no other way to decide whether to pulse again — and so are
+`eeprom28c_verify_page_readback`, `flash_util_verify_operation` and `MSG_ERR_VERIFY` (0xAF). This
+milestone removes a *command surface*. It does not remove verification.
+
+**What replaces the device-side refusal** (**D-2**, operator 2026-09-20). Before writing to a part that
+does not carry `FLAG_CAN_ERASE`, the host reads the target region and refuses if it is not blank. Parts
+that *do* carry the flag are exempt, because the erase immediately above the check already guarantees
+blank — which is exactly why this defect stayed latent for its whole life on every EEPROM and flash
+part ever swept. Only UV parts pay the read. The consequence is accepted deliberately and is recorded
+here so nobody has to rediscover it: with the device-side refusal gone, the host check is the whole
+safety net, and a bug in the exemption has no second line of defence. That is why WRITE-02 requires the
+exemption's reasoning at the exemption site and a test that fails if the exemption ever widens.
+
+**Ordering is a safety property, not a preference.** The host gains each capability *before* the
+firmware loses it. Phase 202 makes the host able to verify and blank by read-back while the firmware
+commands still exist; only then does 204 remove them. Phase 203 puts the host write guard in place
+while the firmware pre-flight still runs — harmlessly redundant for one phase — and only then does 205
+remove it. At no point in the sequence is there a window where neither side checks.
+
+**Known open mechanic — answered by phase 202.** There is no abort message for a read in flight; the
+read path is ack-driven, so the host can stop acking. Phase 202 answered this affirmatively: the
+firmware's `command_done()` teardown routine runs on the error path the abort produces too, so the
+port is left clean without the END phase ever needing to complete normally. The default's "break at
+first mismatch" saving is therefore temporal, not merely diagnostic. See
+`.planning/milestones/v1.41-phases/202-one-comparison-engine-on-the-host/202-READ-ABORT-ANSWER.md` for the mechanism,
+the measured one-second-per-abort cost, and the four-condition discrimination that keeps the
+deliberate stop from ever being mistaken for a fault. A protocol-level abort remains filed as
+**CMP-F1**, though the deferred one-line firmware change (a `DONE`-based clean stop, phase 204) is a
+cheaper route to it than the abort CMP-F1 originally assumed. **Offered at Phase 204 and declined
+there (D-12).** The firmware half is genuinely one line, but the host half is not — the change would
+also rework `_drive_region_compare`'s timeout-keyed discrimination, and that surface is the one
+Phase 202 had just built. See `.planning/milestones/v1.41-phases/204-the-command-surfaces-leave-the-firmware/204-CONTEXT.md`
+D-12 for the full reasoning and the measured forward-compatibility finding, also recorded on CMP-F1
+in `.planning/REQUIREMENTS.md`.
+
+### Phases
+
+| # | Phase | Requirements | Repo | Bench |
+|---|-------|--------------|------|-------|
+| 202 | One comparison engine, on the host | CMP-01…08 | app | no |
+| 203 | The write guard moves up a layer | WRITE-01…06 | app | no |
+| 204 | The command surfaces leave the firmware | FWCMD-01…06, REL-02, REL-03 | both | **yes** |
+| 205 | The pre-flights leave the firmware | FWBLANK-01…05 | both | **yes** |
+| 206 | `dev test` keeps its fidelity, on one session | DEVTEST-01…03, SESS-01…02 | app | **yes** |
+| 207 | The version and the record | REL-01, REL-04 | both | no |
+| 207.1 | Address v1.41 tech debt (INSERTED) | — (audit debt) | both | no |
+
+**Dependencies.** 202 is first and blocks everything: it is the engine the other five either use or
+remove the alternative to. 203 needs 202 for `write --verify`. 204 needs 202, because a host that
+cannot compare must not lose the firmware that can. 205 needs 203, for the same reason in the other
+direction. 206 needs 202 and 203 — `dev test`'s `OP_VERIFY` and `OP_BLANK_CHECK` route through both.
+207 is last because the version bump is a single commit pair across two repos and there is no reason to
+burn it twice.
+
+**204 and 205 are deliberately two phases, not one.** Both are dual-repo lockstep, both are
+bench-gated, and folding them would halve the ceremony. They stay split because the two removals carry
+different risk — 204 removes a surface nothing else calls, 205 removes a safety check other code has
+depended on — and a bisect across a combined phase could not tell which one broke a part.
+
+**Test re-anchoring is scoped work, not overhead.** 13 firmware test files and 17 app test files assert
+over these surfaces, plus the `protocol_branch_inventory.json` golden — which re-derives lossily, so it
+must be diffed field-by-field keyed on `line` rather than trusted to its truthiness gate. Phases 204
+and 205 each own their own share; neither may defer it to the other.
+
+**Phase 206's Bench cell was corrected from `no` to `**yes**` in plan 04 (D-08).** The prior value
+contradicted this same phase's own success criterion 5 above (SESS-02's saving "is measured on a real
+run") and SESS-02's requirement text, which forbids satisfying the requirement by derivation. The cell
+was written before the requirement wording was finalised; the contradiction is resolved in favour of the
+requirement.
+
+## Phase Details
+
+### Phase 202: One comparison engine, on the host
+
+**Goal**: `firestarter verify` and `firestarter blank` compare by reading the chip and comparing on the host, through one streamed implementation that names why a compare failed instead of reporting a single address.
+**Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06, CMP-07, CMP-08
+**Plans:** 5/5 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 202-01-PLAN.md — Tracer: `verify` reads the chip and compares on the host, end to end (wave 1, has the D-10 exit-code checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 202-02-PLAN.md — Bounded memory, bounded runtime, coalescing and the honest range cap (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 202-03-PLAN.md — One divergence implementation: `classify_fingerprint` delegates, plus the bucket line (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 202-04-PLAN.md — Break the read in flight, and answer success criterion 5 in writing (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 202-05-PLAN.md — `blank` joins the engine, region options and refusals, exit-code closure (wave 5)
+
+**Success criteria**:
+
+1. `verify` and `blank` complete correctly against firmware that still carries `CMD_VERIFY` and `CMD_BLANK_CHECK`, without sending either — proving the host half stands alone before anything is removed.
+2. A mismatch is found on a 512 KB part with peak host memory bounded independently of device size.
+3. The default run names the first mismatching range as `start–end` with a byte count and no byte values; `--full` names every mismatching span in that same form. (Amended 2026-09-20 at Phase 202 discuss — operator decision D-13; the original wording asked the default for the expected and actual byte.)
+4. A failed compare carries a `classify_fingerprint` bucket with total and bad counts, computed from streamed accumulation rather than a materialised image.
+5. The read-abort question is answered in writing — either a mid-stream stop works within the existing protocol, or the default's saving is stated as diagnostic and not temporal. It does not get to be assumed either way.
+
+### Phase 203: The write guard moves up a layer
+
+**Goal**: The host refuses a write to a non-blank, non-erasable part before any programming byte reaches the wire, and `write --verify` proves that a write landed.
+**Requirements**: WRITE-01, WRITE-02, WRITE-03, WRITE-04, WRITE-05, WRITE-06
+**Plans:** 4/4 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 203-01-PLAN.md — the host refuses a non-blank write end to end, and a blank region still writes (wave 1, tracer)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 203-02-PLAN.md — pin the exact guarded set, the bypass, the erase re-arming, and the negative start address (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 203-03-PLAN.md — `write --verify` and `--full`, with the confirmed exit-code contract (wave 3, has a decision checkpoint)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 203-04-PLAN.md — the help text tells the truth, both snapshots hand-edited, and the session cost recorded (wave 4)
+
+**Success criteria**:
+
+1. A write to a non-blank UV part is refused by the host, naming the first non-blank address and its value, before the port carries a programming command.
+2. The guarded set is exactly the protocol families the firmware blank-checks at write-init today — `0x07`, `0x08`, `0x0B`, `0x06`, `0x10` — with a part whose erase actually ran exempt inside them; SRAM/FRAM and `0x05` are named exemptions whose reasoning sits at the exemption site, and a test pins that exact set and fails if it narrows or widens. *(Amended 2026-09-21 per 203-CONTEXT.md D-01/D-02; previously worded as a `FLAG_CAN_ERASE`-only exemption pinned against widening.)*
+3. `write -b` skips the host check and still erases an erase-capable part.
+4. `write --verify` compares the written region through Phase 202's engine and exits non-zero on mismatch, with wording that distinguishes "wrote but did not verify" from "did not write".
+5. A non-blank, non-erasable part still accepts a region write into a blank region — the property Phase 201 delivered, now pinned against silent re-breakage on the host path.
+
+### Phase 204: The command surfaces leave the firmware
+
+**Goal**: Ordinals 4 and 6 leave the firmware with every in-algorithm verify provably intact, and both host-firmware compatibility directions are demonstrated on the bench rather than reasoned about.
+**Requirements**: FWCMD-01, FWCMD-02, FWCMD-03, FWCMD-04, FWCMD-05, FWCMD-06, REL-02, REL-03
+**Plans:** 5/5 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 204-01-PLAN.md — tracer: ordinal 6 leaves both ladders and a published `3.0.0b49` host is refused on silicon, with ordinal 4 still live as the control (wave 1, has the package-legitimacy checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 204-02-PLAN.md — the two proof instruments: the eighth source-contract gate and the native id-asserting suite, both with their RED seen (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 204-03-PLAN.md — the ordinal-4 sweep: the collapses, the five protocol handlers with the golden re-derived, then both ladders, plus one small Rule-1 follow-up commit (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 204-04-PLAN.md — the record: the two orphaned catalog ids kept and annotated, five stale firmware citations repaired, and CMP-F1's deferral finding (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 204-05-PLAN.md — the four-role bench matrix: both skew directions on silicon, three matching whole-device digests, and the D-07 sha record (wave 5)
+
+**Success criteria**:
+
+1. `CMD_VERIFY` and `CMD_BLANK_CHECK` appear nowhere in the dispatch switch, `is_memory_cmd` or `configure_memory`, and both wrappers and their declarations are gone.
+2. A test fails if `eprom.cpp` stops calling `memory_verify_execute` for the `VERIFY_PER_PULSE_PLUS_FINAL` arm.
+3. Each in-algorithm verify still raises its own failure id on failure, proven by test and not by inspection: `memory_verify_execute` and `eeprom28c_verify_page_readback` raise `MSG_ERR_VERIFY` (0xAF); the per-pulse verify's budget exits raise `MSG_ERR_MAX_PULSES` (0xBD) and `MSG_ERR_ENERGY_CAP` (0xBE); `flash_util_verify_operation` is a DQ7 data-poll wait and raises `MSG_ERR_OP_TIMEOUT` (0xB7) — it can never raise 0xAF, and asserting that it does would be a false pin. *(Amended 2026-09-21 per 204-CONTEXT.md D-03; previously claimed all three named sites still raise `MSG_ERR_VERIFY` — measurement against the live source showed only `eeprom28c_verify_page_readback` actually does, the per-pulse verify's budget exits raise two different ids, and `flash_util_verify_operation` has no compare-and-report path at all and can never raise 0xAF.)*
+4. A `3.1.0b1` host performs `verify` and `blank` correctly against pre-`3.1.0` firmware, observed on the bench.
+5. A pre-`3.1.0` host against `3.1.0b1` firmware receives an actionable refusal on both commands with no hardware side effect, observed on the bench.
+6. The `protocol_branch_inventory.json` golden is re-derived and diffed field-by-field keyed on `line`, never accepted on its truthiness gate.
+
+### Phase 205: The pre-flights leave the firmware
+
+**Goal**: The write-init and erase-end blank checks, their shared machinery and the `FLAG_SKIP_BLANK_CHECK` bit leave the firmware, and the flash that frees is a measured number rather than an estimate.
+**Requirements**: FWBLANK-01, FWBLANK-02, FWBLANK-03, FWBLANK-04, FWBLANK-05
+**Plans:** 8/8 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 205-01-PLAN.md — `erase -b` becomes a host capability, through Phase 202's `check_eprom_blank`, before the firmware loses the erase-end check
+- [x] 205-02-PLAN.md — repair the firmware test tree's four stale path citations and take FWBLANK-05's phase-entry baseline
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 205-03-PLAN.md — delete the four blank-check call sites, then the machinery itself, with the golden re-derived and the survivor fence migrated
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 205-04-PLAN.md — retire `FLAG_SKIP_BLANK_CHECK` from both ladders as a commit pair, and re-plumb `-b` as an explicit host-side signal
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 205-05-PLAN.md — the folded negative-address firmware fix, scoped to the address field, in its own commit
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 205-06-PLAN.md — complete FWBLANK-05's measured number and annotate the two kept catalog ids
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [x] 205-07-PLAN.md — the bench: criteria 3 and 5 on silicon, the D-04 skew observed before the reflash, and the `erase -b` session cost
+
+**Wave 7** *(gap closure — CR-01, from 205-VERIFICATION.md)*
+
+- [x] 205-08-PLAN.md — make the host write guard's erase exemption address-aware for protocol `0x06`, pin the address dimension, and record the decision
+
+**Success criteria**:
+
+1. No caller of `mem_util_blank_check` or `mem_util_blank_check_region` remains, and both functions plus `blank_check_saved_address` and `BLANK_CHECK_CHUNK_SIZE` are deleted.
+2. `FLAG_SKIP_BLANK_CHECK` is gone from `firestarter.h` and from `constants.py`, with `0x08` recorded as reserved on both sides.
+3. A write to a non-blank UV part reaches the firmware unrefused and programs the region it was given — the property Phase 203's host guard now owns, confirmed on silicon.
+4. Flash and RAM deltas are reported per AVR target as measured numbers for uno, uno328pb and leonardo.
+5. A bench regression across at least one UV part and one erasable part shows no behaviour change other than where the refusal now comes from.
+
+### Phase 206: `dev test` keeps its fidelity, on one session
+
+**Goal**: The `dev test` verify and blank steps route through the host engine without changing what a verdict means, and a plan uses one leased serial link instead of one port open per call.
+**Requirements**: DEVTEST-01, DEVTEST-02, DEVTEST-03, SESS-01, SESS-02
+**Plans:** 4/4 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 206-01-PLAN.md — a transport-failed cycle-block step exits 2, and the two `== 0` adapters learn the third verdict
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 206-02-PLAN.md — additive blank-check compare evidence outside the hash, plus the empty-default `cmp=host` discriminator
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 206-03-PLAN.md — `setup_command` extracted, then one leased serial link per `dev test` plan, default off and revertible whole — **done 2026-09-23: two permanent-plus-revertible commits, exactly as the plan required.** `SerialCommunicator.setup_command` (`fa6c8e8`) is the send/ack/gate half `_probe_port` used to carry inline — behaviour-identical, proven by `test_serial_characterization.py` passing unmodified and three new `test_serial_comm.py` legs (delegation, firmware-gate refusal, decode-error recovery). `EpromOperator.lease()` (`3853b55`) — **the SESS-02 revert target sha** — is default off, `_leased` starting `False`; `_setup_operation` takes the leased branch only when a lease is active AND the held link is still connected, drains via `consume_remaining_input()` before every leased setup, and both the firmware-version and hardware-revision gates run unconditionally through `setup_command` either way. D-06: a `SerialError` inside a leased setup (including a gate refusal — `FirmwareOutdatedError`/`HardwareRevisionUnsupportedError` are `SerialError` subclasses) drops the held link but leaves the lease itself active, so the next operation cold-connects and `run_plan`'s per-step invariant survives; the exception still reaches the caller unchanged. Acquired at exactly one call site, `cli_handlers.dev_test`'s `with app.eprom_operator.lease():` around `run_plan(...)`; D-05's `HardwareManager` (the pre-plan identity read, the voltage sampler) stays outside the lease and caps the measurable saving, stated here rather than discovered at the bench. **Ack-repopulation finding (task 1):** `_decode_id_frame` is instance-bound and unconditionally reassigns `firmware_max_chunk`/`hw_revision`/`firmware_identity`/`write_block_budget_s` on every successfully-decoded `MSG_OK_READY` — a second `setup_command` on the same link repopulates all four fields correctly; none goes stale. `3853b55` touches EXACTLY the three paths the plan named (`cli_handlers.py`, `eprom_operations.py`, `tests/test_session_lease.py`) — machine-verified via `git show --name-only` — and its revert was rehearsed BEFORE any follow-up commit existed: `git revert --no-commit 3853b55` applied with zero conflicts, full suite 2357 passed on the reverted tree, then restored. A third commit (`d723cf7`) was required and deliberately kept separate from the lease: `Mock(spec=EpromOperator)`'s auto-created `.lease` is a plain `Mock`, not a `MagicMock`, so it does not support the context-manager protocol without `operator.lease.return_value = contextlib.nullcontext()` at 6 sites in `test_dev_test_cmd.py`; `FakeChip` needed an actual no-op `lease()` method; and `test_write_verify.py`'s `_setup_operation`-return-count pin moved 3→4 for the new leased-rejected-ack arm. All six `test_session_lease.py` legs assert both the cold and the leased path per the plan's own requirement. Full host suite: 2363 passed (was 2354 at plan 02's close; +9 = 3 setup_command tests + 6 lease tests), `ruff check`/`ruff format --check` both clean, mypy clean on the two strict-island files touched. Commits: `firestarter_app` `fa6c8e8`, `3853b55`, `d723cf7`.**
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 206-04-PLAN.md — the bench measurement, the pre-registered threshold applied, and `206-SESSION-COST.md` — **done 2026-09-23: SESS-02 measured on real silicon, MET; the session lease is KEPT.** Bench rig: Arduino Leonardo (`/dev/ttyACM0`, VID `0x2341` PID `0x8036`), operator-confirmed W27C512 seated on a Rev 2.0 shield, VPP confirmed in range (12.0V) before dispatch after an operator pot trim corrected an earlier 13.0V fault. Both arms ran `firestarter dev test w27c512` (no `--fast`, never `--submit`) to completion, N=3 each, timed with `time` around the whole subprocess: leased-arm median **228.283s** (min 227.836s, max 229.758s), cold-arm median **268.992s** (min 268.731s, max 269.706s). Removed time 40.709s = **15.1%** rounded half-up (unrounded 15.134%) — clears D-07's pre-registered 15.0% threshold (clause 1). Wider-arm (leased) spread 1.922s, 5× = 9.610s, well under the 40.709s removed (clause 2). All six runs report `run_status: COMPLETE` and `chip_id_actual: 0xDA08` with identical per-step verdicts in both arms — no divergence (clause 3). **All three clauses passed: the lease (`firestarter_app` `3853b55`) is KEPT, no revert committed.** The cold arm was produced by applying the corrected two-sha revert recipe (`git revert --no-commit d723cf7 3853b55`, zero conflicts) to a scratch working tree and restoring it afterward via `git checkout HEAD --`, never committing the revert — `firestarter_app` remains at HEAD `d723cf7` on `v1.41-verification-to-host` throughout. Full host suite re-verified green after the restore (2363 passed, 0 failed), `ruff check`/`ruff format --check` both clean. `206-SESSION-COST.md` carries all six sections filled, every figure labelled measured-or-derived with its source. Commits: meta `069a34fc` (task 1, threshold + ROADMAP correction), meta `59b519cf` (task 3, the measured record).
+
+**Success criteria**:
+
+1. `OP_VERIFY` and `OP_BLANK_CHECK` produce a fingerprint at least as informative as today's for the same physical outcome.
+2. A report from the host-side path is distinguishable from a firmware-path one by an empty-default discriminator, so no already-filed `dedup_fingerprint` group is re-keyed and no two mechanically different runs silently merge.
+3. Any classification whose meaning changes for a physically identical outcome is named and justified in the phase record rather than absorbed.
+4. A `dev test` plan opens one validated serial link and reuses it across its steps.
+5. The wall-clock saving is measured on a real run; if it does not pay for the structural change, the change is reverted and that outcome is recorded.
+
+### Phase 207: The version and the record
+
+**Goal**: Both repositories carry `3.1.0b1` in one commit pair, and the wiki documents the breaking change alongside the two new user-facing surfaces.
+**Requirements**: REL-01, REL-04
+**Plans:** 3/3 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 207-01-PLAN.md — merge `origin/beta` into both sub-repo milestone branches (D-01), bump `3.0.0b35` / `3.0.0b50` to `3.1.0b1` in a single-file commit pair, correct the app README's mixed-version sentence, advance the meta gitlinks, and prove `DRY_RUN: 3.1.0b1` and a conflict-free ship merge in both repos (REL-01) — **done 2026-09-23: `origin/beta` merged into both milestone branches first (fw `00c90fc`, app `610fb96`), then the single-file bump pair fw `a55f2d8` / app `67f93e2` to `3.1.0b1`; README upgrade-order fix `2a08c7d`; meta gitlinks `d347dd3f`. Both publishers print `DRY_RUN: 3.1.0b1`; the ship merge is conflict-free; app 2363 passed on Python 3.11, fw tests 316 passed. Nothing pushed.**
+- [x] 207-02-PLAN.md — author the wiki record locally on top of `f967398` (D-02): the Breaking-Changes 3.1.0b1 entry, the new Writing-and-Verifying page with its navigation, and the Install-Beta / Testing-Chips version-pairing notes, every statement labelled from 3.1.0b1 (D-03) (REL-04) — **done 2026-09-23, local only: wiki `39f46e4` (Breaking-Changes 3.1.0b1 entry), `6894ed3` (new Writing-and-Verifying page + Home/sidebar), `880a59b` (Install-Beta / Testing-Chips pairing notes), all on top of the unpushed `f967398`. Live wiki still `81229d8`; REL-04 stays Pending until 207-03 publishes.**
+
+**Wave 2** *(blocked on Wave 1 completion; operator checkpoint)*
+
+- [x] 207-03-PLAN.md — pre-flight the exact outgoing wiki tree, operator `checkpoint:human-action` naming `f967398`, fast-forward push, fresh-clone proof, and the closing criterion-4 check (no Release, no tag, no sub-repo push) (REL-04) — **done 2026-09-23: operator approved at the human-action gate (verbatim `you acn push`); wiki master fast-forwarded `81229d8..880a59b`, publishing `f967398` + the three 3.1.0b1 commits; proven from a fresh clone (`POSTPUSH PASS`); criterion 4 re-proven (0 Releases, no tags, no sub-repo push).**
+
+**Success criteria**:
+
+1. `firestarter_app/firestarter/__init__.py` and `firestarter_fw/include/version.h` both read `3.1.0b1`, bumped in the same commit pair.
+2. The wiki states that ordinals 4 and 6 are retired, what a pre-`3.1.0` host does against `3.1.0b1` firmware, and what a user does about it.
+3. `write --verify`, `--full` and the unchanged-but-now-host-side `-b` semantics are documented where a user will find them.
+4. No GitHub Release is cut from the meta repository and the milestone tag stays bare — a `v1.41` tag parses as PEP 440 `1.41`, which would report every stranded CLI as already up to date.
+
+### Phase 207.1: Address v1.41 tech debt (INSERTED)
+
+**Goal**: Every open item in the v1.41 close-time audit is either resolved or explicitly accepted by the operator before the milestone ships. The list is the `tech_debt` frontmatter of `.planning/milestones/v1.41-MILESTONE-AUDIT.md`: 26 open items, of which 4 need an operator decision (§ Tech Debt by Phase).
+**Requirements**: TBD — no v1.41 requirement is open (34/34 satisfied); this phase carries audit debt, not requirements
+**Depends on:** Phase 207
+**Plans:** 7/7 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 207.1-01-PLAN.md — write-path diagnostics tell the truth: D-08 negative-address gate before page alignment (both tiers), D-07 no fabricated byte on an incomplete guard read, D-06 own line for a landed write with an unacknowledged `--skip-sdp-unlock` (203 WR-01, WR-02, IN-01) — **done 2026-09-23: app RED/GREEN pairs D-08 `6d0e859`/`69426b1`, D-07 `3b3845c`/`e2603b5` (+`a7d38f5` helper extraction for ruff format), D-06 `bb9a018`/`4f28468` (+`b1a0a25` comment reflow), `c02b23f` format fix; no exit code, verdict, help text or snapshot changed; SUMMARY `01dee851`. Nothing pushed.**
+- [x] 207.1-04-PLAN.md — D-16 connect-cost log kept as 206 evidence, D-15 fw `tests/` count, D-17 per-clone ignore for the kept datasheet — **done 2026-09-23: D-16 log committed as 206 evidence `35feaea0` (blob sha256 proven, app copy removed); D-15 fw `4b14111` (316 collected, 316 passed); D-17 per-clone exclude line, no commit; SUMMARY `4adfa249`. Nothing pushed.**
+- [x] 207.1-05-PLAN.md — D-01 WINDOWS entry 3 closed on evidence, D-14 207 record drift corrected by hand — **done 2026-09-23: D-01 WINDOWS entry 3 `fixed` on evidence `50c4e491` (drift check open 0 / fixed 3); D-14 207-REVIEW-FIX.md and three STATE.md sites corrected by hand `e5a4e645`; SUMMARY `70ac3539`. Nothing pushed.**
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 207.1-02-PLAN.md — D-11 `setup_command` asserts an open link (206 IN-02), D-05 read-abort window boundary legs plus the accepted-outcome note (202 WR-01), D-10 measured lease figure (206 IN-01) — **done 2026-09-24: D-11 RED `861a3d3` / GREEN `121de14` (three probe harnesses given a connected fixture); D-05 boundary legs + accepted-outcome note and D-10 measured 15.1 % `45aff92`; app suite 2371 passed on Python 3.11; SUMMARY `dcef8548`. Nothing pushed.**
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 207.1-03-PLAN.md — D-12 format-only `update_version.py`, D-03 / D-09 keep-decision comments, the CI-equivalent app gate on Python 3.11, and the two folded todos closed — **done 2026-09-24: D-12 format-only `f8311ac` (AST-equal); D-03 / D-09 keep comments `5302f63` (AST-equal); CI-equivalent gate on Python 3.11: 2373 passed, 86.40 % coverage, 36 snapshots; todos closed `5b51463a`; SUMMARY `eadc8b8b`. Nothing pushed.**
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 207.1-06-PLAN.md — D-02 `/gsd-secure-phase` 202, 204, 205 at operator checkpoints, then verified (autonomous false) — **done 2026-09-24: 202 `105c2523` and 204 `c6116726` secured by the operator out-of-band; 205 `db82425e` secured in the main session at the operator's direction, where the operator chose "Accept all open" for the five accept-disposition threats (two high, T-205-10 and T-205-16, under 205 D-04; AR-205-01..05); all three verified `status: verified` / `threats_open: 0` / `asvs_level: 1`, PASS-207.1-06-D02; SUMMARY `10591469`. Nothing pushed.**
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 207.1-07-PLAN.md — D-13 both gitlinks advanced once, the closing ledger (all 26 items plus 202 WR-02, D-04 count, D-18 / D-19 / D-20), no-push proof — **done 2026-09-24: gitlinks advanced once `3f46a284` (app `5302f63`, fw `4b14111`); closing ledger `466f84fd` (27 rows, 23 cited shas all resolving, D-01..D-20 present); PASS-207.1-07-D13, PASS-207.1-07-LEDGER, PASS-207.1-NO-PUSH; SUMMARY `18ab5e48`. Post-merge gate: app 2373 passed on Python 3.11.16 (coverage 86.40%, ruff clean), fw `tests/` 316 passed. Nothing pushed.**
 
 ## v1.40 — Program-Parameter Fidelity (CLOSED 2026-09-20 — 19/24 requirements; the three held issue answers (PULSE-04, VOLT-04, RAIL-05) release at the beta cut, RAIL-03 is honestly unmet and OVR-03 is test-enforced only; tagged `v1.40` — bare tag, no GitHub Release; **not shipped**)
 

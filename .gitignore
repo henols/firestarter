@@ -85,3 +85,7 @@ node_modules
 .planning/state.json
 .planning/milestone.lock
 .gsd/
+
+# Local working areas: the wiki clone (its own git repo, pushed separately) and scratch/bench files.
+firestarter.wiki/
+tmp/

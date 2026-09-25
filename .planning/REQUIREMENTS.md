@@ -1,113 +1,108 @@
-# Requirements: Firestarter — v1.40 Program-Parameter Fidelity
+# Requirements: Firestarter — v1.41 Verification Moves to the Host
 
-**Defined:** 2026-09-18
-**Milestone:** v1.40 — "Ask the chip for what its datasheet says, or say plainly that you cannot"
-**Core Value (this milestone):** Every programming parameter the host sends is either what
-`infoic.xml` decodes to, or a datasheet value recorded in one readable override file — and when the
-shield cannot deliver what a part needs, the operator is told before the attempt, not after the
-failure.
+**Defined:** 2026-09-20
+**Milestone:** v1.41 — "The Arduino programs; the host decides whether it worked"
+**Core Value (this milestone):** Every comparison the product makes runs in one place, on the host,
+where it can say *why* a chip failed instead of naming one address — and the firmware keeps only the
+verification its programming algorithms cannot run without.
 
-**Scope:** The database generator (`firestarter_app/tools/build_db.py`) and one new data file beside
-it; the host surfaces that report voltages and warn; and one firmware change in the write-init blank
-check. No protocol dispatch changes. No new chip is added — `tools/extra_chips.json` keeps that job.
+**Scope:** The host comparison path (`firestarter_app/firestarter/eprom_operations.py`,
+`cli_handlers.py`, `chip_test.py`, `diagnostic_report.py`), the firmware command surfaces and
+in-algorithm pre-flight blank checks (`firestarter_fw/src/firestarter.cpp`, `eprom_operations.cpp`,
+`proms/memory.cpp`, `proms/eprom.cpp`, `proms/flash_intel.cpp`, `proms/flash_nor_unlock.cpp`,
+`include/firestarter.h`, `include/memory_utils.h`), and a version bump in both repositories. No
+protocol dispatch changes beyond the retirement of two command ordinals. No chip database change.
 
-**Provenance:** Three community reports, each carrying a datasheet the reporter attached, proved that
-the parameters are wrong at fleet scale rather than per chip:
-[gh#66](https://github.com/henols/firestarter/issues/66) (MBM27C4001 — VPP below the family floor),
-[gh#70](https://github.com/henols/firestarter/issues/70) (MBM27C1000 — a program pulse five times
-shorter than the datasheet minimum), and
-[gh#71](https://github.com/henols/firestarter/issues/71) (MBM27128 — needs 21 V where the VPP rail
-measured 17.8 V and the VPE rail measured 22.7 V). Measured against the live 746-row database:
-**217 of the 297 algorithm 7/8 rows carry `pulse_duration_us: 100`**, **563 of 746 rows carry
-`vpp_mv: 12000`**, and **30 rows ask for 18 V or more — 8 of them 21–25 V — every one of them
-`support_status: supported`**.
+**Provenance:** Pending todo
+[`2026-08-30-remove-cmd-verify-from-firmware-compare-in-app.md`](todos/pending/2026-08-30-remove-cmd-verify-from-firmware-compare-in-app.md)
+(filed 2026-08-30) scoped the verify half and named the constraint that governs this whole milestone:
+`memory_verify_execute` must survive, because `eprom.cpp` calls it for `VERIFY_PER_PULSE_PLUS_FINAL`.
+The blank-check half is provoked by
+[`2026-08-30-write-init-blank-check-is-whole-device.md`](todos/pending/2026-08-30-write-init-blank-check-is-whole-device.md)
+and by v1.40 Phase 201's review finding
+[`2026-09-20-blank-check-region-fails-open-on-start-greater-than-end.md`](todos/pending/2026-09-20-blank-check-region-fails-open-on-start-greater-than-end.md),
+which observed that the blank check's safety property was enforced in a different function in a
+different file from the one that needed it. Moving the whole check to the host settles that by
+removing the split rather than patching it. Seed
+[`dev-test-adaptive-sequencing`](seeds/dev-test-adaptive-sequencing.md) R4 is pulled in because this
+milestone provokes it: a pre-write blank check, a write and a `--verify` are three separate serial
+port opens under today's `EpromOperator.comm`-is-`None`-after-every-call shape.
 
-## Decisions taken at activation (operator, 2026-09-18)
+**Measured today:** the firmware's `memory_verify_execute` aborts at the first mismatching byte and
+reports one address. The host's `classify_fingerprint` / `_diff_offsets` in `chip_test.py` already
+name *why* a compare failed across four buckets and count total against bad — so `dev test` has been
+strictly more informative than `firestarter verify` since v1.21. Test surfaces that move with this
+change: **13 firmware test files, 17 app test files**, and the `protocol_branch_inventory.json`
+golden.
+
+## Decisions taken at activation (operator, 2026-09-20)
 
 | | Decision |
 |---|---|
-| **D-1** | **`infoic.xml` is the baseline for everything.** Nothing part-specific may be hardcoded in the generator. A hardcode is permitted only where there is provably no alternative, and it must carry the proof that no alternative exists. |
-| **D-2** | **Decode tables are not corrections.** `VPP_MV`, `VCC_VOLTAGES` and `PROTOCOL_MAP` stay in code: they *are* the reader of infoic's own encoding. What moves out is every value that contradicts what infoic decodes to. |
-| **D-3** | **Datasheet findings live in one override file holding only the changed fields.** No whole rows, no restated infoic values, so the file stays small enough for a person to read and see the full picture. Sibling to `tools/extra_chips.json`, which adds chips absent from infoic; this one corrects chips present in it. |
-| **D-4** | **When the shield cannot reach the voltage a part needs, do the best that can be done and warn.** If the deliverable maximum is high enough, attempt the operation with a warning that names both numbers. A silent refusal and a silent attempt are both wrong; the operator decides with the numbers in front of them. |
-| **D-5** | **Voltage-reading calibration stays out of scope** (derived from D-4, not chosen by the operator against it). Backlog 999.38's ~+7.5 % ratiometric VPP ADC error and the dormant white-box bandgap/divider calibration seed stay filed. A warn-and-attempt policy does not need a calibrated ADC; a refusal threshold would have. |
-| **D-6** | **Phase numbering continues at 197.** v1.39 ran 194–196. The vacated 150 slot and the v1.24–v1.29 version slots stay unreused so every by-number cross-reference keeps resolving. |
+| **D-1** | **All of it, both halves.** The standalone `CMD_BLANK_CHECK` / `CMD_VERIFY` command surfaces AND the in-algorithm write-init and erase-end pre-flight blank checks leave the firmware. This retires `mem_util_blank_check_region` five weeks after Phase 201 created it, and re-lands the region property on the host. |
+| **D-2** | **The host pre-write blank check is exempt on erasable parts.** A part carrying `FLAG_CAN_ERASE` is erased immediately before the write, so the check has always passed trivially. Only UV parts pay the read. The consequence is accepted deliberately: with the device-side refusal gone, this host check is the whole safety net, with no second line of defence. Its reasoning must be explicit in the code and pinned by a test, not left as a remembered argument. |
+| **D-3** | **Post-write verify is opt-in.** `write --verify` chains a read-back compare of the written region. Default write time is unchanged. |
+| **D-4** | **Clean break on the protocol.** Ordinals 4 and 6 are retired outright, not deprecated. A new host against old firmware is safe without a version gate, because it only ever sends `CMD_READ`. |
+| **D-5** | **`3.1.0b1` in both repositories.** A minor bump, beta series, stable line untouched. The first version-string movement since `3.0.0b48` / `3.0.0b33`. |
+| **D-6** | **Seed R4 rides along.** One leased serial session per `dev test` plan instead of one open per call. |
+| **D-7** | **Removing a command surface is not removing verification.** The per-pulse verify inside the EPROM program loop, `eeprom28c_verify_page_readback`, `flash_util_verify_operation` and `MSG_ERR_VERIFY` (0xAF) are load-bearing and untouched. A UV program loop cannot decide whether to pulse again without its verify. |
 
 ## v1 Requirements
 
-### OVR — one readable override file, and no part-specific constants in the generator (D-1, D-2, D-3)
+### CMP — one comparison engine, on the host (D-1, D-7)
 
-- [x] **OVR-01**: A single override file beside `tools/extra_chips.json` carries per-part field
-      overrides, and the generator applies them on top of the `infoic.xml` decode.
-- [x] **OVR-02**: An entry holds only the fields that differ from the decoded value. A field whose
-      override equals what infoic decodes to is not an entry.
-- [ ] **OVR-03**: Every entry names the datasheet it comes from and the decoded value it replaces, so
-      a reader sees what changed and why without running the generator.
-- [x] **OVR-04**: The generator fails closed on an override it cannot apply — an unknown part number,
-      an unknown field, or an override that has become a no-op because the decode now agrees with it.
-- [x] **OVR-05**: The three part-specific corrections currently hardcoded in `build_db.py`
-      (`NMOS_TRUE_VPP_MV`, `_AT28C_DIP24_NAMES`, and the relabel map) move into the override file,
-      and the generated database is unchanged by the move.
-- [x] **OVR-06**: Any constant that remains part-specific in the generator after OVR-05 is named, with
-      the reason no alternative exists. An empty list is the expected answer.
+- [x] **CMP-01**: `firestarter verify <chip> <file>` compares the chip against the file by reading the chip; no `CMD_VERIFY` is sent on the wire.
+- [x] **CMP-02**: `firestarter blank <chip>` compares the chip against a constant `0xFF` through that same engine; no `CMD_BLANK_CHECK` is sent on the wire.
+- [x] **CMP-03**: the comparison runs on each chunk as it arrives; the device image is never materialised whole in host memory, and peak host memory for a compare is bounded independently of device size.
+- [x] **CMP-04**: by default the comparison stops at the first mismatching byte — the host breaks the read in flight rather than draining it — and reports that mismatch as a single `start–end` range with a byte count, in the same one-line form `--full` uses. **No expected or actual byte values are printed** (operator decision, 2026-09-20, recorded as D-13 in `milestones/v1.41-phases/202-one-comparison-engine-on-the-host/202-CONTEXT.md`; this requirement previously asked for the expected value and the value read).
+- [x] **CMP-05**: `--full` scans the whole region and reports every mismatching span as a coalesced `start–end` range with a byte count, instead of one address.
+- [x] **CMP-06**: a failed comparison is classified through the existing `classify_fingerprint`, naming one of its honest buckets with total and bad counts — computed from streamed accumulation, never from a materialised image.
+- [x] **CMP-07**: `verify` and `blank` keep their exit-code contract — `0` on match, `1` on mismatch — and a hardware or transport failure is distinguishable from a mismatch.
+- [x] **CMP-08**: both accept `--address` and `--size`, and a region-scoped comparison reads and compares only that region.
 
-### PULSE — the program pulse is the one the datasheet asks for (gh#70)
+### FWCMD — the command surfaces leave the firmware (D-1, D-4, D-7)
 
-- [x] **PULSE-01**: What `pulse_delay` encodes is established per algorithm family from evidence, and
-      the finding is written down — including whether the generator's current "microseconds for all
-      protocols" reading survives contact with the datasheets.
-- [x] **PULSE-02**: `MBM27C1000`'s program pulse falls inside its datasheet window (475–525 µs) in the
-      generated database.
-- [x] **PULSE-03**: The regeneration diff is measured across all 746 rows, and no row changes value
-      without either a decode rule that explains it or an override that cites a datasheet for it.
-- [x] **PULSE-04**: gh#70 is answered on the issue with the resulting values and the version carrying
-      them.
+- [x] **FWCMD-01**: `CMD_VERIFY` (6) and `CMD_BLANK_CHECK` (4) are gone from the `firestarter.cpp` dispatch switch, from `is_memory_cmd`, and from `configure_memory`'s switch.
+- [x] **FWCMD-02**: the `eprom_verify()` and `eprom_blank_check()` wrappers and their declarations are deleted.
+- [x] **FWCMD-03**: ordinals 4 and 6 are recorded as reserved and never reused, with the reason stated where a future author will read it before reaching for a free slot.
+- [x] **FWCMD-04**: `memory_verify_execute` still exists and is still called for `VERIFY_PER_PULSE_PLUS_FINAL` on protocols `0x07` / `0x08`; a test fails if that call disappears.
+- [x] **FWCMD-05**: each in-algorithm verify still raises its own failure id on failure, proven by test and not by inspection: `memory_verify_execute` and `eeprom28c_verify_page_readback` raise `MSG_ERR_VERIFY` (0xAF); the per-pulse verify's budget exits raise `MSG_ERR_MAX_PULSES` (0xBD) and `MSG_ERR_ENERGY_CAP` (0xBE); `flash_util_verify_operation` is a DQ7 data-poll wait and raises `MSG_ERR_OP_TIMEOUT` (0xB7) — it can never raise 0xAF, and asserting that it does would be a false pin. Each assertion names the id, not merely a generic error response code (operator decision, 2026-09-21, recorded as D-03 in `milestones/v1.41-phases/204-the-command-surfaces-leave-the-firmware/204-CONTEXT.md`; this requirement previously claimed `MSG_ERR_VERIFY` (0xAF) was still raised by all three named sites — measurement against the live source showed only `eeprom28c_verify_page_readback` actually raises 0xAF, the per-pulse verify's budget exits raise two different ids, and `flash_util_verify_operation` has no compare-and-report path at all and can never raise 0xAF).
+- [x] **FWCMD-06**: a host that sends ordinal 4 or 6 to `3.1.0b1` firmware receives an explicit refusal with no hardware side effect — never silence, never a hang. Proven on real hardware in `milestones/v1.41-phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the published `3.0.0b49` host is refused with `Unknown command: 6` and `Unknown command: 4` against post-204 firmware, both promptly (~3.5s), both non-empty; three whole-device reads before and after both refusals share one SHA-256 digest, ruling out a silent erase. Per D-07, neither side carries the literal `3.1.0b1` string yet — that bump is Phase 207's — so this is proven via the documented label substitution, not against a build carrying that exact version.
 
-### VOLT — the programming voltage clears the part's own floor (gh#66)
+### FWBLANK — the in-algorithm pre-flights leave the firmware (D-1, D-2)
 
-- [x] **VOLT-01**: What the two voltage nibbles encode is established per algorithm family — the
-      unproven question that has blocked the 28-row `vcc_mv: 5500` group since v1.32 Phase 148.
-- [x] **VOLT-02**: The Fujitsu 1 Mbit and 4 Mbit parts ask for a VPP at or above their datasheet floor
-      of 12.2 V, rather than the 12.0 V that reads as in-band under the accepted window while sitting
-      below the part's own minimum.
-- [x] **VOLT-03**: The 28 rows reporting 5.5 V either report their real operating voltage or are left
-      unchanged with the reason recorded. Leaving them unproven and unchanged is an acceptable outcome;
-      changing them on an unproven assumption is not.
-- [x] **VOLT-04**: gh#66 is answered on the issue with the resulting values and the version carrying
-      them.
+- [x] **FWBLANK-01**: the write-init blank check is removed from `eprom.cpp`, `flash_intel.cpp` and `flash_nor_unlock.cpp`.
+- [x] **FWBLANK-02**: the erase-end blank check is removed from `eprom.cpp`.
+- [x] **FWBLANK-03**: `mem_util_blank_check`, `mem_util_blank_check_region`, `blank_check_saved_address` and `BLANK_CHECK_CHUNK_SIZE` are deleted, and no caller remains.
+- [x] **FWBLANK-04**: `FLAG_SKIP_BLANK_CHECK` (`0x08`) is retired from the firmware and from `constants.py`, and the bit is recorded as reserved on both sides.
+- [x] **FWBLANK-05**: the flash and RAM freed is measured per AVR target (uno, uno328pb, leonardo) and reported as a number, not an estimate.
 
-### RAIL — what the shield can actually deliver, and what it does when that is not enough (D-4, gh#71)
+### WRITE — the host takes over the write guard (D-2, D-3)
 
-- [x] **RAIL-01**: The deliverable maximum of the VPP and VPE rails is established at the socket per
-      shield revision and recorded, with the method named — a meter reading and an ADC reading are not
-      interchangeable, and an ADC-derived figure carries its known error.
-- [x] **RAIL-02**: The generator's `RURP_VPP_CEILING_MV = 25000` is either replaced by a measured
-      figure or kept with its status recorded as theoretical, and the 30 rows asking 18 V or more are
-      classified against whichever figure stands.
-- [ ] **RAIL-03**: When a part's required VPP exceeds what the shield can deliver, the operation
-      proceeds with a warning that names the required voltage and the deliverable one. It does not
-      refuse silently, and it does not attempt silently.
-- [x] **RAIL-04**: Where the VPE rail is the only one that reaches a part's requirement, the routing
-      decision is made and recorded — including a decision not to route it.
-- [x] **RAIL-05**: gh#71 is answered on the issue, whichever way RAIL-04 goes.
+- [x] **WRITE-01**: before writing to a part that does not carry `FLAG_CAN_ERASE`, the host reads the target region and refuses the write if it is not blank, naming the first non-blank address and its value.
+- [x] **WRITE-02**: the guard applies to exactly the protocol families whose firmware write-init blank-checks today — `0x07`, `0x08`, `0x0B`, `0x06`, `0x10` — and within those, a part whose erase actually ran is exempt from the read; SRAM/FRAM and protocol `0x05` are named exemptions whose reasoning is stated at the exemption site, and a test pins that exact guarded set and fails if it **narrows or widens** (operator decision, 2026-09-21, recorded as D-01/D-02 in `milestones/v1.41-phases/203-the-write-guard-moves-up-a-layer/203-CONTEXT.md`; this requirement previously exempted any part carrying `FLAG_CAN_ERASE` and pinned only against widening beyond that flag — measurement across every firmware write-init path showed that wording would make the host start refusing non-blank writes on protocol `0x05` and on every SRAM/FRAM part, families the firmware has never checked).
+- [x] **WRITE-03**: `write -b` / `--no-blank-check` skips the host check and still does not skip erase.
+- [x] **WRITE-04**: `write --verify` runs a read-back comparison of the written region through the CMP engine, and reports through it.
+- [x] **WRITE-05**: a `write --verify` whose comparison fails exits non-zero and says the write landed but did not verify — never "successful".
+- [x] **WRITE-06**: a non-blank, non-erasable part accepts a region write into a blank region — and still does after the firmware check is gone. v1.40 Phase 201 already region-scoped the firmware pre-flight, so this passes today; the 2026-08-30 todo's "must be seen RED first" framing predates that fix and does not apply. The risk this pins is **silent re-breakage** when the guard moves to the host, so the test must exercise the host path and fail if the host refuses a blank region on a non-blank part.
 
-### VCC — an elevated programming supply is stated, not silently dropped
+### DEVTEST — `dev test` keeps its fidelity (D-6)
 
-- [x] **VCC-01**: A part that needs a programming VCC above the shield's fixed 5.0 V says so where the
-      operator will see it, rather than carrying a decoded `vdd_mv` that nothing applies.
-- [x] **VCC-02**: That statement uses the same warning shape as RAIL-03, so one fact does not get two
-      explanations.
+- [x] **DEVTEST-01**: `OP_VERIFY` and `OP_BLANK_CHECK` route through the rewritten host methods and produce a fingerprint at least as informative as today's.
+- [x] **DEVTEST-02**: a report from the host-side comparison path is distinguishable from one produced by the firmware path, using the established empty-default discriminator discipline, so no already-filed `dedup_fingerprint` group is silently re-keyed and no two mechanically different runs silently merge.
+- [x] **DEVTEST-03**: `dev test`'s step verdicts for a physically identical outcome do not change meaning; where a classification does change, the change is stated and justified rather than absorbed.
 
-### BLANK — a partial write is gated on the region it writes (backlog 999.44, firmware half)
+### SESS — one leased serial session per plan (D-6, seed R4)
 
-- [x] **BLANK-01**: The write-init blank check applies to the region being written, not to the whole
-      device, so a non-erasable part holding data outside the target region accepts a write into a
-      blank region.
-- [x] **BLANK-02**: `mem_util_blank_check`'s whole-device behaviour is unchanged for its other two
-      callers — the standalone blank-check command and the erase-end check — and the multi-call
-      chunking contract through `blank_check_saved_address` still resumes correctly.
-- [x] **BLANK-03**: A UV part holding data outside the target slot accepts a slot write, proved by the
-      regression test whose absence is why this shipped.
+- [x] **SESS-01**: a `dev test` plan opens one validated serial link and reuses it across its steps, instead of one open and teardown per call.
+- [x] **SESS-02**: the wall-clock saving is measured on a real run and reported as a number; if it is not worth the structural change, that is recorded and the change is reverted rather than kept on principle.
+
+### REL — version, compatibility and the record (D-4, D-5)
+
+- [x] **REL-01**: both repositories carry `3.1.0b1`, and the two version strings are bumped in the same commit pair. Delivered by plan 207-01: firmware `a55f2d8` and app `67f93e2`, each a single-file commit on top of a merge of `origin/beta`. Both repos' own `update_version.py --dry-run` print `DRY_RUN: 3.1.0b1`.
+- [x] **REL-02**: a `3.1.0b1` host against pre-`3.1.0` firmware performs `verify` and `blank` correctly, because it only sends `CMD_READ`. Proven, not assumed. Proven on real hardware in `milestones/v1.41-phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the post-204 host's `verify` matches (exit 0) and `blank` reports not-blank (exit 1, via the documented abort-predicate fast path) against pre-204 firmware, with no unknown-command line in either output. Per D-07, "3.1.0b1" here means the post-204 host label, not the literal version string, which is Phase 207's bump.
+- [x] **REL-03**: a pre-`3.1.0` host against `3.1.0b1` firmware fails `verify` and `blank` with a refusal the user can act on, and with no hardware side effect. Proven on real hardware in `milestones/v1.41-phases/204-the-command-surfaces-leave-the-firmware/204-BENCH-MATRIX.md` (plan 05): the published `3.0.0b49` host is refused with `Unknown command: 6` and `Unknown command: 4` against post-204 firmware, both captured verbatim with exit code and duration; three whole-device reads share one digest, proving no hardware side effect. Per D-07, "3.1.0b1" here means the post-204 firmware label, not the literal version string, which is Phase 207's bump.
+- [x] **REL-04**: the breaking change and the `write --verify` / `--full` surfaces are documented in the wiki, which is the only documentation home. Delivered by plans 207-02 and 207-03: the Breaking-Changes 3.1.0b1 entry and the new Writing-and-Verifying page are live on the wiki at `880a59b`, a fast-forward from `81229d8` approved by the operator. This was proven from a fresh clone.
 
 ## Future Requirements
 
@@ -115,55 +110,69 @@ Tracked, not in this milestone.
 
 | ID | Requirement | Why deferred |
 |---|---|---|
-| **OVR-F1** | The database records, per field, whether the value came from infoic or from an override, and `info` can show it | The override file already answers this for a reader; a per-field provenance channel on the wire is a separate design |
-| **CAL-F1** | White-box bandgap and divider calibration so the board's own voltage readings are trustworthy | D-5 — the warn-and-attempt policy does not need it; seed `voltage-reading-whitebox-calibration` stays dormant, 999.38 stays filed |
-| **VOLT-F1** | The remaining families touching `VCC_VOLTAGES[0x04]` beyond the 28 rows | Only if VOLT-01 proves the nibble semantics generalise |
+| **CMP-F1** | A protocol-level abort for a read in flight, so a first-mismatch stop saves time and not only output | No abort message exists and the END phase must still run to leave the port clean. Adding one is a protocol change of its own, and this milestone is already retiring two ordinals. **Measured at Phase 204 (D-12):** a cheaper `DONE`-based clean stop was offered there and declined. The firmware half genuinely is one line — `op_wait_for_ack` returns on `OP_MSG_ACK` and `OP_MSG_ERROR`, and `OP_MSG_DONE` falls through to the retry delay and the existing one-second timeout. The host half is not one line — today's host aborts by withholding acknowledgements, sending nothing at all, and `_drive_region_compare`'s four-condition discrimination keys on `last_firmware_error_code == MSG_ERR_TIMEOUT`, a code a clean stop would no longer produce; both sides must move together, and the surface they would rework is `verify`, the one Phase 202 had just built. What makes deferring free: pre-`3.1.0` firmware's `op_get_message` already parses `"DONE"` into its own `OP_MSG_DONE` enumeration value and `op_wait_for_ack` already ignores it, so a future host that sends it to pre-`3.1.0` firmware degrades to exactly today's one-second timeout path. The change is forward-compatible by construction and can land in any later phase with the same properties |
+| **CMP-F2** | Reach or retire `classify_fingerprint`'s `transport` bucket | Dead code because `_dispatch_multi_run` is always called with `runs=1`; it belongs to the Phase 178 fault-attribution design, not here |
+| **PROTO-F1** | Replace the jsmn/JSON command layer with fixed-layout binary frames | Seed `binary-command-protocol` triggered on this milestone and was deliberately left planted — ~512 B RAM and ~1–1.5 KB flash, but its own milestone, not a rider |
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Adding chips absent from `infoic.xml` | `tools/extra_chips.json` already owns that, and this milestone corrects rows that exist |
-| Hand-editing `chip_database.json` | It is generated. A wrong value is a decode fault or a missing override, never a row to patch |
-| Protocol dispatch changes | The algorithm axis is settled; this milestone changes parameters, not paths |
-| The SST39SF040 write stall (gh#86/#90) and the 62256 read divergence (gh#83) | Undiagnosed, and neither is a parameter fault — investigation work, not this milestone |
-| Voltage-reading calibration | D-5 |
+| Removing any in-algorithm verify | D-7. A UV program loop cannot decide whether to pulse again without its verify; `eprom.cpp` calls `memory_verify_execute` directly |
+| Removing `MSG_ERR_VERIFY` (0xAF) | Still raised by three surviving in-algorithm verifies. `messages.h` is codegen-generated from meta's `messages.toml` and is never hand-edited |
+| A deprecation window for ordinals 4 and 6 | D-4. Keeping them working keeps the flash, which is the thing being reclaimed |
+| A host firmware-version gate on `verify` / `blank` | Unnecessary in the direction that matters, and the host structurally cannot read a firmware pre-release suffix anyway |
+| Making `write --verify` the default | D-3 |
+| Chip database or generator changes | v1.40 owns that axis; nothing here reads a decoded parameter |
+| A stable `3.1.0` release | D-5. Stable stays operator-gated |
 
 ## Traceability
 
+Every requirement maps to exactly one phase.
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OVR-01 | Phase 197 | Complete |
-| OVR-02 | Phase 197 | Complete |
-| OVR-03 | Phase 197 | Pending |
-| OVR-04 | Phase 197 | Complete |
-| OVR-05 | Phase 197 | Complete |
-| OVR-06 | Phase 197 | Complete |
-| PULSE-01 | Phase 197 | Complete |
-| PULSE-02 | Phase 197 | Complete |
-| PULSE-03 | Phase 197 | Complete |
-| PULSE-04 | Phase 197 | Complete |
-| VOLT-01 | Phase 198 | Complete |
-| VOLT-02 | Phase 198 | Complete |
-| VOLT-03 | Phase 198 | Complete |
-| VOLT-04 | Phase 198 | Complete |
-| RAIL-01 | Phase 199 | Complete |
-| RAIL-02 | Phase 199 | Complete |
-| RAIL-03 | Phase 199 | Pending |
-| RAIL-04 | Phase 199 | Complete |
-| RAIL-05 | Phase 199 | Complete |
-| VCC-01 | Phase 200 | Complete |
-| VCC-02 | Phase 200 | Complete |
-| BLANK-01 | Phase 201 | Complete |
-| BLANK-02 | Phase 201 | Complete |
-| BLANK-03 | Phase 201 | Complete |
+| CMP-01 | Phase 202 | Complete |
+| CMP-02 | Phase 202 | Complete |
+| CMP-03 | Phase 202 | Complete |
+| CMP-04 | Phase 202 | Complete |
+| CMP-05 | Phase 202 | Complete |
+| CMP-06 | Phase 202 | Complete |
+| CMP-07 | Phase 202 | Complete |
+| CMP-08 | Phase 202 | Complete |
+| WRITE-01 | Phase 203 | Complete |
+| WRITE-02 | Phase 203 | Complete |
+| WRITE-03 | Phase 203 | Complete |
+| WRITE-04 | Phase 203 | Complete |
+| WRITE-05 | Phase 203 | Complete |
+| WRITE-06 | Phase 203 | Complete |
+| FWCMD-01 | Phase 204 | Complete |
+| FWCMD-02 | Phase 204 | Complete |
+| FWCMD-03 | Phase 204 | Complete |
+| FWCMD-04 | Phase 204 | Complete |
+| FWCMD-05 | Phase 204 | Complete |
+| FWCMD-06 | Phase 204 | Complete |
+| REL-02 | Phase 204 | Complete |
+| REL-03 | Phase 204 | Complete |
+| FWBLANK-01 | Phase 205 | Complete |
+| FWBLANK-02 | Phase 205 | Complete |
+| FWBLANK-03 | Phase 205 | Complete |
+| FWBLANK-04 | Phase 205 | Complete |
+| FWBLANK-05 | Phase 205 | Complete |
+| DEVTEST-01 | Phase 206 | Complete |
+| DEVTEST-02 | Phase 206 | Complete |
+| DEVTEST-03 | Phase 206 | Complete |
+| SESS-01 | Phase 206 | Complete |
+| SESS-02 | Phase 206 | Complete |
+| REL-01 | Phase 207 | Complete |
+| REL-04 | Phase 207 | Complete |
 
 **Coverage:**
 
-- v1 requirements: 24 total
-- Mapped to phases: 24
+- v1 requirements: 34 total
+- Mapped to phases: 34
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-09-18*
-*Last updated: 2026-09-18 at milestone activation*
+*Requirements defined: 2026-09-20*
+*Last updated: 2026-09-20 at milestone activation*

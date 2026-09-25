@@ -1645,3 +1645,117 @@ had to be redone with position-based matching inside the same phase.
 - Phase 197 was the expensive one at 8 plans, and correctly so — it built the mechanism the other
   four phases spent single plans using. Phase 200 was the cheapest at 3 plans and produced the one
   operator rejection, which cost a re-verification and improved the result.
+
+## Milestone: v1.41 — Verification Moves to the Host
+
+**Closed:** 2026-09-24 (closed, not shipped)
+**Phases:** 7 (202–207 plus the inserted 207.1) | **Plans:** 36 | **Tasks:** 95 | 34/34 v1 requirements | `override_closeout`
+
+### What Was Built
+
+One streaming comparison engine on the host, `firestarter/compare.py`, that `verify`, `blank`,
+`write --verify` and `dev test` all use: it compares per chunk as the read arrives, stops at the
+first mismatch by default, reports every range under `--full`, names a `classify_fingerprint`
+bucket, and returns 0 / 1 / 2 so a transport fault is never reported as a mismatch. A host write
+guard, `write_blank_guard.py`, on exactly the five protocol families the firmware used to check.
+Then the firmware lost what the host had gained: `CMD_VERIFY` (6) and `CMD_BLANK_CHECK` (4) with their
+ordinals reserved, the write-init and erase-end pre-flight blank checks,
+`mem_util_blank_check{,_region}` and `FLAG_SKIP_BLANK_CHECK` — leonardo 24134 → 23314 B. `dev test`
+routes through the same engine behind a `cmp=host` discriminator, on one leased serial session per
+plan. Both repos went to `3.1.0b1`, and the wiki records the breaking change.
+
+### What Worked
+
+**Treating the order of the phases as the safety property.** The host gained each capability one
+phase before the firmware lost it — 202 before 204, 203 before 205 — so no phase boundary left a
+window where neither side checked. It cost one phase of harmless redundancy each time, and it made
+every removal a deletion of something already replaced rather than a leap.
+
+**Pre-registering the keep-or-revert threshold before measuring.** SESS-02's 15.0 % threshold, its
+spread clause and its verdict clause were committed before any bench run, and the revert recipe was
+rehearsed on a scratch tree. The result — 15.1 % — was close enough that an after-the-fact threshold
+would have been worth nothing. Because it was set first, the keep is a measurement and not a
+preference.
+
+**Amending a requirement by measurement, and keeping the text it replaced.** CMP-04, WRITE-02 and
+FWCMD-05 were each rewritten mid-milestone when the live source showed the original was false —
+most sharply FWCMD-05, whose original would have pinned `flash_util_verify_operation` to an error id
+it can never raise. Each amendment names its decision and quotes what it replaced, so a reader can
+see what changed and why without archaeology.
+
+**Proving a refactor behaviour-identical against the old code, not against a test list.** Phase 202
+ran the real pre-refactor `classify_fingerprint` out of git against the new one over 2922 generated
+cases across all five buckets, with zero differences. That is what let Phase 206 route `dev test`
+through the new engine without re-keying any filed report.
+
+**Perturbing the pinning test.** Removing `0x0B` from the guarded set produced one failure; adding
+`0x0D` produced four. After Phase 205 that test is the only drift detector the guard has, so knowing
+it can fail was worth more than knowing it passes.
+
+**Building the "before" firmware from a detached worktree for the skew legs.** Both directions of the
+version skew in 204 and 205 were run on real hardware against firmware built from the pre-change
+commit, not argued from the code.
+
+### What Was Inefficient
+
+**The close-time audit found 26 open items and needed a whole inserted phase.** Phase 207.1 took 7
+plans to disposition them. Three of the items were SECURITY.md files owed by 202, 204 and 205 while
+security enforcement was on; they should have been written when each phase closed, not collected at
+the end. The milestone was audited five times in all.
+
+**The v1.40 lesson about unfiled review findings repeated, one milestone later.** 207.1's code review
+raised three warnings, one of them a real defect (WR-02), and the phase closed with none filed. This
+close filed them, exactly as the v1.40 close filed Phase 200's CR-01. Writing the lesson down in
+v1.40's retrospective did not change the process; nothing in the close path reads review findings
+back.
+
+**Both Criticals were found by code review, not by planning.** Phase 203's CR-01 (a multi-connect
+operation could drift between boards) and Phase 205's CR-01 (protocol `0x06`'s erase exemption held
+at a non-zero address, where no erase runs) were both caught after the code existed. 205's is the
+instructive one: the exemption was derived from what `FLAG_CAN_ERASE` means, not from where the erase
+actually happens.
+
+**WR-02 sat under text written to rule it out.** Phase 206's own docstring cited the drain site as
+"not affected". It was found a phase later by 207.1's review and reproduced by the audit's integration
+checker.
+
+**The Nyquist hook ran on an uncommitted config edit** for three validate-phase runs, and the close
+still found `config.json` modified and unresolved.
+
+**The roadmap contradicted its own requirement.** Phase 206's Bench cell said `no` while SESS-02
+forbade satisfying the requirement without a real run. Plan 206-04 corrected it; the table had been
+written before the requirement wording settled.
+
+### Patterns Established
+
+- **Gain the capability, then remove the alternative — one phase apart.** Applies to any move of
+  responsibility across a boundary.
+- **Pre-register a numeric keep/revert threshold, and rehearse the revert, before the measurement.**
+- **Pin a guarded set in both directions.** A test that fails only if the set widens lets it narrow
+  silently, and a narrowed safety set is the worse failure.
+- **An exemption is sound only where its premise physically holds.** "This part erases before it
+  writes" is true at address 0 and false elsewhere for `0x06`; the exemption now takes the address.
+- **Reserve a retired wire ordinal with a note at the gap**, where the next author looking for a free
+  slot will read it.
+- **An empty-default discriminator on a fingerprint** keeps a new mechanism's reports apart from an
+  old one's without re-keying anything already filed.
+
+### Key Lessons
+
+- **Removing a command surface is not removing verification.** D-7 held the whole milestone
+  together: the per-pulse verify, `memory_verify_execute` and `MSG_ERR_VERIFY` stayed, and a source
+  contract proves they did.
+- **A narrow margin is still a result when the threshold came first.** 15.1 % against 15.0 % is a
+  keep; it would have been noise against a threshold chosen afterwards.
+- **A lesson written in a retrospective is not a process change.** The unfiled-review-finding gap
+  recurred verbatim. If it matters, it needs a step in the close path, not a paragraph.
+- **Find where the effect happens before trusting the flag that describes it.** `FLAG_CAN_ERASE` says
+  a part can be erased; it does not say an erase ran under the bytes about to be written.
+
+### Cost Observations
+
+- 235 meta commits, 65 host and 17 firmware (by `git cherry`) across the milestone range.
+- Four bench sessions, all on one Leonardo, one Rev 2.0 shield and one W27C512: the 204 tracer and
+  skew matrix, the 205 matrix, and 206's six timed `dev test` runs.
+- Phase 205 was the largest at 8 plans, including CR-01's fix; the inserted 207.1 cost 7 plans, almost
+  as much as the most expensive delivery phase, to pay down debt the earlier phases left.

@@ -3,6 +3,8 @@ created: 2026-08-27T17:45:00Z
 title: Strip residual GSD provenance comments from product source (operator hard rule)
 area: both
 resolves_phase: unassigned
+status: obsolete
+resolved: 2026-09-24 (obsolete — the operator removed the no-comments rule in all three repositories on 2026-09-19; comments in product source are allowed)
 files:
   - firestarter/src/operation_utils.cpp (9 blocks, from v1.22 Phase 119-07 e9d0577 and Phase 50)
   - firestarter/src/ + firestarter/include/ (remaining CAP-0N and D-NN citation lines)
