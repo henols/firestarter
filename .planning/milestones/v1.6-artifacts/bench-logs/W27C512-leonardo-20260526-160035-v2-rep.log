@@ -1,34 +1,0 @@
-Run 1/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-160035-v2-rep/run_01.bin
-Connecting...Connecting... OK      
-WARN: Chip ID 0xda01 does not match expected ID 0xda08
-Programmer warning: Chip ID 0xda01 does not match expected ID 0xda08
-Run 1/5: SHA-256 b1874d1ee835d74ea761e42282d1fb8021faa45866983ab782a8ef88522cab35  bytes=65536  elapsed=13.53s
-Run 2/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-160035-v2-rep/run_02.bin
-Connecting...Connecting... OK      
-WARN: Chip ID 0xda01 does not match expected ID 0xda08
-Programmer warning: Chip ID 0xda01 does not match expected ID 0xda08
-Run 2/5: SHA-256 d4706c47efd1a85bd58aad4ad6f69ef81ed98846a57e01da30a4318df0a0fb31  bytes=65536  elapsed=13.37s
-Run 3/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-160035-v2-rep/run_03.bin
-Connecting...Connecting... OK      
-WARN: Chip ID 0xda01 does not match expected ID 0xda08
-Programmer warning: Chip ID 0xda01 does not match expected ID 0xda08
-Run 3/5: SHA-256 6b5c36d823a591b25f44715d9ff5b454afa2b060f8b59a72cc942eae0aa8f016  bytes=65536  elapsed=13.37s
-Run 4/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-160035-v2-rep/run_04.bin
-Connecting...Connecting... OK      
-WARN: Chip ID 0xda01 does not match expected ID 0xda08
-Programmer warning: Chip ID 0xda01 does not match expected ID 0xda08
-Run 4/5: SHA-256 3bebd38490568bcd3a0eb50db904eba25356d5f6048adf0455b9b8dba04f0729  bytes=65536  elapsed=13.37s
-Run 5/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-160035-v2-rep/run_05.bin
-Connecting...Connecting... OK      
-WARN: Chip ID 0xda01 does not match expected ID 0xda08
-Programmer warning: Chip ID 0xda01 does not match expected ID 0xda08
-Run 5/5: SHA-256 4a9eb294b32cbbb76ce483ff9e7d3edc558d92f51a5806fc0b0b512acae8c50a  bytes=65536  elapsed=13.36s
-
-Consistency check: FAIL
-Chip: W27C512  Board: unknown-board  Port: /dev/ttyACM1
-Runs: N=5
-Distinct SHAs: 5
-Output dir: /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-160035-v2-rep/
-First divergence: offset 0x022E  (run_1=0x2F, run_2=0x2E)
-Total divergent bytes (run_1 vs run_2): 506 / 65536 (0.8%)
-First 10 divergent offsets: 0x022E, 0x0394, 0x04D0, 0x0B08, 0x1008, 0x1109, 0x1208, 0x1209, 0x1B12, 0x1B50

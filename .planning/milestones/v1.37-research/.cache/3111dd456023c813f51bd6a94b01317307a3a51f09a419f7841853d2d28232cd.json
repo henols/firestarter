@@ -1,1 +1,0 @@
-{"content":"flashrom does not target 28C parallel EEPROM SDP (its parallel support is LPC/FWH/Firmware-Hub block-lock registers, a different mechanism). No usable precedent for 28C SDP CLI shape from flashrom.","source":"web","provider":"websearch","confidence":"LOW","fetched_at":"2026-07-27T13:02:32.470Z","ttl":86400000,"kind":"web"}

@@ -1,2 +1,0 @@
-read_exit_code=0
-read_set_wallclock_s=219.390

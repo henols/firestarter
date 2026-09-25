@@ -1,9 +1,0 @@
-# 53-07 Leonardo read leg — N=5 consistency-check, verdict 0 (all identical = read self-consistency)
-# board: leonardo (ACM0), Rev 2.0 (operator silkscreen), post-55 fw 'OK: FW: 3.0.0b6:leonardo'
-# -f bypasses the VPP-high(13.1V) init guard; a READ routes no VPP to the socket (safe).
-de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31  run_01.bin
-de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31  run_02.bin
-de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31  run_03.bin
-de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31  run_04.bin
-de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31  run_05.bin
-# verdict: 0 (PASS) — 1 distinct SHA across N=5

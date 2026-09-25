@@ -1,23 +1,0 @@
-=== Settled Read After Run 2 ===
-Timestamp: 2026-06-27T06:39:58Z
-Address 0x0000ff (last byte of page 0):
-Connecting...Connecting... OK      
-Reading 1 bytes from address 0x00FF of W29C040
-  0%|          | 0x0000/0x0001 bytes                                        0%|          | 0x0000/0x0001 bytes 000000ff: 00                                               .
-                                     100%|██████████| 0x0001/0x0001 bytes EPROM read complete.
-100%|██████████| 0x0001/0x0001 bytes 
-Read complete (0.05s)
-Address 0x0000 (first byte of page 0):
-Connecting...Connecting... OK      
-Reading 1 bytes from address 0x0000 of W29C040
-  0%|          | 0x0000/0x0001 bytes                                        0%|          | 0x0000/0x0001 bytes 00000000: 00                                               .
-                                     100%|██████████| 0x0001/0x0001 bytes EPROM read complete.
-100%|██████████| 0x0001/0x0001 bytes 
-Read complete (0.05s)
-Address 0x00fe (second-to-last byte of page 0):
-Connecting...Connecting... OK      
-Reading 1 bytes from address 0x00FE of W29C040
-  0%|          | 0x0000/0x0001 bytes                                        0%|          | 0x0000/0x0001 bytes 000000fe: 00                                               .
-                                     100%|██████████| 0x0001/0x0001 bytes EPROM read complete.
-100%|██████████| 0x0001/0x0001 bytes 
-Read complete (0.05s)

@@ -1,8 +1,0 @@
-# 53-03 Leonardo write leg — 5x (write -b -f -> read <file> -f), readback SHA must == source SHA
-# source_image.bin SHA256 = 25bae52d0943f20a24850a186a2b262cf022d5f054f658bd5bff1333fe08e9e6 (chip's own content; net non-destructive)
-# plain-write path (erase W27C512 = Not supported); -f bypasses VPP-high guard. Writes ~40s each.
-cycle_01_readback.bin  25bae52d0943f20a24850a186a2b262cf022d5f054f658bd5bff1333fe08e9e6  == source PASS
-cycle_02_readback.bin  25bae52d0943f20a24850a186a2b262cf022d5f054f658bd5bff1333fe08e9e6  == source PASS
-cycle_03_readback.bin  25bae52d0943f20a24850a186a2b262cf022d5f054f658bd5bff1333fe08e9e6  == source PASS
-cycle_04_readback.bin  25bae52d0943f20a24850a186a2b262cf022d5f054f658bd5bff1333fe08e9e6  == source PASS
-cycle_05_readback.bin  25bae52d0943f20a24850a186a2b262cf022d5f054f658bd5bff1333fe08e9e6  == source PASS

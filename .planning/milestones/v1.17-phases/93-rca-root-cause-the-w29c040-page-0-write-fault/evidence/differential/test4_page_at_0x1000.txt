@@ -1,6 +1,0 @@
-Connecting...Connecting... OK      
-Writing /workspaces/.planning/phases/93-rca-root-cause-the-w29c040-page-0-write-fault/evidence/differential/w29c040_256b_seed43.bin to W29C040
-  0%|          | 0x0000/0x0100 bytes                                      100%|██████████| 0x0100/0x0100 bytes ERROR: Timeout verifying 0x03 at 0x0010ff (got 0x00)
-Programmer error during WRITE: Timeout verifying 0x03 at 0x0010ff (got 0x00)
-100%|██████████| 0x0100/0x0100 bytes 
-Write to W29C040 failed.

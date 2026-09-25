@@ -1,4 +1,0 @@
-Connecting...Connecting... OK      
-Blank checking EPROM SST39SF040
-ERROR: Chip ID 0000 dont match expected ID 0xbfb7
-Communication error during BLANK_CHECK: Programmer error during init: Chip ID 0000 dont match expected ID 0xbfb7

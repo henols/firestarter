@@ -1,6 +1,0 @@
-# XACT-02 fault-injection log (outgoing, drop-delimiter)
-corrupted_transfer_surfaced_clean_error: True
-error_latency: 23.291s
-sub_second_clean_error_no_2s_cascade: YES (>=2s cascade)
-detail: outgoing: setup command frame rejected; connection did not establish (firmware did not ack a corrupt host->fw frame)
-clean follow-on transfer PASSED (recovery byte-exact)

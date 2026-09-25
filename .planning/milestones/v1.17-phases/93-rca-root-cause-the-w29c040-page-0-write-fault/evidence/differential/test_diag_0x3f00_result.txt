@@ -1,2 +1,0 @@
-  0%|          | 0x0000/0x0100 bytes                                      100%|██████████| 0x0100/0x0100 bytes ERROR: Timeout verifying 0x03 at 0x003fff (got 0x00)
-Write to W29C040 failed.

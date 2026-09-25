@@ -1,13 +1,0 @@
-=== W29C040 Write Fault Reproduction Run 2 ===
-Timestamp: 2026-06-27T06:39:33Z
-Command: firestarter -p /dev/ttyACM0 write -b --skip-erase W29C040 /workspaces/.planning/phases/93-rca-root-cause-the-w29c040-page-0-write-fault/evidence/signature/w29c040_test_1024b_seed42.bin
-Image SHA-256: 1ba43bf584f5492eee63d3e590e65f1e1cdaf93dd988686d958f053713b7782f
-
-=== Serial Output ===
-Connecting...Connecting... OK      
-Writing /workspaces/.planning/phases/93-rca-root-cause-the-w29c040-page-0-write-fault/evidence/signature/w29c040_test_1024b_seed42.bin to W29C040
-  0%|          | 0x0000/0x0400 bytes                                      100%|██████████| 0x0400/0x0400 bytes ERROR: Timeout verifying 0x04 at 0x0000ff (got 0x00)
-Programmer error during WRITE: Timeout verifying 0x04 at 0x0000ff (got 0x00)
-100%|██████████| 0x0400/0x0400 bytes 
-Write to W29C040 failed.
-Exit code: 1
