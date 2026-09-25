@@ -1,0 +1,63 @@
+chipdb:
+  datasheet-overrides:
+    description: One-field corrections with a vendored PDF and page/figure note; only the 6 overridable fields
+  extra-chips:
+    description: Only chips infoic.xml lacks entirely; existing key set; UNVERIFIED until bench proof
+  fix-the-decoder:
+    description: Never hand-edit chip_database.json; fix decoder → override → report; commit the regen
+  no-invented-fields:
+    description: Emit only values decoded from infoic attributes; no per-part tables; T56/T76 data allowed when more accurate
+firmware:
+  command-sequences:
+    description: Named byte_flip_t tables for unlock/SDP/erase; cite vendor doc, never dedupe, extern linkage
+  fail-closed-refusals:
+    description: Refuse unknown/out-of-range input pre-flight with an error ID; never clamp or default
+  hardware-revision-switches:
+    description: Explicit REVISION_* case lists, fail-safe default, #ifdef HARDWARE_REVISION
+  hv-teardown:
+    description: Single-exit body+wrapper clears HV on error; shared masks; name VPE not P1
+  logging-ids:
+    description: Catalog message IDs, big-endian payloads, force WARN/ERROR fork, 0xFF sentinel, Uno frame loss
+  progmem-tables:
+    description: PROGMEM per-protocol tables read via pgm_read_*, linear-scan accessor, no Arduino.h
+  prom-handler-shape:
+    description: configure_<family>() structure, no default arm, lockstep steps for new families/commands
+  size-reporting:
+    description: Report flash + RAM for leonardo (stable + beta) and uno on every firmware change
+  timing:
+    description: Iteration-bounded polls, cited timing constants, long-delay helper, separate erase width
+host:
+  command-skeleton:
+    description: Click decorator order, AppContext injection, UsageError first, 0/1 and 0/1/2 exit contracts
+  confirmation-prompts:
+    description: Hazard text first, default=False, refuse off-TTY
+  echo-vs-logger:
+    description: click.echo for operator facts at default verbosity; logger for -v diagnostics
+  gate-polarity:
+    description: Fail closed by default; fail open only when the worst case is lost availability
+  help-docstrings:
+    description: Command docstrings/help= are user docs; no internal refs; no --help pin tests
+  pre-serial-gates:
+    description: Pure *_gate/*_guard policy modules, require_* raises, called from eprom_operations before serial
+  refusal-text:
+    description: Module-level _REFUSAL_FORMAT constants, CHIP upper, hazard + escape, silkscreen quotes, STE100
+  typed-refusals:
+    description: One exception per refusal, root-class prefix, subclass arm above parent, exit via ClickException
+protocol:
+  duplicated-constants:
+    description: Host/firmware constant pairs (COMMAND/FLAG/CTRL/JSON keys/buffer sizes); change both in one pair
+  message-catalog:
+    description: messages.toml in meta is the only source; sync script; never hand-edit messages.h/.py; ID bands
+  retired-ordinals:
+    description: Commands 4/6 and flag 0x08 are never reused; tombstone comments on both sides
+  rollout-compatibility:
+    description: Firmware first; host may require latest fw; append-only length-discriminated acks; 0 = not sent
+testing:
+  native-firmware-tests:
+    description: Register suites in both platformio lists; run both native envs; stub/time blind spots; explicit fork tests
+  no-source-introspection:
+    description: Tests exercise production code with data; never scan source text or ast; parity via codegen
+  non-vacuity:
+    description: Every check has violating-input, boundary and absent-evidence tests; exact counts; read the RED reason
+  standalone-checkout:
+    description: Tests read only their own repo, paths from __file__; verify in a fresh clone with a uv 3.11 venv
