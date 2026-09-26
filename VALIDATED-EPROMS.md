@@ -62,3 +62,10 @@
 - SST39SF020 is `algorithm: 6` (a sector-erase NOR part handled by a different firmware file,
   `PROTO_FLASH_NOR_UNLOCK`), not a protocol `0x05` part. It never traverses the page-write path,
   so a finding about protocol `0x05` writes does not apply to it.
+- Every row was recorded on the 3.0.0bNN pre-release line. The Host and Firmware columns name
+  3.0.0bNN artefacts, and no row has been re-run against a 3.1.x host or a 3.1.x firmware. A row
+  is evidence about the chip, its wiring and its programming path. It is not evidence that the
+  same sweep passes on 3.1.x. From 3.1.0b1 the verify and blank-check steps run on the host
+  instead of the firmware, so those two steps are unproven on 3.1.x for every row here.
+- A row records one passing sweep. It does not record a chip on which every command works.
+  AE29F2008 passed its sweep, and `erase AE29F2008` still fails (gh#62).
