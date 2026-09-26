@@ -433,6 +433,19 @@ format      = "Internal VCC reads %u mV, which the board cannot run at. The volt
 params      = [{ type = "u16", render = "dec" }]
 wire_format = "id_frame"
 
+# This board has never been calibrated, so its voltage readings carry the full
+# per-die bandgap spread -- up to 10 %, which is three times the VPP acceptance
+# window. The verdict that follows is therefore not trustworthy in either
+# direction. Emitted once per voltage-gated operation, never as a refusal: it
+# reports a limit on what the firmware knows, not a fault in the hardware.
+[[messages]]
+id          = 0x89
+name        = "MSG_WARN_NOT_CALIBRATED"
+severity    = "WARN"
+format      = "Voltage readings are uncalibrated on this board. Run 'firestarter cal' to make them trustworthy."
+params      = []
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # ERROR (0xA0..0xDF)
 # ---------------------------------------------------------------------------
