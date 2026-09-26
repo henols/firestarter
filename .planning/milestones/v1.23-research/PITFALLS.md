@@ -51,8 +51,8 @@ Commands: `pio run -e leonardo -e uno`, `pio test -e native`, in a throwaway wor
 **PROVEN.** Cherry-picking the five `agent/portability-macros` commits onto today's `beta` — the exact "land the HAL prep first, then the port" sequence PROJECT.md's target-features list describes — takes `pio test -e native` from **141/141 passing to 0 passing and all 17 suites ERRORED**. Hard compile failure, not a flaky test:
 
 ```
-src/json_parser.c:114:32: error: implicit declaration of function 'pgm_read_ptr'
-src/json_parser.c:266:9:  error: implicit declaration of function 'strncmp_P'
+src/json_parser.c:302:32: error: implicit declaration of function 'pgm_read_ptr'
+src/json_parser.c:453:9:  error: implicit declaration of function 'strncmp_P'
 *** [.pio/build/native/src/json_parser.o] Error 1
 ```
 
@@ -363,7 +363,7 @@ The DFU installer adds a `py32` extra (`pyusb>=1.2.1`) to a CLI targeting py3.9 
 **What goes wrong:**
 **PROVEN.** PROJECT.md and STATE.md describe `agent/portability-macros` as providing *"`rurp_millis()`/`rurp_delay_ms()`/`rurp_delay_us()` so common code never calls Arduino timing APIs."* Against the branch, that is false. `RURP_DELAY_US` / `RURP_DELAY_MS` / `RURP_MILLIS` / `RURP_MICROS` have **zero call sites in `src/` or shared `include/`** — grepped. Their only consumers are `platform/py32f071/src/usb_cdc.c` and `platform/py32f071/include/Arduino.h`.
 
-Shared code still calls Arduino APIs directly: `delay(100)` / `delay(500)` (`hardware_operations.cpp:37,57`), `delayMicroseconds(10)` + `delay(2/20)` (`flash_type_4.cpp:113,150,158,162,166`), `delay(FLASH_ERASE_DELAY_MS)` (`flash_type_3.cpp:83`), `millis()` (`operation_utils.cpp:105-106`, `flash_utils.cpp:33-34`), `delay(2)` (`rurp_common.cpp:32`).
+Shared code still calls Arduino APIs directly: `delay(100)` / `delay(500)` (`hardware_operations.cpp:37,57`), `delayMicroseconds(10)` + `delay(2/20)` (`flash_type_4.cpp:113,150,158,162,166`), `delay(FLASH_ERASE_DELAY_MS)` (`flash_type_3.cpp:83`), `millis()` (`operation_utils.cpp:111-112`, `flash_utils.cpp:34-35`), `delay(2)` (`rurp_common.cpp:32`).
 
 **The ARM target compiles this by shipping a 76-line fake `platform/py32f071/include/Arduino.h`** that defines `delay`/`delayMicroseconds`/`millis`/`micros` as inline wrappers over `RURP_*`. That is a legitimate porting technique and it explains why the AVR flash delta is ~zero — *no shared code changed*. But it means:
 

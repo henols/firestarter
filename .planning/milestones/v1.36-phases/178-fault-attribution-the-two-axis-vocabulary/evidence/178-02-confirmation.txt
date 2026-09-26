@@ -1,0 +1,24 @@
+== 1 the two legs, measured
+legB_equal=True
+antivacuity_differs=True
+empty_equal=True
+single_equal=True
+ordering_invariant=True
+parts_append_count=3
+hash_reads_status=False
+rc=0
+== 2 the frozen empty-results shape
+empty_shape_frozen=True
+empty_shape_value=8d6208d00be7
+rc=0
+== 3 the named legs
+rc=0
+leg_test_status_axis_does_not_perturb_dedup_fingerprint=1
+leg_test_a_verdict_change_still_perturbs_dedup_fingerprint=1
+leg_test_status_axis_does_not_perturb_an_empty_results_fingerprint=1
+leg_test_status_axis_does_not_reorder_the_fingerprint_pre_image=1
+== 4 the module
+........................................................................ [ 96%]
+...                                                                      [100%]
+75 passed in 0.39s
+rc=0

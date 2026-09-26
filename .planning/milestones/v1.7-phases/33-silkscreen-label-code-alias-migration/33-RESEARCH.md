@@ -6,7 +6,7 @@
 
 ## Summary
 
-Phase 33 is a hard rename — no behavior change, no struct change, no wire-format change. The work is mechanical: replace the existing shield-net-named macros in `firestarter/include/rurp_shield.h:25-94` with a canonical `CTRL_*` / `PIN_*` namespace in a new `firestarter/include/rurp_pinout.h`, rewrite **106 call-site references across 13 files** (95 lines in firmware src/include + 7 lines in native tests + 4 lines in the Python host docstring at `firestarter_app/firestarter/main.py:408-416`), and mirror a small `RURP_CONTROL_REGISTER_BITS` block in `firestarter_app/firestarter/constants.py`. Fill `.planning/v1.7-SHIELD-REVS.md` §7 with a per-rev silkscreen → alias table sourced from upstream `F_Silkscreen.gbr` (physically-printed labels) + per-rev `.kicad_sch` blobs (in-schematic-only net names) via the per-rev R41/JP4/A3 grep already captured in `mine-notes.md:427-510`.
+Phase 33 is a hard rename — no behavior change, no struct change, no wire-format change. The work is mechanical: replace the existing shield-net-named macros in `firestarter/include/rurp_shield.h:25-89` with a canonical `CTRL_*` / `PIN_*` namespace in a new `firestarter/include/rurp_pinout.h`, rewrite **106 call-site references across 13 files** (95 lines in firmware src/include + 7 lines in native tests + 4 lines in the Python host docstring at `firestarter_app/firestarter/main.py:408-416`), and mirror a small `RURP_CONTROL_REGISTER_BITS` block in `firestarter_app/firestarter/constants.py`. Fill `.planning/v1.7-SHIELD-REVS.md` §7 with a per-rev silkscreen → alias table sourced from upstream `F_Silkscreen.gbr` (physically-printed labels) + per-rev `.kicad_sch` blobs (in-schematic-only net names) via the per-rev R41/JP4/A3 grep already captured in `mine-notes.md:427-510`.
 
 The load-bearing constraint is **ALIAS-03 / GATE-1.7 .hex byte-identical for `uno` / `leonardo` / `uno328pb` modulo ≤ ~50 B**. Because `#define` is preprocessor-only substitution, the post-CPP token stream is literally identical (just renamed identifiers carry no AVR symbol-table footprint). `#define` is the project convention (`firestarter/include/rurp_shield.h` is built on `#define`; `constexpr` reserved for type-anchored host-test constants). Two subtle preservation requirements: (1) the `ADDRESS_LINE_16 == VPE_TO_VPP` aliasing in the legacy non-`HARDWARE_REVISION` path must carry through to identical aliasing in the new namespace; (2) the rev-dependent value mapping (`VPE_TO_VPP = 0x01` legacy vs `0x100` rev-2) must remain ifdef-gated.
 
@@ -309,8 +309,8 @@ The corresponding docstring rewrite in `main.py:408-416`:
 - **`constexpr uint8_t REGULATOR = 0x80;` translation.** AVR-objcopy MAY emit symbol metadata that pushes .hex size up; the project convention is `#define`. Per D-07.
 - **Renaming `REVISION_0` / `REVISION_1` / `REVISION_2_*`** in `rurp_shield.h:37-41`. These are revision-enum values (not RURP-signal layer per D-03). Leave them alone.
 - **Touching PORTD/PORTB/DDRD masks** in `uno_rurp_shield.cpp`/`leonardo_rurp_shield.cpp`. MCU-internal layer, out of D-03.
-- **Bumping `CONFIG_VERSION`** (`rurp_shield.h:98`). EEPROM struct layout is unchanged; bumping the version would invalidate every operator's calibration data.
-- **Renaming `CONTROL_REGISTER` / `LEAST_SIGNIFICANT_BYTE` / `MOST_SIGNIFICANT_BYTE` / `OUTPUT_ENABLE` / `CHIP_ENABLE`** (`rurp_shield.h:105-109`). These are 74HC573 latch selectors, NOT control-register bit names — different semantic layer. Out of scope.
+- **Bumping `CONFIG_VERSION`** (`rurp_shield.h:93`). EEPROM struct layout is unchanged; bumping the version would invalidate every operator's calibration data.
+- **Renaming `CONTROL_REGISTER` / `LEAST_SIGNIFICANT_BYTE` / `MOST_SIGNIFICANT_BYTE` / `OUTPUT_ENABLE` / `CHIP_ENABLE`** (`rurp_shield.h:100-104`). These are 74HC573 latch selectors, NOT control-register bit names — different semantic layer. Out of scope.
 - **Auto-applying `sed -i` across the entire tree in one shot.** Easy to hit a comment that meant the OLD name in a historic sense (e.g. `rurp_shield.h:62-63` comments document the old `VPE_ENABLE → P1_VPP_ENABLE` redirect; those comments need refreshing or rewording, but mechanical `sed` may rewrite them awkwardly).
 - **Modifying `chip_database.json`** or any data file. Phase 33 is code-only.
 
@@ -372,7 +372,7 @@ The corresponding docstring rewrite in `main.py:408-416`:
 ### Pitfall 5: `CONFIG_VERSION "VER06"` accidentally bumped
 **What goes wrong:** Reflexive instinct to bump `CONFIG_VERSION` because a firmware change happened.
 **Why it happens:** Project convention bumps `CONFIG_VERSION` when `rurp_configuration_t` struct layout changes (so EEPROM-stored calibration data with the old layout is recognized as stale). Phase 33 does NOT change the struct layout — only macro names.
-**How to avoid:** Verify the struct definition in `include/rurp_types.h` is byte-identical pre/post; explicitly NOT touch `rurp_shield.h:98` `#define CONFIG_VERSION "VER06"`.
+**How to avoid:** Verify the struct definition in `include/rurp_types.h` is byte-identical pre/post; explicitly NOT touch `rurp_shield.h:93` `#define CONFIG_VERSION "VER06"`.
 **Warning signs:** Operator's calibrated R1/R2 values reset to defaults after firmware reflash — would indicate accidental struct or version drift.
 
 ### Pitfall 6: Native test suite (`test_flash_intel_vpp.cpp`) references old names
@@ -731,7 +731,7 @@ Phase 33 has minimal security surface (no auth, no input validation, no cryptogr
 - §7 column schema (Finding #5): MEDIUM — 12-column shape is recommended but planner discretion (A3).
 - Phase 34 handoff names (Finding #6): MEDIUM — recommendation `PIN_HW_REVISION_DETECT_ADC` + `RES_HW_REVISION_DIVIDER` is sensible but planner discretion.
 - Modified Rev 0 mechanical soundness (Finding #7): HIGH — D-09 explicit, firmware does not branch.
-- `CONFIG_VERSION` non-bump (Finding #8): HIGH — struct layout unchanged, `#define CONFIG_VERSION "VER06"` at `rurp_shield.h:98` stays.
+- `CONFIG_VERSION` non-bump (Finding #8): HIGH — struct layout unchanged, `#define CONFIG_VERSION "VER06"` at `rurp_shield.h:93` stays.
 - Validation Architecture (Finding #9): HIGH — test substrate already exists, sampling rate matches Phase 9 precedent.
 - CHAT-INTEL.md accessibility (Finding #10): HIGH — file confirmed present at `.planning/v1.7/notes/CHAT-INTEL.md` (4851 bytes); gitignored but locally accessible.
 

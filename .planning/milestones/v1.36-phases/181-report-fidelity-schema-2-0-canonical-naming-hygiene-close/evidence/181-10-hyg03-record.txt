@@ -1,0 +1,82 @@
+181-10 Task 1 -- HYG-03 (D-18): dedup_fingerprint's never-hash-to_dict()
+decision, recorded in MILESTONES.md and made enforceable with an AST pin.
+
+## Record placement
+
+milestones_paragraph_present=true
+milestones_section=v1.36
+record_names_allow_list=true
+record_names_count_agreeing=true
+record_names_gate=true
+
+The paragraph is appended to the end of the v1.36 section in
+.planning/MILESTONES.md (after the Phase 178 ATTR-04 paragraph, before the
+v1.35 heading). It names the explicit five-entry allow-list mechanism
+(chip | protocol | op=verdict:classification | repeat_policy_tag |
+coverage_tag), states that a field's ABSENCE from that list is the entire
+exclusion mechanism, names count_agreeing as the consumer that reads an
+already-filed hash without ever re-hashing it, states this phase's own
+seven added exported keys as the measurement that makes the temptation
+concrete, and names the gate (the two new test functions below, plus the
+pre-existing 19-way test_dedup_fingerprint_is_frozen parametrization and
+its failure message's two-commit review rule).
+
+Diff shape (scoped edit, not a rewrite):
+  git diff --numstat -- .planning/MILESTONES.md
+  2	0	.planning/MILESTONES.md
+(2 lines added -- one blank separator, one paragraph; 0 lines removed. No
+archived milestone section below v1.36 was touched.)
+
+## The AST pin -- firestarter_app/tests/test_blast_radius_invariance.py
+
+Two named test functions plus one private helper
+(_dedup_fingerprint_reachable_names), appended at the end of the module:
+
+- test_dedup_fingerprint_hashes_an_explicit_allow_list_and_never_the_serialized_mapping
+  The positive claim: dedup_fingerprint's body, parsed by AST from the real
+  firestarter/diagnostic_report.py, contains the join/sha256/hexdigest
+  calls it legitimately makes and none of the forbidden names
+  (to_dict, asdict, fields, vars, __dict__).
+
+- test_a_planted_reflective_body_reddens_the_allow_list_pin
+  The anti-vacuity leg. Asserts the allow-list anchor
+  (`canonical = "|".join(parts)` + the return line) occurs exactly once in
+  the real source, then builds two independent in-memory str.replace
+  mutants -- one hashing json.dumps(report.to_dict(), sort_keys=True), one
+  reflecting over dataclasses.fields(report) -- and asserts the pin's own
+  claim (names.isdisjoint(forbidden)) raises AssertionError against each.
+
+- test_an_empty_forbidden_name_set_fails_rather_than_passing_vacuously
+  The separate, explicitly named vacuity leg: comparing the real function's
+  reachable names against an empty expected set (`names == set()`) raises
+  AssertionError, proving an accidentally-empty forbidden-name set could
+  never pass this pin silently.
+
+pin_at_head=GREEN
+pin_at_planted_to_dict_body=RED
+pin_at_planted_reflection=RED
+empty_forbidden_set=RED
+fixture_files_written=0
+
+All three mutations (to_dict, reflection, empty-set) are in-memory
+str.replace / literal-comparison operations inside the test process; no
+file on disk was written or mutated by any of them.
+
+## Full module run (pytest tail)
+
+$ ./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -o addopts="" -q
+........................................................................ [ 67%]
+..................................                                       [100%]
+106 passed in 1.00s
+
+## Comment census (this module)
+
+$ ./.venv311/bin/python -c 'import io,tokenize;n=sum(1 for t in tokenize.generate_tokens(io.StringIO(open("tests/test_blast_radius_invariance.py",encoding="utf-8").read()).readline) if t.type==tokenize.COMMENT);print("comment_tokens="+str(n))'
+comment_tokens=0
+
+## ruff
+
+$ ./.venv311/bin/python -m ruff check tests/test_blast_radius_invariance.py
+All checks passed!
+$ ./.venv311/bin/python -m ruff format --check tests/test_blast_radius_invariance.py
+1 file already formatted

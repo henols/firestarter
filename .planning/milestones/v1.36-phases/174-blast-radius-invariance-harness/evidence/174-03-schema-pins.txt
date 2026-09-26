@@ -1,0 +1,16 @@
+== measured key lists
+schema_version=1.7
+baked=1.7
+top=["auto_capture", "banner", "db_diff", "dedup_fingerprint", "generated", "is_submittable", "schema_version", "sdp_hold_state", "steps", "transport_health", "voltage"]
+top_n=11
+voltage=["vpe_after_mv", "vpe_before_mv", "vpe_mv", "vpp_after_mv", "vpp_before_mv", "vpp_mv"] n=6
+banner=["locked_steps", "m_applicable", "n_ran"] n=3
+auto_capture=["chip", "chip_id_actual", "chip_id_expected", "chip_id_mismatch_reason", "fw_board_identity", "host_version", "hw_revision", "protocol"] n=8
+transport_health=["cobs_errors", "crc_failures", "retries", "timeouts", "transport_suspect"] n=5
+db_diff=["current_support_status", "ladder_state", "proposed_disposition"] n=3
+steps0=["duration_s", "error_code", "fingerprint", "op", "reason", "run_count", "verdict", "write_bits_cleared", "write_bits_retained", "write_coverage", "write_current_source", "write_region_length", "write_region_start"] n=13
+rc=0
+== the pins
+...................................................                      [100%]
+51 passed in 0.88s
+rc=0

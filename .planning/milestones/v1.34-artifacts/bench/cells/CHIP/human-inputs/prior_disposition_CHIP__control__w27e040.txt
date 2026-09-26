@@ -1,0 +1,5 @@
+Not applicable to a control-rerun row in the same sense as a primary row -- this row exists to
+arbitrate whether CHIP__v133__w27e040's live FAIL (blank-check BAD, "Empty input") is
+v1.33-attributable. Same historical citations as the primary row for completeness: v1.15 Phase 82
+(.planning/v1.15/bench/EVIDENCE.md:99, FAIL genuine, stuck bit at 0x7db bit 4 on erase -- did NOT
+reproduce on either arm this session), Phase 81 (:55, read PASS), Phase 84/D-32 exclusion (:256).

@@ -1,0 +1,67 @@
+== 1 leg 1: ruff check firestarter/ tests/
+All checks passed!
+rc=0
+
+== 2 leg 2: ruff format --check firestarter/ tests/
+Note: first run found tests/test_readback_inventory.py:234 unformatted (implicit
+string concat split across two literals, introduced by plan 180-01). Fixed as a
+Rule 3 auto-fix (app commit 93a1672, gitlink advance meta commit 9f65162c) —
+collapsed to one literal, same value, 10/10 tests in that module still pass.
+Re-run after the fix:
+171 files already formatted
+rc=0
+
+== 3 leg 3: tools/check_mypy_watermark.py
+checked 173 source files
+mypy errors: 35 (watermark: 35)
+OK: error count at watermark.
+rc=0
+
+== 4 leg 4: tools/snapshot_report_shapes.py --check
+OK: 19 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+
+== 5 leg 5: tools/check_devtest_orchestrator.py
+PASS: scanned ../firestarter/chip_test.py, ../firestarter/cli_handlers.py, ../firestarter/submit.py; 0 VPP-set, 0 raw-wire-dict, 0 --force, 0 broad-except; firmware untouched (host-only, asserted)
+rc=0
+
+== 6 leg 6: tools/check_diagnostic_report_claims.py
+PASS: scanned /workspaces/firestarter_app/tools/../firestarter/diagnostic_report.py, 216 string literals checked, zero forbidden matches
+rc=0
+
+== 7 leg 7: python -m pytest tests/ -o addopts="" -q (full suite, measured floor)
+32 snapshots passed.
+2245 passed, 1 warning in 503.85s (0:08:23)
+full_suite_passed=2245
+full_suite_failed=0
+rc=0
+
+== 8 comment delta gate (tokenize, not the added-line regex)
+phase_added_comments=0
+comments_test_chip_test_py=621
+comments_test_readback_inventory_py=0
+rc=0
+
+== 9 cleanliness legs
+firmware_porcelain=clean
+app_tree_porcelain=clean
+chip_database_unchanged=1
+rc=0
+
+== 10 roadmap edit scope
+snapshots_passed=32
+ticked_plan_boxes=3
+requirements_line_intact=1
+phase_headings_count=8
+roadmap_lines_changed_outside_phase_180=0
+rc=0
+
+== summary scalars
+full_suite_passed=2245
+full_suite_failed=0
+snapshots_passed=32
+phase_added_comments=0
+firmware_porcelain=clean
+chip_database_unchanged=1
+roadmap_lines_changed_outside_phase_180=0
+battery_legs=7

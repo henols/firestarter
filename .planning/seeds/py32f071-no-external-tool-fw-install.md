@@ -117,7 +117,7 @@ shipped while the other half did not.
    route, did **not** land. Landing the runner-up does not retire this seed:
    the sentence two paragraphs above already states this in the seed's own
    terms, and it remains true.
-3. **Where the decision now lives.** [`../v1.23-FLASH-PATH-DECISION.md`](../v1.23-FLASH-PATH-DECISION.md)
+3. **Where the decision now lives.** [`../v1.23-FLASH-PATH-DECISION.md`](../milestones/v1.23-FLASH-PATH-DECISION.md)
    is now **canonical** for the flash-path decision: it is the only document
    citing the flash addresses Phase 126 actually reserved, and it carries the
    PCB checklist that this seed's five PCB requirements above fed into.

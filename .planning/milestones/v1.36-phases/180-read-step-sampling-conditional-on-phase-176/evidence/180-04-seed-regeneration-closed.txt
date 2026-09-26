@@ -1,0 +1,45 @@
+== 1 removed fragments (all measured zero, /usr/bin/grep -cF)
+escalation_paragraph_present=0
+stated_cost_paragraph_present=0
+block_structure_enumerated=0
+stride_rationale_present=0
+divergence_keys_present=0
+frag_uno328pb=0
+frag_address_line_aligned=0
+rc=0
+== 2 preserved fragments (measured, /usr/bin/grep -cF)
+rejection_verdict_present=1
+connect_objection_present=1
+operation_context_present=1
+closure_doc_pointer_count=3
+meas01_citation_count=4
+rc=0
+== 3 already-removed statements stay removed (180-02)
+r3_remains_for_phase_180_present=0
+replace_the_read_step_present=0
+per_connect_cost_unmeasured_present=0
+rc=0
+== 4 region cmp verdicts against pinned blob 7a47a1fd9236bb4068bc72be6c8f8ed35f86e300
+region_a_frontmatter_lines=6
+region_cmp_a_frontmatter=identical
+region_b_r1_through_r3_heading_lines=45
+region_cmp_b_r1_through_r3_heading=identical
+region_c_r4_through_phase177_heading_lines=72
+region_cmp_c_r4_through_phase177_heading=identical
+region_d_phase177_section_lines=18
+region_cmp_d_phase177_section=identical
+rc=0
+== 5 frontmatter and structure invariants
+frontmatter_fields=4
+r3_heading_line_70=1
+followthrough_recorded=1
+sequencing_note_occurrences=2
+rc=0
+== 6 seed line count
+lines_before=210
+lines_after=213
+rc=0
+== 7 submodule cleanliness (this task is meta-repo prose only)
+firestarter_submodule_porcelain=clean
+firestarter_app_submodule_porcelain=clean
+rc=0

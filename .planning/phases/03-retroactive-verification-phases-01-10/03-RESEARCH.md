@@ -337,7 +337,7 @@ For files needing a `### Cross-Milestone Closure` subsection, the canonical sour
 
 ### 02-VERIFICATION.md — REQ-SER-02 (no closure needed; verification-gap only)
 
-CONTEXT.md D-02 notes "no content change needed beyond citing `json_parser.c:128-131,:251-255`". The Cross-Milestone Closure subsection is OMITTED for this file — REQ-SER-02 was always WIRED; only the formal VERIFICATION.md was missing. The 02-VERIFICATION.md inherits stability from current-tree grep; no v1.1 work touched the unknown-key skip.
+CONTEXT.md D-02 notes "no content change needed beyond citing `json_parser.c:316-318,:251-255`". The Cross-Milestone Closure subsection is OMITTED for this file — REQ-SER-02 was always WIRED; only the formal VERIFICATION.md was missing. The 02-VERIFICATION.md inherits stability from current-tree grep; no v1.1 work touched the unknown-key skip.
 
 ### 03-VERIFICATION.md — REQ-FW-01 (Phase 12 algo-first dispatch closure)
 
@@ -410,8 +410,8 @@ CONTEXT.md claim ↔ live tree:
 1. `firestarter_app/firestarter/data/pinouts.json:10,21` — `"static-high-pins":[24]` for DIP24_2716 and DIP24_2732.
 2. `firestarter_app/firestarter/database.py:309-319` — `get_bus_config` translates `static-high-pins` via `pin_conversions` (`pin_conversions[24][24] = 13` at :90).
 3. Wire JSON `"static-high":[13]` (post-translation; written into the bus-config sub-object by `get_bus_config`).
-4. `firestarter/src/json_parser.c:239` — `handle->bus_config.static_high_mask |= 1UL << line;` (inside `parse_bus_config`).
-5. `firestarter/src/proms/memory.cpp:247` — `reorg_address |= config.static_high_mask;` (inside `mem_util_remap_address_bus`, defined at :226).
+4. `firestarter/src/json_parser.c:426` — `handle->bus_config.static_high_mask |= 1UL << line;` (inside `parse_bus_config`).
+5. `firestarter/src/proms/memory.cpp:319` — `reorg_address |= config.static_high_mask;` (inside `mem_util_remap_address_bus`, defined at :226).
 
 `pins < 32` VPE_TO_VPP guard:
 
@@ -430,7 +430,7 @@ Per CONTEXT.md D-03, Phase 08 (Integration, Rebuild & Verification) is the trick
 1. **REQ-SAF-03 cross-handler:** blank-check gating intact at all three sites:
    - `flash_type_3.cpp:77-79` (flash3_write_init)
    - `flash_intel.cpp:96-98` (flash_intel_write_init)
-   - `eeprom_28c.cpp:96-98` (eeprom28c_write_init)
+   - `eeprom_28c.cpp:91-93` (eeprom28c_write_init)
    All three guard with `if (!is_flag_set(FLAG_SKIP_BLANK_CHECK))` then call `mem_util_blank_check(handle)`. Same pattern in all three files. Verified by direct grep.
 
 2. **Phase 08's own deliverables (per 08-01-SUMMARY.md):**

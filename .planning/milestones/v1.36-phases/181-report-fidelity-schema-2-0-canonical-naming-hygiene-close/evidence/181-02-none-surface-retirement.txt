@@ -1,0 +1,200 @@
+# 181-02 Task 2 -- write_scope="none" test surface retirement
+#
+# Scope: firestarter_app/tests/ only (production source firestarter/chip_test.py
+# and firestarter/diagnostic_report.py are untouched by this plan -- their
+# 15 combined occurrences stay, describing the parameter that still exists
+# until plan 181-04 deletes it).
+#
+# Every site in this file's scope is one of the 93 total sites this phase's
+# risk register names: 78 explicit occurrences (63 across these 7 test
+# files + 1 in tests/plan_corpus.py, owned by Task 3, + 14 in
+# firestarter/chip_test.py + 1 in firestarter/diagnostic_report.py, both
+# untouched) plus 15 bare `derive_plan(name, db)` calls (all 15 in this
+# task's scope).
+
+explicit_none_after=0
+bare_derive_plan_after=0
+
+## Per-file table (before count = explicit "none" occurrences + bare calls
+## in this file; after = 0 for both; repointed = sites whose derive_plan
+## call survives with an explicit "full"/"partial" literal; deleted =
+## occurrences removed together with the assertion/test they belonged to)
+
+file: tests/test_chip_test.py
+  before_explicit=32 before_bare=12 total_before=44
+  after_explicit=0 after_bare=0
+  repointed=15 deleted=29
+
+file: tests/test_chip_test_sdp_leg.py
+  before_explicit=16 before_bare=2 total_before=18
+  after_explicit=0 after_bare=0
+  repointed=5 deleted=13
+
+file: tests/test_erase_flag_invariants.py
+  before_explicit=5 before_bare=0 total_before=5
+  after_explicit=0 after_bare=0
+  repointed=0 deleted=5
+
+file: tests/test_chip_test_blank_check_order.py
+  before_explicit=4 before_bare=0 total_before=4
+  after_explicit=0 after_bare=0
+  repointed=0 deleted=4
+
+file: tests/test_chip_test_timing.py
+  before_explicit=4 before_bare=0 total_before=4
+  after_explicit=0 after_bare=0
+  repointed=4 deleted=0
+
+file: tests/test_diagnostic_report.py
+  before_explicit=0 before_bare=1 total_before=1
+  after_explicit=0 after_bare=0
+  repointed=1 deleted=0
+
+file: tests/test_derive_plan_structural_sentinel.py
+  before_explicit=1 before_bare=0 total_before=1
+  after_explicit=0 after_bare=0
+  repointed=0 deleted=1
+
+totals:
+  total_before=77 (78 phase-wide explicit minus tests/plan_corpus.py's 1, owned by Task 3; plus all 15 bare)
+  total_repointed=25
+  total_deleted=52
+  25 + 52 = 77
+
+## Per-module pytest counts, before (app base 04fd982) and after this task's commit
+
+module                                        before  after  delta
+tests/test_chip_test.py                          162    152    -10
+tests/test_chip_test_sdp_leg.py                   83     81     -2
+tests/test_erase_flag_invariants.py                6      5     -1
+tests/test_chip_test_blank_check_order.py          5      4     -1
+tests/test_chip_test_timing.py                     6      6      0
+tests/test_diagnostic_report.py                   77     77      0
+tests/test_derive_plan_structural_sentinel.py     31     30     -1
+(sum of the six named in the plan's verify leg: 162+83+6+5+6+77=339 -> 325)
+
+## Per-site disposition ledger -- one line per site (file:line), all 93
+## sites named by this plan's risk register (78 explicit + 15 bare), minus
+## tests/plan_corpus.py's 1 explicit occurrence (owned by Task 3) which is
+## recorded instead in evidence/181-02-corpus-reanchor.txt. Line numbers are
+## as measured pre-edit (Task 1's transcript / the orchestrator's census).
+
+delete tests/test_chip_test.py:526
+delete tests/test_chip_test.py:556
+delete tests/test_chip_test.py:591
+delete tests/test_chip_test.py:602
+delete tests/test_chip_test.py:607
+delete tests/test_chip_test.py:612
+delete tests/test_chip_test.py:621
+delete tests/test_chip_test.py:640
+delete tests/test_chip_test.py:641
+delete tests/test_chip_test.py:642
+delete tests/test_chip_test.py:651
+delete tests/test_chip_test.py:667
+delete tests/test_chip_test.py:673
+delete tests/test_chip_test.py:674
+delete tests/test_chip_test.py:687
+delete tests/test_chip_test.py:705
+delete tests/test_chip_test.py:706
+delete tests/test_chip_test.py:734
+delete tests/test_chip_test.py:904
+delete tests/test_chip_test.py:906
+delete tests/test_chip_test.py:1612
+delete tests/test_chip_test.py:1616
+delete tests/test_chip_test.py:2573
+delete tests/test_chip_test.py:2596
+delete tests/test_chip_test.py:3018
+delete tests/test_chip_test.py:3021
+delete tests/test_chip_test.py:3026
+delete tests/test_chip_test.py:3265
+delete tests/test_chip_test.py:3272
+delete tests/test_chip_test_blank_check_order.py:19
+delete tests/test_chip_test_blank_check_order.py:20
+delete tests/test_chip_test_blank_check_order.py:109
+delete tests/test_chip_test_blank_check_order.py:111
+delete tests/test_chip_test_sdp_leg.py:269
+delete tests/test_chip_test_sdp_leg.py:271
+delete tests/test_chip_test_sdp_leg.py:290
+delete tests/test_chip_test_sdp_leg.py:2099
+delete tests/test_chip_test_sdp_leg.py:2100
+delete tests/test_chip_test_sdp_leg.py:2107
+delete tests/test_chip_test_sdp_leg.py:2118
+delete tests/test_chip_test_sdp_leg.py:2149
+delete tests/test_chip_test_sdp_leg.py:2154
+delete tests/test_chip_test_sdp_leg.py:2160
+delete tests/test_chip_test_sdp_leg.py:2163
+delete tests/test_chip_test_sdp_leg.py:2164
+delete tests/test_chip_test_sdp_leg.py:2165
+delete tests/test_derive_plan_structural_sentinel.py:490
+delete tests/test_erase_flag_invariants.py:52
+delete tests/test_erase_flag_invariants.py:317
+delete tests/test_erase_flag_invariants.py:340
+delete tests/test_erase_flag_invariants.py:346
+delete tests/test_erase_flag_invariants.py:353
+repoint tests/test_chip_test.py:373 bare->explicit
+repoint tests/test_chip_test.py:397 bare->explicit
+repoint tests/test_chip_test.py:417 bare->explicit
+repoint tests/test_chip_test.py:430 bare->explicit
+repoint tests/test_chip_test.py:445 bare->explicit
+repoint tests/test_chip_test.py:475 bare->explicit
+repoint tests/test_chip_test.py:483 bare->explicit
+repoint tests/test_chip_test.py:496 bare->explicit
+repoint tests/test_chip_test.py:508 bare->explicit
+repoint tests/test_chip_test.py:539 bare->explicit
+repoint tests/test_chip_test.py:546 bare->explicit
+repoint tests/test_chip_test.py:558 bare->explicit
+repoint tests/test_chip_test.py:987 none->reachable-scope
+repoint tests/test_chip_test.py:2619 none->reachable-scope
+repoint tests/test_chip_test.py:2657 none->reachable-scope
+repoint tests/test_chip_test_sdp_leg.py:301 bare->explicit
+repoint tests/test_chip_test_sdp_leg.py:1589 bare->explicit
+repoint tests/test_chip_test_sdp_leg.py:2271 none->reachable-scope
+repoint tests/test_chip_test_sdp_leg.py:2279 none->reachable-scope
+repoint tests/test_chip_test_sdp_leg.py:2294 none->reachable-scope
+repoint tests/test_chip_test_timing.py:67 none->reachable-scope
+repoint tests/test_chip_test_timing.py:80 none->reachable-scope
+repoint tests/test_chip_test_timing.py:100 none->reachable-scope
+repoint tests/test_chip_test_timing.py:112 none->reachable-scope
+repoint tests/test_diagnostic_report.py:129 bare->explicit
+
+## Flat list of every deleted test, one per line, file:name
+
+tests/test_chip_test.py:test_derive_plan_strip_default_only_destructive_ops_removed
+tests/test_chip_test.py:test_derive_plan_advisory_populated_when_non_destructive
+tests/test_chip_test.py:test_derive_plan_na_erase_advisory_only_records_write
+tests/test_chip_test.py:test_derive_plan_write_scope_none_unchanged_by_region_policy
+tests/test_chip_test.py:test_derive_plan_write_scope_rejects_unknown_value
+tests/test_chip_test.py:test_no_write_step_means_no_cycle_block
+tests/test_chip_test.py:test_count_applicable_uv_counts
+tests/test_chip_test.py:test_count_applicable_eeprom_counts
+tests/test_chip_test.py:test_r5_laundering_write_scope_none_locks_all_six_and_never_calls_sdp_lock
+tests/test_chip_test.py:test_count_applicable_sdp_does_not_change_shipped_non_sdp_counting
+tests/test_chip_test_sdp_leg.py:test_allow_write_scope_none_locks_six_sdp_leg_steps_and_moves_the_banner
+tests/test_chip_test_sdp_leg.py:test_refuse_write_scope_none_is_byte_identical_to_pre_phase134
+tests/test_chip_test_blank_check_order.py:test_m8720_write_scope_none_is_unchanged
+tests/test_erase_flag_invariants.py:test_at28c256_write_scope_none_shape_is_pinned
+tests/test_derive_plan_structural_sentinel.py:test_resolve_write_scope_returns_partial_for_every_uv_row
+
+## Two non-call-site edits named in the plan (also completed)
+
+- tests/test_derive_plan_structural_sentinel.py: removed the MODULE-LEVEL
+  `from firestarter.cli_handlers import _resolve_write_scope` import (was
+  line 84). This is what stops plan 181-04 reddening all 31 tests in that
+  module at collection time when it deletes `_resolve_write_scope`.
+- tests/test_chip_test.py:315-350's four `is_uv_eprom` tests are UNCHANGED
+  -- their subject is `chip_test.is_uv_eprom`, the engine predicate, which
+  survives untouched.
+
+## Rewritten (not deleted) tests whose surviving claim moved to the
+## reachable scope -- see SUMMARY.md for the per-test claim and reason
+
+- tests/test_chip_test.py:test_derive_plan_destructive_flag_strips_not_annotates
+- tests/test_chip_test.py:test_derive_plan_verify_gated_behind_destructive
+- tests/test_chip_test.py:test_derive_plan_is_uv_wired_from_is_uv_eprom
+- tests/test_chip_test.py:test_count_applicable_bad_counts_as_ran
+- tests/test_chip_test.py:test_count_applicable_m_from_single_plan_never_rederives
+- tests/test_chip_test_sdp_leg.py:test_shipped_ops_sequence_unchanged
+- tests/test_chip_test_sdp_leg.py:test_empty_registry_noop
+- tests/test_chip_test_sdp_leg.py:test_oracle_applicable_true_for_allow_chip_full_and_partial_scope (renamed from ..._full_and_none_scope)
+- tests/test_chip_test_sdp_leg.py:test_oracle_applicable_false_for_refuse_chip_full_and_partial_scope (renamed from ..._full_and_none_scope)
+- tests/test_derive_plan_structural_sentinel.py:test_plans_with_no_write_are_vacuously_clean (dropped only its real-derive_plan-at-"none" assertion block; its two hand-built-plan cases, which never used write_scope, are unchanged)

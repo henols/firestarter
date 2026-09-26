@@ -14,7 +14,7 @@
 
 | Technology | Version (pinned in `firestarter_app/pyproject.toml`) | Purpose for `dev test` | Why Recommended |
 |------------|------|---------|-----------------|
-| `click` | `>=8.1` (project on 8.x) | Register `dev test <chip>` as a subcommand under the existing `@cli.group(name="dev")` in `cli_handlers.py:943`; provide `--destructive`, `--submit`, `--json`/`--output` flags | Already the CLI framework for all 14 commands + the `dev` group (which already hosts `read`, `reg`, `addr`, `consistency-check`, `write-cycle`, `fault-inject`, `validate-family`). New command is a drop-in sibling of `validate-family`. |
+| `click` | `>=8.1` (project on 8.x) | Register `dev test <chip>` as a subcommand under the existing `@cli.group(name="dev")` in `cli_handlers.py:941`; provide `--destructive`, `--submit`, `--json`/`--output` flags | Already the CLI framework for all 14 commands + the `dev` group (which already hosts `read`, `reg`, `addr`, `consistency-check`, `write-cycle`, `fault-inject`, `validate-family`). New command is a drop-in sibling of `validate-family`. |
 | `rich` | `>=14.0` | Human-readable results table (`rich.table.Table`) + interactive provenance prompts (`rich.prompt.Prompt`/`Confirm`) | Already imported for prompts (`firmware.py:20` uses `rich.prompt.Confirm`) and for the `EpromConsolePresenter` display layer. The "prompt tester for shield rev / provenance / pot" step is exactly `rich.prompt`. No new dep. |
 | Python stdlib `json` | 3.9+ (CI floor `requires-python = ">=3.9"`) | Build the machine-readable report dict and serialize the fenced ```` ```json ```` block; `json.dumps(report, indent=2)` | The report is emitted, not consumed/validated by this tool. A self-produced object serialized once needs no schema/validation library. |
 | Python stdlib `subprocess` + `shutil.which` | 3.9+ | Tier-1 submission: detect `gh` (`shutil.which("gh")`) and shell out to `gh issue create` | Already the established pattern in-repo — `avr_tool.py` is a `subprocess` wrapper around `avrdude`. Same idiom. |
@@ -148,7 +148,7 @@
 - Prefilled-URL builder reference (encoding approach, Node-only lib): [sindresorhus/new-github-issue-url](https://github.com/sindresorhus/new-github-issue-url) — MEDIUM confidence (illustrative, not adopted).
 - `gh issue create` `--body-file -` / `--label` / `--web` flags: verified locally against `gh version 2.95.0 (2026-06-17)` in this environment — HIGH confidence.
 - Python stdlib availability (`json`, `subprocess`, `shutil`, `webbrowser`, `urllib.parse`) on the project interpreter: verified locally via import — HIGH confidence.
-- Existing project dependencies (`click>=8.1`, `rich>=14.0`, `requests>=2.20`) + `dev` Click group + `rich.prompt` usage: read directly from `firestarter_app/pyproject.toml` and `firestarter_app/firestarter/cli_handlers.py:943`/`firmware.py:20` — HIGH confidence.
+- Existing project dependencies (`click>=8.1`, `rich>=14.0`, `requests>=2.20`) + `dev` Click group + `rich.prompt` usage: read directly from `firestarter_app/pyproject.toml` and `firestarter_app/firestarter/cli_handlers.py:941`/`firmware.py:20` — HIGH confidence.
 
 ---
 *Stack research for: `firestarter dev test <chip>` community chip-validation command (v1.21)*

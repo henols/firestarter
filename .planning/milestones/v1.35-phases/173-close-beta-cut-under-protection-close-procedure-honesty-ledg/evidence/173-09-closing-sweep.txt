@@ -1,0 +1,233 @@
+=== 173-09 Task 1: closing sweep — each of Phase 173's five ROADMAP success criteria walked in
+order, verdict and named evidence, written BEFORE any requirement checkbox moved ===
+
+Written before .planning/REQUIREMENTS.md's POLICY-04/POLICY-05 checkboxes were flipped, so the
+marks follow this sweep rather than the other way round -- this project's recorded failure mode
+is executors marking multi-plan requirements complete ahead of their evidence, and plan 172-09's
+discharge is the pattern this sweep follows. Every evidence file cited below was confirmed to
+exist and be non-empty before this sweep was committed.
+
+-------------------------------------------------------------------------------
+CRITERION 1 -- "The `beta` lockstep cut is demonstrated working under the new rulesets — an
+actual cut or an equivalent dry run that exercises the same paths, not a reading of the ruleset
+configuration. This project's milestone convention pushes `beta`, not `main`; protection that
+blocked the lockstep cut would be a worse outcome than no protection."
+-------------------------------------------------------------------------------
+  evidence/173-03-probe-verdict.md
+      Per-repository verdict table: a direct push to protected `main`, from a true fast-forward
+      of `origin/main`, rejected in all three repositories by GitHub's own receive-stage `GH013:
+      Repository rule violations found` message naming the pull-request requirement — not
+      `git push --dry-run`, which negotiates but never reaches the receive stage and would have
+      proven nothing. The paired control push, to an unprotected throwaway ref, was accepted then
+      deleted in all three repositories.
+  evidence/173-03-probe-firestarter_prom.txt, evidence/173-03-probe-firestarter.txt,
+  evidence/173-03-probe-firestarter_app.txt
+      The three raw transcripts the verdict record summarises.
+  evidence/173-03-rulesets-before.json, evidence/173-03-rulesets-after.json
+      The three rulesets proven field-for-field identical before and after the probe, at their
+      original ids (22043478 / 4998759 / 22046179) — the probe altered nothing.
+  VERDICT: DISCHARGED.
+  Criterion 1's own wording accepts "an actual cut **or** an equivalent dry run that exercises the
+  same paths." The probe above IS that dry run: it exercises the identical GitHub receive-stage
+  path a real push to `main` would hit, and it is not a reading of ruleset configuration — it is
+  GitHub's own server measured rejecting the push. Per D-03 this alone discharges criterion 1 and
+  POLICY-04. Task 3 of this plan (not yet run at the time this sweep is written) will additionally
+  record whether a full `beta` lockstep cut was authorized and performed, or explicitly declined —
+  but that disposition does not change this verdict either way: criterion 1 is already DISCHARGED
+  on the probe before Task 3 runs, and stays DISCHARGED whichever way Task 3 goes. NON-CLAIM 4
+  below states plainly what is and is not claimed about the cut itself at the moment this sweep is
+  written.
+
+-------------------------------------------------------------------------------
+CRITERION 2 -- "The GSD close procedure is updated for PR-only `main` — either a documented PR
+flow or a documented admin bypass with the conditions under which it may be used — so the next
+`/gsd-complete-milestone` does not discover the change by failing."
+-------------------------------------------------------------------------------
+  evidence/173-02-base-branch-readback.txt
+      The distinguishing read-back: `gsd_run query git.base-branch` flips `main` -> `beta`, and
+      `--is-protected beta` flips `false` -> `true`; `--is-protected` on the milestone branch
+      itself stays `false` before and after, proof the resolver verifies rather than falls closed.
+  .planning/notes/v135-close-procedure-under-protection.md
+      All seven GSD consumer sites of `git.base-branch` (complete-milestone.md, ship.md,
+      execute-phase.md, quick.md, pr-branch.md, protected-branch.md, and the tier-1 resolver
+      itself), the stale-local-`beta` trap at `ship.md:316`, and the corrected
+      `REQUIREMENTS.md:119` premise — no GSD workflow pushes `main` directly; the real failure
+      surfaces are a local squash-merge onto an unpushable `main`, `ship.md --base main`, and
+      three fork-point consumers, all fixed by the same repoint.
+  evidence/173-02-consumer-sites.txt
+      All 13 cited constructs confirmed present and resolving in the vendored workflow tree.
+  CLAUDE.md, section "## Milestone close and branch protection"
+      Auto-loaded into every session in this repository, pointing the next close agent at the
+      procedure before the close fails rather than after.
+  Four pull requests into a protected `main` across this milestone — three merged 2026-09-02
+  (Phase 172's) and plan 173-06's `henols/firestarter_prom#55`, open, carrying the
+  provenance-footer CI leg — banked, live evidence that the documented PR flow already works, not
+  a claim read from the ruleset configuration.
+  VERDICT: DISCHARGED, on the first branch (a documented PR flow), with the second branch (a
+  documented admin bypass) explicitly not available: `current_user_can_bypass` is `never` on all
+  three rulesets, so there is no bypass to document — POLICY-05's second branch does not exist as
+  a route, only as a route that is not there, and D-08 records exactly that rather than inventing
+  one.
+
+-------------------------------------------------------------------------------
+CRITERION 3 -- "An honesty ledger pairs every claim this milestone makes with its explicit
+non-claim. At minimum: relocation is not verification — a document moved to the wiki is not
+thereby confirmed accurate, only relocated intact; the deferred content (FUT-W-01…05) is
+deferred, not delivered; and HONEST-02's stamp-or-check establishes agreement with the database at
+a point in time, not continuously."
+-------------------------------------------------------------------------------
+  .planning/v1.35/CLOSE-RECORD.md
+      7 sections, a 21-row honesty ledger (L1-L21), exceeding D-11's 15-row floor.
+  The three named minimums, confirmed present by row:
+    - L1: relocation is not verification — HONEST-01 proves the move preserved claims; it does
+      not prove today's accuracy.
+    - L2: FUT-W-01 through FUT-W-05 are deferred, not delivered.
+    - L3: HONEST-02's clone-and-check establishes agreement at a point in time only, not
+      continuously — an edit after the last run, with no PR or CI gate on the edit itself, could
+      disagree with the database undetected until the next run.
+  VERDICT: DISCHARGED.
+
+-------------------------------------------------------------------------------
+CRITERION 4 -- "Every unfixed finding surfaced during the migration is filed as a backlog item
+rather than carried as prose, and the 999.9 rename sweep is recorded with the specific phases
+whose links will need re-sweeping (169, 170, 172)."
+-------------------------------------------------------------------------------
+  .planning/ROADMAP.md, headings `### Phase 999.46`, `### Phase 999.47`, `### Phase 999.48`
+      THREE numbered backlog rows, not two. 999.46 (rulesets block the stable-release version
+      bump, both sub-repos) and 999.47 (prom's default branch already red on `Catalog sync check`
+      before Phase 172's merges) were authored by this phase's plan 173-08 and inserted by the
+      orchestrator (commit `6d0eae0a`). 999.48 (the `tools/wiki/` dependency gap PR #55 would hit
+      — `wiki.py`, `honest02_truth.py`, `dispatch_mirror.py`, `claim-allowlist.json` absent from
+      `origin/main`) was filed AFTER plan 173-08 finished, on the operator's decision, and is
+      recorded in `.planning/v1.35/CLOSE-RECORD.md` ledger row L21 and its Section 6 findings
+      table. This sweep states three filed rows because that is what is on disk now — the earlier
+      "not newly filed as a numbered backlog row" language some prior SUMMARY text carried for
+      this finding is superseded by 999.48's filing and is not repeated here as current.
+  evidence/173-08-backlog-999.46.md, evidence/173-08-backlog-999.47.md
+      The two insertion-ready row bodies plan 173-08 authored, now live in ROADMAP.md verbatim.
+  .planning/todos/pending/2026-09-02-rulesets-block-stable-release-version-bump.md — ABSENT
+      Confirmed retired (no longer exists) now that 999.46 carries the same finding as a numbered
+      row.
+  evidence/173-08-rename-sweep-targets.txt
+      The Backlog 999.9 rename-sweep target list: 82,796 references across 3,533 files, scanned
+      with `/usr/bin/grep -P` scoped to `git ls-files` per repository (meta, firestarter,
+      firestarter_app) — never the PATH `grep` (ugrep, which honours `.gitignore` and would
+      silently under-report).
+  CLOSE-RECORD.md Section 7
+      Names Phases 169, 170 and 172 as already-accepted needing re-sweeping, plus this phase's own
+      outputs joining that set (the four upstream reply URLs, the six published wiki footers, the
+      close-procedure note, the CLAUDE.md pointer section, MIGRATION-TABLE.md's new/corrected
+      rows, and 999.46's own workflow citations).
+  VERDICT: DISCHARGED.
+
+-------------------------------------------------------------------------------
+CRITERION 5 -- "The upstream replies owed on GitHub are sent or explicitly deferred with a
+reason: gh#7 (generated-site premise rejected, Wiki chosen, content requirements carried to
+999.12), gh#5 (surviving tracker for the deferred content), gh#9 (pinned orientation issue
+describing the configured end state)."
+-------------------------------------------------------------------------------
+  evidence/173-07-post-transcript.txt
+      Four comments posted via `gh issue comment --body-file`, byte-identical to their
+      operator-approved bodies: gh#5 (#issuecomment-5511486703), gh#6 (#issuecomment-5511486995),
+      gh#7 (#issuecomment-5511487257), gh#9 (#issuecomment-5511487546).
+  evidence/173-04-issue-state-before.json, evidence/173-07-issue-state-after.json
+      Before/after reconciliation on every field: all four comment counts 0->1; gh#6/gh#7
+      open->closed; gh#5/gh#9 stayed open; pinned count 0->1.
+  173-UPSTREAM-REPLIES.md
+      Review status APPROVED AND POSTED, a comment URL recorded beside each of the four bodies.
+  gh#9 pinned via the GraphQL `pinIssue` mutation — `pinnedIssues` on `henols/firestarter_prom`
+  goes from `totalCount: 0` to `totalCount: 1`, naming issue 9 — a gap both ROADMAP criterion 5
+  and Backlog 999.13 had assumed already closed.
+  VERDICT: DISCHARGED. All four replies were sent, not deferred; gh#6 and gh#7 closed, gh#5 and
+  gh#9 stay open per D-12's disposition.
+
+===============================================================================
+WHAT THIS SWEEP DOES NOT CLAIM — recorded beside the marks so they absorb nothing
+===============================================================================
+
+NON-CLAIM 1 -- The provenance-footer checker's CI leg has never been observed green in a real CI
+  run.
+  Evidence: 173-06-SUMMARY.md's own Non-Claim section; CLOSE-RECORD.md rows L6, L14, L15.
+  `henols/firestarter_prom#55` carries the leg and is OPEN, not merged — the operator's own
+  checkpoint answer at plan 173-06 narrowed authorization to opening the PR, withholding the merge
+  as a separate future act. `gh run list --workflow 'Wiki check'` returns ZERO rows. "Registered
+  with Actions" and "observed green in CI" are different facts and only the first is true. Beyond
+  that: per ledger row L21 / Backlog 999.48, even if PR #55 merges as written, the workflow would
+  fail at its second step (`WIKI-05 reachability check`) before ever reaching the new leg, because
+  the rest of `tools/wiki/` is absent from `origin/main` — filed as Backlog 999.48, not fixed here.
+
+NON-CLAIM 2 -- The six published provenance footers do not cover all eleven live wiki pages.
+  Evidence: evidence/173-05-postpush-freshclone.txt; CLOSE-RECORD.md row L10; this sweep's own
+  fresh four-checker run below, which confirms 11 pages currently live.
+  Six of eleven carry a footer (`Programming-Protocols`, `Shield-Revisions`, `Install-Beta`,
+  `Testing-Chips`, `Lockable-PROMs`, `Shell-Completion`). Five are excluded, each for a stated
+  reason: `Home` and `Contributing` were authored on the wiki, not migrated, and have no
+  pre-deletion SHA; `Breaking-Changes`, `Chip-Database-Fields` and `Pin-Maps` were likewise
+  wiki-authored with no source SHA to state. No reader should infer that every page is
+  provenanced.
+
+NON-CLAIM 3 -- GSD now treats `beta` as protected while GitHub itself does not.
+  Evidence: evidence/173-02-base-branch-readback.txt; CLOSE-RECORD.md row L12.
+  `.planning/config.json`'s `git.base_branch: "beta"` makes GSD's own resolver return `true` for
+  every consumer that calls `--is-protected beta`. GitHub itself does not protect `beta` — it
+  appears in no ruleset condition on any of the three repositories (re-measured 2026-09-02). This
+  is the tool's own tier-1 resolver semantics — treating the configured base branch as protected —
+  not a config defect, and the two systems' disagreement is an accepted asymmetry (L12), not
+  something this sweep resolves.
+
+NON-CLAIM 4 -- As of this sweep being written (before Task 3 of this plan runs), no `beta`
+  lockstep cut has been performed under these rulesets, and none is claimed here.
+  Evidence: CLOSE-RECORD.md row L8; evidence/173-03-probe-verdict.md.
+  The probe (criterion 1's evidence above) proves a direct push to `main` is rejected and a push
+  to an unprotected ref is accepted; it does NOT exercise a push to `beta`, which fires its own
+  pre-release cut and cannot be rehearsed. Whether Task 3 authorizes and performs that cut, or
+  declines it, is recorded in Task 3's own evidence (`evidence/173-09-beta-cut.txt` or the decline
+  line in `evidence/173-09-operator-approval.txt`) and in `CLOSE-RECORD.md` Section 2 — not in
+  this file, and not before Task 3 runs.
+
+===============================================================================
+THE FOUR `tools/wiki` CHECKERS, RE-RUN GREEN AGAINST ONE FRESH CLONE AS THE PHASE-GATE SAMPLE
+===============================================================================
+
+Reproduced runner layout, matching `.github/workflows/wiki-check.yml`'s own steps: `meta`
+symlinked to this repository, `firestarter` and `firestarter_app` symlinked to their live
+submodule checkouts (both on `gsd/v1.35-documentation-consolidation-wiki-migration`), and a
+fresh, independent `--depth 1` clone of `firestarter_prom.wiki.git` as `wiki-clone` — not the
+clone plan 173-05 pushed from, a separate clone taken now, at this sweep's own gate.
+
+  $ python3 meta/tools/wiki/wiki.py links --source-dir wiki-clone
+OK: 11 pages, all reachable from Home.md by some link path, all internal links resolve, all
+  filenames legal, and all listed in _Sidebar.md.
+
+  $ python3 meta/tools/wiki/honest02_truth.py --wiki-dir wiki-clone \
+      --db firestarter_app/firestarter/data/chip_database.json \
+      --allowlist meta/tools/wiki/claim-allowlist.json
+  LEG 1 -- stamp present: 10 pages scanned, 5 matched the claim signature, 0 missing stamp
+  LEG 2 -- claims resolve: 1 regions found, 39 claims checked, 5 pages stamp-only unchecked
+  LEG 3 -- stamp freshness: 6 stamps checked against db-sha256-16=ccbc8d2c4866a5af, 0 stale
+OK: leg1 stamp-present 5 matched/0 missing, leg2 claims-resolve 1 regions/39 claims/5 unchecked,
+  leg3 stamp-freshness 6 checked/0 stale.
+
+  $ python3 meta/tools/wiki/dispatch_mirror.py --app-dir firestarter_app --fw-dir firestarter
+OK: 12 protocols compared across firmware doc, host tool and firmware.
+
+  $ python3 meta/tools/wiki/provenance_footers.py --table meta/tools/wiki/MIGRATION-TABLE.md \
+      --wiki-dir wiki-clone
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+
+All four exit 0. All four green against a fresh, independently-taken wiki clone at this phase's
+own gate — not several plans ago, not the producing clone. `honest02_truth.py` leg 1 remains at
+the measured baseline (5 matched / 0 missing) — no drift since RESEARCH.md's own measurement.
+
+===============================================================================
+REQUIREMENT MARKS THIS SWEEP AUTHORIZES — and no others
+===============================================================================
+
+POLICY-04 -- marked complete against CRITERION 1's evidence above, on the probe alone, per D-03.
+  D-03 states plainly this is permitted whichever way the cut is later decided; this sweep does
+  not presume Task 3's outcome and this mark does not depend on it.
+
+POLICY-05 -- marked complete against CRITERION 2's evidence above.
+
+No other requirement checkbox in `.planning/REQUIREMENTS.md` is touched by this sweep or by the
+edit that follows it.

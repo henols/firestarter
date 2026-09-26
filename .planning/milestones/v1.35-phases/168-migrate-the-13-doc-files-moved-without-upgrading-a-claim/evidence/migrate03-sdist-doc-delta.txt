@@ -1,0 +1,76 @@
+MIGRATE-03 — the packaging delta, reported as the no-op it measurably is
+=============================================================================
+
+THE PREMISE IS FALSE. No `doc/` file has ever shipped inside the published `firestarter`
+package. Deleting `firestarter_app/doc/` in this phase changes the sdist by nothing:
+before = 0 doc/ entries, after = 0 doc/ entries.
+
+--- Before: sdist built from a clean checkout of the PRE-PHASE tree ---
+
+`git archive d56424e1979edf7245cffb9ec3111c0469f5b23f` (the commit that created the
+gsd/v1.35-documentation-consolidation-wiki-migration branch, before any 168-plan touched
+firestarter_app — doc/ still has all 10 files on disk at this commit) extracted to a clean
+scratch directory, then built with the SAME build backend/config as the current tree
+(pyproject.toml's packaging config was never touched by this phase):
+
+$ ls <pre-phase-tree>/doc | wc -l
+10
+
+$ cd <pre-phase-tree> && uv build --sdist -o <scratch>/build-pre-phase
+Successfully built <scratch>/build-pre-phase/firestarter-3.0.0b33.tar.gz
+
+$ tar tzf <scratch>/build-pre-phase/firestarter-3.0.0b33.tar.gz | grep -c '/doc/'
+0
+
+BEFORE COUNT: 0 doc/ entries — even while doc/ still had 10 files on disk.
+
+--- After: sdist built from the CURRENT tree (both doc/ directories deleted) ---
+
+$ cd firestarter_app && uv build --sdist --wheel -o <scratch>/build-current
+Successfully built <scratch>/build-current/firestarter-3.0.0b33.tar.gz
+
+$ tar tzf <scratch>/build-current/firestarter-3.0.0b33.tar.gz | grep -c '/doc/'
+0
+
+AFTER COUNT: 0 doc/ entries.
+
+--- Independent confirmation: the two most recently published releases ---
+
+Downloaded directly from PyPI (files.pythonhosted.org), not rebuilt locally:
+
+$ tar tzf firestarter-3.0.0b33.tar.gz | wc -l   -> 174 entries total
+$ tar tzf firestarter-3.0.0b33.tar.gz | grep -c '/doc/'   -> 0
+
+$ tar tzf firestarter-3.0.0b34.tar.gz | wc -l   -> 174 entries total
+$ tar tzf firestarter-3.0.0b34.tar.gz | grep -c '/doc/'   -> 0
+
+Both already-published releases carry 0 doc/ entries, confirming this was never packaged, in
+any release this project has ever shipped to PyPI.
+
+--- The source of the false premise ---
+
+Everyone citing "3 files ship inside the package" was reading
+`firestarter_app/firestarter.egg-info/SOURCES.txt`, a STALE, GITIGNORED build artifact left over
+in the working tree from a historic local build environment — not a description of what
+`pyproject.toml` or `MANIFEST.in` actually declare. 168-RESEARCH.md recorded its exact contents
+before this phase started (2026-08-30): `SOURCES.txt:28-30` listed 3 `doc/*.md` paths, and the
+file as a whole (205 lines) additionally listed 39 other entries a clean build never produces —
+`.gitignore`, `CLAUDE.md`, `.github/workflows/*`, `.planning/codebase/*.md`, `datasheets/*.pdf`,
+`tools/*.py`, `tests/*` — none of which any clean `python -m build`/`uv build` invocation emits
+(confirmed again in this session: the freshly rebuilt egg-info directory after this session's
+builds carries 0 references to `doc/`, because it was regenerated from the real, current
+manifest rules, not from whatever historic local environment produced the 205-line stale copy).
+
+`MANIFEST.in` does not mention `doc/` at all, and `pyproject.toml` declares
+`packages = ["firestarter"]` with `package-data` limited to the three JSON files under
+`firestarter/data/`. There was never a packaging rule that would have included `doc/`.
+
+--- Conclusion ---
+
+BEFORE: 0 doc/ entries. AFTER: 0 doc/ entries. Delta: 0.
+
+Stating that "three files left the package" would be a false claim inside the milestone whose
+entire purpose is preventing exactly that failure mode. The correct, measured statement is: the
+packaging change caused by this phase's `doc/` deletions is a genuine no-op, and the belief that
+it was not one traced to a stale, gitignored, unregenerated build artifact that nobody had reason
+to distrust until it was actually measured against a clean build.

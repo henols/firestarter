@@ -1,0 +1,19 @@
+== 1 the named legs exist
+rc=0
+leg_test_write_target_current_is_probe_read_defaults_to_false=1
+leg_test_step_uv_prewrite_defaults_to_false=1
+leg_test_uv_cycle_tranches_carry_the_probe_read_witness=1
+leg_test_alternating_cycle_complement_carries_no_probe_read_witness=1
+leg_test_uv_plan_blank_check_sits_outside_the_cycle_block=3
+== 2 the carry-through, measured directly
+tranche_witness=True,True
+tranche_no_witness=False,False
+complement_witness=False,False
+outside_block_m27c512=True
+outside_block_am27c020=True
+outside_block_tms27c512=True
+rc=0
+== 3 the two modules
+.................................................................        [100%]
+65 passed in 0.60s
+rc=0

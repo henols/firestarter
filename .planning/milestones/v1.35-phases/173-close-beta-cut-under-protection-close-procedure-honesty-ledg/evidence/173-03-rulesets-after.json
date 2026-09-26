@@ -1,0 +1,62 @@
+{
+  "firestarter": {
+    "bypass_actors": [
+      {
+        "actor_id": null,
+        "actor_type": "DeployKey",
+        "bypass_mode": "always"
+      }
+    ],
+    "conditions": {
+      "ref_name": {
+        "exclude": [],
+        "include": [
+          "~DEFAULT_BRANCH"
+        ]
+      }
+    },
+    "current_user_can_bypass": "never",
+    "enforcement": "active",
+    "id": 4998759
+  },
+  "firestarter_app": {
+    "bypass_actors": [
+      {
+        "actor_id": null,
+        "actor_type": "DeployKey",
+        "bypass_mode": "always"
+      }
+    ],
+    "conditions": {
+      "ref_name": {
+        "exclude": [],
+        "include": [
+          "~DEFAULT_BRANCH"
+        ]
+      }
+    },
+    "current_user_can_bypass": "never",
+    "enforcement": "active",
+    "id": 22046179
+  },
+  "firestarter_prom": {
+    "bypass_actors": [
+      {
+        "actor_id": null,
+        "actor_type": "DeployKey",
+        "bypass_mode": "always"
+      }
+    ],
+    "conditions": {
+      "ref_name": {
+        "exclude": [],
+        "include": [
+          "~DEFAULT_BRANCH"
+        ]
+      }
+    },
+    "current_user_can_bypass": "never",
+    "enforcement": "active",
+    "id": 22043478
+  }
+}

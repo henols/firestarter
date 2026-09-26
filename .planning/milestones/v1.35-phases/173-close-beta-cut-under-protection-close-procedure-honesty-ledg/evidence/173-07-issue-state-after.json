@@ -1,0 +1,43 @@
+{
+  "captured_at": "2026-09-02T14:53:00Z",
+  "issues": {
+    "5": {
+      "number": 5,
+      "state": "open",
+      "comments": 1,
+      "title": "Move documentation",
+      "url": "https://github.com/henols/firestarter_prom/issues/5",
+      "comment_url": "https://github.com/henols/firestarter_prom/issues/5#issuecomment-5511486703",
+      "comment_id": 5511486703
+    },
+    "6": {
+      "number": 6,
+      "state": "closed",
+      "comments": 1,
+      "title": "Protect main branches and centralize issue tracking in firestarter_prom",
+      "url": "https://github.com/henols/firestarter_prom/issues/6",
+      "comment_url": "https://github.com/henols/firestarter_prom/issues/6#issuecomment-5511486995",
+      "comment_id": 5511486995
+    },
+    "7": {
+      "number": 7,
+      "state": "closed",
+      "comments": 1,
+      "title": "Feature: Improve Firestarter discoverability with generated documentation",
+      "url": "https://github.com/henols/firestarter_prom/issues/7",
+      "comment_url": "https://github.com/henols/firestarter_prom/issues/7#issuecomment-5511487257",
+      "comment_id": 5511487257
+    },
+    "9": {
+      "number": 9,
+      "state": "open",
+      "comments": 1,
+      "title": "Repository Structure and Contribution Guide",
+      "url": "https://github.com/henols/firestarter_prom/issues/9",
+      "comment_url": "https://github.com/henols/firestarter_prom/issues/9#issuecomment-5511487546",
+      "comment_id": 5511487546
+    }
+  },
+  "pinned_issue_count": 1,
+  "pinned_issue_number": 9
+}

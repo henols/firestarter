@@ -1,0 +1,86 @@
+=== 172-06: PATCH-and-create sequence (D-10 REVERSED at the checkpoint:decision gate) ===
+
+NO DELETE OCCURRED IN THIS PLAN. Read this file's name as historical: the plan's frontmatter
+names it "delete-create-sequence.txt" because that is what D-10, as originally written, called
+for. The filename is kept unchanged only because the plan's frontmatter fixes it; the sequence
+it records is a PUT (amend) followed by a POST (create), not a DELETE followed by two POSTs.
+
+--- Why D-10 was reversed ---
+
+At Task 1's checkpoint:decision gate, before any write call, ruleset 4998759 on henols/firestarter
+was compared field-by-field against the already-live prom canary (id 22043478), excluding the
+volatile fields id, node_id, created_at, updated_at, source, source_type, _links and
+current_user_can_bypass. The two were found IDENTICAL on every remaining field (name, target,
+conditions, rules including the pull_request rule's parameters, and bypass_actors) except
+enforcement (disabled vs active).
+
+Deleting and recreating 4998759 would have bought only uniform birth history, at the cost of
+permanently destroying its identity and its 2025-04-22T11:42:12.549Z creation date -- the GitHub
+API has no undelete for rulesets. Given the measured equality, that trade had no functional
+justification. The operator selected Option B (amend in place, create only firestarter_app's
+ruleset fresh) at the decision gate on this basis.
+
+D-10's own stated rationale for delete-and-recreate -- "nothing inherited and no dead DeployKey
+bypass to reconcile" -- was independently voided by plan 172-05's mid-phase D-09 revision, which
+made DeployKey the CANONICAL bypass actor (not a dead legacy one) after GitHub rejected the
+originally planned Integration/15368 actor with HTTP 422 on this personal (non-organization)
+account. The delete would therefore have reinstated exactly the bypass type it was meant to shed.
+
+Task 2's checkpoint:human-action gate (originally: authorize the irreversible DELETE) was
+DISCHARGED, not approved in its original form and not skipped. Its subject -- the irreversible
+delete -- no longer existed once D-10 was reversed; a PUT reverses with a PUT, a POST reverses
+with a DELETE, so nothing left in this plan is one-way. The operator authorized the two specific
+replacement operations (the PUT and the POST) by name as part of selecting Option B at the
+decision gate.
+
+--- What was actually executed ---
+
+Both write calls were issued by the ORCHESTRATOR AGENT via its Bash tool, with the operator
+approving each one individually at a harness permission prompt after switching the session out of
+auto mode. The operator did not type or run the commands; the operator authorized them. This
+distinction is recorded deliberately -- an evidence file in this phase must not credit a human
+with an action an agent performed.
+
+The route to that point: the harness's auto-mode Bash classifier blocked the executing agent's
+attempts to issue these calls programmatically mid-plan, and then blocked the orchestrator's
+attempts as well. See the SUMMARY's Deviations section for the full account of that interruption,
+including a genuine API-shape finding along the way: the endpoint for updating a ruleset is PUT,
+not PATCH -- a PATCH attempt against this route returns HTTP 404. Both calls sent the FULL
+canonical body (evidence/172-05-ruleset-body.json), not a partial enforcement-only body, so the
+outcome does not depend on how the API treats omitted fields on a partial update.
+
+[orchestrator-issued, operator-approved at a permission prompt, both rc=0]
+  PUT  /repos/henols/firestarter/rulesets/4998759 --input evidence/172-05-ruleset-body.json
+  POST /repos/henols/firestarter_app/rulesets     --input evidence/172-05-ruleset-body.json
+
+Neither call was preceded or followed by any DELETE, on any repository, at any point in this
+plan's execution.
+
+--- Resulting live state (fresh GETs, re-derived independently by the executor after resume) ---
+
+  henols/firestarter_prom  -- id 22043478, enforcement=active, created 2026-09-01T20:12:43.165Z
+                              (unchanged from plan 172-05's canary)
+  henols/firestarter       -- id 4998759,  enforcement=active, created 2025-04-22T11:42:12.549Z
+                              (id and provenance PRESERVED -- this is the amend, not a recreate)
+  henols/firestarter_app   -- id 22046179, enforcement=active, created 2026-09-01T21:04:58.474Z
+                              (newly created by the POST)
+
+Full raw read-backs, the three-way equality diff, and the order-insensitivity control are in
+evidence/172-06-ruleset-readback.txt.
+
+--- Named findings carried forward, live as of now (not prospective) ---
+
+1. Both sub-repositories' CI version-bump auto-commits to main now break on the next push to
+   main, because enforcement is active on all three repositories as of this plan's completion:
+     - firestarter_app/.github/workflows/release.yml (stefanzweifel/git-auto-commit-action on the
+       default GITHUB_TOKEN)
+     - firestarter/.github/workflows/build.yml (same pattern, below its PUBLISH BOUNDARY comment;
+       the softprops/action-gh-release publish step depends on that push succeeding)
+   A DeployKey bypass does not cover a GITHUB_TOKEN-authenticated push, and all three repositories
+   measure zero deploy keys. This is a known, operator-accepted consequence from plan 172-05,
+   restated here because it is now live rather than prospective. Tracked for Phase 173's ledger.
+
+2. actor_id: null on the DeployKey bypass_actors entry matches ANY deploy key added to any of the
+   three repositories in the future, not a specific key. Currently inert (zero deploy keys
+   measured on all three) but is a standing residual risk against future deploy-key additions.
+   Tracked for Phase 173's ledger, unchanged from plan 172-05's finding.

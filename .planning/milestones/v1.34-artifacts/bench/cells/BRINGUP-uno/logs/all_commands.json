@@ -1,0 +1,182 @@
+[
+  {
+    "argv": [
+      "/usr/local/bin/python3",
+      "/workspaces/.planning/v1.34/tools/probe_board.py",
+      "--target",
+      "uno",
+      "--port",
+      "/dev/ttyACM0",
+      "--pins",
+      "/workspaces/.planning/v1.34/rig-pins.json",
+      "--out",
+      "/workspaces/.planning/v1.34/bench/cells/BRINGUP-uno/probe.json"
+    ],
+    "cwd": "/workspaces"
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/control/.venv/bin/firestarter",
+      "-v",
+      "-p",
+      "/dev/ttyACM0",
+      "hw"
+    ],
+    "cwd": "/workspaces",
+    "note": "controller_string probe attempt, pre-flash -- no I:/INFO: FW line (see probe.json controller_string)"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/git",
+      "-C",
+      "/workspaces/firestarter",
+      "checkout",
+      "8695ee52c27a4bee4387c5c489afd5f3d7275e8a"
+    ],
+    "cwd": "/workspaces"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/pio",
+      "run",
+      "-t",
+      "upload",
+      "-e",
+      "uno",
+      "--upload-port",
+      "/dev/ttyACM0"
+    ],
+    "cwd": "/workspaces/firestarter",
+    "note": "control arm, first flash (Event 1)"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/python3",
+      "/workspaces/.planning/v1.34/tools/judge_readback.py",
+      "--target",
+      "uno",
+      "--port",
+      "/dev/ttyACM0",
+      "--flashed-arm",
+      "control",
+      "--expect-arm",
+      "control",
+      "--out-dir",
+      "/workspaces/.planning/v1.34/bench/cells/BRINGUP-uno",
+      "--pins",
+      "/workspaces/.planning/v1.34/rig-pins.json"
+    ],
+    "cwd": "/workspaces",
+    "note": "Event 1: judged_match=true, judged_span_bytes=26026"
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/control/.venv/bin/firestarter",
+      "-v",
+      "-p",
+      "/dev/ttyACM0",
+      "hw"
+    ],
+    "cwd": "/workspaces",
+    "note": "controller_string probe attempt, post-flash -- still no I:/INFO: FW line"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/git",
+      "-C",
+      "/workspaces/firestarter",
+      "checkout",
+      "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463"
+    ],
+    "cwd": "/workspaces"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/pio",
+      "run",
+      "-t",
+      "upload",
+      "-e",
+      "uno",
+      "--upload-port",
+      "/dev/ttyACM0"
+    ],
+    "cwd": "/workspaces/firestarter",
+    "note": "v133 arm, deliberate cross-flash (Event 2)"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/python3",
+      "/workspaces/.planning/v1.34/tools/judge_readback.py",
+      "--target",
+      "uno",
+      "--port",
+      "/dev/ttyACM0",
+      "--flashed-arm",
+      "v133",
+      "--expect-arm",
+      "control",
+      "--out-dir",
+      "/workspaces/.planning/v1.34/bench/cells/BRINGUP-uno/crossflash",
+      "--pins",
+      "/workspaces/.planning/v1.34/rig-pins.json"
+    ],
+    "cwd": "/workspaces",
+    "note": "Event 2: judged_match=false (rc=1), diff_count=22367/26026 -- negative control FIRED"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/git",
+      "-C",
+      "/workspaces/firestarter",
+      "checkout",
+      "8695ee52c27a4bee4387c5c489afd5f3d7275e8a"
+    ],
+    "cwd": "/workspaces"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/pio",
+      "run",
+      "-t",
+      "upload",
+      "-e",
+      "uno",
+      "--upload-port",
+      "/dev/ttyACM0"
+    ],
+    "cwd": "/workspaces/firestarter",
+    "note": "control arm, correction flash (Event 3)"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/python3",
+      "/workspaces/.planning/v1.34/tools/judge_readback.py",
+      "--target",
+      "uno",
+      "--port",
+      "/dev/ttyACM0",
+      "--flashed-arm",
+      "control",
+      "--expect-arm",
+      "control",
+      "--out-dir",
+      "/workspaces/.planning/v1.34/bench/cells/BRINGUP-uno",
+      "--pins",
+      "/workspaces/.planning/v1.34/rig-pins.json"
+    ],
+    "cwd": "/workspaces",
+    "note": "Event 3: judged_match=true, sha_whole_flash_unjudged identical to Event 1 -- correction confirmed"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/git",
+      "-C",
+      "/workspaces/firestarter",
+      "checkout",
+      "gsd/v1.33-source-hygiene-firmware-size-reduction"
+    ],
+    "cwd": "/workspaces",
+    "note": "restore firestarter/ starting ref after the three checkouts above; porcelain-clean"
+  }
+]

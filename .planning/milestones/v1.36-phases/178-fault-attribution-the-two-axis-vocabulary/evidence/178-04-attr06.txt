@@ -1,0 +1,65 @@
+== 1 exported, rendered, sanitized
+measured_key_present=True
+measured_nonempty=True
+                                                                dev test -- X                                                                 
+┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Field              ┃ Value                                                                                                                 ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ host_version       │ 0.0.0                                                                                                                 │
+│ fw_board_identity  │ not reported                                                                                                          │
+│ hw_revision        │ not reported                                                                                                          │
+│ protocol           │ 0x01                                                                                                                  │
+│ chip_id            │ None                                                                                                                  │
+│ step: id           │ OK                                                                                                                    │
+│ banner             │ None of None ran                                                                                                      │
+│ sdp_hold_state     │                                                                                                                       │
+│ vpp (before/after) │ 11800 / 11750 mV                                                                                                      │
+│ vpe (before/after) │ 12100 / 12050 mV                                                                                                      │
+│ rail reading       │ vpp/vpe readings measure the regulator rail only -- they do not show whether the eprom socket is connected (advisory) │
+└────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+measured_rendered=True
+unmeasured_key_present=True
+unmeasured_nonempty=True
+                                                                dev test -- X                                                                 
+┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Field              ┃ Value                                                                                                                 ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ host_version       │ 0.0.0                                                                                                                 │
+│ fw_board_identity  │ not reported                                                                                                          │
+│ hw_revision        │ not reported                                                                                                          │
+│ protocol           │ 0x01                                                                                                                  │
+│ chip_id            │ None                                                                                                                  │
+│ step: id           │ OK                                                                                                                    │
+│ banner             │ None of None ran                                                                                                      │
+│ sdp_hold_state     │                                                                                                                       │
+│ vpp (before/after) │ not measured                                                                                                          │
+│ vpe (before/after) │ not measured                                                                                                          │
+│ rail reading       │ vpp/vpe readings measure the regulator rail only -- they do not show whether the eprom socket is connected (advisory) │
+└────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+unmeasured_rendered=True
+sanitized_identical=True
+render_reads_dict=True
+render_reads_constant=False
+top_key_count=13
+voltage_key_count=6
+rc=0
+== 2 the wording gate
+PASS: scanned /workspaces/firestarter_app/tools/../firestarter/diagnostic_report.py, 216 string literals checked, zero forbidden matches
+rc=0
+== 3 the pins and the corpus
+to_dict_pin_len=13
+voltage_pin_len=6
+disclosure_pinned=True
+stale_frozen=
+corpus_size=18
+rc=0
+OK: 18 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+snapshot_count=18
+== 4 the modules
+........................................................................ [ 25%]
+........................................................................ [ 51%]
+........................................................................ [ 76%]
+..................................................................       [100%]
+282 passed in 0.99s
+rc=0

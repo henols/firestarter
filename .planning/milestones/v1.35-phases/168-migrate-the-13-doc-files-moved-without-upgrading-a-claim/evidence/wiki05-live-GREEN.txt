@@ -1,0 +1,33 @@
+Paired failure: wiki05-live-orphan-RED.txt (recorded 2026-08-31 by plan 168-05,
+Task 3, against master @ f6131e7 -- exit 1, 12 pages unreachable from Home.md,
+the same 12 pages missing from _Sidebar.md, plus a stray '.git' filename-legality
+error and 8 Lockable-PROMs reference-link-form false positives, both fixed by
+this plan before this run).
+
+Command: python3 tools/wiki/wiki.py links --source-dir <fresh clone>
+Clone:   fresh anonymous `git clone https://github.com/henols/firestarter_prom.wiki.git`
+         into a new scratch directory, distinct from the working clone that
+         authored and pushed the navigation rewrite.
+Commit:  master @ 9d7e9bc280a5c0ba0854577f2fe5fa3cd2aa21a5 (pushed by this plan,
+         Task 3; previous tip was f6131e7, plan 168-05's push)
+Captured: 2026-08-31
+
+--- stdout+stderr ---
+AT28C04-Adapter -> "AT28C04 Adapter"
+Beta-Testing-Install -> "Beta Testing Install"
+Community-Validation -> "Community Validation"
+Home -> "Home"
+How-To-Edit-This-Wiki -> "How To Edit This Wiki"
+Infoic-Field-Dictionary -> "Infoic Field Dictionary"
+Lockable-PROMs -> "Lockable PROMs"
+Package-Details -> "Package Details"
+Pinout-Safety-Review -> "Pinout Safety Review"
+Programming-Protocols -> "Programming Protocols"
+Protocol-Flags -> "Protocol Flags"
+Protocol-ID -> "Protocol ID"
+SRAM-and-NVRAM-Behavior -> "SRAM and NVRAM Behavior"
+Shield-Revisions -> "Shield Revisions"
+OK: 14 pages, all reachable from Home.md, all internal links resolve, all filenames legal, and all listed in _Sidebar.md.
+--- end output ---
+
+exit 0

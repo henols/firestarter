@@ -1,0 +1,59 @@
+=== 172-06: three-way ruleset read-back (post PUT+POST, D-10 reversed to amend-and-create) ===
+
+Independently re-derived by the executor after resume: fresh GET calls issued directly against
+the API, not copied from the coordinator's report. IDs and values below are cross-checked
+against the coordinator's numbers and match.
+
+== firestarter_prom id=22043478 ==
+{"id":22043478,"name":"Protect main","target":"branch","source_type":"Repository","source":"henols/firestarter_prom","enforcement":"active","conditions":{"ref_name":{"exclude":[],"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request","parameters":{"required_approving_review_count":0,"dismiss_stale_reviews_on_push":false,"required_reviewers":[],"require_code_owner_review":false,"require_last_push_approval":false,"required_review_thread_resolution":false,"require_extra_approval_for_unattributed_changes":true,"allowed_merge_methods":["merge","squash","rebase"]}}],"node_id":"RRS_lACqUmVwb3NpdG9yec5JfgRHzgFQW1Y","created_at":"2026-09-01T20:12:43.165Z","updated_at":"2026-09-01T20:12:43.229Z","bypass_actors":[{"actor_id":null,"actor_type":"DeployKey","bypass_mode":"always"}],"current_user_can_bypass":"never","_links":{"self":{"href":"https://api.github.com/repos/henols/firestarter_prom/rulesets/22043478"},"html":{"href":"https://github.com/henols/firestarter_prom/rules/22043478"}}}
+enforcement=active
+rules=deletion,non_fast_forward,pull_request
+bypass=DeployKey:null:always
+include=~DEFAULT_BRANCH
+can_bypass=never
+created_at=2026-09-01T20:12:43.165Z
+
+== firestarter id=4998759 ==
+{"id":4998759,"name":"Protect main","target":"branch","source_type":"Repository","source":"henols/firestarter","enforcement":"active","conditions":{"ref_name":{"exclude":[],"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request","parameters":{"required_approving_review_count":0,"dismiss_stale_reviews_on_push":false,"required_reviewers":[],"require_code_owner_review":false,"require_last_push_approval":false,"required_review_thread_resolution":false,"require_extra_approval_for_unattributed_changes":true,"allowed_merge_methods":["merge","squash","rebase"]}}],"node_id":"RRS_lACqUmVwb3NpdG9yec4wS9fMzgBMRmc","created_at":"2025-04-22T11:42:12.549Z","updated_at":"2026-09-01T21:04:49.275Z","bypass_actors":[{"actor_id":null,"actor_type":"DeployKey","bypass_mode":"always"}],"current_user_can_bypass":"never","_links":{"self":{"href":"https://api.github.com/repos/henols/firestarter/rulesets/4998759"},"html":{"href":"https://github.com/henols/firestarter/rules/4998759"}}}
+enforcement=active
+rules=deletion,non_fast_forward,pull_request
+bypass=DeployKey:null:always
+include=~DEFAULT_BRANCH
+can_bypass=never
+created_at=2025-04-22T11:42:12.549Z
+
+== firestarter_app id=22046179 ==
+{"id":22046179,"name":"Protect main","target":"branch","source_type":"Repository","source":"henols/firestarter_app","enforcement":"active","conditions":{"ref_name":{"exclude":[],"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request","parameters":{"required_approving_review_count":0,"dismiss_stale_reviews_on_push":false,"required_reviewers":[],"require_code_owner_review":false,"require_last_push_approval":false,"required_review_thread_resolution":false,"require_extra_approval_for_unattributed_changes":true,"allowed_merge_methods":["merge","squash","rebase"]}}],"node_id":"RRS_lACqUmVwb3NpdG9yec4wUjbozgFQZeM","created_at":"2026-09-01T21:04:58.474Z","updated_at":"2026-09-01T21:04:58.527Z","bypass_actors":[{"actor_id":null,"actor_type":"DeployKey","bypass_mode":"always"}],"current_user_can_bypass":"never","_links":{"self":{"href":"https://api.github.com/repos/henols/firestarter_app/rulesets/22046179"},"html":{"href":"https://github.com/henols/firestarter_app/rules/22046179"}}}
+enforcement=active
+rules=deletion,non_fast_forward,pull_request
+bypass=DeployKey:null:always
+include=~DEFAULT_BRANCH
+can_bypass=never
+created_at=2026-09-01T21:04:58.474Z
+
+=== three-way equality: normalised diff, prom vs firestarter ===
+Normaliser: del(.id,.node_id,.created_at,.updated_at,._links,.source,.source_type,.current_user_can_bypass) | .rules |= sort_by(.type) | .bypass_actors |= sort_by(.actor_type, (.actor_id // 0))
+CLEAN -- identical apart from the excluded volatile fields
+
+=== three-way equality: normalised diff, prom vs firestarter_app ===
+CLEAN -- identical apart from the excluded volatile fields
+
+=== order-insensitivity control ===
+firestarter's raw read-back, with .rules and .bypass_actors reversed, then renormalised,
+compared against the same read-back normalised without reversal:
+CLEAN -- normaliser is order-insensitive
+
+=== id preservation check (the amend, not a recreate) ===
+firestarter ruleset id: 4998759 (must equal 4998759, the incumbent -- NOT a new id)
+firestarter ruleset created_at: 2025-04-22T11:42:12.549Z (must equal 2025-04-22T11:42:12.549Z, the original creation date -- proves no delete occurred)
+PASS: id preserved
+PASS: creation date preserved
+
+=== summary assertions ===
+ruleset list length: prom=1 firestarter=1 firestarter_app=1 (all must be 1)
+no repository's list contains any id other than its single active ruleset (already shown above; length 1 each)
+enforcement=active count: 3 (must be 3)
+bypass=DeployKey:null:always count: 3 (must be 3 -- NOT Integration:15368:always; D-09 was revised in plan 172-05)
+can_bypass=never count: 3 (must be 3)
+rules=deletion,non_fast_forward,pull_request count: 3 (must be 3)
+include=~DEFAULT_BRANCH count: 3 (must be 3)

@@ -1,0 +1,56 @@
+=== 172-08: the three merges — the first live exercise of PR-only `main` ===
+
+This file is what Phase 173's POLICY-05 cites when it documents the close procedure under
+protection. All values are raw `gh` output, read back after the fact rather than reported.
+
+== The three pull requests ==
+firestarter_prom pr=54 state=MERGED mergedAt=2026-09-02T08:56:58Z head=policy/contributor-policy mergeCommit=71148edafb05bdf7a4923121d99c2f296fe500e8
+firestarter      pr=58 state=MERGED mergedAt=2026-09-02T08:57:02Z head=policy/contributor-policy mergeCommit=135bf9a36acdb4dd770c708cff93255d3ac337ca
+firestarter_app  pr=57 state=MERGED mergedAt=2026-09-02T08:57:06Z head=policy/contributor-policy mergeCommit=1625aef67cceeac11d9c48fefdcfe45d9e0c82e6
+
+Three MERGED, three heads still policy/contributor-policy, merged in the plan's prescribed order
+(prom first, so the wiki-check registration was visible before the two sub-repositories moved)
+within an 8-second window.
+
+== Merge method: MEASURED, not assumed ==
+The plan asks that the merge method be recorded. Rather than take `--merge` on trust, each merge
+commit's parent count was read from the API:
+  firestarter_prom 71148ed parents=ad08a06,4b87023
+  firestarter      135bf9a parents=b3b6cce,579f04a
+  firestarter_app  1625aef parents=584bcdb,992f111
+Two parents each — true merge commits. A squash or a rebase would have produced one parent. The
+method was therefore the ordinary `--merge` route in all three cases.
+
+Cross-check worth having: firestarter's second parent 579f04a is the same head sha 172-07 recorded
+in 172-07-fw-checkruns.txt (579f04a6fde93bae86845cc446fe61f0b8a9fad2). The commit whose empty
+check-run list produced the Pitfall 5 verdict is provably the commit that got merged.
+
+== Nothing needed anything other than the ordinary route ==
+No merge in this plan used an admin override, a force-push, or a temporarily disabled ruleset. No
+merge was refused. Recorded plainly because the plan asks it be recorded plainly either way — and
+independently corroborated two ways: all three rulesets read back `active` with unchanged bypass
+lists and unchanged ids after the merges (172-08-post-merge-surfaces.txt), and
+current_user_can_bypass was `never` on all three both before and after, so the override the plan
+forbids was not available to be used.
+
+== Pitfall 5: no stable firmware release was cut ==
+latest_firmware_release=2.0.6 2025-11-16T13:50:02Z  merged_at=2026-09-02T08:57:02Z
+  published_at 2025-11-16T13:50:02Z is strictly earlier than mergedAt 2026-09-02T08:57:02Z.
+
+Stronger than the assertion the plan specifies. The pre-merge baseline recorded the identical
+value (2.0.6, 2025-11-16T13:50:02Z), so the latest release is not merely old — it is UNCHANGED
+across the merge, which is the fact that actually matters. And the release machinery did not run
+at all: the most recent workflow run of any kind on henols/firestarter's main is
+  Firestarter CI  event=push  2025-11-16T13:49:38Z  success
+i.e. from November 2025. Today's merge triggered nothing. build.yml's push trigger did not fire,
+exactly as 172-07's verdict predicted from main's own `.github/**` paths-ignore entry, and
+py32f071.yml remains absent from main's tree. The verdict is confirmed by outcome, not just by
+prediction.
+
+== What this demonstrates for POLICY-05 ==
+PR-only `main` works. Three branches cut from each repository's own origin/main, three narrow
+pull requests, three ordinary merges, protection active throughout and never bypassed, and the
+`required_approving_review_count: 0` in the canonical ruleset body is what lets a solo maintainer
+complete the route without a second reviewer. Phase 173 should carry this forward as the measured
+procedure, and should note that `/gsd-complete-milestone`'s direct push to main is what still has
+to change — these merges exercised the pull-request route, not that command.

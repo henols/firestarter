@@ -1,0 +1,169 @@
+# 181-06 Task 2 -- a real wall-clock elapsed, stamped once between CLI entry
+# and the first serialization (Task 3 extends this transcript with the
+# console-row swap and the filed-body line)
+# Measured against firestarter_app app HEAD 32f4ff7 (plans 181-01..181-05 plus
+# this plan's Task 1 landed).
+
+## Section 1: the stamp, the assignment site, and the DiagnosticReport field
+
+group_first_stmt=ctx.meta[_CLI_START_MONOTONIC_META_KEY] = time.monotonic()
+stmt_before_first_serialization=report.elapsed = None if cli_start is None else round(time.monotonic() - cli_start, 3)
+report_field_present=true
+to_dict_key_count_before=14
+to_dict_key_count_after=15
+elapsed_expr_is_plain_attribute_read=true
+elapsed_expr_has_call_node=false
+rc=0
+
+## Section 2: the None-safety and stability properties (Task 2's own inline leg)
+
+elapsed_without_cli_context=None
+to_dict_invocations_per_run=3
+elapsed_stamped_once=true
+elapsed_stable_across_invocations=true
+generated_restamped=possibly -- documented as "possibly-different" in the
+  plan's own behavior block: generated has second-level resolution, so two
+  to_dict() calls inside one run are not guaranteed to disagree; only
+  elapsed's stability is asserted as a hard equality.
+rc=0
+
+## Section 3: real end-to-end CliRunner proof (same run, three real to_dict() calls)
+
+Test: tests/test_dev_test_cmd.py::test_a_real_invocation_saves_a_nonnegative_elapsed_stable_across_to_dict_calls
+Result: 1 passed
+  - saved JSON's elapsed: float, >= 0 (asserted, value varies per run --
+    real wall-clock, per the milestone's operation-counts-not-seconds rule)
+  - embedded JSON block inside the saved .md (report.to_json_block()'s own
+    to_dict() call, the THIRD of three): elapsed identical to the saved
+    JSON's (the SECOND of three) -- same in-memory report, same stored value
+rc=0
+
+## Section 4: HYG-04 registration (D-19)
+
+new_helper=_cli_start_time
+registered_in_HANDLER_FUNCTION_NAMES=true
+referenced_helpers_floor_before=6
+referenced_helpers_floor_after=7 (measured live, not computed from prose)
+rc=0
+
+## Section 5 (Task 2 partial measurement): tests re-run after this task's edits
+
+tests/test_dev_test_cmd.py: 63 passed (was 62 pre-task)
+tests/test_blast_radius_invariance.py: 103 passed
+tests/test_check_devtest_orchestrator.py: 26 passed
+rc=0
+
+## Section 6: tokenize COMMENT-token census -- non-increase gate
+
+comment_tokens_pretask firestarter/diagnostic_report.py=214
+comment_tokens_pretask firestarter/cli_handlers.py=357
+comment_tokens_pretask tests/test_dev_test_cmd.py=216
+comment_tokens_pretask tests/test_blast_radius_invariance.py=0
+comment_tokens_pretask tests/test_check_devtest_orchestrator.py=98
+comment_tokens_pretask tools/check_devtest_orchestrator.py=91
+
+comment_tokens_posttask firestarter/diagnostic_report.py=214
+comment_tokens_posttask firestarter/cli_handlers.py=357
+comment_tokens_posttask tests/test_dev_test_cmd.py=216
+comment_tokens_posttask tests/test_blast_radius_invariance.py=0
+comment_tokens_posttask tests/test_check_devtest_orchestrator.py=98
+comment_tokens_posttask tools/check_devtest_orchestrator.py=92 (was 91;
+  +1 is a legitimate, deliberate update to the fail-open allow-list's own
+  explanatory comment, naming the helper that just joined -- tools/ is not
+  product source, same exemption already applied in 181-04/181-05)
+
+phase_added_comments=0 (product source)
+rc=0
+
+## Section 7: ruff / mypy across the full scope
+
+ruff_check=All checks passed! (firestarter/ tests/)
+ruff_format_check=174 files already formatted
+mypy_watermark=35/35 (unchanged)
+rc=0
+
+## Section 8: porcelain (run AFTER Task 2's commit, before Task 3 starts)
+
+firestarter_submodule_porcelain=clean
+rc=0
+
+## Section 9 (Task 3): the console row swap and the filed body line
+
+console_elapsed_row_present=true
+console_summed_row_present=false
+body_elapsed_line_present=true
+elapsed_absent_omits_console_row=true
+elapsed_absent_omits_body_line=true
+elapsed_read_from=exported dict
+dedup_fingerprint_unchanged_by_durations=true
+rc=0
+
+## Section 10 (Task 3): what the removed row excluded -- one comparison,
+## recorded as evidence of the exclusion, not as an acceptance threshold
+## (the milestone's house rule is operation counts, never seconds)
+
+The removed row summed only the per-step durations, so it excluded the
+connects (EpromDatabase load, hardware-identity read), plan derivation, the
+console render, the artifact write and the submit prompt. `elapsed` covers
+CLI entry through immediately before the first serialization -- it INCLUDES
+the connects, the database load, the identity read and plan derivation the
+old row silently left out, and (like the old row) still excludes the
+render, the write and the submit prompt.
+
+One real `dev test` run against a clean-path mock operator (chip M8720, no
+live hardware):
+  elapsed=0.066
+  old_would_be_sum=0.004 (sum of the run's own steps[].duration_s, the
+    exact computation the removed row performed)
+  elapsed_covers_more_than_old_would_be_sum=true
+
+This is the shape the old row's own removed comment already conceded --
+`elapsed` is larger because it counts real setup cost (the identity read
+and plan derivation) the summed row never saw. The absolute numbers are
+mock-timing artifacts of this one CliRunner invocation, not a threshold;
+what is asserted (Task 1's test suite, `_run_step`'s wrapper, and this
+section) is the RELATION, per the milestone's operation-counts-never-
+seconds house rule.
+
+## Section 11 (Task 3): whole-module pytest tails after this task's edits
+
+tests/test_diagnostic_report.py: 79 passed (was 78 pre-Task-3;
+  test_steps_total_row_sums_only_steps_that_ran replaced by two tests)
+tests/test_submit.py: 110 passed (unchanged)
+tests/test_chip_test_timing.py: 11 passed (unchanged)
+tests/test_blast_radius_invariance.py: 103 passed (unchanged)
+rc=0
+
+## Section 12 (Task 3): claim scanner, snapshot drift, frozen-hash literal diff
+
+tools/check_diagnostic_report_claims.py: PASS, 219 string literals checked,
+  zero forbidden matches
+tools/snapshot_report_shapes.py --check: OK, 19/19 match a fresh
+  regeneration (render()-only change; to_dict() untouched by Task 3)
+frozen_hash_literal_lines_moved_since_04fd982=0
+rc=0
+
+## Section 13 (Task 3): tokenize COMMENT-token census -- non-increase gate,
+## the full seven-file set plus the pin module
+
+comment_tokens firestarter/chip_test.py=893
+comment_tokens firestarter/diagnostic_report.py=207 (was 214 pre-Task-3;
+  the deleted "steps total" comment block is a net DECREASE, permitted by
+  the non-increase direction)
+comment_tokens firestarter/cli_handlers.py=357
+comment_tokens firestarter/submit.py=48
+comment_tokens tests/test_chip_test_timing.py=4
+comment_tokens tests/test_diagnostic_report.py=182 (was 183 pre-Task-3; one
+  pre-existing inline comment removed along with the test it annotated)
+comment_tokens tests/test_dev_test_cmd.py=216
+pin_module tests/test_blast_radius_invariance.py=0
+
+phase_added_comments=0
+rc=0
+
+## Section 14 (Task 3): porcelain, run AFTER this task's commits
+
+A=$(git -C /workspaces/firestarter status --porcelain)=empty
+B=$(git -C /workspaces/firestarter_app status --porcelain firestarter/)=empty
+C=$(git -C /workspaces/firestarter_app status --porcelain)=empty
+rc=0

@@ -1,0 +1,122 @@
+MIGRATE-03 — firestarter_app verified on the CI Python floor (3.11), not the
+devcontainer's 3.12
+=============================================================================
+
+Route (per 168-RESEARCH.md "MIGRATE-03 on the CI Python Floor"):
+  export UV_CACHE_DIR=<scratch>/uvcache          # ~/.cache/uv is not writable here
+  uv venv --python 3.11 <scratch>/venv311        # resolves CPython 3.11.16
+  VIRTUAL_ENV=<scratch>/venv311 uv pip install -e '.[test]'
+  export FIRESTARTER_CONFIG_DIR=<scratch>/fsconfig   # app writes to ~/.firestarter regardless
+  cd firestarter_app && <scratch>/venv311/bin/python3 -m pytest tests/ -o addopts="" -q
+
+--- Interpreter version ---
+$ <scratch>/venv311/bin/python3 --version
+Python 3.11.16
+
+--- Resolved package location (must be inside the tree under test) ---
+$ cd firestarter_app && <scratch>/venv311/bin/python3 -c "import firestarter; print(firestarter.__file__)"
+/workspaces/firestarter_app/firestarter/__init__.py
+
+CONFIRMED: resolves into the checked-out tree under test (firestarter_app/firestarter/__init__.py),
+not a sibling checkout.
+
+METHODOLOGY NOTE — a real instance of the sibling-editable-install trap, caught before it produced
+a false result: running the identical `import firestarter; print(firestarter.__file__)` command
+with cwd=/workspaces (the meta repo root, which also contains a directory literally named
+`firestarter` — the unrelated C++ firmware sub-repo) printed `None` and resolved
+`firestarter.__path__` to `['/workspaces/firestarter']` (the firmware repo, not the installed
+Python package). Reason: `python3 -c` puts `''` (cwd) on `sys.path`, and Python's implicit PEP 420
+namespace-package resolution finds `/workspaces/firestarter` (a directory with no `__init__.py`,
+still a legal namespace package) via the ordinary `PathFinder` *before* the editable install's own
+appended `_EditableFinder` ever runs. Every command in this evidence file was therefore run with
+cwd=firestarter_app (never cwd=/workspaces), which resolves correctly, as shown above.
+
+--- ruff check ---
+$ <scratch>/venv311/bin/python3 -m ruff check firestarter/ tests/
+All checks passed!
+exit: 0
+
+--- ruff format --check ---
+$ <scratch>/venv311/bin/python3 -m ruff format --check firestarter/ tests/
+159 files already formatted
+exit: 0
+
+--- mypy watermark gate ---
+$ <scratch>/venv311/bin/python3 tools/check_mypy_watermark.py
+checked 161 source files
+mypy errors: 35 (watermark: 35)
+OK: error count at watermark.
+exit: 0
+
+--- Full suite (tail, count line included) ---
+$ <scratch>/venv311/bin/python3 -m pytest tests/ -o addopts="" -q
+........................................................................ [  3%]
+........................................................................ [  7%]
+........................................................................ [ 11%]
+........................................................................ [ 14%]
+........................................................................ [ 18%]
+........................................................................ [ 22%]
+........................................................................ [ 25%]
+........................................................................ [ 29%]
+........................................................................ [ 33%]
+........................................................................ [ 36%]
+........................................................................ [ 40%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+........................................................................ [ 51%]
+........................................................................ [ 55%]
+........................................................................ [ 58%]
+........................................................................ [ 62%]
+........................................................................ [ 66%]
+........................................................................ [ 69%]
+........................................................................ [ 73%]
+........................................................................ [ 77%]
+........................................................................ [ 81%]
+........................................................................ [ 84%]
+........................................................................ [ 88%]
+........................................................................ [ 92%]
+........................................................................ [ 95%]
+...........                                                              [100%]
+=============================== warnings summary ===============================
+tests/test_click_group_gate_hook.py::test_multicommand_is_deprecated_alias_not_in_dir_but_still_reachable[MultiCommand]
+  /workspaces/firestarter_app/tests/test_click_group_gate_hook.py:161: DeprecationWarning: 'MultiCommand' is deprecated and will be removed in Click 9.0. Use 'Group' instead.
+    assert getattr(click, attr_name) is not None
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+32 snapshots passed.
+1955 passed, 1 warning in 332.99s (0:05:32)
+exit: 0
+
+RESULT: 1955 passed, 0 failed, 0 errors. Count is above the 1900 non-vacuity floor.
+Matches 168-09-SUMMARY.md's devcontainer (Python 3.12) result of 1955 passed exactly — the
+17-leg removal and both doc/ deletions hold identically on the CI Python floor. Configuration:
+firmware sibling present at /workspaces/firestarter (same configuration 168-04, 168-07 and 168-09
+used to prove the H-1 severance and run their own full-suite checks); this is not the bare,
+firmware-sibling-absent shape of the real hosted CI runner, but it is a strictly harder
+configuration (it also exercises every firmware-sibling-dependent leg app CI's bare checkout
+skips), and no test in the suite behaves differently on 3.11 vs 3.12 here.
+
+--- Build ---
+$ VIRTUAL_ENV=<scratch>/venv311 uv build --sdist --wheel -o <scratch>/build-current
+Successfully built <scratch>/build-current/firestarter-3.0.0b33.tar.gz
+Successfully built <scratch>/build-current/firestarter-3.0.0b33-py3-none-any.whl
+exit: 0
+
+--- Install + entry point (mirrors CI's final step: `pip install -e . && firestarter --help`) ---
+$ VIRTUAL_ENV=<scratch>/venv311 uv pip install -e .
+Installed 1 package in 5ms
+ ~ firestarter==3.0.0b33 (from file:///workspaces/firestarter_app)
+exit: 0
+
+$ <scratch>/venv311/bin/firestarter --help
+Usage: firestarter [OPTIONS] COMMAND [ARGS]...
+
+  EPROM programmer for Arduino and Relatively-Universal-ROM-Programmer shield.
+[... command list follows ...]
+exit: 0
+
+CONCLUSION: firestarter_app builds, installs and passes its full suite on Python 3.11.16 (the
+version app CI actually runs), with the editable install proven to resolve into the tree under
+test. The linter, format check and mypy watermark gate all pass. The package builds and installs
+cleanly and the console entry point responds.

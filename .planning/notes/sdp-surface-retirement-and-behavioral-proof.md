@@ -34,7 +34,7 @@
 Three parts, decided together:
 
 1. **Delete `firestarter dev sdp <chip> enable|disable`** — the standalone command shipped in
-   v1.22 Phase 120 (`cli_handlers.py:2098`, live in `3.0.0b14`).
+   v1.22 Phase 120 (`cli_handlers.py:2095`, live in `3.0.0b14`).
 2. **Move the proof into `dev test`** — for SDP-capable chips, lock the part, attempt a write
    *without* unlocking, and assert the chip is **unchanged**; then unlock and prove it is
    writable again. This is the first oracle the SDP lock has ever had.
@@ -94,7 +94,7 @@ carrying `reason`, never a silent omission.
 | 4 | `sdp_unlock` (CMD 9) + write + verify | proves the part is writable again and leaves it unlocked |
 
 **Constraint — the leg cannot be flag-gated.** `dev test` takes **zero options** since Phase 121
-D-05 (`dev_test(app, chip)`, `cli_handlers.py:1961`); the four v1.21 flags were removed, not
+D-05 (`dev_test(app, chip)`, `cli_handlers.py:1958`); the four v1.21 flags were removed, not
 disabled. So the leg must be **plan-derived** from the capability predicate, exactly like every
 other step in `derive_plan`. Do not reintroduce an option for it.
 
@@ -129,7 +129,7 @@ that if auto-unlock's default is ever revisited, this decision is revisited with
 ## 7. Insertion points (host only)
 
 **Delete:**
-- `cli_handlers.py:2098-2230` — `dev_sdp` and its four gates
+- `cli_handlers.py:2095-2227` — `dev_sdp` and its four gates
 - `firestarter_app/tests/test_dev_sdp_cmd.py` — repurpose the gate-ordering cases onto the new leg
   where they still apply
 

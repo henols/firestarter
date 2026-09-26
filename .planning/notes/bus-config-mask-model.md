@@ -8,7 +8,7 @@ context: /gsd-explore session on making pinmaps more general and speeding up mem
 
 Design decisions from exploring a smarter, faster bus-config for the address-bus
 remap. Anchor code: `mem_util_remap_address_bus` in
-`firestarter/src/proms/memory.cpp:259`; struct `bus_config_t` in
+`firestarter/src/proms/memory.cpp:331`; struct `bus_config_t` in
 `firestarter/include/firestarter.h:75`; host composer
 `EpromDatabase.get_bus_config` in `firestarter_app/firestarter/database.py:257`.
 

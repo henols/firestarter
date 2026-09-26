@@ -1,0 +1,103 @@
+# 181-05 Task 3 -- D-16 re-proof after the additive auto_capture key
+# Measured against firestarter_app app HEAD 73ac697 (this plan's own Tasks 1-2 committed),
+# app base 04fd982, plan precondition base ddc0c1c.
+
+## Section 1: the four named scalars
+
+frozen_hash_literal_count=19
+frozen_hash_lines_added_or_removed_since_04fd982=0
+shapes_reproducing=19/19
+auto_capture_key_count_after=9
+rc=0
+
+## Section 2: HYG-04 registration (D-19)
+
+Command: ./.venv311/bin/python tools/check_devtest_orchestrator.py
+Result: PASS: scanned ../firestarter/chip_test.py, ../firestarter/cli_handlers.py,
+        ../firestarter/submit.py; 0 VPP-set, 0 raw-wire-dict, 0 --force, 0 broad-except;
+        firmware untouched (host-only, asserted)
+rc=0
+
+Command: ./.venv311/bin/python -m pytest tests/test_check_devtest_orchestrator.py -o addopts="" -q
+Result: 26 passed
+rc=0
+
+_HANDLER_FUNCTION_NAMES (10 names, includes _canonical_part_number, all resolve to real
+callables in cli_handlers): _canonical_part_number,_chip_id_fields,_dev_test_exit_code,
+_is_interactive,_is_uv_eprom,_make_sampler,_overall_exit_code,_sanitize_chip_token,
+_verdict_code,dev_test
+
+_referenced_underscore_helpers_in_dev_test (live derivation against the real
+cli_handlers.py, re-run rather than inherited from plan 181-04's number): 6 names --
+_canonical_part_number,_chip_id_fields,_dev_test_exit_code,_is_uv_eprom,_make_sampler,
+_sanitize_chip_token. len(derived) floor moved 5 -> 6 (measured, not computed from
+prose).
+
+## Section 3: tests/test_blast_radius_invariance.py pytest tail
+
+Command: ./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -o addopts="" -q
+Result: 103 passed
+rc=0
+
+Command: ./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -k test_dedup_fingerprint_is_frozen -o addopts="" -q
+Result: 19 passed, 84 deselected
+rc=0
+
+## Section 4: tools/snapshot_report_shapes.py --check
+
+Command: ./.venv311/bin/python tools/snapshot_report_shapes.py --check
+Result: OK: 19 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+
+## Section 5: the D-16 argument, in one paragraph
+
+`canonical_part_number` is additive -- `AutoCapture` gained one `str | None` field
+defaulting to `None`, and `_auto_capture_dict()` gained one corresponding key. It sits
+OUTSIDE `dedup_fingerprint`'s explicit five-entry allow-list (`chip` | `protocol` |
+`op=verdict:classification` | `repeat_policy_tag` | `coverage_tag`), which is not a
+filter that could accidentally widen -- it is a fixed list with no reflection over
+dataclass fields, so a field's absence from it is the whole exclusion mechanism.
+`ac.chip`, the pre-image's FIRST component, is untouched: none of this plan's edits
+write to it, and the whole-database sweep in tests/test_canonical_part_number.py never
+calls `_canonical_part_number` in a way that could reach `ac.chip`. So no registered
+shape and no already-filed report can re-key. The gate that would redden if that changed
+is `test_dedup_fingerprint_is_frozen`'s 19-way parametrization in
+tests/test_blast_radius_invariance.py, whose failure message carries the two-commit
+review rule verbatim: "If deliberate, land the behaviour change and the re-key of this
+literal as SEPARATE commits, so the re-key stays a reviewable unit." All 19 pins are
+green (Section 3) and zero twelve-hex literal lines moved since app base 04fd982
+(Section 1) -- confirmed independently, not merely reasoned about.
+
+## Section 6: snapshot-diff scope (19 report snapshots)
+
+Every one of the 19 committed tests/fixtures/reports/*.json snapshots differs from
+this plan's own precondition base (app HEAD ddc0c1c, before any of this plan's
+commits) by EXACTLY ONE added line: `"canonical_part_number": null,` inside the
+`auto_capture` object. No other line in any of the 19 files differs. These are
+to_dict() serializations (via tools/snapshot_report_shapes.py), not console renders,
+so the console table title change (diagnostic_report.py's render()) does not appear
+in them at all -- there is no separate "changed table title" line to account for in
+this snapshot corpus. Confirmed via `git diff ddc0c1c -- <file>` per file, all 19 at
+one added line, zero removed lines. No snapshot differed elsewhere; none required
+investigation beyond this.
+
+at28c256-full-all-ok-sdp.json=+1
+attr01-status-axis-transport-fault.json=+1
+gh20-at28c256-fail.json=+1
+gh23-w27e257-fail.json=+1
+gh28-m27c512-fail.json=+1
+gh47-sst27sf512-pass.json=+1
+m27c512-full-all-ok.json=+1
+m27c512-full-blank-check-bad.json=+1
+m27c512-full-canonical-name.json=+1
+m27c512-full-comma-joined-name.json=+1
+m27c512-full-runs-1.json=+1
+prune03-synthesized-fingerprint-match.json=+1
+sst27sf512-full-all-ok.json=+1
+sst27sf512-six-step-readback-gated.json=+1
+sst27sf512-six-step.json=+1
+synthetic-arm4-empty-results.json=+1
+synthetic-arm4-no-ok.json=+1
+uv-slot-write-pass.json=+1
+w27e257-full-all-ok.json=+1
+rc=0

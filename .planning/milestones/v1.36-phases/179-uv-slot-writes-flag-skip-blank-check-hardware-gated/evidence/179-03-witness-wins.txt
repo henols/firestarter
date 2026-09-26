@@ -1,0 +1,76 @@
+== 1 all twelve legs exist and none is skipped
+rc=0
+leg_test_the_double_refuses_a_non_blank_write_without_the_flag=1
+leg_test_the_double_accepts_a_non_blank_write_with_the_flag=1
+leg_test_uv_slot_write_on_a_non_blank_part_reaches_pass_with_run_count_two=1
+leg_test_the_flag_reaches_the_wire_on_every_cycle=1
+leg_test_the_blank_check_adjudication_is_what_lifts_the_run_to_pass=1
+leg_test_uv_slot_write_preserves_the_not_blank_finding=1
+leg_test_uv_slot_policy_without_the_witness_does_not_set_the_flag=1
+leg_test_fixed_policy_with_the_witness_sets_the_flag=1
+leg_test_the_witness_is_false_for_absent_empty_and_unmasked_targets=1
+leg_test_the_prescribed_probe_read_string_equality_would_never_match=1
+leg_test_a_non_uv_plan_never_sets_the_skip_blank_check_flag=1
+leg_test_a_non_uv_blank_check_failure_is_still_bad=1
+skip_markers=0
+resolver_patched=0
+== 2 the witness, measured independently of the module
+witness_none=False
+witness_unmasked=False
+witness_empty_current=False
+witness_full=True
+dirA_flags=0
+dirA_reads=0
+dirB_flags=8
+dirB_reads=0
+prescribed_equality_matches=False
+staged_prefix_holds=True
+nonuv_flags_distinct=0
+nonuv_blank_check_verdict=BAD
+rc=0
+== 3 the module and the whole suite
+............                                                             [100%]
+12 passed in 0.13s
+rc=0
+........................................................................ [  3%]
+........................................................................ [  6%]
+........................................................................ [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 15%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 25%]
+........................................................................ [ 28%]
+........................................................................ [ 31%]
+........................................................................ [ 34%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+........................................................................ [ 50%]
+........................................................................ [ 54%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+........................................................................ [ 69%]
+........................................................................ [ 73%]
+........................................................................ [ 76%]
+........................................................................ [ 79%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 95%]
+........................................................................ [ 98%]
+.................................                                        [100%]
+=============================== warnings summary ===============================
+tests/test_click_group_gate_hook.py::test_multicommand_is_deprecated_alias_not_in_dir_but_still_reachable[MultiCommand]
+  /workspaces/firestarter_app/tests/test_click_group_gate_hook.py:161: DeprecationWarning: 'MultiCommand' is deprecated and will be removed in Click 9.0. Use 'Group' instead.
+    assert getattr(click, attr_name) is not None
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+32 snapshots passed.
+2265 passed, 1 warning in 325.86s (0:05:25)
+rc=0

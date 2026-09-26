@@ -1,0 +1,35 @@
+Processing uno (platform: atmelavr; board: uno; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/atmelavr/uno.html
+PLATFORM: Atmel AVR (5.2.0) > Arduino Uno
+HARDWARE: ATMEGA328P 16MHz, 2KB RAM, 32KB Flash
+DEBUG: Current (avr-stub) External (avr-stub, simavr)
+PACKAGES: 
+ - framework-arduino-avr @ 5.3.0 
+ - tool-avrdude @ 1.60300.200527 (6.3.0) 
+ - toolchain-atmelavr @ 1.70300.191015 (7.3.0)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 6 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- EEPROM @ 2.0
+|-- jsmn
+Building in release mode
+Checking size .pio/build/uno/firestarter_uno.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [========  ]  76.9% (used 1575 bytes from 2048 bytes)
+Flash: [========  ]  79.4% (used 26026 bytes from 32768 bytes)
+Configuring upload protocol...
+AVAILABLE: arduino
+CURRENT: upload_protocol = arduino
+Looking for upload port...
+Using manually specified: /dev/ttyACM0
+Uploading .pio/build/uno/firestarter_uno.hex
+========================= [SUCCESS] Took 9.42 seconds =========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+uno            SUCCESS   00:00:09.420
+========================= 1 succeeded in 00:00:09.420 =========================

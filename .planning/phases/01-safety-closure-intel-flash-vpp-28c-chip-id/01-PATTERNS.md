@@ -247,7 +247,7 @@ if (handle->chip_id > 0) {
 }
 ```
 
-**Current state at edit site** (`firestarter/src/proms/eeprom_28c.cpp:49-61`):
+**Current state at edit site** (`firestarter/src/proms/eeprom_28c.cpp:45-57`):
 ```c
 void eeprom28c_write_init(firestarter_handle_t* handle) {
     flash_execute_command(EEPROM_SDP_DISABLE);              // <-- insert chip-id check BEFORE this

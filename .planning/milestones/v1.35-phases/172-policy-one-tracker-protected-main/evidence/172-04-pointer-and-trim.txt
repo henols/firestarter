@@ -1,0 +1,12 @@
+== pointer file sha256
+2ccb492280c98f7ae3c462f597ad1dd3edd07f833012828f5e91f37e7571183d  .github/CONTRIBUTING.md
+2ccb492280c98f7ae3c462f597ad1dd3edd07f833012828f5e91f37e7571183d  firestarter/.github/CONTRIBUTING.md
+2ccb492280c98f7ae3c462f597ad1dd3edd07f833012828f5e91f37e7571183d  firestarter_app/.github/CONTRIBUTING.md
+== links in each trimmed section
+prom 1
+fw 1
+app 1
+== surviving restatements
+firestarter/README.md:0
+firestarter_app/README.md:0
+README.md:0

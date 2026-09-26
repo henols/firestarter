@@ -81,7 +81,7 @@ I cannot 100 % nail JP7's nets — the KiCad `.kicad_sch` file is too large for 
 
 `firestarter/src/proms/eprom.cpp`, `firestarter/src/proms/memory.cpp`, `firestarter/include/firestarter.h`:
 
-- `handle->pins` is set from JSON `pin-count` (`firestarter/src/json_parser.c:297`).
+- `handle->pins` is set from JSON `pin-count` (`firestarter/src/json_parser.c:497`).
 - Only two places branch on pin count, both in `memory.cpp`:
   - `mem_util_calculate_top_address_register()` at `firestarter/src/proms/memory.cpp:140-150` — `if (handle->pins < 32)` preserves `VPE_TO_VPP` in the CONTROL register mask; `if (handle->pins == 28)` forces `ADDRESS_LINE_17` HIGH. **No `pins == 24` branch.**
   - `using_p1_as_vpp()` at `firestarter/include/memory_utils.h:24-27` — returns true iff `(pins == 32 && vpp_line == VPP_P1_32_DIP) || (pins < 32 && vpp_line == VPP_P1_28_DIP)`. Note `pins < 32` (not `== 28`), so a 24-pin chip whose pinout JSON sets `vpp_line == 0x0F` would also trip this redirect — but on the current `DIP24_2716` pinout, `vpp_line` resolves to bus line 11 (chip pin 21 via `pin_conversions[24]`), NOT 0x0F. So `using_p1_as_vpp` returns false for a stock 24-pin DB entry, and `VPE_ENABLE` is **not** redirected to `P1_VPP_ENABLE`. The firmware asserts `VPE_ENABLE` → D11 → **socket pin 31 (PGM)** instead, which lies OUTSIDE the bottom-aligned 24-pin chip's footprint (chip only occupies socket pins 5–28).
@@ -240,7 +240,7 @@ None of these is present in the readable schematic content. So the **shield-inte
 - `firestarter/include/memory_utils.h:24-27` — `using_p1_as_vpp()` gate predicate.
 - `firestarter/src/proms/memory.cpp:140-150` — `mem_util_calculate_top_address_register()` pin-count branches (no `== 24` case).
 - `firestarter/include/rurp_shield.h:57-58` — `VPP_P1_32_DIP (0x15)`, `VPP_P1_28_DIP (0x0F)` magic constants.
-- `firestarter/src/proms/memory.cpp:243-245` — VPP-line drive-HIGH during address remapping (read-protection for non-P1 VPP lines).
+- `firestarter/src/proms/memory.cpp:315-317` — VPP-line drive-HIGH during address remapping (read-protection for non-P1 VPP lines).
 
 **Host (Python):**
 - `firestarter_app/firestarter/database.py:68-88` — `pin_conversions[24]` bottom-aligned mapping (chip pin 1 → bus line 7 = socket pin 5; chip pin 24 → bus line 13 = socket pin 28).

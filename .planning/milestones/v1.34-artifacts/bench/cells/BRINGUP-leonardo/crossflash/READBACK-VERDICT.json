@@ -1,0 +1,156 @@
+{
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "avrdude_version": "8.1",
+  "commands": [
+    {
+      "argv": [
+        "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+        "-C",
+        "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+        "-c",
+        "avr109",
+        "-p",
+        "atmega32u4",
+        "-b",
+        "57600",
+        "-P",
+        "/dev/ttyACM0",
+        "-A",
+        "-U",
+        "flash:r:/workspaces/.planning/v1.34/bench/cells/BRINGUP-leonardo/crossflash/flash_readback.bin:r"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/home/vscode/.platformio/packages/toolchain-atmelavr/bin/avr-objcopy",
+        "-I",
+        "ihex",
+        "-O",
+        "binary",
+        "/workspaces/.planning/v1.34/images/firestarter_leonardo.control.hex",
+        "/workspaces/.planning/v1.34/bench/cells/BRINGUP-leonardo/crossflash/expected_span.bin"
+      ],
+      "cwd": "/workspaces"
+    }
+  ],
+  "diff_count": 24454,
+  "expect_arm": "control",
+  "first_diffs": [
+    {
+      "actual": "0xE1",
+      "expected": "0x11",
+      "offset": 2
+    },
+    {
+      "actual": "0x01",
+      "expected": "0x02",
+      "offset": 3
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 6
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 10
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 14
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 18
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 22
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 26
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 30
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 34
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 38
+    },
+    {
+      "actual": "0xAC",
+      "expected": "0x52",
+      "offset": 42
+    },
+    {
+      "actual": "0x22",
+      "expected": "0x26",
+      "offset": 43
+    },
+    {
+      "actual": "0x29",
+      "expected": "0xCF",
+      "offset": 46
+    },
+    {
+      "actual": "0x23",
+      "expected": "0x26",
+      "offset": 47
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 50
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 54
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 58
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 62
+    },
+    {
+      "actual": "0x09",
+      "expected": "0x39",
+      "offset": 66
+    }
+  ],
+  "flashed_arm": "v133",
+  "hex_path": "/workspaces/.planning/v1.34/images/firestarter_leonardo.control.hex",
+  "judged_match": false,
+  "judged_span_bytes": 28170,
+  "judged_span_policy": "hex-extent",
+  "objcopy": "/home/vscode/.platformio/packages/toolchain-atmelavr/bin/avr-objcopy",
+  "port": "/dev/ttyACM0",
+  "raw_stderr_path": "/workspaces/.planning/v1.34/bench/cells/BRINGUP-leonardo/crossflash/avrdude_read.stderr.log",
+  "readback_size_bytes": 32768,
+  "sha_actual_judged": "c15dbc20e86ee8f87a0ba4f18dcba85622b8b626aa27b69fb560637038ba69e2",
+  "sha_expected_judged": "d734ad490329d5307f4760d7525b045f78d0f61168868e9c36f1956519439820",
+  "sha_whole_flash_unjudged": "7bfb041c9ed1349a14b0922c482a1495de458d5ec882696e79cc34808eb0cd6a",
+  "target": "leonardo",
+  "vector_exclusions_applied": []
+}

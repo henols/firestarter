@@ -1,0 +1,15 @@
+v1.15 Phase 82 A->B write (.planning/v1.15/bench/EVIDENCE.md:99): FAIL (genuine) -- "erase cannot
+clear bit 4 @0x7db (reads 0xef, want 0xFF) -- DETERMINISTIC across initial run + 1 reseat (same
+offset/value), genuine stuck cell. Same stuck-bit-on-erase signature class as W27E512 (different
+offset)." Recorded here as HISTORICAL CONTEXT ONLY, per operator ruling -- NOT an authoritative
+baseline for this plan's dev test result.
+v1.15 Phase 81 read sweep (.planning/v1.15/bench/EVIDENCE.md:55): PASS, N=3, no anomaly.
+v1.15 Phase 84 (.planning/v1.15/bench/EVIDENCE.md:256): the part was deliberately NOT re-benched,
+excluded from the FIX-01 re-bench under D-32 as genuine silicon wear (historical context only).
+No v1.16 or v1.18 disposition exists for this part. The v1.18 scoped 32-pin pin-map fix (introduced
+for AM27C020) does NOT apply to this part -- that fix is size-gated to parts at or below a quarter
+mebibyte (262144 B) and W27E040 is twice that (524288 B); this part uses the standard 32-pin map.
+Comparable steps under the OLD (superseded) comparison framing: read (PASS at Phase 81, matches
+this run's read OK); erase (FAIL at Phase 82 -- this run's erase is OK, the predicted stuck-bit
+symptom did NOT reproduce). The operative baseline for THIS row's divergence_verdict is dev test's
+own v133 live verdict, per operator ruling, not this historical comparison.

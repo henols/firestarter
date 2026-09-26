@@ -62,7 +62,7 @@ started: unknown; suspected pre-existing (Phase 54 only touched COBS cap + FW id
 
 - timestamp: 2026-06-04
   checked: host readback path firestarter_app/firestarter/codec.py:98-107 (MSG_OK_CFG)
-  found: `firestarter config` / hw_get_config (hardware_operations.cpp:108-127) returns live EEPROM r1, r2, override. Renders "R1: {r1}, R2: {r2}".
+  found: `firestarter config` / hw_get_config (hardware_operations.cpp:107-126) returns live EEPROM r1, r2, override. Renders "R1: {r1}, R2: {r2}".
   implication: Definitive non-destructive bench confirmation: read back R1 on the board. Expected to show R1≈1000 (or some value ≪270000), not 270000.
 
 ## Resolution

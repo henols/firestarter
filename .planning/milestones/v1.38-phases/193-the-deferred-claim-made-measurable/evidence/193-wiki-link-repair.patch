@@ -1,0 +1,42 @@
+# Wiki link repair — PREPARED, NOT APPLIED
+#
+# Two links in the firestarter wiki pointed at github.com/henols/firestarter/blob/beta/…,
+# which meant the FIRMWARE repo. After the slug claim that path is the project hub and both
+# return HTTP 404 (verified). PROTOCOLS.md and PINOUTS.md live in firestarter_fw, where the
+# repointed URLs return HTTP 200 (verified).
+#
+# The push to the wiki was denied in this session (external system write), so this patch is
+# banked rather than applied. To apply:
+#
+#   git clone https://github.com/henols/firestarter.wiki.git
+#   cd firestarter.wiki && git apply /path/to/193-wiki-link-repair.patch && git commit -am 'Repoint two firmware doc links at firestarter_fw' && git push
+#
+# The firestarter_prom/issues links elsewhere in the wiki are deliberately NOT touched:
+# that slug redirects to the hub and still resolves.
+
+diff --git a/Pin-Maps.md b/Pin-Maps.md
+index 76ebf1b..192eb7b 100644
+--- a/Pin-Maps.md
++++ b/Pin-Maps.md
+@@ -381,7 +381,7 @@ not write.
+ 
+ The shield's own wiring — which Arduino pin drives which RURP signal, and the
+ control-register bits behind them — is in
+-[PINOUTS.md](https://github.com/henols/firestarter/blob/beta/PINOUTS.md)
++[PINOUTS.md](https://github.com/henols/firestarter_fw/blob/beta/PINOUTS.md)
+ in the firmware repository.
+ 
+ <!-- firestarter-claim-stamp: db-sha256-16=ccbc8d2c4866a5af verified=2026-08-31 -->
+diff --git a/Programming-Protocols.md b/Programming-Protocols.md
+index 900fd8c..ca985b3 100644
+--- a/Programming-Protocols.md
++++ b/Programming-Protocols.md
+@@ -11,7 +11,7 @@ it yourself; the database picks it from the part number you give.
+ This page says what each protocol does and which chips it is for. The firmware
+ implementation — write algorithms, pulse widths, voltage routing, datasheet
+ citations — is in
+-[PROTOCOLS.md](https://github.com/henols/firestarter/blob/beta/PROTOCOLS.md)
++[PROTOCOLS.md](https://github.com/henols/firestarter_fw/blob/beta/PROTOCOLS.md)
+ in the firmware repository.
+ 
+ ---

@@ -1,0 +1,5 @@
+Connecting...Connecting... OK      
+Writing /workspaces/.planning/v1.34/bench/cells/A2/reads/A2__v133__w27c512/written.bin to W27C512
+ERROR: Byte at 0x000179 failed to program within 25 pulses
+Programmer error during WRITE: Byte at 0x000179 failed to program within 25 pulses -- the write aborted at this address: bytes before this block were already programmed, this block is only partially programmed, and no later block was attempted. The firmware stops accepting blocks for this write and its address counter does not advance, so re-running the write repeats the whole file from the start. A byte that will not converge like this usually means insufficient program voltage or a worn or failing cell, not a timing problem.
+Write to W27C512 failed.

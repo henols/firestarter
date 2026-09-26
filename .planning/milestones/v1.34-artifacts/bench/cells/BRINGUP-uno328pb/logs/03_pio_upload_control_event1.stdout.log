@@ -1,0 +1,34 @@
+Processing uno328pb (platform: atmelavr; board: ATmega328PB; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/atmelavr/ATmega328PB.html
+PLATFORM: Atmel AVR (5.2.0) > ATmega328PB
+HARDWARE: ATMEGA328PB 16MHz, 2KB RAM, 32KB Flash
+PACKAGES: 
+ - framework-arduino-avr-minicore @ 3.1.2 
+ - tool-avrdude @ 1.80100.0 (8.1.0) 
+ - toolchain-atmelavr @ 1.70300.191015 (7.3.0)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 9 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- EEPROM @ 2.0
+|-- jsmn
+Building in release mode
+Checking size .pio/build/uno328pb/firestarter_uno328pb.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [========  ]  77.2% (used 1581 bytes from 2048 bytes)
+Flash: [========  ]  79.6% (used 26074 bytes from 32768 bytes)
+Configuring upload protocol...
+AVAILABLE: urclock
+CURRENT: upload_protocol = urclock
+Looking for upload port...
+Using manually specified: /dev/ttyUSB0
+Uploading .pio/build/uno328pb/firestarter_uno328pb.hex
+========================= [SUCCESS] Took 7.77 seconds =========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+uno328pb       SUCCESS   00:00:07.768
+========================= 1 succeeded in 00:00:07.768 =========================

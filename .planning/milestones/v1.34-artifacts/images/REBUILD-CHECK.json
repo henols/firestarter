@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "checked": "2026-08-26",
+  "results": [
+    {
+      "arm": "control",
+      "env": "uno",
+      "sha256_before": "be6e4ac80a70e251e2c263beb4109f9f7f9852a034b1064a5dbc8dbbcf05c095",
+      "sha256_after": "be6e4ac80a70e251e2c263beb4109f9f7f9852a034b1064a5dbc8dbbcf05c095",
+      "identical": true,
+      "elapsed_s": 2.15,
+      "divergence_cause": null
+    },
+    {
+      "arm": "control",
+      "env": "uno328pb",
+      "sha256_before": "7b86c1aac5642b968bd9604bde249b7d68643ebe135f0d05690e56e43e20ebba",
+      "sha256_after": "7b86c1aac5642b968bd9604bde249b7d68643ebe135f0d05690e56e43e20ebba",
+      "identical": true,
+      "elapsed_s": 1.98,
+      "divergence_cause": null
+    },
+    {
+      "arm": "control",
+      "env": "leonardo",
+      "sha256_before": "2b9ad44e23dd6dc88e76a5aeb9105050f56c84d470a14b9a9d2597feffb0ee88",
+      "sha256_after": "2b9ad44e23dd6dc88e76a5aeb9105050f56c84d470a14b9a9d2597feffb0ee88",
+      "identical": true,
+      "elapsed_s": 2.09,
+      "divergence_cause": null
+    },
+    {
+      "arm": "v133",
+      "env": "uno",
+      "sha256_before": "6823e6f939d336754498baafc34d6517675e38102accf625f360e3ca16b0a608",
+      "sha256_after": "6823e6f939d336754498baafc34d6517675e38102accf625f360e3ca16b0a608",
+      "identical": true,
+      "elapsed_s": 1.82,
+      "divergence_cause": null
+    },
+    {
+      "arm": "v133",
+      "env": "uno328pb",
+      "sha256_before": "6415fe98ee783385aed5c85c06b6e0f12d8df442dd6ff7ac494cb200de307932",
+      "sha256_after": "6415fe98ee783385aed5c85c06b6e0f12d8df442dd6ff7ac494cb200de307932",
+      "identical": true,
+      "elapsed_s": 1.96,
+      "divergence_cause": null
+    },
+    {
+      "arm": "v133",
+      "env": "leonardo",
+      "sha256_before": "887cabbb3963f831b9032ba35da790a7db798c77479d1650c9e5ad674d28f8f5",
+      "sha256_after": "887cabbb3963f831b9032ba35da790a7db798c77479d1650c9e5ad674d28f8f5",
+      "identical": true,
+      "elapsed_s": 1.98,
+      "divergence_cause": null
+    }
+  ],
+  "all_identical": true,
+  "divergences": [],
+  "research_cross_check": {
+    "claim": "160-RESEARCH.md Code Example 2 recorded uno/v133 cold rebuild as byte-identical, sha256 6823e6f939d336754498baafc34d6517675e38102accf625f360e3ca16b0a608",
+    "this_session_uno_v133_sha256_after": "6823e6f939d336754498baafc34d6517675e38102accf625f360e3ca16b0a608",
+    "agreement": true
+  }
+}

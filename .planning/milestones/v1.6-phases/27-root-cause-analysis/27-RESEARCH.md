@@ -71,7 +71,7 @@ The 12 decisions D-01..D-12 in `.planning/phases/27-root-cause-analysis/27-CONTE
 | ID | Description | Research Support |
 |----|-------------|------------------|
 | **RCA-01** | The exact code path that introduces byte corruption is identified with concrete evidence (instrumented firmware build OR code-path bisection OR minimal reproducer narrowing the bug to a single function / chunk-boundary handler) | This research's Hypothesis Cross-Check section (below) identifies **`firestarter/src/boards/leonardo_rurp_shield.cpp:112-129`** (`rurp_read_data_buffer`) + **`leonardo_rurp_shield.cpp:137-141`** (`rurp_set_data_input`) as the corrupting code path. Evidence: 78% of L1↔L2 divergences are single-bit flips; address-bit-3 correlation 63%; address-bit-2 inverse correlation 17.3% (strong NOT-set signal); first divergence at offset 0x0003 is a bit-7 single-flip (0x83 vs 0x03). The "code-path bisection narrowing" wing of SC#1 is satisfied. |
-| **RCA-02** | A written explanation of WHY the corruption happens (timing window, missed ACK, buffer overflow, etc.) is captured in the planning trail — sufficient for a future reader to understand the bug without re-bisecting | The 2-5 paragraph WHY narrative in this research's §"Detailed RCA-02 Narrative" can be lifted verbatim into the EVIDENCE.md append. Mechanism: PORTD/PORTC/PORTE shift-and-mask reassembly in `rurp_read_data_buffer` lacks any settling delay between `rurp_set_address` (driving the high-impedance address bus) and the read; combined with `rurp_set_data_input` clearing only DDRx (not PORTx — unlike Uno's `df5fb44` fix at uno_rurp_shield.cpp:128-137), residual PORTx bits from the prior register strobe leave 1-2 data pins weakly biased HIGH against the chip's drive, and the chip-drive-vs-pullup race produces stochastic bit-flips per read. |
+| **RCA-02** | A written explanation of WHY the corruption happens (timing window, missed ACK, buffer overflow, etc.) is captured in the planning trail — sufficient for a future reader to understand the bug without re-bisecting | The 2-5 paragraph WHY narrative in this research's §"Detailed RCA-02 Narrative" can be lifted verbatim into the EVIDENCE.md append. Mechanism: PORTD/PORTC/PORTE shift-and-mask reassembly in `rurp_read_data_buffer` lacks any settling delay between `rurp_set_address` (driving the high-impedance address bus) and the read; combined with `rurp_set_data_input` clearing only DDRx (not PORTx — unlike Uno's `df5fb44` fix at uno_rurp_shield.cpp:120-129), residual PORTx bits from the prior register strobe leave 1-2 data pins weakly biased HIGH against the chip's drive, and the chip-drive-vs-pullup race produces stochastic bit-flips per read. |
 | **RCA-03** | The introducing commit (or earliest version with the bug) is identified via `git log -L` / `git bisect` where reasonably possible — at minimum bracketed to a milestone (v1.0 vs v1.2 vs v1.4) | Bracketed to **pre-v1.0** with HIGH confidence (no full bisect needed). The Leonardo `rurp_read_data_buffer` PORTD/PORTC/PORTE reassembly is structurally identical at every tagged firmware version checked (2.0.2 / 2.0.3 / 2.0.4 / 2.0.5 / 2.0.6 / 3.0.0b1..b4). The 2025-02-11 commit `5b1f1cd` ("Leonardo is working, fast as a shark") REPLACED a less-optimised loop-based variant but did NOT introduce a separate version that lacks the read race — the race has been present since the Leonardo target shipped. Strong rationale citation. |
 </phase_requirements>
 
@@ -110,7 +110,7 @@ firestarter dev consistency-check                          /* loop() in firestar
                       |  receive MSG_DATA_SENDING (no payload)   <-- LOG_DATA_ID(MSG_DATA_SENDING)
                       |  receive MSG_DATA_CHUNK + payload        <-- rurp_log_id_wide(MSG_DATA_CHUNK, buf, n)
                       |    SerialComm._read_and_parse_lines     <-- _firestarter_emit_frame_wide
-                      |      (serial_comm.py:491-616)            <-- (rurp_serial_utils.cpp:190-227)
+                      |      (serial_comm.py:491-616)            <-- (rurp_serial_utils.cpp:187-224)
                       |    _decode_id_frame                      <-- byte-by-byte SERIAL.write
                       |      (serial_comm.py:385-489)            <-- + CRC8 over [id, params]
                       |      verify CRC8                         <-- + .flush() at end
@@ -362,7 +362,7 @@ uint8_t rurp_read_data_buffer() {
     return data;
 }
 
-// CONTRAST — the Uno reference at uno_rurp_shield.cpp:120-122:
+// CONTRAST — the Uno reference at uno_rurp_shield.cpp:112-114:
 uint8_t rurp_read_data_buffer() {
     return PIND;
 }
@@ -380,7 +380,7 @@ void rurp_set_data_input() {
     DDRE &= ~PORTE_DATA_MASK;
 }
 
-// CONTRAST — Uno reference at uno_rurp_shield.cpp:128-137:
+// CONTRAST — Uno reference at uno_rurp_shield.cpp:120-129:
 void rurp_set_data_input() {
     // Clear PORTD before switching to input so internal pullups are disabled
     // on every data line. Without this, residual PORTD bits from the last
@@ -510,7 +510,7 @@ The planner converts each row into a Wave A task. Every claim in the RCA narrati
 | Task | Files to read (verbatim line ranges) | Claim it supports |
 |------|--------------------------------------|--------------------|
 | A1: Confirm Leonardo read function unchanged across versions | `firestarter/src/boards/leonardo_rurp_shield.cpp:112-129` (HEAD); `git show 2.0.{2,3,4,5,6}:src/boards/leonardo_rurp_shield.cpp` (tag history) | RCA-03 milestone-bracket = pre-v1.0 |
-| A2: Confirm Uno-side fix (`PORTD = 0x00` before `DDRD = 0x00`) never mirrored to Leonardo | `firestarter/src/boards/uno_rurp_shield.cpp:128-137`; `firestarter/src/boards/leonardo_rurp_shield.cpp:137-141`; `git show df5fb44 --stat` | RCA-02 mechanism §2 (PORTx-clear gap) |
+| A2: Confirm Uno-side fix (`PORTD = 0x00` before `DDRD = 0x00`) never mirrored to Leonardo | `firestarter/src/boards/uno_rurp_shield.cpp:120-129`; `firestarter/src/boards/leonardo_rurp_shield.cpp:137-141`; `git show df5fb44 --stat` | RCA-02 mechanism §2 (PORTx-clear gap) |
 | A3: Mine binary evidence for H2 signature | `.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260521-134210/run_0{1,2,3}.bin` (3× 65,536 B); via 5-line Python in Code Examples | H2 CONFIRMED — 78% single-bit-flip, address-bit-3 correlation 63% |
 | A4: Mine binary evidence to refute H1 (USB-CDC) | Same binaries; check mod-64 distribution | H1 REFUTED — no 64-boundary clustering |
 | A5: Mine binary evidence to refute H3 (chunk-boundary race) | Same binaries; check mod-512 distribution | H3 REFUTED — no chunk-boundary clustering |
@@ -639,8 +639,8 @@ All claims in this research are CITED or VERIFIED against the binaries / source.
 
 - **Firmware sub-repo source code** — verified at HEAD `bc0f5ac`:
   - `firestarter/src/boards/leonardo_rurp_shield.cpp:112-141` (the bug)
-  - `firestarter/src/boards/uno_rurp_shield.cpp:120-137` (the contrast)
-  - `firestarter/src/boards/rurp_serial_utils.cpp:190-227` (the framing emitter, NOT the bug)
+  - `firestarter/src/boards/uno_rurp_shield.cpp:112-129` (the contrast)
+  - `firestarter/src/boards/rurp_serial_utils.cpp:187-224` (the framing emitter, NOT the bug)
   - `firestarter/src/eprom_operations.cpp:110-132` (the per-chunk send loop, NOT the bug)
   - `firestarter/platformio.ini:64-65` (source-of-truth for D-05 / D-11 buffer drift correction)
   - `firestarter/include/firestarter.h:18-20` (DATA_BUFFER_SIZE default = 512)

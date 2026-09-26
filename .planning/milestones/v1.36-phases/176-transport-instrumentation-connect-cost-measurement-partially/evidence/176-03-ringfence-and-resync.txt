@@ -1,0 +1,28 @@
+== 1 the two re-sync legs and the adjacency case
+Magic preamble seen but length bytes not received before timeout — re-syncing.
+Frame body truncated: expected 8 bytes, got 2 — re-syncing.
+Frame body truncated: expected 8 bytes, got 2 — re-syncing.
+Timeout waiting for a response from /dev/null.
+length_missing=1
+length_missing_others=0
+body_truncated=1
+body_truncated_others=0
+adjacency_raised=True
+adjacency_resync=1
+adjacency_timeouts=1
+adjacency_probe=0
+keys=decode_failures,probe_timeouts,resync_body_truncated,resync_length_missing,timeouts
+rc=0
+== 2 the ring-fence pin, recomputed
+digest_matches_pin=True
+digest_changed=True
+records_phase_176=True
+keeps_65_01_paragraph=True
+keeps_violation_message=True
+rc=0
+== 3 the ring-fence test itself
+........................................................................ [ 45%]
+........................................................................ [ 91%]
+.............                                                            [100%]
+157 passed in 1.05s
+rc=0

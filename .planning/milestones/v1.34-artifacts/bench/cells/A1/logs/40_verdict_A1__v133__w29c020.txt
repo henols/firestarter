@@ -1,0 +1,10 @@
+Cell A1's fourth and final position. Three independent v1.33-arm reads of the full 262144 B
+W29C020 device all agreed with each other (distinct_read_shas=1) and with the written image
+(judge_wrv.py sha_verdict_judged=match). No disagreement observed. Write completed under the
+DERIVED 391.748 s ceiling (4x position 2's control-arm measured wall-clock of 97.937 s - the 600 s
+absolute fallback was NOT used here) with wall-clock 97.916 s (app-reported 94.48s) - nearly
+identical to the control arm's 97.937 s / 94.47 s pair. Three-run consistency-check whole-invocation
+wall-clock 219.390 s (app's own per-run elapsed 73.01 s x3), compared against the control arm's
+single-read 73.344 s from position 2 - the v133-side half of that comparison, each individual read
+elapsed figure (73.01 s) closely matching the control arm's single read (73.344 s). App's own
+consistency-check exit code (0) agreed with the judged SHA verdict.

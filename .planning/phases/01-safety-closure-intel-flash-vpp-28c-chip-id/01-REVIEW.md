@@ -43,7 +43,7 @@ The test scaffolding is generally sound; the documented `firestarter_get_data` r
 **File:** `firestarter/src/proms/flash_intel.cpp:39-50, 74-80`
 
 **Issue:**
-`flash_intel_check_vpp` deliberately omits the regulator-clear at exit (line 49 comment: "NO regulator clear — caller continues to use REGULATOR | P1_VPP_ENABLE through the write pulse"). When the function sets `RESPONSE_CODE_ERROR` (non-FORCE high-VPP path, line 40-43), the caller `flash_intel_write_init` checks `handle->response_code == RESPONSE_CODE_ERROR` and `return`s immediately at line 78-80 — **without** turning off `REGULATOR | P1_VPP_ENABLE`. The framework's housekeeping (`operation_utils.cpp:221-227`) skips the END phase when INIT errors, so `flash_intel_cleanup` (which would clear the regulator) is never invoked. Net result: when the firmware detects that VPP is dangerously above the chip's rated maximum (e.g. 14 V on a 12 V part), it logs the error and then continues to apply that dangerous voltage to the socket indefinitely — the opposite of what a pre-pulse safety check is supposed to do.
+`flash_intel_check_vpp` deliberately omits the regulator-clear at exit (line 49 comment: "NO regulator clear — caller continues to use REGULATOR | P1_VPP_ENABLE through the write pulse"). When the function sets `RESPONSE_CODE_ERROR` (non-FORCE high-VPP path, line 40-43), the caller `flash_intel_write_init` checks `handle->response_code == RESPONSE_CODE_ERROR` and `return`s immediately at line 78-80 — **without** turning off `REGULATOR | P1_VPP_ENABLE`. The framework's housekeeping (`operation_utils.cpp:229-235`) skips the END phase when INIT errors, so `flash_intel_cleanup` (which would clear the regulator) is never invoked. Net result: when the firmware detects that VPP is dangerously above the chip's rated maximum (e.g. 14 V on a 12 V part), it logs the error and then continues to apply that dangerous voltage to the socket indefinitely — the opposite of what a pre-pulse safety check is supposed to do.
 
 Compare with the v1.0 `eprom_check_vpp` (eprom.cpp:231) which unconditionally clears `REGULATOR | VPE_TO_VPP` at every exit, including the error path; that pattern is correct and safe.
 
@@ -257,10 +257,10 @@ PlatformIO supports `extra_dirs` / shared library subdirs. Move the shim and the
 ### IN-04: Format-specifier integer-promotion mismatch for `chip_id`
 
 **File:** `firestarter/src/proms/flash_intel.cpp:153`
-**File:** `firestarter/src/proms/eeprom_28c.cpp:67`
+**File:** `firestarter/src/proms/eeprom_28c.cpp:63`
 
 **Issue:**
-`firestarter_response_format(response_code, "Chip ID %#04x dont match expected ID %#04x", chip_id, handle->chip_id);` — `chip_id` and `handle->chip_id` are `uint16_t`; varargs default promotes to `int` (signed). `%x` expects `unsigned int`. Values are always non-negative so this is benign in practice, but `-Wformat` may flag it on stricter toolchains. Pre-existing style across the codebase (line 153 of flash_intel.cpp was here before this phase), only flagged because the new eeprom_28c.cpp:67 copies the same pattern.
+`firestarter_response_format(response_code, "Chip ID %#04x dont match expected ID %#04x", chip_id, handle->chip_id);` — `chip_id` and `handle->chip_id` are `uint16_t`; varargs default promotes to `int` (signed). `%x` expects `unsigned int`. Values are always non-negative so this is benign in practice, but `-Wformat` may flag it on stricter toolchains. Pre-existing style across the codebase (line 153 of flash_intel.cpp was here before this phase), only flagged because the new eeprom_28c.cpp:63 copies the same pattern.
 
 **Fix:**
 Cast explicitly:

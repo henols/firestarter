@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "milestone": "v1.34",
+  "phase": "160-rig-dual-arm-build-flash-provenance-the-shared-cell-procedur",
+  "plan": "160-01",
+  "task": "Task 3: Stand up the two host arms",
+  "generated": "2026-08-26",
+  "arms": {
+    "control": {
+      "fw_sha": "8695ee52c27a4bee4387c5c489afd5f3d7275e8a",
+      "app_sha": "6bfa6453d1bac232eb81ab35fa7f14b50b0b291a",
+      "worktree": "/workspaces/.v1.34-arms/control",
+      "venv_bin": "/workspaces/.v1.34-arms/control/.venv/bin/firestarter",
+      "venv_python": "/workspaces/.v1.34-arms/control/.venv/bin/python",
+      "observed": {
+        "git_rev_parse_head": "6bfa6453d1bac232eb81ab35fa7f14b50b0b291a",
+        "git_status_porcelain": "",
+        "python_dash_P_file_probe": "/workspaces/.v1.34-arms/control/firestarter/__init__.py",
+        "python_no_dash_P_file_probe_from_cwd_workspaces": "None",
+        "cli_version_string": "Firestarter, version 3.0.0b32",
+        "dev_consistency_check_help_exit_code": 0
+      }
+    },
+    "v133": {
+      "fw_sha": "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463",
+      "app_sha": "cb189a9b001e9e34fb7651535de339761301d061",
+      "worktree": "/workspaces/.v1.34-arms/v133",
+      "venv_bin": "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "venv_python": "/workspaces/.v1.34-arms/v133/.venv/bin/python",
+      "observed": {
+        "git_rev_parse_head": "cb189a9b001e9e34fb7651535de339761301d061",
+        "git_status_porcelain": "",
+        "python_dash_P_file_probe": "/workspaces/.v1.34-arms/v133/firestarter/__init__.py",
+        "python_no_dash_P_file_probe_from_cwd_workspaces": "None",
+        "cli_version_string": "Firestarter, version 3.0.0b32",
+        "dev_consistency_check_help_exit_code": 0
+      }
+    }
+  },
+  "d08_triple_note": "Both arms report identical --version (3.0.0b32) — the measured demonstration that no version string can identify an arm (per prohibitions). Arm identity is established only by the invoked absolute venv_bin path plus the SHA+porcelain+__file__ triple recorded above.",
+  "pitfall1_trap_confirmed": "python -P -c 'import firestarter; print(firestarter.__file__)' resolved correctly into each worktree on both arms. The SAME probe WITHOUT -P, run from cwd /workspaces, printed 'None' on both arms — confirming Pitfall 1 (the /workspaces/firestarter PEP 420 namespace-package shadow) is real in this container, not inherited from research prose.",
+  "interpreter": "Python 3.12.14",
+  "interpreter_note": "D-09 non-claim: both arms run on devcontainer Python 3.12.14, not the firestarter_app app-CI py3.11 floor. Recorded once here as the Phase 166 honesty-ledger source line.",
+  "dep_freeze_control": [
+    "certifi==2026.7.22",
+    "charset-normalizer==3.5.1",
+    "click==8.5.0",
+    "idna==3.19",
+    "markdown-it-py==4.2.0",
+    "mdurl==0.1.2",
+    "packaging==26.3",
+    "pygments==2.21.0",
+    "pyserial==3.5",
+    "requests==2.34.2",
+    "rich==15.0.0",
+    "tqdm==4.70.0",
+    "urllib3==2.7.0"
+  ],
+  "dep_freeze_v133": [
+    "certifi==2026.7.22",
+    "charset-normalizer==3.5.1",
+    "click==8.5.0",
+    "idna==3.19",
+    "markdown-it-py==4.2.0",
+    "mdurl==0.1.2",
+    "packaging==26.3",
+    "pygments==2.21.0",
+    "pyserial==3.5",
+    "requests==2.34.2",
+    "rich==15.0.0",
+    "tqdm==4.70.0",
+    "urllib3==2.7.0"
+  ],
+  "dep_freeze_sha": "b9eeb295b3b75f285bce146ee290100b3a6719438885904face0a6a7ee8a98cf",
+  "dep_freeze_sha_note": "sha256 over the sorted, newline-joined freeze text (each arm's local editable line 'firestarter'/'-e file://...' excluded before hashing). Both arms hash identically, confirming Pitfall 8's dependency-drift check is green.",
+  "dep_freeze_diff_empty": true,
+  "dep_freeze_command_note": "uv venv (0.12.6) does not install pip into the venv, so 'python -m pip freeze' is unavailable. Used 'uv pip freeze --python <venv_python>' as the equivalent measurement (Rule 3 blocking-issue fix) — same resolved-environment introspection uv itself used to perform the install.",
+  "config_dir": "/workspaces/.planning/v1.34/config",
+  "config_dir_sha": "77adfdd26ed8710c4a70882e6dc9ee7bb494286fe225000d581f9e730dd77ad0",
+  "config_dir_sha_note": "sha256 over the sorted file tree (relative path + content, in sorted order) of $FIRESTARTER_CONFIG_DIR after seeding: files ['.gitkeep', 'config.json'].",
+  "config_dir_seed_method": "No hardware-free CLI subcommand exists that persists a config value without a live serial device (firestarter config always issues COMMAND_CONFIG over serial, even with --rev -1; no board was attached in this container — confirmed absent via /dev/ttyACM*, /dev/ttyUSB* both absent). Seeded directly via the app's own public ConfigManager API from the control arm's venv: ConfigManager().set_value('_rig_seed_marker', '160-01-task3-bringup', persist=True). This dogfoods firestarter.config's public write path (the same _save_config() any real CLI invocation would call) without fabricating a hardware session.",
+  "home_firestarter_absent_after_seed": true,
+  "uv_cache_dir": "/workspaces/.v1.34-arms/.uv-cache",
+  "sha_verification": {
+    "note": "Carried forward from .planning/v1.34/rig-pins.json (task 1), re-read at execution time rather than trusted from planning prose.",
+    "fw_pr56_headRefOid": "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463",
+    "app_pr54_headRefOid": "cb189a9b001e9e34fb7651535de339761301d061",
+    "fw_merge_base_origin_beta_vs_gsd_v1.33": "8695ee52c27a4bee4387c5c489afd5f3d7275e8a",
+    "app_merge_base_origin_beta_vs_gsd_v1.33": "6bfa6453d1bac232eb81ab35fa7f14b50b0b291a"
+  },
+  "user_site_editable_install": {
+    "path": "/home/vscode/.local/lib/python3.12/site-packages/__editable__.firestarter-3.0.0b32.pth",
+    "bare_which_firestarter": "/home/vscode/.local/bin/firestarter",
+    "status": "Present and NOT neutralized — explicitly deferred per plan instruction. Recorded here as the documented target for the forbidden_argv0 rule in rig-pins.json and for PROCEDURE.md's/gate_record.py's future argv check. Never invoked on the bench."
+  },
+  "sub_repo_cleanliness": {
+    "firestarter_app_main_checkout_porcelain": "",
+    "note": "Main checkout of firestarter_app (not either worktree) confirmed porcelain-clean before and after this task. No commit, branch or push was made in firestarter_app; both worktree additions used --detach so no branch advanced."
+  }
+}

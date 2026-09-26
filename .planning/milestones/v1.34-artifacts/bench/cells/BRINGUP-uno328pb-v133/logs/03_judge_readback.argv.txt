@@ -1,0 +1,1 @@
+argv: python3 /workspaces/.planning/v1.34/tools/judge_readback.py --target uno328pb --port /dev/ttyUSB0 --flashed-arm v133 --expect-arm v133 --out-dir /workspaces/.planning/v1.34/bench/cells/BRINGUP-uno328pb-v133 --pins /workspaces/.planning/v1.34/rig-pins.json (cwd=/workspaces)

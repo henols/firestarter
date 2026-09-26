@@ -1,0 +1,34 @@
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Checking chip ID for SST27SF512
+Chip ID check passed for SST27SF512: (main done) (0.28s)
+Connecting...Connecting... OK      
+Reading EPROM SST27SF512, saving to /tmp/chip_test_read_imsk234h/run_00.bin
+EPROM read complete.
+Read complete (7.40s). Data saved to /tmp/chip_test_read_imsk234h/run_00.bin
+Connecting...Connecting... OK      
+Reading EPROM SST27SF512, saving to /tmp/chip_test_read_imsk234h/run_01.bin
+EPROM read complete.
+Read complete (7.41s). Data saved to /tmp/chip_test_read_imsk234h/run_01.bin
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Writing /tmp/chip_test_pattern_y6yoklfi.bin to SST27SF512
+Write to SST27SF512 successful (30.02s).
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Verifying /tmp/chip_test_pattern_9xmqe737.bin against SST27SF512
+Verify for SST27SF512 successful (5.69s).
+Connecting...Connecting... OK      
+Erasing EPROM SST27SF512
+Erase for SST27SF512 successful (5.16s). (main done)
+Connecting...Connecting... OK      
+Blank checking EPROM SST27SF512
+Blank check for SST27SF512 successful (4.86s). (main done)
+Connecting...
+ERROR: Empty input
+Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Writing /tmp/chip_test_pattern_63y936dn.bin to SST27SF512

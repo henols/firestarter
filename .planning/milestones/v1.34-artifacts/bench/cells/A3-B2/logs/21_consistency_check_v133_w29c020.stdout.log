@@ -1,0 +1,18 @@
+Run 1/3: reading w29c020 -> .planning/v1.34/bench/cells/A3-B2/reads/A3-B2__v133__w29c020/run_01.bin
+Connecting...Connecting... OK      
+EPROM read complete.
+Run 1/3: SHA-256 5da571d8407b97c754858bb63524b4adc80c8078d90d8a39f478cb248edfbfb8  bytes=262144  elapsed=45.16s
+Run 2/3: reading w29c020 -> .planning/v1.34/bench/cells/A3-B2/reads/A3-B2__v133__w29c020/run_02.bin
+Connecting...Connecting... OK      
+EPROM read complete.
+Run 2/3: SHA-256 5da571d8407b97c754858bb63524b4adc80c8078d90d8a39f478cb248edfbfb8  bytes=262144  elapsed=45.11s
+Run 3/3: reading w29c020 -> .planning/v1.34/bench/cells/A3-B2/reads/A3-B2__v133__w29c020/run_03.bin
+Connecting...Connecting... OK      
+EPROM read complete.
+Run 3/3: SHA-256 5da571d8407b97c754858bb63524b4adc80c8078d90d8a39f478cb248edfbfb8  bytes=262144  elapsed=45.04s
+
+Consistency check: PASS
+Chip: w29c020  Board: unknown-board  Port: /dev/ttyACM0
+Runs: N=3
+Distinct SHAs: 1
+Output dir: .planning/v1.34/bench/cells/A3-B2/reads/A3-B2__v133__w29c020/

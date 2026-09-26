@@ -133,7 +133,7 @@ Footnote-style narrative AFTER the table. Mirrors §7's pitfall callouts at `:11
 ```
 
 **Critical preservation** (per CONTEXT.md D-07 + RESEARCH.md §REVISION_UNKNOWN Non-Collision Audit):
-- `0xFF` stays reserved as the EEPROM-override-absent sentinel (loaded-bearing at `rurp_hw_rev_utils.h:63`, `rurp_config_utils.cpp:37`, `hardware_operations.cpp:100,102,112,114`).
+- `0xFF` stays reserved as the EEPROM-override-absent sentinel (loaded-bearing at `rurp_hw_rev_utils.h:63`, `rurp_config_utils.cpp:37`, `hardware_operations.cpp:99,101,111,113`).
 - `0xFE` is grep-clean — only existing occurrence is a CRC8 lookup-table byte at `rurp_serial_utils.cpp:120` (not a sentinel; no collision).
 - Block stays under `#ifdef HARDWARE_REVISION` (native env continues to bypass).
 
@@ -141,7 +141,7 @@ Footnote-style narrative AFTER the table. Mirrors §7's pitfall callouts at `:11
 
 ### 4. `firestarter/include/rurp_hw_rev_utils.h` (detect-rev rework + ctrl-reg `case REVISION_2_3:` arm)
 
-**Role:** firmware header (inlined dispatcher + boot init) · **Data Flow:** request-response (boot init populates static `revision`; called once per boot from `firestarter.cpp:42`) · **Touch:** MODIFY-IN-PLACE — rework function body at `:42-59`; add 1 case label at `:20`; leave `:61-67` UNCHANGED.
+**Role:** firmware header (inlined dispatcher + boot init) · **Data Flow:** request-response (boot init populates static `revision`; called once per boot from `firestarter.cpp:39`) · **Touch:** MODIFY-IN-PLACE — rework function body at `:42-59`; add 1 case label at `:20`; leave `:61-67` UNCHANGED.
 
 **Analog:** Same file — existing function bodies at `:14-36` (mapper) + `:42-59` (detect) + `:61-67` (override-aware getter).
 
@@ -611,7 +611,7 @@ def test_revision_byte_values_match_firmware_enum():
 
 ### Shared Pattern 1: `#define` (not `constexpr`) for AVR-byte-identical compile
 
-**Source:** `firestarter/include/rurp_pinout.h:43-107` (Phase 33 entire substrate) + 33-CONTEXT.md D-07
+**Source:** `firestarter/include/rurp_pinout.h:43-106` (Phase 33 entire substrate) + 33-CONTEXT.md D-07
 **Apply to:** all new firmware `#define`s in Phase 34 — `REVISION_2_3`, `REVISION_UNKNOWN`, `ADC_BAND_R41_4K7_HIGH`, `ADC_BAND_R41_10K_LOW`, `ADC_BAND_R41_10K_HIGH`
 
 ```c
@@ -633,7 +633,7 @@ The `[env:native]` `build_src_filter = +<proms/> +<boards/rurp_serial_utils.cpp>
 
 ### Shared Pattern 3: EEPROM Sentinel `0xFF` Reserve
 
-**Source:** `firestarter/include/rurp_hw_rev_utils.h:63` (override-active gate) + `firestarter/src/rurp_config_utils.cpp:37` (factory-fresh default) + `firestarter/src/hardware_operations.cpp:100, 102, 112, 114` (`MSG_OK_REV` / `MSG_OK_CFG` sentinel byte emit) + `firestarter_app/firestarter/serial_comm.py:338, 344` (`effective == 0xFF` host-side branch)
+**Source:** `firestarter/include/rurp_hw_rev_utils.h:63` (override-active gate) + `firestarter/src/rurp_config_utils.cpp:37` (factory-fresh default) + `firestarter/src/hardware_operations.cpp:99, 102, 112, 114` (`MSG_OK_REV` / `MSG_OK_CFG` sentinel byte emit) + `firestarter_app/firestarter/serial_comm.py:338, 344` (`effective == 0xFF` host-side branch)
 **Apply to:** `REVISION_UNKNOWN = 0xFE` carve-out (NOT `0xFF`)
 
 ```c

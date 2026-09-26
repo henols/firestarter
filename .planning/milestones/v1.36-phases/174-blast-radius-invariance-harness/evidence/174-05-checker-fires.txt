@@ -1,0 +1,53 @@
+== workflow triggers, parsed
+has_beta=True
+has_gsd_glob=True
+has_milestones_path=True
+has_rekey_path=True
+has_app_path=True
+has_self_path=True
+names_checker=True
+recursive_submodules=False
+comment_lines=0
+push_and_pr=True
+rc=0
+== checker with the workflow argument shape
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc=0
+== the same invocation against a checkout that does not exist
+ERROR: ledger not found: /tmp/tmp.Py57wUHSQS/absent/firestarter_app/tests/fixtures/rekey_ledger.py
+rc=2
+
+== simulated cross-tree checkout (meta/ + sibling firestarter_app/, no submodules key used)
+D=$(mktemp -d); mkdir -p "$D/meta/.planning" "$D/meta/tools" "$D/firestarter_app/tests"
+cp -r .planning/* "$D/meta/.planning/"; cp -r tools/* "$D/meta/tools/"
+cp -r firestarter_app/tests "$D/firestarter_app/"
+(cd "$D" && python3 meta/tools/rekey/check_rekey_ledger.py --repo-root meta --milestones meta/.planning/MILESTONES.md --ledger firestarter_app/tests/fixtures/rekey_ledger.py)
+-> OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+-> rc=0
+This reproduces exactly the workflow's own run step's argument shape and path layout (meta
+subdirectory + sibling firestarter_app checkout), proving the invocation is correct independent
+of whether GitHub Actions has scheduled a run.
+
+== gitlink resolution used by the workflow's second step
+git rev-parse HEAD:firestarter_app
+0c709fd48a9cacb59b6d83eb3427cd0af4e59511
+This is the exact commit `actions/checkout@v4`'s `ref:` input resolves to for the `firestarter_app`
+checkout step -- read directly off the meta tree's gitlink, never via `submodules: recursive`.
+
+== on-GitHub scheduling: UNPROVEN, stated explicitly
+This environment cannot cause GitHub Actions to schedule a real workflow run (no network access to
+the Actions API, no push to a remote GitHub triggers a run from inside this sandbox). The three legs
+above (trigger parse, clean local invocation, fail-closed local invocation, plus the simulated
+cross-tree checkout) are the maximum evidence obtainable from this environment. The on-GitHub run is
+NOT observed and must not be represented as observed.
+
+Operator confirmation, one line, after this commit reaches GitHub (push to `beta` or to any
+`gsd/**` branch, or open/update a PR targeting `beta`):
+
+  gh run list --workflow=rekey-ledger-check.yml --limit 5
+
+A run appearing in that list (any conclusion) proves the trigger fired; `gh run view <id> --log`
+proves whether the checker's own invocation inside it passed or failed. `catalog-sync-check.yml`'s
+own history (8 runs, 5 failures, all on `main`-only triggers) is this repo's own proof that a run
+existing is a different fact from a run passing -- both are checked here, but only the first three
+legs are actually observed by this executor.

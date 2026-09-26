@@ -1,0 +1,28 @@
+== A clean ledger, real milestones
+OK: 1 ledger row(s), 1 MILESTONES.md row(s) bound
+rc=0
+== B planted undeclared after_hash
+ERROR: declared ledger row 'RK-174-99-planted-undeclared' (after_hash='000000000000') has no MILESTONES.md row
+ERROR: MILESTONES.md row 'RK-174-01-p177-readback-gating' has no matching ledger row
+rc=1
+== C ledger path does not exist
+ERROR: ledger not found: /tmp/tmp.n2fWFvX5yk/nope.py
+rc=2
+== D milestones path does not exist
+ERROR: milestones file not found: /tmp/tmp.n2fWFvX5yk/nope.md
+rc=2
+== E parses but declares no ledger
+ERROR: no LEDGER assignment found in /tmp/tmp.n2fWFvX5yk/noledger.py
+rc=2
+== F in-process mutations, both axes
+clean=4dc282a5d596
+fp_cleared=399fd0f0521c
+chip_lowered=b49cef21b252
+rc=0
+== G clean again, nothing was left mutated on disk
+OK: 1 ledger row(s), 1 MILESTONES.md row(s) bound
+rc=0
+== H both test modules
+..................                                                       [100%]
+18 passed in 0.80s
+rc=0

@@ -1,0 +1,24 @@
+[
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "vpp"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-03 single reading (timeout -s INT 4 wrapper + FIRESTARTER_CONFIG_DIR inline elided per the env-not-in-argv convention): 12400 mV, in band, unchanged since position 1 -- pot untouched"
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "dev",
+      "test",
+      "FM1608"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-05, clean completed run (timeout 120 wrapper + FIRESTARTER_CONFIG_DIR inline elided): exit 0, steps total 71.0s (8 KiB class ceiling 120s), banner 3 of 3 ran (three steps structurally NA), all applicable steps OK -- dev test's own OK verdict supersedes the phase plan's D-03 pre-booked diverges verdict per the operator ruling; no control arbitration, no flash performed"
+  }
+]

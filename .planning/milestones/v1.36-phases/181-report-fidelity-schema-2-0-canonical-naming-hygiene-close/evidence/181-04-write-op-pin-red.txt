@@ -1,0 +1,46 @@
+# 181-04 Task 3 -- write-op selector pin, observed RED against the planted
+# is_uv mutant. tests/test_derive_plan_structural_sentinel.py.
+
+anchor_count=1
+pin_at_head=GREEN
+pin_at_planted_is_uv=RED
+fixture_files_written=0
+
+# The mutation planted (single in-memory source.replace, no fixture file):
+#   before: write_op = OP_WRITE_PARTIAL if write_scope == _WRITE_SCOPE_PARTIAL else OP_WRITE
+#   after:  write_op = OP_WRITE_PARTIAL if write_scope == _WRITE_SCOPE_PARTIAL or is_uv else OP_WRITE
+#
+# The additive OR form (rather than a full is_uv replacement) is deliberate: it
+# keeps `write_scope` present in the mutated expression while `is_uv` joins it,
+# which is exactly the shape that makes the vacuity leg meaningful -- a pin
+# that only checks for write_scope's PRESENCE stays green on this mutant (the
+# literal is still there), so the pin must also assert is_uv's ABSENCE to
+# catch it. A full replacement (dropping write_scope entirely) would make a
+# presence-only check redden too, understating the case for the absence half
+# of the pin.
+
+# test_the_write_op_selector_reads_write_scope_and_never_is_uv, run at HEAD
+# (unmutated chip_test.py): PASSES. write_op's selector expression contains
+# {write_scope, _WRITE_SCOPE_PARTIAL, OP_WRITE_PARTIAL, OP_WRITE} and does not
+# contain is_uv.
+
+# test_a_planted_is_uv_selector_reddens_the_write_op_pin's own three legs,
+# each independently observed:
+#   1. anchor uniqueness: source.count(_WRITE_OP_ANCHOR) == 1 -- PASS (would
+#      itself raise before any mutation if the anchor text had drifted).
+#   2. extracted name set on the mutant CONTAINS is_uv -- PASS (proves the
+#      mutation landed and is visible to the extractor).
+#   3. "is_uv not in names" (the pin's absence conjunct) on the mutant --
+#      raises AssertionError -- RED, as required. Wrapped in
+#      `pytest.raises(AssertionError)` so the test module itself stays green
+#      while proving the underlying claim reddens.
+
+# Vacuity leg, same test: on the SAME mutant, "write_scope" is still present
+# in the extracted name set (empty-forbidden-set check `not (names & frozenset())`
+# never raises -- a presence-only pin would silently pass here, proving that
+# check alone is vacuous). Only the non-empty forbidden set
+# `not (names & frozenset({"is_uv"}))` raises AssertionError -- RED -- which is
+# what the real pin actually asserts.
+
+# pytest tail (bare pytest, -o addopts="")
+tests/test_derive_plan_structural_sentinel.py: 33 passed (30 pre-existing + 3 new)

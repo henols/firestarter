@@ -1,0 +1,44 @@
+== 1 scope
+firmware_diff=clean
+chip_database_diff=clean
+app_tree=clean
+== 2 comment census on created files
+comments_test_readback_inventory=0
+== 3 tooling
+All checks passed!
+rc=0
+171 files already formatted
+rc=0
+checked 173 source files
+mypy errors: 35 (watermark: 35)
+OK: error count at watermark.
+rc=0
+== 4 oracle
+OK: 17 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+........................................................................ [ 47%]
+........................................................................ [ 94%]
+.........                                                                [100%]
+153 passed in 1.36s
+rc=0
+PASS: scanned ../firestarter/chip_test.py, ../firestarter/cli_handlers.py, ../firestarter/submit.py; 0 VPP-set, 0 raw-wire-dict, 0 --force, 0 broad-except; firmware untouched (host-only, asserted)
+rc=0
+== 5 cross-tree
+OK: 8 ledger row(s), 8 MILESTONES.md row(s) bound
+rc=0
+== 6 the whole suite
+rc=0
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+32 snapshots passed.
+2216 passed, 1 warning in 329.91s (0:05:29)
+full_suite_passed=2216
+== 7 declarations
+coverage_present=yes
+reqs_complete=5
+prune08_untouched=1
+== 8 D-11 commit topology (base=parent of first phase-177 firestarter_app commit)
+topology_base=df2978e40560d8c416f2e282f714c13a8e2d1fa7
+phase_commit_count=5
+no_comments_added_in_range=true
+fixtures_and_chiptest_same_commit=false

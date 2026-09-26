@@ -1,0 +1,53 @@
+{
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "avrdude_version": "8.1",
+  "commands": [
+    {
+      "argv": [
+        "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+        "-C",
+        "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+        "-c",
+        "arduino",
+        "-p",
+        "atmega328p",
+        "-b",
+        "115200",
+        "-P",
+        "/dev/ttyACM1",
+        "-A",
+        "-U",
+        "flash:r:/workspaces/.planning/v1.34/bench/cells/A1/flash_readback.bin:r"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/home/vscode/.platformio/packages/toolchain-atmelavr/bin/avr-objcopy",
+        "-I",
+        "ihex",
+        "-O",
+        "binary",
+        "/workspaces/.planning/v1.34/images/firestarter_uno.control.hex",
+        "/workspaces/.planning/v1.34/bench/cells/A1/expected_span.bin"
+      ],
+      "cwd": "/workspaces"
+    }
+  ],
+  "expect_arm": "control",
+  "flashed_arm": "control",
+  "hex_path": "/workspaces/.planning/v1.34/images/firestarter_uno.control.hex",
+  "judged_match": true,
+  "judged_span_bytes": 26026,
+  "judged_span_policy": "hex-extent",
+  "objcopy": "/home/vscode/.platformio/packages/toolchain-atmelavr/bin/avr-objcopy",
+  "port": "/dev/ttyACM1",
+  "raw_stderr_path": "/workspaces/.planning/v1.34/bench/cells/A1/avrdude_read.stderr.log",
+  "readback_size_bytes": 32768,
+  "sha_actual_judged": "f60fa76ff808b5ca0454e0bff0698f605a57a61069f6c7b8061e61b27ac3fa23",
+  "sha_expected_judged": "f60fa76ff808b5ca0454e0bff0698f605a57a61069f6c7b8061e61b27ac3fa23",
+  "sha_whole_flash_unjudged": "d9eb943a55bc06680485df18e7d8f0fc38a79452db2929340712095c7dc42e87",
+  "target": "uno",
+  "vector_exclusions_applied": []
+}

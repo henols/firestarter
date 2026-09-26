@@ -1,0 +1,64 @@
+{
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "avrdude_version": "8.1",
+  "commands": [
+    {
+      "argv": [
+        "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+        "-C",
+        "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+        "-c",
+        "urclock",
+        "-p",
+        "atmega328pb",
+        "-b",
+        "115200",
+        "-P",
+        "/dev/ttyUSB0",
+        "-A",
+        "-U",
+        "flash:r:/workspaces/.planning/v1.34/bench/cells/A2/flash_readback.bin:r"
+      ],
+      "cwd": "/workspaces/.planning/v1.34/tools"
+    },
+    {
+      "argv": [
+        "/home/vscode/.platformio/packages/toolchain-atmelavr/bin/avr-objcopy",
+        "-I",
+        "ihex",
+        "-O",
+        "binary",
+        "/workspaces/.planning/v1.34/images/firestarter_uno328pb.control.hex",
+        "/workspaces/.planning/v1.34/bench/cells/A2/expected_span.bin"
+      ],
+      "cwd": "/workspaces/.planning/v1.34/tools"
+    }
+  ],
+  "expect_arm": "control",
+  "flashed_arm": "control",
+  "hex_path": "/workspaces/.planning/v1.34/images/firestarter_uno328pb.control.hex",
+  "judged_match": true,
+  "judged_span_bytes": 26074,
+  "judged_span_policy": "vector-exclusion",
+  "objcopy": "/home/vscode/.platformio/packages/toolchain-atmelavr/bin/avr-objcopy",
+  "port": "/dev/ttyUSB0",
+  "raw_stderr_path": "/workspaces/.planning/v1.34/bench/cells/A2/avrdude_read.stderr.log",
+  "readback_size_bytes": 32768,
+  "sha_actual_judged": "43dcb663c5bfcf29462d33664af81edae79161ce8febf7acb2ba47a9880ddda2",
+  "sha_expected_judged": "b18a71515b34466d242cddec7801a21d9998a30507c83f77d30db15477773595",
+  "sha_whole_flash_unjudged": "2c0a81d25d6422ab1d668418cf8f91494687845031f01c27a945028b2915586a",
+  "target": "uno328pb",
+  "vector_exclusions_applied": [
+    {
+      "length": 4,
+      "offset": 0,
+      "reason": "reset vector (vector 0): urclock's -xshowvector reported this bootloader is a VECTOR bootloader (vector 25, SPM_Ready); measured live on the control-arm flash (BRINGUP-uno328pb/BOOTLOADER.md): expected bytes 0c 94 cf 01, actual (post-flash read-back) 3f cf 75 72 -- all 4 bytes of this JMP-encoded vector slot differ, as expected since urclock redirects RESET into the urboot bootloader"
+    },
+    {
+      "length": 4,
+      "offset": 100,
+      "reason": "designated interrupt vector 25 (SPM_Ready), the vector -xshowvector named; offset = vector_number * 4 bytes (JMP-based vector table, RESET=vector 0) = 25*4 = 100, measured live: expected bytes 0c 94 f7 01, actual 0c 94 cf 01 -- 1 of 4 bytes differs (offset 102), because urclock stores a copy of the application's original reset target in this slot"
+    }
+  ]
+}

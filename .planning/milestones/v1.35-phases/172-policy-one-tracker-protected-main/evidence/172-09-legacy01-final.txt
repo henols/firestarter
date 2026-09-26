@@ -1,0 +1,62 @@
+=== 172-09 Task 1: LEGACY-01 final state — no live surface links to a disabled tracker ===
+
+Run 2026-09-02 over the phase's FINAL state, across all four surfaces: meta, both sub-repository
+working trees, and a fresh wiki clone (dc07042). This is the
+run that covers what the phase itself added — the new Contributing wiki page, the three
+.github/CONTRIBUTING.md pointers, the four issue templates and the three trimmed READMEs — none of
+which existed when the leg was first proven RED-then-GREEN in plan 172-03.
+
+Pattern: henols/firestarter(_app)?/issues   (both disabled sub-repository trackers)
+
+== Result, per surface, tracked files only ==
+meta (/workspaces)          0 matching files
+firestarter                 0 matching files
+firestarter_app             0 matching files
+wiki-clone (fresh)          0 matching files
+OK: no page links to henols/firestarter/issues or henols/firestarter_app/issues
+rc=0
+
+== Non-vacuity: what the .planning exclusion costs ==
+planning_excluded_matches=46
+planning_excluded_files=17
+Forty-six matches across seventeen files live under .planning/ and are deliberately NOT acted on.
+REQUIREMENTS.md places them out of scope as historical-by-intent: a planning record that quotes a
+then-live issue URL is evidence of what was true when it was written, and repairing such a citation
+destroys the thing it exists to preserve. Recording the number keeps the exclusion's cost visible
+and keeps the green result above from reading as vacuous — the grep demonstrably reaches files.
+Not repaired, not filed, not added to a backlog item, per this plan's second prohibition.
+
+=== METHOD DEVIATION, and why the plan's own leg would have been wrong twice over ===
+
+This plan's <verify> leg runs a bare `grep -rInE <pattern> meta firestarter firestarter_app
+wiki-clone --exclude-dir=.git --exclude-dir=.planning` over symlinked directories. That command is
+unsafe in this devcontainer in two independent ways, and both were measured rather than reasoned
+about:
+
+1. `grep` on PATH here is **ugrep 7.8.4**, not GNU grep, and ugrep honours .gitignore by default.
+   Measured: over /workspaces with the same pattern and exclusions, ugrep reports **0** matches
+   where GNU grep (/usr/bin/grep 3.11) reports **38**. The plan's leg would therefore have gone
+   GREEN by silently declining to scan, which is the exact failure mode T-172-04 exists to catch —
+   and the without-exclusion counter would not have caught it either, because ugrep under-scans
+   that leg identically.
+
+2. Conversely, a raw GNU-grep directory walk is a **false RED** here. All 38 of those matches are in
+   untracked, gitignored scratch that no consumer and no CI run ever sees:
+     untracked_scratch_matches=38
+     .v1.34-arms/{control,v133}/     — v1.34 host-arm worktrees, README/PKG-INFO/METADATA + doc/
+     firestarter_app_py32/           — a gitignored sibling worktree, README + doc/
+     firestarter_py32_ci/            — a gitignored sibling worktree, README
+     firestarter_app/.venv/          — installed dist-info METADATA of published 2.0.7/3.0.0b21 wheels
+   Every one is either a stale checkout of a README this phase has since trimmed, or the metadata of
+   an already-published wheel that cannot be retroactively edited. Failing the phase gate on those
+   would be failing it on artifacts outside the repository's tracked surface.
+
+**Resolution used above:** GNU grep (/usr/bin/grep), scoped to `git ls-files` per repository with
+.planning/ excluded, plus a plain recursive GNU-grep walk of the fresh wiki clone (which has no
+gitignored scratch to confuse it). That is precisely the set a fresh consumer clone contains, which
+is what the requirement is about. The result is 0 on all four surfaces — green on the merits, not
+green because the scanner declined to look.
+
+The registered CI copy of this leg is unaffected by (1): GitHub runners carry GNU grep. It is
+exposed to (2) only if a runner's workspace ever contains gitignored scratch, which a fresh
+actions/checkout does not. No change to wiki-check.yml is made or needed here.

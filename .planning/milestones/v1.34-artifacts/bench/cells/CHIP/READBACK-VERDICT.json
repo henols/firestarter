@@ -1,0 +1,53 @@
+{
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "avrdude_version": "8.1",
+  "commands": [
+    {
+      "argv": [
+        "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+        "-C",
+        "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+        "-c",
+        "avr109",
+        "-p",
+        "atmega32u4",
+        "-b",
+        "57600",
+        "-P",
+        "/dev/ttyACM0",
+        "-A",
+        "-U",
+        "flash:r:.planning/v1.34/bench/cells/CHIP/flash_readback.bin:r"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/home/vscode/.platformio/packages/toolchain-atmelavr/bin/avr-objcopy",
+        "-I",
+        "ihex",
+        "-O",
+        "binary",
+        "/workspaces/.planning/v1.34/images/firestarter_leonardo.control.hex",
+        ".planning/v1.34/bench/cells/CHIP/expected_span.bin"
+      ],
+      "cwd": "/workspaces"
+    }
+  ],
+  "expect_arm": "control",
+  "flashed_arm": "control",
+  "hex_path": "/workspaces/.planning/v1.34/images/firestarter_leonardo.control.hex",
+  "judged_match": true,
+  "judged_span_bytes": 28170,
+  "judged_span_policy": "hex-extent",
+  "objcopy": "/home/vscode/.platformio/packages/toolchain-atmelavr/bin/avr-objcopy",
+  "port": "/dev/ttyACM0",
+  "raw_stderr_path": ".planning/v1.34/bench/cells/CHIP/avrdude_read.stderr.log",
+  "readback_size_bytes": 32768,
+  "sha_actual_judged": "d734ad490329d5307f4760d7525b045f78d0f61168868e9c36f1956519439820",
+  "sha_expected_judged": "d734ad490329d5307f4760d7525b045f78d0f61168868e9c36f1956519439820",
+  "sha_whole_flash_unjudged": "334f9144d44a4e53cae73e86ef185c53e0170cc519166e6e692313b97e7db0d6",
+  "target": "leonardo",
+  "vector_exclusions_applied": []
+}

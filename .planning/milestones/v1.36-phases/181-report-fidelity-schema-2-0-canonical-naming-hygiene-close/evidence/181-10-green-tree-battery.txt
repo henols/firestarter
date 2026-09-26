@@ -1,0 +1,176 @@
+181-10 Task 3 -- the seven-leg green-tree battery, run ONCE for the whole
+phase, at HEAD 6de7273 (app), after every plan in the phase has landed and
+every artifact in this plan has been committed.
+
+## Leg 1 -- ruff check
+
+$ ./.venv311/bin/python -m ruff check firestarter/ tests/
+All checks passed!
+rc=0
+ruff_check_rc=0
+
+## Leg 2 -- ruff format --check
+
+$ ./.venv311/bin/python -m ruff format --check firestarter/ tests/
+175 files already formatted
+rc=0
+ruff_format_rc=0
+
+## Leg 3 -- mypy watermark (35)
+
+First run, BEFORE the fix below, FAILED:
+$ ./.venv311/bin/python tools/check_mypy_watermark.py
+checked 177 source files
+mypy errors: 37 (watermark: 35)
+FAIL: 37 errors exceeds watermark 35. New errors introduced.
+rc=1
+
+Root cause: tests/test_voltage_field_census.py (plan 181-09's new AST census
+module) carried two mypy errors -- `"object" has no attribute "__file__"`
+(the `_module_source(module: object)` parameter) and `"AST" has no
+attribute "lineno"` (a post-hoc isinstance narrowing that mypy does not
+retain across an if/elif + subsequent-statement boundary). 181-09's own
+SUMMARY names ruff/census/porcelain as its automated legs but not the mypy
+watermark -- this is the first time the watermark leg ran since that
+module landed.
+
+Fixed here (Rule 3 -- blocking issue for this plan's own required battery
+leg), app commit 6de7273: typed `_module_source`'s parameter as
+`types.ModuleType` plus an explicit not-None assert on `__file__`; replaced
+the two-branch if/elif + post-hoc assert in `_assignment_sites` with an
+early `if not isinstance(node, (ast.Assign, ast.AnnAssign)): continue`,
+which narrows `node`'s type for the rest of the loop body with no runtime
+behaviour change. 4/4 module tests still pass; ruff check/format clean;
+0 comment tokens.
+
+Re-run AFTER the fix:
+$ ./.venv311/bin/python tools/check_mypy_watermark.py
+checked 177 source files
+mypy errors: 35 (watermark: 35)
+OK: error count at watermark.
+rc=0
+mypy_watermark_rc=0
+
+## Leg 4 -- snapshot-shapes check
+
+$ ./.venv311/bin/python tools/snapshot_report_shapes.py --check
+OK: 19 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+snapshot_check_rc=0
+
+## Leg 5 -- dev test orchestrator gate
+
+$ ./.venv311/bin/python tools/check_devtest_orchestrator.py
+PASS: scanned ../firestarter/chip_test.py, ../firestarter/cli_handlers.py, ../firestarter/submit.py; 0 VPP-set, 0 raw-wire-dict, 0 --force, 0 broad-except; firmware untouched (host-only, asserted)
+rc=0
+orchestrator_gate_rc=0
+
+## Leg 6 -- diagnostic-report claim scanner
+
+$ ./.venv311/bin/python tools/check_diagnostic_report_claims.py
+PASS: scanned /workspaces/firestarter_app/tools/../firestarter/diagnostic_report.py, 226 string literals checked, zero forbidden matches
+rc=0
+claim_scanner_rc=0
+
+## Leg 7 -- full suite, floor 2239
+
+Run as a BACKGROUND command (measured historically at ~741s against a 600s
+foreground per-call timeout), output redirected to a scratchpad file
+OUTSIDE both repositories:
+
+$ cd /workspaces/firestarter_app && \
+  ./.venv311/bin/python -m pytest tests/ -o addopts="" \
+  > /tmp/claude-1000/-workspaces/64e556f7-1072-44e1-bd80-a1e406175986/scratchpad/p181/181-10-full-suite.txt 2>&1
+
+Started 2026-09-09T15:58:41Z at app HEAD 7b6fa64 (the working tree already
+carried the mypy fix at the time this ran; the fix is a pure type-narrowing
+edit with no runtime-behaviour change, confirmed by the module's own 4/4
+pass both before and after).
+
+Verbatim tail:
+
+    tests/test_wire_dict_equivalence.py .......                              [ 98%]
+    tests/test_write_progress.py ......                                      [ 99%]
+    tests/test_write_response_budget.py ......                               [ 99%]
+    tests/test_write_skip_erase_0x0d.py .......                              [ 99%]
+    tests/test_write_skip_sdp_unlock.py ........                             [100%]
+
+    =============================== warnings summary ===============================
+    tests/test_click_group_gate_hook.py::test_multicommand_is_deprecated_alias_not_in_dir_but_still_reachable[MultiCommand]
+      /workspaces/firestarter_app/tests/test_click_group_gate_hook.py:161: DeprecationWarning: 'MultiCommand' is deprecated and will be removed in Click 9.0. Use 'Group' instead.
+        assert getattr(click, attr_name) is not None
+
+    -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+    --------------------------- snapshot report summary ----------------------------
+    32 snapshots passed.
+    ================= 2285 passed, 1 warning in 476.19s (0:07:56) ==================
+
+Header: `rootdir: /workspaces/firestarter_app`, `collected 2285 items`.
+Reconciliation: passed(2285) + failed(0) + skipped(0) + xfailed(0) +
+xpassed(0) + error(0) = 2285 = collected(2285). Exact.
+
+suite_passed=2285
+suite_floor=2239
+suite_failed=0
+suite_collected=2285
+suite_raw_output=/tmp/claude-1000/-workspaces/64e556f7-1072-44e1-bd80-a1e406175986/scratchpad/p181/181-10-full-suite.txt
+rc=0
+
+**The plan's own note names three PRE-EXISTING `tests/test_skip_census.py`
+failures (a 180s child-run timeout cap against the historically-measured
+~741s suite). This run measured ZERO failures anywhere, including in
+`tests/test_skip_census.py` (5/5 passed -- confirmed by grep, no `F` in
+its result line).** This is not a discrepancy in the code; it is the
+timeout-dependent failure mode simply not triggering this run: the whole
+suite completed in 476.19s (0:07:56), well under the ~741s baseline that
+previously left individual `test_skip_census.py` child processes short of
+their own 180s budget. A faster host/less loaded run gives each child
+comfortable headroom. Recorded here exactly as measured -- 2285 passed, 0
+failed -- rather than asserting three failures that did not occur in this
+run. This is confirmed BETTER than, not worse than, the floor and the
+historical baseline; nothing about it hides a regression this phase
+caused.
+
+preexisting_failures=0 (measured this run; historically 3, timeout-dependent, not triggered here)
+preexisting_failure_module=tests/test_skip_census.py
+preexisting_failure_cause=a 180-second per-child-process timeout cap racing the suite's own historically-measured ~741-second wall time; this run completed in 476.19s, comfortably inside every child's budget, so the flake did not fire
+
+## Frozen-hash reproof, final (after every plan in the phase)
+
+$ git diff 04fd982 -- tests/fixtures/report_shapes.py | grep -E '^[-+][[:space:]]*"[a-z0-9-]+": "[0-9a-f]{12}",'
+(zero matches -- zero twelve-hex frozen-hash literal lines moved)
+
+$ ./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -o addopts="" -k test_dedup_fingerprint_is_frozen -q
+19 passed, 87 deselected in 0.36s
+
+frozen_hash_literal_count=19
+frozen_hash_lines_added_or_removed_since_04fd982=0
+shapes_reproducing=19/19
+
+## Comment census (mandated, git diff --name-only 04fd982..HEAD, all .py files)
+
+files over baseline: 0 / 28
+
+## D-22 fence
+
+pushed=false
+tagged=false
+pr_opened=false
+branch_cut=false
+
+The retired eighth-leg re-key ledger checker (removed 2026-09-08, does not
+exist) is invoked nowhere in this plan. Battery is exactly seven legs, not
+eight.
+
+## Porcelain (run AFTER every commit in this plan)
+
+$ git -C /workspaces/firestarter_app status --porcelain
+(empty)
+$ git -C /workspaces/firestarter_app status --porcelain firestarter/
+(empty)
+$ git -C /workspaces/firestarter status --porcelain
+(empty)
+$ git -C /workspaces status --porcelain .planning/ .claude/
+(empty)
+
+leg_count=7

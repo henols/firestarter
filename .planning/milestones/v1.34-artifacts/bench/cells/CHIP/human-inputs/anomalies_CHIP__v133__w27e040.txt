@@ -1,0 +1,78 @@
+DIAGNOSTIC SEQUENCE (four v133-arm attempts at this position, all kept, none silently dropped):
+
+Attempt 1 (initial seating, JP4 position not explicitly confirmed by the operator): dev test
+W27E040 exit 1, ~14s. id/read/blank-check all BAD on chip-ID mismatch (reported 0x8201, expected
+0xDA86); write/verify/erase gated off, chip left pristine. Checkpoint returned asking the operator
+to verify JP4 at 32-pin.
+
+Attempt 2 (after the operator adjusted JP4; resulting position not stated in words): dev test
+W27E040 exit 1, ~19s. Byte-identical failure to attempt 1. Diagnosis moved from JP4 to
+seating/orientation. Checkpoint returned asking the operator to check full seating and pin-1
+orientation.
+
+Attempt 3 (RECORDED, after the operator reseated the part): chip ID cleared (0xDA86) and the run
+proceeded through read/write/verify/erase, all OK. Seating confirmed as the cause of attempts 1-2.
+blank-check BAD, "Empty input", error_code 164, at 69.392s. Exit 1, wall-clock 768s.
+
+Attempt 4 (REPRODUCIBILITY RE-RUN, same seating, board confirmed still at v1.33 SHA -- no re-flash):
+IDENTICAL result to attempt 3 -- id/read/write/verify/erase OK, blank-check BAD, same reason "Empty
+input", same error_code 164. Exit 1, wall-clock 767s. Confirms the attempt-3 failure is a
+REPRODUCIBLE fault at this exact step, not a one-off transient.
+
+ERROR-IDENTITY FINDING (separate from the transport-integrity finding above -- itself a Phase
+165/166 filing, NOT fixed here, D-16 boundary): `MSG_ERR_EMPTY_INPUT` (error_code 164/0xA4) is
+OVERLOADED in firestarter/src/firestarter.cpp. Two emit sites: `:124`, a genuine empty-buffer
+check; `:251-255`, the frame-integrity path (CRC mismatch, COBS violation, overflow, or read
+underrun), which REUSES `MSG_ERR_EMPTY_INPUT` because a distinct `MSG_ERR_BAD_FRAME` was
+deliberately deferred -- the code comment states verbatim: "messages.h is codegen; adding
+MSG_ERR_BAD_FRAME requires a TOML catalog update -- deferred." An operator or triager reading
+"ERROR: Empty input" on a blank-check will reasonably conclude something about the chip or the
+input file; the actual condition is far more likely a corrupted serial frame. This misleading error
+identity is filed here for Phase 165/166 on its own merits, separate from the transport-integrity
+finding itself. NOT fixed here -- messages.h is codegen-generated from meta's messages.toml and
+this is a Phase 165 boundary; no product-code edit made in either sub-repo.
+
+BLANK-CHECK VERDICT SCOPE, STATED EXPLICITLY: because blank-check failed at the transport layer
+before returning a result, this run carries NO EVIDENCE about whether the device is actually
+blank -- and therefore NO independent confirmation that the preceding `erase: OK` actually erased
+anything. `erase: OK` means the erase COMMAND was accepted and completed without the firmware
+reporting an error; it is NOT itself proof the device was left blank, because the step that would
+have checked that is precisely the one that died. This is stated explicitly so `erase: OK` is
+never read as blank-check-confirmed-erase in this row.
+
+STEP-ORDER HYPOTHESIS (operator question), checked and cleared: whether erase before blank-check
+is the correct sequence for this part. Confirmed live against
+firestarter_app/firestarter/chip_test.py:640-683 -- blank-check is appended AFTER erase (Case 2)
+specifically for a part with an executable erase (this part: EEPROM, protocol 8, erase supported),
+"only once erase has run does 'not blank' become a tool-health finding rather than a report of the
+chip's prior state." The alternative position (before write, Case 4) applies only to
+SRAM/FRAM-excluded or auto-erase-on-write parts, or UV-EPROM. W27E040 correctly uses Case 2 --
+erase-before-blank-check is deliberate and correct here, not a step-ordering defect. Checked and
+cleared; not re-investigated further; no product-code change.
+
+DISTRIBUTION ACROSS THE SWEEP: the identical `ERROR: Empty input` text has now appeared, at
+different points in the sequence and without affecting the step verdict, in
+CHIP__v133__w27c512, CHIP__v133__w27e512, the superseded CHIP__control__w27e512 control run, and
+CHIP__v133__sst27sf512 -- i.e. on BOTH arms, at multiple different points in the twelve-step
+sequence, across four positions before this one. Combined with this position's own reproduction
+(twice on v133, once on control, all at the SAME step here), the distribution is consistent with
+INTERMITTENT, arm-independent frame corruption that can land on different steps depending on
+timing, not a step-specific or arm-specific firmware logic defect.
+
+PIN-MAP NOTE (per this plan's own required record): this part is on the standard 32-pin map, not
+the scoped map v1.18's Phase 97-99 fix introduced for AM27C020 (the other 32-pin EPROM-QUICK-family
+part in this inventory) -- that fix is size-gated to parts at or below a quarter mebibyte
+(262144 B) and W27E040 is twice that (524288 B), so the fix does not touch it.
+
+ERASE-DURATION COMPARISON (per this plan's own required record; caveat above applies -- this is
+the erase COMMAND's own duration, not an independently blank-check-confirmed erase): this
+position's measured erase duration is 62.617s (single cycle, 524288 B). Plan 162-05's other
+stuck-bit part (W27E512, 65536 B) measured its own healthy erase at 16.7s cycle-sum / 2 = 8.35s per
+operation. Two data points on the erase op, eight times apart in capacity: 62.6s vs 8.35s is
+roughly 7.5x for an 8x capacity increase.
+
+Recorded detail, kept but NOT itself the divergence trigger (per the operator ruling, dev test's
+own verdict is the arbiter): read step's reason = "read runs diverged" (verdict OK, run_count 2).
+The structured read_divergence metric and its underlying total/bad/bad_pct/evidence fields are not
+exported by the report (diagnostic_report.py's own _step_dict() gap, already filed for Phase
+165/166) -- recorded as `not measured -- <reason>` per this row's own schema field, not re-derived.

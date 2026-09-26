@@ -1,0 +1,5 @@
+command: python3 tools/wiki/dispatch_mirror.py --app-dir <fixture>/app --fw-dir <fixture>/fw
+mutation: deleted the 0xA5 bucket row from the claims region while the host dispatch stub and firmware stub both retain 0xA5
+exit status: 1
+--- captured output ---
+ERROR: 0xA5 is dispatched by the host tool but has no bucket row in the claims region

@@ -1,0 +1,19 @@
+== 1 the cross-tree binding
+OK: 8 ledger row(s), 8 MILESTONES.md row(s) bound
+rc=0
+== 2 the table's own shape
+milestones_rk_rows=8
+still_undeclared=4
+still_pending=4
+reanchor_row=1
+corrections_rows=10
+== 3 the published mapping
+mapping_present=yes
+mapping_rows=18
+corpus_untouched=yes
+== 4 the app-side oracle is green
+........................................................................ [ 47%]
+........................................................................ [ 94%]
+.........                                                                [100%]
+153 passed in 1.23s
+rc=0

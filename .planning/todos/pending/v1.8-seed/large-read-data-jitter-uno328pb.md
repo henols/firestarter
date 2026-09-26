@@ -48,13 +48,13 @@ Phase 29 v2 (closed 2026-05-26) characterized the bug as two independent failure
 ## v1.8 RCA substrate (ready to consume)
 
 - 15 N=5 W27C512 binaries (3 sessions × 5 runs × 65536 B):
-  - `.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-155021-v2/` — Modified Rev 0 canonical
-  - `.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-155617-v2-rev20/` — Rev 2.0 bonus
-  - `.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-160035-v2-rep/` — Modified Rev 0 replication
-- `.planning/v1.6/bench-logs/W27C512-leonardo-20260526-*.log` — 3 tee'd stdout logs
-- `.planning/v1.6-EVIDENCE.md` §"Phase 29 v2 — Post-Revert Bench Verification (2026-05-26)" (H3 block at lines 394+) — full pattern findings
+  - `.planning/milestones/v1.6-artifacts/consistency-check-runs/W27C512-leonardo-20260526-155021-v2/` — Modified Rev 0 canonical
+  - `.planning/milestones/v1.6-artifacts/consistency-check-runs/W27C512-leonardo-20260526-155617-v2-rev20/` — Rev 2.0 bonus
+  - `.planning/milestones/v1.6-artifacts/consistency-check-runs/W27C512-leonardo-20260526-160035-v2-rep/` — Modified Rev 0 replication
+- `.planning/milestones/v1.6-artifacts/bench-logs/W27C512-leonardo-20260526-*.log` — 3 tee'd stdout logs
+- `.planning/milestones/v1.6-EVIDENCE.md` §"Phase 29 v2 — Post-Revert Bench Verification (2026-05-26)" (H3 block at lines 394+) — full pattern findings
 - `.planning/phases/29-multi-board-bench-verification/29-04-SUMMARY.md` — canonical Phase 29 v2 close narrative
-- v1.7 substrate (shipped 2026-05-26): `.planning/v1.7-SHIELD-REVS.md` per-rev capability table + labeled schematic + shield-version-detect firmware plumbing → enables v1.8 to design A/B fix candidates knowing exactly which silkscreen rev sits on the bench at each step.
+- v1.7 substrate (shipped 2026-05-26): `.planning/milestones/v1.7-SHIELD-REVS.md` per-rev capability table + labeled schematic + shield-version-detect firmware plumbing → enables v1.8 to design A/B fix candidates knowing exactly which silkscreen rev sits on the bench at each step.
 
 ## Phase references
 

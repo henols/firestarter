@@ -1,0 +1,22 @@
+== ledger rows recomputed
+ledger_n=6
+all_undeclared=True
+ids_sorted=True
+ids_unique=True
+RK-174-01-p177-readback-gating shape=sst27sf512-six-step before=4dc282a5d596 current=4dc282a5d596
+RK-174-02-rejected-sdp-step-pruning shape=m27c512-full-all-ok before=6d3afbc52315 current=6d3afbc52315
+RK-174-03-p181-canonical-naming-avoided shape=m27c512-full-canonical-name before=776846bf2dc8 current=776846bf2dc8
+RK-174-04-p179-uv-blank-check-abort shape=m27c512-full-blank-check-bad before=077a32d1a5c4 current=077a32d1a5c4
+RK-174-05-p177-match-bucket-d4d6 shape=at28c256-full-all-ok-sdp before=52fb759dc48c current=52fb759dc48c
+RK-174-06-p178-status-axis-must-not-rekey shape=sst27sf512-full-all-ok before=4b3e52cab987 current=4b3e52cab987
+rc=0
+== checker on the real pair
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc=0
+== checker on a MILESTONES carrying an orphan row
+ERROR: MILESTONES.md row 'RK-174-97-orphan-row' has no matching ledger row
+rc=1
+== the ledger test module
+................                                                         [100%]
+16 passed in 1.04s
+rc=0

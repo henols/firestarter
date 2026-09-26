@@ -1,0 +1,87 @@
+# 181-02 Task 1 -- D-09 equivalence digest and D-08 de-risking measurements
+# Measured against firestarter_app app base 04fd982 (plan 181-01 landed).
+# EpromDatabase(skip_local_override=True) -- the shipped database only.
+
+part_numbers=677
+reachable_scope_digest=6fd1c722551296a5fb344be93ab2f08685cf62d315e024d4141595f3efd4e165
+serializer_field_order=name,reason,is_uv,steps[].op,steps[].supported,steps[].reason,steps[].destructive,steps[].write_region,steps[].region_policy,steps[].full_device_permitted,locked_destructive
+
+rows_with_nonempty_locked_destructive_at_reachable_scope=0
+sdp_oracle_applicable_second_arm_changes_result_for=0
+count_applicable_m_changes_without_locked_term_for=0
+resolve_write_scope_matches_plan_is_uv_for=677
+resolve_write_scope_mismatches=0
+write_scope_none_production_callers=0
+
+bare_derive_plan_calls_in_tests=15
+explicit_write_scope_none_occurrences=78
+explicit_write_scope_none_ast_call_sites=26
+
+explicit_write_scope_none_occurrences is a textual /usr/bin/grep -c count of the literal `write_scope="none"` across firestarter/*.py + tests/*.py (includes docstring/comment prose, matching the orchestrator's 9-file, 78-occurrence disposition). explicit_write_scope_none_ast_call_sites is the narrower AST count of derive_plan(..., write_scope="none") KEYWORD call sites in tests/ + tests/fixtures/ only -- the two differ because most occurrences are prose, not call sites.
+
+explicit_write_scope_none_occurrences by file (textual grep -c):
+  firestarter/chip_test.py: 14
+  firestarter/diagnostic_report.py: 1
+  tests/plan_corpus.py: 1
+  tests/test_chip_test.py: 32
+  tests/test_chip_test_blank_check_order.py: 4
+  tests/test_chip_test_sdp_leg.py: 16
+  tests/test_chip_test_timing.py: 4
+  tests/test_derive_plan_structural_sentinel.py: 1
+  tests/test_erase_flag_invariants.py: 5
+
+bare_derive_plan_call_sites (AST, tests/ + tests/fixtures/):
+  tests/test_chip_test.py:373
+  tests/test_chip_test.py:397
+  tests/test_chip_test.py:417
+  tests/test_chip_test.py:430
+  tests/test_chip_test.py:445
+  tests/test_chip_test.py:475
+  tests/test_chip_test.py:483
+  tests/test_chip_test.py:496
+  tests/test_chip_test.py:508
+  tests/test_chip_test.py:539
+  tests/test_chip_test.py:546
+  tests/test_chip_test.py:558
+  tests/test_chip_test_sdp_leg.py:301
+  tests/test_chip_test_sdp_leg.py:1589
+  tests/test_diagnostic_report.py:129
+
+explicit_write_scope_none_call_sites (AST, tests/ + tests/fixtures/):
+  tests/test_chip_test.py:607
+  tests/test_chip_test.py:674
+  tests/test_chip_test.py:687
+  tests/test_chip_test.py:706
+  tests/test_chip_test.py:734
+  tests/test_chip_test.py:904
+  tests/test_chip_test.py:987
+  tests/test_chip_test.py:1616
+  tests/test_chip_test.py:2573
+  tests/test_chip_test.py:2596
+  tests/test_chip_test.py:2619
+  tests/test_chip_test.py:2657
+  tests/test_chip_test.py:3026
+  tests/test_chip_test.py:3265
+  tests/test_chip_test.py:3272
+  tests/test_chip_test_blank_check_order.py:111
+  tests/test_chip_test_sdp_leg.py:2118
+  tests/test_chip_test_sdp_leg.py:2160
+  tests/test_chip_test_sdp_leg.py:2279
+  tests/test_chip_test_sdp_leg.py:2294
+  tests/test_chip_test_timing.py:67
+  tests/test_chip_test_timing.py:80
+  tests/test_chip_test_timing.py:100
+  tests/test_chip_test_timing.py:112
+  tests/test_derive_plan_structural_sentinel.py:490
+  tests/test_erase_flag_invariants.py:353
+
+write_scope_none_production_caller_sites (AST, firestarter/):
+  (none)
+
+1. chip_test.py:894 correction of 181-PATTERNS.md
+   The `locked_destructive.append((sdp_op, ...))` line at chip_test.py:894 sits in the `elif sdp_allowed:` arm (chip_test.py:887) whose controlling `if` is `if write_execute:` (chip_test.py:852). `write_execute` is defined as `write_scope in (_WRITE_SCOPE_FULL, _WRITE_SCOPE_PARTIAL)` (chip_test.py:592), so it is False only at write_scope="none". The `elif sdp_allowed:` arm at :887 is therefore reachable ONLY when write_scope="none" -- it IS a write_scope="none"-only append, contradicting 181-PATTERNS.md's line 128 claim that it is 'not a write_scope="none" append'. 181-PATTERNS.md is wrong; the code and this measurement agree.
+
+sdp_capability_split (measured directly, over all 677 distinct part numbers PART_NUMBERS sweeps -- NOT the same domain as the gate's own 43 ALLOW / 41 REFUSE / 84 total pin in test_sdp_capability.py, which counts (manufacturer, part_number) PAIRS restricted to the 84 shipped algorithm==13 (0x0D) rows. 40 distinct part_number strings among those 43 pairs are ALLOW, matching this measurement's sdp_allow=40 exactly; every other one of the 677 names -- including every row outside the 0x0D universe -- resolves REFUSE by construction, which is why sdp_refuse is 637 rather than 41):
+  sdp_allow=40
+  sdp_refuse=637
+  sdp_total=677

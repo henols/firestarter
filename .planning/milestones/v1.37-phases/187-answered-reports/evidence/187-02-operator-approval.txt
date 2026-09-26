@@ -1,0 +1,58 @@
+APPROVED-FOR-MERGE: meta
+================================================================================
+
+Operator : Henrik Olsson <henrik@predictly.se>
+Date     : 2026-09-12
+
+--- Decision prose ---
+
+NOTE: The paragraph below is the ORCHESTRATOR'S RENDERING of the operator's menu selection.
+The operator was presented with a three-option menu (merge / hold / stop) and picked one
+option ID. They did not dictate this prose, and no sentence below should be read as a
+verbatim quotation of the operator's own words. The operator selected:
+
+  merge — "Open the PR and merge it to `beta`."
+
+Before answering, the operator was shown the verbatim `PRE-MERGE MEASUREMENT` block recorded
+in `evidence/187-02-meta-merge.txt` (Task 1 of this plan), including both SHAs and the
+`git cherry` counts:
+
+  origin/beta SHA : 0629e4ad365a3ef8d3fde38a1e28272e3c49ef59
+  HEAD SHA        : 195bb84c90f617d61b130a5838cf93a71d1a9b67
+  git cherry origin/beta <branch>:
+    ^+ count (new commits, ahead of beta)        : 180
+    ^- count (already-equivalent commits on beta): 0
+
+The operator was also told, explicitly and in these terms, the four required statements from
+this task's `<context>`:
+
+  1. What becomes public: the whole `.planning/` tree at this branch tip, including Plan 01's
+     five record repairs and the four new `.planning/notes/` documents. This repository is
+     public.
+  2. What this merge does not do: the meta repository has no `.github/workflows/` directory at
+     all, so no release CI fires and nothing is published to PyPI or GitHub Releases by this
+     merge.
+  3. The reversibility rating, in D-01's own words: one-way. Content merged to a published
+     branch in a public repository is world-readable from that moment and cannot be recalled.
+  4. GitHub enforces no branch rules on `beta` in any of the three repositories — `Protect main`
+     is the only active ruleset — so the PR route is this project's chosen review surface
+     rather than an obstacle. No admin bypass is needed and none is used.
+
+--- Harness mode confirmation ---
+
+The orchestrator stated the measured harness mode to the operator BEFORE presenting the
+question, and the operator answered without contradicting that statement. The measured facts,
+disclosed verbatim to the operator:
+
+  - This run was invoked as `/gsd-execute-phase 187` with no flags.
+  - `workflow._auto_chain_active` was cleared before any config read.
+  - `check auto-mode` measured `false`.
+  - `workflow.auto_advance` reads `false` in `.planning/config.json`.
+
+This run is confirmed NOT under `--auto` or `--chain`. The operator's confirmation is that they
+saw this disclosure and did not contradict it — not an independent operator-authored statement.
+
+--- Scope ---
+
+This approval covers the META merge (this plan, 187-02) only. It approves nothing about the
+app merge (187-03), the firmware merge (187-04), or any reply posting (187-05 through 187-12).

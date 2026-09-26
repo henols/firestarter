@@ -25,7 +25,7 @@ requirements_verified:
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
 | 1 | `flash_type_3.cpp` exposes a sector-granular erase path branching on `handle->address` (REQ-FW-04) | VERIFIED | `flash3_sector_erase` defined at `firestarter/src/proms/flash_type_3.cpp:104`; `flash3_erase_execute` branch at `:94-101` reads `if (handle->address != 0) { ... flash3_sector_erase(handle, handle->address); }` — non-zero address targets a sector; zero address falls through to chip-erase. Entry-point `configure_flash3` wires `firestarter_operation_init = flash3_write_init` at `:35` and `firestarter_operation_main = flash3_erase_execute` at `:39` (per-mode wiring). |
-| 2 | `flash3_write_init` honours the standard blank-check gate before any write (REQ-SAF-03 flash3 portion) | VERIFIED | Gate at `firestarter/src/proms/flash_type_3.cpp:77-79`: `if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) { mem_util_blank_check(handle); }`. Identical pattern to the other two cross-handler write_init sites (`flash_intel.cpp:96-98`, `eeprom_28c.cpp:96-98`); 08-VERIFICATION.md owns the cross-handler scope for REQ-SAF-03 verification. |
+| 2 | `flash3_write_init` honours the standard blank-check gate before any write (REQ-SAF-03 flash3 portion) | VERIFIED | Gate at `firestarter/src/proms/flash_type_3.cpp:77-79`: `if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) { mem_util_blank_check(handle); }`. Identical pattern to the other two cross-handler write_init sites (`flash_intel.cpp:96-98`, `eeprom_28c.cpp:91-93`); 08-VERIFICATION.md owns the cross-handler scope for REQ-SAF-03 verification. |
 
 **Score:** 2/2 truths verified
 

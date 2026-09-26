@@ -1,0 +1,12 @@
+{
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "avrdude_version": "8.1",
+  "board_signature": "0x1e9516",
+  "connected_part": "atmega328pb",
+  "mcu_expected": "atmega328pb",
+  "mcu_matches": true,
+  "raw_stderr_path": "/workspaces/.planning/v1.34/bench/cells/A2/board_probe.json.stderr.log",
+  "signature_route": "route1",
+  "urclock_probes": {}
+}

@@ -95,12 +95,12 @@ the very end (694-758).
 
 **Verdict path:** `_dispatch_step` (`chip_test.py:1601-1605`) maps
 `check_eprom_blank() is False` → `VERDICT_BAD`. `_VERDICT_EXIT_CODES`
-(`cli_handlers.py:2011-2017`) maps `VERDICT_BAD → 1`, and
-`_EXIT_CODE_PRECEDENCE = (1, 2, 0)` (`cli_handlers.py:2029-2045`) makes BAD the
+(`cli_handlers.py:2008-2014`) maps `VERDICT_BAD → 1`, and
+`_EXIT_CODE_PRECEDENCE = (1, 2, 0)` (`cli_handlers.py:2026-2042`) makes BAD the
 **most severe** code — so this defect produces exit 1, the worst outcome the
 command can report. (Note the D-14 correction: exit precedence is an explicit
 most-severe-first walk, NOT the numeric `max`; `dev_test`'s own docstring at
-`cli_handlers.py:2404-2406` still says "computed as max over per-step exit
+`cli_handlers.py:2401-2403` still says "computed as max over per-step exit
 codes" and is stale. Out of scope here — record it, do not fix it.)
 
 **Constants already in the module:** `_PROTOCOL_FLASH4 = 0x05` (line 304) and
@@ -192,11 +192,11 @@ any OTP/PROM-like part would have been swallowed by the broader predicate.
 
 Separately confirm the verdict path by reading, not running: quote the two live
 lines proving `check_eprom_blank() is False` reaches exit 1 —
-`chip_test.py:1601-1605` (`VERDICT_BAD`) and `cli_handlers.py:2011-2017` +
+`chip_test.py:1601-1605` (`VERDICT_BAD`) and `cli_handlers.py:2008-2014` +
 `:2029` (`VERDICT_BAD -> 1`, and 1 is first in `_EXIT_CODE_PRECEDENCE`). Record
 that BAD is the MOST severe code, so this defect produces the worst exit the
 command can emit — and record that `dev_test`'s docstring at
-`cli_handlers.py:2404-2406` still describes the superseded `max` mechanism (a
+`cli_handlers.py:2401-2403` still describes the superseded `max` mechanism (a
 known-stale line, NOT this plan's scope to fix).
 
 Do not commit the script. Its output is the evidence Task 2 quotes verbatim in

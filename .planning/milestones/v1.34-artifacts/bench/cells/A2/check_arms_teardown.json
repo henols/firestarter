@@ -1,0 +1,58 @@
+{
+  "arm_names": [
+    "control",
+    "v133"
+  ],
+  "config_dir_sha": "77adfdd26ed8710c4a70882e6dc9ee7bb494286fe225000d581f9e730dd77ad0",
+  "help_diffs": [],
+  "per_arm": {
+    "control": {
+      "dep_freeze": [
+        "certifi==2026.7.22",
+        "charset-normalizer==3.5.1",
+        "click==8.5.0",
+        "idna==3.19",
+        "markdown-it-py==4.2.0",
+        "mdurl==0.1.2",
+        "packaging==26.3",
+        "pygments==2.21.0",
+        "pyserial==3.5",
+        "requests==2.34.2",
+        "rich==15.0.0",
+        "tqdm==4.70.0",
+        "urllib3==2.7.0"
+      ],
+      "file_probe": "/workspaces/.v1.34-arms/control/firestarter/__init__.py",
+      "head": "6bfa6453d1bac232eb81ab35fa7f14b50b0b291a",
+      "interpreter": "Python 3.12.14",
+      "porcelain_clean": true
+    },
+    "v133": {
+      "dep_freeze": [
+        "certifi==2026.7.22",
+        "charset-normalizer==3.5.1",
+        "click==8.5.0",
+        "idna==3.19",
+        "markdown-it-py==4.2.0",
+        "mdurl==0.1.2",
+        "packaging==26.3",
+        "pygments==2.21.0",
+        "pyserial==3.5",
+        "requests==2.34.2",
+        "rich==15.0.0",
+        "tqdm==4.70.0",
+        "urllib3==2.7.0"
+      ],
+      "file_probe": "/workspaces/.v1.34-arms/v133/firestarter/__init__.py",
+      "head": "cb189a9b001e9e34fb7651535de339761301d061",
+      "interpreter": "Python 3.12.14",
+      "porcelain_clean": true
+    }
+  },
+  "surface_counts": {
+    "control": 25,
+    "v133": 25
+  },
+  "surface_diff_ab": [],
+  "surface_diff_ba": []
+}

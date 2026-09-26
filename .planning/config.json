@@ -1,30 +1,74 @@
 {
   "mode": "YOLO",
-  "parallelization": "enabled",
+  "parallelization": false,
   "granularity": "Comprehensive",
   "workflow": {
     "_auto_chain_active": false,
     "research": true,
     "plan_check": true,
     "verifier": true,
-    "code_review": true
+    "code_review": true,
+    "nyquist_validation": true,
+    "pattern_mapper": true,
+    "ui_phase": false,
+    "ui_safety_gate": false,
+    "ai_integration_phase": false,
+    "tdd_mode": false,
+    "ui_review": false,
+    "auto_advance": false,
+    "research_before_questions": true,
+    "skip_discuss": false,
+    "use_worktrees": false,
+    "code_review_depth": "standard",
+    "auto_prune_state": false
   },
   "planning": {
     "sub_repos": [
-      "firestarter",
+      "firestarter.wiki",
       "firestarter_app",
-      "firestarter_app_py32",
-      "firestarter_py32_ci"
+      "firestarter_fw"
     ]
   },
   "model_profile": "balanced",
+  "model_profile_overrides": {
+    "codex": {
+      "opus": {
+        "model": "gpt-5.6-sol",
+        "reasoning_effort": "xhigh"
+      },
+      "sonnet": {
+        "model": "gpt-5.6-terra",
+        "reasoning_effort": "medium"
+      },
+      "haiku": {
+        "model": "gpt-5.6-luna",
+        "reasoning_effort": "medium"
+      }
+    }
+  },
   "models": {
     "research": "opus"
   },
   "git": {
-    "branching_strategy": "milestone"
+    "branching_strategy": "milestone",
+    "base_branch": "beta",
+    "protected_branches": [
+      "main"
+    ],
+    "create_tag": true
   },
   "graphify": {
-    "enabled": true
+    "enabled": true,
+    "auto_update": true
+  },
+  "intel": {
+    "enabled": false
+  },
+  "commit_docs": true,
+  "plan_review": {
+    "source_grounding": true
+  },
+  "hooks": {
+    "context_warnings": true
   }
 }

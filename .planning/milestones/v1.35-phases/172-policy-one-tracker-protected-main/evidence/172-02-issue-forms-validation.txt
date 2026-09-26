@@ -1,0 +1,19 @@
+Validator: structural fallback (option B, package-legitimacy gate declined; see 172-02-package-legitimacy.txt)
+
+-- bug-report.yml / feature-request.yml structural check --
+.github/ISSUE_TEMPLATE/bug-report.yml: top-level keys and body[].type values all in the documented sets
+.github/ISSUE_TEMPLATE/feature-request.yml: top-level keys and body[].type values all in the documented sets
+forms exit 0
+
+-- config.yml structural check --
+config.yml: top-level keys are exactly the documented set (blank_issues_enabled, contact_links)
+config exit 0
+
+-- dev-test-report.md marker check --
+no [dev test] machine marker present; title uses [chip report] instead
+
+-- .github/ISSUE_TEMPLATE/ directory listing --
+bug-report.yml
+config.yml
+dev-test-report.md
+feature-request.yml

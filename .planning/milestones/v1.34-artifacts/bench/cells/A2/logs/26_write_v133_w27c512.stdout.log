@@ -1,0 +1,5 @@
+Connecting...Connecting... OK      
+Writing /workspaces/.planning/v1.34/bench/cells/A2/reads/A2__v133__w27c512/written.bin to W27C512
+ERROR: Chip ID 0x303 does not match expected ID 0xda08
+Programmer error during WRITE: Programmer error during init: Chip ID 0x303 does not match expected ID 0xda08
+Write to W27C512 failed.

@@ -1,0 +1,106 @@
+191-03 Task 2 — live read-back of the merge, at ref=main, from the GitHub contents API
+Capture timestamp: 2026-09-13T21:40:58Z
+
+Precondition: operator reported "merged, app#/66, sha 1d526ea". This transcript verifies that
+report against the live API rather than trusting it.
+
+=== PR object read-back (never trust the operator's message alone) ===
+
+Command:
+  export XDG_CACHE_HOME=/tmp/ghcache
+  gh api repos/henols/firestarter_app/pulls/66
+
+Relevant fields from the raw JSON response:
+  "number": 66
+  "state": "closed"
+  "merged": true
+  "merged_at": "2026-09-13T21:39:13Z"
+  "merge_commit_sha": "1d526ea30f0a00c23ad8198b4679ee9459f31a88"
+  "merged_by.login": "henols"
+  "base.ref": "main"
+  "base.sha": "1625aef67cceeac11d9c48fefdcfe45d9e0c82e6"
+  "head.ref": "v1.38-url-02-main"
+  "head.sha": "186a1524f13a4df6e4d9ac5a4c1b3e7177a7ee79"
+  "changed_files": 3
+  "additions": 3
+  "deletions": 3
+
+Assertion: merged is true. merge_commit_sha (1d526ea30f0a00c23ad8198b4679ee9459f31a88) matches
+the operator's reported short sha "1d526ea" as a prefix — full sha read from the API, not
+narrated from the operator's message. head.sha 186a1524f13a4df6e4d9ac5a4c1b3e7177a7ee79 matches
+the branch commit prepared in 191-02. No discrepancy found.
+
+=== firestarter/constants.py @ ref=main ===
+
+Command:
+  gh api "repos/henols/firestarter_app/contents/firestarter/constants.py?ref=main" \
+    -H "Accept: application/vnd.github.raw"
+
+Raw output (relevant excerpt):
+  FIRESTARTER_RELEASE_URL = (
+      "https://api.github.com/repos/henols/firestarter_fw/releases/latest"
+  )
+
+Assertion 1 — repointed endpoint present exactly once:
+  Command: | /usr/bin/grep -c 'https://api.github.com/repos/henols/firestarter_fw/releases/latest'
+  Result: 1
+  PASS
+
+Assertion 2 — boundary-aware unqualified-slug sweep, zero matches:
+  Command: | /usr/bin/grep -cE 'henols/firestarter([^_a-zA-Z0-9]|$)' || true
+  Result: 0
+  PASS
+
+=== README.md @ ref=main ===
+
+Command:
+  gh api "repos/henols/firestarter_app/contents/README.md?ref=main" \
+    -H "Accept: application/vnd.github.raw"
+
+Assertion 1 — repointed firmware link present:
+  Command: | /usr/bin/grep -c 'https://github.com/henols/firestarter_fw'
+  Result: 1
+  PASS
+
+Assertion 2 — boundary-aware unqualified-slug sweep, zero matches:
+  Command: | /usr/bin/grep -cE 'henols/firestarter([^_a-zA-Z0-9]|$)' || true
+  Result: 0
+  PASS
+
+Assertion 3 — non-vacuity positive control (henols/firestarter_app still present):
+  Command: | /usr/bin/grep -c 'henols/firestarter_app'
+  Result: 4
+  PASS — proves the response carried real content; the zero counts above are a real absence,
+  not an empty API response.
+
+=== firestarter/__init__.py @ ref=main ===
+
+Command:
+  gh api "repos/henols/firestarter_app/contents/firestarter/__init__.py?ref=main" \
+    -H "Accept: application/vnd.github.raw"
+
+Raw output:
+  __version__ = "2.0.9"
+
+Assertion: reads 2.0.9, not 2.0.8. This is the value the pull request carried directly — it is
+NOT the bumped-on-top-of value a successful release.yml bot run would produce (that would read
+2.0.10, per D-06 Branch B). Task 3 determines and records which branch actually occurred; this
+task records only what ref=main reads at this capture time, which is 2.0.9.
+PASS (matches D-06's non-bot-touched expectation; Task 3 will state whether release.yml altered
+this file after this capture).
+
+=== Summary of assertions ===
+
+| # | File                      | Assertion                              | Result | Status |
+|---|---------------------------|-----------------------------------------|--------|--------|
+| 1 | constants.py              | repointed endpoint count == 1           | 1      | PASS   |
+| 2 | constants.py              | bare-slug sweep == 0                    | 0      | PASS   |
+| 3 | README.md                 | repointed firmware link count >= 1      | 1      | PASS   |
+| 4 | README.md                 | bare-slug sweep == 0                    | 0      | PASS   |
+| 5 | README.md                 | non-vacuity control (firestarter_app)   | 4      | PASS   |
+| 6 | __init__.py               | version == 2.0.9                        | 2.0.9  | PASS   |
+| 7 | PR #66 object              | merged == true                          | true   | PASS   |
+| 8 | PR #66 object              | merge_commit_sha recorded from API      | 1d526ea30f0a00c23ad8198b4679ee9459f31a88 | PASS |
+
+All readings taken live at ref=main via the GitHub contents API and the pulls API — none from
+this clone, none from the operator's report beyond using it as a lead to check.

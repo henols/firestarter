@@ -53,7 +53,7 @@ All artifacts: VERIFIED.
 |------|----|----|--------|---------|
 | `build_db.py:KNOWN_PROTOCOLS` (`:89`) | `memory.cpp:configure_memory` protocol-prefix dispatch | identity of the 13-element set | WIRED | Phase 12 `12-VERIFICATION.md` Truth #1 confirms `memory.cpp` lines 72-101 dispatch on the same 13 protocol values. `check_dispatch.py` PASS on 743 chips re-verifies the wire round-trip (cited from `02-VERIFICATION.md` SC4). |
 | `build_db.py:VPP_MV` (`:82`) | `database.py:_map_data` (`:387`) | upstream JSON `electrical.vpp_mv` field | WIRED | `build_db.py` writes `"vpp_mv": VPP_MV.get(voltages & 0xFF, 0)` at `:256`; `database.py` reads `vpp_mv = electrical.get("vpp_mv", 0)` at `:387`. End-to-end integer-mV propagation. |
-| `database.py:_map_data` (`:518`) | `json_parser.c:get_vpp_mv` (`firestarter/src/json_parser.c:308-310`) | wire JSON key `"vpp_mv"` | WIRED | Python emitter at `database.py:518` writes `"vpp_mv": vpp_mv`. Firmware parser PROGMEM literal at `json_parser.c:62`, dispatch table row at `:74`, getter at `:308-310` reads into `handle->vpp_mv`. Atomic three-site flip landed in v1.1 Plan 02-01 — see Cross-Milestone Closure. |
+| `database.py:_map_data` (`:518`) | `json_parser.c:get_vpp_mv` (`firestarter/src/json_parser.c:503-497`) | wire JSON key `"vpp_mv"` | WIRED | Python emitter at `database.py:518` writes `"vpp_mv": vpp_mv`. Firmware parser PROGMEM literal at `json_parser.c:62`, dispatch table row at `:74`, getter at `:308-310` reads into `handle->vpp_mv`. Atomic three-site flip landed in v1.1 Plan 02-01 — see Cross-Milestone Closure. |
 | `build_db.py:DIP28_VARIANT_MAP` (`:93`) | `database.py:get_bus_config` pin-resolution path | shared `pinout_key` field on each chip | WIRED | `build_db.py:120` resolves a DIP28 variant to a canonical key (e.g. `DIP28_2764`); `database.py:get_bus_config` (called from `_map_data`) looks the key up in `pinouts.json` and translates pin numbers via `pin_conversions` (`database.py:68+`). Single pinout-key contract. |
 | `build_db.py:204` (skip unknown protocols) | `database.py:_ALGO_MEM_TYPE` (`:47-61`) | identity of the protocol set | WIRED | `KNOWN_PROTOCOLS` at `build_db.py:89` and `_ALGO_MEM_TYPE` at `database.py:47-61` both enumerate the same 13 D3 algorithm integers. Mismatch would produce `mem_type=None` at host or unmappable chips in DB. Both confirmed identical via `12-VERIFICATION.md` Truth #2. |
 
@@ -67,7 +67,7 @@ All artifacts: VERIFIED.
 | 2 | `build_db.py` | per-chip JSON entry | XML parse + `KNOWN_PROTOCOLS` skip + `VPP_MV` lookup + `DIP28_VARIANT_MAP` resolve | Yes — emits to `chip_database.json` at `:277` | FLOWING |
 | 3 | `chip_database.json` | persistent DB | `build_db.py` writer | Yes — 335KB file at `firestarter_app/firestarter/data/chip_database.json` | FLOWING |
 | 4 | `database.py:_map_data` | wire payload dict | reads `chip_database.json`, applies `_ALGO_MEM_TYPE[protocol_id]`, copies `vpp_mv` through | Yes — confirmed via `check_dispatch.py` PASS in `02-VERIFICATION.md` SC4 | FLOWING |
-| 5 | wire JSON `"vpp_mv": NNNN` | firmware-facing payload | `database.py:518` emitter | Yes — `json_parser.c:308-310` `extract_int("vpp_mv", handle->vpp_mv)` populates `handle->vpp_mv` from this exact key | FLOWING |
+| 5 | wire JSON `"vpp_mv": NNNN` | firmware-facing payload | `database.py:518` emitter | Yes — `json_parser.c:503-497` `extract_int("vpp_mv", handle->vpp_mv)` populates `handle->vpp_mv` from this exact key | FLOWING |
 
 End-to-end: upstream XML voltage code → integer mV → wire `"vpp_mv"` → firmware `handle->vpp_mv`. No string parsing on the firmware side, no float arithmetic past the host boundary.
 
@@ -93,7 +93,7 @@ End-to-end: upstream XML voltage code → integer mV → wire `"vpp_mv"` → fir
 |-------------|-------------|-------------|--------|----------|
 | REQ-DB-01 | 01-01, 01-02, 01-03 | Algorithm-first `mem_type` derivation | SATISFIED | `_ALGO_MEM_TYPE` table at `database.py:47-61`; lookup at `_map_data:395` via `protocol_id = programming.get("algorithm", 0)` at `:390`. 13/13 KNOWN_PROTOCOLS covered. Phase 12 closed BLOCKER-1 reachability; reachability confirmed by `check_dispatch.py` PASS on 743 chips. |
 | REQ-DB-02 | 01-01..03 | DIP28 variant resolution via single map | SATISFIED | `DIP28_VARIANT_MAP` at `build_db.py:93`; resolved at `:120`. Every DIP28 chip in `chip_database.json` carries a canonical `pinout_key` consumable by `database.py:get_bus_config`. |
-| REQ-DB-03 | 01-01..03 | VPP at source in millivolts | SATISFIED | `VPP_MV` `build_db.py:82` → DB `vpp_mv` `:256` → `database.py` read `:387` → wire emit `:518` → firmware `json_parser.c:308-310` into `handle->vpp_mv`. WARNING-3 closed by v1.1 Plan 02-01 (WIRE-01); see Cross-Milestone Closure. |
+| REQ-DB-03 | 01-01..03 | VPP at source in millivolts | SATISFIED | `VPP_MV` `build_db.py:82` → DB `vpp_mv` `:256` → `database.py` read `:387` → wire emit `:518` → firmware `json_parser.c:503-497` into `handle->vpp_mv`. WARNING-3 closed by v1.1 Plan 02-01 (WIRE-01); see Cross-Milestone Closure. |
 | REQ-DB-04 | 01-01..03 | Unknown protocols skipped at build | SATISFIED | `KNOWN_PROTOCOLS` `build_db.py:89` + skip guard `:204`. Verified parity with firmware dispatch via `12-VERIFICATION.md` Truth #1; no orphan chips can reach `configure_memory` with an unrecognised protocol. |
 
 All four declared requirements SATISFIED against the current source tree.

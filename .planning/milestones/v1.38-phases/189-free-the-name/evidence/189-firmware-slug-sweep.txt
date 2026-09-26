@@ -1,0 +1,56 @@
+FIRMWARE REPOSITORY BARE-SLUG SWEEP (189-03, Task 2)
+=====================================================
+capture_date: 2026-09-13T14:13:25Z
+capture_commit: c67a330 (firestarter, v1.38-repository-rename)
+
+Discriminator (189-PATTERNS.md section 2 -- the bare-slug regex, not a plain
+substring match, so it excludes firestarter_app / firestarter_prom / firestarter_fw):
+
+  git grep -lE 'henols/firestarter([^_a-zA-Z0-9]|$)' -- .
+
+PRE-STATE (measured 2026-09-13, before this plan; not re-measured here) -- exactly
+two live tracked matches:
+
+  firestarter/README.md:47              [Releases](https://github.com/henols/firestarter/releases)
+  firestarter/tests/meta_presence.py:22  `actions/checkout` of `henols/firestarter` in isolation, that parent
+
+POST-STATE READING 1 -- bare-slug discriminator, tracked files only:
+
+  command: git -C /workspaces/firestarter grep -lE 'henols/firestarter([^_a-zA-Z0-9]|$)' -- .
+  matching files: 0
+  result: ZERO live tracked references to the bare slug remain.
+
+POST-STATE READING 2 -- non-vacuity control (henols/firestarter_prom, which
+legitimately remains untouched per D-1):
+
+  command: git -C /workspaces/firestarter grep -lE 'henols/firestarter_prom' -- .
+  matching files: 4
+    .github/CONTRIBUTING.md
+    PINOUTS.md
+    PROTOCOLS.md
+    README.md
+  result: NON-ZERO, as expected. The bare-slug sweep's zero above is therefore
+  not explained by an empty scan or a broken pattern -- the same tree, the same
+  git grep machinery, over the same commit, still finds firestarter_prom
+  references. The zero is a property of the bare slug specifically.
+
+POST-STATE READING 3 -- workflow-file check (D-10: no source-scanning guard was
+added inside the firmware repository; this reading only confirms no *existing*
+workflow file references any firmware slug, it does not itself constitute a
+committed guard):
+
+  command: git -C /workspaces/firestarter ls-files '*.yml' '*.yaml' | \
+           xargs -r git -C /workspaces/firestarter grep -lE 'henols/firestarter' --
+  matching files: 0
+  workflow files present: .github/actions/build-py32f071/action.yml,
+    .github/workflows/beta-build.yml, .github/workflows/build.yml,
+    .github/workflows/py32f071.yml (none reference any firmware slug)
+
+CONCLUSION
+
+The firmware repository holds zero live tracked references to the bare
+`henols/firestarter` slug as of commit c67a330. The two references present
+before this plan (README.md:47, tests/meta_presence.py:22) were repointed to
+firestarter_fw in Task 1's commit. No committed regression guard was added
+inside the firmware repository (D-10) -- this transcript is the verification-time
+proof, not a standing check.

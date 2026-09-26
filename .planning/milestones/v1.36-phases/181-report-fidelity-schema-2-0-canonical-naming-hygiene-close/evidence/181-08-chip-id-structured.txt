@@ -1,0 +1,138 @@
+Phase 181 Plan 08 -- Task 1 evidence: chip-id becomes a structured field (RPT-A5, RPT-A1)
+=============================================================================
+
+1. THE FOUR CASES (via `_dispatch_id`, real function, mocked operator only)
+-----------------------------------------------------------------------------
+
+PASS (operator.check_eprom_id.return_value = (True, 0x1F65), eprom_data
+chip-id = 0x1F65):
+  chip_id_detected=8037 (0x1F65)
+  chip_id_actual=8037 (0x1F65)          # read structurally off chip_id_detected by _chip_id_fields
+  chip_id_expected=8037 (0x1F65)
+  reason=''
+  reason_matches_base=true
+
+MISMATCH (operator.check_eprom_id.return_value = (True, 0x1234), eprom_data
+chip-id = 0x1F65):
+  chip_id_detected=4660 (0x1234)
+  chip_id_actual=4660 (0x1234)
+  chip_id_expected=8037 (0x1F65)
+  reason='chip-ID mismatch: expected 0x1F65, detected 0x1234'
+  reason_matches_base=true
+
+NOT-OK-WITH-NO-ID (operator.check_eprom_id.return_value = (False, None)):
+  chip_id_detected=None
+  chip_id_actual=None
+  chip_id_expected=8037 (0x1F65)
+  reason='chip-ID check did not return OK'
+  reason_matches_base=true
+
+NO-ID-STEP (a plan with no OP_ID step, or an id step adjudicated NA/SKIPPED):
+  chip_id_detected=None
+  chip_id_actual=None
+  -- `_chip_id_fields`'s loop finds no `r.op == OP_ID` element, both stay
+     at their initialized `None`. Structurally unreachable to populate.
+
+2. SCALARS
+-----------------------------------------------------------------------------
+scrape_expression_present=false
+provenance_key_added=false
+console_chip_id_row_changed=false
+steps_key_count_before=19
+steps_key_count_after=20
+dedup_fingerprint_before=6d3afbc52315   (m27c512-full-all-ok)
+dedup_fingerprint_after=6d3afbc52315    (m27c512-full-all-ok, unchanged)
+frozen_hash_md5_before=555a6d762d528102b74061b504183df6
+frozen_hash_md5_after=555a6d762d528102b74061b504183df6
+
+3. THE HONESTY CEILING (recorded in the record, not only in the docstring)
+-----------------------------------------------------------------------------
+On a PASSING id check, `check_eprom_id`'s OK reply carries no id back from
+the firmware (measured at `eprom_operations.py:2293-2328`): the value it
+returns is `cmd_data.get("chip-id")`, the host's OWN expected id, echoed out
+of the command dict it just sent. `StepResult.chip_id_detected` and, via it,
+`AutoCapture.chip_id_actual` therefore equal `chip_id_expected` exactly on
+every pass -- they record the id the check was VERIFIED AGAINST, never an
+independent read-back. Only on a MISMATCH (`check_eprom_id` returning
+`is_ok=True` with a detected id differing from the DB's expected value) or
+on the not-OK path does the value come from something the firmware actually
+said. This is why `chip_id_actual` populating on a pass (RPT-A1) is not new
+evidence of a real chip-id read -- it is the same echo the console row's
+2026-08-21 decision was already built to hide, now surfaced structurally
+instead of silently dropped.
+
+4. RENDER() GUARD -- A NECESSARY, MINIMAL DEVIATION FROM THE PLAN'S "DO NOT TOUCH"
+-----------------------------------------------------------------------------
+Before this plan, `_chip_id_fields` populated `chip_id_actual` ONLY on a
+mismatch (the hex-scrape loop's own `if` gate), so `render()`'s
+`if ac["chip_id_actual"] is None:` guard was sufficient by itself: `None`
+meant "no id was ever recovered" and doubled as "no mismatch to show".
+
+RPT-A1 breaks that coincidence on purpose -- `chip_id_actual` now populates
+on a PASS too, EQUAL to `chip_id_expected` by construction (see Section 3).
+Left unmodified, `render()`'s `is None` guard would have gone to the
+two-sided branch on EVERY id-run, including a clean pass, printing a
+"0x1F65 / 0x1F65" pair -- exactly the regression the plan's own
+`test_a_clean_run_saves_a_populated_chip_id_actual_equal_to_expected` end-to-
+end test (`<how-to-verify>` calls this "D-10's gate") exists to catch, and
+exactly what the must_haves/prohibitions in 181-08-PLAN.md forbid ("A
+matching pair is not added to the table").
+
+The guard was therefore extended by one clause:
+  if ac["chip_id_actual"] is None or ac["chip_id_actual"] == ac["chip_id_expected"]:
+The two branches' CONTENT (row labels, `_hex_cell` calls, the two-sided
+f-string) are byte-unchanged. Verified two ways:
+  - `test_a_clean_run_saves_a_populated_chip_id_actual_equal_to_expected`
+    (real Click invocation, `w27c020`, `check_eprom_id` returning the real
+    DB chip-id 55941/0xDA85 on a pass): asserts the rendered console output
+    contains no "chip_id (expected/actual)" substring.
+  - `test_chip_id_one_sided_row_when_actual_equals_expected` (unit-level,
+    `_minimal_report`): asserts the row is "chip_id" == "0x1F65" with no
+    two-sided row present.
+`console_chip_id_row_changed=false` above records the OUTPUT-behavior
+invariant this transcript proves held: every existing report shape renders
+byte-identically to before this plan (one-sided on agreement -- which used
+to be the only way to reach `chip_id_actual is None` -- two-sided only on a
+real mismatch), even though the guard's own source line grew one `or`
+clause to keep producing that same output under the new field semantics.
+
+The pre-existing 8-line `#` comment above the guard (recording the
+2026-08-21 decision) explained the OLD mechanism ("chip_id_actual is
+populated ONLY on a mismatch ... `_chip_id_fields` correctly discards it").
+That explanation is false under the new semantics. Per CLAUDE.md's hard
+no-comments rule and this phase's own established precedent (delete a
+falsified clause outright rather than reword it -- a pure deletion cannot
+exceed the comment-census baseline; a reword always can), the comment block
+was deleted in full rather than patched. The up-to-date rationale for the
+guard's shape lives here and in `StepResult`'s and `_chip_id_fields`'s
+docstrings, which is where CLAUDE.md and this project's own precedent both
+say it belongs.
+
+5. TWO EXISTING TESTS THIS CHANGE COLLIDED WITH, BOTH UPDATED
+-----------------------------------------------------------------------------
+`test_hex_cell_chip_id_both_populated_is_4_digit_upper_hex` hand-constructed
+`chip_id_expected == chip_id_actual == 0x1234` purely to exercise the
+two-sided row's hex formatting -- a scenario that, under RPT-A1, is now
+exactly the agreement case D-10 requires to render ONE-sided. Retargeted to
+a genuine mismatch pair (0x1234 / 0x5678), preserving the original intent
+(both cells format as 4-digit uppercase hex) without contradicting D-10.
+
+`test_chip_id_one_sided_row_when_no_mismatch_was_recorded`'s docstring
+asserted "`chip_id_actual` is populated ONLY on a mismatch" as the reason
+the row stays one-sided when `chip_id_actual is None`. That specific claim
+is now false (chip_id_actual also populates, non-None, on a pass); the
+docstring's core claim about the `None` case is unaffected by this
+plan and was left in place, with the outdated "populated ONLY on a mismatch"
+reasoning removed and a pointer added to the new
+`test_chip_id_one_sided_row_when_actual_equals_expected` test, which covers
+the case this test's docstring used to (incorrectly) claim was impossible.
+
+6. SNAPSHOT REGENERATION
+-----------------------------------------------------------------------------
+`tools/snapshot_report_shapes.py --check` exits 0. 18 of 19 fixture files
+changed (one additive `"chip_id_detected"` line per step element);
+`synthetic-arm4-empty-results` has zero steps and is unaffected. `git diff
+04fd982 -- tests/fixtures/report_shapes.py` is empty -- no frozen-hash
+literal line moved.
+
+END OF TRANSCRIPT

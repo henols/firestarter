@@ -1,0 +1,5 @@
+Connecting...Connecting... OK      
+Writing /workspaces/.planning/v1.34/bench/cells/A2/reads/A2__control__w27c512/written.bin to W27C512
+Timeout waiting for a response from /dev/ttyUSB0.
+Communication error during WRITE: Timeout waiting for a significant response from /dev/ttyUSB0.
+Write to W27C512 failed.

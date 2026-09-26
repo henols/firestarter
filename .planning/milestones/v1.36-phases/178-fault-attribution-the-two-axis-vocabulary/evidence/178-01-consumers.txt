@@ -1,0 +1,17 @@
+== 1 the named legs exist
+rc=0
+leg_test_overall_verdict_error_status_is_inconclusive_harness=1
+leg_test_overall_verdict_defaults_to_complete_for_a_status_less_result=1
+leg_test_build_title_for_a_transport_fault_is_not_fail=1
+leg_test_a_transport_fault_reason_survives_the_markdown_reason_cell=1
+leg_test_error_run_status_routes_the_ladder_to_inconclusive=1
+leg_test_transport_fault_exits_two_and_titles_inconclusive_harness=1
+== 2 the four inherited overall_verdict legs are untouched
+inherited_diff=0
+== 3 the three modules
+........................................................................ [ 30%]
+........................................................................ [ 60%]
+........................................................................ [ 90%]
+.......................                                                  [100%]
+239 passed in 46.92s
+rc=0

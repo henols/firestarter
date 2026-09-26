@@ -1,0 +1,11 @@
+== firestarter_prom pr=54 head=policy/contributor-policy base=main
+.github/CONTRIBUTING.md
+.github/ISSUE_TEMPLATE/bug-report.yml
+.github/ISSUE_TEMPLATE/config.yml
+.github/ISSUE_TEMPLATE/dev-test-report.md
+.github/ISSUE_TEMPLATE/feature-request.yml
+.github/workflows/wiki-check.yml
+== firestarter pr=58 head=policy/contributor-policy base=main
+.github/CONTRIBUTING.md
+== firestarter_app pr=57 head=policy/contributor-policy base=main
+.github/CONTRIBUTING.md

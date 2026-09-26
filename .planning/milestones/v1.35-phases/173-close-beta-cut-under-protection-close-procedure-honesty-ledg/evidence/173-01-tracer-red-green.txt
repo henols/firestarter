@@ -1,0 +1,29 @@
+== 1 checker against the table as it stood at HEAD, footer-free clone
+ERROR: PAGE MISSING: Protocol-Flags — the table names it but the wiki clone does not have it
+ERROR: PAGE MISSING: Protocol-ID — the table names it but the wiki clone does not have it
+ERROR: UNRECORDED PAGE: Breaking-Changes has no row in the migration table
+ERROR: UNRECORDED PAGE: Chip-Database-Fields has no row in the migration table
+ERROR: UNRECORDED PAGE: Pin-Maps has no row in the migration table
+rc=1
+== 2 checker against the corrected table, footer-free clone
+ERROR: FOOTER MISSING: Programming-Protocols
+ERROR: FOOTER MISSING: Shield-Revisions
+ERROR: FOOTER MISSING: Install-Beta
+ERROR: FOOTER MISSING: Testing-Chips
+ERROR: FOOTER MISSING: Lockable-PROMs
+ERROR: FOOTER MISSING: Shell-Completion
+rc=1
+== 3 emit
+OK: 6 footers written.
+rc=0
+== 4 emit again, then porcelain
+OK: 6 footers written.
+rc=0
+porcelain=0
+== 5 checker against the corrected table, footers present
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+rc=0
+== 6 the Install-Beta footer, verbatim
+*Relocated from `firestarter_app/doc/beta-testing-install.md` in `firestarter_app` at `d56424e1979edf7245cffb9ec3111c0469f5b23f`, then rewritten 2026-08-31 on the wiki; not re-verified against the code.*
+== 7 the Programming-Protocols footer, verbatim
+*Relocated from `firestarter/doc/PROTOCOLS.md` in `firestarter` at `a218b4f5273d14f0abd796b21ac104792de01603`. Moved intact and not edited since; not re-verified against the code.*

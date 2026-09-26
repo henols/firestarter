@@ -1,0 +1,4 @@
+v1.15 Phase 82 A->B write (.planning/v1.15/bench/EVIDENCE.md:98): PASS -- "Auto-erase proven (clean B over A, no explicit erase); consistency-check N=3 1-distinct-SHA == image B; neg-control verify(A) RC=1". Newest and only recorded disposition for this part; no v1.16 or v1.18 disposition exists.
+v1.15 Phase 81 read sweep (.planning/v1.15/bench/EVIDENCE.md:54): PASS, N=3, no anomaly.
+Comparable steps: read, write, verify -- full-device on both sides, obtained without a now-forbidden flag; the cleanest comparison in the DIP28 group. id, erase and blank-check were never measured separately by any prior sweep -- no comparable prior measurement, never a flip.
+Per the operator ruling recorded in CELL.md (162-05): this history is carried as context only. The operative baseline for this row's divergence_verdict is dev test's own v133 verdict (OK here on all six steps), not this disposition.

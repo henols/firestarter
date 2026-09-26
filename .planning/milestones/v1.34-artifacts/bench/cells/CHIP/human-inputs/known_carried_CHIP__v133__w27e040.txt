@@ -1,0 +1,7 @@
+no -- the recorded v1.15 Phase 82 disposition (a stuck bit failing to clear on erase, at offset
+0x7db, bit 4) did NOT reproduce: this run's erase step returned OK with no anomaly. The observed
+live failure (blank-check BAD, "Empty input", error_code 164) is a DIFFERENT symptom that matches
+no recorded disposition for this part -- it cannot be known_carried, because known_carried applies
+only when a previously recorded fault's own symptom reproduces, and this symptom was never
+predicted for this part. This is a fresh, unclassified live finding, recorded plainly rather than
+folded into the pre-existing stuck-bit narrative.

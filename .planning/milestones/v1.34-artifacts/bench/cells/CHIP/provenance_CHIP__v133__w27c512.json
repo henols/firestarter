@@ -1,0 +1,119 @@
+{
+  "_schema": {
+    "record_keys": [
+      "captured_at_step",
+      "cell_id",
+      "cell_slug",
+      "position_id",
+      "arm",
+      "target_env",
+      "port",
+      "chip",
+      "chip_package",
+      "chip_size_bytes",
+      "shield_rev_declared",
+      "board_signature",
+      "controller_string",
+      "fw_sha",
+      "fw_readback_sha_judged",
+      "fw_readback_sha_whole_flash",
+      "host_arm_sha",
+      "host_arm_porcelain_clean",
+      "host_arm_file",
+      "config_dir_sha",
+      "interpreter",
+      "dep_freeze_sha",
+      "avrdude_binary",
+      "avrdude_conf",
+      "eeprom_calibration",
+      "image_mask",
+      "image_stamp_width",
+      "image_sha",
+      "commands"
+    ],
+    "outcome_values": [
+      "validated",
+      "skipped-with-reason"
+    ]
+  },
+  "captured_at_step": 2,
+  "cell_id": "CHIP",
+  "cell_slug": "CHIP",
+  "position_id": "CHIP__v133__w27c512",
+  "arm": "v133",
+  "target_env": "leonardo",
+  "port": "/dev/ttyACM0",
+  "chip": "w27c512",
+  "chip_package": "DIP28",
+  "chip_size_bytes": 65536,
+  "shield_rev_declared": "Rev 2.0",
+  "board_signature": "0x1e9587",
+  "controller_string": "not measured \u2014 the `hw` CLI subcommand's handler (firestarter_app/firestarter/cli_handlers.py, _build_op_flags() called with zero kwargs) never forwards the CLI's -v/--verbose into the wire command's `flags` field, so FLAG_VERBOSE is never set on the command `hw` sends; firmware's MSG_INFO_FW echo line is therefore never emitted by `hw`, regardless of CLI verbosity or which arm's firmware is running. Measured live twice already (BRINGUP-uno, 160-08, pre- and post-flash) and re-confirmed here (BRINGUP-wrv, 160-11) -- a genuine host-app limitation, out of scope for this phase to fix (D-16 boundary: no product-code changes).",
+  "fw_sha": "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463",
+  "fw_readback_sha_judged": "not measured \u2014 pending flash and read-back for this cell; captured with --pending-readback before the test step per RIG-02's ordering requirement, to be completed by a --patch-readback invocation once judge_readback.py has run",
+  "fw_readback_sha_whole_flash": "not measured \u2014 pending flash and read-back for this cell; captured with --pending-readback before the test step per RIG-02's ordering requirement, to be completed by a --patch-readback invocation once judge_readback.py has run",
+  "host_arm_sha": "cb189a9b001e9e34fb7651535de339761301d061",
+  "host_arm_porcelain_clean": true,
+  "host_arm_file": "/workspaces/.v1.34-arms/v133/firestarter/__init__.py",
+  "config_dir_sha": "77adfdd26ed8710c4a70882e6dc9ee7bb494286fe225000d581f9e730dd77ad0",
+  "interpreter": "Python 3.12.14",
+  "dep_freeze_sha": "b9eeb295b3b75f285bce146ee290100b3a6719438885904face0a6a7ee8a98cf",
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "eeprom_calibration": {
+    "hw_revision_bucket": "not measured \u2014 `hw` command's revision line not found in this session's output",
+    "r16_ohms": "not measured \u2014 no read-back CLI path exists for R16; firestarter config is write-only in this app version",
+    "r14r15_ohms": "not measured \u2014 no read-back CLI path exists for R14/R15; firestarter config is write-only in this app version"
+  },
+  "image_mask": "not measured \u2014 no bench/IMAGE-PLAN.json row exists for position_id 'CHIP__v133__w27c512' (bring-up pre-proof cell, no chip write ever runs here, --no-image-plan was passed explicitly)",
+  "image_stamp_width": "not measured \u2014 no bench/IMAGE-PLAN.json row exists for position_id 'CHIP__v133__w27c512' (bring-up pre-proof cell, no chip write ever runs here, --no-image-plan was passed explicitly)",
+  "image_sha": "not measured \u2014 no bench/IMAGE-PLAN.json row exists for position_id 'CHIP__v133__w27c512' (bring-up pre-proof cell, no chip write ever runs here, --no-image-plan was passed explicitly)",
+  "commands": [
+    {
+      "argv": [
+        "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+        "-v",
+        "-p",
+        "/dev/ttyACM0",
+        "hw"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/usr/local/bin/git",
+        "-C",
+        "/workspaces/.v1.34-arms/v133",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/usr/local/bin/git",
+        "-C",
+        "/workspaces/.v1.34-arms/v133",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/workspaces/.v1.34-arms/v133/.venv/bin/python",
+        "-P",
+        "-c",
+        "import firestarter; print(firestarter.__file__)"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/workspaces/.v1.34-arms/v133/.venv/bin/python",
+        "--version"
+      ],
+      "cwd": "/workspaces"
+    }
+  ]
+}

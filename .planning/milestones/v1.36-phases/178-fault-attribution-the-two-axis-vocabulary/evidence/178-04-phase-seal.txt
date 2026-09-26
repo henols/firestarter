@@ -1,0 +1,39 @@
+== 1 scope
+firmware_diff=clean
+chip_database_diff=clean
+app_tree=clean
+== 2 tooling
+All checks passed!
+rc=0
+171 files already formatted
+rc=0
+checked 173 source files
+mypy errors: 35 (watermark: 35)
+OK: error count at watermark.
+rc=0
+== 3 the gates
+OK: 18 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+PASS: scanned ../firestarter/chip_test.py, ../firestarter/cli_handlers.py, ../firestarter/submit.py; 0 VPP-set, 0 raw-wire-dict, 0 --force, 0 broad-except; firmware untouched (host-only, asserted)
+rc=0
+PASS: scanned /workspaces/firestarter_app/tools/../firestarter/diagnostic_report.py, 216 string literals checked, zero forbidden matches
+rc=0
+OK: 8 ledger row(s), 8 MILESTONES.md row(s) bound
+rc=0
+== 4 the whole suite
+rc=0
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+32 snapshots passed.
+2241 passed, 1 warning in 324.48s (0:05:24)
+full_suite_passed=2241
+== 5 declarations
+coverage_present=yes
+reqs_complete=6
+rig01_still_deferred=1
+milestones_attr04_record=2
+milestones_t3_void=1
+milestones_t4_oos=1
+milestones_fp_transport=1
+== 6 comment census across the phase
+phase_added_comments=0

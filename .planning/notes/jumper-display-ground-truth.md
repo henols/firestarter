@@ -16,7 +16,7 @@ be checked against, and the defects found.
 | Revision family | Source | Status |
 |---|---|---|
 | Rev 0 / Rev 1 (identical, per operator) | `firestarter/document/rurp_schematics_rev1.pdf` (KiCad, Anders Nielsen) | Read 2026-07-10 |
-| Rev 2.0 / 2.1 / 2.2 / 2.3 | KiCad schematics in `.planning/v1.7/upstream-rurp/hardware/` | Verified during v1.7 + this session's research pass |
+| Rev 2.0 / 2.1 / 2.2 / 2.3 | KiCad schematics in `.planning/milestones/v1.7-artifacts/upstream-rurp/hardware/` | Verified during v1.7 + this session's research pass |
 | Firmware corroboration | `firestarter/include/rurp_shield.h:36` ("VPP pin is socket pin 1"), `firestarter/doc/PROTOCOLS.md:136` | — |
 
 Note: an earlier research pass claimed Rev 0/1 routing was undocumented
@@ -30,12 +30,109 @@ itself.
 | JP1 | 0/1 | Socket A13-position pin: **A13 vs VCC** | "24pin ROM VCC" — VCC position for 24-pin chips |
 | JP2 | 0/1 | Socket A17-position pin: **A17 vs +5V** | ">=SST39SF020 & 28C512 need A17" |
 | JP3 | 0/1 | `P1_VPP_ENABLE` net → **pin-1 position of a 32-pin vs 28-pin seated chip** | "W27C010/AT27C010 needs p1 VPE/VPP (32 pin)" |
-| JP4 | 2.0/2.1/2.2 | `P1_VPP_JMP` — common pin on `P1_VPP_ENABLE` net; **VPP to socket pin 1 only** | Footprint changes to 3-pole 2x2 selector at Rev 2.3 (v1.7-SHIELD-REVS.md §5 row 6) |
-| JP5 | 2.x | **`A19_CUT` — a bridged solder jumper, not a user-config header** | The host's JP5 renderer concept is wrong |
+| JP4 | 2.0/2.1/2.2/2.3 | `P1_VPP_JMP` — **corrected 2026-09-10 (Phase 182):** socket pin 1 is JP4's **COMMON pole** (pin C), not a destination — JP4 carries no VPP of its own. Its two selectable poles **export** whatever socket pin 1 carries: to socket pin 3 (pole A, a 28-pin part's pin 1) or socket pin 25 (pole B, a 24-pin part's pin 21, reachable only on Rev 2.2+). Superseded the prior single-destination claim; see "VPP destination per revision and JP4 state" below. | Footprint changes 1×2 → 3-pole selector at **Rev 2.1 → Rev 2.2**. The KiCad footprint is named `PinHeader_2x02_P2.54mm_Vertical`, but **only 3 of its 4 positions are ever drilled** — 3 pads on a 2×2 grid with one position unpopulated, which is what the board physically shows and why "2×2" alone is a misleading way to describe it (see "JP4's physical pad geometry" below) — **corrected 2026-09-10 (Phase 182)**, previously misattributed to Rev 2.2 → Rev 2.3. Settled by Rev 2.2's own `Rev2.2/W27C512Programmer-top-pos.csv` (`PinHeader_2x02_P2.54mm_Vertical`) against Rev 2.1's `Rev2.1/W27C512Programmer-top-pos.csv` (`PinHeader_1x02_P2.54mm_Vertical`), and each revision's own gerber drill file (three component drills for Rev 2.2, two for Rev 2.1). |
+| JP5 | 2.x | **`A19_CUT` — a bridged solder jumper, not a user-config header.** Measured topology (Phase 182): pole A (pin 1) is `Q8` (MMBT3906) collector, whose emitter is the `VPE` rail, gated by `P1_VPP_ENABLE` through `R25`/`Q5`; pole B (pin 2) is socket pin 1. KiCad footprint `SolderJumper-2_P1.3mm_Bridged_RoundedPad1.0x1.5mm` — **bridged by default**. | The host's JP5 renderer concept is wrong |
 
 Key principle that falls out: **JP3/JP4 correctness is a function of WHERE the
 pin map puts VPP (pin-1 or not), never of pin count.** JP1/JP2 are
 socket-width adapters and genuinely are pin-count functions.
+
+### JP4's physical pad geometry, and which side each jumper is on
+
+**Added 2026-09-10 (Phase 182), prompted by the operator's own sight of the board.** Two facts that
+the pick-and-place CSV alone does not convey, and whose absence made the record read wrongly.
+
+**1. JP4 is 3 pads on a 2×2 grid, one position unpopulated — not a 4-pin 2×2 header.** The KiCad
+footprint is named `PinHeader_2x02_P2.54mm_Vertical`, which is what the pos-CSV reports and what
+entered this project's records as "2×2". Only three of its four grid positions are ever drilled.
+Rev 2.2's own gerber drill file (`Rev2.2-gerbers.zip → W27C512Programmer-PTH.drl`, tool `T2`,
+⌀1.0 mm plated component drill) places them at:
+
+| Board coordinate (mm) | Grid position |
+|---|---|
+| `X91.44 Y-81.788` | drilled |
+| `X91.44 Y-84.328` | drilled |
+| `X93.98 Y-81.788` | drilled |
+| `X93.98 Y-84.328` | **not drilled** |
+
+Three corners of a 2.54 mm square with the fourth (+X, −Y in board coordinates) absent. Rev 2.1's
+own drill file has only two, at a single X: `X90.932 Y-81.534` and `X90.932 Y-84.074` — a plain
+1×2. Total ⌀1.0 mm component drills across the whole board go **109 → 110** between the two
+revisions: exactly one hole added, every other hole identical. That single added hole is the third
+pole.
+
+**Still open:** which corner is the missing one *as the operator sees the `JP4` silkscreen legend*.
+The drill file gives it in board coordinates only; converting that to "the pad up and to the right
+of the legend" needs a sighting, and that sighting is one of the probes in the VPP-destination
+table above.
+
+**2. JP4 is on the top side; JP5 through JP9 are all on the bottom.** Read from the Rev 2.2 and
+Rev 2.1 gerber bundles:
+
+| | Side | Layer evidence (Rev 2.2 gerbers) | Type |
+|---|---|---|---|
+| JP4 `P1_VPP_JMP` | **Top** | designator on `F_Silkscreen`; pads on `F_Mask` **and** `B_Mask` (through-hole); `top` in the pos-CSV | pin header — the VPP selector |
+| JP5 `A19_CUT` | **Bottom** | `B_Silkscreen` + `B_Mask` only; absent from every front layer | bridged solder jumper |
+| JP6, JP8, JP9 "Bodge point" | **Bottom** | `B_Silkscreen` + `B_Mask` only | bridged solder jumpers |
+| JP7 "Tin foil socket" | **Bottom** | `B_Silkscreen` + `B_Mask` only | **open** solder jumper |
+
+All six exist on Rev 2.1, Rev 2.2 **and** Rev 2.3 — none of JP5–JP9 is a later addition, and the
+front silkscreen carries only `JP4`, which is why a front-layer search finds no JP5. This is also
+why the Rev 2.2 evidence photograph can show JP4, JP5, JP6 and JP9 together: it is the **back** of
+the board, where JP4's through-hole pads land alongside the five solder jumpers.
+
+Types and values are from the Rev 2.3 schematic
+(`.planning/milestones/v1.7-artifacts/upstream-rurp/hardware/RelativelyUniversalROMProgrammer.kicad_sch`, `(rev "2.3")`
+— the only committed schematic that carries these designators); their presence on Rev 2.1 and
+Rev 2.2 is from those revisions' own gerber bundles, per the read-Rev-2.2's-own-artefacts rule in
+`.planning/milestones/v1.7-SHIELD-REVS.md`.
+
+## VPP destination per revision and JP4 state (Phase 182 trace)
+
+Settled 2026-09-10 (SAFE-03, D-11) from `RelativelyUniversalROMProgrammer.kicad_sch` (JP4/JP5
+symbol block, lines 22553-22623, plus wire+junction net trace), cross-checked against the
+committed `.kicad_pcb` pad→net table and against the Rev 2.1 and Rev 2.2 gerber drill files. Read
+as: *for a part seated in the named socket position, on this revision, with JP4 in this state —
+which socket pin can the shield energize to the `VPE` rail?*
+
+| Revision family | JP4 physical state | Socket pin reachable by VPE via Q8 (`P1_VPP_ENABLE`) | Also reachable via other switches | Settled? |
+|---|---|---|---|---|
+| **Rev 0 / Rev 1** | JP4 and JP5 do not exist on these boards | Rev 0's equivalent strap is **JP3** (`W27C010/AT27C010 needs p1 VPE/VPP (32 pin)`), selecting the pin-1 position of a 32- vs 28-pin seated chip | socket 24 (`/OE`) via Q6; socket 26 (A9) via Q7 | **PROBE-PENDING** — Rev 0's own schematic blob is `cfe6139f`, not `d2a7f691` (the origin/rev2.0 blob that carries JP4/JP5 a Rev 0 board never had); not read this session. `v1.7-SHIELD-REVS.md` already records the whole Rev 0 jumper set as untraced. Probe: unpowered, no chip seated — continuity from the operator's modified Rev 0 JP3 pads to socket pins 1 and 3. **Still open after Plan 06 (2026-09-10):** the modified Rev 0 board was not brought to the bench this session (only the Rev 2.2 board was); the probe above remains the closing action. |
+| **Rev 2.0 / Rev 2.1** (JP4 = 1×02, 2 pads) | Open | socket **1** only | socket 24, socket 26 | SETTLED — the 2-pad footprint means one pole at most, and open means none |
+| | Closed | socket **1** *and* whichever socket pin the single fitted pole reaches | socket 24, socket 26 | **PROBE-PENDING** — no Rev 2.0/2.1 schematic or PCB is committed (Phase 31 Finding E). The silkscreen ("Closed for 28 pin ROMs") and Rev 0's JP3 semantics both point to socket 3; a third pole to socket 25 is newly added at Rev 2.2 per D-10, not present on these revisions — but that destination is *inferred*, not measured. Probe: unpowered Rev 2.0 board, no chip seated — continuity from each of JP4's two pads to socket pins 1, 3 and 25. **Still open after Plan 06 (2026-09-10):** the Rev 2.0 board was not brought to the bench this session (only the Rev 2.2 board was); the probe above remains the closing action, and the inferred socket-pin-3 destination stays an inference on this board family. |
+| **Rev 2.2 / Rev 2.3** (JP4 = 3 pads in an L) | No jumper (32-pin mode) | socket **1** only | socket 24, socket 26 | SETTLED (schematic + PCB + Rev 2.2 drill file agree) |
+| | Jumper across the corner pad and the pad +2.54 mm in +X (28-pin mode) | socket **1** and socket **3** | socket 24, socket 26 | **SETTLED — measured 2026-09-10 (Plan 06).** Operator continuity probe on the Rev 2.2 board: the pole toward the ZIF socket (board +X) reaches socket pin 3. In operator-visible terms, this is **the socket-facing pole** — the pad nearer the ZIF socket as the operator sights the board. See `evidence/182-06-bench-readings.md` Task 2a. |
+| | Jumper across the corner pad and the pad +2.54 mm in −Y (24-pin mode) | socket **1** and socket **25** | socket 24, socket 26 | **SETTLED — measured 2026-09-10 (Plan 06).** Same probe: the pole toward the board periphery (away from the ZIF socket) reaches socket pin 25. In operator-visible terms, this is **the periphery-facing pole**. See `evidence/182-06-bench-readings.md` Task 2a. |
+
+**Reading the table for the two questions that motivated it:**
+
+- **The 8 Mbit part (27C080/M27C801 class).** It wants VPP on **socket pin 24**, not pin 1 (shared
+  with `/OE`, the same trick `DIP28_27512` already uses). The shield reaches socket pin 24 through
+  Q6 / `VPE_ENABLE` on every Rev 2.x board, independent of JP4 and JP5 — so these parts are **not**
+  read-only on this hardware, they are programmable. What the shield cannot do is drive socket pin
+  1 as a clean logic A19 while JP5 is bridged, because the only pin-1 driver is `P1_VPP_ENABLE`
+  through JP5, and asserting `P1_VPP_ENABLE` also turns on Q8. See "Which operations energize
+  socket pin 1" below.
+- **Confirmed defect 4 (24-pin VPP maps get no JP3/JP4 guidance)** is resolved by this table as a
+  by-product — see the "Confirmed defects" entry below.
+
+### The socket-position offsets the table depends on
+
+The socket is a 32-pin position, bottom-aligned (GND end fixed), with three `Pin1→` markers on
+the silkscreen (`evidence/shield-rev2.2-jp4-jp5-jp6-jp9.jpg`). Standard bottom-aligned mapping:
+
+| Seated part | Part pin 1 at socket pin | Part GND at socket pin | Part VCC at socket pin |
+|---|---|---|---|
+| 32-pin | 1 | 16 | 32 |
+| 28-pin | 3 | 16 | 30 |
+| 24-pin | 5 | 16 | 28 |
+
+Consequently a 24-pin part's **pin 21** sits at **socket pin 25**, and a 28-pin part's **pin 1**
+sits at **socket pin 3** — precisely what JP4's two poles reach. This mapping is *inferred* (from
+the standard DIP-in-wider-socket convention plus the GND/VCC anchors), but it is independently
+corroborated: the host's own `database.py` `pin_conversions` table already shares the same RURP
+bus line between `[24][21]` and `[32][25]` (bus line 11), and between `[28][1]` and `[32][3]` (bus
+line 15) — the host's own board-wiring table already encodes these offsets.
 
 ## Confirmed defects in the current derivation (ic_layout.py ~L621-659)
 
@@ -52,9 +149,16 @@ socket-width adapters and genuinely are pin-count functions.
    present `A19_CUT` (solder jumper) as a Rev 2.2 config header. Must be
    deleted, not re-enabled. → todo `delete-jp5-dead-renderer`.
 4. **24-pin VPP maps (2716/2732/2532, 32 chips) get no JP3/JP4 guidance.**
-   Plausibly correct (protocol 0x0B applies VPE directly to the PGM pin, no
-   pin-1 routing) but unconfirmed against the rev1 schematic. → research
-   question.
+   **RESOLVED 2026-09-10 (Phase 182, D-15.1).** `DIP24_2716` and `DIP24_2532`
+   declare `vpp-pin: [21]` (`firestarter_app/firestarter/data/pinouts.json`,
+   confirmed unchanged by this trace). A 24-pin part bottom-aligned in the
+   32-pin socket puts its pin 21 at socket pin 25 — see "The socket-position
+   offsets the table depends on" above — and socket pin 25 is exactly JP4's
+   third pole. So on Rev 0/2.0/2.1 those maps' declared VPP pin is
+   **unreachable**, and on Rev 2.2+ it is reachable only with JP4 in the
+   24-pin position. `DIP24_2732` (`vpp-pin: [20]`) is a different, already-
+   flagged case and is not resolved by this entry. This is a finding, not a
+   host behavior change — see the backlog item filed per D-15.1.
 5. **All revision blocks always shown.** `info` prints Rev 0.1/1.0 and Rev
    2.0/2.1 blocks unconditionally even though firmware can report its hardware
    revision since v1.7. Secondary UX issue, noted for the redesign.
@@ -62,6 +166,105 @@ socket-width adapters and genuinely are pin-count functions.
 Also: `firestarter/doc/PROTOCOLS.md:136` loosely says 0x07-family VPP is
 applied "via JP4 jumper routing" — contradicts the pin-1-only routing for
 pin-22-VPP chips. Doc wording needs fixing alongside the code.
+
+## Which operations energize socket pin 1 — the answer to gh#60
+
+Settled 2026-09-10 (SAFE-03, success criterion 5) from `firestarter/` at HEAD
+(`gsd/v1.36-dev-test-fidelity`; `git diff HEAD origin/beta` is one line in `include/version.h`, so
+this reading is beta's).
+
+> **Writing and erasing. Not reading, not verifying, not blank-checking, not `id`.**
+
+Socket pin 1 is energized to the `VPE` rail only through `Q8`, and `Q8` is gated by
+`P1_VPP_ENABLE` — physical control bit `0x08`. `firestarter/include/rurp_pinout.h:149` aliases
+`CTRL_ADDRESS_LINE_18_REV2` to `CTRL_VPP_P1_ENABLE_REV2` (`0x08`), and
+`firestarter/include/rurp_hw_rev_utils.h:18-26` maps both logical
+`CTRL_ADDRESS_LINE_18` and `CTRL_VPP_P1_ENABLE` onto that same physical bit on every Rev 2.x
+revision (`REVISION_2_0` through `REVISION_2_3`). On `REVISION_0`/`REVISION_1` the mapping is
+verbatim, so logical A18 stays on a different physical line — the collapse is Rev-2-only.
+
+**This is the crux that makes the pin-map fix insufficient on its own.** On any Rev 2.x board
+there is exactly one physical line to socket pin 1, serving double duty as the top address bit
+and as the VPP-enable. `firestarter/src/proms/memory.cpp:152-160`'s own comment says every address
+write rewrites `CONTROL_REGISTER` unconditionally, on every byte, for both the pulse and the
+verify. So after the pin-map fix, VPP correctly moves to socket pin 24 for an 8 Mbit part — but
+A19 (bus line 21, which is socket pin 1) is driven from the address on every byte during a write,
+and `firestarter/src/proms/eprom.cpp:266-269` + `:481-489` hold that route asserted for the whole
+block ("a successful block must leave the route asserted"). The operation is safe only if JP5 is
+cut — which is exactly, and unconditionally, what the silkscreen already says.
+
+**The three assert sites** (`firestarter/src/proms/eprom.cpp:453/462` — write pulse;
+`eprom.cpp:547` — erase, reached by `CMD_ERASE` and by `CMD_WRITE`'s init when
+`FLAG_CAN_ERASE && !FLAG_SKIP_ERASE`; `flash_intel.cpp:73,81,87,112,124` — Intel-flash protocol
+`0x10`, where socket pin 1 genuinely *is* VPP) are the operations that reach physical bit `0x08`.
+`eprom.cpp:216/220`'s overprogram pulse also asserts it but is inert on every shipped protocol
+(`overprogram_factor == 0` everywhere).
+
+**Sites that do NOT reach socket pin 1:** `eprom_check_vpp` (`eprom.cpp:512-539`) boosts the rail
+and checks it at address 0 with `CTRL_VPE_ENABLE` never asserted, so `Q8` stays off.
+`eprom_get_chip_id` (`eprom.cpp:499-510`) asserts `CTRL_VPP_A9_ENABLE` — **`id` puts 12 V on
+socket pin 26 (A9) through Q7, never on socket pin 1.** `mem_util_blank_check`
+(`memory.cpp:452+`) is pure reads. `memory.cpp:417-419`'s guard deliberately does not drive the
+VPP line high for a VPP-on-P1 part unless `using_p1_as_vpp` — without it, every read would assert
+P1. `read` still boosts the regulator at init (`eprom_generic_init` runs unconditionally before
+the per-command switch) but at address 0, so `Q8` is off during that window.
+
+**Assumption A1 — A1 CONFIRMED (measured 2026-09-10, Plan 06).** The claim that the `VPE` rail
+sits at roughly VCC when `CTRL_VPP_REGULATOR_ENABLE` is clear was **inferred** from the boost
+topology (`U1` is a MIC2288 boost converter; a disabled boost passes VIN through its inductor and
+the `D1` Schottky to `VPE`) — it was not measured, and no committed artefact stated it. It is what
+makes "reading is safe" true rather than merely "reading asserts a bit whose voltage we did not
+check." **Probe:** with the regulator disabled, measure `VPE` at `J6` pin 4 and socket pin 1 while
+reading a `DIP32_SST39SF040`-class part above address `0x40000` — that part already has A18 on
+socket pin 1 today, so the measurement needs no code change. **Consequence if boosted:** `read`,
+`verify` and `blank` join the damage-capable set and the gate's scope (D-06) widens. Named for
+Plan 06.
+
+**Result (Plan 06, 2026-09-10).** Operator DMM reading: `J6` pin 4 (`VPE`), referenced to `J5`
+pin 1 (`GND`), board powered and idle, no operation running — **4.9 V DC**, on the operator's
+Rev 2.2 board. Decision threshold: at or below ~6 V confirms (logic-level rail); at or above
+~11 V falsifies (programming rail). 4.9 V sits decisively in the confirming band. **A1 CONFIRMED
+— the gate's scope of `write` and `erase` now rests on a measurement rather than an inference.**
+`DAMAGE_CAPABLE_OPERATIONS` stays `{write, erase}`; Task 3's conditional widening to
+`read`/`verify`/`blank` does not fire; no code changed in `firestarter_app` or `firestarter`. Full
+reading detail (probe point, `J6`'s other three pins, and the Schottky-drop reasoning for why
+4.9 V is the expected confirming value) is in
+`evidence/182-06-bench-readings.md` Task 1.
+
+**JP5 premise, also measured this session.** The gate's warranted-on-this-board premise was
+checked alongside A1: JP5 pad A ↔ pad B reads continuous (factory-bridged, not cut) and `J6`
+pin 3 → socket pin 1 also reads continuous, confirming the `Q8` collector → JP5 → socket pin 1
+strap end-to-end. JP5 is intact on the operator's Rev 2.2 board, so the hazard the gate exists
+for is real on this specific board — measured, not assumed. See
+`evidence/182-06-bench-readings.md` Task 2b.
+
+**Board restoration, as left at session end.** The operator was asked to return JP4 to its
+starting position when the bench session ended. That request was **not confirmed** before the
+session closed. Last known state: JP4 jumper off, board still connected, socket empty. Recorded
+here as requested-but-unconfirmed, not as restored.
+
+### The structural remainder this gate does not cover
+
+255 shipped `chip_database.json` rows on `DIP32_SST39SF040` (algorithms 5, 6, 14 and 41) already
+place A18 on socket pin 1, and this phase deliberately does **not** gate them: the trace above
+established damage capability for the held-boosted-rail EPROM write path specifically, and D-06
+forbids gating on inference. Recorded here so it is not later read as an omission; Plan 07 files
+the backlog item.
+
+## Evidence photographs (Phase 182)
+
+Three shield photographs, operator-photographed 2026-09-10, back this trace and the D-09 phase
+that follows it:
+
+- `.planning/phases/182-jp5-destructive-operation-gate/evidence/shield-rev2-jp4-jp5.jpg` — Rev 2 board. Silkscreen, verbatim: *"JP5: Cut for ROMs with A19 on P1"* (the JP5 instruction is unconditional — it does not say "cut if VPP is asserted"); JP4's silkscreen on this board carries the same *"Only for ROMs with VPP on P1"* parenthetical discussed below, without the wrong clause described in the Rev 2.2 bullet.
+- `.planning/phases/182-jp5-destructive-operation-gate/evidence/shield-rev2.2-jp4-jp5-jp6-jp9.jpg` — Rev 2.2 board, carrying the same silkscreen text as Rev 2. **Do not reproduce the "Open for 32 pin ROMs, Closed for 28 pin ROMs" clause in any operator-facing text — it is wrong on this board:** Rev 2.2's JP4 is a 3-pole selector (D-10), and two-state open/closed language cannot describe it; a text this project must never write. The parenthetical beside it, *"Only for ROMs with VPP on P1,"* remains the right standard to write operator-facing text to.
+- `.planning/phases/182-jp5-destructive-operation-gate/evidence/shield-rev0-modified-jp1-jp2-jp3.jpg`
+  — Modified Rev 0 board, closing a standing evidence gap (this board had never been physically
+  photographed before this phase).
+
+These photographs are downscaled (~250 KB each) from ~15 MB originals that live outside
+`.planning/` at `/workspaces/tmp/` and are **not preserved by any commit** — the D-09 wiki phase
+should re-export them at publication resolution before that directory is cleared.
 
 ## Chip-population impact (746 chips, 15 pin maps)
 

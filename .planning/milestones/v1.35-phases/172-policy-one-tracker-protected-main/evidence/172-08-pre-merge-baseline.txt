@@ -1,0 +1,54 @@
+=== 172-08: PRE-MERGE baseline — every surface this plan asserts is ABSENT from main ===
+
+Not called for by 172-08-PLAN.md. Added because the plan's two automated legs assert only
+PRESENCE at ?ref=main; nothing in them distinguishes "the merge put it there" from "it was
+already there and the merge proved nothing". These reads were taken BEFORE any merge and
+make the post-merge legs non-vacuous. All values are raw `gh` output.
+
+Taken 2026-09-02, before pull requests 54 / 58 / 57 were merged (all three still OPEN,
+mergeStateStatus=CLEAN, mergeable=MERGEABLE at the time of reading).
+
+== POLICY-02 surface: prom's issue templates ==
+GET /repos/henols/firestarter_prom/contents/.github/ISSUE_TEMPLATE?ref=main
+  -> 404 Not Found
+  The directory GitHub reads the New Issue chooser from does not exist on the default branch.
+
+== POLICY-01 surface: .github/CONTRIBUTING.md on each default branch ==
+GET /repos/henols/firestarter_prom/contents/.github/CONTRIBUTING.md?ref=main -> 404 Not Found
+GET /repos/henols/firestarter/contents/.github/CONTRIBUTING.md?ref=main      -> 404 Not Found
+GET /repos/henols/firestarter_app/contents/.github/CONTRIBUTING.md?ref=main  -> 404 Not Found
+
+== LEGACY-01 surface: the wiki-check workflow ==
+GET /repos/henols/firestarter_prom/contents/.github/workflows/wiki-check.yml?ref=main
+  -> 404 Not Found
+gh workflow list --repo henols/firestarter_prom --json name
+  -> "Catalog sync check"
+  Exactly one registered workflow, and it is not the wiki check. This is the measured form of
+  the standing finding that wiki-check.yml is NOT registered with Actions: the file is absent
+  from the default branch, so its `schedule` and `workflow_dispatch` triggers do not exist as
+  far as Actions is concerned. There is no CI on the wiki at all right now.
+
+== Pitfall 5 baseline: the firmware release that must not be superseded ==
+GET /repos/henols/firestarter/releases/latest
+  -> tag_name=2.0.6  published_at=2025-11-16T13:50:02Z
+  Task 2 asserts the latest release's published_at is STRICTLY EARLIER than the firmware pull
+  request's mergedAt. Recording the pre-merge value means a post-merge re-read that still says
+  2.0.6 / 2025-11-16 proves no release was cut, rather than merely proving some release is old.
+
+== T-172-32 baseline: the override this plan forbids is not available anyway ==
+current_user_can_bypass, read per repository from its single ruleset:
+  firestarter_prom = never
+  firestarter      = never
+  firestarter_app  = never
+The plan's prohibition on admin override is therefore belt-and-braces rather than load-bearing:
+the authenticated user cannot bypass these rulesets even deliberately. A merge that succeeds
+succeeded through the pull-request route by construction.
+
+=== Correction to this plan's own acceptance criteria ===
+172-08-PLAN.md's acceptance criteria and threat register (T-172-32) both say the expected bypass
+is "the single `Integration`/15368 bypass". That is STALE. Plan 172-05 revised D-09 to a
+DeployKey actor after the Integration form returned 422, and 172-06's read-back records
+`bypass=DeployKey:null:always` on all three repositories. The plan's two AUTOMATED legs are
+unaffected — they assert only `ruleset_*=1:active` and never inspect the actor — so nothing here
+needs re-mechanising; the prose criterion is what is wrong, and it is recorded as wrong rather
+than reconciled by changing the configuration to match a superseded decision.

@@ -1,0 +1,59 @@
+== 1 gate: gap fixes measured present and committed before this task edited anything
+gate_seed_fragments=0
+seed_fragment_1="Escalate to the full second read"=0
+seed_fragment_2="**Cost, stated:**"=0
+seed_fragment_3="256 B block at each"=0
+gate_hardened_pins=present
+helper_connect_route_calls_present=1
+helper_last_ok_assignment_shape_present=1
+helper_alternating_read_side_effect_present=1
+meta_repo_porcelain_before_edit=1
+app_repo_porcelain_before_edit=1
+rc=0
+
+== 2 requirement ledger edits (measured, not transcribed)
+edit_1_line=60
+edit_1_before=- [ ] **PRUNE-08**: The read step's second full sweep is replaced by a bit-structured sample **only if** MEAS-01 shows the sample is cheaper on the measured board class. If it is not, this requirement closes as *measured, not worth doing*, with the measurement recorded — that is a success, not a miss.
+edit_1_after=- [x] **PRUNE-08**: The read step's second full sweep is replaced by a bit-structured sample **only if** MEAS-01 shows the sample is cheaper on the measured board class. If it is not, this requirement closes as *measured, not worth doing*, with the measurement recorded — that is a success, not a miss.
+edit_2_line=175
+edit_2_before=| PRUNE-08 | Phase 180 | Gaps Found |
+edit_2_after=| PRUNE-08 | Phase 180 | Complete |
+changed_lines=2
+rc=0
+
+== 3 ledger counts, before and after (recomputed from disk, not transcribed)
+unchecked_before=19
+unchecked_after=18
+checked_before=27
+checked_after=28
+pending_before=18
+pending_after=18
+complete_before=27
+complete_after=28
+gapsfound_before=1
+gapsfound_after=0
+rc=0
+
+Note: `Pending` does not move (18 to 18) in this reseal, unlike plan 180-03's
+transcript where `Pending` moved 19 to 18. The row this phase flips was reading
+`Gaps Found`, not `Pending`, because `180-VERIFICATION.md` reverted it out of
+Complete into `Gaps Found` rather than back to `Pending`. An unchanged `Pending`
+count here is the correct measurement, not a missed edit.
+
+== 4 untouched-row spot checks
+diff_marker_count_vs_pinned_blob_6366d59d=4
+meas_01_untouched=1
+r4_01_untouched=1
+coverage_block_untouched=1
+phase_181_rpt_a1_row_untouched=1
+rc=0
+
+== summary scalars
+changed_lines=2
+unchecked_after=18
+checked_after=28
+complete_after=28
+gapsfound_after=0
+pending_after=18
+gate_seed_fragments=0
+gate_hardened_pins=present

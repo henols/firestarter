@@ -9,6 +9,11 @@
 #
 # Schema reference: .planning/phases/06-logging-infrastructure/06-RESEARCH.md
 # §"Catalog Format + Schema" and §"Param Shape + Render Hints".
+#
+# ERROR-severity band convention: 0xA0-0xBF is fully allocated (32 of 32 ids).
+# New ERROR-severity ids are minted starting at 0xC0, extending the band into
+# 0xC0-0xDF. Severity always comes from each entry's explicit `severity` field,
+# never from which numeric range an id falls in.
 
 [catalog]
 version = 1
@@ -392,7 +397,7 @@ wire_format = "id_frame"
 id          = 0x85
 name        = "MSG_WARN_FL4_BOOT_BLOCK_LOCKED"
 severity    = "WARN"
-format      = "boot block locked -- 0x%06lx not programmable (W29C040 section 6.6 irreversible lockout, write forced)"
+format      = "boot block locked -- 0x%06lx not programmable"
 params      = [{ type = "u24", render = "hex_addr" }]
 wire_format = "id_frame"
 
@@ -549,6 +554,17 @@ params      = [
 wire_format = "id_frame"
 
 [[messages]]
+# Orphaned as of 3.1.0, but not the plain way: its only firmware emit site
+# was inside mem_util_blank_check_region() (memory.cpp:502), retired along
+# with the write-init and erase-end blank-check machinery in 3.1.0 (v1.41
+# phase 205). Unlike the orphaned debug ids elsewhere in this file, 0xB0 is
+# NOT orphaned on the host -- a post-3.1.0 host still RECEIVES this id from
+# pre-3.1.0 firmware, which is exactly the skew phase 205's bench leg (plan
+# 07) puts on silicon. Retiring it from messages.py would make that real
+# "Not blank" refusal render as an unknown id instead of the sentence it
+# is. KEPT, and the host deliberately still renders it for pre-3.1.0
+# firmware. Reusing the number would make a replayed capture or an older
+# firmware's log stream silently misinterpreted. Not free for reuse.
 id          = 0xB0
 name        = "MSG_ERR_NOT_BLANK"
 severity    = "ERROR"
@@ -671,7 +687,7 @@ wire_format = "id_frame"
 id          = 0xBC
 name        = "MSG_ERR_FL4_BOOT_BLOCK_LOCKED"
 severity    = "ERROR"
-format      = "boot block locked -- 0x%06lx not programmable (W29C040 section 6.6 irreversible lockout)"
+format      = "boot block locked -- 0x%06lx not programmable"
 params      = [{ type = "u24", render = "hex_addr" }]
 wire_format = "id_frame"
 
@@ -697,6 +713,25 @@ params      = [
 ]
 wire_format = "id_frame"
 
+[[messages]]
+id          = 0xBF
+name        = "MSG_ERR_FL4_PAGE_SIZE"
+severity    = "ERROR"
+format      = "page size %u rejected -- write refused"
+params      = [{ type = "u16", render = "dec" }]
+wire_format = "id_frame"
+
+[[messages]]
+id          = 0xC0
+name        = "MSG_ERR_FL4_PAGE_ALIGN"
+severity    = "ERROR"
+format      = "Write refused -- address 0x%06lx not page-aligned or length %u not a whole page"
+params      = [
+    { type = "u24", render = "hex_addr" },
+    { type = "u16", render = "dec" },
+]
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # DATA (0xE0..0xEF)
 # ---------------------------------------------------------------------------
@@ -709,6 +744,24 @@ format      = "%lu/%lu"
 params      = [
     { type = "u32", render = "dec" },
     { type = "u32", render = "dec" },
+]
+wire_format = "id_frame"
+
+# Phase 151 / LOCK-02: CMD_LOCK_STATUS (16) response. Byte 0 is the raw byte
+# read from silicon, unmodified. Byte 1 is a firmware decode code: 0x00
+# reads-as-unprotected, 0x01 reads-as-protected, 0xFF indeterminate/not-
+# obtainable (reuses hw_get_version's established 0xFF sentinel convention).
+# The raw byte rides the wire so D-03's probe legs can record the observation
+# independently of the decode -- a wrong decode must not destroy it. This is
+# an observation, not a state claim; the class token is produced on the host.
+[[messages]]
+id          = 0xE1
+name        = "MSG_DATA_PROTECTION_STATUS"
+severity    = "DATA"
+format      = "Lock status probe: raw=0x%02X decode=%u"
+params      = [
+    { type = "u8", render = "hex_byte" },
+    { type = "u8" },
 ]
 wire_format = "id_frame"
 
@@ -839,6 +892,14 @@ format = "Write EPROM"
 params = []
 
 [[debug.messages]]
+# Orphaned as of 3.1.0: its only emit site was the eprom_verify() wrapper
+# (LOG_DEBUG_ID_SUB(DBG_VERIFY_PROM)), retired along with the standalone
+# CMD_VERIFY command surface in 3.1.0 (v1.41 phase 204). Nothing else in
+# either repository emits this sub-id. KEPT, not retired (D-06) -- reusing
+# the number would make a replayed capture or an older firmware's log
+# stream silently misinterpreted, and retaining it costs nothing: this
+# entry has no format-string bytes on the AVR side (LOG_DEBUG_ID_SUB is
+# id-only). Not free for reuse.
 id     = 0x08
 name   = "DBG_VERIFY_PROM"
 format = "Verify PROM"
@@ -857,6 +918,14 @@ format = "Check Chip ID"
 params = []
 
 [[debug.messages]]
+# Orphaned as of 3.1.0: its only emit site was the eprom_blank_check()
+# wrapper (LOG_DEBUG_ID_SUB(DBG_BLANK_CHECK_PROM)), retired along with the
+# standalone CMD_BLANK_CHECK command surface in 3.1.0 (v1.41 phase 204).
+# Nothing else in either repository emits this sub-id. KEPT, not retired
+# (D-06) -- reusing the number would make a replayed capture or an older
+# firmware's log stream silently misinterpreted, and retaining it costs
+# nothing: this entry has no format-string bytes on the AVR side
+# (LOG_DEBUG_ID_SUB is id-only). Not free for reuse.
 id     = 0x0B
 name   = "DBG_BLANK_CHECK_PROM"
 format = "Blank check PROM"
@@ -1075,6 +1144,16 @@ format = "Skip erase: %u"
 params = [{ type = "u8" }]
 
 [[debug.messages]]
+# Orphaned as of 3.1.0: its only emit site was the flag dump in
+# firestarter.cpp:89 (a LOG_DEBUG_ID_SUB call on this sub-id), retired along
+# with the FLAG_SKIP_BLANK_CHECK bit's full retirement in 3.1.0 (v1.41 phase
+# 205, FWBLANK-04). Nothing else in either repository emits this sub-id.
+# The third orphaned debug id, alongside DBG_VERIFY_PROM (0x08) and
+# DBG_BLANK_CHECK_PROM (0x0B). KEPT, not retired -- reusing the number
+# would make a replayed capture or an older firmware's log stream silently
+# misinterpreted, and retaining it costs nothing: this entry has no
+# format-string bytes on the AVR side (LOG_DEBUG_ID_SUB is id-only).
+# Not free for reuse.
 id     = 0x2E
 name   = "DBG_FLAG_SKIP_BLANK"
 format = "Skip blank check: %u"

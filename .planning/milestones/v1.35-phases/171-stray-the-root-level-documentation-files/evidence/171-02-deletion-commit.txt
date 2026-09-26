@@ -1,0 +1,10 @@
+=== git show --stat --format="" HEAD (firestarter_app) ===
+ SECURITY.md     | 53 --------------------------------------------
+ autocomplete.md | 69 ---------------------------------------------------------
+ things.md       |  7 ------
+ 3 files changed, 129 deletions(-)
+
+=== git status --short (firestarter_app) — surviving exclusion ===
+ M tools/build_db.py
+
+Excluded from this commit (pre-existing, unrelated): M tools/build_db.py — predates Phase 171, unrelated to it, deliberately not swept in.

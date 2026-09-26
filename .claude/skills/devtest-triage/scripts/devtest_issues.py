@@ -28,7 +28,9 @@ import re
 import subprocess
 import sys
 
-REPO = "henols/firestarter_prom"
+import firmware_messages
+
+REPO = "henols/firestarter"
 def _repo_root() -> str:
     """Locate the checkout from this file: <root>/.claude/skills/<s>/scripts/.
 
@@ -69,7 +71,7 @@ NOT_ATTRIBUTABLE = (
 TITLE_RE = re.compile(
     r"^\[dev test\]\s+(?P<chip>\S+)\s+[—-]\s+(?P<verdict>[A-Za-z]+)"
 )
-FENCE_RE = re.compile(r"```(?:json)?\s*\n(.*?)```", re.DOTALL)
+FENCE_RE = re.compile(r"^```[^\n]*\n(.*?)^```", re.DOTALL | re.MULTILINE)
 
 BAD = {"BAD", "FAIL"}
 SOFT = {"MARGINAL", "INCONCLUSIVE"}
@@ -135,11 +137,14 @@ def parse_title(title: str) -> dict | None:
 def extract_report(body: str) -> dict | None:
     """Return the embedded diagnostic report.
 
-    Detection requires a fenced block whose parsed object carries
-    `schema_version` — accepted by PRESENCE, not by exact value, so a schema
-    bump does not need a code change here. Defensive against unrelated fenced
-    blocks elsewhere in the issue: every block is tried, the first qualifying
-    one wins.
+    `FENCE_RE` enumerates every line-anchored fenced block in the body,
+    whatever its info string (bare, `json`, `text`, or anything else) —
+    the info string is never required and never sufficient, so a schema
+    bump does not need a code change here. Detection requires a fenced
+    block whose parsed object carries `schema_version` — accepted by
+    PRESENCE, not by exact value. Defensive against unrelated fenced
+    blocks anywhere in the issue, including ones that precede the report:
+    every block is tried in document order, the first qualifying one wins.
     """
     if not body:
         return None
@@ -615,7 +620,7 @@ def cmd_show(args: argparse.Namespace) -> int:
         print(f"  chip id     expected {exp}  actual {act}")
     print(f"  fingerprint {fingerprint(report, body)}")
 
-    print("\n  step         verdict    reason")
+    print(f"\n  {'step':<12} {'verdict':<10} {'error':<28} reason")
     failing, soft = [], []
     for s in steps:
         if not isinstance(s, dict):
@@ -623,7 +628,10 @@ def cmd_show(args: argparse.Namespace) -> int:
         op = str(s.get("op", "?"))
         v = str(s.get("verdict", "?"))
         reason = str(s.get("reason") or "")[:90]
-        print(f"  {op:<12} {v:<10} {reason}")
+        err = firmware_messages.resolve_error(
+            s.get("error_code"), s.get("error_name")
+        )
+        print(f"  {op:<12} {v:<10} {err:<28} {reason}")
         if v.upper() in BAD:
             failing.append(op)
         elif v.upper() in SOFT:

@@ -1,0 +1,42 @@
+RENAME-02 existing-clone observables
+=====================================
+Captured: 2026-09-13T14:08:34Z, read-only from the already-existing meta
+clone at /workspaces (no new clone taken for this transcript -- that is
+189-rename-03-fresh-clone.txt's job).
+
+Three D-03 observables, all reading the new URL:
+
+  gitmodules_url(firestarter):        git@github.com:henols/firestarter_fw.git
+  config_url(firestarter):            git@github.com:henols/firestarter_fw.git
+  remote_origin(firestarter):         git@github.com:henols/firestarter_fw.git
+
+Untouched control -- the host submodule was left alone:
+
+  gitmodules_url(firestarter_app):    git@github.com:henols/firestarter_app.git
+
+Section-and-path integrity -- evidencing the URL-only scope (D-01):
+
+  section: [submodule "firestarter"]  -- present, unchanged
+  path:    firestarter                -- present, unchanged
+
+Why three readings, not one (D-03)
+-----------------------------------
+`git submodule set-url firestarter <url>` rewrites `.gitmodules` alone. It
+is `git submodule sync --recursive` that propagates the value into the
+superproject's local `.git/config` (`config_url(firestarter)` above) and
+into the submodule's own `remote.origin.url` (`remote_origin(firestarter)`
+above). A verifier who reads only the file cannot tell whether the sync
+step ran; recording all three closes that gap. This is why RENAME-02 is
+evidenced across three observables rather than by the file alone.
+
+Branch disposition (D-08)
+--------------------------
+ROADMAP criterion 2's "on both `beta` and `main`" is satisfied here by the
+milestone branch (`v1.38-repository-rename`, this commit) plus the `main`
+pull request landed in 189-04. The `beta` half is explicitly close-carried
+-- it lands when the milestone merges, which is the standard route for
+every change in this project, and is not expected to be true mid-milestone.
+Merging to `beta` early is not an option: it fires a pre-release cut in
+both sub-repositories and publishes the host one to PyPI (D-7). A verifier
+should not read "`beta` does not have it yet" as an incomplete requirement
+while the milestone is still open.

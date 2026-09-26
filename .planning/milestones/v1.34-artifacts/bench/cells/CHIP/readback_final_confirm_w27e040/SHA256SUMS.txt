@@ -1,0 +1,6 @@
+# judged_span.bin -- the judged [0, judged_span_bytes) prefix of the read-back,
+# compared against the flashed arm's own hex extent (D-02).
+f032843d209019355237677110c48acdcaa562f3d523d1cba1a6aaf3b2363fc7  judged_span.bin
+# flash_readback.bin -- the full read-back; UNJUDGED whole-flash datum, never
+# consumed in the judged_match decision (D-02).
+7bfb041c9ed1349a14b0922c482a1495de458d5ec882696e79cc34808eb0cd6a  flash_readback.bin

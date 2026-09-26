@@ -1,0 +1,31 @@
+{
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "avrdude_version": "8.1",
+  "board_signature": "0x1e9587",
+  "connected_part": "atmega32u4",
+  "device_node_enumeration_check": {
+    "devpath": "/devices/pci0000:00/0000:00:14.0/usb3/3-3/3-3.1/3-3.1.2/3-3.1.2.2/3-3.1.2.2:1.0/tty/ttyACM0",
+    "devpath_note": "A different hub port than the wave-5 Uno used, and an ACM-class node consistent with the ATmega32U4's native USB rather than a CH340 bridge (contrast wave-6's uno328pb, which enumerated via a CH340 bridge as ttyUSB0).",
+    "enumerated_after_gate": [
+      "/dev/ttyACM0"
+    ],
+    "enumerated_before_gate": [
+      "/dev/ttyUSB0"
+    ],
+    "match": true,
+    "note": "Pre-swap enumeration (2026-08-27T07:00:08Z): ['/dev/ttyUSB0'] (the wave-6 ATmega328PB, still connected at gate time). Post-swap enumeration (2026-08-27T07:02:49Z): ['/dev/ttyACM0'] (ttyUSB0 gone, ttyACM0 created 2026-08-27T07:02:13.94Z). The operator's reported node matches the sole enumerated node exactly. This is also the 'before' side of the touch_1200.py bootloader-entry measurement carried out in this cell (BOOTLOADER-WINDOW.md): the node list at gate time and at every touch attempt below is identical, ['/dev/ttyACM0'] -- no other serial device was ever present during this cell's run.",
+    "operator_reported_node": "/dev/ttyACM0"
+  },
+  "mcu_expected": "atmega32u4",
+  "mcu_matches": true,
+  "operator_declared_board": "Leonardo",
+  "operator_declared_chip_state": "W27C512 seated",
+  "operator_declared_chip_state_note": "Operator's verbatim task-1 declaration: 'Leonardo, sheild and w27c512 seated'. Recorded explicitly rather than assumed, per this plan's own instruction: the Leonardo is the one board exempt from the chip-out-before-sideload rule (rig-pins.json targets.leonardo.chip_out_before_sideload=false) and is flashed and read back WITH the chip seated. No chip operation (read/write/erase/blank/vpp) was performed against the seated W27C512 anywhere in this cell -- this cell is a firmware-only bring-up.",
+  "operator_declared_shield_state": "mounted",
+  "operator_probe_agreement": true,
+  "operator_probe_agreement_note": "Operator declared 'Leonardo' (implying ATmega32U4); the avrdude signature probe independently identified connected_part=atmega32u4 via board_signature=0x1e9587 (the known-good value for the leonardo target, probe_board.py's _SIGNATURE_TO_MCU table). The two agree; the plan's stop-and-report clause was not triggered.",
+  "raw_stderr_path": "/workspaces/.planning/v1.34/bench/cells/BRINGUP-leonardo/probe.json.stderr.log",
+  "signature_route": "route1",
+  "urclock_probes": {}
+}

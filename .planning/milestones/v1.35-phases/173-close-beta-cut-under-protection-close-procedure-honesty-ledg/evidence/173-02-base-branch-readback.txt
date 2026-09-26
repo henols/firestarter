@@ -1,0 +1,20 @@
+=== BEFORE edit ===
+base-branch before: main
+is-protected beta before: false
+is-protected main before: true
+is-protected gsd/v1.35-documentation-consolidation-wiki-migration before: false
+
+=== AFTER edit ===
+base-branch after: beta
+is-protected beta after: true
+is-protected main after: true
+is-protected gsd/v1.35-documentation-consolidation-wiki-migration after: false
+
+=== Notes ===
+is-protected main is already true before the edit, because tier 2 resolves main as the base branch and the base branch is always folded in at git-base-branch.cjs:305. This read-back is not distinguishing.
+beta becomes locally protected while GitHub leaves it unprotected: git-base-branch.cjs:305 folds the resolved base branch into protectedBranches, so GSD now treats beta as protected too. Both consumers (ship.md:78, execute-phase/steps/protected-branch.md:10-15) only warn and continue, and the second applies only to branching_strategy: none, so this is a ledger non-claim, not a close blocker.
+
+=== CLAUDE.md pointer read-back ===
+pointer target exists: yes
+CLAUDE.md pointer string: .planning/notes/v135-close-procedure-under-protection.md
+beta becomes locally protected while GitHub leaves it unprotected

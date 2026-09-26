@@ -1,0 +1,21 @@
+== 1 the aggregation contract
+odd_min=2.500s
+odd_median=2.600s
+odd_max=2.900s
+floor=2.500s
+has_mean=False
+even_median=2.000s
+empty_min=unmeasured
+empty_median=unmeasured
+empty_samples=0
+keys=max,median,min,remainder,samples,structural_floor
+rc=0
+== 2 no new dev subcommand
+gated=reg,addr,consistency-check,write-cycle,fault-inject,validate-family,lock-status
+gated_count=7
+rc=0
+== 3 the harness test module and the channel gate tests
+........................................................................ [ 71%]
+.............................                                            [100%]
+101 passed in 0.66s
+rc=0

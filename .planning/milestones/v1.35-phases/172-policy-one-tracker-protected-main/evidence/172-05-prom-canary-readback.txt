@@ -1,0 +1,10 @@
+== firestarter_prom ruleset id=22043478
+{"id":22043478,"name":"Protect main","target":"branch","source_type":"Repository","source":"henols/firestarter_prom","enforcement":"active","conditions":{"ref_name":{"exclude":[],"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request","parameters":{"required_approving_review_count":0,"dismiss_stale_reviews_on_push":false,"required_reviewers":[],"require_code_owner_review":false,"require_last_push_approval":false,"required_review_thread_resolution":false,"require_extra_approval_for_unattributed_changes":true,"allowed_merge_methods":["merge","squash","rebase"]}}],"node_id":"RRS_lACqUmVwb3NpdG9yec5JfgRHzgFQW1Y","created_at":"2026-09-01T20:12:43.165Z","updated_at":"2026-09-01T20:12:43.229Z","bypass_actors":[{"actor_id":null,"actor_type":"DeployKey","bypass_mode":"always"}],"current_user_can_bypass":"never","_links":{"self":{"href":"https://api.github.com/repos/henols/firestarter_prom/rulesets/22043478"},"html":{"href":"https://github.com/henols/firestarter_prom/rules/22043478"}}}
+enforcement=active
+rules=deletion,non_fast_forward,pull_request
+bypass=DeployKey:null:always
+include=~DEFAULT_BRANCH
+can_bypass=never
+fw_rulesets=1
+fw_id=4998759
+app_rulesets=0

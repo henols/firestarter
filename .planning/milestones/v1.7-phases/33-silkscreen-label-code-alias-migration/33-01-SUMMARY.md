@@ -13,12 +13,12 @@ requires:
     provides: "per-rev electrical context — REV_1_* / REV_2_* macro pattern carried into CTRL_*_REV1 / CTRL_*_REV2 suffix family"
 provides:
   - "firestarter/include/rurp_pinout.h — canonical CTRL_* / PIN_* alias substrate (107 lines; 37 CTRL_ + 2 PIN_ declarations across legacy + HARDWARE_REVISION branches)"
-  - "rurp_pinout.h is unused in Wave 1 (no callers) — sits alongside the unchanged rurp_shield.h:25-94 backward-compat substrate per D-06"
+  - "rurp_pinout.h is unused in Wave 1 (no callers) — sits alongside the unchanged rurp_shield.h:25-89 backward-compat substrate per D-06"
   - "firestarter/CLAUDE.md §Constants + §Algorithm Handlers + §Key Files refreshed to new CTRL_* names + rurp_pinout.h as the SoT pointer"
   - "GATE-1.7 ALIAS-03 preservation: post-Wave-1 .hex byte-identical to baseline for all 3 AVR envs (uno / uno328pb / leonardo)"
 affects:
   - "33-02 (Wave 2 — call-site migration in src/proms/* + hardware_operations.cpp; consumes new CTRL_* names from rurp_pinout.h)"
-  - "33-03 (Wave 3 — remaining call-sites in src/boards/, include/rurp_*_utils.h, test/; final task atomically deletes rurp_shield.h:25-94 old #defines)"
+  - "33-03 (Wave 3 — remaining call-sites in src/boards/, include/rurp_*_utils.h, test/; final task atomically deletes rurp_shield.h:25-89 old #defines)"
 
 # Tech tracking
 tech-stack:
@@ -52,7 +52,7 @@ completed: 2026-05-25
 
 # Phase 33 Plan 01: Create rurp_pinout.h Alias Substrate (Wave 1) Summary
 
-**Created `firestarter/include/rurp_pinout.h` with the 4-namespace alias substrate (CTRL_* / PIN_* + reserved RES_* / JMP_* per §7 table) and refreshed `firestarter/CLAUDE.md` §Constants / §Algorithm Handlers / §Key Files to the new CTRL_* names. Per D-06: NO shim block — rurp_shield.h:25-94 is UNCHANGED in Wave 1 and remains the load-bearing backward-compat substrate until Wave 3's final task atomically deletes it. All 3 AVR envs build clean; .hex byte-identical to baseline (unused header creates no machine code).**
+**Created `firestarter/include/rurp_pinout.h` with the 4-namespace alias substrate (CTRL_* / PIN_* + reserved RES_* / JMP_* per §7 table) and refreshed `firestarter/CLAUDE.md` §Constants / §Algorithm Handlers / §Key Files to the new CTRL_* names. Per D-06: NO shim block — rurp_shield.h:25-89 is UNCHANGED in Wave 1 and remains the load-bearing backward-compat substrate until Wave 3's final task atomically deletes it. All 3 AVR envs build clean; .hex byte-identical to baseline (unused header creates no machine code).**
 
 ## Performance
 
@@ -94,7 +94,7 @@ exit=1
 ```
 
 **This FAIL is expected at the Wave 1 boundary** (per Plan 33-00 SUMMARY documented gate semantics):
-- Assertion 1 still fires because both `rurp_shield.h` AND `src/proms/*.cpp` / `src/boards/*.cpp` / `include/rurp_*_utils.h` still reference the old names. Wave 2 migrates `src/proms/*` + `hardware_operations.cpp`; Wave 3 migrates remaining call-sites in `src/boards/*` + `include/rurp_*_utils.h` + `test/` AND in its final task deletes the `rurp_shield.h:25-94` old-#define block (the D-06 enforcement gate).
+- Assertion 1 still fires because both `rurp_shield.h` AND `src/proms/*.cpp` / `src/boards/*.cpp` / `include/rurp_*_utils.h` still reference the old names. Wave 2 migrates `src/proms/*` + `hardware_operations.cpp`; Wave 3 migrates remaining call-sites in `src/boards/*` + `include/rurp_*_utils.h` + `test/` AND in its final task deletes the `rurp_shield.h:25-89` old-#define block (the D-06 enforcement gate).
 - Assertion 3 (cmp byte-identical) was confirmed PASS for all 3 envs via direct invocation (cmp short-circuited by Assertion 1's earlier exit in the wrapper script). The cmp gate is the load-bearing GATE-1.7 ALIAS-03 anchor and it is green at the Wave 1 boundary.
 - Decreasing hit count is the visible progress indicator: 71 (Wave 1) → some lower N (Wave 2) → 0 (Wave 3 complete).
 
@@ -112,7 +112,7 @@ Task 2 lands no commits because its scope is purely verification (the plan body 
 ## Files Created/Modified
 
 **Created (committed inside firestarter submodule):**
-- `firestarter/include/rurp_pinout.h` — 107 lines, 37 CTRL_* + 2 PIN_* declarations across legacy + HARDWARE_REVISION + REV1/REV2 branches; header-guard `__RURP_PINOUT_H__`; `extern "C"` block; mirrors rurp_shield.h:24-94 ifdef structure VERBATIM with new names.
+- `firestarter/include/rurp_pinout.h` — 107 lines, 37 CTRL_* + 2 PIN_* declarations across legacy + HARDWARE_REVISION + REV1/REV2 branches; header-guard `__RURP_PINOUT_H__`; `extern "C"` block; mirrors rurp_shield.h:24-89 ifdef structure VERBATIM with new names.
 
 **Modified (committed inside firestarter submodule):**
 - `firestarter/CLAUDE.md` — 10 insertions, 10 deletions; §Constants block + §Algorithm Handlers VPP column rows 0x07/0x08/0x10 + §Key Files include path.
@@ -155,7 +155,7 @@ None — no external service configuration required. All artifacts land in the f
 
 ## Pending for Wave 3 Final Task (D-06 restructure)
 
-- **Atomic deletion of `firestarter/include/rurp_shield.h:25-94` old-#define block.** This is the load-bearing D-06 enforcement gate that replaces the previously-planned "remove shim block" task. After every call-site in src/proms/* + src/boards/* + include/rurp_*_utils.h + test/ + hardware_operations.cpp is migrated to the new CTRL_*/PIN_* names, the final Wave-3 task deletes the rurp_shield.h:25-94 block in one atomic commit. At that point: (a) check-migration.sh Assertion 1 returns 0 hits; (b) Assertion 3 cmp byte-identical (or within ALIAS-03 ≤ ~50 B documented drift); (c) the project's "no orphan symbols / no shim chain" posture is honored end-to-end.
+- **Atomic deletion of `firestarter/include/rurp_shield.h:25-89` old-#define block.** This is the load-bearing D-06 enforcement gate that replaces the previously-planned "remove shim block" task. After every call-site in src/proms/* + src/boards/* + include/rurp_*_utils.h + test/ + hardware_operations.cpp is migrated to the new CTRL_*/PIN_* names, the final Wave-3 task deletes the rurp_shield.h:25-89 block in one atomic commit. At that point: (a) check-migration.sh Assertion 1 returns 0 hits; (b) Assertion 3 cmp byte-identical (or within ALIAS-03 ≤ ~50 B documented drift); (c) the project's "no orphan symbols / no shim chain" posture is honored end-to-end.
 
 ## Self-Check: PASSED
 

@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "built_at_commit": {
+    "control": "8695ee52c27a4bee4387c5c489afd5f3d7275e8a",
+    "v133": "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463",
+    "note": "Both SHAs pinned in rig-pins.json arms.*.fw_sha; re-verified against gh pr view headRefOid / merge-base at plan 01 (rig_pins.json sha_verification block)."
+  },
+  "arms": {
+    "control": {
+      "fw_sha": "8695ee52c27a4bee4387c5c489afd5f3d7275e8a",
+      "description": "merge-base(origin/beta, gsd/v1.33-source-hygiene-firmware-size-reduction) -- the pre-v1.33 firmware tree"
+    },
+    "v133": {
+      "fw_sha": "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463",
+      "description": "fw PR #56 head (gsd/v1.33-source-hygiene-firmware-size-reduction tip) -- includes Phase 158's LAND-01 jsmntok_t narrowing and every other v1.33 firmware change"
+    }
+  },
+  "toolchain": {
+    "platformio_core": "6.1.19",
+    "platform_atmelavr": "5.2.0",
+    "toolchain_atmelavr": "1.70300.191015",
+    "avr_gcc": "7.3.0",
+    "framework_arduino_avr": "5.3.0",
+    "framework_arduino_avr_minicore": "3.1.2",
+    "measured_from": [
+      "pio --version",
+      "~/.platformio/platforms/atmelavr/.piopm",
+      "~/.platformio/packages/toolchain-atmelavr/package.json",
+      "~/.platformio/packages/toolchain-atmelavr/bin/avr-gcc --version",
+      "~/.platformio/packages/framework-arduino-avr/package.json",
+      "~/.platformio/packages/framework-arduino-avr-minicore/package.json"
+    ],
+    "enforcement_note": "platform = atmelavr in firestarter/platformio.ini is unversioned and ~/.platformio/platforms/atmelavr/.piopm records requirements: null, so nothing enforces these five pins. All five currently installed versions match firestarter/scripts/baseline/size_baseline.json's recorded pins. Documentation, not enforcement."
+  },
+  "toolchain_enforcement_note": "platform = atmelavr in firestarter/platformio.ini is unversioned and ~/.platformio/platforms/atmelavr/.piopm records requirements: null, so nothing enforces these five pins. All five currently installed versions match firestarter/scripts/baseline/size_baseline.json's recorded pins. Documentation, not enforcement.",
+  "images": [
+    {
+      "file": "firestarter_uno.control.hex",
+      "arm": "control",
+      "env": "uno",
+      "fw_sha": "8695ee52c27a4bee4387c5c489afd5f3d7275e8a",
+      "sha256": "be6e4ac80a70e251e2c263beb4109f9f7f9852a034b1064a5dbc8dbbcf05c095",
+      "hex_records": 1629,
+      "hex_lo": 0,
+      "hex_hi": 26026,
+      "hex_span": 26026,
+      "flash_used_baseline": 22952,
+      "bootloader": "optiboot 512 B",
+      "avrdude_programmer": "arduino",
+      "avrdude_baud": 115200,
+      "mcu": "atmega328p",
+      "flash_used_baseline_own_arm": 25548
+    },
+    {
+      "file": "firestarter_uno328pb.control.hex",
+      "arm": "control",
+      "env": "uno328pb",
+      "fw_sha": "8695ee52c27a4bee4387c5c489afd5f3d7275e8a",
+      "sha256": "7b86c1aac5642b968bd9604bde249b7d68643ebe135f0d05690e56e43e20ebba",
+      "hex_records": 1631,
+      "hex_lo": 0,
+      "hex_hi": 26074,
+      "hex_span": 26074,
+      "flash_used_baseline": 23000,
+      "bootloader": "urboot 384 B",
+      "avrdude_programmer": "urclock",
+      "avrdude_baud": 115200,
+      "mcu": "atmega328pb",
+      "flash_used_baseline_own_arm": 25598
+    },
+    {
+      "file": "firestarter_leonardo.control.hex",
+      "arm": "control",
+      "env": "leonardo",
+      "fw_sha": "8695ee52c27a4bee4387c5c489afd5f3d7275e8a",
+      "sha256": "2b9ad44e23dd6dc88e76a5aeb9105050f56c84d470a14b9a9d2597feffb0ee88",
+      "hex_records": 1762,
+      "hex_lo": 0,
+      "hex_hi": 28170,
+      "hex_span": 28170,
+      "flash_used_baseline": 25098,
+      "bootloader": "Caterina 4096 B",
+      "avrdude_programmer": "avr109",
+      "avrdude_baud": 57600,
+      "mcu": "atmega32u4",
+      "flash_used_baseline_own_arm": 27630
+    },
+    {
+      "file": "firestarter_uno.v133.hex",
+      "arm": "v133",
+      "env": "uno",
+      "fw_sha": "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463",
+      "sha256": "6823e6f939d336754498baafc34d6517675e38102accf625f360e3ca16b0a608",
+      "hex_records": 1436,
+      "hex_lo": 0,
+      "hex_hi": 22952,
+      "hex_span": 22952,
+      "flash_used_baseline": 22952,
+      "bootloader": "optiboot 512 B",
+      "avrdude_programmer": "arduino",
+      "avrdude_baud": 115200,
+      "mcu": "atmega328p",
+      "flash_used_baseline_own_arm": 22952
+    },
+    {
+      "file": "firestarter_uno328pb.v133.hex",
+      "arm": "v133",
+      "env": "uno328pb",
+      "fw_sha": "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463",
+      "sha256": "6415fe98ee783385aed5c85c06b6e0f12d8df442dd6ff7ac494cb200de307932",
+      "hex_records": 1440,
+      "hex_lo": 0,
+      "hex_hi": 23000,
+      "hex_span": 23000,
+      "flash_used_baseline": 23000,
+      "bootloader": "urboot 384 B",
+      "avrdude_programmer": "urclock",
+      "avrdude_baud": 115200,
+      "mcu": "atmega328pb",
+      "flash_used_baseline_own_arm": 23000
+    },
+    {
+      "file": "firestarter_leonardo.v133.hex",
+      "arm": "v133",
+      "env": "leonardo",
+      "fw_sha": "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463",
+      "sha256": "887cabbb3963f831b9032ba35da790a7db798c77479d1650c9e5ad674d28f8f5",
+      "hex_records": 1571,
+      "hex_lo": 0,
+      "hex_hi": 25098,
+      "hex_span": 25098,
+      "flash_used_baseline": 25098,
+      "bootloader": "Caterina 4096 B",
+      "avrdude_programmer": "avr109",
+      "avrdude_baud": 57600,
+      "mcu": "atmega32u4",
+      "flash_used_baseline_own_arm": 25098
+    }
+  ],
+  "build_commands": [
+    {
+      "description": "detach to control arm fw SHA",
+      "argv": [
+        "git",
+        "-C",
+        "/workspaces/firestarter",
+        "checkout",
+        "8695ee52c27a4bee4387c5c489afd5f3d7275e8a"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "clean uno build dir (control)",
+      "argv": [
+        "rm",
+        "-rf",
+        ".pio/build/uno"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "build uno (control)",
+      "argv": [
+        "/usr/local/bin/pio",
+        "run",
+        "-e",
+        "uno"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "clean uno328pb build dir (control)",
+      "argv": [
+        "rm",
+        "-rf",
+        ".pio/build/uno328pb"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "build uno328pb (control)",
+      "argv": [
+        "/usr/local/bin/pio",
+        "run",
+        "-e",
+        "uno328pb"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "clean leonardo build dir (control)",
+      "argv": [
+        "rm",
+        "-rf",
+        ".pio/build/leonardo"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "build leonardo (control)",
+      "argv": [
+        "/usr/local/bin/pio",
+        "run",
+        "-e",
+        "leonardo"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "detach to v133 arm fw SHA",
+      "argv": [
+        "git",
+        "-C",
+        "/workspaces/firestarter",
+        "checkout",
+        "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "clean uno build dir (v133)",
+      "argv": [
+        "rm",
+        "-rf",
+        ".pio/build/uno"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "build uno (v133)",
+      "argv": [
+        "/usr/local/bin/pio",
+        "run",
+        "-e",
+        "uno"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "clean uno328pb build dir (v133)",
+      "argv": [
+        "rm",
+        "-rf",
+        ".pio/build/uno328pb"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "build uno328pb (v133)",
+      "argv": [
+        "/usr/local/bin/pio",
+        "run",
+        "-e",
+        "uno328pb"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "clean leonardo build dir (v133)",
+      "argv": [
+        "rm",
+        "-rf",
+        ".pio/build/leonardo"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "build leonardo (v133)",
+      "argv": [
+        "/usr/local/bin/pio",
+        "run",
+        "-e",
+        "leonardo"
+      ],
+      "cwd": "/workspaces/firestarter"
+    },
+    {
+      "description": "restore starting branch",
+      "argv": [
+        "git",
+        "-C",
+        "/workspaces/firestarter",
+        "checkout",
+        "gsd/v1.33-source-hygiene-firmware-size-reduction"
+      ],
+      "cwd": "/workspaces/firestarter"
+    }
+  ],
+  "measured_divergence_finding": {
+    "summary": "The control arm's three images do not match size_baseline.json's flash_used figures at HEAD (22952/23000/25098) -- the v133 arm's images match those exactly. But `scripts/baseline/size_baseline.json` lives INSIDE the firestarter repo, so it is itself arm-dependent: read at the CONTROL arm's own fw_sha (8695ee52c27a4bee4387c5c489afd5f3d7275e8a), the file records flash_used 25548/25598/27630 -- and the control arm's measured spans (26026/26074/28170) do not match THAT figure either. There is a residual of exactly +478/+476/+540 B (uno/uno328pb/leonardo) between the control arm's measured build and its OWN committed baseline. This residual is fully explained below, not absorbed into the cross-arm delta.",
+    "measured": {
+      "uno": {
+        "control_hex_span": 26026,
+        "v133_hex_span": 22952,
+        "baseline_flash_used": 22952,
+        "control_own_arm_baseline": 25548,
+        "v133_own_arm_baseline": 22952,
+        "residual_vs_own_arm_baseline": {
+          "control": 478,
+          "v133": 0
+        }
+      },
+      "uno328pb": {
+        "control_hex_span": 26074,
+        "v133_hex_span": 23000,
+        "baseline_flash_used": 23000,
+        "control_own_arm_baseline": 25598,
+        "v133_own_arm_baseline": 23000,
+        "residual_vs_own_arm_baseline": {
+          "control": 476,
+          "v133": 0
+        }
+      },
+      "leonardo": {
+        "control_hex_span": 28170,
+        "v133_hex_span": 25098,
+        "baseline_flash_used": 25098,
+        "control_own_arm_baseline": 27630,
+        "v133_own_arm_baseline": 25098,
+        "residual_vs_own_arm_baseline": {
+          "control": 540,
+          "v133": 0
+        }
+      }
+    },
+    "cause": "Two independent, additive facts, both measured from firestarter git history (never guessed):\n(1) CROSS-ARM DELTA (v133 vs control's own-arm baseline, ~+3074 B): size_baseline.json's LIVE figures (22952/23000/25098) were re-recorded cold at Phase 158 Plan 04 (LAND-01, the jsmntok_t narrowing), against a tree at/after that reduction. The control arm's fw_sha is the merge-base of origin/beta and gsd/v1.33-..., i.e. the tree BEFORE that reduction (and before every other v1.33 firmware change) -- so it never had a chance to inherit Phase 158's size drop.\n(2) RESIDUAL WITHIN THE CONTROL ARM ITSELF (+478/+476/+540 B, now fully attributed): at the control arm's own fw_sha, `scripts/baseline/size_baseline.json` was ALREADY STALE relative to the tree it sits in, by exactly this amount. Root-cause chain, git-history-sourced: commit e0d6a1f (Phase 153 Plan 14, ERASE-08) last legitimately cold-re-recorded avr_targets to 25548/25598/27630. PR #55 'perf(eprom): amortise the VPE settle over a pass, not every byte (3.2x faster writes)' (branch debug-w27c512-write-slow: commits 071d505 the perf rewrite itself, 5882548, 453a188, 273eedb, 6d4d6bc; merged via f0f214f) then rewrote src/proms/eprom.cpp (289 lines changed) -- a real flash-size-affecting change -- and landed on the branch that becomes the control arm's direct ancestor. Commit 273eedb's own message says so explicitly, verbatim: \"NOTHING ELSE IN THIS FILE MOVED: the avr_targets flash_used/ram_used figures below still record the PRE-change position (uno 25548, uno328pb 25598, leonardo 27630) deliberately -- a native-only test adds no AVR bytes, and re-recording the AVR figures is the separate act whoever lands this branch must adjudicate along with the +478/+476/+540 flash growth.\" That figure -- +478/+476/+540 -- is a byte-for-byte match against this session's measured residual. Commit 8695ee52c27a4bee4387c5c489afd5f3d7275e8a itself (the control arm's fw_sha, \"Apply automatic changes\") touches only include/version.h -- confirmed via `git diff 6d4d6bc 8695ee52 -- scripts/baseline/size_baseline.json` (empty). So the deferred adjudication 273eedb's own author named was NEVER performed before this milestone's control-arm SHA was cut: the committed baseline is knowingly stale by the residual amount, and this session's measurement is simply re-discovering a gap the firmware repo's own commit history had already named and left open. RAM is unaffected: this session's measured control-arm RAM (1575/1581/2016 B) matches the stale baseline's RAM figures exactly, consistent with 273eedb's own framing that the perf rewrite is flash-only.",
+    "disposition": "The expectation (22952/23000/25098 on both arms) is NOT edited. The actual measured values are recorded in each image's own hex_span field, and each image now also carries flash_used_baseline_own_arm (the size_baseline.json figure recorded AT THAT IMAGE'S OWN fw_sha) alongside the existing flash_used_baseline (which stays the v133/HEAD figure unconditionally, unchanged, because judge_readback.py and this plan's own verify leg read it). The residual is fully attributed to a named, git-history-sourced cause (PR #55's unrecorded flash growth) rather than left as an unexplained gap -- see `cause` above. Zero bytes remain unaccounted for: 478-478=0, 476-476=0, 540-540=0.",
+    "gate_vs_criterion_mismatch": "This plan's own Task 1 <automated> verify leg hard-asserts, for ALL SIX manifest entries, that hex_span == flash_used_baseline == a hardcoded per-env constant (22952/23000/25098), with no escape clause for a named divergence. Run literally as written, it throws an AssertionError on the three control-arm entries (observed and quoted in this plan's SUMMARY). That is a RED-by-construction gate, not a broken build: the plan's own written acceptance criterion for the SAME task (line 154) explicitly permits this outcome -- 'if any differs, the actual value is recorded and the divergence is named rather than the expectation being edited.' The coded verify script has no such escape hatch and will always fail whenever a real, legitimate, named divergence occurs (which is exactly the case here). This authoring mismatch between the acceptance-criteria prose and the coded gate is recorded here so a future reader -- including 160-13's fresh-context reconstruction -- does not mistake the RED exit for evidence of a defect in the images or the manifest."
+  }
+}

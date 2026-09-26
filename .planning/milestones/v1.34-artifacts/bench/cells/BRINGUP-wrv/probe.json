@@ -1,0 +1,46 @@
+{
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "avrdude_version": "8.1",
+  "board_signature": "0x1e950f",
+  "connected_part": "atmega328p",
+  "controller_string": "not measured \u2014 the `hw` CLI subcommand's handler never forwards -v/--verbose into the wire command's flags, so firmware's FW info line is never emitted regardless of verbosity or firmware build (measured live, BRINGUP-uno 160-08, re-confirmed here at BRINGUP-wrv 160-11 via logs/02_hw_probe_pre_flash.std{out,err}.log)",
+  "device_node_enumeration_check": {
+    "match": true,
+    "operator_reported_node": "/dev/ttyACM0",
+    "post_swap_enumeration": {
+      "at": "2026-08-27T07:30:52Z",
+      "nodes": [
+        "/dev/ttyACM0"
+      ]
+    },
+    "pre_swap_enumeration": {
+      "at": "2026-08-27T07:27:35Z",
+      "nodes": [
+        "/dev/ttyACM0"
+      ],
+      "note": "the wave-7 Leonardo, still attached at this point"
+    }
+  },
+  "eeprom_calibration_r1_r2": {
+    "operator_answer_verbatim": "No / can't read them",
+    "source": "operator-declared (cannot read); firmware-EEPROM readback for R16/R14R15 has no CLI path in this app version (see provenance.json eeprom_calibration field, which records the same not-measured reason with its own blocking cause on the same line)"
+  },
+  "mcu_expected": "atmega328p",
+  "mcu_matches": true,
+  "node_identity_trap_evidence": {
+    "leonardo_ttyACM0_created": "2026-08-27T07:02:13.94Z (plan 160-10, prior board)",
+    "resolution": "board_signature=0x1e950f (atmega328p) confirms this is the Uno, NOT the Leonardo's 0x1e9587 (atmega32u4) -- the signature probe is what actually proves identity here, not the node name or its timestamp alone; the timestamp is corroborating evidence that a real board swap occurred between the two sessions.",
+    "this_session_ttyACM0_created": "2026-08-27T07:29:19.242432281+00:00 (measured live via `ls --time-style=full-iso -la /dev/ttyACM0` / `udevadm info`, this task)",
+    "trap": "The node NAME /dev/ttyACM0 is IDENTICAL to the one the Leonardo used in plan 160-10 -- but this is a DIFFERENT PHYSICAL BOARD. Node creation timestamp is the only distinguishing evidence available, since the name alone is reused."
+  },
+  "operator_declared_board": "Uno (ATmega328P) with the Rev 2.0 RURP shield mounted",
+  "operator_declared_shield_rev": "Rev 2.0",
+  "operator_declared_socket_state": "Yes \u2014 empty, Uno connected",
+  "operator_probe_agreement": true,
+  "operator_probe_agreement_note": "Operator declared the Uno (ATmega328P); the avrdude signature probe independently identified connected_part=atmega328p via board_signature=0x1e950f (the known-good value for the Uno, probe_board.py's _SIGNATURE_TO_MCU table -- and explicitly NOT 0x1e9587/atmega32u4, the Leonardo used in the immediately prior plan 160-10 on the IDENTICAL node name /dev/ttyACM0, nor 0x1e9516/atmega328pb). The two agree; the plan's stop-and-report clause was not triggered.",
+  "operator_r1_r2_calibration_answer": "No / can't read them",
+  "raw_stderr_path": ".planning/v1.34/bench/cells/BRINGUP-wrv/probe.json.stderr.log",
+  "signature_route": "route1",
+  "urclock_probes": {}
+}

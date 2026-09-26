@@ -1,0 +1,55 @@
+# 181-06 Task 1 -- duration_s becomes the mean over the cycles that ran
+# Measured against firestarter_app app HEAD f93dec8 (plans 181-01..181-05 landed),
+# fold = firestarter.chip_test._aggregate_cycle_results, op = read.
+
+## Section 1: the fold, the rejected sum, and the four properties
+
+cycle_durations=[1.0, 3.0]
+folded_duration_s=2.0
+rejected_sum=4.0
+denominator=2
+run_count=2
+denominator_equals_run_count=true
+no_duration_yields=None
+single_cycle_returns_unchanged=true
+reversed_order_identical=true
+rc=0
+
+## Section 2: property notes -- numbers are evidence of a relation, not a threshold
+
+The milestone's house rule is operation counts, never seconds. Every scalar
+in Section 1 is a per-run measurement of the RELATION between the mean and
+the sum (2.0 == round((1.0+3.0)/2, 3), strictly less than round(1.0+3.0, 3)
+== 4.0), the denominator-equals-run_count identity, the None-when-nothing-
+ran guard, the single-cycle identity return, and order-insensitivity -- not
+an acceptance threshold on wall-clock duration.
+
+## Section 3: whole-module pytest tail after this task's edits (bare pytest, -o addopts="")
+
+tests/test_chip_test_timing.py: 11 passed (was 6 pre-task)
+tests/test_blast_radius_invariance.py: 103 passed
+rc=0
+
+## Section 4: tokenize COMMENT-token census -- non-increase gate, measured at task head
+
+comment_tokens_pretask firestarter/chip_test.py=893
+comment_tokens_pretask firestarter/diagnostic_report.py=214
+comment_tokens_pretask firestarter/cli_handlers.py=357
+comment_tokens_pretask firestarter/submit.py=48
+comment_tokens_pretask tests/test_chip_test_timing.py=4
+comment_tokens_pretask tests/test_diagnostic_report.py=183
+comment_tokens_pretask tests/test_dev_test_cmd.py=216
+comment_tokens_pretask tests/test_blast_radius_invariance.py=0
+
+comment_tokens_posttask firestarter/chip_test.py=893
+comment_tokens_posttask tests/test_chip_test_timing.py=4
+comment_tokens_posttask tests/test_blast_radius_invariance.py=0
+
+phase_added_comments=0
+rc=0
+
+## Section 5: ruff
+
+ruff_check=All checks passed! (firestarter/chip_test.py, tests/test_chip_test_timing.py)
+ruff_format_check=2 files already formatted
+rc=0

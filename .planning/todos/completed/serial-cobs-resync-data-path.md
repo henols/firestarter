@@ -35,7 +35,7 @@ lib like PacketSerial bring to the firmware." Conclusion: **not worth a drop-in.
 | host→fw commands | `firestarter/src/firestarter.cpp:162-172` | ASCII JSON, peek for `{`, discard junk |
 | host→fw data block | `firestarter/src/boards/rurp_serial_utils.cpp:44-79` | `[len_u16][xor][payload]`, 2 s timeout |
 | fw→host data block | `firestarter/src/boards/rurp_serial_utils.cpp:81-93` | same `[len_u16][xor][payload]` |
-| fw→host log/telemetry | `firestarter/src/boards/rurp_serial_utils.cpp:138-184` | `[0xAA55AA55][len_u16][id][params][crc8][0x0A]` |
+| fw→host log/telemetry | `firestarter/src/boards/rurp_serial_utils.cpp:135-181` | `[0xAA55AA55][len_u16][id][params][crc8][0x0A]` |
 
 The host decoder at `firestarter_app/firestarter/serial_comm.py:546-660` demuxes all
 of these on one stream and is **byte-for-byte synced** with the firmware (magic
@@ -184,7 +184,7 @@ streaming-to-Stream API.
 
 ## Cross-references
 - `firestarter/src/boards/rurp_serial_utils.cpp:44-93` (data block) + `:138-184` (log frames)
-- `firestarter/src/firestarter.cpp:113` (`init_programmer` read) + `:162-172` (command peek loop)
+- `firestarter/src/firestarter.cpp:109` (`init_programmer` read) + `:162-172` (command peek loop)
 - `firestarter_app/firestarter/serial_comm.py:546-660` (host stream demux) + `:967-983` (data-block checksum read)
 - `firestarter/include/firestarter.h:87` (`data_buffer[512]`)
 - Root `CLAUDE.md`: serial protocol must stay in sync across `serial_comm.py` ↔ `firestarter.cpp`

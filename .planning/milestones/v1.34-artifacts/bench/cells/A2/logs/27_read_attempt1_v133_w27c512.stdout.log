@@ -1,0 +1,4 @@
+Connecting...Connecting... OK      
+Reading EPROM W27C512, saving to /workspaces/.planning/v1.34/bench/cells/A2/reads/A2__v133__w27c512/attempt1_run_01.bin
+ERROR: Chip ID 0x303 does not match expected ID 0xda08
+Programmer error during READ: Programmer error during init: Chip ID 0x303 does not match expected ID 0xda08

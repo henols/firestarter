@@ -1,0 +1,27 @@
+== 1 the two frozen devtest-triage fixtures, resolved and parsed
+fixture_1_2_path=.claude/skills/devtest-triage/fixtures/dev-test-at28c256-null-identity.md
+fixture_1_2_body_length=2767
+fixture_1_2_schema_version=1.2
+fixture_1_4_path=.claude/skills/devtest-triage/fixtures/dev-test-at28c256-populated-identity.md
+fixture_1_4_body_length=2684
+fixture_1_4_schema_version=1.4
+locked_steps_present_in_parsed_1_2=true
+vpp_mv_present_in_parsed_1_2=true
+vpe_mv_present_in_parsed_1_2=true
+locked_steps_present_in_parsed_1_4=true
+vpp_mv_present_in_parsed_1_4=true
+vpe_mv_present_in_parsed_1_4=true
+missing_schema_version_returns_none=true
+fixture_files_modified=0
+
+== 2 tests/test_blast_radius_invariance.py, full run after Task 2's edit
+command=./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -o addopts="" -q
+........................................................................ [ 71%]
+.............................                                            [100%]
+101 passed in 2.66s
+rc=0
+
+== 3 fixture files byte-unchanged
+command=git status --porcelain .claude/skills/devtest-triage/fixtures/
+output=(empty)
+rc=0

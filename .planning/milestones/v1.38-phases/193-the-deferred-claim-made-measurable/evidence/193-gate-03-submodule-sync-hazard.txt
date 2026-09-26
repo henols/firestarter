@@ -1,0 +1,144 @@
+SYNC HAZARD REPRODUCTION AND REPAIR (GATE-03)
+================================================
+capture_date: 2026-09-14T10:48:00Z
+capture_host_commit: b5225c1a49e3fc8deeba91baa4f8be6b01e0ba58
+
+Captured by: `git clone`, `git checkout`, `git config`, `git submodule update/sync`, `git -C
+firestarter remote <cmd>`, all run inside a directory created by `mktemp -d`. Observables read
+with `/usr/bin/grep` and shell builtins, never PATH `grep` (ugrep, honours .gitignore, silently
+under-scans).
+
+This transcript reproduces the workaround's own failure mode: `.planning/notes/
+999.9-repo-rename-impact-analysis.md`'s ordered procedure, Phase A step 2, instructs
+`git submodule sync --recursive` as routine hygiene when repointing `.gitmodules` on `beta` and
+`main`. Run at a pre-rename ref, that same command undoes the GATE-03 override with no warning
+and no error. This session rebuilds the existing-clone state from
+`evidence/193-gate-03-existing-clone.txt`, then runs `sync` and repairs it.
+
+Setup, rebuilding task 2's existing-clone state:
+
+  $ git clone --no-recurse-submodules https://github.com/henols/firestarter_prom.git hazard
+  Cloning into 'hazard'...
+  $ git config submodule.firestarter.url git@github.com:henols/firestarter_fw.git
+  $ git checkout v1.35
+  HEAD is now at 6e84030b Merge pull request #56: v1.35 close (Phases 171-173 remainder, beta
+  lockstep cut)
+
+meta_ref: v1.35
+meta_commit: 6e84030bb526da7bde603b94c4d899c0b80adc30
+
+clean_state_proof: firestarter/ is the empty placeholder directory from clone (0 entries).
+.git/modules/firestarter is absent.
+
+  $ git submodule update --init --depth 1 firestarter
+  Cloning into '/.../hazard/firestarter'...
+  From github.com:henols/firestarter_fw
+   * branch            4f73c80cfa2915fb22812dde55b2923a86120c5f -> FETCH_HEAD
+  Submodule path 'firestarter': checked out '4f73c80cfa2915fb22812dde55b2923a86120c5f'
+
+head(firestarter): 4f73c80cfa2915fb22812dde55b2923a86120c5f
+
+====================================================================
+READING 1 -- before
+====================================================================
+capture_date: 2026-09-14T10:48:30Z
+
+  $ git config --get submodule.firestarter.url
+  git@github.com:henols/firestarter_fw.git
+  $ git -C firestarter remote get-url origin
+  git@github.com:henols/firestarter_fw.git
+
+config_url(firestarter): git@github.com:henols/firestarter_fw.git
+remote_origin(firestarter): git@github.com:henols/firestarter_fw.git
+
+Both values name firestarter_fw. HEAD is still v1.35, the pre-rename ref, and the workaround from
+task 2 is holding.
+
+====================================================================
+READING 2 -- the hazard
+====================================================================
+capture_date: 2026-09-14T10:48:50Z
+
+HEAD is still the pre-rename ref (unchanged since setup):
+
+  $ git rev-parse HEAD
+  6e84030bb526da7bde603b94c4d899c0b80adc30
+
+Run the exact command 999.9's own routine-hygiene step names:
+
+  $ git submodule sync firestarter
+  Synchronizing submodule url for 'firestarter'
+
+Re-read both values:
+
+  $ git config --get submodule.firestarter.url
+  git@github.com:henols/firestarter.git
+  $ git -C firestarter remote get-url origin
+  git@github.com:henols/firestarter.git
+
+config_url(firestarter): git@github.com:henols/firestarter.git
+remote_origin(firestarter): git@github.com:henols/firestarter.git
+
+Both values now name the OLD slug. `sync` re-reads .gitmodules at the current HEAD -- which at a
+pre-rename ref still declares the old URL -- and overwrites the override with it. It clobbers two
+places, not one: the `.git/config` override AND the child's own `origin` remote. A reader who
+checks only one of the two readings above would see a partial picture. This is why the 999.9
+procedure's own routine-hygiene step is exactly what an operator following it would run into: an
+operator who has internalised "run `submodule sync --recursive` after repointing .gitmodules" will
+undo the GATE-03 workaround with no warning and no error the moment they run it at a pre-rename
+ref.
+
+====================================================================
+READING 3 -- the repair
+====================================================================
+capture_date: 2026-09-14T10:49:10Z
+
+Both repair commands, run in this order:
+
+  $ git config submodule.firestarter.url git@github.com:henols/firestarter_fw.git
+  $ git -C firestarter remote set-url origin git@github.com:henols/firestarter_fw.git
+
+Re-read both values:
+
+  $ git config --get submodule.firestarter.url
+  git@github.com:henols/firestarter_fw.git
+  $ git -C firestarter remote get-url origin
+  git@github.com:henols/firestarter_fw.git
+
+config_url(firestarter): git@github.com:henols/firestarter_fw.git
+remote_origin(firestarter): git@github.com:henols/firestarter_fw.git
+
+Both back on firestarter_fw. The discriminator: `sync` clobbers two places, so a repair that sets
+only the `.git/config` override leaves the child's own `origin` still pointing at the old slug --
+a reader who checks only the override would conclude the repair worked when it half did. Both
+repair commands are needed, and both are shown above with their literal argument order.
+
+Durability check -- re-running `sync` at the same HEAD immediately re-clobbers both:
+
+  $ git submodule sync firestarter
+  Synchronizing submodule url for 'firestarter'
+  $ git config --get submodule.firestarter.url
+  git@github.com:henols/firestarter.git
+  $ git -C firestarter remote get-url origin
+  git@github.com:henols/firestarter.git
+
+Both back on the old slug immediately. The two-command sequence above is a repair, not a fix -- it
+undoes one run of `sync`, and any further `sync` at the same pre-rename ref undoes it again. The
+only durable answer at a pre-rename ref is not to run `sync` there at all.
+
+====================================================================
+Working-clone integrity confirmation
+====================================================================
+The temp clone was created under a directory from `mktemp -d` and removed after this transcript
+was captured. No command in this file ran against /workspaces.
+
+  $ git -C /workspaces config --get submodule.firestarter.url
+  git@github.com:henols/firestarter_fw.git
+  $ git -C /workspaces/firestarter remote get-url origin
+  git@github.com:henols/firestarter_fw.git
+  $ git -C /workspaces branch --show-current
+  gsd/v1.38-repository-rename-activated-2026-09-13
+
+Same values as before this task ran.
+
+SYNC HAZARD REPRODUCED AND REPAIRED

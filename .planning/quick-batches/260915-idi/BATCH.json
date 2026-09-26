@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "batch_id": "260915-idi",
+  "created_at": "2026-09-15T13:13:49.073Z",
+  "options": {},
+  "base_revision": "8392ac3d75058f41202b3c335181c2ad468da897",
+  "items": [
+    {
+      "quick_id": "260915-idj",
+      "client_id": null,
+      "description": "Rewrite .claude/skills/devtest-rootcause/SKILL.md in Strict ASD-STE100, and repair two factual defects in it: line 27 sets FW=$ROOT/firestarter but that directory does not exist (the firmware submodule is firestarter_fw per .gitmodules), which breaks all 10 downstream $FW references; and the citation build_db.py:114 for _PAGE_SIZE_BY_PART is stale because that symbol is at line 102.",
+      "status": "complete",
+      "depends_on": [],
+      "planned_files": [
+        ".claude/skills/devtest-rootcause/SKILL.md"
+      ],
+      "directory": null,
+      "worktree": null,
+      "dispatched_worktree": null,
+      "dispatched_branch": null,
+      "dispatched_base": null,
+      "wave": 0,
+      "commit": "faf7e055",
+      "failure_reason": null
+    },
+    {
+      "quick_id": "260915-idk",
+      "client_id": null,
+      "description": "Rewrite .claude/skills/devtest-triage/SKILL.md in Strict ASD-STE100, reserving the six dev-test step tokens (id, read, blank-check, write, verify, erase) for step names only so prose never reuses them as ordinary English verbs, and rephrasing the garden-path clause \"close failures a later PASS supersedes\" in the description frontmatter.",
+      "status": "complete",
+      "depends_on": [],
+      "planned_files": [
+        ".claude/skills/devtest-triage/SKILL.md",
+        ".planning/quick/260915-idk-rewrite-claude-skills-devtest-triage-ski/gates.sh",
+        ".planning/quick/260915-idk-rewrite-claude-skills-devtest-triage-ski/skill-before.txt",
+        ".planning/quick/260915-idk-rewrite-claude-skills-devtest-triage-ski/fences-baseline.txt",
+        ".planning/quick/260915-idk-rewrite-claude-skills-devtest-triage-ski/token-census.txt",
+        ".planning/quick/260915-idk-rewrite-claude-skills-devtest-triage-ski/token-census.md",
+        ".planning/quick/260915-idk-rewrite-claude-skills-devtest-triage-ski/citations-derived.txt",
+        ".planning/quick/260915-idk-rewrite-claude-skills-devtest-triage-ski/citation-remap.md",
+        ".planning/milestones/v1.37-research/SUMMARY.md",
+        ".planning/milestones/v1.37-research/PITFALLS.md",
+        ".planning/milestones/v1.37-phases/187-answered-reports/187-RESEARCH.md",
+        ".planning/milestones/v1.37-phases/187-answered-reports/187-PATTERNS.md",
+        ".planning/milestones/v1.37-phases/187-answered-reports/187-CONTEXT.md",
+        ".planning/milestones/v1.36-phases/181-report-fidelity-schema-2-0-canonical-naming-hygiene-close/181-09-PLAN.md",
+        ".planning/milestones/v1.36-phases/181-report-fidelity-schema-2-0-canonical-naming-hygiene-close/181-07-PLAN.md"
+      ],
+      "directory": null,
+      "worktree": null,
+      "dispatched_worktree": null,
+      "dispatched_branch": null,
+      "dispatched_base": null,
+      "wave": 0,
+      "commit": "ed519fc7",
+      "failure_reason": null
+    }
+  ]
+}

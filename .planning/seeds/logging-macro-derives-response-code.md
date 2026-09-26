@@ -35,7 +35,7 @@ LOG_RESP_ID_U32(handle,
 ## Grounding facts (verified 2026-07-28, v1.22 branch)
 
 **`response_code` is a per-callback return channel, not a command status.**
-`_check_response()` (`firestarter/src/operation_utils.cpp:322-343`) reads it and
+`_check_response()` (`firestarter/src/operation_utils.cpp:330-351`) reads it and
 then unconditionally resets it to `RESPONSE_CODE_OK` before the next callback
 runs. Consequence: do **not** build a cross-command high-water mark — the
 callback boundary is the correct reset point. Monotonicity, if wanted at all,
@@ -67,8 +67,8 @@ would be reset before anyone read it. So a global fold into `LOG_ERROR_ID_*`
 writes dead state at those 16 sites — it must be scoped to the handler layer.
 
 **All 29 handler sites are mechanical to convert.** The ~5 sites where the log
-sits inside a nested block with the store after it (`memory.cpp:250`,
-`eeprom_28c.cpp:380`/`:419`, `eprom.cpp:190`, `flash_5v_page.cpp:127`) are plain
+sits inside a nested block with the store after it (`memory.cpp:322`,
+`eeprom_28c.cpp:354`/`:419`, `eprom.cpp:190`, `flash_5v_page.cpp:126`) are plain
 scope blocks for a `_b[]` byte-array temporary, not conditionals.
 
 ## Shape (rough)
@@ -105,8 +105,8 @@ static inline void _resp_from_id(firestarter_handle_t* h, uint8_t id) {
   build if any entry's declared `severity` disagrees with its ID band. This
   turns a convention into a machine-checked invariant.
 - **DATA band must NOT map.** `RESPONSE_CODE_DATA` is set deliberately at
-  `memory.cpp:348`; progress frames (`LOG_DATA_ID_U32_U32` at
-  `operation_utils.cpp:285`) must not set it as a side effect.
+  `memory.cpp:420`; progress frames (`LOG_DATA_ID_U32_U32` at
+  `operation_utils.cpp:293`) must not set it as a side effect.
 - **Leave `LOG_ERROR_ID_*` / `LOG_WARN_ID_*` alone.** They stay the framework
   layer's spelling. No behavior change at those 16 sites.
 

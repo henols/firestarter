@@ -1,0 +1,25 @@
+== 1 corpus census
+rows=746
+names=677
+plans=1354
+steps=16248
+unsupported=9304
+rc=0
+== 2 op vocabulary partition
+ops=13
+requires_verify=2
+exempt=11
+partition=OK
+rc=0
+== 3 predicate over the whole database
+violations=0
+unsupported_writes=0
+rc=0
+== 4 one-chip run_plan alignment
+align=OK
+align_steps=12
+rc=0
+== 5 the new module
+.......                                                                  [100%]
+7 passed in 1.08s
+rc=0

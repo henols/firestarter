@@ -1,0 +1,18 @@
+# Artifact-volume policy (Phase 160 D-15/D-16, recorded in full in IMAGE-PLAN.json's
+# artifact_volume_policy). These are reproducible-from-the-record or too voluminous to be
+# worth committing by default:
+#   - written images are exactly reproducible from tools/gen_addr_image.py plus
+#     IMAGE-PLAN.json's recorded size_bytes/mask/stamp_width, so their bytes stay local
+#   - chip read-back run_*.bin files are ~6.5 MB total across the sweep; their SHAs are
+#     recorded in EVIDENCE.jsonl, so a clean-match position is re-checkable by SHA alone
+cells/*/reads/
+cells/*/written.bin
+
+# COMMITTED-ON-FAILURE EXCEPTION: for any position whose judged verdict is not a clean
+# match (a SHA mismatch, an N=3 disagreement, or a verdict disagreement against the app's
+# unjudged 0/1/2), the run_*.bin files and written.bin for THAT position must be committed
+# -- Phase 165's root-cause analysis needs the actual bytes, not only their SHA. Because
+# this .gitignore excludes them by default, committing a failing position's files requires
+# the explicit escape hatch:
+#     git add -f bench/cells/<cell_slug>/reads/run_01.bin  (etc.)
+#     git add -f bench/cells/<cell_slug>/written.bin

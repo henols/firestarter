@@ -1,0 +1,28 @@
+
+Warning! Please install `99-platformio-udev.rules`. 
+More details: https://docs.platformio.org/en/latest/core/installation/udev-rules.html
+
+
+avrdude: AVR device initialized and ready to accept instructions
+
+Reading | ################################################## | 100% 0.00s
+
+avrdude: Device signature = 0x1e950f (probably m328p)
+avrdude: reading input file ".pio/build/uno/firestarter_uno.hex"
+avrdude: writing flash (26026 bytes):
+
+Writing | ################################################## | 100% 4.22s
+
+avrdude: 26026 bytes of flash written
+avrdude: verifying flash memory against .pio/build/uno/firestarter_uno.hex:
+avrdude: load data flash data from input file .pio/build/uno/firestarter_uno.hex:
+avrdude: input file .pio/build/uno/firestarter_uno.hex contains 26026 bytes
+avrdude: reading on-chip flash data:
+
+Reading | ################################################## | 100% 3.37s
+
+avrdude: verifying ...
+avrdude: 26026 bytes of flash verified
+
+avrdude done.  Thank you.
+

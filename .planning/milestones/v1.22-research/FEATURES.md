@@ -14,7 +14,7 @@ Every claim in this section was read out of the working tree at v1.22 start, not
 
 | Fact | Evidence |
 |---|---|
-| SDP-**disable** runs unconditionally + silently on every `0x0D` write | `firestarter/src/proms/eeprom_28c.cpp:109` — `flash_execute_command(EEPROM_SDP_DISABLE)` inside `eeprom28c_write_init()`, no flag, no log, no user-visible signal |
+| SDP-**disable** runs unconditionally + silently on every `0x0D` write | `firestarter/src/proms/eeprom_28c.cpp:104` — `flash_execute_command(EEPROM_SDP_DISABLE)` inside `eeprom28c_write_init()`, no flag, no log, no user-visible signal |
 | The 6-write disable table is local to the handler | `eeprom_28c.cpp:26-33` (`EEPROM_SDP_DISABLE`) — a duplicate of `FLASH_DISABLE_WRITE_PROTECTION`, `flash_utils.h:53-60` |
 | 64-byte page write + read-back polling exist | `eeprom_28c.cpp:19` (`PAGE_SIZE 64`), `:119-133` (`eeprom28c_write_execute`), `:135-155` (`eeprom28c_wait_for_write`) |
 | SDP-**enable** does not exist at any layer | `FLASH_ENABLE_WRITE_PROTECTION` (`flash_utils.h:48-52`) has **zero callers** — confirmed by grep across `src/` |
@@ -28,7 +28,7 @@ Every claim in this section was read out of the working tree at v1.22 start, not
 
 ```c
 flash_execute_command(EEPROM_SDP_DISABLE);
-if (!eeprom28c_wait_for_write(handle, 0x5555, 0x20)) { return; }   // eeprom_28c.cpp:111
+if (!eeprom28c_wait_for_write(handle, 0x5555, 0x20)) { return; }   // eeprom_28c.cpp:106
 ```
 
 The AT28C256 datasheet (Microchip DS20006386B, local copy `firestarter_app/datasheets/AT28C256.pdf`, p. 10) states:
@@ -65,9 +65,9 @@ And critically: **there is no state-neutral universal write path.** Prefixed-alw
 
 ### 0.4 Two more facts that reshape scope
 
-**The A9-12V identity check is dead in practice.** `eeprom28c_check_chip_id` is guarded by `if (handle->chip_id > 0)` (`eeprom_28c.cpp:100`). **All 84** `algorithm: 13` DB entries carry `chip_id_check: false` and `chip_id_value: "0x00000000"` — verified by iterating `chip_database.json`. The check has never executed for any real chip. Worse, the datasheet (p. 11) says the ID area is "an extra 64 bytes of EEPROM memory … available **to the user** for device identification," writable via A9=12V — it is **not a factory signature**, and reads `0xFF` on a virgin part. See §5 and the anti-feature in §7.
+**The A9-12V identity check is dead in practice.** `eeprom28c_check_chip_id` is guarded by `if (handle->chip_id > 0)` (`eeprom_28c.cpp:95`). **All 84** `algorithm: 13` DB entries carry `chip_id_check: false` and `chip_id_value: "0x00000000"` — verified by iterating `chip_database.json`. The check has never executed for any real chip. Worse, the datasheet (p. 11) says the ID area is "an extra 64 bytes of EEPROM memory … available **to the user** for device identification," writable via A9=12V — it is **not a factory signature**, and reads `0xFF` on a virgin part. See §5 and the anti-feature in §7.
 
-**`firestarter erase at28c256` cannot work, but `dev test` plans it anyway.** `configure_eeprom28c` has only `case CMD_WRITE` and `case CMD_BLANK_CHECK` (`eeprom_28c.cpp:39-47`) — no `CMD_ERASE` arm, so `handle->firestarter_operation_main` stays NULL and `op_execute_function` returns false (`operation_utils.cpp:97-102`). Meanwhile `database.py:594` sets `FLAG_CAN_ERASE` for `electrical.type == "EEPROM"`, and `chip_test.derive_plan` plans `OP_ERASE` whenever `can_erase and protocol != 0x05` (`chip_test.py:404`). So `dev test at28c256 --destructive` will produce a **BAD** erase verdict → `build_db_diff` auto-tags `ladder_state = "community-fail"` (`diagnostic_report.py:274`) **even if write and verify both pass**. That directly poisons the gh#11/gh#12 closeout, which asks reporters to file `dev test` reports. (The datasheet does document an "optional chip erase mode … using a 6-byte software code," p. 11 — so erase is implementable, just not in this scope.)
+**`firestarter erase at28c256` cannot work, but `dev test` plans it anyway.** `configure_eeprom28c` has only `case CMD_WRITE` and `case CMD_BLANK_CHECK` (`eeprom_28c.cpp:39-47`) — no `CMD_ERASE` arm, so `handle->firestarter_operation_main` stays NULL and `op_execute_function` returns false (`operation_utils.cpp:103-108`). Meanwhile `database.py:594` sets `FLAG_CAN_ERASE` for `electrical.type == "EEPROM"`, and `chip_test.derive_plan` plans `OP_ERASE` whenever `can_erase and protocol != 0x05` (`chip_test.py:404`). So `dev test at28c256 --destructive` will produce a **BAD** erase verdict → `build_db_diff` auto-tags `ladder_state = "community-fail"` (`diagnostic_report.py:268`) **even if write and verify both pass**. That directly poisons the gh#11/gh#12 closeout, which asks reporters to file `dev test` reports. (The datasheet does document an "optional chip erase mode … using a 6-byte software code," p. 11 — so erase is implementable, just not in this scope.)
 
 ---
 
@@ -242,7 +242,7 @@ It states the action, the resulting attractor, and the escape hatch — and it m
 
 ## 5. Interaction with the chip-ID / A9-12V mechanism
 
-**Current state.** `eeprom28c_write_init` checks identity *before* SDP-disable, with the ordering decision documented in the source (`eeprom_28c.cpp:98-99`): "*Check chip identity via A9-12V (SAF-05) BEFORE SDP-disable (D-08: fail-fast on identity leaves the chip write-protected on mismatch).*"
+**Current state.** `eeprom28c_write_init` checks identity *before* SDP-disable, with the ordering decision documented in the source (`eeprom_28c.cpp:93-94`): "*Check chip identity via A9-12V (SAF-05) BEFORE SDP-disable (D-08: fail-fast on identity leaves the chip write-protected on mismatch).*"
 
 **Three findings.**
 

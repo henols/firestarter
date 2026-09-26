@@ -1,0 +1,37 @@
+[
+  {
+    "argv": [
+      "/usr/local/bin/git",
+      "-C",
+      "/workspaces/firestarter",
+      "checkout",
+      "8695ee52c27a4bee4387c5c489afd5f3d7275e8a"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-08: check out control firmware SHA, porcelain confirmed empty before and after"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/pio",
+      "run",
+      "-t",
+      "upload",
+      "-e",
+      "leonardo"
+    ],
+    "cwd": "/workspaces/firestarter",
+    "note": "C-08 flash (env -C /workspaces/firestarter wrapper elided per env-not-in-argv convention): SUCCESS, 28170 bytes written, matches hex_span_expected_by_arm.control"
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/control/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "dev",
+      "test",
+      "W27E512"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-08 control-arm re-run (timeout 856 wrapper + FIRESTARTER_CONFIG_DIR inline elided): exit 0, wall-clock 213s, banner 6 of 6 ran, all steps OK -- same indeterminate write/verify fingerprint shape as the v133 run"
+  }
+]

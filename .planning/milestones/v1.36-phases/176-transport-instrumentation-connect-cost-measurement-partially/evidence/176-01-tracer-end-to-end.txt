@@ -1,0 +1,18 @@
+== 1 sink contract
+keys=decode_failures
+sorted=True
+zeroed=True
+after_one=1
+snapshot_is_a_copy=True
+after_reset=0
+rc=0
+== 2 report surface
+report_keys=cobs_errors,crc_failures,decode_failures,retries,timeouts,transport_suspect
+decode_default=not measured
+decode_is_not_zero=True
+rc=0
+== 3 the new module and the report tests
+........................................................................ [ 93%]
+.....                                                                    [100%]
+77 passed in 0.56s
+rc=0

@@ -1,0 +1,78 @@
+== 1 leg 1: ruff check firestarter/ tests/
+All checks passed!
+rc=0
+
+== 2 leg 2: ruff format --check firestarter/ tests/
+171 files already formatted
+rc=0
+
+== 3 leg 3: tools/check_mypy_watermark.py
+checked 173 source files
+mypy errors: 35 (watermark: 35)
+OK: error count at watermark.
+rc=0
+
+Note: first run measured 37 errors (2 over watermark) -- plan 180-04's WR-02
+hardening (_last_ok_assignment_shape) read .lineno/.col_offset off an
+ast.AST-typed loop variable, a type typeshed does not declare that attribute
+on. Fixed as a Rule 3 auto-fix (app commit 04fd982): narrowed to the four
+node types the loop already restricts target extraction to, all of which
+declare lineno/col_offset via ast.stmt/ast.expr. No behavior change; module
+still 12 passed. Re-run above is the fixed, passing measurement.
+
+== 4 leg 4: tools/snapshot_report_shapes.py --check
+OK: 19 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+
+== 5 leg 5: tools/check_devtest_orchestrator.py
+PASS: scanned ../firestarter/chip_test.py, ../firestarter/cli_handlers.py, ../firestarter/submit.py; 0 VPP-set, 0 raw-wire-dict, 0 --force, 0 broad-except; firmware untouched (host-only, asserted)
+rc=0
+
+== 6 leg 6: tools/check_diagnostic_report_claims.py
+PASS: scanned /workspaces/firestarter_app/tools/../firestarter/diagnostic_report.py, 216 string literals checked, zero forbidden matches
+rc=0
+
+== 7 leg 7: python -m pytest tests/ -o addopts="" -q (full suite, measured floor)
+32 snapshots passed.
+2247 passed, 1 warning in 360.73s (0:06:00)
+full_suite_passed=2247
+full_suite_failed=0
+rc=0
+
+== 8 comment delta gate (tokenize, not the added-line regex)
+phase_added_comments=0
+comments_test_chip_test_py=621
+comments_test_readback_inventory_py=0
+rc=0
+
+== 9 cleanliness legs
+changed_file_set_since_93a1672=tests/test_chip_test.py,tests/test_readback_inventory.py
+firmware_porcelain=clean
+app_tree_porcelain=clean
+chip_database_unchanged=1
+rc=0
+
+== 10 roadmap edit scope
+roadmap_region_before_phase180=identical
+roadmap_region_after_phase180=identical
+region_before_lines=434
+region_after_lines=5386
+ticked_plan_boxes=5
+gap_closure_grouping_present=1
+requirements_line_intact=1
+phase_level_checkbox_ticked=0
+plans_3_plans_global_count=7
+rc=0
+
+== summary scalars
+full_suite_passed=2247
+full_suite_failed=0
+snapshots_passed=32
+phase_added_comments=0
+firmware_porcelain=clean
+chip_database_unchanged=1
+roadmap_region_before_phase180=identical
+roadmap_region_after_phase180=identical
+ticked_plan_boxes=5
+phase_level_checkbox_ticked=0
+battery_legs=7

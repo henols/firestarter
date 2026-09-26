@@ -1,0 +1,30 @@
+== 1 the gate, the bypass and the fold
+gate_closes=True
+gate_tuple_intact=True
+gate_mentions_status=False
+transport_handlers=1
+handler_stepresult_calls=1
+handler_skipresult_calls=0
+fold_empty=COMPLETE
+fold_error=ERROR
+fold_complete=COMPLETE
+rc=0
+== 2 the status values are not op strings
+status_in_all_ops=False
+status_in_multiword=False
+rc=0
+== 3 the named legs
+rc=0
+leg_test_transport_fault_carries_skipped_verdict_and_error_status=1
+leg_test_id_step_closes_gate_predicate_is_unchanged_by_the_status_axis=1
+leg_test_the_transport_arm_does_not_route_through_skip_result=1
+leg_test_run_status_folds_error_when_any_step_errored=1
+leg_test_run_status_is_complete_when_no_step_errored=1
+leg_test_the_transport_precedence_rows_carry_the_error_status=1
+== 4 the modules
+........................................................................ [ 28%]
+........................................................................ [ 57%]
+........................................................................ [ 86%]
+..................................                                       [100%]
+250 passed in 2.21s
+rc=0

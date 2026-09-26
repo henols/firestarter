@@ -79,7 +79,7 @@ overrides_applied: 0
 | VPP SAF-04 suite (6/6) | `pio test -e native` (test_flash_intel_vpp env) | `native/avr/test_flash_intel_vpp [PASSED]` — 6/6 | PASS |
 | Chip-ID SAF-05 suite (4/4) | `pio test -e native` (test_eeprom28c_chip_id env) | `native/avr/test_eeprom28c_chip_id [PASSED]` — 4/4 | PASS |
 | CR-01 regression: VPP error clears regulator | `test_flash_intel_high_vpp_error_clears_regulator` in suite | PASSED — asserts `s_ctrl_writes_with_p1_low > 0` and final write state=false | PASS |
-| CR-02 regression: `mem_size < 64` underflow guard | `eeprom_28c.cpp:60-64` guard present | `if (handle->mem_size < 64)` fires before address derivation | PASS |
+| CR-02 regression: `mem_size < 64` underflow guard | `eeprom_28c.cpp:56-60` guard present | `if (handle->mem_size < 64)` fires before address derivation | PASS |
 
 ---
 
@@ -98,7 +98,7 @@ overrides_applied: 0
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
 | `flash_intel.cpp:39` | 39 | `int response_code` — local variable shadows outer scope idiom; same pattern as pre-existing `flash_intel_check_chip_id:152` | Info | Not a defect; consistent with codebase style |
-| `eeprom_28c.cpp:25` | 25 | `const byte_flip_t EEPROM_SDP_DISABLE[]` missing `static` qualifier (pre-existing, noted in review WR-01 as IN-01) | Info | In C++ namespace-scope `const` has internal linkage; no ODR risk; pre-existing style |
+| `eeprom_28c.cpp:23` | 25 | `const byte_flip_t EEPROM_SDP_DISABLE[]` missing `static` qualifier (pre-existing, noted in review WR-01 as IN-01) | Info | In C++ namespace-scope `const` has internal linkage; no ODR risk; pre-existing style |
 | `test_eeprom28c_chip_id.cpp:108,123,143,163` | multiple | `h.firestarter_get_data = mock_get_data_scripted` reassigned after `configure_memory()` (4 repetitions) | Warning | Fragile coupling to dispatcher internals; documented in test docstrings; noted in review WR-03; not a phase-blocking issue |
 
 No `TBD`, `FIXME`, or `XXX` markers found in any file modified by this phase. No unreferenced debt markers.
@@ -123,7 +123,7 @@ The code review (`01-REVIEW.md`, reviewed 2026-05-12T06:19:50Z) surfaced two cri
 
 The same fix was applied to the chip-id early-return path at `flash_intel.cpp:88-91` (WR-01 from the review).
 
-**CR-02 (integer underflow in `eeprom28c_check_chip_id`):** `uint32_t mfr_addr = handle->mem_size - 64` was unconditional; `mem_size == 0` wraps to `0xFFFFFFC0` and would drive 12V on A9 of an arbitrary address. Fixed in `firestarter` commit `4b57656`: a guard at `eeprom_28c.cpp:60-64` checks `mem_size < 64` and returns `RESPONSE_CODE_ERROR` (or WARNING with FORCE) before any address derivation.
+**CR-02 (integer underflow in `eeprom28c_check_chip_id`):** `uint32_t mfr_addr = handle->mem_size - 64` was unconditional; `mem_size == 0` wraps to `0xFFFFFFC0` and would drive 12V on A9 of an arbitrary address. Fixed in `firestarter` commit `4b57656`: a guard at `eeprom_28c.cpp:56-60` checks `mem_size < 64` and returns `RESPONSE_CODE_ERROR` (or WARNING with FORCE) before any address derivation.
 
 Both fixes were recorded in meta-repo commit `83c37b7`. The native suite result of 25/25 PASSED reflects the corrected code.
 

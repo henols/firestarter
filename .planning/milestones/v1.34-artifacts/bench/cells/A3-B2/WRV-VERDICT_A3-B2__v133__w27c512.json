@@ -1,0 +1,23 @@
+{
+  "app_verdict_unjudged": 0,
+  "commands": [],
+  "distinct_read_shas": 1,
+  "expect_size": 65536,
+  "n3_disagreement": false,
+  "position_id": "A3-B2__v133__w27c512",
+  "read_count": 3,
+  "read_files": [
+    ".planning/v1.34/bench/cells/A3-B2/reads/A3-B2__v133__w27c512/run_01.bin",
+    ".planning/v1.34/bench/cells/A3-B2/reads/A3-B2__v133__w27c512/run_02.bin",
+    ".planning/v1.34/bench/cells/A3-B2/reads/A3-B2__v133__w27c512/run_03.bin"
+  ],
+  "read_shas": [
+    "558decd0795b5d534aece2d94be4c52d62d42aa67a03f72a37f984d0eeadb807",
+    "558decd0795b5d534aece2d94be4c52d62d42aa67a03f72a37f984d0eeadb807",
+    "558decd0795b5d534aece2d94be4c52d62d42aa67a03f72a37f984d0eeadb807"
+  ],
+  "sha_verdict_judged": "match",
+  "size_violations": [],
+  "verdict_disagreement": false,
+  "written_sha": "558decd0795b5d534aece2d94be4c52d62d42aa67a03f72a37f984d0eeadb807"
+}

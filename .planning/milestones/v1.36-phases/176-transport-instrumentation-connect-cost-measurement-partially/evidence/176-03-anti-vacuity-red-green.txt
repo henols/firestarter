@@ -1,0 +1,383 @@
+== w1: delete the increment from the length-missing branch ==
+                if len(len_bytes) < 2:
+                    logger.warning(
+                        "Magic preamble seen but length bytes not received "
+                        "before timeout — re-syncing."
+                    )
+                    continue
+                frame_len = struct.unpack_from(">H", len_bytes)[0]
+
+                # Read body (`frame_len` bytes: id + params + crc).
+............F..........................                                  [100%]
+=================================== FAILURES ===================================
+_ test_magic_preamble_with_no_length_bytes_raises_resync_length_missing_and_nothing_else _
+
+make_comm = <function make_comm.<locals>._factory at 0x7ff85080f6a0>
+fake_serial = <tests.conftest._FakeSerial object at 0x7ff8507ffe50>
+
+    def test_magic_preamble_with_no_length_bytes_raises_resync_length_missing_and_nothing_else(
+        make_comm, fake_serial
+    ) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        fake_serial.feed(MAGIC_PREAMBLE_REF)
+    
+        list(comm._read_and_parse_lines(0.05))
+    
+        snap = transport_counters.snapshot()
+>       assert snap["resync_length_missing"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:265: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:489 Magic preamble seen but length bytes not received before timeout — re-syncing.
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_magic_preamble_with_no_length_bytes_raises_resync_length_missing_and_nothing_else
+1 failed, 38 passed in 0.47s
+rc_w1=1
+== restore after w1 ==
+.......................................                                  [100%]
+39 passed in 0.41s
+== w2: delete the increment from the body-truncated branch ==
+                    ) from e
+                if len(body) != frame_len:
+                    logger.warning(
+                        f"Frame body truncated: expected {frame_len} bytes, "
+                        f"got {len(body)} — re-syncing."
+                    )
+                    continue
+
+                # Consume the trailing terminator (D-04: anchor, not
+.............FF........................                                  [100%]
+=================================== FAILURES ===================================
+_ test_declared_length_longer_than_body_raises_resync_body_truncated_and_nothing_else _
+
+make_comm = <function make_comm.<locals>._factory at 0x7ff9395bf740>
+fake_serial = <tests.conftest._FakeSerial object at 0x7ff9395900d0>
+
+    def test_declared_length_longer_than_body_raises_resync_body_truncated_and_nothing_else(
+        make_comm, fake_serial
+    ) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        fake_serial.feed(MAGIC_PREAMBLE_REF + struct.pack(">H", 8) + b"\x01\x02")
+    
+        list(comm._read_and_parse_lines(0.05))
+    
+        snap = transport_counters.snapshot()
+>       assert snap["resync_body_truncated"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:279: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:505 Frame body truncated: expected 8 bytes, got 2 — re-syncing.
+_ test_truncated_frame_then_timeout_raises_both_resync_body_truncated_and_timeouts _
+
+make_comm = <function make_comm.<locals>._factory at 0x7ff9395d8c20>
+fake_serial = <tests.conftest._FakeSerial object at 0x7ff9395aea50>
+
+    def test_truncated_frame_then_timeout_raises_both_resync_body_truncated_and_timeouts(
+        make_comm, fake_serial
+    ) -> None:
+        """The adjacency leg: a single get_response call whose stream re-syncs on
+        a truncated frame and then runs out of time must raise BOTH
+        resync_body_truncated and timeouts by exactly one each -- two distinct
+        events on one call, neither merged into one counter nor suppressing the
+        other."""
+        transport_counters.reset()
+        comm = make_comm()
+        fake_serial.feed(MAGIC_PREAMBLE_REF + struct.pack(">H", 8) + b"\x01\x02")
+    
+        with pytest.raises(SerialTimeoutError):
+            comm.get_response(timeout=0.05)
+    
+        snap = transport_counters.snapshot()
+>       assert snap["resync_body_truncated"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:299: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:505 Frame body truncated: expected 8 bytes, got 2 — re-syncing.
+WARNING  SerialComm:serial_comm.py:561 Timeout waiting for a response from /dev/null.
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_declared_length_longer_than_body_raises_resync_body_truncated_and_nothing_else
+FAILED tests/test_transport_counters.py::test_truncated_frame_then_timeout_raises_both_resync_body_truncated_and_timeouts
+2 failed, 37 passed in 0.43s
+rc_w2=1
+== restore after w2 ==
+.......................................                                  [100%]
+39 passed in 0.43s
+== w3: swap the two increments so each branch records the other's counter ==
+                if len(len_bytes) < 2:
+                    logger.warning(
+                        "Magic preamble seen but length bytes not received "
+                        "before timeout — re-syncing."
+                    )
+                    transport_counters.record_resync_body_truncated()
+                    continue
+                frame_len = struct.unpack_from(">H", len_bytes)[0]
+
+                # Read body (`frame_len` bytes: id + params + crc).
+                try:
+                    body = self.connection.read(frame_len)  # type: ignore[union-attr]  # Phase 42 D-06
+                except serial.SerialException as e:
+                    raise SerialError(
+                        f"Serial error reading from {self.port_name}: {e}"
+                    ) from e
+                if len(body) != frame_len:
+                    logger.warning(
+                        f"Frame body truncated: expected {frame_len} bytes, "
+                        f"got {len(body)} — re-syncing."
+                    )
+                    transport_counters.record_resync_length_missing()
+                    continue
+
+............FFF........................                                  [100%]
+=================================== FAILURES ===================================
+_ test_magic_preamble_with_no_length_bytes_raises_resync_length_missing_and_nothing_else _
+
+make_comm = <function make_comm.<locals>._factory at 0x7f8f1a9136a0>
+fake_serial = <tests.conftest._FakeSerial object at 0x7f8f1a8fffd0>
+
+    def test_magic_preamble_with_no_length_bytes_raises_resync_length_missing_and_nothing_else(
+        make_comm, fake_serial
+    ) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        fake_serial.feed(MAGIC_PREAMBLE_REF)
+    
+        list(comm._read_and_parse_lines(0.05))
+    
+        snap = transport_counters.snapshot()
+>       assert snap["resync_length_missing"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:265: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:489 Magic preamble seen but length bytes not received before timeout — re-syncing.
+_ test_declared_length_longer_than_body_raises_resync_body_truncated_and_nothing_else _
+
+make_comm = <function make_comm.<locals>._factory at 0x7f8f1a92cb80>
+fake_serial = <tests.conftest._FakeSerial object at 0x7f8f1a8fe7d0>
+
+    def test_declared_length_longer_than_body_raises_resync_body_truncated_and_nothing_else(
+        make_comm, fake_serial
+    ) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        fake_serial.feed(MAGIC_PREAMBLE_REF + struct.pack(">H", 8) + b"\x01\x02")
+    
+        list(comm._read_and_parse_lines(0.05))
+    
+        snap = transport_counters.snapshot()
+>       assert snap["resync_body_truncated"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:279: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:505 Frame body truncated: expected 8 bytes, got 2 — re-syncing.
+_ test_truncated_frame_then_timeout_raises_both_resync_body_truncated_and_timeouts _
+
+make_comm = <function make_comm.<locals>._factory at 0x7f8f1a92cea0>
+fake_serial = <tests.conftest._FakeSerial object at 0x7f8f1a7b6e10>
+
+    def test_truncated_frame_then_timeout_raises_both_resync_body_truncated_and_timeouts(
+        make_comm, fake_serial
+    ) -> None:
+        """The adjacency leg: a single get_response call whose stream re-syncs on
+        a truncated frame and then runs out of time must raise BOTH
+        resync_body_truncated and timeouts by exactly one each -- two distinct
+        events on one call, neither merged into one counter nor suppressing the
+        other."""
+        transport_counters.reset()
+        comm = make_comm()
+        fake_serial.feed(MAGIC_PREAMBLE_REF + struct.pack(">H", 8) + b"\x01\x02")
+    
+        with pytest.raises(SerialTimeoutError):
+            comm.get_response(timeout=0.05)
+    
+        snap = transport_counters.snapshot()
+>       assert snap["resync_body_truncated"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:299: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:505 Frame body truncated: expected 8 bytes, got 2 — re-syncing.
+WARNING  SerialComm:serial_comm.py:562 Timeout waiting for a response from /dev/null.
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_magic_preamble_with_no_length_bytes_raises_resync_length_missing_and_nothing_else
+FAILED tests/test_transport_counters.py::test_declared_length_longer_than_body_raises_resync_body_truncated_and_nothing_else
+FAILED tests/test_transport_counters.py::test_truncated_frame_then_timeout_raises_both_resync_body_truncated_and_timeouts
+3 failed, 36 passed in 0.47s
+rc_w3=1
+== restore after w3 ==
+.......................................                                  [100%]
+39 passed in 0.46s
+== w4: delete the timeouts increment (record_response_timeout() in get_response), which must break the adjacency leg while leaving the two direct re-sync legs green ==
+        """
+        for response in self._read_and_parse_lines(timeout):
+            if response.type and response.type not in NON_RESPONSE_PREFIXES:
+                return response
+
+        # If the generator finishes without yielding a significant response, it's a timeout.  # noqa: E501
+        logger.warning(f"Timeout waiting for a response from {self.port_name}.")
+        raise SerialTimeoutError(
+.......FFF....F........................                                  [100%]
+=================================== FAILURES ===================================
+__________ test_established_timeout_raises_timeouts_and_nothing_else ___________
+
+make_comm = <function make_comm.<locals>._factory at 0x7f86940e71a0>
+
+    def test_established_timeout_raises_timeouts_and_nothing_else(make_comm) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        with pytest.raises(SerialTimeoutError):
+            comm.get_response(timeout=0.02)
+        snap = transport_counters.snapshot()
+>       assert snap["timeouts"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:200: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:561 Timeout waiting for a response from /dev/null.
+_______ test_probe_scoped_timeout_raises_probe_timeouts_and_nothing_else _______
+
+make_comm = <function make_comm.<locals>._factory at 0x7f86941009a0>
+
+    def test_probe_scoped_timeout_raises_probe_timeouts_and_nothing_else(
+        make_comm,
+    ) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        with transport_counters.probe_scope():
+            with pytest.raises(SerialTimeoutError):
+                comm.get_response(timeout=0.02)
+        snap = transport_counters.snapshot()
+>       assert snap["probe_timeouts"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:214: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:561 Timeout waiting for a response from /dev/null.
+_________ test_timeout_after_scope_exit_counts_as_established_timeout __________
+
+make_comm = <function make_comm.<locals>._factory at 0x7f8694100c20>
+
+    def test_timeout_after_scope_exit_counts_as_established_timeout(make_comm) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        with transport_counters.probe_scope():
+            pass
+        with pytest.raises(SerialTimeoutError):
+            comm.get_response(timeout=0.02)
+        snap = transport_counters.snapshot()
+>       assert snap["timeouts"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:227: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:561 Timeout waiting for a response from /dev/null.
+_ test_truncated_frame_then_timeout_raises_both_resync_body_truncated_and_timeouts _
+
+make_comm = <function make_comm.<locals>._factory at 0x7f8694100ae0>
+fake_serial = <tests.conftest._FakeSerial object at 0x7f8693f905d0>
+
+    def test_truncated_frame_then_timeout_raises_both_resync_body_truncated_and_timeouts(
+        make_comm, fake_serial
+    ) -> None:
+        """The adjacency leg: a single get_response call whose stream re-syncs on
+        a truncated frame and then runs out of time must raise BOTH
+        resync_body_truncated and timeouts by exactly one each -- two distinct
+        events on one call, neither merged into one counter nor suppressing the
+        other."""
+        transport_counters.reset()
+        comm = make_comm()
+        fake_serial.feed(MAGIC_PREAMBLE_REF + struct.pack(">H", 8) + b"\x01\x02")
+    
+        with pytest.raises(SerialTimeoutError):
+            comm.get_response(timeout=0.05)
+    
+        snap = transport_counters.snapshot()
+        assert snap["resync_body_truncated"] == 1
+>       assert snap["timeouts"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:300: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:505 Frame body truncated: expected 8 bytes, got 2 — re-syncing.
+WARNING  SerialComm:serial_comm.py:561 Timeout waiting for a response from /dev/null.
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_established_timeout_raises_timeouts_and_nothing_else
+FAILED tests/test_transport_counters.py::test_probe_scoped_timeout_raises_probe_timeouts_and_nothing_else
+FAILED tests/test_transport_counters.py::test_timeout_after_scope_exit_counts_as_established_timeout
+FAILED tests/test_transport_counters.py::test_truncated_frame_then_timeout_raises_both_resync_body_truncated_and_timeouts
+4 failed, 35 passed in 0.41s
+rc_w4=1
+== restore after w4 ==
+.......................................                                  [100%]
+39 passed in 0.38s
+== fence weakening: add a whitespace-only line inside _read_and_parse_lines' body, proving the re-pinned fence still discriminates ==
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_read_and_parse_lines_ringfence_unchanged _________________
+
+    def test_read_and_parse_lines_ringfence_unchanged() -> None:
+        """Ring-fence compliance: _read_and_parse_lines body source is byte-identical
+        to the GATE-1.8d pinned snapshot.
+    
+        This test is GREEN today — the snapshot is captured from the current body.
+        It goes RED if ANY change is made to the generator body (per GATE-1.8d:
+        any change must be flagged and deferred to v1.9 alongside binary re-validation).
+    
+        Pinned SHA-256 (2026-09-04): 8b77800003a44fb21f2054fe8d0584e804648a76e52c3f23f55f06df74127b41
+        (Updated from 6d9e4fe4b67b78c110418305113b275174f16b2ecc9e0f55fbf5d9a623398184
+         at Phase 176 plan 03: both re-sync branches now call
+         transport_counters.record_resync_length_missing() /
+         .record_resync_body_truncated() beside their existing logger.warning(...),
+         before the existing continue. Approved via blocking-human checkpoint
+         (RPT-C1). Not a transport-path change: no new read() call, no new branch
+         on a wire byte, and no write to start_time, so none of the byte-by-byte
+         read loop, the magic-preamble dispatch, the frame-length read, or the
+         timeout reset semantics is affected.)
+        (Updated from 544433068cb14ac14677939435cb4f0ea78783b503315ed645b5f88c5c44a444
+         at Phase 65-01: Response now carries id=decoded.id for ProtocolNotImplementedError
+         typed-raise dispatch. Change is in-scope for v1.12 host graceful handling — not
+         a transport-path change, only adds id plumbing to the Response construction.)
+        """
+        import hashlib
+        import inspect
+    
+        from firestarter.serial_comm import SerialCommunicator
+    
+        _PINNED_SHA256 = "8b77800003a44fb21f2054fe8d0584e804648a76e52c3f23f55f06df74127b41"
+    
+        src = inspect.getsource(SerialCommunicator._read_and_parse_lines)
+        actual_digest = hashlib.sha256(src.encode("utf-8")).hexdigest()
+    
+>       assert actual_digest == _PINNED_SHA256, (
+            f"GATE-1.8d VIOLATION: _read_and_parse_lines body has changed!\n"
+            f"  Pinned digest:  {_PINNED_SHA256}\n"
+            f"  Actual digest:  {actual_digest}\n"
+            "Any change to this generator body must be flagged and deferred to v1.9 "
+            "per the ring-fence protocol (see serial_comm.py header comment)."
+        )
+E       AssertionError: GATE-1.8d VIOLATION: _read_and_parse_lines body has changed!
+E           Pinned digest:  8b77800003a44fb21f2054fe8d0584e804648a76e52c3f23f55f06df74127b41
+E           Actual digest:  ffa79d1c508914c16768dab9d7aa62819c7fbe7b81eabae0cd829fae4dcdf48c
+E         Any change to this generator body must be flagged and deferred to v1.9 per the ring-fence protocol (see serial_comm.py header comment).
+E       assert 'ffa79d1c5089...29fae4dcdf48c' == '8b77800003a4...f06df74127b41'
+E         
+E         - 8b77800003a44fb21f2054fe8d0584e804648a76e52c3f23f55f06df74127b41
+E         + ffa79d1c508914c16768dab9d7aa62819c7fbe7b81eabae0cd829fae4dcdf48c
+
+tests/test_serial_comm.py:463: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_serial_comm.py::test_read_and_parse_lines_ringfence_unchanged
+1 failed in 0.14s
+rc_fence=1
+== restore after fence weakening, confirm green ==
+........................................................................ [ 45%]
+........................................................................ [ 91%]
+.............                                                            [100%]
+157 passed in 1.15s
+rc_clean=0

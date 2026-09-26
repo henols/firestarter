@@ -1,0 +1,222 @@
+== 1 comment sweep, zero-comment files
+zero firestarter_app/tests/fixtures/report_shapes.py=0
+zero firestarter_app/tests/fixtures/rekey_ledger.py=0
+zero firestarter_app/tests/fixtures/planted_rekey_mutation.py=0
+zero firestarter_app/tests/test_blast_radius_invariance.py=0
+zero firestarter_app/tests/test_rekey_ledger.py=0
+zero firestarter_app/tests/test_devtest_issue_corpus.py=0
+zero firestarter_app/tests/test_part_number_delta_drift.py=0
+== 1b comment sweep, shebang-only files
+shebang firestarter_app/tools/snapshot_report_shapes.py=1
+shebang firestarter_app/tools/build_devtest_issue_corpus.py=1
+shebang firestarter_app/tools/measure_part_number_delta.py=1
+shebang tools/rekey/check_rekey_ledger.py=1
+== 1c html comment openers in markdown this phase wrote
+md_openers=0
+== 1d yaml comments in the new workflow
+yaml_comments=0
+== 2 phase boundary
+app_prod_porcelain=0
+fw_porcelain=0
+app_changed_files:
+tests/fixtures/devtest_issue_corpus.json
+tests/fixtures/part_number_delta.json
+tests/fixtures/planted_rekey_mutation.py
+tests/fixtures/rekey_ledger.py
+tests/fixtures/report_shapes.py
+tests/fixtures/reports/at28c256-full-all-ok-sdp.json
+tests/fixtures/reports/gh20-at28c256-fail.json
+tests/fixtures/reports/gh23-w27e257-fail.json
+tests/fixtures/reports/gh28-m27c512-fail.json
+tests/fixtures/reports/gh47-sst27sf512-pass.json
+tests/fixtures/reports/m27c512-full-all-ok.json
+tests/fixtures/reports/m27c512-full-blank-check-bad.json
+tests/fixtures/reports/m27c512-full-canonical-name.json
+tests/fixtures/reports/m27c512-full-comma-joined-name.json
+tests/fixtures/reports/m27c512-full-runs-1.json
+tests/fixtures/reports/sst27sf512-full-all-ok.json
+tests/fixtures/reports/sst27sf512-six-step-readback-gated.json
+tests/fixtures/reports/sst27sf512-six-step.json
+tests/fixtures/reports/synthetic-arm4-empty-results.json
+tests/fixtures/reports/synthetic-arm4-no-ok.json
+tests/fixtures/reports/w27e257-full-all-ok.json
+tests/fixtures/shape_ids.json
+tests/test_blast_radius_invariance.py
+tests/test_devtest_issue_corpus.py
+tests/test_part_number_delta_drift.py
+tests/test_rekey_ledger.py
+tools/build_devtest_issue_corpus.py
+tools/measure_part_number_delta.py
+tools/snapshot_report_shapes.py
+== 3 cost of the five new modules
+........................................................................ [ 65%]
+......................................                                   [100%]
+110 passed in 7.32s
+new_modules_seconds=7.92
+rc=0
+baseline_full_suite_seconds=740.92
+derive_plan_sweep_seconds=4.26
+sweep_share_percent=0.58
+slow_marker=none
+== 4 the three pre-existing census failures, untouched
+FFF..                                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_no_skip_claims_firmware_absent_while_marker_present ___________
+
+    def test_no_skip_claims_firmware_absent_while_marker_present() -> None:
+        """If the sibling `../firestarter/.git` marker IS present, no test in the
+        child run may report a skip reason equal to `FW_ABSENT_REASON` -- that
+        would be exactly the fail-open proxy behaviour this milestone removed.
+    
+        `FW_REPO_PRESENT` / `FW_ABSENT_REASON` are imported from
+        `tests.fw_presence` and used for NOTHING else in this module -- the
+        census must not inherit any behaviour from that helper beyond reading the
+        marker (module docstring's mechanism note).
+    
+        When the sibling repo is genuinely absent in this environment, this test
+        takes the early `return` below -- a plain conditional exit, NOT a
+        `pytest.skip()` call, so pytest still reports this test PASSED, not
+        SKIPPED. A firmware-absent skip is honest in that case; it is
+        `ALLOWED_SKIP_REASONS` (via `FW_ABSENT_REASON`) and test 2 below that
+        would still fail if it appeared unexpectedly.
+        """
+        if not FW_REPO_PRESENT:
+            return
+>       result = _run_child_suite()
+                 ^^^^^^^^^^^^^^^^^^
+
+tests/test_skip_census.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_skip_census.py:235: in _run_child_suite
+    result = subprocess.run(
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:550: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:1209: in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:2116: in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Popen: returncode: -9 args: ['/workspaces/firestarter_app/.venv311/bin/pyth...>
+endtime = 207329.685600057, orig_timeout = 180
+stdout_seq = [b'.', b'.', b'.', b'.', b'.', b'.', ...], stderr_seq = []
+skip_check_and_raise = False
+
+    def _check_timeout(self, endtime, orig_timeout, stdout_seq, stderr_seq,
+                       skip_check_and_raise=False):
+        """Convenience for checking if a timeout has expired."""
+        if endtime is None:
+            return
+        if skip_check_and_raise or _time() > endtime:
+>           raise TimeoutExpired(
+                    self.args, orig_timeout,
+                    output=b''.join(stdout_seq) if stdout_seq else None,
+                    stderr=b''.join(stderr_seq) if stderr_seq else None)
+E           subprocess.TimeoutExpired: Command '['/workspaces/firestarter_app/.venv311/bin/python', '-m', 'pytest', 'tests/', '-rs', '-q', '--ignore=tests/test_skip_census.py']' timed out after 180 seconds
+
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:1253: TimeoutExpired
+____________________ test_every_skip_reason_is_allow_listed ____________________
+
+    def test_every_skip_reason_is_allow_listed() -> None:
+        """Any skip reason reported by the child run that is not recognised by
+        `ALLOWED_SKIP_REASONS` FAILs the census -- an unrecognised skip is
+        exactly the "silent, undocumented, new skip" D-10's allow-list exists to
+        surface. Add a deliberate, commented entry to `ALLOWED_SKIP_REASONS`
+        above if a new skip is genuinely legitimate."""
+>       result = _run_child_suite()
+                 ^^^^^^^^^^^^^^^^^^
+
+tests/test_skip_census.py:296: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_skip_census.py:235: in _run_child_suite
+    result = subprocess.run(
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:550: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:1209: in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:2116: in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Popen: returncode: -9 args: ['/workspaces/firestarter_app/.venv311/bin/pyth...>
+endtime = 207511.989123502, orig_timeout = 180
+stdout_seq = [b'.', b'.', b'.', b'.', b'.', b'.', ...], stderr_seq = []
+skip_check_and_raise = False
+
+    def _check_timeout(self, endtime, orig_timeout, stdout_seq, stderr_seq,
+                       skip_check_and_raise=False):
+        """Convenience for checking if a timeout has expired."""
+        if endtime is None:
+            return
+        if skip_check_and_raise or _time() > endtime:
+>           raise TimeoutExpired(
+                    self.args, orig_timeout,
+                    output=b''.join(stdout_seq) if stdout_seq else None,
+                    stderr=b''.join(stderr_seq) if stderr_seq else None)
+E           subprocess.TimeoutExpired: Command '['/workspaces/firestarter_app/.venv311/bin/python', '-m', 'pytest', 'tests/', '-rs', '-q', '--ignore=tests/test_skip_census.py']' timed out after 180 seconds
+
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:1253: TimeoutExpired
+________________________ test_census_child_run_is_live _________________________
+
+    def test_census_child_run_is_live() -> None:
+        """The child run must have actually collected a non-zero number of tests
+        -- otherwise a collection regression (e.g. a broken conftest.py) could
+        silence tests 1 and 2 by producing an empty report that vacuously
+        satisfies both (Pitfall 4 -- the census must assert its own liveness).
+    
+        Uses the `--collect-only` count captured by `_run_child_suite`, not the
+        full run's trailing summary line -- see the module docstring's
+        "Liveness signal" section for why the latter is unreliable here.
+        """
+>       result = _run_child_suite()
+                 ^^^^^^^^^^^^^^^^^^
+
+tests/test_skip_census.py:325: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_skip_census.py:235: in _run_child_suite
+    result = subprocess.run(
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:550: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:1209: in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:2116: in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Popen: returncode: -9 args: ['/workspaces/firestarter_app/.venv311/bin/pyth...>
+endtime = 207695.289897745, orig_timeout = 180
+stdout_seq = [b'.', b'.', b'.', b'...', b'.', b'.', ...], stderr_seq = []
+skip_check_and_raise = False
+
+    def _check_timeout(self, endtime, orig_timeout, stdout_seq, stderr_seq,
+                       skip_check_and_raise=False):
+        """Convenience for checking if a timeout has expired."""
+        if endtime is None:
+            return
+        if skip_check_and_raise or _time() > endtime:
+>           raise TimeoutExpired(
+                    self.args, orig_timeout,
+                    output=b''.join(stdout_seq) if stdout_seq else None,
+                    stderr=b''.join(stderr_seq) if stderr_seq else None)
+E           subprocess.TimeoutExpired: Command '['/workspaces/firestarter_app/.venv311/bin/python', '-m', 'pytest', 'tests/', '-rs', '-q', '--ignore=tests/test_skip_census.py']' timed out after 180 seconds
+
+/home/vscode/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py:1253: TimeoutExpired
+=========================== short test summary info ============================
+FAILED tests/test_skip_census.py::test_no_skip_claims_firmware_absent_while_marker_present
+FAILED tests/test_skip_census.py::test_every_skip_reason_is_allow_listed - su...
+FAILED tests/test_skip_census.py::test_census_child_run_is_live - subprocess....
+3 failed, 2 passed in 548.83s (0:09:08)
+rc=1
+census_porcelain=0
+Cause confirmed unchanged: a 180 s subprocess.TimeoutExpired child-run cap against a suite
+measured at 740.92 s (548.83 s observed just for this module's own child invocation, itself
+already past the 180 s cap). Unrelated to dedup_fingerprint, build_db_diff, derive_plan or the
+fixtures directory this phase added -- this belongs in the backlog, not this phase.
+== 5 runtime dependency set unchanged
+deps_changed=0

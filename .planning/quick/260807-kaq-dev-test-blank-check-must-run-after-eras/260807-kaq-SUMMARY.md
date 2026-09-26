@@ -64,9 +64,9 @@ Bucket D's distinct tuples — **finding, refined from the plan's literal spec**
 
 **Verdict path confirmed by citation** (chip_test.py / cli_handlers.py line numbers matched the plan's `<measured_ground_truth>` almost exactly, off by a handful of lines due to intervening unrelated history):
 - `chip_test.py:1601-1605`: `OP_BLANK_CHECK` dispatch maps `check_eprom_blank() is False` → `VERDICT_BAD`.
-- `cli_handlers.py:2011-2017`: `_VERDICT_EXIT_CODES[VERDICT_BAD] = 1`.
-- `cli_handlers.py:2029`: `_EXIT_CODE_PRECEDENCE = (1, 2, 0)` — BAD (1) is checked and returned first, ahead of marginal (2), confirming BAD is the **most severe** code the command can emit.
-- `cli_handlers.py:2404-2406`: `dev_test`'s own docstring still says "computed as max over per-step exit codes" — confirmed stale (D-14 already corrected the mechanism to the explicit-precedence walk); out of this task's scope, not touched.
+- `cli_handlers.py:2008-2014`: `_VERDICT_EXIT_CODES[VERDICT_BAD] = 1`.
+- `cli_handlers.py:2026`: `_EXIT_CODE_PRECEDENCE = (1, 2, 0)` — BAD (1) is checked and returned first, ahead of marginal (2), confirming BAD is the **most severe** code the command can emit.
+- `cli_handlers.py:2401-2403`: `dev_test`'s own docstring still says "computed as max over per-step exit codes" — confirmed stale (D-14 already corrected the mechanism to the explicit-precedence walk); out of this task's scope, not touched.
 
 ## Task 2 — RED-first proof (captured verbatim)
 

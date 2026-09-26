@@ -1,0 +1,40 @@
+== extracted resolver body
+          DEF="${META_DEFAULT_BRANCH:-main}"
+          CAND="$META_REF"
+          if [ "$CAND" = "$DEF" ]; then
+            CAND=""
+          fi
+          if [ -n "$CAND" ]; then
+            echo "meta ref under test: $CAND"
+          else
+            echo "meta ref under test: none (meta default branch, falling through to beta)"
+          fi
+          for repo in firestarter firestarter_app; do
+            RESOLVED="beta"
+            if [ -n "$CAND" ] && git ls-remote --exit-code --heads \
+                 "https://github.com/henols/$repo.git" "$CAND" >/dev/null 2>&1; then
+              RESOLVED="$CAND"
+            fi
+            echo "${repo}_ref=$RESOLVED" >> "$GITHUB_OUTPUT"
+            echo "$repo -> $RESOLVED"
+          done
+
+== scenario A schedule
+meta ref under test: none (meta default branch, falling through to beta)
+firestarter -> beta
+firestarter_app -> beta
+firestarter_ref=beta
+firestarter_app_ref=beta
+== scenario B dispatch milestone branch
+meta ref under test: gsd/v1.35-documentation-consolidation-wiki-migration
+firestarter -> gsd/v1.35-documentation-consolidation-wiki-migration
+firestarter_app -> gsd/v1.35-documentation-consolidation-wiki-migration
+firestarter_ref=gsd/v1.35-documentation-consolidation-wiki-migration
+firestarter_app_ref=gsd/v1.35-documentation-consolidation-wiki-migration
+== scenario C dispatch unknown branch
+meta ref under test: no-such-branch-172
+firestarter -> beta
+firestarter_app -> beta
+firestarter_ref=beta
+firestarter_app_ref=beta
+exit 0

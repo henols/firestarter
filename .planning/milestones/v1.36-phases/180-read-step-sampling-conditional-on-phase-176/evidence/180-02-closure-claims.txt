@@ -1,0 +1,39 @@
+== 1 required section headings present (180-PRUNE-08-CLOSURE.md)
+sections_total=6
+sec_excluded_and_why=1
+sec_criterion4=1
+sec_standing_granted=1
+sec_would_invalidate=1
+rc=0
+
+== 2 criterion 4 verdict
+criterion4_precondition_quoted=1
+criterion4_verdict=NA
+rc=0
+
+== 3 forward note and invalidating condition
+r4_01_named=1
+read_region_noted=1
+read_region_line=chip_test.py:2851
+rc=0
+
+== 4 size-gated variant disposition (D-05)
+size_gated_declined=1
+size_gated_refiled_as_requirement=0
+rc=0
+
+== 5 honesty scalars
+blanket_supported_claim=0
+modelled_rate_published=0
+kbps_figure_present=0
+rc=0
+
+== 6 D-06 / one-connect gates named by function
+d06_test_functions_named=3
+one_connect_pin_named=1
+rc=0
+
+== 7 submodule cleanliness
+firestarter_porcelain=1
+firestarter_app_porcelain=1
+rc=0

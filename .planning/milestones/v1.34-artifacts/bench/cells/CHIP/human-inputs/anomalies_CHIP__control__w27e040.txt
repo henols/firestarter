@@ -1,0 +1,18 @@
+Chip stayed seated throughout (Leonardo chip-out-exempt) between the v133 run, this control
+re-run, and the restore flash -- zero extra chip handling for this arbitration, per C-08. Run-count
+shift noted: read ran x2, but write/verify/erase/blank-check all ran x1 on BOTH arms for this
+part (repeat_policy: 'runs=1' on this row too, matching the primary row's own accurate derivation
+-- not the healthy-default two-cycle shape seen on positions 1-4). No --fast was used on either
+invocation; the single-cycle shape for these four steps appears to be this chip/size class's own
+behaviour, not a degraded-mode artifact.
+
+Timing comparison, arm to arm, step for step (v133 -> control): id 3.54s -> 3.48s; read 165.3s ->
+165.3s; write 392.4s -> 392.4s; verify 68.9s/69.0s -> 68.9s; erase 62.6s -> 62.6s; blank-check
+69.4s -> 69.4s (both BAD). Essentially identical -- further corroboration this is an
+arm-independent fault, not a v1.33-specific behavioural or timing change.
+
+REPRODUCIBILITY UPDATE: a subsequent v133-arm re-run (same seating, no re-flash) reproduced the
+identical blank-check failure a second time on that arm, at the same step, with the same error and
+near-identical timing to both this control run and the original v133 run. The fault is now
+observed three times total (v133 x2, control x1), all at the same step -- reinforcing that this is
+an intermittent, arm-independent transport fault rather than a one-off or arm-specific event.

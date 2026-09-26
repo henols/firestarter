@@ -1,0 +1,64 @@
+Plan 181-09 Task 1 -- D-5 two-repo same-commit adjudication (RPT-B1, RPT-F2)
+============================================================================
+
+meta_commit_sha=d2116df
+app_commit_sha=c994849
+commit_order=skill_first
+commit_order_reason=the skill's new sentence (naming all four surviving rail fields
+  and the pre-2.0 note) is already true before the deletion lands -- the four
+  before/after fields are the ones a triager should read today regardless of when
+  the deletion ships. Landing the skill first means there is no window in which the
+  report has dropped a key the skill still presents as live. Landing the app half
+  first would have created exactly that window (a schema that has already dropped
+  vpp_mv/vpe_mv while the skill still silently implies they might appear).
+
+skill_names_four_rail_fields=true
+skill_states_rail_not_socket=true
+skill_states_pre_2_0_note=true
+skill_datasheet_row_changed=false
+skill_fixtures_changed=0
+parse_input_fixtures_changed=0
+voltage_key_count_before=6
+voltage_key_count_after=4
+
+Datasheet cross-check example row identification
+-------------------------------------------------
+SKILL.md's datasheet-cross-check section (`### 5c. Cross-check the datasheet against
+what firestarter believes`) has a "Check | Datasheet source | firestarter source |
+Failure means" table whose VPP row's firestarter-side column reads the `VPP:` line
+from `firestarter info -a <chip>`. The example mismatch row a few paragraphs below
+that table (`vpp_mv: 13500`) is drawn from that SAME column structure -- it is the
+DATABASE's programming voltage for the part (the value `firestarter info` prints,
+sourced from `chip_database.json`), compared against the datasheet's stated
+programming voltage. It is a different field that happens to share a literal name
+with the REPORT's now-deleted standalone `voltage.vpp_mv` key. Confirmed:
+
+  $ /usr/bin/grep -n "vpp_mv: 13500" .claude/skills/devtest-triage/SKILL.md
+  385:| VPP (program) | 12V program; 14V is the ERASE voltage only | `vpp_mv: 13500` | MISMATCH -- neither the program nor the erase voltage |
+
+This row sits inside the datasheet-vs-database table (line ~304-315), not inside
+the report-voltage sentence this task edited (line ~330-339, the section that names
+the report's own `voltage.vpp_before_mv` / `vpp_after_mv` / `vpe_before_mv` /
+`vpe_after_mv` fields). Rewriting the example row as if it were the report's rail
+field would turn a correct database-versus-datasheet comparison into a false one.
+It was left byte-unchanged: verify leg (post-edit) --
+
+  $ test "$(/usr/bin/grep -c 'vpp_mv: 13500' .claude/skills/devtest-triage/SKILL.md)" -eq 1 && echo OK1
+  OK1
+  $ D=$(git diff 2facbc8f -- .claude/skills/devtest-triage/SKILL.md); test -z "$(printf '%s\n' "$D" | /usr/bin/grep -E '^[-+].*13500')" && echo OK2
+  OK2
+
+Both frozen fixtures unmodified
+---------------------------------
+  $ git status --porcelain .claude/skills/devtest-triage/fixtures/
+  (empty)
+
+D-5 residue
+-----------
+One commit across two git repositories is structurally impossible -- there is no
+single commit boundary that spans a meta repo and a submodule with independent
+histories. D-5's "same commit" requirement is discharged as far as two repositories
+allow: two commits landed inside this one task (Task 1), in the ordering and for
+the reason recorded above, each commit message naming the other side's sha. The
+record states this plainly rather than claiming a literal same-commit that did not
+happen.

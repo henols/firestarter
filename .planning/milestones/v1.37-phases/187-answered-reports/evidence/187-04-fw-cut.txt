@@ -1,0 +1,188 @@
+PRE-MERGE MEASUREMENT (firmware)
+=================================
+
+$ git rev-parse origin/beta
+3e26c1bb23e351954227ad48ad6e8f27663914f1
+
+$ git rev-parse HEAD
+3c3c802c18896ad8d498fd8a829b11d2300a72f4
+
+$ git rev-parse --abbrev-ref HEAD
+gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+
+$ git cherry origin/beta $(git rev-parse --abbrev-ref HEAD)
++ d8cf708bdb122f585afef27c8420bd1e62787581
++ fd5923489929c21b7b1c3cd1dc64c3dda85bdd71
++ 1564a608114e8cd57619b4a824e37ca2efd44718
++ 3e6d75ad378653a16fc13387cb4d9e48947d5d2f
++ e44ba6f2a4971ad97a8f31e3696593e898aa935f
++ 8c341f0c10960a32bb2cea01aeac7d6430b959bb
++ ec7c1bbd9768c58908a3cf1b3c15b7695036b3e6
++ 14be84c02a49bdd456add39832d0278a80768ae4
++ 3c3c802c18896ad8d498fd8a829b11d2300a72f4
+
+^+ count (ahead):
+9
+^- count (behind/merged-elsewhere):
+0
+
+$ git status --short
+(empty output = clean working tree)
+
+$ ls -1 .github/workflows/
+beta-build.yml
+build.yml
+py32f071.yml
+
+DRIFT-1 PROOF: beta-build.yml is present, beta-release.yml is absent, confirmed live above.
+
+$ git diff --stat origin/beta...HEAD
+ CLAUDE.md                                          |   9 +-
+ PROTOCOLS.md                                       |   9 +-
+ scripts/baseline/size_baseline.json                |  25 +--
+ scripts/check_erase_no_vpp.py                      |  28 +--
+ src/proms/flash_5v_page.cpp                        |  52 ------
+ .../avr/test_dispatch/test_configure_memory.cpp    |   3 +-
+ .../avr/test_val_5v_page/test_val_5v_page.cpp      |  66 ++++---
+ tests/fixtures/captured_build_v185_leonardo.log    |  91 ++++++++++
+ tests/fixtures/captured_build_v185_uno.log         |  91 ++++++++++
+ tests/fixtures/captured_build_v185_uno328pb.log    |  91 ++++++++++
+ .../captured_test_native_nodevtools_summary.log    |  36 ++--
+ tests/fixtures/captured_test_native_summary.log    |  36 ++--
+ tests/fixtures/planted_erase_no_vpp_ctrl_write.cpp |  12 +-
+ ...planted_size_baseline_flash_regression_v185.log |  91 ++++++++++
+ tests/test_check_size_baseline.py                  | 189 ++++++++++-----------
+ 15 files changed, 582 insertions(+), 247 deletions(-)
+
+$ git diff --numstat origin/beta...HEAD -- src/proms/flash_5v_page.cpp
+0	52	src/proms/flash_5v_page.cpp
+(expected: 0 added, 52 deleted -- the SAFE-08 unreachable 12V bulk-erase arm deletion D-02 names)
+
+$ gh pr list --repo henols/firestarter --state open --json number,title,headRefName,baseRefName
+[{"baseRefName":"beta","headRefName":"beta","number":54,"title":"OLED support for the Firestarter project has been added. Code works f…"}]
+
+Assertion: no open PR has this milestone branch ($B) as its head -- confirmed (0 matches above).
+NOTE: firestarter#54 exists in the open-PR list above (head=beta, base=beta, OPEN, 0 comments,
+created 2026-08-22T17:56:21Z) -- an unrelated stale external OLED contribution. It is NOT this
+milestone's PR and must not be touched. This is why 'zero open PRs' is not the assertion made;
+the assertion is scoped to 'no open PR whose head is this milestone branch.'
+
+$ gh pr view 54 --repo henols/firestarter --json number,title,state,headRefName,baseRefName,comments,createdAt
+{"baseRefName":"beta","comments":[],"createdAt":"2026-08-22T17:56:21Z","headRefName":"beta","number":54,"state":"OPEN","title":"OLED support for the Firestarter project has been added. Code works f…"}
+
+firestarter#54 BEFORE-STATE (for Task 3's after-half reconciliation):
+  state: OPEN
+  headRefName: beta
+  baseRefName: beta
+  comments: 0
+  createdAt: 2026-08-22T17:56:21Z
+
+PRE-CUT PUBLISHED STATE (orientation only -- this version must NOT be named in any reply body):
+$ gh release list --repo henols/firestarter --limit 3
+3.0.0b26	Pre-release	3.0.0b26	2026-09-09T18:58:36Z
+3.0.0b25	Pre-release	3.0.0b25	2026-09-02T17:21:41Z
+3.0.0b24	Pre-release	3.0.0b24	2026-08-31T22:47:23Z
+
+The pre-cut latest firmware pre-release is 3.0.0b26. This value must NOT appear in evidence/187-04-fw-version.txt
+or in any reply body -- Task 3 will read the post-cut version fresh from the API.
+READ AFTER THE CUT — timestamped poll log for beta-build.yml run 34700201882 (started 2026-09-12T14:45:15Z)
+
+2026-09-12T14:46:11Z  status=in_progress  raw=[{"conclusion":"","databaseId":34700201882,"status":"in_progress"}]
+2026-09-12T14:46:42Z  status=in_progress  raw=[{"conclusion":"","databaseId":34700201882,"status":"in_progress"}]
+2026-09-12T14:47:12Z  status=in_progress  raw=[{"conclusion":"","databaseId":34700201882,"status":"in_progress"}]
+2026-09-12T14:47:43Z  status=in_progress  raw=[{"conclusion":"","databaseId":34700201882,"status":"in_progress"}]
+2026-09-12T14:48:14Z  status=in_progress  raw=[{"conclusion":"","databaseId":34700201882,"status":"in_progress"}]
+2026-09-12T14:48:45Z  status=in_progress  raw=[{"conclusion":"","databaseId":34700201882,"status":"in_progress"}]
+2026-09-12T14:49:15Z  status=completed  raw=[{"conclusion":"success","databaseId":34700201882,"status":"completed"}]
+2026-09-12T14:49:15Z  BUILD COMPLETED
+
+=== PR / MERGE TRANSCRIPT ===
+
+$ gh pr create --repo henols/firestarter --base beta --head gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+https://github.com/henols/firestarter/pull/61
+
+$ gh pr merge 61 --repo henols/firestarter --merge
+(first attempt was denied by the local Claude Code auto-mode tool-permission classifier as a
+transient Stage-2 error; identical command retried, rc=0, no gh api substitution used)
+
+$ gh api repos/henols/firestarter/pulls/61 --jq '{state,merged,merge_commit_sha,merged_at,base:.base.ref}'
+{"base":"beta","merge_commit_sha":"3eda1cbf20b099061b0602134c369c318b770ea6","merged":true,
+ "merged_at":"2026-09-12T14:45:13Z","state":"closed"}
+
+A true merge commit was used (merge_method=merge), not a squash and not a rebase.
+
+=== RELEASE READ (never predicted) ===
+
+$ gh run list --repo henols/firestarter --workflow beta-build.yml --limit 1 --json status --jq '.[0].status'
+completed
+$ gh run list --repo henols/firestarter --workflow beta-build.yml --limit 1 --json conclusion --jq '.[0].conclusion'
+success
+
+Run 34700201882: created 2026-09-12T14:45:15Z, updated (completed) 2026-09-12T14:49:06Z (~3m51s
+elapsed), well inside the >=90-minute no-false-timeout polling budget.
+
+$ gh release list --repo henols/firestarter --limit 5
+3.0.0b27	Pre-release	3.0.0b27	2026-09-12T14:49:01Z
+3.0.0b26	Pre-release	3.0.0b26	2026-09-09T18:58:36Z
+3.0.0b25	Pre-release	3.0.0b25	2026-09-02T17:21:41Z
+3.0.0b24	Pre-release	3.0.0b24	2026-08-31T22:47:23Z
+3.0.0b23	Pre-release	3.0.0b23	2026-08-29T21:24:02Z
+
+The READ (post-cut) version is 3.0.0b27 -- written alone on line 1 of evidence/187-04-fw-version.txt.
+This is neither the pre-cut value shown at the Task 2 gate (3.0.0b26) nor the app's own version
+(3.0.0b39, a different repository).
+
+=== POST-MERGE DELETION-LANDED PROOF ===
+
+$ git fetch origin --quiet
+$ git diff --numstat origin/beta HEAD -- src/proms/flash_5v_page.cpp
+(empty output)
+$ git rev-parse origin/beta:src/proms/flash_5v_page.cpp
+11d5fef69ab8059ed0b9095d2ff25de8c3481e9e
+$ git rev-parse HEAD:src/proms/flash_5v_page.cpp
+11d5fef69ab8059ed0b9095d2ff25de8c3481e9e
+IDENTICAL -- the 52-line deletion (0 added / 52 deleted, measured pre-merge) has landed on
+origin/beta.
+
+=== POST-MERGE git cherry ===
+
+$ git rev-parse origin/beta
+0b5c19fe89920d2458720973ff0eb54185e0f5ab
+$ git cherry origin/beta gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+(no output -- both ^+ and ^- counts are 0)
+
+=== firestarter#54 AFTER-STATE (reconciled against Task 1's before-state) ===
+
+$ gh pr view 54 --repo henols/firestarter --json number,title,state,headRefName,baseRefName,comments,createdAt
+{"baseRefName":"beta","comments":[],"createdAt":"2026-08-22T17:56:21Z","headRefName":"beta","number":54,"state":"OPEN","title":"OLED support for the Firestarter project has been added. Code works f…"}
+
+Before (Task 1): state=OPEN, headRefName=beta, baseRefName=beta, comments=0, createdAt=2026-08-22T17:56:21Z
+After  (Task 3): state=OPEN, headRefName=beta, baseRefName=beta, comments=0, createdAt=2026-08-22T17:56:21Z
+IDENTICAL -- firestarter#54 was not touched by this plan.
+
+=== TAG ABSENCE (all three repos, post-merge) ===
+
+$ cd /workspaces/firestarter && git ls-remote --tags origin | /usr/bin/grep -c 'v1\.37'
+0
+$ cd /workspaces && git ls-remote --tags origin | /usr/bin/grep -c 'v1\.37'
+0
+$ cd /workspaces/firestarter_app && git ls-remote --tags origin | /usr/bin/grep -c 'v1\.37'
+0
+
+No v1.37 tag exists in any of the three repositories after this merge.
+
+=== GITLINK POSITION (recorded for the milestone close's benefit; not acted on) ===
+
+$ git log --oneline -5 origin/beta
+0b5c19f Apply automatic changes
+3eda1cb Merge pull request #61 from henols/gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+3c3c802 docs(185): correct envs_agree_note's stale 184 case count to the recorded 185
+...
+
+origin/beta's tip (0b5c19f, "Apply automatic changes") is CI's auto version-bump commit, one
+commit past the true merge commit (3eda1cb), which is itself one commit past the milestone
+branch's own tip (3c3c802, which meta's gitlink already names). This is the same precedented
+two-commits-behind shape recorded for the app repo in 187-03/187-MERGE-RECORD.md section 5 --
+meta's gitlinks are structurally two commits behind origin/beta per sub-repo after each cut,
+because the CI bump commit does not exist until after the merge. Per D-03, this is not acted on
+here; it is not scheduled as a second meta PR unless the operator asks.

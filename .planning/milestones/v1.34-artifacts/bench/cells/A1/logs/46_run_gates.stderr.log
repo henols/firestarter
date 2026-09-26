@@ -1,0 +1,24 @@
+usage: capture_provenance.py [-h] --cell-id CELL_ID --position-id POSITION_ID
+                             --arm {control,v133} --target
+                             {uno,uno328pb,leonardo} --port PORT --chip
+                             {w27c512,w29c020} --shield-rev {Rev 2.0,Rev
+                             2.2,Modified Rev 0} [--pins PINS]
+                             [--image-plan IMAGE_PLAN] [--out OUT]
+                             [--pending-readback] [--patch-readback]
+                             [--patch-image-plan]
+                             [--board-probe-json BOARD_PROBE_JSON]
+                             [--no-image-plan] [--selftest]
+capture_provenance.py: error: the following arguments are required: --shield-rev
+usage: capture_provenance.py [-h] --cell-id CELL_ID --position-id POSITION_ID
+                             --arm {control,v133} --target
+                             {uno,uno328pb,leonardo} --port PORT --chip
+                             {w27c512,w29c020} --shield-rev {Rev 2.0,Rev
+                             2.2,Modified Rev 0} [--pins PINS]
+                             [--image-plan IMAGE_PLAN] [--out OUT]
+                             [--pending-readback] [--patch-readback]
+                             [--patch-image-plan]
+                             [--board-probe-json BOARD_PROBE_JSON]
+                             [--no-image-plan] [--selftest]
+capture_provenance.py: error: argument --shield-rev: invalid choice: 'Rev 1.0' (choose from Rev 2.0, Rev 2.2, Modified Rev 0)
+FAIL: --patch-readback requires an existing record at /tmp/capture_provenance_selftest_readback_kin5obe_/does-not-exist.json (run --pending-readback first)
+FAIL: --patch-image-plan requires an existing record at /tmp/capture_provenance_selftest_imageplan_km1tzkls/does-not-exist.json

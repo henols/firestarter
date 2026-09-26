@@ -1,0 +1,42 @@
+=== 191-02 URL-02 prepared branch readings ===
+Captured: 2026-09-13T20:42:04Z
+
+--- git diff --numstat origin/main v1.38-url-02-main ---
+1	1	README.md
+1	1	firestarter/__init__.py
+1	1	firestarter/constants.py
+
+--- repointed constant (firestarter/constants.py on v1.38-url-02-main) ---
+
+FIRESTARTER_RELEASE_URL = (
+    "https://api.github.com/repos/henols/firestarter_fw/releases/latest"
+)
+
+--- README.md link line (v1.38-url-02-main) ---
+The Firestarter Firmware can be found here [Firestarter](https://github.com/henols/firestarter_fw).
+
+--- version (firestarter/__init__.py on v1.38-url-02-main) ---
+__version__ = "2.0.9"
+
+--- boundary-aware bare-slug sweep over v1.38-url-02-main (expect 0) ---
+count: 0
+
+--- positive control: henols/firestarter_app over v1.38-url-02-main (expect non-zero) ---
+v1.38-url-02-main:README.md
+v1.38-url-02-main:autocomplete.md
+v1.38-url-02-main:doc/package-details.md
+v1.38-url-02-main:doc/protocol-id.md
+v1.38-url-02-main:pyproject.toml
+v1.38-url-02-main:things.md
+count: 6
+
+--- commit ---
+186a1524f13a4df6e4d9ac5a4c1b3e7177a7ee79 fix(url-02): repoint firmware release URL to firestarter_fw, bump to 2.0.9
+
+--- worktree list after removal (must not name v1.38-url-02-main) ---
+/workspaces/firestarter_app     560ec24 [v1.38-repository-rename]
+/workspaces/.v1.34-arms/control 6bfa645 (detached HEAD)
+/workspaces/.v1.34-arms/v133    cb189a9 (detached HEAD)
+
+--- verdict ---
+PREPARED BRANCH OK -- three files, one commit, zero bare-slug hits, non-zero control, unpushed

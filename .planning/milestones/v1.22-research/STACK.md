@@ -10,7 +10,7 @@
 
 **No new technology is required. Zero new third-party dependencies on either side of the wire.** Every mechanism v1.22 needs already exists in-tree: the `byte_flip_t` table + `flash_execute_command` primitive (firmware), the `uint32_t ctrl_flags` wire field (both sides), the codegen'd message catalog, the Click `dev` group, the v1.21 destructiveness gate, and a native register-recording test harness. The "stack additions" are five small, additive integration points plus **one correctness fix that changes the shape of the whole milestone**.
 
-**The load-bearing discovery (§3.3): the SDP-disable sequence that ships in `3.0.0b11` is electrically inert on 66 of the 84 `0x0D` chips in the database.** `PROJECT.md:53` records that unlock "already exists and runs unconditionally… therefore shipped in `3.0.0b11`". That is true of the *source*, and false of the *silicon*. The 6-write sequence is issued through `flash_util_byte_flipping`, which writes raw addresses straight to the LSB/MSB latches (`flash_utils.cpp:61-66`) and **bypasses `mem_util_remap_address_bus` entirely** (`memory.cpp:259-282`). On the two 28-pin `0x0D` pinouts the magic address `0x5555` puts a `1` on RURP bus line 14 — which those pinouts map to socket pin 27, `/WE`. Per AT28C256 datasheet Table 6-1, `WE = V_IH` is a documented **Write Inhibit**. Four of the six disable writes are to `0x5555`, so they are all inhibited. The DIP24 pinout has the inverse collision. So v1.22 does not "complete and expose" a working unlock — it must **first make unlock work at all**, and that is a *fix*, not a feature.
+**The load-bearing discovery (§3.3): the SDP-disable sequence that ships in `3.0.0b11` is electrically inert on 66 of the 84 `0x0D` chips in the database.** `PROJECT.md:53` records that unlock "already exists and runs unconditionally… therefore shipped in `3.0.0b11`". That is true of the *source*, and false of the *silicon*. The 6-write sequence is issued through `flash_util_byte_flipping`, which writes raw addresses straight to the LSB/MSB latches (`flash_utils.cpp:62-67`) and **bypasses `mem_util_remap_address_bus` entirely** (`memory.cpp:331-354`). On the two 28-pin `0x0D` pinouts the magic address `0x5555` puts a `1` on RURP bus line 14 — which those pinouts map to socket pin 27, `/WE`. Per AT28C256 datasheet Table 6-1, `WE = V_IH` is a documented **Write Inhibit**. Four of the six disable writes are to `0x5555`, so they are all inhibited. The DIP24 pinout has the inverse collision. So v1.22 does not "complete and expose" a working unlock — it must **first make unlock work at all**, and that is a *fix*, not a feature.
 
 This reframes the milestone a third time, and it is good news: it means v1.22 has a real, provable, software-only deliverable (a native register-trace test that goes RED today and GREEN after the fix) instead of only a lock-half plus cosmetics.
 
@@ -61,7 +61,7 @@ So `AA-55-A0` is **dual-purpose**: with no payload it *locks*; with a payload it
 
 > **AT28C256 §6.6.2 / p.10:** "All command sequences must conform to the page write timing specifications." — i.e. the SDP bytes are subject to `t_BLC`, exactly as page-write bytes are.
 
-**`t_BLC` is almost certainly NOT Firestarter's problem, and that is worth stating explicitly** because it is the community's #1 reported failure mode (see §4). `fu_flash_flip_data` (`flash_utils.cpp:52-59`) contains **no `delay*()` call of any kind**: two register latches, a data-buffer write, and a `/CE` strobe. On a 16 MHz AVR with direct port access that is single-digit microseconds — an order of magnitude inside even Xicor's 100 µs. Recommend adding a native assertion that no delay is introduced into this path (a regression guard), not a timing fix.
+**`t_BLC` is almost certainly NOT Firestarter's problem, and that is worth stating explicitly** because it is the community's #1 reported failure mode (see §4). `fu_flash_flip_data` (`flash_utils.cpp:53-60`) contains **no `delay*()` call of any kind**: two register latches, a data-buffer write, and a `/CE` strobe. On a 16 MHz AVR with direct port access that is single-digit microseconds — an order of magnitude inside even Xicor's 100 µs. Recommend adding a native assertion that no delay is introduced into this path (a regression guard), not a timing fix.
 
 ### 1.4 The other load-bearing datasheet fact — the read-back inference is not weak, it is invalid
 
@@ -69,7 +69,7 @@ So `AA-55-A0` is **dual-purpose**: with no payload it *locks*; with a payload it
 
 > **AT28C256 DS20006386B p.10:** same claim, phrased "The data in the enable and disable command sequences is not written to the device…"
 
-`eeprom_28c.cpp:111` does:
+`eeprom_28c.cpp:106` does:
 
 ```c
 if (!eeprom28c_wait_for_write(handle, 0x5555, 0x20)) { return; }
@@ -82,7 +82,7 @@ if (!eeprom28c_wait_for_write(handle, 0x5555, 0x20)) { return; }
 The datasheet-correct completion signals, in preference order:
 1. **`t_WC` wall-clock wait** — the datasheets' own instruction ("after writing the 3-byte command sequence and waiting `t_WC`"). One `delay(10)`. Cheapest, provably correct, no read at all.
 2. **Toggle bit (I/O6)** — AT28C256 §6.16/§6.17 pp.19-20. Note 3 on p.20: "**Any address location may be used** but the address should not vary." This is the only in-band signal that is valid for a command sequence with no stored data.
-3. **DQ7 data polling** — valid only for real array writes (there is a "last byte written"), which is what `eeprom28c_write_execute` legitimately uses. Not valid for the SDP sequence. Note `flash_util_verify_operation` (`flash_utils.cpp:29-50`) already implements a correct DQ7-only, double-read, 150 ms-bounded poll and **is not used by `0x0D` at all** — a reuse candidate for the write path, not for the SDP path.
+3. **DQ7 data polling** — valid only for real array writes (there is a "last byte written"), which is what `eeprom28c_write_execute` legitimately uses. Not valid for the SDP sequence. Note `flash_util_verify_operation` (`flash_utils.cpp:30-51`) already implements a correct DQ7-only, double-read, 150 ms-bounded poll and **is not used by `0x0D` at all** — a reuse candidate for the write path, not for the SDP path.
 
 **Recommendation:** option 1 for the SDP sequences (`delay(10)`, matching `t_WC` max) plus option 2 only if positive proof is required beyond a fixed wait. Do **not** try to salvage the `0x5555`/`0x20` read-back.
 
@@ -129,18 +129,18 @@ AT28C64  pinout=DIP28_28C64  bus=[0..12]   intended 0x5555 → chip sees 0x1555 
 
 1. **`t_BLC`:** Atmel/Microchip 150 µs, Xicor/ON-Semi **100 µs** (MEDIUM). 8 XICOR + 11 CATALYST(CSI) chips sit on `0x0D`. Firestarter's ~µs-scale sequence clears both, so this is a "do not regress" constraint rather than a change.
 2. **Page size.** `eeprom_28c.cpp:19` hard-codes `#define PAGE_SIZE 64`. AT28C010's own §19 note 4 says "**1 to 128 bytes** of data are loaded" — the AT28C010 page is 128 B, and AT28C040 is 256 B. 18 of the 84 `0x0D` chips are 64K–512K parts on `DIP32_28C512_EEPROM`. A 64-byte poll on a 128-byte page mid-page is precisely the W29C040 bug that v1.17 CR-01 fixed for `0x05`. **Adjacent, real, but arguably out of v1.22's scope** — flag it for the roadmap as a candidate slice or an explicit deferral, not silence.
-3. **Latent trap if you touch page size:** `constants.py:107-111` declares `JSON_KEY_PAGE_SIZE = "page-size"` with the comment "Firmware sync: json_parser.c (key_page_size)". **That comment is false.** `json_parser.c:56-79` `key_parsers[]` contains only `memory-size, address, flags, chip-id, pin-count, pulse-delay, vpp_mv, algorithm, read-settling-delay, read-strobe-us`; `grep -rn page_size src/ include/` in the firmware returns only `flash_5v_page.cpp`'s local heuristic. The host emits `page-size` and the firmware **silently discards it** (unknown JSON fields are skipped). Any plan that says "reuse the existing `page_size` wire field" is planning against a field that does not exist on the wire.
+3. **Latent trap if you touch page size:** `constants.py:107-111` declares `JSON_KEY_PAGE_SIZE = "page-size"` with the comment "Firmware sync: json_parser.c (key_page_size)". **That comment is false.** `json_parser.c:67` `key_parsers[]` contains only `memory-size, address, flags, chip-id, pin-count, pulse-delay, vpp_mv, algorithm, read-settling-delay, read-strobe-us`; `grep -rn page_size src/ include/` in the firmware returns only `flash_5v_page.cpp`'s local heuristic. The host emits `page-size` and the firmware **silently discards it** (unknown JSON fields are skipped). Any plan that says "reuse the existing `page_size` wire field" is planning against a field that does not exist on the wire.
 
 ### 3.3 THE DEFECT — `/WE` collides with the magic address on 66 of 84 chips
 
-`flash_util_byte_flipping` (`flash_utils.cpp:20-27`) calls `fu_flash_flip_data` → `fu_flash_fast_address` (`:61-66`), which does:
+`flash_util_byte_flipping` (`flash_utils.cpp:21-28`) calls `fu_flash_flip_data` → `fu_flash_fast_address` (`:61-66`), which does:
 
 ```c
 uint8_t lsb = address & 0xFF;   rurp_write_to_register(LEAST_SIGNIFICANT_BYTE, lsb);
 uint8_t msb = ((address >> 8) & 0xFF); rurp_write_to_register(MOST_SIGNIFICANT_BYTE, msb);
 ```
 
-Raw address → bus lines 0–15. It never calls `mem_util_remap_address_bus` (`memory.cpp:259-282`), so it applies **no** chip-pin remap, **no** `rw_line` polarity (`memory.cpp:271-273`, `WRITE_FLAG 0` / `READ_FLAG 1` per `memory_utils.h:16-17`), and **no** `static_high_mask` (`memory.cpp:280`). Bus line *n* = bit *n* of the 24-bit physical word: 0–7 in the LSB latch, 8–15 in the MSB latch, 16+ in CONTROL.
+Raw address → bus lines 0–15. It never calls `mem_util_remap_address_bus` (`memory.cpp:331-354`), so it applies **no** chip-pin remap, **no** `rw_line` polarity (`memory.cpp:343-345`, `WRITE_FLAG 0` / `READ_FLAG 1` per `memory_utils.h:16-17`), and **no** `static_high_mask` (`memory.cpp:352`). Bus line *n* = bit *n* of the 24-bit physical word: 0–7 in the LSB latch, 8–15 in the MSB latch, 16+ in CONTROL.
 
 `flash_util_byte_flipping:22,26` does clear `CTRL_READ_WRITE` (`0x40` = bus line 22) — which is the correct `/WE` bit only for pinouts whose `rw-pin` resolves to line 22 (the v1.18 `DIP32_27C020` case). None of the four `0x0D` pinouts do.
 
@@ -167,7 +167,7 @@ Reproduction (worth keeping as the phase's RED test fixture):
 
 **Every one of the 84 `0x0D` chips has at least one inhibited write in the shipped sequence.** Per AT28C64B §6.8 Table 6-1, row "Write Inhibit — X, X, V_IH", a `/WE`-high cycle is a documented no-op. The sequence cannot latch.
 
-**The fix is a stack decision, and it is small.** `0x0D` must not use `flash_util_byte_flipping`. It needs a byte-flip that routes each command byte through the normal `handle->firestarter_set_data(handle, addr, data)` path — which already applies `mem_util_remap_address_bus` with `WRITE_FLAG`, driving `/WE` low and placing every address bit on the right pin (`memory.cpp:224-234`). `handle->pulse_delay` is already set to 0 for `0x0D` (`eeprom_28c.cpp:39-40`), so `memory_set_data`'s `delayMicroseconds(3)` + zero pulse keeps the per-byte cost around 5-10 µs — still an order of magnitude inside Xicor's 100 µs `t_BLC`. Reuse over rewrite: a small `eeprom28c_execute_command(handle, table, n)` looping `firestarter_set_data` is ~10 lines and needs no new primitive.
+**The fix is a stack decision, and it is small.** `0x0D` must not use `flash_util_byte_flipping`. It needs a byte-flip that routes each command byte through the normal `handle->firestarter_set_data(handle, addr, data)` path — which already applies `mem_util_remap_address_bus` with `WRITE_FLAG`, driving `/WE` low and placing every address bit on the right pin (`memory.cpp:228-306`). `handle->pulse_delay` is already set to 0 for `0x0D` (`eeprom_28c.cpp:39-40`), so `memory_set_data`'s `delayMicroseconds(3)` + zero pulse keeps the per-byte cost around 5-10 µs — still an order of magnitude inside Xicor's 100 µs `t_BLC`. Reuse over rewrite: a small `eeprom28c_execute_command(handle, table, n)` looping `firestarter_set_data` is ~10 lines and needs no new primitive.
 
 Caveat to verify in the fix phase: `DIP24_2816` has **no** `static-high-pins` key in `pinouts.json`, unlike `DIP24_2716` and `DIP24_2732` which both declare `[24]`. So `static_high_mask == 0` and VCC (bus line 13) is not force-driven for the 19 DIP24 EEPROMs even on the remapped path. Routing through `firestarter_set_data` fixes `/WE` and the addresses but not this; treat it as a separate, named finding.
 
@@ -176,7 +176,7 @@ Caveat to verify in the fix phase: `DIP24_2816` has **no** `static-high-pins` ke
 The brief asks to "check X28C and W29EE families since they share the `0x0D` protocol bucket in this project's DB." Verified against `chip_database.json`:
 
 - **X28C is present** — 8 XICOR entries on `0x0D`: `X2804A`, `X2816A`, `X2816B/C`, `X28256/X28C256`, `X2864AP`, `X28C010`, `X28C64/X28HC64`, `X28C64(NonStandard)/X28HC64(NonStandard)`. Same AA/55/A0 + 6-write shape, tighter `t_BLC`.
-- **W29EE is NOT on `0x0D`.** Zero Winbond entries in the 84-chip `0x0D` set. `W29EE011`/`W29EE012` are AT29C-class page-program *flash* and live on the `0x05` (`PROTO_FLASH_5V_PAGE`) / `0x06` (`PROTO_FLASH_NOR_UNLOCK`) handlers, whose SDP is already exercised by `flash_5v_page.cpp:86-95`. **Do not pull W29EE into v1.22's scope.**
+- **W29EE is NOT on `0x0D`.** Zero Winbond entries in the 84-chip `0x0D` set. `W29EE011`/`W29EE012` are AT29C-class page-program *flash* and live on the `0x05` (`PROTO_FLASH_5V_PAGE`) / `0x06` (`PROTO_FLASH_NOR_UNLOCK`) handlers, whose SDP is already exercised by `flash_5v_page.cpp:85-94`. **Do not pull W29EE into v1.22's scope.**
 
 Full `0x0D` population: 84 chips, 15 manufacturers (ATMEL 20, MICROCHIP memory 14, CATALYST 11, XICOR 8, EXEL 7, ST 5, WED 4, AMD 3, NEC 3, SGS-THOMSON 3, SAMSUNG 2, CYPRESS/FUJITSU/HITACHI/MAXWELL 1 each); 75 `supported`, 9 `adapter-required`.
 
@@ -200,7 +200,7 @@ if (cmdopts.no_protect_on  == 0 && device->opts4 & 0xc000) { minipro_protect_on(
 ```
 
 Three properties Firestarter currently has **none** of:
-1. **A DB capability gate** — `device->opts4 & 0xc000`. Firestarter unlocks unconditionally for all 84 chips (`eeprom_28c.cpp:109`), including parts that may not implement SDP.
+1. **A DB capability gate** — `device->opts4 & 0xc000`. Firestarter unlocks unconditionally for all 84 chips (`eeprom_28c.cpp:104`), including parts that may not implement SDP.
 2. **Automatic RE-LOCK after write.** minipro restores the chip's protected state. Firestarter leaves every part it writes permanently unlocked, silently.
 3. **Explicit opt-outs**, one per direction.
 
@@ -227,8 +227,8 @@ flashrom's parallel support targets LPC/FWH Firmware-Hub block-lock *registers*,
 
 | Option | Cost | Verdict |
 |--------|------|---------|
-| **A. New flag bits on `ctrl_flags`** | Zero wire change. `handle->ctrl_flags` is `uint32_t` (`firestarter.h:96`) and `get_flags` parses via `extract_long`/`simple_strtoul` into it (`json_parser.c:284-286`), so bits ≥ `0x100` are already wire-legal on both sides today. All eight low bits are taken (`firestarter.h:59-68`). | **RECOMMENDED for the write-path modifiers** (`FLAG_SKIP_SDP_UNLOCK`, `FLAG_SDP_RELOCK`) |
-| **B. New `CMD_*` value** | `CMD` 9 and 10 are free (`firestarter.h:34-51`). **But there is a trap:** `firestarter.cpp:76-95` gates `configure_memory()` behind `cmd < CMD_READ_VPP` **and**, when `DEV_TOOLS` is defined, `cmd < CMD_DEV_ADDRESS` (7). A new `cmd` 9/10 would fall into the dev-flags `else` branch and **never reach `configure_memory`**, leaving `firestarter_operation_main` NULL. It would also need a new `case` in `loop()`'s switch (`:202-252`) or hit `MSG_ERR_UNKNOWN_CMD`. Renumbering `CMD_DEV_*` is a gratuitous breaking wire change. | Viable but requires restructuring a safety-relevant gate. **Prefer A.** |
+| **A. New flag bits on `ctrl_flags`** | Zero wire change. `handle->ctrl_flags` is `uint32_t` (`firestarter.h:96`) and `get_flags` parses via `extract_long`/`simple_strtoul` into it (`json_parser.c:471-473`), so bits ≥ `0x100` are already wire-legal on both sides today. All eight low bits are taken (`firestarter.h:59-68`). | **RECOMMENDED for the write-path modifiers** (`FLAG_SKIP_SDP_UNLOCK`, `FLAG_SDP_RELOCK`) |
+| **B. New `CMD_*` value** | `CMD` 9 and 10 are free (`firestarter.h:34-51`). **But there is a trap:** `firestarter.cpp:73-91` gates `configure_memory()` behind `cmd < CMD_READ_VPP` **and**, when `DEV_TOOLS` is defined, `cmd < CMD_DEV_ADDRESS` (7). A new `cmd` 9/10 would fall into the dev-flags `else` branch and **never reach `configure_memory`**, leaving `firestarter_operation_main` NULL. It would also need a new `case` in `loop()`'s switch (`:202-252`) or hit `MSG_ERR_UNKNOWN_CMD`. Renumbering `CMD_DEV_*` is a gratuitous breaking wire change. | Viable but requires restructuring a safety-relevant gate. **Prefer A.** |
 | **C. Sub-op selector field** | New JSON key + new `key_parsers[]` entry. More surface than A for no gain. | No |
 
 **For the standalone `lock` / `unlock` operations**, the cleanest fit is **B-with-eyes-open** *or* modelling on `CMD_ERASE`. Study `eprom_erase` (`eprom_operations.cpp:34-41`):
@@ -244,10 +244,10 @@ That is the exact archetype v1.22 needs: **a capability-gated, no-data-payload, 
 
 ### 5.2 What the three-phase INIT/MAIN/END machine implies
 
-`_execute_operation_house_keeping` (`operation_utils.cpp:195-217`) runs INIT → MAIN → END, **each phase waiting for a host ACK first** (`op_wait_for_ack`, `:203`, `:233`). For a no-payload operation:
+`_execute_operation_house_keeping` (`operation_utils.cpp:203-225`) runs INIT → MAIN → END, **each phase waiting for a host ACK first** (`op_wait_for_ack`, `:203`, `:233`). For a no-payload operation:
 - Set **only** `firestarter_operation_main`; leave `init` and `end` NULL. `_execute_operation_house_keeping_func` returns `CONTINUE` for a NULL callback (`:244` → `_execute_operation` returns `CONTINUE` at `:311`) and the phase is skipped without an ACK round-trip. `configure_eeprom28c`'s existing `CMD_BLANK_CHECK` arm (`eeprom_28c.cpp:44-46`) does exactly this.
 - **Do not** put the SDP sequence in `firestarter_operation_init` for a standalone op. INIT is for write-preamble work; a standalone lock has no MAIN to precede.
-- The `RESPONSE_CODE_OK / WARNING / ERROR` triad and `_check_response` (`:322-338`) give the success signal for free — no new response mechanism needed. Match the `FLAG_FORCE` → WARNING-instead-of-ERROR convention already used at `eeprom_28c.cpp:62-68` and `:86-92`.
+- The `RESPONSE_CODE_OK / WARNING / ERROR` triad and `_check_response` (`:322-338`) give the success signal for free — no new response mechanism needed. Match the `FLAG_FORCE` → WARNING-instead-of-ERROR convention already used at `eeprom_28c.cpp:58-64` and `:86-92`.
 - Per-command timeout is `TIMEOUT_MS 1000` (`firestarter.h:32`), reset by `op_reset_timeout()`. A `t_WC` `delay(10)` is far inside it; a 6-byte sequence + `delay(10)` is ~10 ms total.
 
 ### 5.3 Concrete firmware change list
@@ -255,7 +255,7 @@ That is the exact archetype v1.22 needs: **a capability-gated, no-data-payload, 
 | Change | Location | Notes |
 |--------|----------|-------|
 | **Fix the byte-flip path (must-do)** | new `eeprom28c_execute_command()` in `eeprom_28c.cpp`; stop calling `flash_execute_command` at `:109` | Route each command byte through `handle->firestarter_set_data` so `mem_util_remap_address_bus` applies. ~10 lines. This is §3.3. |
-| **Fix the completion wait (must-do)** | `eeprom_28c.cpp:111` | Replace the `(0x5555, 0x20)` read-back with `delay(10)` (`t_WC` max) and/or a toggle-bit poll. §1.4. |
+| **Fix the completion wait (must-do)** | `eeprom_28c.cpp:106` | Replace the `(0x5555, 0x20)` read-back with `delay(10)` (`t_WC` max) and/or a toggle-bit poll. §1.4. |
 | **Add `EEPROM_SDP_ENABLE` table** | `eeprom_28c.cpp` alongside `EEPROM_SDP_DISABLE` (`:26-33`) | `{0x5555,0xAA},{0x2AAA,0x55},{0x5555,0xA0}`. Keep it **local to `eeprom_28c.cpp`**, mirroring the existing local `EEPROM_SDP_DISABLE`, rather than wiring the zero-caller `FLASH_ENABLE_WRITE_PROTECTION` in `flash_utils.h:48-52` — that header's tables are `const` at file scope in a header included by multiple TUs and are the wrong sharing boundary for a `0x0D`-specific table. |
 | **Add `CMD_*` arms** | `configure_eeprom28c` switch, `eeprom_28c.cpp:39-47` | Today only `CMD_WRITE` and `CMD_BLANK_CHECK`. Note `CMD_CHECK_CHIP_ID` has **no arm** even though `eeprom28c_check_chip_id` exists (`:56-95`) — it is reachable only from write-init. A cheap adjacent win. |
 | **New flag bits** | `firestarter.h` after `:68`; mirror in `constants.py:88-99` | `0x100`+. **Lockstep — must change together.** |
@@ -299,9 +299,9 @@ Reject `firestarter sdp <lock|unlock> <chip>` — a two-level verb for two opera
 
 Two distinct gates, do not conflate them:
 
-1. **`firestarter unlock` / `lock` gates** — these are new top-level commands and need their own confirm. Reuse the `dev test` pattern verbatim (`cli_handlers.py:1836-1843`): `_is_interactive()` → `Confirm.ask(...)` on a TTY, `-y/--yes` bypass, and off-TTY the explicit flag is itself consent. That helper (`_is_interactive`, `:1719-1726`) exists precisely because `CliRunner.invoke` replaces `sys.stdin`, so patch the helper, not `sys.stdin.isatty`.
+1. **`firestarter unlock` / `lock` gates** — these are new top-level commands and need their own confirm. Reuse the `dev test` pattern verbatim (`cli_handlers.py:1833-1840`): `_is_interactive()` → `Confirm.ask(...)` on a TTY, `-y/--yes` bypass, and off-TTY the explicit flag is itself consent. That helper (`_is_interactive`, `:1719-1726`) exists precisely because `CliRunner.invoke` replaces `sys.stdin`, so patch the helper, not `sys.stdin.isatty`.
 
-2. **The v1.21 `dev test` destructiveness gate** — `derive_plan(..., destructive=...)` (`chip_test.py:318`) with `_DESTRUCTIVE_OPS = frozenset({OP_WRITE, OP_ERASE})` (`:453`) and the `locked_destructive` advisory list (`:295-330`). **If, and only if, an SDP step is added to the `dev test` plan**, it must join `_DESTRUCTIVE_OPS` and be omitted (not skipped) from a non-destructive plan per D-01/SAFE-01. Note the op vocabulary is a closed set of six strings (`chip_test.py:273-278`) consumed by `parse_devtest_issue.py` and the report renderer — adding `OP_SDP_LOCK`/`OP_SDP_UNLOCK` ripples into the issue parser, the ladder-state taxonomy (`diagnostic_report.py:210-247`), and the `audit_coverage_matrix` golden.
+2. **The v1.21 `dev test` destructiveness gate** — `derive_plan(..., destructive=...)` (`chip_test.py:318`) with `_DESTRUCTIVE_OPS = frozenset({OP_WRITE, OP_ERASE})` (`:453`) and the `locked_destructive` advisory list (`:295-330`). **If, and only if, an SDP step is added to the `dev test` plan**, it must join `_DESTRUCTIVE_OPS` and be omitted (not skipped) from a non-destructive plan per D-01/SAFE-01. Note the op vocabulary is a closed set of six strings (`chip_test.py:273-278`) consumed by `parse_devtest_issue.py` and the report renderer — adding `OP_SDP_LOCK`/`OP_SDP_UNLOCK` ripples into the issue parser, the ladder-state taxonomy (`diagnostic_report.py:207-243`), and the `audit_coverage_matrix` golden.
 
 **Recommendation: keep SDP out of the `dev test` plan in v1.22.** Ship the CLI commands + write-path flags first. Adding an op to `dev test` triples the blast radius (op vocabulary + issue parser + report golden + orchestrator AST gate) for a chip family nobody can bench.
 
@@ -331,8 +331,8 @@ Two distinct gates, do not conflate them:
 | **A new `CMD_*` byte "because lock is a new operation"** | `CMD` 9/10 are free but sit **above** `CMD_DEV_ADDRESS`, so `firestarter.cpp:79` skips `configure_memory` for them when `DEV_TOOLS` is defined; and `loop()`'s switch would reject them. Renumbering `CMD_DEV_*` is a breaking wire change for a cosmetic gain. | Flag bits on `ctrl_flags` (`uint32_t`, wire-ready today) for write-path modifiers; if a standalone command byte really is needed, budget the `DEV_TOOLS` gate restructure explicitly. |
 | **Deleting `FLASH_ENABLE_WRITE_PROTECTION` as a duplicate of `FLASH_ENABLE_WRITE`** | They are byte-identical because the AT28C datasheet makes `AA-55-A0` genuinely dual-purpose: lock-with-no-payload vs write-while-protected-with-payload (§1.2). The abandoned v1.16 `0052c42` dedup would have erased real semantics. | Keep both, or collapse to one table named for the bytes (`SDP_CMD_PREFIX_A0`) with both intents documented at the call sites. |
 | **Hand-editing `messages.h` or `messages.py`** | Both are codegen output from `messages.toml`; CI has a drift gate. | Edit the meta-repo TOML, run `codegen.py`, run `sync_to_subrepos.sh`. |
-| **"Reuse the existing `page-size` wire field"** | It does not exist on the wire. `constants.py:107-111` claims firmware sync; `json_parser.c:56-79` has no such key and the firmware silently discards it (§3.2 item 3). | If page size is needed, add the `key_parsers[]` entry as real lockstep work — or correct the false comment and defer. |
-| **A `--force` path that bypasses a firmware SDP refusal** | The project's standing posture, and the orchestrator AST gate denies `force=True` pass-through in the `dev test` surface. `FLAG_FORCE` in this family means "downgrade ERROR to WARNING" (`eeprom_28c.cpp:62-68`), not "ignore". | Keep `FLAG_FORCE` semantics unchanged. |
+| **"Reuse the existing `page-size` wire field"** | It does not exist on the wire. `constants.py:107-111` claims firmware sync; `json_parser.c:67` has no such key and the firmware silently discards it (§3.2 item 3). | If page size is needed, add the `key_parsers[]` entry as real lockstep work — or correct the false comment and defer. |
+| **A `--force` path that bypasses a firmware SDP refusal** | The project's standing posture, and the orchestrator AST gate denies `force=True` pass-through in the `dev test` surface. `FLAG_FORCE` in this family means "downgrade ERROR to WARNING" (`eeprom_28c.cpp:58-64`), not "ignore". | Keep `FLAG_FORCE` semantics unchanged. |
 | **A bench-graduation requirement** | No AT28C part in operator inventory (`PROJECT.md:59`). | Software-only validation: native register traces + host tests. The §5.5 RED→GREEN test is stronger evidence than a single-sample bench run would be anyway. |
 | **Trusting the `PROJECT.md` "unlock already ships in b11" premise** | True at source level, false electrically (§3.3). | Re-baseline the milestone on the §3.3 finding before writing requirements. |
 
@@ -347,7 +347,7 @@ Two distinct gates, do not conflate them:
 | PlatformIO + Arduino AVR | as pinned in `firestarter/platformio.ini` | Firmware build for uno / leonardo / uno328pb | Unchanged; SDP work is ~50 lines of C, no flash-budget risk |
 | Unity via `pio test -e native` | as configured | Host-side register-trace tests, no board needed | The only validation path available with no AT28C silicon; harness + recording stubs already exist |
 | Click | already a dependency | `lock` / `unlock` commands + `write` flags | 14 `@cli.command()` + a `dev` group already established |
-| rich (`Confirm.ask`) | already a dependency | TTY safety confirm | Exact v1.21 `dev test` gate pattern, `cli_handlers.py:1836-1843` |
+| rich (`Confirm.ask`) | already a dependency | TTY safety confirm | Exact v1.21 `dev test` gate pattern, `cli_handlers.py:1833-1840` |
 | `tools/catalog/codegen.py` + `messages.toml` | v1 catalog | New message IDs `0xBD`–`0xBF` | Mandatory path; CI drift gate |
 
 ### Development tools (unchanged, all already gating CI)

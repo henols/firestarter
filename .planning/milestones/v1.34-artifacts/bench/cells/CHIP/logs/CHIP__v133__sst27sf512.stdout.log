@@ -1,0 +1,227 @@
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Checking chip ID for SST27SF512
+Chip ID check passed for SST27SF512: (main done) (0.28s)
+Connecting...Connecting... OK      
+Reading EPROM SST27SF512, saving to /tmp/chip_test_read_jh9i98t0/run_00.bin
+EPROM read complete.
+Read complete (7.40s). Data saved to /tmp/chip_test_read_jh9i98t0/run_00.bin
+Connecting...Connecting... OK      
+Reading EPROM SST27SF512, saving to /tmp/chip_test_read_jh9i98t0/run_01.bin
+EPROM read complete.
+Read complete (7.40s). Data saved to /tmp/chip_test_read_jh9i98t0/run_01.bin
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Writing /tmp/chip_test_pattern_c8gkz1pk.bin to SST27SF512
+Write to SST27SF512 successful (30.02s).
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Verifying /tmp/chip_test_pattern_h02tbiut.bin against SST27SF512
+Verify for SST27SF512 successful (5.68s).
+Connecting...Connecting... OK      
+Erasing EPROM SST27SF512
+Erase for SST27SF512 successful (5.16s). (main done)
+Connecting...Connecting... OK      
+Blank checking EPROM SST27SF512
+Blank check for SST27SF512 successful (4.86s). (main done)
+Connecting...
+ERROR: Empty input
+Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Writing /tmp/chip_test_pattern_f59z6p2n.bin to SST27SF512
+Write to SST27SF512 successful (30.02s).
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Reading EPROM SST27SF512, saving to /tmp/chip_test_region_jgjjerwg/region.bin
+EPROM read complete.
+Read complete (7.41s). Data saved to /tmp/chip_test_region_jgjjerwg/region.bin
+Connecting...Connecting... OK      
+Verifying /tmp/chip_test_pattern_39iwhkn7.bin against SST27SF512
+Verify for SST27SF512 successful (5.68s).
+Connecting...Connecting... OK      
+Reading EPROM SST27SF512, saving to /tmp/chip_test_region_y4z5e638/region.bin
+EPROM read complete.
+Read complete (7.40s). Data saved to /tmp/chip_test_region_y4z5e638/region.bin
+Connecting...Connecting... OK      
+Erasing EPROM SST27SF512
+Erase for SST27SF512 successful (5.16s). (main done)
+Connecting...Connecting... OK      
+Blank checking EPROM SST27SF512
+Blank check for SST27SF512 successful (4.85s). (main done)
+                      dev test -- SST27SF512                      
+┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Field              ┃ Value                                     ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ host_version       │ 3.0.0b32                                  │
+│ fw_board_identity  │ 3.0.0b22:leonardo                         │
+│ hw_revision        │ Rev 2.0-class, Override HW: Rev 2.0-class │
+│ protocol           │ 0x07                                      │
+│ chip_id            │ 0xBFA4                                    │
+│ step: id           │ OK  x1  3.53s                             │
+│ step: read         │ OK  x2  21.2s                             │
+│ step: write        │ OK  x2  115.6s                            │
+│ step: verify       │ OK  x2  28.5s                             │
+│ step: erase        │ OK  x2  16.6s                             │
+│ step: blank-check  │ OK  x2  16.1s                             │
+│ banner             │ 6 of 6 ran                                │
+│ steps total        │ 201.6s                                    │
+│ sdp_hold_state     │ NOT-RUN                                   │
+│ vpp (before/after) │ 12400 / 12400 mV                          │
+│ vpe (before/after) │ 14400 / 14400 mV                          │
+└────────────────────┴───────────────────────────────────────────┘
+Report written to 
+/workspaces/.planning/v1.34/config/reports/dev-test-SST27SF512.json
+https://github.com/henols/firestarter_prom/issues/new?title=%5Bdev%20test%5D%20S
+ST27SF512%20%E2%80%94%20PASS%20%28fe0ab4e6da24%29&body=%7C%20Step%20%7C%20Verdic
+t%20%7C%20Runs%20%7C%20Took%20%7C%20Reason%20%7C%0A%7C%20----%20%7C%20-------%20
+%7C%20----%20%7C%20----%20%7C%20------%20%7C%0A%7C%20id%20%7C%20OK%20%7C%201%20%
+7C%203.53s%20%7C%20-%20%7C%0A%7C%20read%20%7C%20OK%20%7C%202%20%7C%2021.2s%20%7C
+%20-%20%7C%0A%7C%20write%20%7C%20OK%20%7C%202%20%7C%20115.6s%20%7C%20-%20%7C%0A%
+7C%20verify%20%7C%20OK%20%7C%202%20%7C%2028.5s%20%7C%20-%20%7C%0A%7C%20erase%20%
+7C%20OK%20%7C%202%20%7C%2016.6s%20%7C%20-%20%7C%0A%7C%20blank-check%20%7C%20OK%2
+0%7C%202%20%7C%2016.1s%20%7C%20-%20%7C%0A%7C%20write-baseline-b%20%7C%20NA%20%7C
+%20-%20%7C%20-%20%7C%20-%20%7C%0A%7C%20write-baseline-a%20%7C%20NA%20%7C%20-%20%
+7C%20-%20%7C%20-%20%7C%0A%7C%20sdp-lock%20%7C%20NA%20%7C%20-%20%7C%20-%20%7C%20-
+%20%7C%0A%7C%20write-inhibited%20%7C%20NA%20%7C%20-%20%7C%20-%20%7C%20-%20%7C%0A
+%7C%20sdp-unlock%20%7C%20NA%20%7C%20-%20%7C%20-%20%7C%20-%20%7C%0A%7C%20write-re
+stored%20%7C%20NA%20%7C%20-%20%7C%20-%20%7C%20-%20%7C%0A%0A%60%60%60json%0A%7B%0
+A%20%20%22schema_version%22%3A%20%221.7%22%2C%0A%20%20%22generated%22%3A%20%2220
+26-08-28T23%3A28%3A47Z%22%2C%0A%20%20%22auto_capture%22%3A%20%7B%0A%20%20%20%20%
+22host_version%22%3A%20%223.0.0b32%22%2C%0A%20%20%20%20%22fw_board_identity%22%3
+A%20%223.0.0b22%3Aleonardo%22%2C%0A%20%20%20%20%22hw_revision%22%3A%20%22Rev%202
+.0-class%2C%20Override%20HW%3A%20Rev%202.0-class%22%2C%0A%20%20%20%20%22chip%22%
+3A%20%22SST27SF512%22%2C%0A%20%20%20%20%22protocol%22%3A%20%227%22%2C%0A%20%20%2
+0%20%22chip_id_expected%22%3A%2049060%2C%0A%20%20%20%20%22chip_id_actual%22%3A%2
+0null%2C%0A%20%20%20%20%22chip_id_mismatch_reason%22%3A%20null%0A%20%20%7D%2C%0A
+%20%20%22transport_health%22%3A%20%7B%0A%20%20%20%20%22cobs_errors%22%3A%20%22no
+t%20measured%22%2C%0A%20%20%20%20%22crc_failures%22%3A%20%22not%20measured%22%2C
+%0A%20%20%20%20%22retries%22%3A%20%22not%20measured%22%2C%0A%20%20%20%20%22timeo
+uts%22%3A%20%22not%20measured%22%2C%0A%20%20%20%20%22transport_suspect%22%3A%20f
+alse%0A%20%20%7D%2C%0A%20%20%22steps%22%3A%20%5B%0A%20%20%20%20%7B%0A%20%20%20%2
+0%20%20%22op%22%3A%20%22id%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22OK%22
+%2C%0A%20%20%20%20%20%20%22run_count%22%3A%201%2C%0A%20%20%20%20%20%20%22reason%
+22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%
+20%20%20%22fingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%2
+03.533%2C%0A%20%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A%20%20%20%
+20%20%20%22write_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits
+_cleared%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A%20null
+%2C%0A%20%20%20%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%20%20%20%2
+0%20%22write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%
+20%20%20%20%20%22op%22%3A%20%22read%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%2
+0%22OK%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%202%2C%0A%20%20%20%20%20%20%
+22reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%
+20%20%20%20%20%20%22fingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_
+s%22%3A%2021.162%2C%0A%20%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A
+%20%20%20%20%20%20%22write_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22
+write_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22
+%3A%20null%2C%0A%20%20%20%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%
+20%20%20%20%20%22write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20
+%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22write%22%2C%0A%20%20%20%20%20%20%22verd
+ict%22%3A%20%22OK%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%202%2C%0A%20%20%2
+0%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20
+null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A%20%22indeterminate%22%2C%0A%20%
+20%20%20%20%20%22duration_s%22%3A%20115.592%2C%0A%20%20%20%20%20%20%22write_regi
+on_start%22%3A%200%2C%0A%20%20%20%20%20%20%22write_region_length%22%3A%2065536%2
+C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A%200%2C%0A%20%20%20%20%20%20%22
+write_bits_retained%22%3A%200%2C%0A%20%20%20%20%20%20%22write_current_source%22%
+3A%20%22address-derived%20pattern%20%28unmasked%29%22%2C%0A%20%20%20%20%20%20%22
+write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%2
+0%20%20%22op%22%3A%20%22verify%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22O
+K%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%202%2C%0A%20%20%20%20%20%20%22rea
+son%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20
+%20%20%20%20%22fingerprint%22%3A%20%22indeterminate%22%2C%0A%20%20%20%20%20%20%2
+2duration_s%22%3A%2028.54%2C%0A%20%20%20%20%20%20%22write_region_start%22%3A%20n
+ull%2C%0A%20%20%20%20%20%20%22write_region_length%22%3A%20null%2C%0A%20%20%20%20
+%20%20%22write_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_re
+tained%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_current_source%22%3A%20null%
+2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20
+%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22erase%22%2C%0A%20%20%20%20%20%
+20%22verdict%22%3A%20%22OK%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%202%2C%0
+A%20%20%20%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code
+%22%3A%20null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A%20null%2C%0A%20%20%20%
+20%20%20%22duration_s%22%3A%2016.638%2C%0A%20%20%20%20%20%20%22write_region_star
+t%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_length%22%3A%20null%2C%0A%
+20%20%20%20%20%20%22write_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20%20%22wr
+ite_bits_retained%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_current_source%22
+%3A%20null%2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%20null%0A%20%20%20%20%
+7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22blank-check%22%2C%0
+A%20%20%20%20%20%20%22verdict%22%3A%20%22OK%22%2C%0A%20%20%20%20%20%20%22run_cou
+nt%22%3A%202%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20%2
+0%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A%20nul
+l%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%2016.13%2C%0A%20%20%20%20%20%20%22w
+rite_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_length%22%
+3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A%20null%2C%0A%20%20%
+20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_c
+urrent_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%20null
+%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22wri
+te-baseline-b%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20%20%
+20%20%20%20%22run_count%22%3A%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%2
+2%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22fi
+ngerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%20null%2C%0A%2
+0%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22wri
+te_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A
+%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%2
+0%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_c
+overage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20
+%22op%22%3A%20%22write-baseline-a%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%
+22NA%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%200%2C%0A%20%20%20%20%20%20%22
+reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20
+%20%20%20%20%20%22fingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s%
+22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A%20%
+20%20%20%20%20%22write_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22writ
+e_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A%
+20null%2C%0A%20%20%20%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%20%2
+0%20%20%20%22write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%
+0A%20%20%20%20%20%20%22op%22%3A%20%22sdp-lock%22%2C%0A%20%20%20%20%20%20%22verdi
+ct%22%3A%20%22NA%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%200%2C%0A%20%20%20
+%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20n
+ull%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%2
+2duration_s%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_start%22%3A%20nu
+ll%2C%0A%20%20%20%20%20%20%22write_region_length%22%3A%20null%2C%0A%20%20%20%20%
+20%20%22write_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_ret
+ained%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_current_source%22%3A%20null%2
+C%0A%20%20%20%20%20%20%22write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%
+20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22write-inhibited%22%2C%0A%20%20%
+20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A
+%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22e
+rror_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A%20null%2C%0A%
+20%20%20%20%20%20%22duration_s%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_regi
+on_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_length%22%3A%20null
+%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20%
+20%22write_bits_retained%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_current_so
+urce%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%20null%0A%20%20
+%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22sdp-unlock%2
+2%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20%20%20%20%20%20%22r
+un_count%22%3A%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%2
+0%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A
+%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%20null%2C%0A%20%20%20%20%20%2
+0%22write_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_lengt
+h%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A%20null%2C%0A%2
+0%20%20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%20%20%20%20%22wr
+ite_current_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%2
+0null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%
+22write-restored%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20%
+20%20%20%20%20%22run_count%22%3A%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%2
+2%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%2
+2fingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%20null%2C%0
+A%20%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22
+write_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22
+%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%2
+0%20%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22writ
+e_coverage%22%3A%20null%0A%20%20%20%20%7D%0A%20%20%5D%2C%0A%20%20%22banner%22%3A
+%20%7B%0A%20%20%20%20%22n_ran%22%3A%206%2C%0A%20%20%20%20%22m_applicable%22%3A%2
+06%2C%0A%20%20%20%20%22locked_steps%22%3A%20%5B%5D%0A%20%20%7D%2C%0A%20%20%22vol
+tage%22%3A%20%7B%0A%20%20%20%20%22vpp_before_mv%22%3A%2012400%2C%0A%20%20%20%20%
+22vpp_after_mv%22%3A%2012400%2C%0A%20%20%20%20%22vpe_before_mv%22%3A%2014400%2C%
+0A%20%20%20%20%22vpe_after_mv%22%3A%2014400%2C%0A%20%20%20%20%22vpp_mv%22%3A%20%
+22not%20measured%22%2C%0A%20%20%20%20%22vpe_mv%22%3A%20%22not%20measured%22%0A%2
+0%20%7D%2C%0A%20%20%22is_submittable%22%3A%20true%2C%0A%20%20%22dedup_fingerprin
+t%22%3A%20%22fe0ab4e6da24%22%2C%0A%20%20%22db_diff%22%3A%20%7B%0A%20%20%20%20%22
+current_support_status%22%3A%20%22supported%22%2C%0A%20%20%20%20%22proposed_disp
+osition%22%3A%20%22inconclusive%20--%20needs%20N%3E%3D2%20agreement%20%28advisor
+y%29%22%2C%0A%20%20%20%20%22ladder_state%22%3A%20%22%22%0A%20%20%7D%2C%0A%20%20%
+22sdp_hold_state%22%3A%20%22NOT-RUN%22%0A%7D%0A%60%60%60

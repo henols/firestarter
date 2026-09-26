@@ -1,0 +1,1 @@
+FAIL: position A2__control__w29c020 judged sha_verdict_judged='mismatch' read_count=1 distinct_read_shas=1 verdict_disagreement=False size_violations=[{'file': '/workspaces/.planning/v1.34/bench/cells/A2/reads/A2__control__w29c020/run_01.bin', 'size_bytes': 113152}]

@@ -16,7 +16,7 @@ Full measurement rationale: `.planning/notes/binary-protocol-savings-analysis.md
 ## Why (payoff)
 
 - **~512 B RAM reclaimed** (the `static jsmntok_t tokens[64]` array,
-  `firestarter.cpp:56`). This is the real prize — a fixed-offset binary format
+  `firestarter.cpp:53`). This is the real prize — a fixed-offset binary format
   needs no token array.
 - **~1–1.5 KB flash net** (after a small binary decoder replaces jsmn +
   `json_parser.c`).

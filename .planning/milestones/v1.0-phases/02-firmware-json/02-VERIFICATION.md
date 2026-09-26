@@ -23,7 +23,7 @@ requirements_verified:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | The firmware JSON parser silently skips unknown keys at BOTH parse sites (top-level `json_parse` and nested `parse_bus_config`) without aborting or corrupting state (REQ-SER-02) | VERIFIED | Top-level skip at `firestarter/src/json_parser.c:128-131` (`} else { // Unknown field — skip key + value token (forward-compatible with new Python fields) ⏎ token_idx += 2; }`); nested skip at `:251-255` (`} else { // Unknown key — skip key + value tokens ⏎ total_consumed_tokens += 2; ⏎ current_token_idx += 2; }`). Both sites advance by exactly 2 tokens (key + value) and continue the parse loop — no `return -1`, no `goto error`. |
+| 1 | The firmware JSON parser silently skips unknown keys at BOTH parse sites (top-level `json_parse` and nested `parse_bus_config`) without aborting or corrupting state (REQ-SER-02) | VERIFIED | Top-level skip at `firestarter/src/json_parser.c:316-318` (`} else { // Unknown field — skip key + value token (forward-compatible with new Python fields) ⏎ token_idx += 2; }`); nested skip at `:251-255` (`} else { // Unknown key — skip key + value tokens ⏎ total_consumed_tokens += 2; ⏎ current_token_idx += 2; }`). Both sites advance by exactly 2 tokens (key + value) and continue the parse loop — no `return -1`, no `goto error`. |
 
 **Score:** 1/1 truths verified
 
@@ -62,7 +62,7 @@ The single-file delivery is intentional — REQ-SER-02's entire scope is the unk
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|-------------|-------------|--------|----------|
-| REQ-SER-02 | 02-01 | Unknown JSON keys are skipped at both parse sites (top-level + nested `bus-config`) without aborting the parse | SATISFIED | Top-level skip at `firestarter/src/json_parser.c:128-131`; nested skip at `:251-255`. Both blocks advance exactly 2 tokens and continue. Live `check_dispatch.py` PASS + `pio test` 25/25 PASS (cited) confirm forward-compat is intact under real wire-payload + nested `bus-config` shapes. |
+| REQ-SER-02 | 02-01 | Unknown JSON keys are skipped at both parse sites (top-level + nested `bus-config`) without aborting the parse | SATISFIED | Top-level skip at `firestarter/src/json_parser.c:316-318`; nested skip at `:251-255`. Both blocks advance exactly 2 tokens and continue. Live `check_dispatch.py` PASS + `pio test` 25/25 PASS (cited) confirm forward-compat is intact under real wire-payload + nested `bus-config` shapes. |
 
 REQ-SER-02 is the only Phase 02 requirement; SATISFIED.
 

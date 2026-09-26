@@ -1,0 +1,23 @@
+== emit
+OK: 6 footers written.
+rc=0
+== porcelain after emit, before commit
+ M Install-Beta.md
+ M Lockable-PROMs.md
+ M Programming-Protocols.md
+ M Shell-Completion.md
+ M Shield-Revisions.md
+ M Testing-Chips.md
+pages modified before commit: 6
+== wiki.py links
+OK: 11 pages, all reachable from Home.md by some link path, all internal links resolve, all filenames legal, and all listed in _Sidebar.md.
+rc=0
+== honest02_truth.py
+OK: leg1 stamp-present 5 matched/0 missing, leg2 claims-resolve 1 regions/39 claims/5 unchecked, leg3 stamp-freshness 6 checked/0 stale.
+rc=0
+== dispatch_mirror.py
+OK: 12 protocols compared across firmware doc, host tool and firmware.
+rc=0
+== provenance_footers.py
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+rc=0

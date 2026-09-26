@@ -1,0 +1,148 @@
+{
+  "_schema": {
+    "record_keys": [
+      "captured_at_step",
+      "cell_id",
+      "cell_slug",
+      "position_id",
+      "arm",
+      "target_env",
+      "port",
+      "chip",
+      "chip_package",
+      "chip_size_bytes",
+      "shield_rev_declared",
+      "board_signature",
+      "controller_string",
+      "fw_sha",
+      "fw_readback_sha_judged",
+      "fw_readback_sha_whole_flash",
+      "host_arm_sha",
+      "host_arm_porcelain_clean",
+      "host_arm_file",
+      "config_dir_sha",
+      "interpreter",
+      "dep_freeze_sha",
+      "avrdude_binary",
+      "avrdude_conf",
+      "eeprom_calibration",
+      "image_mask",
+      "image_stamp_width",
+      "image_sha",
+      "commands"
+    ],
+    "outcome_values": [
+      "validated",
+      "skipped-with-reason"
+    ]
+  },
+  "captured_at_step": 2,
+  "cell_id": "BRINGUP-wrv",
+  "cell_slug": "BRINGUP-wrv",
+  "position_id": "BRINGUP-wrv__v133__w27c512",
+  "arm": "v133",
+  "target_env": "uno",
+  "port": "/dev/ttyACM0",
+  "chip": "w27c512",
+  "chip_package": "DIP28",
+  "chip_size_bytes": 65536,
+  "shield_rev_declared": "Rev 2.0",
+  "board_signature": "0x1e950f",
+  "controller_string": "not measured \u2014 the `hw` CLI subcommand's handler (firestarter_app/firestarter/cli_handlers.py, _build_op_flags() called with zero kwargs) never forwards the CLI's -v/--verbose into the wire command's `flags` field, so FLAG_VERBOSE is never set on the command `hw` sends; firmware's MSG_INFO_FW echo line is therefore never emitted by `hw`, regardless of CLI verbosity or which arm's firmware is running. Measured live twice already (BRINGUP-uno, 160-08, pre- and post-flash) and re-confirmed here (BRINGUP-wrv, 160-11) -- a genuine host-app limitation, out of scope for this phase to fix (D-16 boundary: no product-code changes).",
+  "fw_sha": "5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463",
+  "fw_readback_sha_judged": "dc2ae8a15be600b3d22539d06e4e3fa779af56e2835d3068610fcd3a8775f853",
+  "fw_readback_sha_whole_flash": "944b73f6158e633d09fe5c743c9375159c499c4cdc03537d24cdd59770920ebd",
+  "host_arm_sha": "cb189a9b001e9e34fb7651535de339761301d061",
+  "host_arm_porcelain_clean": true,
+  "host_arm_file": "/workspaces/.v1.34-arms/v133/firestarter/__init__.py",
+  "config_dir_sha": "77adfdd26ed8710c4a70882e6dc9ee7bb494286fe225000d581f9e730dd77ad0",
+  "interpreter": "Python 3.12.14",
+  "dep_freeze_sha": "b9eeb295b3b75f285bce146ee290100b3a6719438885904face0a6a7ee8a98cf",
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "eeprom_calibration": {
+    "hw_revision_bucket": "not measured \u2014 `hw` command's revision line not found in this session's output",
+    "r16_ohms": "not measured \u2014 no read-back CLI path exists for R16; firestarter config is write-only in this app version",
+    "r14r15_ohms": "not measured \u2014 no read-back CLI path exists for R14/R15; firestarter config is write-only in this app version"
+  },
+  "image_mask": 36,
+  "image_stamp_width": 16,
+  "image_sha": "fff15da9f46d04b366b4b8bf42a91cd2f67a8f57a1cfccac26351c5325b35726",
+  "commands": [
+    {
+      "argv": [
+        "/usr/local/bin/python3",
+        "/workspaces/.planning/v1.34/tools/probe_board.py",
+        "--port",
+        "/dev/ttyACM0",
+        "--target",
+        "uno",
+        "--pins",
+        ".planning/v1.34/rig-pins.json",
+        "--out",
+        "/tmp/capture_provenance_vwjhhbzo/probe_board_result.json"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+        "-v",
+        "-p",
+        "/dev/ttyACM0",
+        "hw"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/usr/local/bin/git",
+        "-C",
+        "/workspaces/.v1.34-arms/v133",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/usr/local/bin/git",
+        "-C",
+        "/workspaces/.v1.34-arms/v133",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/workspaces/.v1.34-arms/v133/.venv/bin/python",
+        "-P",
+        "-c",
+        "import firestarter; print(firestarter.__file__)"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/workspaces/.v1.34-arms/v133/.venv/bin/python",
+        "--version"
+      ],
+      "cwd": "/workspaces"
+    },
+    {
+      "argv": [
+        "/usr/local/bin/python3",
+        "/workspaces/.planning/v1.34/tools/check_arms.py",
+        "--pins",
+        "/workspaces/.planning/v1.34/rig-pins.json",
+        "--expect-config-sha",
+        "77adfdd26ed8710c4a70882e6dc9ee7bb494286fe225000d581f9e730dd77ad0",
+        "--out",
+        "/workspaces/.planning/v1.34/bench/cells/BRINGUP-wrv/check_arms_teardown.json"
+      ],
+      "cwd": "/workspaces",
+      "note": "P-11 teardown (plan 12, task 3), both assertions in order per PROCEDURE.md's 'two assertions, in order -- not one': (1) FIRST asserted ~/.firestarter still does not exist -- FOUND IT TO EXIST (a directory, birth/mtime 2026-08-27T07:59:25Z, containing only config.json = {\"port\": \"/dev/ttyACM0\"}). This is standing bench rule 9's own predicted P-H1 rig failure (\"the seam this rule exists to prove was not actually used by at least one invocation\"). Root-cause: the timestamp (07:59:25Z) and content (a bare port setting, nothing else) match exactly what POT.md's own disclosed deviation describes -- an UNLOGGED first vpp invocation in plan 11 task 3 that ran without a --timeout option and was killed by the surrounding shell's own 120s command timeout; 07:57:25Z (120s before the observed birth time) to 07:59:25Z is consistent with that invocation's window. This was never logged as a numbered artifact in plan 11's logs/, so the causal chain is circumstantial (timing + content correlation), not a proven trace, and is stated as such. This plan's own two write/read invocations (task 1 write, task 2 dev consistency-check) both set FIRESTARTER_CONFIG_DIR inline and neither touched ~/.firestarter (its mtime is unchanged from 07:59:25Z across this entire plan's session). Removal (rm -f the file, then rmdir the directory) was attempted and denied by this session's own sandbox policy (a home-directory deletion outside the repo) -- the contamination is therefore recorded, not silently cleaned, and is carried forward as an open item for a session with the needed permission or for the operator to clear by hand. (2) ONLY THEN, per the procedure's own ordering, ran the second assertion below (check_arms.py --expect-config-sha) against the FROZEN FIRESTARTER_CONFIG_DIR -- a different, unrelated directory from ~/.firestarter above -- which is UNCHANGED: exit 0, config_dir_sha matched the value recorded in this record's own config_dir_sha field, and both arms plus their full CLI surface re-verified clean. D-07 holds: neither arm wrote to the shared frozen config directory during this cell, regardless of finding (1)."
+    }
+  ]
+}

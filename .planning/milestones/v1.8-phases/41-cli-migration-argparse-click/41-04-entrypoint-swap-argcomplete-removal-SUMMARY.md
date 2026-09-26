@@ -254,7 +254,7 @@ Per SCOPE BOUNDARY rule (only auto-fix issues directly caused by the current tas
 
 - **`tests/test_fw_version_guard.py`** — `ruff format --check` reports it needs reformatting. Pre-existing baseline drift from Phase 40 commit `eb1717e`. Same finding as 41-01 / 41-02 / 41-03 summaries; not touched.
 - **Pre-existing mypy errors at 41/44 watermark** — cli_handlers.py manager-call sites (set_hardware_config rev: `Optional[float]` vs `Optional[int]`; channel_filter type mismatch) carried forward from W3; gate still passes (3 below watermark). Candidate for Phase 42 ERR-02.
-- **`firestarter/ic_layout.py:396` `_generate_pin_names_for_display` TypeError** — every chip in `info` still crashes; preserved verbatim per GATE-1.8b (same as 41-02 / 41-03).
+- **`firestarter/ic_layout.py:394` `_generate_pin_names_for_display` TypeError** — every chip in `info` still crashes; preserved verbatim per GATE-1.8b (same as 41-02 / 41-03).
 - **`firestarter/serial_comm.py`, `eprom_operations.py`, `firmware.py`, `ic_layout.py`** — pre-existing mypy errors carried forward; gate passes.
 - **`tools/check_dispatch.py` + 6 other `tools/` files** — pre-existing ruff/format violations; not in CI scope.
 

@@ -13,7 +13,7 @@ Three findings reframe the milestone. Two of them change the build order.
 
 **F-1 (topology, verified).** The milestone brief's `0052c42` claim is **correct, and understated**. `0052c42` exists, is dated 2026-06-26, and is reachable from *only* `v1.16-protocol-first-architecture-rebuild` — not `beta`, not the v1.21/current line. But the same is true of the **entire v1.16 Phase-89 primitives layer**: `primitives.{h,cpp}` was created in `a10871d` and, like `a296195` (the "v1.16 tip"), is an ancestor of neither `beta` nor `HEAD`. **There is no `primitives.{h,cpp}` in the tree v1.22 will branch from.** Any roadmap phase written against "the primitives layer" or "the v1.16 golden traces" is writing against code that does not exist. The real shared-code seam is `flash_utils.{h,cpp}`; the real golden-trace mechanism is the `HOST_STUBS_RECORD_BUS` recording stub (`test/native/avr/_shared/host_stubs_common.inc:54-80`), which records **only** `rurp_write_to_register` — not data bytes, not strobes.
 
-**F-2 (the load-bearing defect, machine-verified).** The shipped `0x0D` SDP-disable sequence is **almost certainly a no-op or a partial corrupting write on every one of the four `0x0D` pinouts**, and its success check reads a different physical address than it wrote. `flash_util_byte_flipping` (`flash_utils.cpp:20-27`) drives `/WE` via `set_control_register(CTRL_READ_WRITE, 0)` — control-register bit 6 ≡ address bit **22**. That is correct for `DIP32_SST39SF040` (`rw-pin: 22`), the pinout every bench-proven `0x05`/`0x06` flash chip uses. Every `0x0D` pinout has a **different** `rw-pin`: 11, 14, 14, 20. And `fu_flash_fast_address` (`flash_utils.cpp:61-66`) writes only the LSB/MSB registers, bypassing `mem_util_remap_address_bus` entirely — so for `rw-pin` 11 and 14 the `/WE` bit is *inside the raw magic-address value* and toggles with the address, and for `rw-pin` 20 it is in the untouched top-address register. Details and the exact per-pinout numbers in §3. Consequence: **you cannot build a lock path on this seam. The fix must precede the feature.**
+**F-2 (the load-bearing defect, machine-verified).** The shipped `0x0D` SDP-disable sequence is **almost certainly a no-op or a partial corrupting write on every one of the four `0x0D` pinouts**, and its success check reads a different physical address than it wrote. `flash_util_byte_flipping` (`flash_utils.cpp:21-28`) drives `/WE` via `set_control_register(CTRL_READ_WRITE, 0)` — control-register bit 6 ≡ address bit **22**. That is correct for `DIP32_SST39SF040` (`rw-pin: 22`), the pinout every bench-proven `0x05`/`0x06` flash chip uses. Every `0x0D` pinout has a **different** `rw-pin`: 11, 14, 14, 20. And `fu_flash_fast_address` (`flash_utils.cpp:62-67`) writes only the LSB/MSB registers, bypassing `mem_util_remap_address_bus` entirely — so for `rw-pin` 11 and 14 the `/WE` bit is *inside the raw magic-address value* and toggles with the address, and for `rw-pin` 20 it is in the untouched top-address register. Details and the exact per-pinout numbers in §3. Consequence: **you cannot build a lock path on this seam. The fix must precede the feature.**
 
 **F-3 (data modelling, machine-verified).** Protocol-`0x0D` membership is **provably insufficient** as an SDP-capability predicate. The 84-chip `0x0D` bucket contains two **FRAM** parts (`CYPRESS FM28V020`, `FUJITSU MB85R256H` — no SDP, no write cycle) and ~19 pre-SDP `2804`/`2816`/`2817`-class parts (SDP post-dates them), plus the XICOR `X28C` family whose magic addresses differ on some variants. Firing a 6-cycle "unlock" at those parts is 6 real data writes at magic addresses. See §5.
 
@@ -99,16 +99,16 @@ CODEGEN (meta-repo authoritative, all three copies md5-identical today):
 |---|---|---|---|
 | Dispatch | `memory.cpp:75-78` | routes `0x0D` → `configure_eeprom28c`; sole axis is `protocol` | **NO** — do not touch |
 | Operation selector | `eeprom_28c.cpp:39-47` | `switch (handle->cmd)` picks INIT/MAIN fn-ptrs | **YES** — add cases + `default:` |
-| Command admission | `firestarter.cpp:76-95` | decides which `cmd` values reach `configure_memory` | **YES** — see §2 trap T-1 |
-| Loop driver | `firestarter.cpp:202-252` | `cmd` → `eprom_*()` operation driver | **YES** — add 2 cases |
+| Command admission | `firestarter.cpp:73-91` | decides which `cmd` values reach `configure_memory` | **YES** — see §2 trap T-1 |
+| Loop driver | `firestarter.cpp:197-247` | `cmd` → `eprom_*()` operation driver | **YES** — add 2 cases |
 | No-payload op driver | `eprom_operations.cpp:34-55` | `op_execute_simple_operation` wrapper per cmd | **YES** — 2 new drivers |
-| State machine | `operation_utils.cpp:58-84,271-295` | INIT▸MAIN▸END + ack handshake | **NO** — reuse as-is |
-| Command-cycle emitter (raw) | `flash_utils.cpp:20-27,52-66` | `/WE` via ctrl bit 22, raw LSB/MSB, **no remap** | **NO** — see §4 |
-| Command-cycle emitter (remap-aware) | `memory.cpp:224-234` + `:259-282` | full `bus_config` remap + `WRITE_FLAG` + `/CE` pulse | **YES** — build the SDP emitter on this |
+| State machine | `operation_utils.cpp:58-90,271-295` | INIT▸MAIN▸END + ack handshake | **NO** — reuse as-is |
+| Command-cycle emitter (raw) | `flash_utils.cpp:21-28,52-66` | `/WE` via ctrl bit 22, raw LSB/MSB, **no remap** | **NO** — see §4 |
+| Command-cycle emitter (remap-aware) | `memory.cpp:228-306` + `:259-282` | full `bus_config` remap + `WRITE_FLAG` + `/CE` pulse | **YES** — build the SDP emitter on this |
 | Host wire builder | `eprom_operations.py:287-345` | `command_dict["cmd"]`, `["flags"]`; `COMMAND_NAMES[cmd]` at `:301` | **YES** |
 | Host op shape | `eprom_operations.py:1628-1651` | `erase_eprom` = the canonical no-payload op | **YES** — copy |
 | Host error seam | `eprom_operations.py:70-86`, `exceptions.py:37-42` | `_raise_for_error_response` → `EpromOperationError.error_code` | **YES** — reuse |
-| Destructive gate | `cli_handlers.py:1836-1842` | TTY `Confirm.ask` + `-y` bypass; CLI-only, never config/env (SAFE-01) | **YES** — reuse pattern |
+| Destructive gate | `cli_handlers.py:1833-1839` | TTY `Confirm.ask` + `-y` bypass; CLI-only, never config/env (SAFE-01) | **YES** — reuse pattern |
 
 ---
 
@@ -130,14 +130,14 @@ Free slots exist: `CMD_VERIFY = 6`, `CMD_DEV_ADDRESS = 7`, `CMD_DEV_REGISTER = 8
 |---|---|---|
 | `CMD_SDP_UNLOCK 9`, `CMD_SDP_LOCK 10` | `firestarter.h:34-51` | **YES** ↔ `constants.py:56-70` |
 | ⚠ Admission guard (trap T-1 below) | `firestarter.cpp:79` | no |
-| 2 `case` arms → new drivers | `firestarter.cpp:202-252` | no |
+| 2 `case` arms → new drivers | `firestarter.cpp:197-247` | no |
 | `eprom_sdp_lock/_unlock` on `op_execute_simple_operation` | `eprom_operations.{h,cpp}` | no |
 | 2 `case` arms + `default:` | `eeprom_28c.cpp:39-47` | no |
 | `COMMAND_SDP_UNLOCK/LOCK` + **`COMMAND_NAMES` entries** | `constants.py:56-86` | **YES** |
 | `EpromOperator.sdp_unlock/sdp_lock` | `eprom_operations.py` (copy `:1628`) | no |
 | Wire dict gains | nothing but `"cmd": 9\|10` — the rest of the dict (`algorithm`, `memory-size`, `bus-config`, `flags`, `chip-id`, `pin-count`) is already emitted for every memory command | — |
 
-**Trap T-1 — the admission guard is the real work.** `firestarter.cpp:76-95`:
+**Trap T-1 — the admission guard is the real work.** `firestarter.cpp:73-91`:
 
 ```c
 if (handle->cmd < CMD_READ_VPP) {            // 11 — cmd 9/10 pass ✔ json_parse runs
@@ -152,15 +152,15 @@ if (handle->cmd < CMD_READ_VPP) {            // 11 — cmd 9/10 pass ✔ json_pa
 }
 ```
 
-So `cmd = 9` today parses the full memory command but **never calls `configure_memory`** → `firestarter_operation_main` stays `NULL` (`memory.cpp:44-46`) → `MSG_ERR_UNKNOWN_CMD` at `firestarter.cpp:249`. Worse, the guard is `#ifdef DEV_TOOLS`-gated, so a **non-DEV_TOOLS build behaves differently** (the inner `if` vanishes and 9/10 *would* reach `configure_memory`). Fix: replace the ordinal comparison with an explicit predicate, e.g. `is_memory_cmd(cmd)` in `firestarter.h`, enumerating `{READ, WRITE, ERASE, BLANK_CHECK, CHECK_CHIP_ID, VERIFY, SDP_UNLOCK, SDP_LOCK}`. This removes a latent build-config divergence as a side benefit — a legitimate, small, well-bounded refactor with its own native test.
+So `cmd = 9` today parses the full memory command but **never calls `configure_memory`** → `firestarter_operation_main` stays `NULL` (`memory.cpp:44-46`) → `MSG_ERR_UNKNOWN_CMD` at `firestarter.cpp:244`. Worse, the guard is `#ifdef DEV_TOOLS`-gated, so a **non-DEV_TOOLS build behaves differently** (the inner `if` vanishes and 9/10 *would* reach `configure_memory`). Fix: replace the ordinal comparison with an explicit predicate, e.g. `is_memory_cmd(cmd)` in `firestarter.h`, enumerating `{READ, WRITE, ERASE, BLANK_CHECK, CHECK_CHIP_ID, VERIFY, SDP_UNLOCK, SDP_LOCK}`. This removes a latent build-config divergence as a side benefit — a legitimate, small, well-bounded refactor with its own native test.
 
-**Trap T-2 — silent-finish on the wrong protocol.** `configure_eeprom28c`'s switch has **no `default:`** (`eeprom_28c.cpp:39-47`), and neither do the other handlers. A `CMD_SDP_LOCK` aimed at, say, `0x07` reaches `configure_eprom`, matches no case, leaves `operation_main = NULL` → `op_execute_stateful_operation` returns `false` (`operation_utils.cpp:83`) → the driver reports **finished with no error**. That is the same class of bug as the `0xA4` SRAM blank-check trap fixed host-side as D-30 (`eprom_operations.py:1661-1676`). Mitigation is required in **both** places: firmware `default:` → `MSG_ERR_NOT_SUPPORTED`, **and** a host pre-wire refusal.
+**Trap T-2 — silent-finish on the wrong protocol.** `configure_eeprom28c`'s switch has **no `default:`** (`eeprom_28c.cpp:39-47`), and neither do the other handlers. A `CMD_SDP_LOCK` aimed at, say, `0x07` reaches `configure_eprom`, matches no case, leaves `operation_main = NULL` → `op_execute_stateful_operation` returns `false` (`operation_utils.cpp:89`) → the driver reports **finished with no error**. That is the same class of bug as the `0xA4` SRAM blank-check trap fixed host-side as D-30 (`eprom_operations.py:1661-1676`). Mitigation is required in **both** places: firmware `default:` → `MSG_ERR_NOT_SUPPORTED`, **and** a host pre-wire refusal.
 
 **Trap T-3 — do NOT renumber.** Inserting the new commands at `7`/`8` and pushing the `dev` commands up would mean a stale host's `cmd:7` ("set address") lands on new firmware as **SDP lock**. Hazardous. Use 9/10.
 
 #### (b) New flag bits on `CMD_WRITE` — **RECOMMENDED (complementary, not a substitute)**
 
-All eight low `ctrl_flags` bits are taken (`firestarter.h:59-68`: `0x01 … 0x80`). But `handle->ctrl_flags` is `uint32_t` (`firestarter.h:96`), `is_flag_set` is a plain mask compare (`:70-71`), and the parser uses `simple_strtoul` (`json_parser.c:284-285`) — so **`0x100`+ are available with no plumbing change**. (`ic_layout`/`dev reg` display code reads the low bits only; verify no truncation at the display sites.)
+All eight low `ctrl_flags` bits are taken (`firestarter.h:59-68`: `0x01 … 0x80`). But `handle->ctrl_flags` is `uint32_t` (`firestarter.h:96`), `is_flag_set` is a plain mask compare (`:70-71`), and the parser uses `simple_strtoul` (`json_parser.c:471-472`) — so **`0x100`+ are available with no plumbing change**. (`ic_layout`/`dev reg` display code reads the low bits only; verify no truncation at the display sites.)
 
 | Flag | Semantics | Serves which milestone target |
 |---|---|---|
@@ -178,7 +178,7 @@ Host side: extend `build_flags()` (`eprom_operations.py:168-183`) and add `write
 #### (d) Something else — considered and rejected
 
 - **Overload `CMD_ERASE` with a flag.** `eprom_erase` hard-gates on `FLAG_CAN_ERASE` (`eprom_operations.cpp:36-39`) and "erase" already means auto-erase-before-write for this family. Conflating protection state with content state is exactly the kind of axis-muddling v1.20 spent a milestone undoing.
-- **A `sdp` sub-key in the JSON dict rather than a `cmd`.** `json_parser.c:73-78` is a flat key→parser table; a nested mode key would be a *third* thing the firmware branches on, and would leave `cmd` meaningless. This is the option that genuinely *would* create a second axis. Reject.
+- **A `sdp` sub-key in the JSON dict rather than a `cmd`.** `json_parser.c:164-97` is a flat key→parser table; a nested mode key would be a *third* thing the firmware branches on, and would leave `cmd` meaningless. This is the option that genuinely *would* create a second axis. Reject.
 
 ### Recommendation
 
@@ -190,7 +190,7 @@ Host side: extend `build_flags()` (`eprom_operations.py:168-183`) and add `write
 
 ### The mechanism
 
-`eeprom28c_write_init` calls `flash_execute_command(EEPROM_SDP_DISABLE)` (`eeprom_28c.cpp:109`) → `flash_util_byte_flipping` (`flash_utils.cpp:20-27`):
+`eeprom28c_write_init` calls `flash_execute_command(EEPROM_SDP_DISABLE)` (`eeprom_28c.cpp:104`) → `flash_util_byte_flipping` (`flash_utils.cpp:21-28`):
 
 ```c
 handle->firestarter_set_control_register(handle, CTRL_READ_WRITE, 0);   // /WE assert
@@ -230,7 +230,7 @@ for n in ('AM28C16A','AM28C17A','AT28BV256','AT28C010','W29C020'):
 
 ### The success check is also wrong
 
-`eeprom28c_wait_for_write(handle, 0x5555, 0x20)` (`eeprom_28c.cpp:111`, body `:135-155`) polls through `handle->firestarter_get_data` → `memory_get_data` (`memory.cpp:178`) → **full remap with `READ_FLAG`**. So the write and the read-back target different physical addresses:
+`eeprom28c_wait_for_write(handle, 0x5555, 0x20)` (`eeprom_28c.cpp:106`, body `:135-155`) polls through `handle->firestarter_get_data` → `memory_get_data` (`memory.cpp:178`) → **full remap with `READ_FLAG`**. So the write and the read-back target different physical addresses:
 
 | Pinout | raw address the write drove | address the poll reads | match? |
 |---|---|---|---|
@@ -271,7 +271,7 @@ Independently, the *criterion* is inverted: expecting to read back `0x20` at `0x
 Rationale:
 
 1. **The shared implementation is the broken one.** F-2 shows `flash_util_byte_flipping` is correct only for `rw-pin: 22`. Promoting the `0x0D` sequence *into* it, or extending it to serve both, means either (a) making the raw fast path remap-aware — which changes the emitted register stream for the bench-proven `0x05`/`0x06` families, or (b) parameterising it, which adds branches inside the one function all four flash/EEPROM families share. Both put proven silicon behaviour at risk to serve an unproven family. **Wrong direction of risk.**
-2. **The correct `0x0D` emitter is a different mechanism, not a variant.** It should be built on `handle->firestarter_set_data` (= `memory_set_data`, `memory.cpp:224-234`) — which already does remap + `WRITE_FLAG` + `/CE` pulse — the very function `eeprom28c_write_execute:123` already uses for page data. Timing is viable: `pulse_delay = 0` for `0x0D` (`eeprom_28c.cpp:38`), so a cycle is ~3 µs settle + register writes + `/CE` pulse, comfortably inside the ~150 µs tBLC window (this µs budget is an **assumption** — see §7 ceiling).
+2. **The correct `0x0D` emitter is a different mechanism, not a variant.** It should be built on `handle->firestarter_set_data` (= `memory_set_data`, `memory.cpp:228-306`) — which already does remap + `WRITE_FLAG` + `/CE` pulse — the very function `eeprom28c_write_execute:123` already uses for page data. Timing is viable: `pulse_delay = 0` for `0x0D` (`eeprom_28c.cpp:38`), so a cycle is ~3 µs settle + register writes + `/CE` pulse, comfortably inside the ~150 µs tBLC window (this µs budget is an **assumption** — see §7 ceiling).
 3. **`flash_utils.h`/`flash_utils.cpp`/`flash_5v_page.cpp`/`flash_nor_unlock.cpp` stay byte-untouched**, so the `0x05`/`0x06`/`0x10` native suites and any register trace over them are trivially non-regressed. That is the cheapest possible non-regression argument.
 4. **Flash cost of not deduping is ~0 today.** The tables are `const` at namespace scope in a header → internal linkage → one private copy per including TU, **elided when unreferenced**. `FLASH_ENABLE_WRITE_PROTECTION` has zero references, so it costs zero bytes now; deleting it saves nothing. The `EEPROM_SDP_DISABLE`/`FLASH_DISABLE_WRITE_PROTECTION` dedup is worth at most ~48 B (6 × 8 B `byte_flip_t`). Measured Leonardo baseline is **88.3 % flash (25324 / 28672 B, 3348 B free)** and **78.0 % RAM (1998 / 2560 B, 562 B free)** (`pio run -e leonardo`, 2026-07-27). 48 B is not worth touching shared code for.
 
@@ -281,7 +281,7 @@ Concretely: add `EEPROM_SDP_ENABLE[]` next to `EEPROM_SDP_DISABLE[]` in `eeprom_
 
 There is **no** v1.16 golden-trace suite in this tree (F-1). What exists:
 
-- `HOST_STUBS_RECORD_BUS` (`test/native/avr/_shared/host_stubs_common.inc:54-80`) — an **opt-in** stub that records `(reg, data)` pairs from `rurp_write_to_register`, exposed via `clear_bus_recording/bus_recording_count/recorded_reg/recorded_data`. Cap 256 entries. **It does not record `rurp_write_data_buffer` (`:98-100`, a no-op) nor the `/CE`,`/OE` strobes** (`rurp_chip_enable` etc. are macros over `rurp_set_chip_enable`, `rurp_shield.h:104-107`).
+- `HOST_STUBS_RECORD_BUS` (`test/native/avr/_shared/host_stubs_common.inc:54-80`) — an **opt-in** stub that records `(reg, data)` pairs from `rurp_write_to_register`, exposed via `clear_bus_recording/bus_recording_count/recorded_reg/recorded_data`. Cap 256 entries. **It does not record `rurp_write_data_buffer` (`:98-100`, a no-op) nor the `/CE`,`/OE` strobes** (`rurp_chip_enable` etc. are macros over `rurp_set_chip_enable`, `rurp_shield.h:99-102`).
 - Consumers: the 6 `test_val_*` suites (`platformio.ini [env:native] test_filter`).
 
 **Therefore a golden trace *can* prove an SDP sequence emits exactly the right transitions — but only after the recording stub is extended** to also capture data bytes and chip-enable/output edges. That extension must be a **second opt-in flag** (e.g. `HOST_STUBS_RECORD_FULL`) so the eight existing suites that do *not* define it stay byte-exact, exactly as `HOST_STUBS_RECORD_BUS` was introduced (`:47-53` documents that discipline). This is the single most valuable deliverable in the milestone and belongs in Phase 116.
@@ -331,18 +331,18 @@ Instead: a **NEW host module** (`firestarter/sdp.py`) holding a curated, datashe
 | # | Seam | Location | Reuse as |
 |---|---|---|---|
 | S-1 | `flash_execute_command(cmd)` macro | `flash_utils.h:15-16` | **do not reuse for `0x0D`** (F-2). Keep for `0x05`/`0x06`. |
-| S-2 | `flash_util_byte_flipping` | `flash_utils.cpp:20-27` | pattern only — the `set_control_register(rw,0)` → N cycles → restore shape. Reimplement remap-aware. |
+| S-2 | `flash_util_byte_flipping` | `flash_utils.cpp:21-28` | pattern only — the `set_control_register(rw,0)` → N cycles → restore shape. Reimplement remap-aware. |
 | S-3 | `byte_flip_t` + table pattern | `flash_utils.h:19-22` | **reuse the type verbatim**; declare new `0x0D` tables locally in `eeprom_28c.cpp` beside `:26-33`. |
-| S-4 | **`handle->firestarter_set_data`** (`memory_set_data`) | `memory.cpp:224-234` | ★ **the emitter to build on** — remap + `WRITE_FLAG` + `/CE` pulse. Already used at `eeprom_28c.cpp:123`. |
-| S-5 | `mem_util_remap_address_bus` | `memory.cpp:259-282` | the address translation S-2 skips; `WRITE_FLAG=0`/`READ_FLAG=1` at `memory_utils.h:14-15`. |
+| S-4 | **`handle->firestarter_set_data`** (`memory_set_data`) | `memory.cpp:228-306` | ★ **the emitter to build on** — remap + `WRITE_FLAG` + `/CE` pulse. Already used at `eeprom_28c.cpp:123`. |
+| S-5 | `mem_util_remap_address_bus` | `memory.cpp:331-354` | the address translation S-2 skips; `WRITE_FLAG=0`/`READ_FLAG=1` at `memory_utils.h:14-15`. |
 | S-6 | `eeprom28c_wait_for_write` | `eeprom_28c.cpp:135-155` | polling **loop shape** reusable (2000 × 10 µs, `MSG_ERR_EEPROM_TIMEOUT` + 5 param bytes). Its `(0x5555, 0x20)` call site at `:111` must be **replaced**, not reused. |
-| S-7 | `flash_util_verify_operation` (DQ7 toggle poll) | `flash_utils.cpp:29-50` | alternative poll primitive (150 ms budget, double-read confirm) — closer to the datasheet DQ7 model than S-6. |
+| S-7 | `flash_util_verify_operation` (DQ7 toggle poll) | `flash_utils.cpp:30-51` | alternative poll primitive (150 ms budget, double-read confirm) — closer to the datasheet DQ7 model than S-6. |
 | S-8 | `eeprom28c_check_chip_id` + **D-08 identity-before-unlock ordering** | `eeprom_28c.cpp:56-95`, ordering comment `:98-99` | ★ **reuse verbatim and preserve the ordering.** Lock/unlock must run the identity gate first so a mismatch leaves the chip in its current protection state. Note it drives 12 V on A9 (`:71-78`) — the only VPP use on `0x0D`; the `test_val_eeprom28c` 5V-only invariant must be extended to cover the new commands *in the configure phase*. |
-| S-9 | `flash_util_check_chip_id_execute` | `flash_utils.cpp:89-105` | the `FLAG_FORCE` → WARNING vs ERROR fork. Mirror it; and heed the recorded lesson that a golden trace with a *matching* id misses this fork — plant a **mismatch** test. |
+| S-9 | `flash_util_check_chip_id_execute` | `flash_utils.cpp:97` | the `FLAG_FORCE` → WARNING vs ERROR fork. Mirror it; and heed the recorded lesson that a golden trace with a *matching* id misses this fork — plant a **mismatch** test. |
 | S-10 | `op_execute_simple_operation` | `operation_utils.cpp:58-60`, `.h:74` | ★ **the no-payload operation rail.** `eprom_erase/check_chip_id/blank_check` all ride it (`eprom_operations.cpp:34-55`). |
-| S-11 | `_single_step_operation_callback` | `operation_utils.cpp:271-295` | note its `cmd == CMD_BLANK_CHECK` special case for programmer-mode frame flushing — an SDP op that needs to emit an outcome frame from programmer mode faces the same Uno `com_mode` gate. |
-| S-12 | v1.21 destructiveness gate | `cli_handlers.py:1836-1842` | ★ TTY `Confirm.ask` + `-y/--yes` bypass; **CLI-only flag, never config/env (SAFE-01)**. Note `dev test`'s own gate is `if destructive:` and `derive_plan(..., destructive=)` (`chip_test.py:318`) keeps omitted destructive steps on the advisory `locked_destructive` list (`:315`) with no code path to execute them — the same discipline applies to lock. |
-| S-13 | `SAFE-04` absent-chip hard-fail | `cli_handlers.py:1844-1850` | pre-hardware `app.db.get_eprom(chip)` emptiness check; reuse for the new commands. |
+| S-11 | `_single_step_operation_callback` | `operation_utils.cpp:279-303` | note its `cmd == CMD_BLANK_CHECK` special case for programmer-mode frame flushing — an SDP op that needs to emit an outcome frame from programmer mode faces the same Uno `com_mode` gate. |
+| S-12 | v1.21 destructiveness gate | `cli_handlers.py:1833-1839` | ★ TTY `Confirm.ask` + `-y/--yes` bypass; **CLI-only flag, never config/env (SAFE-01)**. Note `dev test`'s own gate is `if destructive:` and `derive_plan(..., destructive=)` (`chip_test.py:318`) keeps omitted destructive steps on the advisory `locked_destructive` list (`:315`) with no code path to execute them — the same discipline applies to lock. |
+| S-13 | `SAFE-04` absent-chip hard-fail | `cli_handlers.py:1841-1847` | pre-hardware `app.db.get_eprom(chip)` emptiness check; reuse for the new commands. |
 | S-14 | `EpromOperator` no-payload method shape | `eprom_operations.py:1628-1651` (`erase_eprom`) | ★ copy: `_operation_context(...) → _run_state_machine(op_name)`; `_main_phase_simple` (`:494`) handles the MAIN wait. |
 | S-15 | `_raise_for_error_response` → `EpromOperationError.error_code` | `eprom_operations.py:70-86`; `exceptions.py:37-42` | ★ typed-error seam; add the new SDP error id here (or let it fall through to the generic branch). `ProtocolNotImplementedError` (`exceptions.py:45`) is the `0xBB` subclass. |
 | S-16 | D-30 pre-wire short-circuit | `eprom_operations.py:1656,1661-1676` | ★ the exact shape for the SDP-capability refusal (§5), and the precedent that a host-side refusal is the right fix for a NULL-main-op firmware trap. |
@@ -402,7 +402,7 @@ Decomposed, the three sub-claims software cannot reach:
 v1.20's precedent (`v1.20-ROADMAP.md:1289`): *"firmware stops parsing `type` first (safe: `json_parser.c` silently skips unknown fields…), then the host stops emitting it — the wire contract is never left half-broken."* v1.22 is the **inverse operation** (adding, not removing), so the rule inverts to the same conclusion:
 
 - **Firmware CAN be half-landed safely.** New firmware that understands `cmd 9/10` and `flags 0x100/0x200` is fully backward-compatible with the current host, which emits neither. Zero behaviour change until the host opts in.
-- **Host CANNOT be half-landed.** A host emitting `cmd:9` to `3.0.0b11` firmware hits `MSG_ERR_UNKNOWN_CMD` (`firestarter.cpp:249`) — fail-closed, but with an unhelpful message and no capability negotiation. A host setting `flags 0x100` on old firmware is **silently ignored** (`is_flag_set` just doesn't match) → the user asked to skip the unlock and it ran anyway. That is the dangerous half-landing. **FW-first is mandatory.**
+- **Host CANNOT be half-landed.** A host emitting `cmd:9` to `3.0.0b11` firmware hits `MSG_ERR_UNKNOWN_CMD` (`firestarter.cpp:244`) — fail-closed, but with an unhelpful message and no capability negotiation. A host setting `flags 0x100` on old firmware is **silently ignored** (`is_flag_set` just doesn't match) → the user asked to skip the unlock and it ran anyway. That is the dangerous half-landing. **FW-first is mandatory.**
 - Note there is **no minimum-firmware-version gate** for capabilities: `_validate_firmware_version` (`serial_comm.py:556-591`) only enforces `major >= 3` / `>= 2.0.0`. Consider whether the host should refuse SDP commands below a known-good FW version, or accept the `UNKNOWN_CMD` failure as sufficient.
 
 ### Proposed phases
@@ -410,9 +410,9 @@ v1.20's precedent (`v1.20-ROADMAP.md:1289`): *"firmware stops parsing `type` fir
 | # | Phase | Repos | Half-landable | Depends on |
 |---|---|---|---|---|
 | **116** | **TRACE — SDP observability harness + RED golden trace of today's emission** · extend `host_stubs_common.inc` recording behind a new opt-in flag (data bytes + `/CE`//`/OE` edges); new `test/native/avr/test_eeprom28c_sdp/` suite pinning the exact sequence `eeprom28c_write_init` emits for each of the four `0x0D` pinouts; `platformio.ini` wiring. **ZERO production code change** — pure oracle construction. Deliverable: F-2 confirmed or refuted as a machine-checked fact. Also: acquire the AT28C256 datasheet (T-B). | FW (tests only) | yes | — |
-| **117** | **FIX — remap-aware `0x0D` command emitter + honest success signal** · replace `flash_execute_command(EEPROM_SDP_DISABLE)` (`eeprom_28c.cpp:109`) with a `0x0D`-local emitter on `handle->firestarter_set_data`; replace the inverted `wait_for_write(0x5555,0x20)` (`:111`) with a coherent check; 116's traces flip RED→GREEN. `flash_utils.*` / `flash_5v_page.cpp` / `flash_nor_unlock.cpp` **untouched**. No wire change, no lockstep, host untouched. | FW only | **yes** | 116 |
+| **117** | **FIX — remap-aware `0x0D` command emitter + honest success signal** · replace `flash_execute_command(EEPROM_SDP_DISABLE)` (`eeprom_28c.cpp:104`) with a `0x0D`-local emitter on `handle->firestarter_set_data`; replace the inverted `wait_for_write(0x5555,0x20)` (`:111`) with a coherent check; 116's traces flip RED→GREEN. `flash_utils.*` / `flash_5v_page.cpp` / `flash_nor_unlock.cpp` **untouched**. No wire change, no lockstep, host untouched. | FW only | **yes** | 116 |
 | **118** | **OBSERVE — auto-unlock becomes visible + opt-out-able** (FW half of the lockstep) · new INFO/WARN ids in meta `messages.toml` → `sync_to_subrepos.sh` → `codegen.py` regen both sub-repos; `FLAG_SKIP_SDP_UNLOCK 0x100` in `firestarter.h`; firmware honours it and emits an outcome frame. Delivers the `gh#11`/`gh#12` user-visible value earliest. ⚠ `is_flag_set` on `>0x80` — audit display sites for uint8 truncation. | FW + meta catalog | **yes** | 117 |
-| **119** | **LOCK — SDP-enable path + new command surface** (FW half) · `CMD_SDP_UNLOCK 9` / `CMD_SDP_LOCK 10`; replace the `cmd < CMD_DEV_ADDRESS` admission guard with `is_memory_cmd()` (T-1); `case` arms in `firestarter.cpp:202-252`; `eprom_sdp_lock/_unlock` on `op_execute_simple_operation`; `EEPROM_SDP_ENABLE[]` + read-modify-write-identical lock body (P-1); `default:` → `MSG_ERR_NOT_SUPPORTED` in the handler switches (T-2); D-08 identity-first preserved; `FLAG_SDP_LOCK_AFTER 0x200`. Carries a `pio run -e leonardo` flash-budget criterion (3348 B headroom). | FW + meta catalog | **yes** | 117, 118 |
+| **119** | **LOCK — SDP-enable path + new command surface** (FW half) · `CMD_SDP_UNLOCK 9` / `CMD_SDP_LOCK 10`; replace the `cmd < CMD_DEV_ADDRESS` admission guard with `is_memory_cmd()` (T-1); `case` arms in `firestarter.cpp:197-247`; `eprom_sdp_lock/_unlock` on `op_execute_simple_operation`; `EEPROM_SDP_ENABLE[]` + read-modify-write-identical lock body (P-1); `default:` → `MSG_ERR_NOT_SUPPORTED` in the handler switches (T-2); D-08 identity-first preserved; `FLAG_SDP_LOCK_AFTER 0x200`. Carries a `pio run -e leonardo` flash-budget criterion (3348 B headroom). | FW + meta catalog | **yes** | 117, 118 |
 | **120** | **HOST — CLI surface, wire emission, capability refusal, destructive gate** · `constants.py` `COMMAND_SDP_*` + **`COMMAND_NAMES` entries** + `FLAG_*`; NEW `firestarter/sdp.py` curated capability resolver (§5); `EpromOperator.sdp_lock/sdp_unlock` on the `erase_eprom` shape; CLI commands behind the S-12 destructive confirm + `-y`; `write --skip-sdp-unlock` / `--lock-after`; pre-wire refusal for non-`0x0D` and `SDP_ABSENT`/`SDP_UNKNOWN` (S-16); constants-parity test extended. **Closes the lockstep — this is the half that must not land first.** | HOST | **NO** | 119 |
 | **121** | **GATE + DOCS (close)** · NEW `tools/check_sdp_capability.py` + anti-hollow planting pytest (S-21); correct `doc/PROTOCOLS.md` §1.6 (`:185-186` currently describes a sequence that does not faithfully reach silicon) and `firestarter/CLAUDE.md` command/flag tables; PROTOCOL-LEDGER `0x0D` stays `UNVERIFIED` with the §7 ceiling recorded verbatim; re-verify full native suite + `check_dispatch.py` (0 violations) + `diff_db.py` (identity — DB unchanged) + host pytest + py3.11-target CI; comment `gh#11`/`gh#12`. | both + meta | — | 120 |
 
@@ -511,7 +511,7 @@ Measured 2026-07-27 (`cd /workspaces/firestarter && pio run -e leonardo`):
 | ≤ ~500 B added | Comfortable. Expected for 117 (may be net-negative: dropping the `flash_utils` call in `eeprom_28c.cpp` sheds the 48 B table + a call site). |
 | ~500–2000 B | Phase 119's most likely band (2 CMD arms + 2 op drivers + lock body + `is_memory_cmd`). Carry a `pio run -e leonardo` success criterion per firmware phase, as v1.13/v1.17 did. |
 | > 2000 B | Re-scope. First lever: collapse the two commands into **one** `CMD_SDP` + a flag bit selecting lock vs unlock (frees slot 10, one op driver instead of two). Second lever: skip the `default:` arms in the non-`0x0D` handlers (AP: T-2) and rely solely on the host refusal — cheaper in flash, weaker in defence-in-depth; record as explicit accepted debt if taken. |
-| RAM | Stay away from new `malloc` in the SDP path (`mem_util_blank_check` already mallocs at `memory.cpp:300`). The SDP bodies need no heap. |
+| RAM | Stay away from new `malloc` in the SDP path (`mem_util_blank_check` already mallocs at `memory.cpp:372`). The SDP bodies need no heap. |
 
 ---
 
@@ -525,10 +525,10 @@ All findings are **first-party reads of the working tree at `firestarter@0fd7992
 | **`primitives.{h,cpp}` does not exist in this tree**; `a10871d`/`a296195` are on the v1.16 branch only | **HIGH** | `ls include/ src/proms/`; `git log --all --oneline --diff-filter=A -- '*primitives*'`; `git merge-base --is-ancestor a296195 beta` → NO |
 | `datasheets/` does not exist in the meta-repo (despite `PROTOCOLS.md` citations) | **HIGH** | `ls -d /workspaces/datasheets` → ENOENT |
 | SDP-disable shipped in `3.0.0b11`; `0x0D` handler functionally untouched since 2026-05-12 | **HIGH** | `git merge-base --is-ancestor 34cefac beta` → YES; `git log HEAD -- src/proms/eeprom_28c.cpp` |
-| **F-2**: `rw-pin` is 11/14/14/20 for the four `0x0D` pinouts vs 22 for `DIP32_SST39SF040`; `fu_flash_fast_address` bypasses remap; write/read-back addresses diverge | **HIGH** | script in §3 + reading `flash_utils.cpp:20-66`, `memory.cpp:224-282`, `json_parser.c:214-231` |
+| **F-2**: `rw-pin` is 11/14/14/20 for the four `0x0D` pinouts vs 22 for `DIP32_SST39SF040`; `fu_flash_fast_address` bypasses remap; write/read-back addresses diverge | **HIGH** | script in §3 + reading `flash_utils.cpp:21-67`, `memory.cpp:228-354`, `json_parser.c:401-418` |
 | **F-3**: 84 `0x0D` chips incl. 2 FRAM + ~19 pre-SDP parts | **HIGH** | script in §5 |
-| `CMD` slots 9/10 free; `cmd < CMD_DEV_ADDRESS` guard blocks them; `DEV_TOOLS`-conditional divergence | **HIGH** | `firestarter.h:34-51`, `firestarter.cpp:76-95,248-251` |
-| Recording stub captures registers only, not data bytes or strobes | **HIGH** | `host_stubs_common.inc:54-80,98-100`; `rurp_shield.h:104-107` |
+| `CMD` slots 9/10 free; `cmd < CMD_DEV_ADDRESS` guard blocks them; `DEV_TOOLS`-conditional divergence | **HIGH** | `firestarter.h:34-51`, `firestarter.cpp:73-91,248-251` |
+| Recording stub captures registers only, not data bytes or strobes | **HIGH** | `host_stubs_common.inc:54-80,98-100`; `rurp_shield.h:99-102` |
 | Flash/RAM baseline 88.3 % / 78.0 % | **HIGH** | `pio run -e leonardo`, 2026-07-27 |
 | Free message-id slots; `0xAE` retired in v1.20; all 3 `messages.toml` copies identical | **HIGH** | `md5sum` ×3; id-scan script over `messages.toml` |
 | `infoic.xml` protection flags unusable for capability derivation | **HIGH** | `.planning/notes/infoic-xml-protection-flags-research.md` (pinned negative result, minipro `@a8efaed`) |

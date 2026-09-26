@@ -1,0 +1,48 @@
+== 1 the registry, the new shape and the re-baseline
+shape_count=19
+registered=True
+reserved_left=
+pinned_set_len=19
+pinned_set_matches=True
+anchor_matches=True
+ladder_len=19
+ladder_distinct=4
+new_bc_verdict=SKIPPED
+new_write_verdict=OK
+new_write_run_count=2
+new_verify_verdict=OK
+new_verify_run_count=2
+new_overall=PASS
+new_target_masked=True
+new_target_probe=True
+new_hash=927571e5110f
+new_hash_frozen_matches=True
+rebaselined_hash=e42f1567967a
+rebaselined_frozen_matches=True
+rebaselined_moved_off_before=True
+inherited_count=17
+inherited_drifted=
+ladder_mismatches=
+ladder_uvslot=community-reported
+ladder_blankcheckbad=community-reported
+rc=0
+== 2 snapshots regenerate clean at nineteen
+OK: 19 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+== 3 the invariance harness
+........................................................................ [ 72%]
+............................                                             [100%]
+100 passed in 0.76s
+rc=0
+== 4 no reserved read site went silently vacuous
+tests/test_blast_radius_invariance.py:81:    RESERVED_SHAPE_IDS,
+tests/test_blast_radius_invariance.py:579:    assert not (set(SHAPE_IDS) & RESERVED_SHAPE_IDS)
+tests/test_blast_radius_invariance.py:776:    177, 178 and 179 registered all three names `RESERVED_SHAPE_IDS` ever
+tests/test_blast_radius_invariance.py:785:    assert RESERVED_SHAPE_IDS == frozenset(), (
+tests/test_blast_radius_invariance.py:786:        "RESERVED_SHAPE_IDS is no longer empty -- a new name was reserved "
+tests/test_blast_radius_invariance.py:789:    for reserved_id in sorted(RESERVED_SHAPE_IDS):
+tests/fixtures/report_shapes.py:22:`RESERVED_SHAPE_IDS` claims `shape_id` names ahead of the phases that will
+tests/fixtures/report_shapes.py:752:RESERVED_SHAPE_IDS: frozenset[str] = frozenset()
+tests/fixtures/report_shapes.py:754:assert not (set(SHAPE_IDS) & RESERVED_SHAPE_IDS), (
+tests/fixtures/report_shapes.py:756:    f"collision: {set(SHAPE_IDS) & RESERVED_SHAPE_IDS}"
+rc=0

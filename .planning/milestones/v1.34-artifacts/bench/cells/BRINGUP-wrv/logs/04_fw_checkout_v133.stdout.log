@@ -1,0 +1,4 @@
+git -C /workspaces/firestarter rev-parse HEAD
+5759dc8d644a8a7fb26e9a0ccd11a8bfd53fc463
+git -C /workspaces/firestarter status --porcelain (must be empty)
+(empty confirms clean)

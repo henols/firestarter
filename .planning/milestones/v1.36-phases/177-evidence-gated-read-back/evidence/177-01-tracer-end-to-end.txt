@@ -1,0 +1,43 @@
+== 0 the Phase 175 licence
+...............................                                          [100%]
+31 passed in 1.58s
+rc=0
+== 1 the synthesized contract and the four hops
+const=match
+cls=match
+total=4096
+bad=0
+bad_pct=0.0
+ff_ratio_is_none=True
+evidence_keys=bit_clustering,ff_ratio,first_offset,repeat_divergent
+empty_total=0
+empty_cls=match
+measured_keys=bit_clustering,ff_ratio,first_offset,repeat_divergent
+key_sets_agree=True
+all_ff_perfect=blank/contact
+hop__run_step=True
+hop__run_step_untimed=True
+hop__dispatch_step=True
+hop__dispatch_multi_run=True
+rc=0
+== 2 the counted read-backs on a passing run
+passing_readbacks=0
+write_cls=match
+verify_cls=match
+rc=0
+== 3 the engine test modules
+........................................................................ [ 37%]
+........................................................................ [ 75%]
+...............................................                          [100%]
+191 passed in 11.53s
+rc=0
+== 4 the named legs exist
+leg_test_a_passing_run_performs_zero_fingerprint_read_backs=1
+leg_test_a_passing_write_reports_a_synthesized_match_fingerprint=1
+leg_test_synthesized_and_measured_fingerprints_share_one_evidence_key_set=1
+leg_test_a_bad_blank_check_does_not_force_a_read_back_on_a_passing_write=1
+leg_test_a_failing_step_still_performs_its_fingerprint_read_back=1
+leg_test_classify_fingerprint_still_returns_blank_contact_for_an_all_ff_perfect_compare=1
+leg_test_a_zero_length_write_region_synthesizes_a_match_with_no_read=1
+leg_test_a_failing_first_cycle_keeps_the_fingerprint_read_back=1
+leg_test_an_all_passing_two_cycle_run_performs_zero_fingerprint_read_backs=1

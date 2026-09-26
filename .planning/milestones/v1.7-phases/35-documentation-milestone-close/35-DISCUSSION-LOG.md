@@ -18,7 +18,7 @@
 |--------|----------|------|-------|
 | CR-01 | BLOCKER | `firestarter/include/rurp_hw_rev_utils.h:60-61` | `INPUT_PULLUP` active during `analogRead` on A3 detect divider corrupts band math (15-30% per-rev shift) |
 | CR-02 | BLOCKER | `firestarter/include/rurp_pinout.h:58-62` + `rurp_hw_rev_utils.h:68-87` | Guard-gap band `[200, 220)` is 20 counts wide vs 5-10 count noise floor; silent-misclassifies into `ctrl_reg = 0` fail-silent dispatcher arm |
-| WR-01 | WARNING | `firestarter_app/firestarter/serial_comm.py:171-179` + `messages.py:145-146` + `firestarter/src/firestarter.cpp:137-138` | `MSG_INFO_HW` + `MSG_INFO_PHYSICAL_HW` bypass `_REVISION_SILKSCREEN` → render `"HW: Rev254"` for REVISION_UNKNOWN |
+| WR-01 | WARNING | `firestarter_app/firestarter/serial_comm.py:171-179` + `messages.py:145-146` + `firestarter/src/firestarter.cpp:133-134` | `MSG_INFO_HW` + `MSG_INFO_PHYSICAL_HW` bypass `_REVISION_SILKSCREEN` → render `"HW: Rev254"` for REVISION_UNKNOWN |
 | WR-02 | WARNING | `firestarter_app/firestarter/serial_comm.py:359-363` | `MSG_OK_CFG` Override clause bypasses `_REVISION_SILKSCREEN` → renders raw byte adjacent to silkscreen MSG_OK_REV |
 
 **Options considered:**

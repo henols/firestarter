@@ -117,7 +117,7 @@ No other references to `database_generated.json` or `minipro_complete_db.json` e
 **Notes:**
 - `part_number` is the comma-joined alias list from upstream XML; `AT28C256` shows as `"AT28C256,AT28C256"` — the host CLI's `EpromDatabase.get_eprom("AT28C256")` lookup tolerates this via comma-split (see `database.py:_map_data` and the search/info paths). CLI invocations use the bare name `AT28C256`.
 - AT28C256 retains `electrical.type = "Flash/EEPROM"` AND `electrical.vpp = "12V"` / `vpp_mv = 12000` IN THE DB JSON — the Phase 13 override flipped ONLY `programming.algorithm` from 0x07 to 0x0D. The 5V invariant is enforced by the firmware handler (`configure_eeprom28c` never asserts the regulator), NOT by the DB voltage field.
-- `chip_id_check = false` + `chip_id_value = 0` for AT28C256 means `eeprom28c_write_init` at `eeprom_28c.cpp:82` skips the SAF-05 A9-12V chip-ID branch entirely (gated on `handle->chip_id > 0`). The SDP-disable + DQ7-poll write path runs unconditionally.
+- `chip_id_check = false` + `chip_id_value = 0` for AT28C256 means `eeprom28c_write_init` at `eeprom_28c.cpp:78` skips the SAF-05 A9-12V chip-ID branch entirely (gated on `handle->chip_id > 0`). The SDP-disable + DQ7-poll write path runs unconditionally.
 - All four flash/EEPROM chips have `info_flags |= 0x10` (Can be electrically erased) set in `database.py:408`, which translates to wire-protocol `FLAG_CAN_ERASE` (0x02). The firmware write-init paths therefore auto-erase before write unless `--no-blank-check` is passed.
 
 ## Per-Chip Code-Path Snapshot
@@ -147,7 +147,7 @@ The planner should add a Wave-1 task to verify the post-fix script run (without 
 **DB:** `WINBOND/W27C512`, `algorithm=7`, `size_bytes=65536`, `pin_count=28`, `vpp_mv=12000`, `pinout=DIP28_27512`, `chip_id_value=0x0000da08`.
 
 **Firmware path:**
-1. `firestarter.cpp:99` `op_execute_function(configure_memory, handle)` runs INIT.
+1. `firestarter.cpp:95` `op_execute_function(configure_memory, handle)` runs INIT.
 2. `memory.cpp:92` — `handle->protocol == 0x07` branch → `configure_eprom(handle)`.
 3. `eprom.cpp:79` — `eprom_check_vpp(handle)` (the UV-EPROM equivalent of SAF-04, pre-existing in v1.0).
 4. `eprom.cpp:84` — `eprom_internal_check_chip_id(handle, RESPONSE_CODE_ERROR)` runs unconditionally since `chip_id != 0` (0xda08 is set).
@@ -214,17 +214,17 @@ The planner should decide whether to run BOTH variants on SST39SF040 (full chip-
 
 **Critical:** The DB's `vpp_mv=12000` is **ignored at the firmware level** — `configure_eeprom28c` (`eeprom_28c.cpp:34-47`) sets only `firestarter_operation_init` / `_main` / `_end` and `pulse_delay=0`; it NEVER calls `firestarter_set_control_register(handle, REGULATOR | P1_VPP_ENABLE, ...)`. Phase 13 verification confirmed `grep -c 'REGULATOR\|VPE_TO_VPP\|VPE_ENABLE\|P1_VPP_ENABLE\|A9_VPP_ENABLE\|eprom_check_vpp' firestarter/src/proms/eeprom_28c.cpp = 0`.
 
-Wait — that grep was reported in `13-VERIFICATION.md`. Let me re-verify against the **current** tree, because SAF-05 (Phase 1 v1.1) added `eeprom28c_check_chip_id` which DOES toggle the regulator briefly for A9-12V identification (`eeprom_28c.cpp:65-72`). The current `eeprom_28c.cpp`:
+Wait — that grep was reported in `13-VERIFICATION.md`. Let me re-verify against the **current** tree, because SAF-05 (Phase 1 v1.1) added `eeprom28c_check_chip_id` which DOES toggle the regulator briefly for A9-12V identification (`eeprom_28c.cpp:61-68`). The current `eeprom_28c.cpp`:
 - `eeprom28c_check_chip_id` at lines 55-77 — **DOES assert `REGULATOR` and `A9_VPP_ENABLE`** at lines 65-67 (for A9-12V chip-ID read), then clears both at line 72. **But this branch only runs when `handle->chip_id > 0`** (gated at line 82). AT28C256's DB entry has `chip_id_value=0`, so the gate is FALSE and the chip-ID branch is skipped entirely. The write path begins at `flash_execute_command(EEPROM_SDP_DISABLE)` (line 91) which uses no regulator engagement.
 
 **Net effect for HW-04:** As long as the operator does NOT pass `--force` AND the DB entry's `chip_id_value=0` is intact, the entire write path is 5V VCC only. `P1_VPP_ENABLE` is never asserted. DMM at socket pin 1 reads ~0 V continuously throughout.
 
-If the chip-ID branch were somehow enabled (e.g., user override sets a chip_id_value), `eeprom_28c.cpp:65-72` would briefly assert `REGULATOR | A9_VPP_ENABLE` to drive A9 to 12V. **A9 is socket pin 25 on DIP28_2764, NOT pin 1.** P1_VPP is socket pin 1. So even the chip-ID branch does not engage P1_VPP. The HW-04 invariant "0 V at P1_VPP during write window" holds regardless of chip-ID state, by handler construction.
+If the chip-ID branch were somehow enabled (e.g., user override sets a chip_id_value), `eeprom_28c.cpp:61-68` would briefly assert `REGULATOR | A9_VPP_ENABLE` to drive A9 to 12V. **A9 is socket pin 25 on DIP28_2764, NOT pin 1.** P1_VPP is socket pin 1. So even the chip-ID branch does not engage P1_VPP. The HW-04 invariant "0 V at P1_VPP during write window" holds regardless of chip-ID state, by handler construction.
 
 **Firmware path:**
 1. `memory.cpp:77` — `handle->protocol == 0x0D` branch → `configure_eeprom28c(handle)`.
 2. `eeprom_28c.cpp:34-47` `configure_eeprom28c` — sets init/main/end function pointers; pulse_delay=0.
-3. `eeprom_28c.cpp:79-99` `eeprom28c_write_init`:
+3. `eeprom_28c.cpp:75-94` `eeprom28c_write_init`:
    - Line 82: `if (handle->chip_id > 0)` — skipped for AT28C256 (chip_id_value=0).
    - Line 91: `flash_execute_command(EEPROM_SDP_DISABLE)` — 6-write sequence to unlock SDP if enabled. No regulator engagement.
    - Line 93: `eeprom28c_wait_for_write(handle, 0x5555, 0x20)` — wait for SDP-disable internal write.
@@ -717,7 +717,7 @@ From `./CLAUDE.md` (meta-repo) and `firestarter_app/CLAUDE.md`:
 | A2 | The Sub-run A abort signature `ERROR: VPP is high: X.XV > Y.YV` is the literal wire prefix the host CLI emits to stdout | §HW-05 | Source string at `flash_intel.cpp:41` uses `firestarter_response_format(RESPONSE_CODE_ERROR, "VPP is high: %u.%uV > %u.%uV", ...)`. Macro emits via `log_error()` → `rurp_log(LOG_ERROR_MSG, msg)` where `LOG_ERROR_MSG[]="ERROR"`. The Python parse at `serial_comm.py:48` PREFIX_REGEX matches `ERROR:` exactly. Logger output prefix prepended at `serial_comm.py:194-195` (`rurp_logger.log(level, f"{log_prefix}: {message}")` where `log_prefix="ERROR"` for non-debug). Final stdout line is `RURP: ERROR: VPP is high: ...` or similar based on log handler config. The substring `ERROR: VPP is high` is grep-stable — assumption is **VERIFIED**. |
 | A3 | The CONTEXT.md D-05 phrasing "lower regulator setpoint via `firestarter config`" is a misalignment with the actual CLI surface, and the DB-override alternative achieves the same load-bearing two-run contrast | §HW-05 + Open Questions | If the user intended a different mechanism the planner doesn't know about (e.g., a non-public undocumented config field), the abort run would need to use that mechanism. Mitigation: surface as Open Question #1; let the planner / user confirm. |
 | A4 | The SST39SF040 sector-erase variant in HW-03 uses `-a <nonzero>` flag to `firestarter write` to trigger the sector-erase path | §HW-03 | Verified at `flash_type_3.cpp:94-102` (`flash3_erase_execute` branches on `handle->address != 0`). Host CLI's `firestarter write -a <addr>` sets `command_dict["address"] = <addr>` in `eprom_operations.py:179` — passes verbatim through to wire JSON. Assumption is **VERIFIED**. |
-| A5 | `firestarter verify` exit code semantics: exit 0 on byte-match, exit 1 on mismatch | §HW-02..HW-04 | `eprom_operations.py:559-579` `verify_eprom` returns `is_ok` from `_run_state_machine`; `main.py:541-542` checks return and exits accordingly. The wire-level verify is via `memory_verify_execute` at `memory.cpp:214-223` which emits `ERROR: 0x%02x != 0x%02x at 0x%06x` on mismatch — propagates to ERROR: line → exit 1. **VERIFIED.** |
+| A5 | `firestarter verify` exit code semantics: exit 0 on byte-match, exit 1 on mismatch | §HW-02..HW-04 | `eprom_operations.py:559-579` `verify_eprom` returns `is_ok` from `_run_state_machine`; `main.py:541-542` checks return and exits accordingly. The wire-level verify is via `memory_verify_execute` at `memory.cpp:218-227` which emits `ERROR: 0x%02x != 0x%02x at 0x%06x` on mismatch — propagates to ERROR: line → exit 1. **VERIFIED.** |
 
 After re-verification, **A1, A2, A4, A5 are VERIFIED (not assumed)**. Only **A3 remains an actual assumption** — the planner should resolve via Open Question #1.
 
@@ -725,7 +725,7 @@ After re-verification, **A1, A2, A4, A5 are VERIFIED (not assumed)**. Only **A3 
 
 ### 1. D-05 mechanism: `firestarter config` vs DB override for HW-05 underpowering
 
-**What we know:** CONTEXT.md D-05 specifies "Run `firestarter config` to lower the VPP regulator setpoint to a value below Intel's required ~12V (target 10000 mV = 10 V)." The live `firestarter config` CLI at `main.py:256-271` exposes only `--rev`, `-r1/--r16`, `-r2/--r14r15` — no VPP setpoint argument. The wire-protocol `CMD_CONFIG` path at `firestarter.cpp:111-119` parses `r1`, `r2`, `rev` fields into `rurp_configuration_t` via `json_parse_config`. No VPP-millivolt field exists.
+**What we know:** CONTEXT.md D-05 specifies "Run `firestarter config` to lower the VPP regulator setpoint to a value below Intel's required ~12V (target 10000 mV = 10 V)." The live `firestarter config` CLI at `main.py:256-271` exposes only `--rev`, `-r1/--r16`, `-r2/--r14r15` — no VPP setpoint argument. The wire-protocol `CMD_CONFIG` path at `firestarter.cpp:107-115` parses `r1`, `r2`, `rev` fields into `rurp_configuration_t` via `json_parse_config`. No VPP-millivolt field exists.
 
 **What's unclear:** Whether the user has a different mechanism in mind, or whether D-05's phrasing was a research-time assumption that needs revision.
 
@@ -773,7 +773,7 @@ Recommendation (A) — pre-author both; the additional effort is small and avoid
 - `firestarter/src/proms/eprom.cpp:30,79-181,199-247` — UV-EPROM configure + check_vpp (the W27C512 path)
 - `firestarter/include/logging.h:79-194` — `log_error`, `log_warn`, `firestarter_response_format` macro expansion
 - `firestarter/src/logging.c:7-14` — PROGMEM line prefix strings (`"OK"`, `"DATA"`, `"WARN"`, `"ERROR"`)
-- `firestarter/src/operation_utils.cpp:321-342` — `_check_response` switch that drives the per-line log emission
+- `firestarter/src/operation_utils.cpp:329-350` — `_check_response` switch that drives the per-line log emission
 - `.planning/phases/01-safety-closure-intel-flash-vpp-28c-chip-id/01-VERIFICATION.md` Truth #1, #3 — SAF-04 evidence
 - `.planning/milestones/v1.0-phases/13-close-gap-warning-5-at28c256-64-5v-eeprom-override-12v-on-we/13-VERIFICATION.md` Truth #1-#8 — Phase 13 override evidence
 - `.planning/milestones/v1.0-phases/05-intel-flash/05-VERIFICATION.md` — REQ-SAF-01 Intel closure cross-milestone narrative

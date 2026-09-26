@@ -1,0 +1,13 @@
+DEBUG  :Config       : 116: ConfigManager initialized for /workspaces/.planning/v1.34/config/config.json.
+DEBUG  :Database     : 160: EpromDatabase initialized.
+INFO   :Hardware     : 128: Reading hardware revision...
+DEBUG  :SerialComm   : 816: Probing for programmer on /dev/ttyACM0...
+DEBUG  :SerialComm   : 188: Attempting to connect to /dev/ttyACM0 at 250000 baud.
+DEBUG  :SerialComm   : 197: Successfully connected to /dev/ttyACM0.
+DEBUG  :SerialComm   : 616: Sending command to programmer: {'state': 15}
+DEBUG  :SerialComm   : 219: Sent 15 bytes to /dev/ttyACM0.
+DEBUG  :RURP         : 325: OK: Ready
+DEBUG  :SerialComm   : 912: Programmer found on /dev/ttyACM0: Ready
+DEBUG  :RURP         : 325: OK: Rev 2.0-class, Override HW: Rev 2.3
+INFO   :Hardware     : 139: Hardware revision: Rev 2.0-class, Override HW: Rev 2.3
+DEBUG  :SerialComm   : 607: Disconnected from /dev/ttyACM0.

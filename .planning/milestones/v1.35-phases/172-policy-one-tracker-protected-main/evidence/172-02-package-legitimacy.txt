@@ -1,0 +1,42 @@
+Package-legitimacy gate: check-jsonschema (Task 1, 172-02-PLAN.md)
+Date: 2026-09-01
+
+Audit verdict (verbatim, phase package-legitimacy audit):
+  name:        check-jsonschema
+  registry:    PyPI
+  verdict:     SUS
+  reasons:     too-new, unknown-downloads
+  publishedAt: 2026-08-09 (latest release, not first publication)
+  repoUrl:     https://github.com/python-jsonschema/check-jsonschema
+  deprecated:  false
+  postinstall: null
+
+Countervailing PyPI metadata, fetched independently by the orchestrator and weighed
+by the human before deciding:
+  first release:  0.1.0 on 2021-01-08
+  total releases: 98
+  latest release: 0.38.0 on 2026-08-09
+  source:         github.com/python-jsonschema/check-jsonschema
+  author:         Stephen Rosen (sirosen0@gmail.com) -- also the maintainer of the
+                   `jsonschema` package itself
+  note: the audit's `too-new` signal keys on the LATEST release date, not first
+  publication, so it fires on any actively maintained package regardless of age.
+
+Decision: B -- DECLINED the install.
+Decided by: human, 2026-09-01.
+
+No install was performed. No venv was created at /tmp/gsd-172-v311 or anywhere
+else. No `uv pip install` or `pip install` command was run for this plan.
+
+Resulting guarantee (stated plainly, not softened):
+The shipped validation is a structural assertion only -- implemented in Python
+standard library only, no PyYAML, no check-jsonschema. It checks that each form's
+top-level keys are a subset of the documented eight (name description title labels
+projects assignees type body) and that every body[].type is one of the six legal
+values (checkboxes dropdown input markdown textarea upload). It catches a mistyped
+body[].type and an unexpected top-level key. It does NOT catch a misplaced attribute
+or an illegal nested key, which the vendor.github-issue-forms / vendor.github-issue-config
+SchemaStore schemas (additionalProperties: false) would have caught. A malformed form
+therefore fails at GitHub render time rather than here. This is a recorded, accepted
+reduction in guarantee, not a claim of equivalent coverage.
+validator: structural fallback (top-level key set and body type enum only)

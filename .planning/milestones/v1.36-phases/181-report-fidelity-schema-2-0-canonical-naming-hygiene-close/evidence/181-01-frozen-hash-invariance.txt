@@ -1,0 +1,50 @@
+== 1 base count for tests/test_blast_radius_invariance.py at app base 04fd982
+measured_base_count=100
+orchestrator_disposition_expected=100
+discrepancy=none
+
+== 2 schema_version before/after
+schema_version_before=1.8
+schema_version_after=2.0
+to_dict_key_count_before=13
+to_dict_key_count_after=14
+is_uv_source_expression=self.plan.is_uv
+
+== 3 frozen dedup hash literal count and drift since app base 04fd982
+frozen_hash_literal_count=19
+frozen_hash_lines_added_or_removed_since_04fd982=0
+command=git diff 04fd982 -- tests/fixtures/report_shapes.py | /usr/bin/grep -cE '^[-+][[:space:]]*"[a-z0-9-]+": "[0-9a-f]{12}",'
+output=0
+rc=0
+
+== 4 tests/test_blast_radius_invariance.py, full run after Task 1's edits
+command=./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -o addopts="" -q
+........................................................................ [ 72%]
+............................                                             [100%]
+100 passed in 1.10s
+rc=0
+
+== 5 snapshot regeneration confinement (19 shapes)
+command=./.venv311/bin/python tools/snapshot_report_shapes.py
+snapshots_regenerated=19
+snapshots_confined_to_is_uv_and_schema_version=19
+snapshots_out_of_scope_diff=0
+command=./.venv311/bin/python tools/snapshot_report_shapes.py --check
+OK: 19 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+
+== 6 AST proof: to_dict() carries exactly fourteen keys, is_uv reads self.plan.is_uv
+to_dict_keys=14
+is_uv_source=self.plan.is_uv
+rc=0
+
+== 7 RPT-E3 exception clause discharge
+rpt_e3_exception_clause_discharges_as_empty=true
+re_key_count_this_task=0
+ledger_row_written=false
+reason=tools/rekey/check_rekey_ledger.py does not exist (GATE-06's RK-174- ledger,
+  its app-side fixture, its checker and its CI workflow were retired on
+  2026-09-08 per D-15). RPT-E3's anchor is now the 19 absolute FROZEN_HASHES
+  literals in tests/fixtures/report_shapes.py plus the two-commit review rule
+  carried in test_dedup_fingerprint_is_frozen's own failure message. Phase 181
+  plan 01 declares zero re-keys, so that rule never fires here.

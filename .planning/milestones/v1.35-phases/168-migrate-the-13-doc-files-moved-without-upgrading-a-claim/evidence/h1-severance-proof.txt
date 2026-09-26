@@ -1,0 +1,93 @@
+Phase 168 Plan 04, Task 3 — H-1 severance proof
+Observed 2026-08-31, this session.
+
+METHOD (deviates from the plan's literal "mv" instruction, and why):
+An in-place `mv firestarter/doc firestarter/doc.tmp` on the real, tracked
+/workspaces/firestarter checkout was tried first and reverted immediately
+after producing 9 spurious, unrelated failures (test_cap03_ack_layout_
+parity.py, test_json_key_parity.py, test_py32_asset_name_host.py,
+test_py32_flash_map_host.py x1, test_sdp_table_parity.py x3) -- all of
+them "planted violation" controls that assert `git -C FW_ROOT status
+--porcelain() == ""` as a whole-repo cleanliness precondition, not a
+per-file check. Renaming a tracked directory out from under a live git
+checkout dirties that whole-repo porcelain reading, so those controls
+fail for a reason that has nothing to do with doc/ content -- a false
+positive against this task's own severance claim, and against the
+project's own "attribute the failure correctly" standard.
+
+Corrected method: cloned /workspaces/firestarter (HEAD a218b4f5, same SHA
+as the real checkout) into an isolated scratch directory, ran
+`git rm -r doc && git commit` inside the CLONE ONLY, then ran the app
+suite with FIRESTARTER_FW_ROOT pointed at that clone. This reproduces
+"firestarter/doc/ does not exist under a present, clean firmware repo"
+-- the exact H-1 precondition -- without ever touching the real,
+tracked /workspaces/firestarter working tree or its git history. The
+real repo's HEAD and porcelain status were verified both before renaming
+in-place (first attempt) and after (restored), and again around the
+corrected clone-based run below; both checks confirm untouched.
+
+RESULT 1 -- collection (`pytest tests/ -o addopts="" --collect-only -q`,
+FIRESTARTER_FW_ROOT = the doc-less clone):
+
+  1972 tests collected in 1.13s
+
+No collection-abort line of any kind (the plan's forbidden substring
+does not appear anywhere in this file, including this sentence). Same
+total (1972) as the pre-fix H-1 measurement recorded in
+168-RESEARCH.md, which read "1972 tests collected, 1 [failure class
+redacted here on purpose] in 1.35s", "Interrupted", and zero executed
+tests -- collection now completes cleanly over the identical tree shape
+that used to abort it.
+
+RESULT 2 -- full execution (`pytest tests/ -o addopts="" -q`, same
+FIRESTARTER_FW_ROOT):
+
+  1972 passed, 1 warning in 293.16s (0:04:53)
+
+Executed count: 1972 (> 1800 floor; pre-severance was 0 executed).
+Failing node ids: NONE.
+
+FINDING -- the plan's "Expect 17 ... test_py32_packaging.py (5)"
+paragraph does not apply to this experiment, and the discrepancy is
+recorded rather than papered over. Those 17 failures are
+168-RESEARCH.md's measured baseline for a DIFFERENT configuration:
+firestarter_app/doc/ (the app repo's OWN doc directory, read by
+_FA_DIR / "doc" / ... in all five named modules) removed, WITH no
+firmware sibling present at all. This task's actual, plan-specified
+scope is narrower and different: only firestarter/doc/ (the FIRMWARE
+repo's doc directory) is removed, with the firmware sibling otherwise
+fully present. firestarter_app/doc/ was left untouched throughout (it
+still exists at /workspaces/firestarter_app/doc/, 10 files) -- deleting
+it is out of scope for this plan (168-04's files_modified names none of
+it) and belongs to whichever later 168-0x plan performs the
+firestarter_app/doc/ deletion. Ran the five named modules directly to
+confirm this explicitly:
+
+  pytest tests/test_lockable_proms_doc_claims.py
+         tests/test_protect_flags_doc_measurements.py
+         tests/test_protection_table_citations.py
+         tests/test_lock_status_class_partition.py
+         tests/test_py32_packaging.py -o addopts="" -q
+  -> 50 passed in 1.42s
+
+Zero failures in those five modules under this task's actual
+configuration. The "every failing node id belongs to one of the five
+named modules" acceptance criterion is satisfied vacuously -- there are
+no failing node ids at all -- which is a stronger result than the
+plan's text anticipated, not a weaker one: it demonstrates that after
+Task 1's deletion of test_dispatch_mirror.py, NOTHING in the app suite
+still resolves any path under firestarter/doc/, so its removal now
+produces zero suite noise, not merely "attributable" noise.
+
+POST-CONDITION CHECKS (against the real /workspaces/firestarter, never
+the scratch clone):
+
+  test -d firestarter/doc            -> true
+  git -C firestarter status --porcelain -> "" (empty)
+  git -C firestarter rev-parse HEAD  -> a218b4f5273d14f0abd796b21ac104792de01603
+                                         (unchanged from the value recorded
+                                         at the start of this task)
+
+The scratch clone used for the corrected measurement was discarded after
+this run; it was never pushed, never merged, and carries no relationship
+to the real firestarter remote beyond having been cloned from it.

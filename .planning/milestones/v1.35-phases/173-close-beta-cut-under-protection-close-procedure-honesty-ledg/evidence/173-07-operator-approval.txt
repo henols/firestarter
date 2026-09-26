@@ -1,0 +1,24 @@
+APPROVED-FOR-POST: gh5 gh6 gh7 gh9
+
+Operator: Henrik Olsson
+Date: 2026-09-02
+
+Decision (D-13 blocking wording review): the orchestrator presented all four drafted bodies
+(evidence/bodies/173-gh5.md, 173-gh6.md, 173-gh7.md, 173-gh9.md) to the operator in full and
+verbatim, together with the disposition each implies (comment on all four; close gh#7 and gh#6;
+pin gh#9; leave gh#5 open). This sentence is the orchestrator's rendering of the operator's menu
+selection plus its option description, not a verbatim quotation: the operator selected "Approve,
+strengthen gh#6" — approve all four for posting exactly as drafted, on the condition that gh#6's
+third "Delivered" bullet is amended first to cite the performed push rejected by GH013 across all
+three repositories (evidence/173-03-probe-verdict.md) rather than an API configuration read-back,
+with every other byte of all four bodies left unchanged.
+
+The amendment described above has already been applied to evidence/bodies/173-gh6.md and to the
+gh#6 body copy inside 173-UPSTREAM-REPLIES.md before this approval file was written, so the four
+sha256 hashes below are computed over the bodies exactly as approved and exactly as they will be
+posted.
+
+sha256(evidence/bodies/173-gh5.md) = ea0b21158729b9c1c45d7b0dde320c8efdb0181a318b2c45a7f5725d55618c50
+sha256(evidence/bodies/173-gh6.md) = 49f4a2a645d95ccfde0d13d883f609a7989b99cfa2b4b2969c2527900ce873d3
+sha256(evidence/bodies/173-gh7.md) = c6ae994f0bbd71f20c3c05c88fc57df2babe60a507514bcb7d8bec7e9120b2c3
+sha256(evidence/bodies/173-gh9.md) = 0db65fe80d52497b0f78fcb281bd96d8ae5d62e47947fdb6cd5d4789b0c6fe95

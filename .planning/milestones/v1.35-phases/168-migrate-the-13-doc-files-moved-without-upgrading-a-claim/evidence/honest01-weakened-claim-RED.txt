@@ -1,0 +1,14 @@
+command: python3 tools/wiki/honest01_claims.py --table <fixture-table> --wiki-dir <fixture-wiki> --vocab tools/wiki/claim-vocabulary.json --repo-root <fixture-repo-root>
+mutation: softened one of two adapter-required occurrences on the wiki-side Fixture-Page.md to 'may need an adapter'; the git-committed source fixture (sha 3f267a3a89225719af25f8509614ddb027d3ba3f) still carries both occurrences
+control: exit 0 (both sides start at 2 occurrences of adapter-required)
+result: exit 1
+--- captured output ---
+DROPPED:
+ERROR: dropped claim: Fixture-Page: token 'adapter-required' (family=support_status) source=3 dest=2
+VACUOUS (expected_zero, not folded into the pass line):
+NOTE: 'vpp-exceeds-max': 0 of 0 -- VACUOUS, not checked
+NOTE: 'requires an adapter': 0 of 0 -- VACUOUS, not checked
+NOTE: 'unverified': 0 of 0 -- VACUOUS, not checked
+NOTE: 'at your own risk': 0 of 0 -- VACUOUS, not checked
+NOTE: 'UNVERIFIED': 0 of 0 -- VACUOUS, not checked
+NOTE: 'PROTOCOL-LEDGER': 0 of 0 -- VACUOUS, not checked

@@ -1,0 +1,35 @@
+== aggregate as committed
+gen=True
+aliases_n=953
+filed_n=26
+filed_all_differ=True
+aliases_chip_not_found=0
+aliases_chip_not_implemented=16
+aliases_resolving_to_comma_joined=514
+aliases_token_differs_from_part_number=942
+aliases_token_equals_part_number=11
+distinct_aliases=953
+distinct_part_numbers=677
+part_numbers_not_lowercase_published_proxy=732
+part_numbers_with_comma=234
+rows=746
+vendors=59
+rc=0
+== check mode, clean
+OK: /workspaces/firestarter_app/tests/fixtures/part_number_delta.json matches a fresh regeneration
+rc=0
+== check mode, target absent
+DRIFT: target does not exist: /tmp/tmp.bktEZ21tdB/absent.json
+rc=1
+== issues input absent
+ERROR: issues corpus not found: /tmp/tmp.bktEZ21tdB/absent-corpus.json
+rc=2
+wrote_on_bad_input=no
+== byte-identical regeneration
+OK: wrote /tmp/tmp.bktEZ21tdB/regen.json
+rc=0
+byte_identical=yes
+== the drift gate
+....                                                                     [100%]
+4 passed in 6.50s
+rc=0

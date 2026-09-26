@@ -1,0 +1,9 @@
+rows with a SHA: 8
+  firestarter/doc/PROTOCOLS.md -> Programming-Protocols 168
+  firestarter/doc/SHIELD-REVISIONS.md -> Shield-Revisions 168
+  firestarter_app/doc/beta-testing-install.md -> Install-Beta 168
+  firestarter_app/doc/community-validation.md -> Testing-Chips 168
+  firestarter_app/doc/lockable-proms.md -> Lockable-PROMs 168
+  firestarter_app/doc/protocol-flags.md -> Protocol-Flags 168
+  firestarter_app/doc/protocol-id.md -> Protocol-ID 168
+  firestarter_app/autocomplete.md -> Shell-Completion 171

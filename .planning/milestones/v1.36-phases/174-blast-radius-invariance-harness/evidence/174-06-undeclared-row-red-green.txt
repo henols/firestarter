@@ -1,0 +1,43 @@
+cells=7
+remaining_rows=0
+== wrongshape against PRE-FIX blob 5c0c7c9 -- RED expected, it exits 0 where non-zero is required
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc_prefix_wrongshape=0
+== wrongshape against the FIXED checker -- GREEN expected, exit 1 with a naming ERROR
+ERROR: 'RK-174-01-p177-readback-gating' MILESTONES.md row (shape_id, before)=('TOTALLY-WRONG-SHAPE', '4dc282a5d596') does not match ledger row (shape_id, before_hash)=('sst27sf512-six-step', '4dc282a5d596')
+rc_fixed_wrongshape=1
+== wrongbefore against PRE-FIX blob 5c0c7c9 -- RED expected, it exits 0 where non-zero is required
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc_prefix_wrongbefore=0
+== wrongbefore against the FIXED checker -- GREEN expected, exit 1 with a naming ERROR
+ERROR: 'RK-174-01-p177-readback-gating' MILESTONES.md row (shape_id, before)=('sst27sf512-six-step', '000000000000') does not match ledger row (shape_id, before_hash)=('sst27sf512-six-step', '4dc282a5d596')
+rc_fixed_wrongbefore=1
+== upperbefore against PRE-FIX blob 5c0c7c9 -- RED expected, it exits 0 where non-zero is required
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc_prefix_upperbefore=0
+== upperbefore against the FIXED checker -- GREEN expected, exit 1 with a naming ERROR
+ERROR: 'RK-174-01-p177-readback-gating' MILESTONES.md row (shape_id, before)=('sst27sf512-six-step', '4DC282A5D596') does not match ledger row (shape_id, before_hash)=('sst27sf512-six-step', '4dc282a5d596')
+rc_fixed_upperbefore=1
+== wideafter against PRE-FIX blob 5c0c7c9 -- RED expected, it exits 0 where non-zero is required
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc_prefix_wideafter=0
+== wideafter against the FIXED checker -- GREEN expected, exit 1 with a naming ERROR
+ERROR: 'RK-174-01-p177-readback-gating' is undeclared in the ledger but MILESTONES.md's after cell 'ffffffffffffff' is not the exact literal '(undeclared)'
+rc_fixed_wideafter=1
+== shortafter against PRE-FIX blob 5c0c7c9 -- RED expected, it exits 0 where non-zero is required
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc_prefix_shortafter=0
+== shortafter against the FIXED checker -- GREEN expected, exit 1 with a naming ERROR
+ERROR: 'RK-174-01-p177-readback-gating' is undeclared in the ledger but MILESTONES.md's after cell '4dc282a5d59' is not the exact literal '(undeclared)'
+rc_fixed_shortafter=1
+== emptytable against PRE-FIX blob 5c0c7c9 -- RED expected, it exits 0 where non-zero is required
+OK: 6 ledger row(s), 0 MILESTONES.md row(s) bound
+rc_prefix_emptytable=0
+== emptytable against the FIXED checker -- GREEN expected, exit 1 with a naming ERROR
+ERROR: MILESTONES.md carries 0 RK-174- row(s) while the ledger declares 6 row(s)
+rc_fixed_emptytable=1
+== order stability, two consecutive runs over the same corrupted copy
+order_stable=identical
+== the real unmutated pair still binds
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc_fixed_clean=0

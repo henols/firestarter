@@ -1,0 +1,9 @@
+PASS, per operator ruling on the sweep's operative baseline. `dev test W27E512` returned verdict OK on all six steps -- id x1 (3.55s), read x2 (21.2s), write x2 (122.2s), verify x2 (28.4s), erase x2 (16.7s), blank-check x2 (16.1s); banner 6 of 6 ran, steps total 208.1s, wall-clock 213s. VPP before/after 12400/12400 mV, in band. fw_board_identity 3.0.0b22:leonardo, non-null. The write covered the FULL device (write_region_start=0, write_region_length=65536).
+
+Operator ruling, verbatim in substance: if dev test reported OK, the part is OK; old test records are not proof and are not interesting. Applied here: dev test's own verdict on the v133 arm is the operative baseline for this sweep, not a prior milestone's disposition.
+
+v1.15 Phase 82 (.planning/v1.15/bench/EVIDENCE.md:97) recorded a stuck-bit-at-0x3d disposition for this part under a DIFFERENT test methodology (write_A+verify_A -> write_B+verify_B), on a different milestone's rig, with different tooling. Per the operator ruling, that record is NOT treated as an authoritative baseline for a dev test result -- the mismatch between "OK now" and "FAIL then" is not booked as a divergence and earns no control arbitration.
+
+Not asserted: that the cell healed. Not asserted: that it is still faulty. Neither is established, and the phase does not need to settle it -- dev test's own OK verdict is what this row records.
+
+Recorded detail, kept but NOT grounds for a divergence verdict on their own (per the ruling, dev test's own verdict is the arbiter): read step's reason = "read runs diverged" (verdict OK); write and verify steps' fingerprint = "indeterminate" (verdict OK on both). These are observations, not findings.

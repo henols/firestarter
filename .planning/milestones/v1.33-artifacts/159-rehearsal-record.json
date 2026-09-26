@@ -1,0 +1,118 @@
+{
+  "affected_documents_count": 1293,
+  "apply": {
+    "actionable_counts": {
+      "needs_review": 0,
+      "no_match_in_document": 0,
+      "not_at_recorded_line": 0,
+      "retarget": 0,
+      "unreviewed_retarget": 0,
+      "violation": 0
+    },
+    "documents_changed": 564,
+    "label": "disposable",
+    "planned_rewrites": 2743,
+    "receipt_status": "APPLIED",
+    "returncode": 0
+  },
+  "archive_gate": {
+    "after": {
+      "exempt_tally": {
+        "block": 22,
+        "inline-allow": 10,
+        "inline-history": 6,
+        "line-label": 4,
+        "superseded": 11
+      },
+      "pass": true,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "PASS: scanned ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/PROJECT.md, ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/STATE.md, ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/ROADMAP.md, ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/milestones/v1.23-REQUIREMENTS.md, ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/notes/py32f071-port-branch-state.md; exempt hits by verdict: {'block': 22, 'line-label': 4, 'inline-history': 6, 'inline-allow': 10, 'superseded': 11}",
+      "superseded_count": 11
+    },
+    "before": {
+      "exempt_tally": {
+        "block": 23,
+        "inline-allow": 10,
+        "inline-history": 6,
+        "line-label": 4,
+        "superseded": 12
+      },
+      "pass": true,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "PASS: scanned ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/PROJECT.md, ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/STATE.md, ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/ROADMAP.md, ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/milestones/v1.23-REQUIREMENTS.md, ../tmp/gsd-159-rehearsal-5o8x5ail/corpus/.planning/notes/py32f071-port-branch-state.md; exempt hits by verdict: {'block': 23, 'line-label': 4, 'inline-history': 6, 'inline-allow': 10, 'superseded': 12}",
+      "superseded_count": 12
+    },
+    "pass_before_and_after": true,
+    "superseded_drift_explained": "a citation remap legitimately renumbered a line a Phase-130 'superseded' needle regex was keyed on (measured: notes/py32f071-port-branch-state.md:96, needle 'cli-handlers-821', cli_handlers.py:821 -> :819); the needle no longer matches ANY text on that line post-remap, so it drops out of the tally entirely rather than becoming 'unlabeled' -- the gate's exit code and PASS verdict are unaffected before and after",
+    "superseded_unchanged": false
+  },
+  "corpus_fingerprint": "95c5f522872da2e774008104b32974acc5df5cc8cd7306804715c65611333fed",
+  "corpus_fingerprint_match": true,
+  "generated_by": "rehearse_citation_remap.py",
+  "index_isolation": {
+    "entries": 564,
+    "findings": [
+      ".planning/STATE.md correctly kept off a whole-file stage (citation_only_index_object)",
+      ".planning/v1.33/v1.9-COBS-DECISION.md correctly scoped to its own authorize_include row (no broader scope)"
+    ],
+    "ok": true
+  },
+  "input_hashes": {
+    "corpus_overlay_sha256": [
+      "ba50c1a2e9d07f9e863a7f8861d26ee37abf5e915b2c3f6c6898fd89d49a3794"
+    ],
+    "exceptions_sha256": "0362b94e8edee833702240387742960116219b899b854ee845b28a87415973f1",
+    "manifest_sha256": [
+      "ecdd0fc84be1627f893e30f6369c0b9eedf2a69ce3ec351064828d82e72d992e",
+      "307d74355cc332680050bb34f739abce69b89782384175d50c9b68787b16fd01"
+    ]
+  },
+  "live_root": "/workspaces",
+  "no_production_event": true,
+  "post_apply_hashes": {
+    "changed_count": 564,
+    "post_apply_sample_count": 1293,
+    "pre_apply_sample_count": 1293
+  },
+  "range_proofs": {
+    "end_text_match": true,
+    "found": true,
+    "new_span": 3,
+    "old_span": 4,
+    "proof": {
+      "new_end": 318,
+      "new_span": 3,
+      "new_start": 316,
+      "old_end": 131,
+      "old_span": 4,
+      "old_start": 128,
+      "record_id": "orig-fe6697dd74c7a30b"
+    },
+    "start_text_match": true
+  },
+  "recovery": {
+    "apply_returncode": 1,
+    "apply_stderr": "FAIL: batch transaction ended in status 'FAILED'; rollback_status='COMPLETE'. See /tmp/gsd-159-rehearsal-5o8x5ail/recovery-receipt.json for the full receipt. Exit 1 (BLOCK).",
+    "preimage_restored": true,
+    "receipt_status": "FAILED",
+    "recover_returncode": 0,
+    "recovered_rollback_status": "COMPLETE",
+    "recovered_status": "FAILED",
+    "replaced_documents": [
+      ".planning/MILESTONES.md"
+    ],
+    "rollback_status": "COMPLETE"
+  },
+  "root_class": "disposable",
+  "second_dry_run": {
+    "hashes_identical_to_post_apply": true,
+    "planned_documents": 0,
+    "planned_rewrites": 0,
+    "returncode": 0
+  },
+  "status": "COMPLETE",
+  "topology_digest": "0d7c095d109f37dba5f3375a7644153ade4abe4e5f5862eb64b91ed85d56932e",
+  "topology_digest_match": true
+}

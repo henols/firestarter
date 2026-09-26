@@ -1,0 +1,26 @@
+== 1 R3 inverted (Phase 177 key set, inverted per 180-PATTERNS.md section 4)
+r3_intact=0
+r3_amended=1
+connect_objection_preserved=1
+rc=0
+
+== 2 R4's now-false sentence corrected (Ruling 2)
+r4_amended=1
+r4_design_substance_untouched=1
+r4_01_scoped_or_implemented=0
+rc=0
+
+== 3 status line repointed
+status_line_repointed=1
+rc=0
+
+== 4 preserved invariants
+frontmatter_fields=4
+projection_table_intact=1
+phase177_section_bytes_unchanged=1
+dated_block=1
+rc=0
+
+== 5 destination the amended text points at
+closure_document_path=.planning/phases/180-read-step-sampling-conditional-on-phase-176/180-PRUNE-08-CLOSURE.md
+rc=0

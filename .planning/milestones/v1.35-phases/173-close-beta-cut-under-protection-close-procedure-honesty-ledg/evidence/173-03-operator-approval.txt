@@ -1,0 +1,10 @@
+APPROVED-FOR-PROBE: firestarter_prom firestarter firestarter_app
+
+Operator: Henrik Olsson
+Date: 2026-09-02
+
+The operator selected option id "authorize" ("Authorize the probe as specified by D-02") from
+the checkpoint's two-option menu presented by the orchestrator, which reproduced verbatim the
+five numbered points, the CI cost, and the one-way reversibility rating from
+173-03-PLAN.md Task 1. This is a menu selection, not free text: the operator added no
+sentence of their own beyond choosing "authorize", so no quotation is attributed to them here.

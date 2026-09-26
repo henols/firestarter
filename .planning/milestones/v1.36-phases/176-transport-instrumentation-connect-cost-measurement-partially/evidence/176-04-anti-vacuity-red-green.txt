@@ -1,0 +1,115 @@
+== w1: median_low -> median (even-count test must break)
+.F......                                                                 [100%]
+=================================== FAILURES ===================================
+_ TestSummarizeConnectSamples.test_even_sample_count_reports_lower_median_not_average _
+
+self = <tests.test_connect_cost_harness.TestSummarizeConnectSamples object at 0x7f2dad614210>
+
+    def test_even_sample_count_reports_lower_median_not_average(self) -> None:
+        summary = EpromOperator._summarize_connect_samples([1.0, 2.0, 3.0, 4.0])
+>       assert summary["median"] == "2.000s", (
+            "median_low must report the lower of the two middle values "
+            "(2.0), never the interpolated average (2.5) -- every reported "
+            "figure must be one that was actually observed."
+        )
+E       AssertionError: median_low must report the lower of the two middle values (2.0), never the interpolated average (2.5) -- every reported figure must be one that was actually observed.
+E       assert '2.500s' == '2.000s'
+E         
+E         - 2.000s
+E         ?   ^
+E         + 2.500s
+E         ?   ^
+
+tests/test_connect_cost_harness.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_connect_cost_harness.py::TestSummarizeConnectSamples::test_even_sample_count_reports_lower_median_not_average
+1 failed, 7 passed in 0.20s
+rc_w1=1
+== w2: three decimals -> two decimals (rounding tests must break)
+FF......                                                                 [100%]
+=================================== FAILURES ===================================
+_ TestSummarizeConnectSamples.test_odd_sample_count_reports_min_median_max_no_mean _
+
+self = <tests.test_connect_cost_harness.TestSummarizeConnectSamples object at 0x7f7f48cbeb50>
+
+    def test_odd_sample_count_reports_min_median_max_no_mean(self) -> None:
+        summary = EpromOperator._summarize_connect_samples([2.6, 2.5, 2.9])
+>       assert summary["min"] == "2.500s"
+E       AssertionError: assert '2.50s' == '2.500s'
+E         
+E         - 2.500s
+E         ?     -
+E         + 2.50s
+
+tests/test_connect_cost_harness.py:37: AssertionError
+_ TestSummarizeConnectSamples.test_even_sample_count_reports_lower_median_not_average _
+
+self = <tests.test_connect_cost_harness.TestSummarizeConnectSamples object at 0x7f7f47d07fd0>
+
+    def test_even_sample_count_reports_lower_median_not_average(self) -> None:
+        summary = EpromOperator._summarize_connect_samples([1.0, 2.0, 3.0, 4.0])
+>       assert summary["median"] == "2.000s", (
+            "median_low must report the lower of the two middle values "
+            "(2.0), never the interpolated average (2.5) -- every reported "
+            "figure must be one that was actually observed."
+        )
+E       AssertionError: median_low must report the lower of the two middle values (2.0), never the interpolated average (2.5) -- every reported figure must be one that was actually observed.
+E       assert '2.00s' == '2.000s'
+E         
+E         - 2.000s
+E         ?     -
+E         + 2.00s
+
+tests/test_connect_cost_harness.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_connect_cost_harness.py::TestSummarizeConnectSamples::test_odd_sample_count_reports_min_median_max_no_mean
+FAILED tests/test_connect_cost_harness.py::TestSummarizeConnectSamples::test_even_sample_count_reports_lower_median_not_average
+2 failed, 6 passed in 0.18s
+rc_w2=1
+== w3: empty-sample path reports 0.000s instead of unmeasured (honesty test must break)
+..F.....                                                                 [100%]
+=================================== FAILURES ===================================
+_ TestSummarizeConnectSamples.test_empty_sample_list_reports_unmeasured_not_a_number _
+
+self = <tests.test_connect_cost_harness.TestSummarizeConnectSamples object at 0x7f3b85318190>
+
+    def test_empty_sample_list_reports_unmeasured_not_a_number(self) -> None:
+        summary = EpromOperator._summarize_connect_samples([])
+        assert summary["samples"] == "0"
+>       assert summary["min"] == "unmeasured"
+E       AssertionError: assert '0.000s' == 'unmeasured'
+E         
+E         - unmeasured
+E         + 0.000s
+
+tests/test_connect_cost_harness.py:54: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_connect_cost_harness.py::TestSummarizeConnectSamples::test_empty_sample_list_reports_unmeasured_not_a_number
+1 failed, 7 passed in 0.18s
+rc_w3=1
+== w4: added a mean figure to the summary (no-mean assertion must break)
+F.......                                                                 [100%]
+=================================== FAILURES ===================================
+_ TestSummarizeConnectSamples.test_odd_sample_count_reports_min_median_max_no_mean _
+
+self = <tests.test_connect_cost_harness.TestSummarizeConnectSamples object at 0x7f7eeb622d50>
+
+    def test_odd_sample_count_reports_min_median_max_no_mean(self) -> None:
+        summary = EpromOperator._summarize_connect_samples([2.6, 2.5, 2.9])
+        assert summary["min"] == "2.500s"
+        assert summary["median"] == "2.600s"
+        assert summary["max"] == "2.900s"
+        assert summary["structural_floor"] == "2.500s"
+>       assert not any("mean" in key for key in summary)
+E       assert not True
+E        +  where True = any(<generator object TestSummarizeConnectSamples.test_odd_sample_count_reports_min_median_max_no_mean.<locals>.<genexpr> at 0x7f7eeb5e9e50>)
+
+tests/test_connect_cost_harness.py:41: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_connect_cost_harness.py::TestSummarizeConnectSamples::test_odd_sample_count_reports_min_median_max_no_mean
+1 failed, 7 passed in 0.19s
+rc_w4=1
+== clean: restored to green working tree
+........                                                                 [100%]
+8 passed in 0.14s
+rc_clean=0

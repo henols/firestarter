@@ -1,0 +1,16 @@
+{
+  "changed": false,
+  "devices_after": [
+    "/dev/ttyACM0",
+    "/dev/ttyUSB0"
+  ],
+  "devices_before": [
+    "/dev/ttyACM0",
+    "/dev/ttyUSB0"
+  ],
+  "port_requested": "/dev/ttyACM0",
+  "port_to_use": "/dev/ttyACM0",
+  "settle_s": 2.0,
+  "timeout_s": null,
+  "wait_new_port": false
+}

@@ -37,7 +37,7 @@ All 10 retroactive `NN-VERIFICATION.md` artifacts exist at the canonical paths, 
 | 1 | SC#1 — Ten `NN-VERIFICATION.md` files exist under `.planning/milestones/v1.0-phases/`, one per v1.0 phase 01..10. | VERIFIED | `ls .planning/milestones/v1.0-phases/{NN-slug}/{NN}-VERIFICATION.md` — all 10 files present (01..10). Sizes range 8.7 KB (08) to 13.7 KB (10). |
 | 2 | SC#2 — Every audit finding attributed to "missing VERIFICATION.md" is resolved or explicitly carried as `follow_ups`. | VERIFIED | All 14 PARTIAL REQs from `v1.0-MILESTONE-AUDIT.md` are SATISFIED against current source tree in their owning VERIFICATION.md, and three open hazards (WARNING-4, WARNING-5 x3, INFO-3) carried in `follow_ups`. |
 | 3 | SC#3 — `05-VERIFICATION.md` records the v1.1 SAF-04 closure of `REQ-SAF-01` (Intel-flash VPP ADC compare). | VERIFIED | `05-VERIFICATION.md:103-113` contains the verbatim subsection heading `### Cross-Milestone Closure — REQ-SAF-01 (Intel-flash VPP ADC compare)` and cites helper at `flash_intel.cpp:25-50`, call-site at `:77`, chip-id branch at `:87`, CR-01 regression at `:79-85`. All four citations verified against live `flash_intel.cpp` (helper exists at lines 25-50; call at line 77; chip-id check at line 87). |
-| 4 | SC#4 — `10-VERIFICATION.md` confirms `static_high_mask` end-to-end + `pins < 32` VPE_TO_VPP guard intact in current `memory.cpp`. | VERIFIED | `10-VERIFICATION.md:112-119` `### SC#4 Explicit Lock` subsection traces 5-hop chain (`pinouts.json:10,21` → `database.py:309-319` → wire JSON → `json_parser.c:239` (init `:84`) → `memory.cpp:247`); `pins < 32` guard at `memory.cpp:140` confirmed via `Read`; dead `READ_WRITE == WRITE_FLAG` confirmed absent via `grep` (zero matches). |
+| 4 | SC#4 — `10-VERIFICATION.md` confirms `static_high_mask` end-to-end + `pins < 32` VPE_TO_VPP guard intact in current `memory.cpp`. | VERIFIED | `10-VERIFICATION.md:112-119` `### SC#4 Explicit Lock` subsection traces 5-hop chain (`pinouts.json:10,21` → `database.py:309-319` → wire JSON → `json_parser.c:426` (init `:84`) → `memory.cpp:319`); `pins < 32` guard at `memory.cpp:140` confirmed via `Read`; dead `READ_WRITE == WRITE_FLAG` confirmed absent via `grep` (zero matches). |
 
 **Score:** 4/4 ROADMAP success criteria verified.
 
@@ -102,8 +102,8 @@ One-line verdict per file. Every file: status=passed, overrides_applied=0, front
 | 1 | `firestarter_app/firestarter/data/pinouts.json:10` `:21` | `"static-high-pins": [24]` at lines 10 + 21 for DIP24_2716 and DIP24_2732 | VERIFIED |
 | 2 | `firestarter_app/firestarter/database.py:309-319` (`get_bus_config` static-high block) + `:87-88` (`pin_conversions[24][24] = 13`) | `if "static-high-pins" in pin_map_data ...` at `:309-319` building `map_config["static-high"]`; `pin_conversions[24][24] = 13` at `:87` (with adjacent comment `:85-86`) | VERIFIED |
 | 3 | wire JSON `"static-high":[13]` | emitted via `map_config["static-high"] = static_high` at `database.py:319` (post-translation) | VERIFIED |
-| 4 | `firestarter/src/json_parser.c:239` (mask OR) + `:84` (init to 0) | `handle->bus_config.static_high_mask |= 1UL << line;` at line 239 inside `parse_bus_config:193`; init `handle->bus_config.static_high_mask = 0;` at line 84 inside `json_parse` | VERIFIED |
-| 5 | `firestarter/src/proms/memory.cpp:247` (mask application) | `reorg_address |= config.static_high_mask;` at line 247 inside `mem_util_remap_address_bus` (defined at line 226) | VERIFIED |
+| 4 | `firestarter/src/json_parser.c:426` (mask OR) + `:84` (init to 0) | `handle->bus_config.static_high_mask |= 1UL << line;` at line 239 inside `parse_bus_config:193`; init `handle->bus_config.static_high_mask = 0;` at line 84 inside `json_parse` | VERIFIED |
+| 5 | `firestarter/src/proms/memory.cpp:319` (mask application) | `reorg_address |= config.static_high_mask;` at line 247 inside `mem_util_remap_address_bus` (defined at line 226) | VERIFIED |
 | — | `firestarter/include/firestarter.h:72` (field declaration) | `uint32_t static_high_mask;` at line 72 of `bus_config_t` | VERIFIED |
 
 **Spot-check `pins < 32` VPE_TO_VPP guard:**
@@ -194,16 +194,16 @@ Phase 3 is documentation-only. The "behavior" under test is "every cited `file:l
 | `memory.cpp:82` 0x06 flash3 dispatch | 04-VERIFICATION.md Key Link Verification | `if (handle->protocol == 0x06) ...` at lines 82-85 | PASS |
 | `memory.cpp:92` UV-EPROM dispatch | 03-VERIFICATION.md Truth #1 | `if (handle->protocol == 0x07 || handle->protocol == 0x08 || handle->protocol == 0x0B) ...` at lines 92-95 | PASS |
 | `memory.cpp:140` `pins < 32` guard | 10-VERIFICATION.md Truth #2 + SC#4 lock | guard at line 140 verbatim | PASS |
-| `memory.cpp:247` mask application | 10-VERIFICATION.md Truth #1 hop 5 | `reorg_address |= config.static_high_mask;` at line 247 | PASS |
+| `memory.cpp:319` mask application | 10-VERIFICATION.md Truth #1 hop 5 | `reorg_address |= config.static_high_mask;` at line 247 | PASS |
 | `eeprom_28c.cpp:55-77` SAF-05 helper | 07-VERIFICATION.md Cross-Milestone Closure | helper at lines 55-77; A9-12V (NOT JEDEC) per D-05 override | PASS |
-| `eeprom_28c.cpp:82-83` gate + call | 07-VERIFICATION.md Truth #3 | `if (handle->chip_id > 0) { eeprom28c_check_chip_id(handle); ... }` at lines 82-86 | PASS |
+| `eeprom_28c.cpp:78-79` gate + call | 07-VERIFICATION.md Truth #3 | `if (handle->chip_id > 0) { eeprom28c_check_chip_id(handle); ... }` at lines 82-86 | PASS |
 | `eeprom_28c.cpp:91` SDP_DISABLE | 07-VERIFICATION.md (ordering) + 06-VERIFICATION.md Truth #1 | `flash_execute_command(EEPROM_SDP_DISABLE);` at line 91 | PASS |
 | `eprom.cpp:250-251` `eprom_generic_init` + `eprom_check_vpp` call | 03-VERIFICATION.md Truth #2 | function opens line 250; `eprom_check_vpp(handle);` line 251 | PASS |
 | `eprom.cpp:68-74` protocol-default pulse_delay switch | 03-VERIFICATION.md Truth #1 | switch body lines 70-74 (closing brace 75) inside conditional starting line 68-69; cited line range covers the switch construct | PASS |
 | `flash_type_3.cpp:104` `flash3_sector_erase` | 04-VERIFICATION.md Truth #1 | `void flash3_sector_erase(...)` at line 104 | PASS |
 | `flash_type_3.cpp:77-79` blank-check gate | 04-VERIFICATION.md Truth #2 + 08-VERIFICATION.md Truth #1 | `if (!is_flag_set(FLAG_SKIP_BLANK_CHECK)) { mem_util_blank_check(handle); }` at lines 77-79 | PASS |
-| `json_parser.c:128-131` top-level unknown-key skip | 02-VERIFICATION.md Truth #1 | "Unknown field — skip key + value token..." comment at line 129, `token_idx += 2;` at line 130 | PASS |
-| `json_parser.c:251-255` nested unknown-key skip | 02-VERIFICATION.md Truth #1 | "Unknown key — skip key + value tokens" comment at line 252, advances at 253-254 | PASS |
+| `json_parser.c:316-318` top-level unknown-key skip | 02-VERIFICATION.md Truth #1 | "Unknown field — skip key + value token..." comment at line 129, `token_idx += 2;` at line 130 | PASS |
+| `json_parser.c:438-442` nested unknown-key skip | 02-VERIFICATION.md Truth #1 | "Unknown key — skip key + value tokens" comment at line 252, advances at 253-254 | PASS |
 | `database.py:309-319` static-high translation | 10-VERIFICATION.md hop 2 | `if "static-high-pins" in pin_map_data ...` at lines 309-319 | PASS |
 | `pinouts.json:10` + `:21` `static-high-pins: [24]` | 10-VERIFICATION.md hop 1 | lines 10 and 21 carry `"static-high-pins": [24]` verbatim | PASS |
 | `database.py:518` `vpp_mv` wire emit | 01-VERIFICATION.md Cross-Milestone Closure | `"vpp_mv": vpp_mv,` at line 518 | PASS |
@@ -218,9 +218,9 @@ Phase 3 is documentation-only. The "behavior" under test is "every cited `file:l
 |--------|------------------------|--------|----------|
 | REQ-DB-01 | 01 | SATISFIED | `database.py:47-61` (`_ALGO_MEM_TYPE`); `:395` lookup |
 | REQ-DB-02 | 01 | SATISFIED | `build_db.py:93` (`DIP28_VARIANT_MAP`); `:120` resolution |
-| REQ-DB-03 | 01 | SATISFIED | `build_db.py:82,256` + `database.py:387,518` + `json_parser.c:62,74,309`; WIRE-01 closure |
+| REQ-DB-03 | 01 | SATISFIED | `build_db.py:82,256` + `database.py:387,518` + `json_parser.c:62,164,503`; WIRE-01 closure |
 | REQ-DB-04 | 01 | SATISFIED | `build_db.py:89` (`KNOWN_PROTOCOLS`); `:204` guard |
-| REQ-SER-02 | 02 | SATISFIED | `json_parser.c:128-131` + `:251-255` unknown-key skips |
+| REQ-SER-02 | 02 | SATISFIED | `json_parser.c:316-318` + `:251-255` unknown-key skips |
 | REQ-FW-01 | 03 | SATISFIED | `eprom.cpp:40,68-74,250-251`; Phase 12 reachability |
 | REQ-SAF-01 (UV-EPROM) | 03 | SATISFIED | `eprom.cpp:251` unconditional `eprom_check_vpp` |
 | REQ-FW-04 | 04 | SATISFIED | `flash_type_3.cpp:94-104` (sector-erase branch) |

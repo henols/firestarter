@@ -1,0 +1,20 @@
+#include "chained_demo.h"
+
+// Fixture (SWEEP-11): the OLD side of the chained line map. Exactly 20 lines.
+// DELETED BLOCK ONE, line 1 of 2 -- absent from the new side.
+// DELETED BLOCK ONE, line 2 of 2 -- absent from the new side.
+static uint8_t demo_state;
+
+void demo_begin(void) {
+    demo_state = 0;
+}
+// DELETED BLOCK TWO, line 1 of 3 -- absent from the new side.
+// DELETED BLOCK TWO, line 2 of 3 -- absent from the new side.
+// DELETED BLOCK TWO, line 3 of 3 -- absent from the new side.
+// Two SEPARATED blocks are the whole point: one block cannot produce a chain.
+uint8_t demo_read(uint8_t address) {
+    return demo_state ^ address;
+}
+// The map this pair yields is 20 old lines -> 15 new lines, 5 not surviving.
+void demo_end(void) { demo_state = 0xFF; }
+// End of the fixture: this is old line 20 and it becomes new line 15.

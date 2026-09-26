@@ -117,11 +117,11 @@ the bench leaves this state.
 
 ## ROOT CAUSE — CONFIRMED (Leonardo A/B, update 6)
 
-**Bug:** `mem_util_blank_check` emits its progress (`MSG_DATA_PROGRESS`, memory.cpp:350) and its
-not-blank result (`MSG_ERR_NOT_BLANK`, memory.cpp:332) via `LOG_*_ID` → `rurp_log_id` **while the
+**Bug:** `mem_util_blank_check` emits its progress (`MSG_DATA_PROGRESS`, memory.cpp:422) and its
+not-blank result (`MSG_ERR_NOT_BLANK`, memory.cpp:404) via `LOG_*_ID` → `rurp_log_id` **while the
 firmware is in programmer mode** (com_mode=false; `_execute_operation` wraps the MAIN op in
 `rurp_set_programmer_mode()` … `rurp_set_communication_mode()`). On the **Uno**, the strong-override
-`rurp_log_id` (uno_rurp_shield.cpp:80-86) is **gated on `com_mode`** → emits are SILENTLY DROPPED →
+`rurp_log_id` (uno_rurp_shield.cpp:77-83) is **gated on `com_mode`** → emits are SILENTLY DROPPED →
 host receives nothing for the whole scan → timeout.
 
 **Confirmation (A/B):**

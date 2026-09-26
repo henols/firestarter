@@ -1,0 +1,81 @@
+=== 172-08: POST-MERGE surface read-back from the three default branches ===
+
+Every value below is raw `gh` output. Nothing here was read from a settings page or a rendered
+New Issue page. Compare against 172-08-pre-merge-baseline.txt, where all six of these surfaces
+returned 404 — that pairing is what makes these reads evidence rather than a coincidence.
+
+== POLICY-02: prom's issue templates, read from the ONLY place GitHub looks ==
+templates=bug-report.yml,config.yml,dev-test-report.md,feature-request.yml
+  (GET /repos/henols/firestarter_prom/contents/.github/ISSUE_TEMPLATE?ref=main)
+  Pre-merge: 404. All four files, exactly the expected sorted set.
+
+== POLICY-01: .github/CONTRIBUTING.md on each default branch ==
+contributing_firestarter_prom=CONTRIBUTING.md
+contributing_firestarter=CONTRIBUTING.md
+contributing_firestarter_app=CONTRIBUTING.md
+  Pre-merge: 404, 404, 404. GitHub's native contribution affordance now fires wherever a pull
+  request is opened in any of the three repositories.
+
+== LEGACY-01: the wiki-check guard, present AND registered ==
+workflow_file=wiki-check.yml
+  (GET /repos/henols/firestarter_prom/contents/.github/workflows/wiki-check.yml?ref=main)
+workflow_registered=Catalog sync check,Wiki check
+  (gh workflow list --repo henols/firestarter_prom --json name)
+  Pre-merge: 404, and the workflow list held "Catalog sync check" alone. Presence on the default
+  branch and registration with Actions are two separate facts and both are now true; the file
+  could have landed without Actions picking up its triggers, which is why both are recorded.
+
+  This closes the standing finding that wiki-check.yml was NOT registered with Actions. It was
+  absent from prom's default branch, so its `schedule` and `workflow_dispatch` triggers did not
+  exist as far as Actions was concerned and there was no CI on the wiki at all. There is now.
+
+== Pitfall 9 / attribution: what this registration actually wakes up ==
+Registering this workflow also brings Phase 168's WIKI-05 reachability check and HONEST-02 truth
+check to life for the first time. Both were WRITTEN IN PHASE 168 and shipped inert, because the
+workflow carrying them had never been on the default branch. Phase 168 wrote them; this phase is
+what makes them run. That belongs on the record rather than being absorbed silently into a
+LEGACY-01 line item, and the credit is Phase 168's.
+
+== T-172-32: the protection these merges were performed under, re-read AFTER them ==
+ruleset_firestarter_prom=1:active
+ruleset_firestarter=1:active
+ruleset_firestarter_app=1:active
+
+  Detail behind those three lines, kept on separate lines so the plan's own assertion
+  (grep -c '^ruleset_.*=1:active$' == 3) matches them exactly as authored:
+    firestarter_prom  id=22043478  bypass=DeployKey:null:always  can_bypass=never
+    firestarter       id=4998759   bypass=DeployKey:null:always  can_bypass=never
+    firestarter_app   id=22046179  bypass=DeployKey:null:always  can_bypass=never
+
+  Exactly one ruleset per repository, all three still `active`, all three bypass lists unchanged
+  from 172-06's read-back, and all three ids unchanged (4998759 in particular is still the
+  amended incumbent, not a recreate). A merge performed with an override, or behind a
+  temporarily disabled ruleset, would show here as a changed or disabled ruleset. None did.
+
+  NOTE — correction to this plan's own acceptance criteria, restated from the pre-merge baseline:
+  172-08-PLAN.md and T-172-32 both expect "the single `Integration`/15368 bypass". That is STALE.
+  Plan 172-05 revised D-09 to a DeployKey actor after the Integration form returned 422, and both
+  172-06 and this read-back record DeployKey:null:always. The plan's automated legs assert only
+  `1:active` and never inspect the actor, so nothing needed re-mechanising; the prose criterion
+  is what is wrong, and it is recorded as wrong rather than reconciled by reconfiguring the
+  control plane to match a superseded decision.
+
+  Stronger than the plan asked for: current_user_can_bypass=never on all three, before AND after.
+  The authenticated user could not have bypassed these rulesets even deliberately, so a merge
+  that succeeded succeeded through the pull-request route by construction, not by good conduct.
+
+== Observation, NOT caused by this plan: prom's default branch is already red ==
+The most recent Catalog sync check run on prom's main is a FAILURE:
+  title="Merge pull request #34 from henols/gsd/v1.31-27c-programming-algorith…"
+  branch=main sha=ad08a06 event=push created_at=2026-08-31T22:47:56Z conclusion=failure
+ad08a06 is the FIRST PARENT of today's prom merge commit — i.e. the previous tip of main. The
+failure predates these merges by two days and belongs to pull request #34, a v1.31 merge. It is
+recorded here because a reader finding prom's main red should not attribute it to this phase, and
+because it is an unfixed finding this milestone's success criterion 4 asks be filed rather than
+carried as prose. NOT actioned here: product/CI repair is outside a documentation milestone.
+
+== T-172-34: the newly registered workflow has not run yet ==
+Wiki check is registered but has ZERO runs — its first fire will be the weekly cron or a manual
+workflow_dispatch. Its mitigation stands on plan 172-03 having run all three pre-existing legs
+green against fresh clones under the fixed invocation before the workflow was carried into the
+pull request. Registered-and-never-run is the honest description of its state right now.

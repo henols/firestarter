@@ -1,0 +1,136 @@
+# 181-02 Task 3 -- plan_corpus() re-key and every count pin it feeds
+#
+# All numbers below are MEASURED against the live database at the commit
+# that landed them (app HEAD 851c93b), never computed by arithmetic on the
+# number they replace. Source: tests/plan_corpus.py's plan_corpus() (before
+# re-key: (name, scope) tuple key over SWEEP_SCOPES=("full","partial");
+# after: plain-string name key at the single reachable scope, "partial" iff
+# is_uv else "full", the same rule evidence/181-02-derive-plan-equivalence.txt
+# records for D-09).
+
+corpus_size_before=1354 measured
+corpus_size_after=677 measured
+part_numbers=677 measured (unchanged)
+
+## tests/fixtures/plan_shapes.json aggregate, before and after regeneration
+## via `python tools/measure_plan_shapes.py` (never hand-edited)
+
+plan_shapes_rows_before=746 measured
+plan_shapes_rows_after=746 measured
+plan_shapes_distinct_part_numbers_before=677 measured
+plan_shapes_distinct_part_numbers_after=677 measured
+plan_shapes_plans_before=1354 measured
+plan_shapes_plans_after=677 measured
+plan_shapes_total_steps_before=16248 measured
+plan_shapes_total_steps_after=8124 measured
+plan_shapes_unsupported_steps_before=9304 measured
+plan_shapes_unsupported_steps_after=4652 measured
+plan_shapes_distinct_shape_families_before=8 measured
+plan_shapes_distinct_shape_families_after=8 measured (unchanged -- no
+  shape family existed only under the retired full+partial-for-every-chip
+  sweep; see "shape family membership" below)
+
+aggregate_numbers_source=tools/measure_plan_shapes.py regeneration
+
+## Note on the halving
+
+total_steps and unsupported_steps both landed at EXACTLY half their prior
+value (8124 = 16248/2, 4652 = 9304/2). This is a real, measured property of
+the domain, not an assumption substituted for a measurement: at the
+reachable scope, `write_execute` is True either way (full or partial), so
+every chip's step COUNT and each step's `supported` flag are identical
+between its full-scope and partial-scope derivation -- only the write op's
+literal string (`write` vs `write-partial`) and its `write_region` differ,
+neither of which this count touches. The old two-scope-per-chip corpus was
+therefore counting each chip's step population twice over; the new corpus
+counts it once. This was verified by direct measurement (re-running
+`tools/measure_plan_shapes.py` against the shipped database), not derived
+by halving the old number in the editor.
+
+## Count pins re-anchored in tests/test_derive_plan_structural_sentinel.py
+
+corpus_size: 1354 -> 677 (5 sites: test_corpus_census_is_pinned,
+  test_no_shipped_plan_emits_a_write_without_a_verify,
+  test_every_executable_erase_has_a_blank_check_behind_it_in_the_block, and
+  3 sites in _write_bearing_plans' three consumer tests)
+total_steps: 16248 -> 8124 (test_corpus_census_is_pinned)
+unsupported_steps: 9304 -> 4652 (test_corpus_census_is_pinned)
+live_erase_plans: 608 -> 304 measured (test_live_erase_population_is_pinned,
+  test_removing_the_blank_check_flags_every_live_erase_plan)
+carveout_plans (28C-family NA blank-check carve-out): 162 -> 81 measured
+carveout_chips: 81 -> 81 measured (UNCHANGED IN VALUE -- now trivially
+  equal to carveout_plans since the corpus is 1:1 chip:plan; both
+  assertions kept, since the plan carried no instruction to fold them)
+uv_plans: 540 -> 270 measured (test_no_uv_plan_claims_the_full_device_
+  region_policy, test_a_uv_write_has_a_blank_check_ahead_of_it)
+slot_steps (region_policy uv-slot, across the corpus): 1080 -> 540 measured
+  (test_the_uv_slot_policy_is_claimed_only_by_uv_plans)
+
+## Count pins re-anchored in tests/test_derive_plan_no_drop_sweep.py
+
+plan_count: 1354 -> 677 measured (test_every_plan_yields_one_result_per_step)
+result_count: 16248 -> 8124 measured (same test, mirrors total_steps since
+  run_plan yields exactly one StepResult per Step)
+unsupported_count: 9304 -> 4652 measured
+  (test_every_unsupported_step_result_carries_the_na_verdict)
+SENSITIVITY_SLICE: rebuilt as the first 40 names of sorted(PART_NUMBERS)
+  (was 20 "(name, full)" + 20 "(name, partial)" pairs); size stays 40,
+  asserted absolutely at the top of both sensitivity legs, unchanged
+
+## Real bug fixed by the re-key, not merely a mechanical rename
+
+tests/test_derive_plan_structural_sentinel.py's 28C-family carve-out test
+built `carveout_chips = {name for name, _scope in carveout_plans}` --
+valid only when `carveout_plans` held (name, scope) tuples. Under the new
+single-key corpus this line would raise (`too many values to unpack`, a
+plain string is not a 2-tuple) rather than silently produce a wrong
+answer -- caught by running the test, not by inspection. Fixed to
+`carveout_chips = set(carveout_plans)`.
+
+## shape family membership (why distinct_shape_families stayed 8)
+
+Measured directly: none of the 8 shape families mixes a UV and a non-UV
+chip. A family's identity is the (id, blank-check-position, erase, SDP)
+structural boolean combination, which is scope-invariant -- so grouping by
+family at the single reachable scope produces the same 8 families the old
+full+partial sweep found, and no family's recorded step-token list needs
+to represent two conflicting write-op spellings ("write" vs
+"write-partial") for the same label. `tools/measure_plan_shapes.py`'s
+validate() now asserts this directly (a UV/non-UV mix inside one family
+would raise ValidationError, exit 1) rather than leaving it an unstated
+assumption.
+
+## Generator update (tools/measure_plan_shapes.py, not in the plan's <files>
+## but authorized by its own action text: "Update the generator only if it
+## hard-codes a scope list of its own")
+
+The generator's derive() and validate() both hard-coded
+`corpus[(name, "full")]` / `corpus[(name, "partial")]` per chip, and its
+shape_families schema stored a {"full": [...], "partial": [...]} pair per
+family. Both are re-keyed to the single corpus[name] lookup and a single
+"steps" list per family; aggregate["plans"] changed from `len(chips) * 2`
+to `len(chips)`. Without this update the generator would raise KeyError
+against the re-keyed corpus and could not run at all -- this was not a
+discretionary style choice.
+
+## Post-migration pytest counts (all bare "N passed", no failed/error/skipped)
+
+tests/test_plan_shapes_drift.py: 6 passed
+tests/test_derive_plan_no_drop_sweep.py: 6 passed
+tests/test_derive_plan_structural_sentinel.py: 30 passed (unchanged from
+  Task 2's post-migration count -- Task 3 touched no test count in this
+  module, only its pinned values)
+
+## Porcelain (measured after this task's commit 851c93b)
+
+git -C /workspaces/firestarter status --porcelain: clean
+git -C /workspaces/firestarter_app status --porcelain -- tests/plan_corpus.py
+  tests/test_derive_plan_structural_sentinel.py
+  tests/test_derive_plan_no_drop_sweep.py tests/test_plan_shapes_drift.py
+  tests/fixtures/plan_shapes.json tools/measure_plan_shapes.py: clean
+git diff 04fd982 --name-only -- firestarter/: lists
+  firestarter/diagnostic_report.py (plan 181-01's landed change only) and
+  firestarter/serial_comm.py (an unrelated, concurrently active
+  /gsd-debug session's own work -- see 181-01-SUMMARY.md's "Known
+  Environmental Condition" and 181-02-SUMMARY.md for the same disclosure;
+  not this plan's file, not touched by this plan)

@@ -1,0 +1,17 @@
+command: python3 tools/wiki/honest01_claims.py --table tools/wiki/MIGRATION-TABLE.md --wiki-dir <fresh clone of firestarter_prom.wiki.git> --vocab tools/wiki/claim-vocabulary.json --repo-root .
+paired failure: honest01-weakened-claim-RED.txt (fixture RED observed before this GREEN was trusted)
+
+history on this row: first live run was against wiki master 9d7e9bc and exited 1 -- DROPPED: Shield-Revisions: token 'does not' (family=negative_capability) source=2 dest=1, caused by 168-05's .planning/ path-removal edit incidentally pluralizing 'operator does not' to 'operators do not'. The page was corrected on the live wiki (commit 'fix(168-11): restore source wording on Shield-Revisions claim line', master 9d7e9bc -> aa4a5c7), not the checker or the vocabulary. This run is against the corrected state, aa4a5c7.
+counting unit: substring occurrences (grep -o semantics), not lines -- matches the 168-RESEARCH.md corpus measurement methodology
+wiki commit compared: aa4a5c7 (master, 14 pages, firestarter_prom.wiki.git)
+result: exit 0
+--- captured output ---
+VACUOUS (expected_zero, not folded into the pass line):
+NOTE: 'vpp-exceeds-max': 0 of 0 -- VACUOUS, not checked
+NOTE: 'requires an adapter': 0 of 0 -- VACUOUS, not checked
+NOTE: 'unverified': 0 of 0 -- VACUOUS, not checked
+NOTE: 'at your own risk': 0 of 0 -- VACUOUS, not checked
+NOTE: 'UNVERIFIED': 0 of 0 -- VACUOUS, not checked
+NOTE: 'PROTOCOL-LEDGER': 0 of 0 -- VACUOUS, not checked
+OK: 12 pages compared, 19 tokens compared, 0 dropped, 0 added, 6 vacuous.
+EXIT=0

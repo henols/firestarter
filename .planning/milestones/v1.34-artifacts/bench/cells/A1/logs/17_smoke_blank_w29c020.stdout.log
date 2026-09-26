@@ -1,0 +1,4 @@
+Connecting...Connecting... OK      
+Blank checking EPROM W29C020
+ERROR: Not blank, at 0x000000, v: 0x00
+Programmer error during BLANK_CHECK: Not blank, at 0x000000, v: 0x00

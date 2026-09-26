@@ -1,0 +1,14 @@
+== 1 the ledger's own arithmetic
+rows=8
+ids_unique=True
+ids_ascending=True
+pairs_unique=True
+declared=RK-174-01-p177-readback-gating,RK-174-05-p177-match-bucket-d4d6,RK-174-06-p178-status-axis-must-not-rekey,RK-174-07-p177-w27e257-all-ok-synthesized-match
+undeclared=RK-174-02-rejected-sdp-step-pruning,RK-174-03-p181-canonical-naming-avoided,RK-174-04-p179-uv-blank-check-abort,RK-174-09-p178-status-axis-must-not-rekey-reanchored
+inconsistent=
+logic_free=True
+rc=0
+== 2 no before cell was overwritten
+before_cells_overwritten=
+rows_removed=
+rc=0

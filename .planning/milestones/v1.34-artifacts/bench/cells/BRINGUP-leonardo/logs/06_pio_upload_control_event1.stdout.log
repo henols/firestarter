@@ -1,0 +1,37 @@
+Processing leonardo (platform: atmelavr; board: leonardo; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/atmelavr/leonardo.html
+PLATFORM: Atmel AVR (5.2.0) > Arduino Leonardo
+HARDWARE: ATMEGA32U4 16MHz, 2.50KB RAM, 32KB Flash
+DEBUG: Current (simavr) External (simavr)
+PACKAGES: 
+ - framework-arduino-avr @ 5.3.0 
+ - tool-avrdude @ 1.60300.200527 (6.3.0) 
+ - toolchain-atmelavr @ 1.70300.191015 (7.3.0)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 6 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- EEPROM @ 2.0
+|-- jsmn
+Building in release mode
+Checking size .pio/build/leonardo/firestarter_leonardo.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [========  ]  78.8% (used 2016 bytes from 2560 bytes)
+Flash: [========= ]  86.0% (used 28170 bytes from 32768 bytes)
+Configuring upload protocol...
+AVAILABLE: avr109
+CURRENT: upload_protocol = avr109
+Looking for upload port...
+Using manually specified: /dev/ttyACM0
+Forcing reset using 1200bps open/close on port /dev/ttyACM0
+Waiting for the new upload port...
+Uploading .pio/build/leonardo/firestarter_leonardo.hex
+========================= [SUCCESS] Took 6.93 seconds =========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+leonardo       SUCCESS   00:00:06.934
+========================= 1 succeeded in 00:00:06.934 =========================

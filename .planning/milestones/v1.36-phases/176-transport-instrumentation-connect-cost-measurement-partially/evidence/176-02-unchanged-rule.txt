@@ -1,0 +1,41 @@
+== 1 the four propositions and the exclusion
+threshold=5
+scanned=cobs_errors,crc_failures,decode_failures,retries,timeouts
+excluded=probe_timeouts
+closure=True
+all_none=False
+boundary_4=False
+boundary_5=True
+boundary_6=True
+zero_is_present=False
+probe_excluded=False
+any_one_suffices=True
+none_never_trips=False
+basis_names_probe=True
+basis_names_32=True
+rc=0
+== 2 the test module
+...............................                                          [100%]
+31 passed in 0.37s
+rc=0
+
+== FINAL re-verify after typing fix ==
+threshold=5
+scanned=cobs_errors,crc_failures,decode_failures,retries,timeouts
+excluded=probe_timeouts
+closure=True
+all_none=False
+boundary_4=False
+boundary_5=True
+boundary_6=True
+zero_is_present=False
+probe_excluded=False
+any_one_suffices=True
+none_never_trips=False
+basis_names_probe=True
+basis_names_32=True
+rc=0
+== 2 the test module ==
+...............................                                          [100%]
+31 passed in 0.22s
+rc=0
