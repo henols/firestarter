@@ -1,0 +1,20 @@
+== 1 the census itself
+source_nonempty=True
+engine_read_sites=2
+enclosing=_dispatch_read,_read_region
+verify_params=eprom_name,eprom_data_dict,input_file_path,operation_flags,address_str
+read_region_doc_pins_one_place=True
+sdp_doc_pins_verdict=True
+rc=0
+== 2 the census module
+......                                                                   [100%]
+6 passed in 0.33s
+rc=0
+comments_test_readback_inventory=0
+== 3 the inventory artifact
+inventory_present=yes
+inventory_rows=10
+names_write_cycle=1
+names_sdp_leg=1
+names_dispatch_read=1
+states_closure=2

@@ -1,0 +1,18 @@
+== 1 the recorded reasons
+reason_cobs=True
+reason_crc=True
+reason_retries=True
+stale_none_exist_claim=False
+doc_lines=38
+rc=0
+== 2 the skill parsers tolerate the added keys
+snapshot_read=at28c256-full-all-ok-sdp.json
+has_schema_version=True
+transport_keys=cobs_errors,crc_failures,decode_failures,probe_timeouts,retries,timeouts,transport_suspect
+rc=0
+skill_transport_refs=0
+== 3 the test module
+........................................................................ [ 70%]
+..............................                                           [100%]
+102 passed in 0.68s
+rc=0

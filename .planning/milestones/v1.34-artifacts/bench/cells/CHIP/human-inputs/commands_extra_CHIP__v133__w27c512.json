@@ -1,0 +1,46 @@
+[
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "vpp"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-03 1st reading (timeout -s INT 4 wrapper + FIRESTARTER_CONFIG_DIR inline elided per the env-not-in-argv convention), pot at meter 11.97V -- 12800 mV, 300 mV above the 12500 mV high guard; halted, no dev test run at this setting"
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "vpp"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-03 reconfirm (same wrapper elided) after operator re-adjusted pot to meter 11.6V -- 12400 mV, in band (100 mV margin below the 12500 mV high guard)"
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "dev",
+      "test",
+      "W27C512"
+    ],
+    "cwd": "/workspaces",
+    "note": "ATTEMPT 1, ABORTED (timeout 500 wrapper + FIRESTARTER_CONFIG_DIR inline elided): killed at ~120s by an executor tooling error (insufficient outer harness timeout, not this task own 500s ceiling) -- no report was written; config dir confirmed pristine before the clean retry"
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "dev",
+      "test",
+      "W27C512"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-05, clean completed run (same wrapper elided): exit 0, wall-clock 214s (ceiling 500s), banner 6 of 6 ran, all steps OK"
+  }
+]

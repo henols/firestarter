@@ -98,7 +98,7 @@ gh#15's per-byte pulse→verify loop looks expensive because
 byte that would be 512 × 10 ms = **5.1 s of pure settling per block**.
 
 It does not have to be. `rurp_chip_enable`/`rurp_chip_output` are **dedicated
-pins** (`rurp_shield.h:114-134`), and `mem_util_calculate_top_address_register`
+pins** (`rurp_shield.h:109-129`), and `mem_util_calculate_top_address_register`
 preserves the HV bits across *every* `set_address`, read path included
 (`memory.cpp:163-166`):
 
@@ -129,7 +129,7 @@ block passes.
 `DEFAULT_RESPONSE_TIMEOUT = 10` s (`firestarter_app/firestarter/serial_comm.py:66`).
 Only reachable on failing silicon, but it converts "chip is marginal" into
 "serial timeout", destroying the diagnostic. Precedent for the fix: the
-blank-check progress/chunk pattern at `memory.cpp:307-312`.
+blank-check progress/chunk pattern at `memory.cpp:379-384`.
 
 ## Open question — is `0x0B` one-shot or looped? (bench-only)
 

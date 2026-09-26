@@ -1,0 +1,95 @@
+# 181-07 Task 1 -- the four fingerprint values the run already measured
+# become flat additive siblings (RPT-A2)
+# Measured against firestarter_app app HEAD 0f53959 (plans 181-01..181-06 landed),
+# shape = tests/fixtures/report_shapes.py:"sst27sf512-full-all-ok" (real-path-built,
+# so its fingerprint carries the classifier's real evidence dict rather than the
+# hand-transcribed tracer shape's empty {} -- see the Anchor Drift note below).
+
+## Section 1: the exported sibling values for a real fingerprint-bearing step
+
+step_op=write
+fingerprint_total=65536
+fingerprint_bad=0
+fingerprint_bad_pct=0.0
+evidence_key_count=4
+evidence_keys=bit_clustering,ff_ratio,first_offset,repeat_divergent
+evidence_carries_offset_list=false
+
+## Section 2: the step key-list count, before and after this task
+
+steps_key_count_before=14
+steps_key_count_after=18
+distinct_step_key_sets_in_shape=1
+
+## Section 3: measured serialized body size against the parser's cap
+
+body_bytes_before=6310
+body_bytes_after=8172
+body_bytes_delta=1862
+parser_cap_bytes=131072
+
+## Section 4: dedup_fingerprint is unchanged by this task
+
+dedup_fingerprint_before=14d306256076
+dedup_fingerprint_after=14d306256076
+dedup_fingerprint_unchanged=true
+frozen_hash_literal_lines_moved_since_04fd982=0
+shapes_reproducing=19/19
+
+## Section 5: snapshot regeneration
+
+snapshot_files_changed=18
+snapshot_files_diff_confined_to_four_added_keys=18
+snapshot_files_unaffected=1 (synthetic-arm4-empty-results.json -- zero steps)
+
+## Section 6: whole-module pytest tail after this task's edits (bare pytest, -o addopts="")
+
+tests/test_blast_radius_invariance.py + tests/test_diagnostic_report.py: 185 passed
+rc=0
+
+## Section 7: tokenize COMMENT-token census -- non-increase gate, measured at task head
+
+comment_tokens_pretask firestarter/chip_test.py=893
+comment_tokens_pretask firestarter/diagnostic_report.py=207
+comment_tokens_pretask tests/test_chip_test.py=563
+comment_tokens_pretask tests/test_diagnostic_report.py=182
+comment_tokens_pretask tests/test_blast_radius_invariance.py=0
+
+comment_tokens_posttask firestarter/diagnostic_report.py=207
+comment_tokens_posttask tests/test_diagnostic_report.py=187 (docstrings on 3 new tests, not # comments)
+comment_tokens_posttask tests/test_blast_radius_invariance.py=0
+
+phase_added_comments=0
+rc=0
+
+## Section 8: ruff, snapshot-check, claim scanner
+
+ruff_check=All checks passed! (firestarter/ tests/)
+ruff_format_check=174 files already formatted (after one auto-format pass on diagnostic_report.py)
+snapshot_report_shapes_check=OK: 19 snapshot(s) match a fresh regeneration
+check_diagnostic_report_claims=PASS: 224 string literals checked, zero forbidden matches
+
+## Anchor Drift note (verify-leg fixture mismatch, not a production defect)
+
+The plan's Task 1 second `<automated>` verify leg is written against
+`build_shape("sst27sf512-six-step")`. That shape is HAND-SPECIFIED via
+`build_shape_from_step_specs`, which constructs `Fingerprint(total=10, bad=0,
+bad_pct=0.0, classification=cls)` with NO `evidence=` argument -- so its
+`evidence` field takes the dataclass default `field(default_factory=dict)`,
+i.e. `{}`, for every step in that shape. `{}` is falsy, so the verify leg's
+own filter (`[... for s in d["steps"] if s["fingerprint_evidence"]]`) drops
+every step and the leg's own `assert ev, "no populated evidence mapping in
+this shape"` fails -- confirmed by running the leg verbatim before adapting
+it (AssertionError at that exact line). This is a mismatch between the
+plan's chosen fixture and that fixture's own construction, not a defect in
+`_step_dict`'s new siblings: `fingerprint_total`/`fingerprint_bad`/
+`fingerprint_bad_pct` are correctly exported and equal to the dataclass's
+own values regardless (proven by the leg's first half, which still passes
+against "sst27sf512-six-step" unmodified). Re-run against
+"sst27sf512-full-all-ok" (a `_build_real_path_report`-built shape, so its
+fingerprint carries `classify_fingerprint`'s real, non-empty evidence dict)
+-- Section 1 above is that re-run's output. Gate that would redden if this
+regressed: `test_fingerprint_siblings_equal_the_dataclass_own_values` in
+`tests/test_diagnostic_report.py`, which asserts equality against an
+explicitly-constructed non-empty evidence dict rather than relying on any
+particular fixture shape's emptiness.

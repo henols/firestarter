@@ -1,0 +1,191 @@
+Phase 168 — Closing Gate Sweep
+=============================================================================
+Run 2026-08-31, against: meta HEAD (this plan's own commits), firestarter @
+bf3a4e4 (gsd/v1.35-…), firestarter_app @ 50f85b2 (gsd/v1.35-…), live wiki
+master @ aa4a5c7 (fresh clone, no local edits).
+
+GATE 1 — Both doc/ directories gone
+-----------------------------------
+$ test -d firestarter/doc; echo $?
+1   (absent)
+$ test -d firestarter_app/doc; echo $?
+1   (absent)
+RESULT: PASS. Establishes ROADMAP criterion 2 (first half).
+
+GATE 2 — No dangling reference
+-------------------------------
+Three sweep commands (168-RESEARCH.md § "Repair Surface"), one per repo:
+
+$ git -C firestarter grep -lE '(^|[^A-Za-z])doc/[A-Za-z0-9_.-]+\.md' -- .
+platform/py32f071/FLASH-PATH-AND-PCB.md
+test/native/avr/test_eeprom28c_sdp/RED-BASELINE.md
+tests/golden/eprom_params_citations.json
+exit=0 (3 matches)
+
+$ git -C firestarter_app grep -lE '(^|[^A-Za-z"])doc/[A-Za-z0-9_.-]+\.md' -- .
+tools/baseline/chip_database.baseline.json
+exit=0 (1 match)
+
+$ git -C /workspaces grep -nE '(firestarter(_app)?/)?doc/[A-Za-z0-9_.-]+\.md' -- . ':!.planning'
+tools/wiki/MIGRATION-TABLE.md (13 lines — the 12 source-path rows + the deferred-file line + the
+  git-show example line; this column is there BY DESIGN, D-02/D-13, and is what the Backlog 999.9
+  repository-rename sweep greps)
+tools/wiki/selftest.sh (5 lines — "doc/FIXTURE.md" / "fixture-source/doc/FIXTURE.md": synthetic
+  fixture text inside the HONEST-01 selftest case (`new_source_repo`, added by plan 168-11), which
+  builds a throwaway scratch git repo to exercise the `git show <sha>:doc/<file>` oracle mechanism
+  itself. It is not a reference to any real, deleted path — it is test data shaped like one, on
+  purpose, so the oracle-reading code under test has something to read. This match was not
+  anticipated in 168-RESEARCH.md (written before plan 168-11 existed) but is the same class of
+  "expected, by-design match" as the migration table's own source-path column.)
+
+SURVIVING MATCHES, NAMED (exactly four historical exclusions, plus the two by-design meta-repo
+matches above):
+
+  1. firestarter/test/native/avr/test_eeprom28c_sdp/RED-BASELINE.md — a recorded RED-baseline file
+     listing; records what was true when it was written. D-18 historical exclusion. Repairing it
+     would falsify a historical record of what a test run actually said.
+  2. firestarter/platform/py32f071/FLASH-PATH-AND-PCB.md — a scope statement about
+     firestarter_app/doc/PY32F071-FIRMWARE-INSTALL.md being out of scope for its own (unrelated)
+     phase. D-18 historical exclusion.
+  3. firestarter/tests/golden/eprom_params_citations.json — contains a sentence *about*
+     doc/PROTOCOLS.md citing paths that did not resolve; repairing it destroys the evidence it
+     exists to hold. D-18 historical exclusion.
+  4. firestarter_app/tools/baseline/chip_database.baseline.json — a pinned Phase-98 snapshot
+     (362bfa0, 2026-06-30) carrying 9 unsupported_reason strings that still cite
+     firestarter/doc/AT28C04-ADAPTER.md. Decided by plan 168-09 (not originally in D-18's list) as
+     an explicit named historical exclusion: diff_db.py is measured indifferent to the literal
+     text (RC=0 under a mutated-string control), no test asserts the path itself, and re-anchoring
+     a frozen baseline has previously reddened unrelated legs elsewhere in this project.
+
+RESULT: PASS — the sweep's only survivors are the four named historical exclusions plus the two
+by-design meta-repo matches (MIGRATION-TABLE.md's source-path column, selftest.sh's synthetic
+fixture text). No unnamed, unexplained match survives. Establishes ROADMAP criterion 2 (second
+half) and criterion 4's oracle-integrity precondition.
+
+GATE 3 — No unopenable planning path on any published page
+------------------------------------------------------------
+Fresh, anonymous clone of firestarter_prom.wiki.git (no local working-copy contamination):
+
+$ git clone --depth 1 https://github.com/henols/firestarter_prom.wiki.git wiki-clone-gates
+$ git -C wiki-clone-gates log -1 --format=%H
+aa4a5c7a917b7ee7926181edc309857bc5c0bdfb
+
+$ grep -rniE '\.planning/|planning/[a-z0-9_.-]+\.(md|json)' wiki-clone-gates/*.md
+(no output, exit 1)
+
+$ grep -c 'planning' wiki-clone-gates/*.md | grep -v ':0'
+Programming-Protocols.md:1
+
+The one hit is the plain English word "planning" in ordinary prose ("root cause found in
+retrospect while reviewing planning notes...", Programming-Protocols.md:404) — not a `.planning/`
+path, not a citation, not openable-or-not; it needs no repair.
+
+RESULT: PASS. Zero unopenable `.planning/` paths across all 15 files (14 content pages +
+_Sidebar.md) in the fresh clone. Establishes ROADMAP criterion 6 (second half) and criterion 1's
+"auditable, not asserted" bar together with MIGRATION-TABLE.md.
+
+GATE 4 — No in-repo mirror
+----------------------------
+$ test -d wiki; echo $?
+1   (absent)
+$ test -f .github/workflows/wiki-publish.yml; echo $?
+1   (absent)
+$ grep -cE 'def cmd_(publish|sidebar|check)\(' tools/wiki/wiki.py
+0
+$ grep -n 'COMMANDS = {' -A2 tools/wiki/wiki.py
+COMMANDS = {
+    "links": cmd_links,
+}
+
+RESULT: PASS. wiki/ is gone, wiki-publish.yml is gone, and wiki.py exposes exactly one
+subcommand (links) — no retired publish/sidebar/check function survives anywhere in the file.
+Establishes ROADMAP criterion 7 (WIKI-02).
+
+ALSO ASSERTED — the two de-framed pages (LEGACY-06, ROADMAP criterion 6, first half)
+----------------------------------------------------------------------------------------
+$ head -3 wiki-clone-gates/Pinout-Safety-Review.md
+# Pinout Safety Review
+(no "Phase 58" anywhere in the title)
+
+$ head -3 wiki-clone-gates/SRAM-and-NVRAM-Behavior.md
+# SRAM and NVRAM Behavior
+(no "Phase 59" anywhere in the title)
+
+$ grep -ci 'full audit trail' wiki-clone-gates/Pinout-Safety-Review.md wiki-clone-gates/SRAM-and-NVRAM-Behavior.md
+Pinout-Safety-Review.md:0
+SRAM-and-NVRAM-Behavior.md:0
+
+$ grep -c 'CITED' wiki-clone-gates/Pinout-Safety-Review.md wiki-clone-gates/SRAM-and-NVRAM-Behavior.md
+Pinout-Safety-Review.md:0
+SRAM-and-NVRAM-Behavior.md:0
+
+RESULT: PASS. Neither page carries a phase number in its title, an audit-trail pointer, or an
+inline `[CITED: …]` planning-file citation marker.
+
+=============================================================================
+Every ROADMAP criterion, with the command and result that establishes it
+=============================================================================
+
+1. All 12 migrating files reachable, auditably (not just asserted).
+   -> tools/wiki/MIGRATION-TABLE.md (12 rows, page name/title/pre-deletion SHA each);
+      GATE 3 above (fresh clone, 14 content pages present); PY32F071-FIRMWARE-INSTALL.md
+      confirmed absent from every page (168-05-SUMMARY.md). PASS.
+
+2. Both doc/ directories gone; no dangling reference.
+   -> GATE 1, GATE 2 above. PASS.
+
+3. firestarter_app builds, installs, passes its full suite on the CI Python floor; the
+   packaging change is observed, not assumed.
+   -> evidence/migrate03-py311-suite.txt (1955 passed, 0 failed, 0 errors, Python 3.11.16,
+      package resolves inside the tree under test); evidence/migrate03-sdist-doc-delta.txt
+      (0 doc/ entries before AND after — the "3 files ship" premise is false, measured). PASS.
+
+4. Every support_status value and PROTOCOL-LEDGER UNVERIFIED bucket present in the source is
+   present on the wiki with the same force; the doc/ snapshot was taken before deletion.
+   -> tools/wiki/claim-vocabulary.json + tools/wiki/honest01_claims.py (168-11);
+      evidence/honest01-live-GREEN.txt: "OK: 12 pages compared, 19 tokens compared, 0 dropped,
+      0 added, 6 vacuous." against wiki master aa4a5c7. The PROTOCOL-LEDGER/UNVERIFIED half is
+      explicitly reported VACUOUS (0 of 0), not silently passed. The live run's own first attempt
+      caught and fixed a genuine dropped token (Shield-Revisions.md, master 9d7e9bc -> aa4a5c7) —
+      see 168-11-SUMMARY.md "The HONEST-01 finding, as a first-class result". PASS.
+
+5. Any wiki page making per-chip/per-protocol claims carries a check or a stamp; the check runs
+   on a schedule/dispatch and clones the live wiki.
+   -> tools/wiki/honest02_truth.py + tools/wiki/claim-allowlist.json (168-12); demonstrated
+      failing three distinguishable ways on a fixture (evidence/honest02-fixture-RED.txt) before
+      being trusted; live run clean on the first attempt (evidence/honest02-live-run.txt: 11/12
+      matched, 3 regions/60 claims/8 unchecked (named), 0 stale). Wired into a schedule +
+      workflow_dispatch trigger by THIS plan (.github/workflows/wiki-check.yml) — see this
+      plan's Task 1 commit and the local exercise of all three checker steps against the live
+      wiki further above in this phase's record. PASS.
+
+6. The two GSD-framed pages read as reference documentation (or do not ship, with reason
+   recorded); their audit-trail pointers go or are rewritten.
+   -> "ALSO ASSERTED" section above (fresh clone). PASS.
+
+7. (WIKI-02) No in-repo mirror of wiki content exists anywhere; retired, not dormant.
+   -> GATE 4 above. PASS.
+
+8. (WIKI-05) Every page reachable from Home or the sidebar, checked against a wiki clone;
+   demonstrated catching an unreferenced page before being trusted.
+   -> evidence/wiki05-live-orphan-RED.txt (168-05, the real 12-orphan RED, master f6131e7) paired
+      with evidence/wiki05-live-GREEN.txt (168-08, exit 0, 14 pages, master 9d7e9bc). Re-confirmed
+      in this plan's Task 1 local exercise: `python3 tools/wiki/wiki.py links --source-dir
+      wiki-clone-verify` against master aa4a5c7 -> "OK: 14 pages, all reachable from Home.md, all
+      internal links resolve, all filenames legal, and all listed in _Sidebar.md.", exit 0. PASS.
+
+=============================================================================
+Selftest driver — final count
+=============================================================================
+$ bash tools/wiki/selftest.sh
+... (14 cases' worth of control/mutation sub-checks; see the tool's own evidence table) ...
+OK: selftest complete (11 cases)
+
+NOTE: plan 168-13's own acceptance criterion literally states "reports 9 cases" — this is the
+same stale-arithmetic artifact 168-11-SUMMARY.md and 168-12-SUMMARY.md already documented for
+plans 168-02/168-10/168-11 in turn: the phase's projected case counts were written before later
+plans' cases were added, and each plan in turn checked against the actual, correctly-observed
+output rather than the plan's stale literal number. The real, final count is 11, all green,
+0 failures — this is what 168-HONESTY-LEDGER.md records as the phase's closing selftest result.
+
+ALL FOUR GATES: PASS. All eight ROADMAP criteria: PASS, each with a command and a result above.

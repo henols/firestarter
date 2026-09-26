@@ -1,0 +1,7 @@
+=== route1 (rc=1) ===
+Device signature = 1E 95 0F (ATmega328P, ATA6614Q, LGT8F328P)
+Error: expected signature for ATmega2560 is 1E 98 01
+  - double check chip or use -F to carry on regardless
+
+Avrdude done.  Thank you.
+

@@ -1,0 +1,13 @@
+DEBUG  :Config       : 116: ConfigManager initialized for /workspaces/.planning/v1.34/config/config.json.
+DEBUG  :Database     : 173: EpromDatabase initialized.
+INFO   :Hardware     : 128: Reading hardware revision...
+DEBUG  :SerialComm   : 855: Probing for programmer on /dev/ttyUSB0...
+DEBUG  :SerialComm   : 188: Attempting to connect to /dev/ttyUSB0 at 250000 baud.
+DEBUG  :SerialComm   : 197: Successfully connected to /dev/ttyUSB0.
+DEBUG  :SerialComm   : 653: Sending command to programmer: {'state': 15}
+DEBUG  :SerialComm   : 219: Sent 15 bytes to /dev/ttyUSB0.
+DEBUG  :RURP         : 342: OK: Ready
+DEBUG  :SerialComm   : 951: Programmer found on /dev/ttyUSB0: Ready
+DEBUG  :RURP         : 342: OK: Rev 2.0-class
+INFO   :Hardware     : 139: Hardware revision: Rev 2.0-class
+DEBUG  :SerialComm   : 644: Disconnected from /dev/ttyUSB0.

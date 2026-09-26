@@ -1,0 +1,77 @@
+== Phase 177 Task 3: measured RED, before any repair ==
+
+-- Per-shape dedup_fingerprint: committed FROZEN_HASHES vs freshly computed --
+shape=at28c256-full-all-ok-sdp committed=52fb759dc48c fresh=050ad3830704 agree=False
+shape=gh20-at28c256-fail committed=00e121446ceb fresh=00e121446ceb agree=True
+shape=gh23-w27e257-fail committed=7a89fcea856a fresh=7a89fcea856a agree=True
+shape=gh28-m27c512-fail committed=31547956e56b fresh=31547956e56b agree=True
+shape=gh47-sst27sf512-pass committed=f9dbc31dcd27 fresh=f9dbc31dcd27 agree=True
+shape=m27c512-full-all-ok committed=6d3afbc52315 fresh=6d3afbc52315 agree=True
+shape=m27c512-full-blank-check-bad committed=077a32d1a5c4 fresh=077a32d1a5c4 agree=True
+shape=m27c512-full-canonical-name committed=776846bf2dc8 fresh=776846bf2dc8 agree=True
+shape=m27c512-full-comma-joined-name committed=37ad34d39a19 fresh=37ad34d39a19 agree=True
+shape=m27c512-full-runs-1 committed=e4838f7bb1d3 fresh=e4838f7bb1d3 agree=True
+shape=sst27sf512-full-all-ok committed=4b3e52cab987 fresh=14d306256076 agree=False
+shape=sst27sf512-six-step committed=4dc282a5d596 fresh=4dc282a5d596 agree=True
+shape=sst27sf512-six-step-readback-gated committed=60a031573aab fresh=60a031573aab agree=True
+shape=synthetic-arm4-empty-results committed=8d6208d00be7 fresh=8d6208d00be7 agree=True
+shape=synthetic-arm4-no-ok committed=f90dfe1a44f7 fresh=f90dfe1a44f7 agree=True
+shape=w27e257-full-all-ok committed=22908e2954c3 fresh=3a9f95aba65e agree=False
+
+moved=at28c256-full-all-ok-sdp,sst27sf512-full-all-ok,w27e257-full-all-ok
+unmoved_count=13
+
+-- Per-shape build_db_diff (proposed_disposition, ladder_state): committed LADDER_PINS vs freshly computed --
+shape=at28c256-full-all-ok-sdp committed=('inconclusive -- needs N>=2 agreement (advisory)', '') fresh=('suggests: candidate for community-reported (advisory)', 'community-reported') agree=False
+shape=gh20-at28c256-fail committed=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail') fresh=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail') agree=True
+shape=gh23-w27e257-fail committed=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail') fresh=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail') agree=True
+shape=gh28-m27c512-fail committed=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail') fresh=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail') agree=True
+shape=gh47-sst27sf512-pass committed=('inconclusive -- needs N>=2 agreement (advisory)', '') fresh=('inconclusive -- needs N>=2 agreement (advisory)', '') agree=True
+shape=m27c512-full-all-ok committed=('suggests: candidate for community-reported (advisory)', 'community-reported') fresh=('suggests: candidate for community-reported (advisory)', 'community-reported') agree=True
+shape=m27c512-full-blank-check-bad committed=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail') fresh=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail') agree=True
+shape=m27c512-full-canonical-name committed=('suggests: candidate for community-reported (advisory)', 'community-reported') fresh=('suggests: candidate for community-reported (advisory)', 'community-reported') agree=True
+shape=m27c512-full-comma-joined-name committed=('suggests: candidate for community-reported (advisory)', 'community-reported') fresh=('suggests: candidate for community-reported (advisory)', 'community-reported') agree=True
+shape=m27c512-full-runs-1 committed=('suggests: candidate for community-reported (advisory)', 'community-reported') fresh=('suggests: candidate for community-reported (advisory)', 'community-reported') agree=True
+shape=sst27sf512-full-all-ok committed=('suggests: candidate for community-reported (advisory)', 'community-reported') fresh=('suggests: candidate for community-reported (advisory)', 'community-reported') agree=True
+shape=sst27sf512-six-step committed=('inconclusive -- needs N>=2 agreement (advisory)', '') fresh=('inconclusive -- needs N>=2 agreement (advisory)', '') agree=True
+shape=sst27sf512-six-step-readback-gated committed=('suggests: candidate for community-reported (advisory)', 'community-reported') fresh=('suggests: candidate for community-reported (advisory)', 'community-reported') agree=True
+shape=synthetic-arm4-empty-results committed=('no change suggested (advisory)', '') fresh=('no change suggested (advisory)', '') agree=True
+shape=synthetic-arm4-no-ok committed=('no change suggested (advisory)', '') fresh=('no change suggested (advisory)', '') agree=True
+shape=w27e257-full-all-ok committed=('suggests: candidate for community-reported (advisory)', 'community-reported') fresh=('suggests: candidate for community-reported (advisory)', 'community-reported') agree=True
+
+ladder_moved=at28c256-full-all-ok-sdp
+distinct_arms=4
+distinct_arms_finding=RESEARCH.md projected the INCONCLUSIVE arm empties to distinct_arms=3 once the match bucket lands; measured reality after this commit alone is distinct_arms=4 because two of the three INCONCLUSIVE members (gh47-sst27sf512-pass, sst27sf512-six-step) are hand-specified fixtures whose literal classification strings are NOT recomputed by classify_fingerprint -- only at28c256-full-all-ok-sdp (a real-path builder) moved automatically. The arm empties only once plan 177-02 edits those two hand-specified step_specs (D-177-3).
+
+-- Filed-corpus impact: 26 committed devtest_issue_corpus.json rows, PRUNE-01+PRUNE-03 rule applied to each row's recorded step vector --
+corpus_rows=26
+corpus_rekeyed=18
+corpus_rekeyed_issues=22,24,25,26,27,29,31,39,40,42,45,46,47,48,49,50,51,52
+corpus_map=22:0eec03f6821b:ae8bcb4888b1
+corpus_map=24:3870f9b5f6ca:9b8db06b2796
+corpus_map=25:ed1b5dc79022:e4c3506816b8
+corpus_map=26:f8cb30c62aac:2aab7ffddd1c
+corpus_map=27:ea556a61c3db:6f5ccf0f736d
+corpus_map=29:7c6997788e25:80085c799534
+corpus_map=31:d8771536cb43:b69de8bde40a
+corpus_map=39:334c3fa198bf:16aac69da5bc
+corpus_map=40:334c3fa198bf:16aac69da5bc
+corpus_map=42:8236361b75a5:b2eedefb3435
+corpus_map=45:957307f7b750:5e2a14063327
+corpus_map=46:2f4fb4f62ff3:4d2bfa33e50c
+corpus_map=47:f9dbc31dcd27:1f812aae49ca
+corpus_map=48:969aa43f48c3:c1691f167f40
+corpus_map=49:0e86f636df87:e497a347c9ec
+corpus_map=50:52af74c52f2c:436592268b72
+corpus_map=51:e62e68e1c93a:2bb103e07469
+corpus_map=52:e09213a69a71:d26e7e7435b2
+corpus_projection_agreement=RESEARCH.md projected 18 rows moving, issues 22,24,25,26,27,29,31,39,40,42,45,46,47,48,49,50,51,52 -- measured this session against the committed 26-row corpus: 18 rows moved, matching the projection exactly, same issue list.
+corpus_note_gh39_gh40=gh#39 and gh#40 share filed_hash 334c3fa198bf before mutation and move TOGETHER to 16aac69da5bc after -- the dedup group survives intact, merely re-keyed, matching RESEARCH.md's noted finding.
+
+-- The falsified sst27sf512-six-step-readback-gated projection (Phase 177's own falsified R2 reading) --
+six_step_current_frozen=4dc282a5d596
+six_step_after=7fb88e0b07d6
+gated_current_frozen=60a031573aab
+gated_projected_after=7fb88e0b07d6
+gated_shape_collapses_onto_tracer=True
+collapse_finding=Applying the PRUNE-03 rule (a write-shaped step with verdict OK classifies match) to BOTH sst27sf512-six-step's current indeterminate step_specs AND sst27sf512-six-step-readback-gated's current None (fingerprint-dropped) step_specs converges on the SAME value -- confirming MILESTONES.md:39's inherited R2 projection (dropping the fingerprint entirely) is falsified: it collapses the gated shape onto the tracer's own after-value rather than producing a genuinely distinct shape. D-177-3 Option A's remedy (re-point the gated shape to a step that FAILED and kept its real read-back, verdict marginal) is what plan 177-02 must implement instead of the naive fingerprint-dropped projection.

@@ -1,0 +1,35 @@
+== 1 anti-vacuity: the to_dict() key pin observed RED against planted drift, in-memory only
+subject_shape=sst27sf512-six-step
+anchor_count=1
+pin_at_head=GREEN
+pin_at_planted_added_key=RED
+pin_at_planted_removed_key=RED
+empty_expected_list=RED
+fixture_files_written=0
+
+== 2 targeted run of the two new tests (values above captured with a temporary
+   print() instrumented into each assertion path, then removed before commit)
+command=./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py::test_the_to_dict_key_pin_reddens_on_a_planted_added_and_removed_key tests/test_blast_radius_invariance.py::test_the_to_dict_key_pin_is_not_vacuous_against_an_empty_expected_list -o addopts="" -v
+tests/test_blast_radius_invariance.py::test_the_to_dict_key_pin_reddens_on_a_planted_added_and_removed_key PASSED
+tests/test_blast_radius_invariance.py::test_the_to_dict_key_pin_is_not_vacuous_against_an_empty_expected_list PASSED
+2 passed in 0.17s
+rc=0
+
+== 3 tests/test_blast_radius_invariance.py, full run after Task 3's edits
+command=./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -o addopts="" -q
+........................................................................ [ 69%]
+...............................                                          [100%]
+103 passed in 1.65s
+rc=0
+
+== 4 no reference to the deleted checker or the superseded suite floor
+command=! /usr/bin/grep -rqF 'check_rekey_ledger' tests/ firestarter/ tools/ && ! /usr/bin/grep -rqF '2242' tests/test_blast_radius_invariance.py
+rc=0
+
+== 5 RPT-E3 re-anchoring precedent measurements
+voltage_keys_shrink_precedent_commits=0
+banner_keys_shrink_precedent_commits=0
+command=git log -S'_VOLTAGE_KEYS' --oneline -- tests/test_blast_radius_invariance.py
+5693bf7 test(174-03): pin report schema key lists element-wise, seven pins
+command=git log -S'_BANNER_KEYS' --oneline -- tests/test_blast_radius_invariance.py
+5693bf7 test(174-03): pin report schema key lists element-wise, seven pins

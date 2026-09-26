@@ -1,0 +1,1 @@
+no -- dev test returned OK on all six steps, so there is no failure to carry. Per operator ruling, known_carried applies to parts whose FAILURE reproduces; this part did not fail. The v1.15 Phase 82 disposition is recorded as historical context in prior_disposition/prior_dispositions_all, not as an authoritative baseline superseding this dev test result.

@@ -1,0 +1,264 @@
+== stable release sets at phase start (pre-cut baseline, read at Task 3 execution time) ==
+firestarter stable at phase start: 0.1.10,0.1.11,0.1.12,0.1.13,0.1.14,0.1.3,0.1.4,0.1.5,0.1.6,0.1.7,0.1.8,0.1.9,1.0.1,1.0.10,1.0.11,1.0.12,1.0.13,1.0.14,1.0.15,1.0.2,1.0.3,1.0.4,1.0.5,1.0.6,1.0.7,1.0.8,1.1.1,1.1.2,1.1.3,1.1.4,1.1.5,1.1.6,1.1.7,1.1.8,1.2.1,1.2.2,1.2.3,1.2.4,1.3.0,1.3.10,1.3.11,1.3.12,1.3.13,1.3.14,1.3.15,1.3.16,1.3.17,1.3.18,1.3.19,1.3.20,1.3.21,1.3.22,1.3.23,1.3.24,1.3.25,1.3.26,1.3.27,1.3.28,1.3.29,1.3.3,1.3.4,1.3.5,1.3.6,1.3.7,1.3.8,1.3.9,1.4.0,1.4.1,1.4.2,1.4.3,2.0.0,2.0.1,2.0.2,2.0.3,2.0.4,2.0.5,2.0.6
+firestarter_app stable at phase start: 1.3.10,1.3.11,1.3.12,1.3.13,1.3.14,1.3.15,1.3.16,1.3.17,1.3.18,1.3.19,1.3.20,1.3.21,1.3.22,1.3.23,1.3.24,1.3.25,1.3.26,1.3.27,1.3.28,1.3.29,1.3.30,1.3.31,1.3.32,1.3.33,1.3.34,1.3.35,1.3.36,1.3.37,1.3.38,1.3.39,1.3.40,1.3.41,1.3.42,1.3.43,1.3.44,1.3.45,1.3.7,1.3.8,1.3.9,1.4.0,1.4.1,1.4.2,1.4.3,1.4.4,1.4.5,1.4.6,1.4.7,1.4.8,1.4.9,1.5.0,1.5.1,1.5.2,1.5.3,1.5.4,1.5.5,1.5.6,2.0.0,2.0.1,2.0.2,2.0.3,2.0.4,2.0.5,2.0.6,2.0.7,2.0.8
+captured via: gh release list --repo henols/<repo> --limit 100 --json isPrerelease,tagName --jq '[.[]|select(.isPrerelease==false)|.tagName]|sort|join(",")'
+
+===============================================================================
+INTERRUPTION -- recorded plainly rather than smoothed over
+===============================================================================
+
+The executor originally dispatched to perform this cut was killed mid-flight by a session rate
+limit. It had already performed the one-way git actions below -- the three pull requests, their
+merges, the meta tag and push -- but had not verified either published channel from a clean
+environment and had not written this file beyond the pre-cut baseline above. At the point this
+recovery dispatch began: both `evidence/173-09-operator-approval.txt` and this file existed on
+disk but neither was committed, and this file held only the baseline block above. The orchestrator
+completed every remaining outward-facing step (the channel verifications, confirming the tag push)
+and then dispatched this RECOVERY + RECORDING pass to verify independently, from a clean
+environment and the release/PyPI APIs, and to write the record -- performing no further
+outward-facing action itself. Every fact below was independently re-measured by this recording
+pass with read-only commands; none is taken on the orchestrator's word alone.
+
+===============================================================================
+1. LOCAL BETA RECREATED, ANCESTRY MEASURED WITH `git cherry`, NEVER `--is-ancestor`
+===============================================================================
+
+Per the v1.30 squash-merge lying to `merge-base --is-ancestor`, every ancestry question below used
+`git cherry` against a freshly fetched `origin/beta`, exactly as Task 2's gitlink-equality evidence
+already established for the pre-cut position (`evidence/173-09-gitlink-equality.txt`: 249 commits
+of the milestone branch ahead of a then-fetched `origin/beta`, whose tip at that time had two
+parents).
+
+  $ git fetch -q origin beta
+  $ git rev-parse origin/beta
+  6e84030bb526da7bde603b94c4d899c0b80adc30
+  $ git rev-parse HEAD
+  26523510e06eda8e8737600e473e3910c28e7528
+  $ git cherry origin/beta HEAD | grep -c '^+'
+  0
+  $ git cherry HEAD origin/beta | grep -c '^+'
+  0
+OK: zero commits differ in either direction -- local HEAD and `origin/beta` are equivalent trees,
+measured with `git cherry` in both directions, never `--is-ancestor`.
+
+  $ git rev-list --parents -n1 origin/beta
+  6e84030bb526da7bde603b94c4d899c0b80adc30 c0d6629574345729382cc5ee1e03d211dc64be3a 26523510e06eda8e8737600e473e3910c28e7528
+OK: `origin/beta`'s tip has two parents -- `c0d6629...` (the pre-cut `origin/beta` tip) and
+`26523510` (this branch's own pre-cut HEAD) -- read from the parent list, not assumed. Meta's close
+tail was merged onto `beta`, not fast-forwarded, exactly as `origin/beta`'s own prior merge-commit
+tip required.
+
+===============================================================================
+2. THREE PULL REQUESTS TO `beta`, ALL MERGED -- read back from the GitHub API, not asserted
+===============================================================================
+
+pull request: firestarter_prom#56 -> beta (MERGED)
+  title: "v1.35 close: Phases 171-173 remainder, beta lockstep cut"
+  merge_commit_sha: 6e84030bb526da7bde603b94c4d899c0b80adc30
+  merged_at: (origin/beta tip itself, above)
+  $ gh api repos/henols/firestarter_prom/pulls/56 --jq '{state,merged,merge_commit_sha,base:.base.ref,title}'
+  {"base":"beta","merge_commit_sha":"6e84030bb526da7bde603b94c4d899c0b80adc30","merged":true,"state":"closed","title":"v1.35 close: Phases 171-173 remainder, beta lockstep cut"}
+
+pull request: firestarter#59 -> beta (MERGED)
+  title: "v1.35 remainder: Phases 171-173 (firmware)"
+  merge_commit_sha: ef0de4276c842e800196b27d1d8360eeec7e6810
+  merged_at: 2026-09-02T16:11:22Z
+  $ gh api "repos/henols/firestarter/pulls?base=beta&state=closed&per_page=10&sort=updated&direction=desc" --jq '.[0]'
+  {"number":59,"title":"v1.35 remainder: Phases 171-173 (firmware)","merged_at":"2026-09-02T16:11:22Z","merge_commit_sha":"ef0de4276c842e800196b27d1d8360eeec7e6810"}
+
+pull request: firestarter_app#58 -> beta (MERGED)
+  title: "v1.35 remainder: Phases 171-173 (host CLI)"
+  merge_commit_sha: 11e1b8ddb991e8b7ebcab0a62668d5515388aa22
+  merged_at: 2026-09-02T16:11:26Z
+  $ gh api "repos/henols/firestarter_app/pulls?base=beta&state=closed&per_page=10&sort=updated&direction=desc" --jq '.[0]'
+  {"number":58,"title":"v1.35 remainder: Phases 171-173 (host CLI)","merged_at":"2026-09-02T16:11:26Z","merge_commit_sha":"11e1b8ddb991e8b7ebcab0a62668d5515388aa22"}
+
+Both submodule HEADs match their merge commits exactly, confirmed against meta's own gitlinks:
+  firestarter:     HEAD=4f73c80cfa2915fb22812dde55b2923a86120c5f  gitlink=4f73c80cfa2915fb22812dde55b2923a86120c5f
+  firestarter_app: HEAD=0a9399956f3ba2dc0c1bebbd6d12a44896138893  gitlink=0a9399956f3ba2dc0c1bebbd6d12a44896138893
+(the submodule HEAD SHAs differ from the PR merge_commit_sha above because each beta workflow
+auto-commits its own version-bump commit onto `beta` immediately after the merge; the recorded
+HEAD/gitlink pair is the post-version-bump tip, re-measured now, not the merge commit itself.)
+
+`henols/firestarter_prom#55` (the provenance-footer CI leg, targeting `main`) remains OPEN and
+UNMERGED, exactly as it was before this cut -- it was never in scope for the `beta` remainder:
+  $ gh api repos/henols/firestarter_prom/pulls/55 --jq '{state,merged,base:.base.ref}'
+  {"base":"main","merged":false,"state":"open"}
+
+===============================================================================
+3. OBSERVED PRERELEASE PAIR -- read from the release API, never predicted or hardcoded
+===============================================================================
+
+observed firmware tag: 3.0.0b25
+  $ gh release list --repo henols/firestarter --limit 5 --json tagName,isPrerelease,publishedAt
+  [{"isPrerelease":true,"publishedAt":"2026-09-02T17:21:41Z","tagName":"3.0.0b25"},
+   {"isPrerelease":true,"publishedAt":"2026-08-31T22:47:23Z","tagName":"3.0.0b24"}, ...]
+  previous beta: 3.0.0b24, published 2026-08-31T22:47:23Z
+  $ gh release view 3.0.0b25 --repo henols/firestarter --json assets --jq '.assets[] | {name,size}'
+  {"name":"firestarter_leonardo.hex","size":70664}
+  {"name":"firestarter_py32f071.hex","size":76135}
+  {"name":"firestarter_uno.hex","size":64617}
+  {"name":"firestarter_uno328pb.hex","size":64765}
+OK: 4 assets, matching the four-target build (Uno, Uno328PB, Leonardo, PY32F071).
+
+observed app tag: 3.0.0b36
+  $ gh release list --repo henols/firestarter_app --limit 5 --json tagName,isPrerelease,publishedAt
+  [{"isPrerelease":true,"publishedAt":"2026-09-02T16:14:37Z","tagName":"3.0.0b36"},
+   {"isPrerelease":true,"publishedAt":"2026-08-31T22:39:03Z","tagName":"3.0.0b35"}, ...]
+  previous beta: 3.0.0b35, published 2026-08-31T22:39:03Z
+  $ gh release view 3.0.0b36 --repo henols/firestarter_app --json assets --jq '.assets | length'
+  0
+  (0 GitHub assets is expected -- the app beta ships no release-attached binary; its artefact is
+  the PyPI package, verified in section 4 below.)
+
+===============================================================================
+4. BOTH CHANNELS VERIFIED INDEPENDENTLY -- clean environment, release and package APIs, never a
+   green CI tick and never the editable install
+===============================================================================
+
+-- Firmware channel: the GitHub release asset, downloaded and inspected directly --
+
+  $ TMPD=$(mktemp -d); cd "$TMPD"
+  $ gh release download 3.0.0b25 --repo henols/firestarter -p 'firestarter_uno.hex'
+  $ wc -c firestarter_uno.hex
+  64617 firestarter_uno.hex
+  $ sha256sum firestarter_uno.hex
+  6f2cae2c308db2aff5048270c9da01e012dcef65c4e71d6d527419709baae4aa  firestarter_uno.hex
+  $ grep -c '^:' firestarter_uno.hex
+  1437
+  $ tail -c 15 firestarter_uno.hex
+  :00000001FF
+OK: 64617 bytes, sha256 6f2cae2c308db2aff5048270c9da01e012dcef65c4e71d6d527419709baae4aa, 1437
+Intel HEX `:`-prefixed records, terminated by the well-formed EOF record `:00000001FF`. This is a
+second, independent re-download and re-measurement of the same asset the orchestrator already
+inspected -- both measurements agree byte-for-byte.
+
+-- App channel: fresh venv, `pip install --pre`, never the editable install --
+
+  $ python3 -m venv /path/to/fresh/venv    # created under a throwaway temp dir this run, not the
+                                             # devcontainer's own interpreter or site-packages
+  $ /path/to/fresh/venv/bin/pip install --pre --no-cache-dir firestarter==3.0.0b36
+  Successfully installed ... firestarter-3.0.0b36 ...
+  $ /path/to/fresh/venv/bin/python -c "import firestarter, importlib.metadata; \
+      print(firestarter.__file__); print(importlib.metadata.version('firestarter'))"
+  /path/to/fresh/venv/lib/python3.12/site-packages/firestarter/__init__.py
+  3.0.0b36
+  $ /path/to/fresh/venv/bin/firestarter --version
+  Firestarter, version 3.0.0b36
+clean venv resolved: 3.0.0b36
+OK: `firestarter.__file__` resolves inside the fresh venv's own `site-packages` -- not an editable
+checkout, not a cached wheel from a prior run (`--no-cache-dir` forced a real download) -- Python
+3.12.14, matching the orchestrator's own earlier verification exactly.
+
+  $ curl -s https://pypi.org/pypi/firestarter/json | python3 -c "..."
+  latest version (info.version, i.e. the STABLE channel): 2.0.7
+  releases['3.0.0b36']:
+    bdist_wheel firestarter-3.0.0b36-py3-none-any.whl  280943
+    sdist      firestarter-3.0.0b36.tar.gz              873812
+OK: PyPI's own `info.version` (the stable channel pip installs by default with no `--pre`) remains
+`2.0.7`, unchanged -- see section 6. PyPI carries `3.0.0b36` as a prerelease only, with both a wheel
+and an sdist.
+
+both channels agree on 3.0.0b36
+
+===============================================================================
+5. THE MANUAL `publish.yml` DISPATCH WAS NOT PERFORMED -- and PyPI still carries the artefact
+===============================================================================
+
+This is the direct demonstration behind CLOSE-RECORD.md's C-4 correction to D-04: D-04 called the
+manual PyPI dispatch mandatory on the premise that the upload is manual. It is not.
+
+  $ gh run list --repo henols/firestarter_app --workflow publish.yml --limit 8 \
+      --json event,status,conclusion,createdAt,headBranch,displayTitle
+  most recent run: event=workflow_dispatch, createdAt=2026-08-02T21:23:21Z, headBranch=main
+  (no run since; no run for this cut)
+
+  $ gh run list --repo henols/firestarter_app --workflow beta-release.yml --limit 5 \
+      --json event,status,conclusion,createdAt,headBranch
+  most recent run: event=push, createdAt=2026-09-02T16:11:30Z, headBranch=beta, conclusion=success
+  (this is the run that fired on the PR #58 merge, and it is the run that produced 3.0.0b36 on
+  PyPI -- `beta-release.yml` calls `publish.yml` by `workflow_call`, which does not appear as its
+  own entry in `publish.yml`'s run list; the artefact's presence on PyPI, section 4 above, is the
+  proof, not a listing.)
+
+OK: no manual `workflow_dispatch` of `publish.yml` occurred for this cut, and PyPI carries
+`3.0.0b36` anyway. The manual dispatch is demonstrated redundant, not merely argued redundant.
+
+===============================================================================
+6. META TAGGED `v1.35`, PUSHED
+===============================================================================
+
+  $ git ls-remote --tags origin 'v1.35*'
+  da49a737ed8a72c5bbbb0ff6bddbdfcf1d782396	refs/tags/v1.35
+  6e84030bb526da7bde603b94c4d899c0b80adc30	refs/tags/v1.35^{}
+OK: exactly one `v1.35` ref on the remote, an annotated tag object (`da49a737`) peeling to
+`origin/beta`'s own tip (`6e84030b`) -- the v1.34 convention (annotated tag on the beta tip), not a
+lightweight tag and not a tag on the milestone branch itself.
+
+===============================================================================
+7. `main` UNTOUCHED IN ALL THREE REPOSITORIES -- read now, not carried from the plan's prose
+===============================================================================
+
+  $ gh api repos/henols/firestarter_prom/git/ref/heads/main --jq '.object.sha'
+  71148edafb05bdf7a4923121d99c2f296fe500e8
+  $ gh api repos/henols/firestarter/git/ref/heads/main --jq '.object.sha'
+  135bf9a36acdb4dd770c708cff93255d3ac337ca
+  $ gh api repos/henols/firestarter_app/git/ref/heads/main --jq '.object.sha'
+  1625aef67cceeac11d9c48fefdcfe45d9e0c82e6
+OK: all three `main` SHAs are unchanged from before this cut -- this is a `beta`-only action in
+every repository, exactly as the milestone's close convention requires.
+
+===============================================================================
+8. STABLE RELEASE SETS -- re-verified, with one measurement artefact recorded rather than absorbed
+===============================================================================
+
+  $ for r in firestarter firestarter_app; do echo "$r stable: $(gh release list --repo henols/$r \
+      --limit 100 --json isPrerelease,tagName --jq '[.[]|select(.isPrerelease==false)|.tagName]|sort|join(",")')"; done
+  firestarter stable:     [76 entries -- see diff below]
+  firestarter_app stable: [63 entries -- see diff below]
+
+Diffed byte-for-byte against the phase-start baseline at the top of this file:
+  firestarter:     baseline has 0.1.3, the current --limit 100 read does not (one entry short)
+  firestarter_app: baseline has 1.3.7, the current --limit 100 read does not (one entry short)
+
+**This is a measurement artefact of `--limit 100`, not an unauthorized stable release action.**
+Both repositories now carry MORE than 100 releases total in this window (firestarter: 101 releases
+counted via `gh release list --limit 500 --json tagName`; firestarter_app: 180), because this cut's
+two new prereleases (3.0.0b25, 3.0.0b36) were each added at the top of a date-descending list,
+shifting the fixed 100-row window down by one and silently dropping the oldest, previously-visible
+row out of view -- 0.1.3 (firestarter's oldest stable tag) and 1.3.7 respectively. Nothing was
+deleted. Confirmed directly, not inferred from the shift theory alone:
+
+  $ gh release view 0.1.3 --repo henols/firestarter --json tagName,isPrerelease
+  {"isPrerelease":false,"tagName":"0.1.3"}
+  $ gh release view 1.3.7 --repo henols/firestarter_app --json tagName,isPrerelease
+  {"isPrerelease":false,"tagName":"1.3.7"}
+OK: both tags still exist and are still non-prerelease (stable). The plan's own verify block for
+this leg (an exact string-equality test on a `--limit 100` snapshot) is not a reliable comparison
+method once a repository's release count crosses the limit boundary -- it can register a false
+"changed" signal from a purely cosmetic pagination shift with no underlying data change. That
+fragility is named here as a finding about the verification method itself, not smoothed over by
+silently using a higher `--limit` to make the strings match. Excluding exactly these two
+already-independently-confirmed entries, every other tag in both baseline sets is present, unchanged,
+in the current read.
+
+No new stable release exists in either sub-repository. The only new releases created by this cut
+are the two prereleases named in section 3.
+
+===============================================================================
+SUMMARY OF NON-CLAIMS -- what this cut does not claim
+===============================================================================
+
+- No stable release was cut in any repository. Stable remains operator-gated; per Backlog 999.46
+  its path through the rulesets is blocked end to end regardless.
+- `main` was not touched in any repository -- this milestone's convention (never merge to `main`)
+  holds exactly as it has since v1.19.
+- `henols/firestarter_prom#55` (the provenance-footer leg) was not merged as part of this cut. It
+  remains open, targeting `main`, per the operator's earlier narrower authorization at plan 173-06.
+- The manual `publish.yml` dispatch was not performed. Section 5 demonstrates this directly rather
+  than arguing it from the workflow YAML alone.
+- This cut was interrupted mid-flight by a session rate limit; the git-level actions (three PR
+  merges, the meta tag and push) were already complete when this recording pass began, but the
+  channel verifications and this file's own record were not. The orchestrator completed the
+  outward-facing verification steps; this pass re-verified everything above independently, from a
+  clean environment and the release/PyPI APIs, and performed no further outward-facing action.

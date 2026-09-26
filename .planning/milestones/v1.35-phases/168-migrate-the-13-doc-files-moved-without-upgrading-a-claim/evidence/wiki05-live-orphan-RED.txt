@@ -1,0 +1,34 @@
+ERROR: illegal page filename '.git': directory found in flat wiki/ tree
+ERROR: illegal internal link form in Lockable-PROMs.md:53: [Infineon][1] -- the only legal internal link form is [Text](Page-Name) or [Text](Page-Name#anchor)
+ERROR: illegal internal link form in Lockable-PROMs.md:108: [Infineon][2] -- the only legal internal link form is [Text](Page-Name) or [Text](Page-Name#anchor)
+ERROR: illegal internal link form in Lockable-PROMs.md:108: [Infineon][3] -- the only legal internal link form is [Text](Page-Name) or [Text](Page-Name#anchor)
+ERROR: illegal internal link form in Lockable-PROMs.md:121: [macronix.com][4] -- the only legal internal link form is [Text](Page-Name) or [Text](Page-Name#anchor)
+ERROR: illegal internal link form in Lockable-PROMs.md:132: [macronix.com][5] -- the only legal internal link form is [Text](Page-Name) or [Text](Page-Name#anchor)
+ERROR: illegal internal link form in Lockable-PROMs.md:250: [Microchip][6] -- the only legal internal link form is [Text](Page-Name) or [Text](Page-Name#anchor)
+ERROR: illegal internal link form in Lockable-PROMs.md:275: [Microchip][7] -- the only legal internal link form is [Text](Page-Name) or [Text](Page-Name#anchor)
+ERROR: illegal internal link form in Lockable-PROMs.md:306: [Microchip][8] -- the only legal internal link form is [Text](Page-Name) or [Text](Page-Name#anchor)
+ERROR: orphan page not linked from Home.md: AT28C04-Adapter
+ERROR: orphan page not linked from Home.md: Beta-Testing-Install
+ERROR: orphan page not linked from Home.md: Community-Validation
+ERROR: orphan page not linked from Home.md: Infoic-Field-Dictionary
+ERROR: orphan page not linked from Home.md: Lockable-PROMs
+ERROR: orphan page not linked from Home.md: Package-Details
+ERROR: orphan page not linked from Home.md: Pinout-Safety-Review
+ERROR: orphan page not linked from Home.md: Programming-Protocols
+ERROR: orphan page not linked from Home.md: Protocol-Flags
+ERROR: orphan page not linked from Home.md: Protocol-ID
+ERROR: orphan page not linked from Home.md: SRAM-and-NVRAM-Behavior
+ERROR: orphan page not linked from Home.md: Shield-Revisions
+ERROR: page missing from _Sidebar.md: AT28C04-Adapter
+ERROR: page missing from _Sidebar.md: Beta-Testing-Install
+ERROR: page missing from _Sidebar.md: Community-Validation
+ERROR: page missing from _Sidebar.md: Infoic-Field-Dictionary
+ERROR: page missing from _Sidebar.md: Lockable-PROMs
+ERROR: page missing from _Sidebar.md: Package-Details
+ERROR: page missing from _Sidebar.md: Pinout-Safety-Review
+ERROR: page missing from _Sidebar.md: Programming-Protocols
+ERROR: page missing from _Sidebar.md: Protocol-Flags
+ERROR: page missing from _Sidebar.md: Protocol-ID
+ERROR: page missing from _Sidebar.md: SRAM-and-NVRAM-Behavior
+ERROR: page missing from _Sidebar.md: Shield-Revisions
+exit 1

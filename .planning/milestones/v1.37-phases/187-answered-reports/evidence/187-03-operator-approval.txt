@@ -1,0 +1,48 @@
+APPROVED-FOR-MERGE: app
+
+Operator: Henrik Olsson <henrik@predictly.se>
+Date: 2026-09-12
+
+The prose below is the orchestrator's rendering of the operator's menu selection at the Task 2
+blocking-human gate, not a verbatim operator quotation. The operator was presented with three
+options (merge / hold / stop) and chose one by name; they did not dictate the rationale text.
+
+The orchestrator presented the operator with the verbatim `PRE-MERGE MEASUREMENT (app)` block from
+`evidence/187-03-app-cut.txt`, including both SHAs — `origin/beta`
+1efdc5769ab4c78f9237b70c6826d217673cc164, HEAD 612aa6983e781d0d9437071da1d3daaba5e71aae — and the
+`git cherry origin/beta <branch>` counts of 33 `^+` / 0 `^-`, and stated the following four things
+before asking for a decision:
+
+1. What fires: `.github/workflows/beta-release.yml` triggers on every push to `beta`, with no
+   `paths-ignore` filter (deliberately removed), so this merge cuts a pre-release regardless of what
+   changed. It publishes to GitHub Releases and, via a direct `uses:` call into `publish.yml` with
+   inherited secrets, to PyPI.
+2. Reversibility, in D-01's own terms: one-way. A published PyPI version cannot be unpublished, and
+   a PyPI version number can never be reused even after deletion.
+3. The version: deliberately unknown at gate time. It must be READ from `gh release list` after the
+   run completes, per D-05. The pre-cut value `3.0.0b38` was shown only as the value that must NOT
+   appear in any reply — no version was predicted or computed at this gate.
+4. Duration: measured app runs of the sibling workflow are 3m36s-4m53s; the polling in Task 3 uses
+   no deadline shorter than 90 minutes, because the sibling firmware workflow has taken 70 minutes
+   once.
+
+The operator was also told the harness mode before answering: this dispatch is
+`/gsd-execute-phase 187` with no `--auto`/`--chain` flags; `workflow._auto_chain_active` reads
+`false`; `workflow.auto_advance` reads `false`. The orchestrator stated this measured mode to the
+operator before presenting the question, and the operator answered without contradicting it — the
+confirmation took the form of an uncontradicted disclosure, not a separate verbal reply restating
+the mode.
+
+The operator's selection: `merge` — "Open the PR and merge it to `beta`."
+
+This approval covers the APP merge only (Task 3 of Plan 187-03). It does not approve anything about
+the firmware merge (Plan 187-04) or the posting of any upstream reply (Plans 187-07 through
+187-11).
+
+Note on timing (deviation, see 187-03-SUMMARY.md): this file is written after an intervening halt,
+not at the instant the operator answered. The first continuation dispatch for this plan was denied
+by the Claude Code harness's auto-mode classifier before it could write this file or take any
+public action — recorded by hand in meta commit `a3f6cb19`. The operator's `merge` decision was
+made before that denial; auto mode has since been turned off by the operator, and this file is
+written by the retry dispatch, immediately before Task 3 and before any push, PR, or merge. No
+public act occurred between the operator's answer and this file's commit.

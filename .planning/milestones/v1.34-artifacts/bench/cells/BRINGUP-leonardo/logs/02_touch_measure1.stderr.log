@@ -1,0 +1,1 @@
+FAIL: timed out after 3.0s waiting for a NEW serial port after the 1200-baud touch on /dev/ttyACM0 (before=['/dev/ttyACM0'] after=['/dev/ttyACM0'])

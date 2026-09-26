@@ -1,0 +1,1 @@
+argv: /usr/local/bin/pio run -t upload -e uno328pb (cwd=/workspaces/firestarter)

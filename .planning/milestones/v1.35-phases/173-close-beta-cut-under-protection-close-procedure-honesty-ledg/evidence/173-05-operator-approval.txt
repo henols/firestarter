@@ -1,0 +1,12 @@
+APPROVED-FOR-WIKI-PUSH: 6 pages
+
+Operator: Henrik Olsson
+Date: 2026-09-02
+
+Record of authorization: the orchestrator presented Task 1's checkpoint decision verbatim —
+the six footer lines from plan 173-01's throwaway-clone evidence, the six pages they land on
+(Programming-Protocols, Shield-Revisions, Install-Beta, Testing-Chips, Lockable-PROMs,
+Shell-Completion), the five scope points from the plan's action text, the costly-to-undo
+reversibility rating, and the already-measured four-checker regression from 173-01 — and the
+operator selected menu option `publish` ("Publish the six footers (D-09 as decided)") with no
+added free-text note.

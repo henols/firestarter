@@ -1,0 +1,4 @@
+Connecting...
+Timeout waiting for a response from /dev/ttyUSB0.
+Connecting... Failed  
+Failed to setup operation WRITE for w29c020: No compatible programmer answered on /dev/ttyUSB0. If a board is attached there, its firmware may predate the current command framing, which makes it answer 'Bad JSON' instead of an ack — every 2.x release, and 3.0.0 pre-releases before b8. Such a board can still be reflashed directly: firestarter --port /dev/ttyUSB0 fw --board <board> --install

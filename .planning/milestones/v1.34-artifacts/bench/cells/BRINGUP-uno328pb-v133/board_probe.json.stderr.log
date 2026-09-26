@@ -1,0 +1,8 @@
+=== route1 (rc=1) ===
+Error: connected part ATmega328PB differs in signature from -p ATmega2560 (override with -F or use -p ATmega328PB)
+Error: unable to read signature data for part ATmega2560 (rc = -1)
+Error: unable to read signature data (rc = -1)
+use -F to override this check
+
+Avrdude done.  Thank you.
+

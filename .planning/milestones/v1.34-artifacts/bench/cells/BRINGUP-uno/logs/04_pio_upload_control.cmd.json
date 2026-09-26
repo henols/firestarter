@@ -1,0 +1,27 @@
+[
+  {
+    "argv": [
+      "git",
+      "-C",
+      "/workspaces/firestarter",
+      "checkout",
+      "8695ee52c27a4bee4387c5c489afd5f3d7275e8a"
+    ],
+    "cwd": "/workspaces",
+    "description": "detach firmware repo to control arm's fw_sha"
+  },
+  {
+    "argv": [
+      "/usr/local/bin/pio",
+      "run",
+      "-t",
+      "upload",
+      "-e",
+      "uno",
+      "--upload-port",
+      "/dev/ttyACM0"
+    ],
+    "cwd": "/workspaces/firestarter",
+    "description": "PlatformIO upload path -- flashes the control arm's uno build; PIO internally resolved avrdude 6.3 (tool-avrdude@1.60300.200527) for this upload, NOT the pinned 8.1 binary -- see SUMMARY Finding"
+  }
+]

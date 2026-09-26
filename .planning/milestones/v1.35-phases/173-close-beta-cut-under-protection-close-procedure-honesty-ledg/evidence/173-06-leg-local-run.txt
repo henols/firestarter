@@ -1,0 +1,19 @@
+== extracted leg body
+          python3 meta/tools/wiki/provenance_footers.py \
+            --table meta/tools/wiki/MIGRATION-TABLE.md \
+            --wiki-dir wiki-clone
+          echo "OK: every migrated wiki page still carries the provenance footer its migration-table row states, and every live page is accounted for by that table"
+== executed from the reproduced runner layout
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+OK: every migrated wiki page still carries the provenance footer its migration-table row states, and every live page is accounted for by that table
+rc=0
+== CI run history for this workflow
+
+This is a local reproduction of the leg's exact run: body, extracted from
+.github/workflows/wiki-check.yml rather than retyped, executed against a
+scratch tree reproducing the runner's path layout (meta symlinked to this
+repository, wiki-clone a fresh shallow clone of the live wiki). The leg
+itself has not yet run in CI: the CI run history query above returned zero
+rows for the Wiki check workflow, matching Phase 172's NON-CLAIM 3 --
+registered with Actions, zero runs. First fire is the weekly cron or a
+manual workflow_dispatch, neither of which this task performed.

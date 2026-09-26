@@ -172,7 +172,7 @@ default-marker stay.
 
 ---
 
-### 3. `firestarter_app/firestarter/ic_layout.py:516` — D-04 consumer
+### 3. `firestarter_app/firestarter/ic_layout.py:513` — D-04 consumer
 
 **Role:** utility (DIP layout renderer). **Data flow:** transform (mapped dict → output_data).
 **Analog:** sibling `output_data` assignments in the same function.
@@ -604,7 +604,7 @@ Phase 2.
 
 ### Shared Pattern A: PROGMEM key-parser table (firmware)
 
-**Source:** `firestarter/src/json_parser.c:56-75, :280-314`
+**Source:** `firestarter/src/json_parser.c:67-92, :280-314`
 **Apply to:** the WIRE-01 atomic flip only.
 
 The firmware encodes "what JSON keys exist" in TWO places per field:
@@ -682,10 +682,10 @@ Files with no close codebase analog (none in this phase — all are self-analog)
 **Analog search scope:**
 - `firestarter_app/firestarter/database.py` (lines 40-540 — targeted, non-overlapping reads)
 - `firestarter_app/firestarter/eprom_info.py:265-278`
-- `firestarter_app/firestarter/ic_layout.py:510-520`
+- `firestarter_app/firestarter/ic_layout.py:507-517`
 - `firestarter_app/tools/build_db.py:1-35`
 - `firestarter_app/tools/check_dispatch.py` (full, 161 lines)
-- `firestarter/src/json_parser.c:55-130, :255-330` (non-overlapping)
+- `firestarter/src/json_parser.c:66-92, :255-330` (non-overlapping)
 - `firestarter_app/pyproject.toml:55-69`
 - `firestarter_app/MANIFEST.in` (full, 11 lines)
 - `firestarter_app/CLAUDE.md` (full, provided in system reminder)

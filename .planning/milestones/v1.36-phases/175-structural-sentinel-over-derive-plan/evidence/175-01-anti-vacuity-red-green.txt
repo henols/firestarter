@@ -1,0 +1,395 @@
+== W1 write_verify_violations returns [] unconditionally -- RED expected across every Part A and Part B leg
+.......FFFFFFF..FFF                                                      [100%]
+=================================== FAILURES ===================================
+_____________ test_planted_counter_plan_with_no_verify_is_flagged ______________
+
+    def test_planted_counter_plan_with_no_verify_is_flagged():
+        """Roadmap success criterion 1."""
+        plan = plan_with_steps(
+            step(chip_test.OP_ID),
+            step(chip_test.OP_READ),
+            step(chip_test.OP_WRITE),
+            step(chip_test.OP_ERASE),
+        )
+        violations = write_verify_violations(plan)
+>       assert len(violations) == 1, violations
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_derive_plan_structural_sentinel.py:375: AssertionError
+_______ test_a_second_write_outside_the_block_is_a_violation_not_a_skip ________
+
+    def test_a_second_write_outside_the_block_is_a_violation_not_a_skip():
+        """`cycle_block_bounds` returns only the FIRST maximal run, so a second
+        write past the end of that run must be a VIOLATION, never silently
+        skipped -- this arm is unreachable on the shipped corpus, where every
+        plan carries exactly one write, and is coded fail-closed for exactly
+        that reason."""
+        plan = plan_with_steps(
+            step(chip_test.OP_WRITE),
+            step(chip_test.OP_VERIFY),
+            step(chip_test.OP_SDP_LOCK),
+            step(chip_test.OP_WRITE),
+            step(chip_test.OP_VERIFY),
+        )
+        bounds = chip_test.cycle_block_bounds(plan.steps)
+        assert bounds == (0, 2), (
+            f"fixture setup error: expected bounds (0, 2), got {bounds}"
+        )
+    
+        violations = write_verify_violations(plan)
+>       assert violations == [
+            (3, chip_test.OP_WRITE, "write sits outside the cycle block")
+        ], violations
+E       AssertionError: []
+E       assert [] == [(3, 'write',...cycle block')]
+E         
+E         Right contains one more item: (3, 'write', 'write sits outside the cycle block')
+E         Use -v to get more diff
+
+tests/test_derive_plan_structural_sentinel.py:400: AssertionError
+_______________ test_a_verify_at_a_lower_index_is_not_an_oracle ________________
+
+    def test_a_verify_at_a_lower_index_is_not_an_oracle():
+        plan = plan_with_steps(step(chip_test.OP_VERIFY), step(chip_test.OP_WRITE))
+        violations = write_verify_violations(plan)
+>       assert len(violations) == 1, violations
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_derive_plan_structural_sentinel.py:408: AssertionError
+_______________ test_a_verify_outside_the_block_is_not_an_oracle _______________
+
+    def test_a_verify_outside_the_block_is_not_an_oracle():
+        """`(0, 1)` is what makes D-02's same-cycle-block reading stronger than
+        anywhere-later-in-the-list: the verify here sits right after the write
+        in `plan.steps`, but `sdp-lock` closes the block first."""
+        plan = plan_with_steps(
+            step(chip_test.OP_WRITE), step(chip_test.OP_SDP_LOCK), step(chip_test.OP_VERIFY)
+        )
+        bounds = chip_test.cycle_block_bounds(plan.steps)
+        assert bounds == (0, 1), (
+            f"fixture setup error: expected bounds (0, 1), got {bounds}"
+        )
+    
+        violations = write_verify_violations(plan)
+>       assert len(violations) == 1, violations
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_derive_plan_structural_sentinel.py:425: AssertionError
+_________________________ test_a_lone_write_is_flagged _________________________
+
+    def test_a_lone_write_is_flagged():
+        plan = plan_with_steps(step(chip_test.OP_WRITE))
+        bounds = chip_test.cycle_block_bounds(plan.steps)
+        assert bounds == (0, 1), (
+            f"fixture setup error: expected bounds (0, 1), got {bounds}"
+        )
+    
+        violations = write_verify_violations(plan)
+>       assert len(violations) == 1, violations
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_derive_plan_structural_sentinel.py:436: AssertionError
+_________________ test_an_unsupported_verify_is_not_an_oracle __________________
+
+    def test_an_unsupported_verify_is_not_an_oracle():
+        """D-03: a `supported=False` verify behind a live write IS a write with
+        no oracle and must not pass merely because a step with the right op
+        string is present."""
+        plan = plan_with_steps(
+            step(chip_test.OP_WRITE), step(chip_test.OP_VERIFY, supported=False)
+        )
+        violations = write_verify_violations(plan)
+>       assert len(violations) == 1, violations
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_derive_plan_structural_sentinel.py:447: AssertionError
+_________________ test_a_field_skewed_verify_is_not_an_oracle __________________
+
+    def test_a_field_skewed_verify_is_not_an_oracle():
+        """D-04: the verify must match the write on `write_region`,
+        `region_policy` and `cycle_payload`. Three sub-cases, each a
+        `write, verify` pair identical except for one field."""
+        region_skewed = plan_with_steps(
+            step(chip_test.OP_WRITE, write_region=(0, 10)),
+            step(chip_test.OP_VERIFY, write_region=(1, 10)),
+        )
+>       assert len(write_verify_violations(region_skewed)) == 1, (
+            "write_region mismatch not flagged"
+        )
+E       AssertionError: write_region mismatch not flagged
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = write_verify_violations(Plan(name='M8720', steps=[Step(op='write', supported=True, reason='', destructive=False, write_region=(0, 10), cycle_p...le_payload='same', region_policy='fixed', full_device_permitted=False)], reason='', locked_destructive=[], is_uv=False))
+
+tests/test_derive_plan_structural_sentinel.py:458: AssertionError
+___________ test_removing_the_verify_flags_every_write_bearing_plan ____________
+
+    def test_removing_the_verify_flags_every_write_bearing_plan():
+        write_bearing = _write_bearing_plans()
+        assert len(write_bearing) == 1354, (
+            f"write-bearing corpus size drifted to {len(write_bearing)} -- a "
+            "sweep that visits zero rows must not pass"
+        )
+    
+        unflagged = []
+        for key, plan in write_bearing.items():
+            mutant = dataclasses.replace(
+                plan, steps=[s for s in plan.steps if s.op != chip_test.OP_VERIFY]
+            )
+            if not write_verify_violations(mutant):
+                unflagged.append(key)
+>       assert not unflagged, (
+            f"{len(unflagged)} of {len(write_bearing)} write-bearing plans were "
+            f"NOT flagged after their verify step was removed; first ten: "
+            f"{unflagged[:10]}"
+        )
+E       AssertionError: 1354 of 1354 write-bearing plans were NOT flagged after their verify step was removed; first ten: [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ('27128A,D27128A,D27128B', 'full'), ('27128A,D27128A,D27128B', 'partial'), ('2732,2732A,M2732,M2732A', 'full'), ('2732,2732A,M2732,M2732A', 'partial')]
+E       assert not [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ...]
+
+tests/test_derive_plan_structural_sentinel.py:560: AssertionError
+__________ test_an_unsupported_verify_flags_every_write_bearing_plan ___________
+
+    def test_an_unsupported_verify_flags_every_write_bearing_plan():
+        """D-03, generalized across the whole corpus."""
+        write_bearing = _write_bearing_plans()
+        assert len(write_bearing) == 1354, (
+            f"write-bearing corpus size drifted to {len(write_bearing)} -- a "
+            "sweep that visits zero rows must not pass"
+        )
+    
+        unflagged = []
+        for key, plan in write_bearing.items():
+            mutated_steps = [
+                dataclasses.replace(s, supported=False)
+                if s.op == chip_test.OP_VERIFY
+                else s
+                for s in plan.steps
+            ]
+            mutant = dataclasses.replace(plan, steps=mutated_steps)
+            if not write_verify_violations(mutant):
+                unflagged.append(key)
+>       assert not unflagged, (
+            f"{len(unflagged)} of {len(write_bearing)} write-bearing plans were "
+            f"NOT flagged after their verify step was marked unsupported; "
+            f"first ten: {unflagged[:10]}"
+        )
+E       AssertionError: 1354 of 1354 write-bearing plans were NOT flagged after their verify step was marked unsupported; first ten: [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ('27128A,D27128A,D27128B', 'full'), ('27128A,D27128A,D27128B', 'partial'), ('2732,2732A,M2732,M2732A', 'full'), ('2732,2732A,M2732,M2732A', 'partial')]
+E       assert not [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ...]
+
+tests/test_derive_plan_structural_sentinel.py:586: AssertionError
+__________ test_a_region_skewed_verify_flags_every_write_bearing_plan __________
+
+    def test_a_region_skewed_verify_flags_every_write_bearing_plan():
+        """D-04, generalized across the whole corpus."""
+        write_bearing = _write_bearing_plans()
+        assert len(write_bearing) == 1354, (
+            f"write-bearing corpus size drifted to {len(write_bearing)} -- a "
+            "sweep that visits zero rows must not pass"
+        )
+    
+        unflagged = []
+        for key, plan in write_bearing.items():
+            mutated_steps = []
+            for s in plan.steps:
+                if s.op == chip_test.OP_VERIFY and s.write_region is not None:
+                    skewed_start = s.write_region[0] + 1
+                    mutated_steps.append(
+                        dataclasses.replace(
+                            s, write_region=(skewed_start, s.write_region[1])
+                        )
+                    )
+                else:
+                    mutated_steps.append(s)
+            mutant = dataclasses.replace(plan, steps=mutated_steps)
+            if not write_verify_violations(mutant):
+                unflagged.append(key)
+>       assert not unflagged, (
+            f"{len(unflagged)} of {len(write_bearing)} write-bearing plans were "
+            f"NOT flagged after their verify step's write_region start was "
+            f"skewed by one; first ten: {unflagged[:10]}"
+        )
+E       AssertionError: 1354 of 1354 write-bearing plans were NOT flagged after their verify step's write_region start was skewed by one; first ten: [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ('27128A,D27128A,D27128B', 'full'), ('27128A,D27128A,D27128B', 'partial'), ('2732,2732A,M2732,M2732A', 'full'), ('2732,2732A,M2732,M2732A', 'partial')]
+E       assert not [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ...]
+
+tests/test_derive_plan_structural_sentinel.py:617: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_planted_counter_plan_with_no_verify_is_flagged
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_second_write_outside_the_block_is_a_violation_not_a_skip
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_verify_at_a_lower_index_is_not_an_oracle
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_verify_outside_the_block_is_not_an_oracle
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_lone_write_is_flagged
+FAILED tests/test_derive_plan_structural_sentinel.py::test_an_unsupported_verify_is_not_an_oracle
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_field_skewed_verify_is_not_an_oracle
+FAILED tests/test_derive_plan_structural_sentinel.py::test_removing_the_verify_flags_every_write_bearing_plan
+FAILED tests/test_derive_plan_structural_sentinel.py::test_an_unsupported_verify_flags_every_write_bearing_plan
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_region_skewed_verify_flags_every_write_bearing_plan
+10 failed, 9 passed in 1.23s
+rc_w1=1
+== W2 drop the supported conjunct from the verify-candidate test -- RED expected for the D-03 legs
+............F....F.                                                      [100%]
+=================================== FAILURES ===================================
+_________________ test_an_unsupported_verify_is_not_an_oracle __________________
+
+    def test_an_unsupported_verify_is_not_an_oracle():
+        """D-03: a `supported=False` verify behind a live write IS a write with
+        no oracle and must not pass merely because a step with the right op
+        string is present."""
+        plan = plan_with_steps(
+            step(chip_test.OP_WRITE), step(chip_test.OP_VERIFY, supported=False)
+        )
+        violations = write_verify_violations(plan)
+>       assert len(violations) == 1, violations
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_derive_plan_structural_sentinel.py:445: AssertionError
+__________ test_an_unsupported_verify_flags_every_write_bearing_plan ___________
+
+    def test_an_unsupported_verify_flags_every_write_bearing_plan():
+        """D-03, generalized across the whole corpus."""
+        write_bearing = _write_bearing_plans()
+        assert len(write_bearing) == 1354, (
+            f"write-bearing corpus size drifted to {len(write_bearing)} -- a "
+            "sweep that visits zero rows must not pass"
+        )
+    
+        unflagged = []
+        for key, plan in write_bearing.items():
+            mutated_steps = [
+                dataclasses.replace(s, supported=False)
+                if s.op == chip_test.OP_VERIFY
+                else s
+                for s in plan.steps
+            ]
+            mutant = dataclasses.replace(plan, steps=mutated_steps)
+            if not write_verify_violations(mutant):
+                unflagged.append(key)
+>       assert not unflagged, (
+            f"{len(unflagged)} of {len(write_bearing)} write-bearing plans were "
+            f"NOT flagged after their verify step was marked unsupported; "
+            f"first ten: {unflagged[:10]}"
+        )
+E       AssertionError: 1354 of 1354 write-bearing plans were NOT flagged after their verify step was marked unsupported; first ten: [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ('27128A,D27128A,D27128B', 'full'), ('27128A,D27128A,D27128B', 'partial'), ('2732,2732A,M2732,M2732A', 'full'), ('2732,2732A,M2732,M2732A', 'partial')]
+E       assert not [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ...]
+
+tests/test_derive_plan_structural_sentinel.py:584: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_an_unsupported_verify_is_not_an_oracle
+FAILED tests/test_derive_plan_structural_sentinel.py::test_an_unsupported_verify_flags_every_write_bearing_plan
+2 failed, 17 passed in 1.16s
+rc_w2=1
+== W3 drop the three field-equality conjuncts (write_region/region_policy/cycle_payload) -- RED expected for the D-04 legs
+.............F....F                                                      [100%]
+=================================== FAILURES ===================================
+_________________ test_a_field_skewed_verify_is_not_an_oracle __________________
+
+    def test_a_field_skewed_verify_is_not_an_oracle():
+        """D-04: the verify must match the write on `write_region`,
+        `region_policy` and `cycle_payload`. Three sub-cases, each a
+        `write, verify` pair identical except for one field."""
+        region_skewed = plan_with_steps(
+            step(chip_test.OP_WRITE, write_region=(0, 10)),
+            step(chip_test.OP_VERIFY, write_region=(1, 10)),
+        )
+>       assert len(write_verify_violations(region_skewed)) == 1, (
+            "write_region mismatch not flagged"
+        )
+E       AssertionError: write_region mismatch not flagged
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = write_verify_violations(Plan(name='M8720', steps=[Step(op='write', supported=True, reason='', destructive=False, write_region=(0, 10), cycle_p...le_payload='same', region_policy='fixed', full_device_permitted=False)], reason='', locked_destructive=[], is_uv=False))
+
+tests/test_derive_plan_structural_sentinel.py:454: AssertionError
+__________ test_a_region_skewed_verify_flags_every_write_bearing_plan __________
+
+    def test_a_region_skewed_verify_flags_every_write_bearing_plan():
+        """D-04, generalized across the whole corpus."""
+        write_bearing = _write_bearing_plans()
+        assert len(write_bearing) == 1354, (
+            f"write-bearing corpus size drifted to {len(write_bearing)} -- a "
+            "sweep that visits zero rows must not pass"
+        )
+    
+        unflagged = []
+        for key, plan in write_bearing.items():
+            mutated_steps = []
+            for s in plan.steps:
+                if s.op == chip_test.OP_VERIFY and s.write_region is not None:
+                    skewed_start = s.write_region[0] + 1
+                    mutated_steps.append(
+                        dataclasses.replace(
+                            s, write_region=(skewed_start, s.write_region[1])
+                        )
+                    )
+                else:
+                    mutated_steps.append(s)
+            mutant = dataclasses.replace(plan, steps=mutated_steps)
+            if not write_verify_violations(mutant):
+                unflagged.append(key)
+>       assert not unflagged, (
+            f"{len(unflagged)} of {len(write_bearing)} write-bearing plans were "
+            f"NOT flagged after their verify step's write_region start was "
+            f"skewed by one; first ten: {unflagged[:10]}"
+        )
+E       AssertionError: 1354 of 1354 write-bearing plans were NOT flagged after their verify step's write_region start was skewed by one; first ten: [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ('27128A,D27128A,D27128B', 'full'), ('27128A,D27128A,D27128B', 'partial'), ('2732,2732A,M2732,M2732A', 'full'), ('2732,2732A,M2732,M2732A', 'partial')]
+E       assert not [('2516', 'full'), ('2516', 'partial'), ('2532', 'full'), ('2532', 'partial'), ('27128,D27128', 'full'), ('27128,D27128', 'partial'), ...]
+
+tests/test_derive_plan_structural_sentinel.py:613: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_field_skewed_verify_is_not_an_oracle
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_region_skewed_verify_flags_every_write_bearing_plan
+2 failed, 17 passed in 1.98s
+rc_w3=1
+== W4 replace the outside-the-block violation with a continue (the warning sign RESEARCH Pitfall 2 names) -- RED expected for the second-write leg
+........F..........                                                      [100%]
+=================================== FAILURES ===================================
+_______ test_a_second_write_outside_the_block_is_a_violation_not_a_skip ________
+
+    def test_a_second_write_outside_the_block_is_a_violation_not_a_skip():
+        """`cycle_block_bounds` returns only the FIRST maximal run, so a second
+        write past the end of that run must be a VIOLATION, never silently
+        skipped -- this arm is unreachable on the shipped corpus, where every
+        plan carries exactly one write, and is coded fail-closed for exactly
+        that reason."""
+        plan = plan_with_steps(
+            step(chip_test.OP_WRITE),
+            step(chip_test.OP_VERIFY),
+            step(chip_test.OP_SDP_LOCK),
+            step(chip_test.OP_WRITE),
+            step(chip_test.OP_VERIFY),
+        )
+        bounds = chip_test.cycle_block_bounds(plan.steps)
+        assert bounds == (0, 2), (
+            f"fixture setup error: expected bounds (0, 2), got {bounds}"
+        )
+    
+        violations = write_verify_violations(plan)
+>       assert violations == [
+            (3, chip_test.OP_WRITE, "write sits outside the cycle block")
+        ], violations
+E       AssertionError: []
+E       assert [] == [(3, 'write',...cycle block')]
+E         
+E         Right contains one more item: (3, 'write', 'write sits outside the cycle block')
+E         Use -v to get more diff
+
+tests/test_derive_plan_structural_sentinel.py:396: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_second_write_outside_the_block_is_a_violation_not_a_skip
+1 failed, 18 passed in 4.15s
+rc_w4=1
+== RESTORED clean run of the unmodified module
+...................                                                      [100%]
+19 passed in 3.09s
+rc_clean=0

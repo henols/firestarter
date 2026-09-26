@@ -23,7 +23,7 @@ provides:
   - "src/proms/* + src/hardware_operations.cpp is grep-zero for old shield-net names outside comment-only lines"
   - "GATE-1.7 ALIAS-03 preservation: post-Wave-2 .hex byte-identical to Wave 0 baseline for all 3 AVR envs"
 affects:
-  - "33-03 (Wave 3 — remaining call-sites in src/boards/, include/rurp_*_utils.h, test/native/avr/; final task atomically deletes rurp_shield.h:25-94 old #define block per D-06)"
+  - "33-03 (Wave 3 — remaining call-sites in src/boards/, include/rurp_*_utils.h, test/native/avr/; final task atomically deletes rurp_shield.h:25-89 old #define block per D-06)"
 
 # Tech tracking
 tech-stack:
@@ -48,7 +48,7 @@ key-files:
 key-decisions:
   - "Per-file include strategy — files that already include rurp_shield.h add rurp_pinout.h directly after it (eprom, memory, flash_intel, flash_utils, hardware_operations); files that do NOT include rurp_shield.h directly (flash_type_4, eeprom_28c — they get bus access via flash_utils.h transitive chain) add rurp_pinout.h adjacent to operation_utils.h. Avoids relying on a transitive resolution path that does not yet exist (rurp_shield.h → rurp_pinout.h transitive include lands in Wave 3 final task per D-06)."
   - "Comment refresh handled deliberately per file, NOT sed-bulk. memory.cpp:142-144 aliasing comment (Pitfall 1 documentation), flash_intel.cpp:34/:80 caller-asserted-precondition comments, eprom.cpp:145/:148/:276/:279/:317 (eprom_internal_set_control_register function-header), and the load-bearing comment in eprom.cpp:279 (assumes CTRL_VPP_VPE_DROP_ENABLE isn't set) all refreshed to canonical names while their surrounding code renamed."
-  - "CONTROL_REGISTER untouched in hardware_operations.cpp:27/:30 — 74HC573 latch selector lives at rurp_shield.h:108 in a different semantic layer than the CTRL_* control-register bits, per RESEARCH §Anti-Patterns and D-03 alias-scoping."
+  - "CONTROL_REGISTER untouched in hardware_operations.cpp:27/:30 — 74HC573 latch selector lives at rurp_shield.h:103 in a different semantic layer than the CTRL_* control-register bits, per RESEARCH §Anti-Patterns and D-03 alias-scoping."
 
 requirements-completed:
   - ALIAS-02
@@ -82,7 +82,7 @@ completed: 2026-05-25
 - **hardware_operations.cpp — 2 call-sites migrated.** `hw_read_voltage` VPP/VPE branch: :27 `REGULATOR | VPE_TO_VPP` → `CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_VPE_DROP_ENABLE` (CMD_READ_VPP path); :30 `REGULATOR` → `CTRL_VPP_REGULATOR_ENABLE` (CMD_READ_VPE path). `CONTROL_REGISTER` (74HC573 latch selector) preserved — different semantic layer than CTRL_* per D-03.
 - **All 3 AVR envs build clean post-wave.** `pio run -e uno -e uno328pb -e leonardo` SUCCESS for every commit in the wave (Tasks 1, 2, 3).
 - **pio test -e native 20/20 PASS** at every wave checkpoint (per-task + post-wave). Native build path does NOT set `-D HARDWARE_REVISION`, so this exercises the legacy `#ifndef HARDWARE_REVISION` path including the load-bearing `CTRL_ADDRESS_LINE_16 == CTRL_VPP_VPE_DROP_ENABLE` macro-alias-as-macro aliasing (Pitfall 1). All dispatch + message tests green.
-- **GATE-1.7 ALIAS-03 cmp byte-identical preserved for all 3 envs end-of-wave.** Post-Wave-2 .hex byte-identical to the Phase 33 Plan 00 baselines: `cmp` exit 0 for `uno.hex` / `uno328pb.hex` / `leonardo.hex` against `.planning/v1.7/phase-33-baseline-hex/<env>.hex`. The `#define` expansion produces identical token streams under both the new `CTRL_*` names (defined in `rurp_pinout.h`) and the old shield-net names (still defined unchanged in `rurp_shield.h:25-94`); since both headers compile-time-expand to the same hex values, no machine code drift is introduced.
+- **GATE-1.7 ALIAS-03 cmp byte-identical preserved for all 3 envs end-of-wave.** Post-Wave-2 .hex byte-identical to the Phase 33 Plan 00 baselines: `cmp` exit 0 for `uno.hex` / `uno328pb.hex` / `leonardo.hex` against `.planning/v1.7/phase-33-baseline-hex/<env>.hex`. The `#define` expansion produces identical token streams under both the new `CTRL_*` names (defined in `rurp_pinout.h`) and the old shield-net names (still defined unchanged in `rurp_shield.h:25-89`); since both headers compile-time-expand to the same hex values, no machine code drift is introduced.
 
 ## check-migration.sh post-Wave-2 state
 
@@ -94,7 +94,7 @@ FAIL: Assertion 1 — found 33 non-comment references to the 8 old shield-net na
 exit=1
 ```
 
-**This FAIL is expected at the Wave 2 boundary** (per Plan 33-00 SUMMARY documented gate semantics). Hit count progression: Wave 0 baseline ≥86 hits → Wave 1 71 hits → **Wave 2 33 hits (−38 from Wave 1)** → Wave 3 0 hits (after final-task deletion of rurp_shield.h:25-94 block).
+**This FAIL is expected at the Wave 2 boundary** (per Plan 33-00 SUMMARY documented gate semantics). Hit count progression: Wave 0 baseline ≥86 hits → Wave 1 71 hits → **Wave 2 33 hits (−38 from Wave 1)** → Wave 3 0 hits (after final-task deletion of rurp_shield.h:25-89 block).
 
 Where the 33 remaining hits live (all Wave 3 targets — exactly as documented in 33-01 SUMMARY "Next Plan Readiness"):
 
@@ -117,7 +117,7 @@ Where the 33 remaining hits live (all Wave 3 targets — exactly as documented i
 | leonardo  | 68876 B            | 68876 B                | byte-identical |
 | **total** | **194347 B**       | **194347 B**           | Δ = 0 B |
 
-Wave 2 expectation honored: `#define` expansion of the new `CTRL_*` names emits the same hex values as the unchanged `rurp_shield.h:25-94` old `#define`s, so AVR-toolchain output is byte-identical across the rename.
+Wave 2 expectation honored: `#define` expansion of the new `CTRL_*` names emits the same hex values as the unchanged `rurp_shield.h:25-89` old `#define`s, so AVR-toolchain output is byte-identical across the rename.
 
 ## Task Commits
 
@@ -154,7 +154,7 @@ Wave 2 expectation honored: `#define` expansion of the new `CTRL_*` names emits 
 
 - **Per-file `#include "rurp_pinout.h"` strategy adopted directly.** rurp_shield.h does NOT yet transitively include rurp_pinout.h (that lands in Wave 3 Task 4's atomic edit alongside the :25-94 deletion). To avoid relying on a transitive resolution path that does not yet exist, every .cpp that consumes a new `CTRL_*` name adds `#include "rurp_pinout.h"` directly. Files that already include rurp_shield.h add the new include adjacent to it (eprom, memory, flash_intel, flash_utils, hardware_operations); files that get bus access via flash_utils.h transitive chain (flash_type_4, eeprom_28c) add the include adjacent to operation_utils.h. No build error surfaced — the strategy was confirmed correct on first build of every task.
 - **Comment-refresh discipline matched rename per-file.** Six comment blocks across 4 files refreshed: memory.cpp:142-144 (Pitfall 1 aliasing documentation); flash_intel.cpp:34 + :80 (caller-asserted precondition); eprom.cpp:145, :148, :276, :279, :317 (function-header for eprom_internal_set_control_register + load-bearing "assumes VPE_TO_VPP isn't set" inline). Comment refresh kept literal CTRL_* names that match the renamed code immediately above them, so future grep for old names returns clean.
-- **CONTROL_REGISTER preserved verbatim in hardware_operations.cpp:27/:30.** Per D-03 + RESEARCH §Anti-Patterns, `CONTROL_REGISTER` is the 74HC573 latch selector (defined at rurp_shield.h:108 alongside `LEAST_SIGNIFICANT_BYTE` / `MOST_SIGNIFICANT_BYTE` / `OUTPUT_ENABLE` / `CHIP_ENABLE`), NOT a control-register bit alias — it lives in a different semantic layer than the `CTRL_*` namespace and is out of scope for Phase 33.
+- **CONTROL_REGISTER preserved verbatim in hardware_operations.cpp:27/:30.** Per D-03 + RESEARCH §Anti-Patterns, `CONTROL_REGISTER` is the 74HC573 latch selector (defined at rurp_shield.h:103 alongside `LEAST_SIGNIFICANT_BYTE` / `MOST_SIGNIFICANT_BYTE` / `OUTPUT_ENABLE` / `CHIP_ENABLE`), NOT a control-register bit alias — it lives in a different semantic layer than the `CTRL_*` namespace and is out of scope for Phase 33.
 
 ## Deviations from Plan
 
@@ -178,7 +178,7 @@ None — no external service configuration required. All artifacts land in the f
 - **Plan 33-03 (Wave 3 — remaining call-sites in src/boards/, include/rurp_*_utils.h, test/native/avr/) can begin immediately.** Substrate is ready:
   - 33 remaining old-name references concentrated in 5 known files (all Wave 3 targets per RESEARCH inventory).
   - `rurp_pinout.h` from Wave 1 declares every canonical CTRL_*/PIN_* name Wave 3 will consume.
-  - `rurp_shield.h:25-94` old #defines still present for AVR build resolution until Wave 3's final atomic task deletes them.
+  - `rurp_shield.h:25-89` old #defines still present for AVR build resolution until Wave 3's final atomic task deletes them.
 - **GATE-1.7 ALIAS-03 anchor preserved through end of Wave 2.** Wave 2 .hex byte-identical for all 3 envs; the cmp gate continues to be the load-bearing constraint for the remaining waves.
 - **No blockers.** firestarter submodule is on `v1.7-shield-investigation`; meta-repo is on `v1.7-shield-investigation`; .hex baselines unchanged.
 
@@ -189,7 +189,7 @@ None — no external service configuration required. All artifacts land in the f
   2. Rename `include/rurp_register_utils.h` settle-check at `case CONTROL_REGISTER` (`P1_VPP_ENABLE` → `CTRL_VPP_P1_ENABLE`).
   3. Rename `src/boards/rurp_common.cpp` `analogRead(VOLTAGE_MEASURE_PIN)` at :58 → `PIN_VPP_VOLTAGE_ADC`.
   4. Rename `test/native/avr/test_flash_intel_vpp/test_flash_intel_vpp.cpp` 7 references (mocks + SAF-04 assertions). Pitfall 6 — must include because native build does NOT set `-D HARDWARE_REVISION`.
-  5. **Atomic D-06 enforcement**: delete `rurp_shield.h:25-94` old-#define block + add `#include "rurp_pinout.h"` at the top of `rurp_shield.h` (after the existing `#include "rurp_types.h"` at :19). At this point: (a) check-migration.sh Assertion 1 returns 0 hits; (b) Assertion 3 cmp byte-identical preserved; (c) project posture honored end-to-end.
+  5. **Atomic D-06 enforcement**: delete `rurp_shield.h:25-89` old-#define block + add `#include "rurp_pinout.h"` at the top of `rurp_shield.h` (after the existing `#include "rurp_types.h"` at :19). At this point: (a) check-migration.sh Assertion 1 returns 0 hits; (b) Assertion 3 cmp byte-identical preserved; (c) project posture honored end-to-end.
 
 ## Self-Check: PASSED
 

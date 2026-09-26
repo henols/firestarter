@@ -1,0 +1,46 @@
+== harness: clean git worktrees at HEAD (d1eba7b9) for meta/firestarter/firestarter_app, fresh wiki clone ==
+-- LEGACY-01 step body, extracted verbatim from committed .github/workflows/wiki-check.yml --
+          if grep -rInE 'henols/firestarter(_app)?/issues' meta firestarter firestarter_app wiki-clone --exclude-dir=.git --exclude-dir=.planning; then
+            echo "FAIL: a page links to an issue tracker that is disabled"
+            exit 1
+          fi
+          echo "OK: no page links to a disabled issue tracker"
+
+
+== 1 green as the trees stand
+OK: no page links to a disabled issue tracker
+rc=0
+== 2 red on a planted firmware tracker link
+wiki-clone/Home.md:57:x https://github.com/henols/firestarter/issues
+FAIL: a page links to an issue tracker that is disabled
+rc=1
+== 3 red on a planted host tracker link
+wiki-clone/Home.md:57:x https://github.com/henols/firestarter_app/issues
+FAIL: a page links to an issue tracker that is disabled
+rc=1
+== 4 green again after removal
+OK: no page links to a disabled issue tracker
+rc=0
+== 5 reach control, matches without the .planning exclusion
+45
+== 6 scratch wiki clone clean
+0
+
+== Part B: historical hazard confirmation (was the pre-fix wording a real self-match?) ==
+-- reconstructed OLD step body (never committed -- existed only transiently before bd188bac) --
+          if grep -rInE 'henols/firestarter(_app)?/issues' meta firestarter firestarter_app wiki-clone --exclude-dir=.git --exclude-dir=.planning; then
+            echo "FAIL: a page links to an issue tracker that is disabled"
+            exit 1
+          fi
+          echo "OK: no page links to henols/firestarter/issues or henols/firestarter_app/issues"
+
+
+-- scan set: same clean worktrees as Part A, except the copy of wiki-check.yml in this
+   scratch meta carries the OLD wording at the same line the shipped file carries the
+   fix -- confirms whether that wording, if it had shipped, would self-match its own scan --
+meta/.github/workflows/wiki-check.yml:105:          echo "OK: no page links to henols/firestarter/issues or henols/firestarter_app/issues"
+FAIL: a page links to an issue tracker that is disabled
+hazard_rc=1 (historical confirmation only -- not part of the required 2-green/2-red core sequence above)
+
+== 7 reach-control matches lying outside .planning/ (should be 0 -- exclusion cost stays visible, not silent)
+0

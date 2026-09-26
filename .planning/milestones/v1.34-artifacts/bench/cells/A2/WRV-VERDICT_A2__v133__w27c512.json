@@ -1,0 +1,23 @@
+{
+  "app_verdict_unjudged": 1,
+  "commands": [],
+  "distinct_read_shas": 3,
+  "expect_size": 65536,
+  "n3_disagreement": true,
+  "position_id": "A2__v133__w27c512",
+  "read_count": 3,
+  "read_files": [
+    "/workspaces/.planning/v1.34/bench/cells/A2/reads/A2__v133__w27c512/run_01.bin",
+    "/workspaces/.planning/v1.34/bench/cells/A2/reads/A2__v133__w27c512/run_02.bin",
+    "/workspaces/.planning/v1.34/bench/cells/A2/reads/A2__v133__w27c512/run_03.bin"
+  ],
+  "read_shas": [
+    "15b679d59968194e4b85005349aaa26a0a71ab923470a48a13b7119ef701b914",
+    "928792dc13901907bb5dec7163995ff9555a99c988ce70cdd3a71dde41dae48d",
+    "250a2a732c0474452385e3650bf70efa25c87ecdb36d1cd199bbc942cbbcd11a"
+  ],
+  "sha_verdict_judged": "disagreement",
+  "size_violations": [],
+  "verdict_disagreement": false,
+  "written_sha": "36b87c396aad25f27599290344360e8b501457ac8d5432de29411705257f558a"
+}

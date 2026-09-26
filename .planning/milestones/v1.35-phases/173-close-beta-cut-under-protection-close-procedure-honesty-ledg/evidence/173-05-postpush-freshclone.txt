@@ -1,0 +1,27 @@
+fresh clone HEAD: d7073f64c81e5206372d81072623369499429377
+md files: 12
+OK: 11 pages, all reachable from Home.md by some link path, all internal links resolve, all filenames legal, and all listed in _Sidebar.md.
+rc=0
+OK: leg1 stamp-present 5 matched/0 missing, leg2 claims-resolve 1 regions/39 claims/5 unchecked, leg3 stamp-freshness 6 checked/0 stale.
+rc=0
+OK: 12 protocols compared across firmware doc, host tool and firmware.
+rc=0
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+rc=0
+Programming-Protocols :: *Relocated from `firestarter/doc/PROTOCOLS.md` in `firestarter` at `a218b4f5273d14f0abd796b21ac104792de01603`. Moved intact and not edited since; not re-verified against the code.*
+Shield-Revisions :: *Relocated from `firestarter/doc/SHIELD-REVISIONS.md` in `firestarter` at `a218b4f5273d14f0abd796b21ac104792de01603`, then trimmed 2026-08-31 on the wiki; not re-verified against the code.*
+Install-Beta :: *Relocated from `firestarter_app/doc/beta-testing-install.md` in `firestarter_app` at `d56424e1979edf7245cffb9ec3111c0469f5b23f`, then rewritten 2026-08-31 on the wiki; not re-verified against the code.*
+Testing-Chips :: *Relocated from `firestarter_app/doc/community-validation.md` in `firestarter_app` at `d56424e1979edf7245cffb9ec3111c0469f5b23f`, then rewritten 2026-08-31 on the wiki; not re-verified against the code.*
+Lockable-PROMs :: *Relocated from `firestarter_app/doc/lockable-proms.md` in `firestarter_app` at `d56424e1979edf7245cffb9ec3111c0469f5b23f`, then trimmed 2026-08-31 on the wiki; not re-verified against the code.*
+Shell-Completion :: *Relocated from `firestarter_app/autocomplete.md` in `firestarter_app` at `d56424e1979edf7245cffb9ec3111c0469f5b23f`. Moved intact and not edited since; not re-verified against the code.*
+
+pushed SHA (from push transcript): d7073f64c81e5206372d81072623369499429377
+fresh clone SHA matches pushed SHA: yes
+
+The footers are now the milestone's central non-claim in the place the reader is, generated
+from tools/wiki/MIGRATION-TABLE.md rather than authored, and guarded by
+tools/wiki/provenance_footers.py, a checker that has been seen to fail (plan 173-01's five
+planted failures and its RED runs against the HEAD table and a footer-free clone). That
+checker is not yet running in CI: plan 173-06 registers it as a wiki-check.yml leg, and
+until that registration lands the guard on this surface is manual, the same shape as Phase
+172's NON-CLAIM 3, where Wiki check was registered and had never run.

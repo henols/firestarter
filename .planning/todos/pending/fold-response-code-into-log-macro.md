@@ -46,7 +46,7 @@ from ID band not macro name; codegen emits the band constants and asserts
 - 29 call sites, all under `src/proms/` — all mechanical (the nested blocks
   around the log calls are `_b[]` scope, not conditionals).
 - Do **not** touch the 16 sites outside `src/proms/`. Those signal failure by
-  return value, and `_check_response()` (`src/operation_utils.cpp:322-343`)
+  return value, and `_check_response()` (`src/operation_utils.cpp:330-351`)
   resets `response_code` to OK after every callback, so a store there is dead.
 - `messages.h` is codegen-generated — band constants go in
   `tools/catalog/codegen.py` + `messages.toml`, never hand-edited.

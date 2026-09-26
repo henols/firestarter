@@ -1,0 +1,39 @@
+== 1 artifact census
+generated_by=tools/measure_plan_shapes.py
+rows=746
+distinct_part_numbers=677
+plans=1354
+distinct_shape_families=8
+total_steps=16248
+unsupported_steps=9304
+aggregate_keys=6
+families=8
+chips=677
+family_count_sum=677
+orphan_chips=0
+chips_sorted=True
+families_sorted=True
+rc=0
+== 2 check clean -- GREEN expected
+OK: /workspaces/firestarter_app/tests/fixtures/plan_shapes.json matches a fresh regeneration
+rc_check_clean=0
+== 3 planted chip-count-skew -- RED expected
+ERROR: derivation validation failed: family 'noid-bcpre-eraseNA-sdpNA' declares chip_count 89, but 90 chips point at it
+rc_f1=1
+== 4 planted orphan-family -- RED expected
+ERROR: derivation validation failed: chip '2516' names family 'not-a-real-family-id', which is not a key of shape_families
+rc_f2=1
+== 5 planted empty-chips -- RED expected
+ERROR: derivation validation failed: the chips map is empty
+rc_f3=1
+== 6 check against a nonexistent target -- RED expected
+DRIFT: target does not exist: /tmp/tmp.Ggk6ONyVOV/nope.json
+rc_f4=1
+== 7 check against a one-byte-altered copy -- RED expected
+DRIFT: /tmp/tmp.Ggk6ONyVOV/altered.json differs from a fresh regeneration (38647 bytes committed vs 38646 bytes regenerated)
+rc_f5=1
+artifact_unchanged=yes
+== 8 the drift test module
+......                                                                   [100%]
+6 passed in 5.56s
+rc_drift=0

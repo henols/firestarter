@@ -1,0 +1,24 @@
+[
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "vpp"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-03 single reading for position 2, timeout -s INT 4 wrapper elided -- 12400 mV, in band, unchanged from position 1 (pot untouched, per Task 4)"
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "dev",
+      "test",
+      "W27E512"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-05, clean completed run (timeout 856 wrapper + FIRESTARTER_CONFIG_DIR inline elided): exit 0, wall-clock 213s (ceiling 856s, measured from position 1), banner 6 of 6 ran, all steps OK -- DIVERGES from the pre-declared stuck-erase-bit disposition"
+  }
+]

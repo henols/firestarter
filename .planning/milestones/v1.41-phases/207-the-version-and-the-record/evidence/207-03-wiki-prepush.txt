@@ -1,0 +1,315 @@
+207-03 Pre-Push Evidence — everything the operator reviewed before approving
+Generated: 2026-09-23
+Wiki clone: /workspaces/firestarter.wiki (branch master)
+
+=== a. Outgoing commit list (git log --format='%H %an %ad %s' --date=short origin/master..HEAD) ===
+
+880a59b1588f8a52ebc89caad12d452d86428369 Henrik Olsson 2026-09-23 Say which CLI and firmware versions go together when installing and testing
+6894ed3a5ebcf8a2c9a94d684ede19d861707cf0 Henrik Olsson 2026-09-23 Add Writing and Verifying: write, verify, blank and erase -b from 3.1.0b1
+39f46e4ff2479d155943de9259e8d9ab43913076 Henrik Olsson 2026-09-23 Document the 3.1.0b1 compatibility break between the CLI and the firmware
+f967398fdf653f4ee77f7ad07b37a416927763be Henrik Olsson 2026-09-15 Repoint the tracker at henols/firestarter and fix the firmware repo name
+
+f967398fdf653f4ee77f7ad07b37a416927763be — Repoint the tracker at henols/firestarter and fix the firmware repo name — written 2026-09-15 and never published; it publishes in this push. It fixes the live Contributing page, which still sends firmware pull requests to the planning repository, and repoints Install-Beta and Testing-Chips from the old tracker alias.
+
+=== b. f967398's full diff (git show f967398) ===
+
+commit f967398fdf653f4ee77f7ad07b37a416927763be
+Author: Henrik Olsson <henols@gmail.se>
+Date:   Tue Sep 15 12:17:30 2026 +0000
+
+    Repoint the tracker at henols/firestarter and fix the firmware repo name
+
+    henols/firestarter_prom is the rename alias left behind when the meta repo
+    became henols/firestarter on 2026-09-14. It is slated to be dropped, so the
+    three pages that sent readers to it are repointed.
+
+    Contributing.md carried a second, worse defect: it still called the firmware
+    repo `firestarter`, a name that now belongs to the meta repo. Readers following
+    "Firmware changes -> firestarter" would have opened a PR against the planning
+    repo. Corrected to firestarter_fw.
+
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+diff --git a/Contributing.md b/Contributing.md
+index fdb3226..efbe798 100644
+--- a/Contributing.md
++++ b/Contributing.md
+@@ -6,9 +6,9 @@
+
+ ## Where to report a problem
+
+-`firestarter_prom` is the only repository where GitHub Issues are maintained. GitHub
+-Issues are disabled on both `firestarter` and `firestarter_app`. Every bug report and
+-feature request goes to https://github.com/henols/firestarter_prom/issues, whichever
++`firestarter` is the only repository where GitHub Issues are maintained. GitHub
++Issues are disabled on both `firestarter_fw` and `firestarter_app`. Every bug report and
++feature request goes to https://github.com/henols/firestarter/issues, whichever
+ part of the system it concerns.
+
+ ## Where to open a pull request
+@@ -16,12 +16,12 @@ part of the system it concerns.
+ Submit pull requests to the repository containing the code you are changing.
+
+ 1. Application changes → `firestarter_app`
+-2. Firmware changes → `firestarter`
+-3. Project documentation or planning → `firestarter_prom`
++2. Firmware changes → `firestarter_fw`
++3. Project documentation or planning → `firestarter`
+
+ ## Changes that span repositories
+
+-1. Create a single issue in `firestarter_prom`.
++1. Create a single issue in `firestarter`.
+ 2. Reference that issue from each implementation PR.
+ 3. Keep design discussion in the issue.
+ 4. Keep implementation discussion in the relevant PRs.
+diff --git a/Install-Beta.md b/Install-Beta.md
+index feeddd7..cb3bda5 100644
+--- a/Install-Beta.md
++++ b/Install-Beta.md
+@@ -93,7 +93,7 @@ Open an issue and include:
+ - your operating system and version
+ - the output of `avrdude -v`
+
+-Report it at https://github.com/henols/firestarter_prom/issues — that is the
++Report it at https://github.com/henols/firestarter/issues — that is the
+ tracker for all three repositories, whichever part the problem is in.
+
+ ---
+diff --git a/Testing-Chips.md b/Testing-Chips.md
+index f9315e1..974f375 100644
+--- a/Testing-Chips.md
++++ b/Testing-Chips.md
+@@ -90,7 +90,7 @@ firestarter dev test <chip> --submit
+ ```
+
+ If you would rather do it by hand, or the submit step fails, open an issue at
+-https://github.com/henols/firestarter_prom/issues and include:
++https://github.com/henols/firestarter/issues and include:
+
+ - the chip's exact part number, and the manufacturer marking on the package
+ - everything the test printed, from the command down
+
+=== c. Plan 207-02's three commits (git show --stat --format='%h %s') ===
+
+39f46e4 Document the 3.1.0b1 compatibility break between the CLI and the firmware
+
+ Breaking-Changes.md | 67 +++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 62 insertions(+), 5 deletions(-)
+
+6894ed3 Add Writing and Verifying: write, verify, blank and erase -b from 3.1.0b1
+
+ Breaking-Changes.md      |   4 +-
+ Home.md                  |   1 +
+ Writing-and-Verifying.md | 128 +++++++++++++++++++++++++++++++++++++++++++++++
+ _Sidebar.md              |   1 +
+ 4 files changed, 133 insertions(+), 1 deletion(-)
+
+880a59b Say which CLI and firmware versions go together when installing and testing
+
+ Install-Beta.md  | 6 +++++-
+ Testing-Chips.md | 5 +++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+=== d. Home.md / _Sidebar.md diff (git diff origin/master..HEAD -- Home.md _Sidebar.md) ===
+
+diff --git a/Home.md b/Home.md
+index cc2d740..3079de6 100644
+--- a/Home.md
++++ b/Home.md
+@@ -41,6 +41,7 @@ read and write chips.
+
+ ## Reference
+
++- [Writing-and-Verifying](Writing-and-Verifying) — writing a chip, checking it afterwards, and what each exit code means
+ - [Programming-Protocols](Programming-Protocols) — how each protocol works and which chips it is for
+ - [Chip-Database-Fields](Chip-Database-Fields) — what every field in the chip database means
+ - [Pin-Maps](Pin-Maps) — pin maps for every chip family, and the DIP24 adapter
+diff --git a/_Sidebar.md b/_Sidebar.md
+index b5def93..63ab182 100644
+--- a/_Sidebar.md
++++ b/_Sidebar.md
+@@ -1,6 +1,7 @@
+ - [Home](Home)
+ - [Install Beta](Install-Beta)
+ - [Testing Chips](Testing-Chips)
++- [Writing and Verifying](Writing-and-Verifying)
+ - [Programming-Protocols](Programming-Protocols)
+ - [Chip-Database-Fields](Chip-Database-Fields)
+ - [Pin-Maps](Pin-Maps)
+
+=== e. Breaking-Changes.md diff (git diff origin/master..HEAD -- Breaking-Changes.md) ===
+
+diff --git a/Breaking-Changes.md b/Breaking-Changes.md
+index 27c38d9..1e09812 100644
+--- a/Breaking-Changes.md
++++ b/Breaking-Changes.md
+@@ -6,13 +6,11 @@
+
+ Changes that require action when upgrading. Newest first.
+
+-**The firmware and the CLI are upgraded together.** Every wire-protocol change
+-below breaks mixed versions — a new CLI cannot drive old firmware, and old
+-firmware cannot be driven by a new CLI. A mismatched pair fails with a timeout
+-or a decode error rather than misbehaving quietly.
++**Each entry says which mixed CLI and firmware pairings work.** When in doubt,
++upgrade the CLI first, then the firmware:
+
+ ```bash
+-pip install --pre firestarter && firestarter fw -i --pre
++pip install --pre --upgrade firestarter && firestarter fw -i --pre
+ ```
+
+ All of these are beta-only. Nothing is promoted to stable without operator
+@@ -20,6 +18,67 @@ authorization.
+
+ ---
+
++## 3.1.0b1 — verify and blank check run on the host
++
++From CLI and firmware `3.1.0b1`, `verify` and `blank` read the chip with an
++ordinary read and compare on your computer. The firmware's own verify command
++(command 6) and blank-check command (command 4) are removed, and those two
++numbers will never be reused for another command. The CLI now also runs the
++check that a chip is blank before a write, which the firmware used to run;
++`write -b` still means "skip that check", and the erase still runs. See
++[Writing-and-Verifying](Writing-and-Verifying) for the full description of
++`write -b`, `--verify`, `--full`, `verify`, `blank` and `erase -b`.
++
++### An older CLI on 3.1.0b1 firmware
++
++**An older CLI's `write` no longer refuses a non-blank UV EPROM.** Before
++`3.1.0b1` the firmware refused that write; from `3.1.0b1` the CLI refuses it,
++and an older CLI has no such check, so the write starts on a chip that is not
++blank and fails partway, leaving it partly programmed.
++
++| Command | What happens |
++|---|---|
++| `verify` | Refused before the chip is touched, printing `ERROR: Unknown command: 6`, exit 1. |
++| `blank` | Refused the same way, printing `ERROR: Unknown command: 4`, exit 1. |
++| `erase -b` | Erases, then does not check, and reports success on the erase alone (from the code; not yet observed on hardware). |
++| `dev test` | Its verify and blank-check steps are refused, so the report describes the version mismatch rather than the chip, and must not be submitted. |
++| `fw` and `fw -i` | Offer to install `3.1.0b1` firmware, which must not be accepted before the CLI is upgraded. |
++
++### A 3.1.0b1 CLI on older firmware
++
++`verify` and `blank` work. `write -b` onto a non-blank UV EPROM is refused by
++the older firmware, quoting `ERROR: Not blank, at 0x000000, v: 0x11` (the
++address and value vary); `dev test`'s UV slot writes are refused the same way.
++Plain `erase`, without `-b`, on electrically erasable parts that use the
++UV-EPROM programming path (the W27C512, for example) now also runs the older
++firmware's blank check after erasing, so an erase that leaves stray bits fails
++where it used to report success (from the code; not yet observed on hardware).
++The fix for every row: `firestarter fw -i`.
++
++### What to do (from 3.1.0b1)
++
++**Upgrade:** upgrade the CLI first:
++
++```bash
++pip install --pre --upgrade firestarter
++```
++
++Confirm `firestarter --version` prints `3.1.0b1` or later, then flash the
++firmware:
++
++```bash
++firestarter fw -i
++```
++
++`firestarter fw` then shows the firmware version. To stay on an older CLI, pin
++the firmware instead:
++
++```bash
++firestarter fw -i --firmware-version 3.0.0b35
++```
++
++---
++
+ ## v1.32 — chip database
+
+ ### The database stores numbers, not unit-suffixed strings
+
+=== f. Code-derived statements ("not yet observed on hardware") ===
+
+These rows come from reading the code, not from a bench observation. The operator can strike, reword or keep each.
+
+/workspaces/firestarter.wiki/Breaking-Changes.md:43:| `erase -b` | Erases, then does not check, and reports success on the erase alone (from the code; not yet observed on hardware). |
+/workspaces/firestarter.wiki/Breaking-Changes.md:55:where it used to report success (from the code; not yet observed on hardware).
+
+=== g. Writing-and-Verifying.md page list (grep -n -e '^## ') ===
+
+20:## Writing a chip (from 3.1.0b1)
+45:## Checking a write as it lands: --verify (from 3.1.0b1)
+73:## verify and blank (from 3.1.0b1)
+95:## Erasing with a check: erase -b (from 3.1.0b1)
+112:## Exit codes at a glance (from 3.1.0b1)
+125:## Mixed CLI and firmware versions (from 3.1.0b1)
+
+=== h. Export leg output ===
+
+$ W=/workspaces/firestarter.wiki; X=$(mktemp -d) && git -C $W fetch -q origin && \
+  [ "$(git -C $W rev-parse origin/master)" = "81229d8ed8a280b935cf84c4c74f4c97afcdf475" ] && \
+  git -C $W merge-base --is-ancestor origin/master HEAD && \
+  [ -z "$(git -C $W status --porcelain)" ] && \
+  git -C $W archive HEAD | tar -x -C "$X" && cd "$X" && \
+  [ -f Writing-and-Verifying.md ] && \
+  for p in 'Unknown command: 6' 'Unknown command: 4' 'Not blank, at 0x000000, v: 0x11' \
+    '## 3.1.0b1 — verify and blank check run on the host' 'pip install --pre --upgrade firestarter' \
+    '--verify' '--full' '--no-blank-check' 'Refusing write to'; do
+    /usr/bin/grep -qF -e "$p" *.md || { echo "MISSING: $p"; exit 1; }
+  done && \
+  ! /usr/bin/grep -nE 'Phase [0-9]{3}|\bD-[0-9]+\b|\.planning/|v1\.4[0-9]' *.md && \
+  bad=0 && for l in $(/usr/bin/grep -ohE '\]\([A-Za-z-]+\)' *.md | sed -E 's/^\]\(|\)$//g' | sort -u); do
+    [ -f "$l.md" ] || { echo "BROKEN: $l"; bad=1; }
+  done && [ "$bad" = "0" ] && \
+  [ "$(git -C $W rev-list --count origin/master..HEAD)" = "4" ] && \
+  git -C $W log --format=%H origin/master..HEAD | /usr/bin/grep -qx -e 'f967398fdf653f4ee77f7ad07b37a416927763be' && \
+  echo PASS-207-03-EXPORT
+PASS-207-03-EXPORT
+
+(Export directory: a fresh mktemp -d, discarded after the check; all content and link checks ran
+against the git archive HEAD export, not the working tree, so an uncommitted edit could not have
+made this pass.)
+
+=== i. Prohibition leg output ===
+
+$ export XDG_CACHE_HOME=/tmp/claude-gh-cache
+$ for r in firestarter_app firestarter_fw; do
+    git -C /workspaces/$r fetch -q origin beta main || { echo "FETCH FAIL $r"; exit 1; }
+    S=$(git -C /workspaces/$r log -1 --format=%H --fixed-strings --grep='chore(207-01): bump' HEAD)
+    [ -n "$S" ] || { echo "NO BUMP SHA $r"; exit 1; }
+    for b in beta main; do
+      git -C /workspaces/$r rev-parse -q --verify "origin/$b" >/dev/null || { echo "NO REF $r $b"; exit 1; }
+      if git -C /workspaces/$r merge-base --is-ancestor "$S" "origin/$b"; then echo "PUBLISHED $r $b"; exit 1; fi
+    done
+    [ -z "$(git -C /workspaces/$r ls-remote origin refs/heads/v1.41-verification-to-host 'refs/tags/3.1.0*')" ] || { echo "REMOTE REF $r"; exit 1; }
+    [ -z "$(git -C /workspaces/$r tag --contains "$S")" ] || { echo "TAG $r"; exit 1; }
+  done
+  G=$(git -C /workspaces log -1 --format=%H --fixed-strings --grep='chore(207-01): advance firestarter_fw and firestarter_app gitlinks' HEAD)
+  [ -n "$G" ] || { echo "NO GITLINK COMMIT"; exit 1; }
+  [ -z "$(git -C /workspaces tag --contains "$G")" ] || { echo "META TAG"; exit 1; }
+  [ -z "$(git -C /workspaces ls-remote origin refs/heads/v1.41-verification-to-host 'refs/tags/v1.41*')" ] || { echo "META REMOTE REF"; exit 1; }
+  [ -z "$(git -C /workspaces tag --list 'v1.41*')" ] || { echo "META LOCAL TAG"; exit 1; }
+  [ "$(gh api repos/henols/firestarter/releases --jq length)" = "0" ] || { echo "META RELEASE"; exit 1; }
+  [ ! -d /workspaces/.github/workflows ] || { echo "META WORKFLOWS"; exit 1; }
+  [ -z "$(git -C /workspaces/firestarter.wiki tag --list)" ] || { echo "WIKI TAG"; exit 1; }
+  echo PASS-207-PROHIBITION
+PASS-207-PROHIBITION
+
+(No PUBLISHED / REMOTE REF / TAG / META TAG / META REMOTE REF / META LOCAL TAG / META RELEASE /
+META WORKFLOWS / WIKI TAG / FETCH FAIL / NO REF / NO BUMP SHA / NO GITLINK COMMIT lines printed.
+`gh api repos/henols/firestarter/releases --jq length` returned 0. No `v1.41*` tag exists locally
+or remotely in the meta repo. `/workspaces/.github/workflows` does not exist. The wiki clone has no
+tags. Neither sub-repo's 207-01 bump commit is an ancestor of its own origin/beta or origin/main.)
+
+=== j. Push target and exact command ===
+
+Remote:       https://github.com/henols/firestarter.wiki.git
+Branch:       master
+Fast-forward: from 81229d8ed8a280b935cf84c4c74f4c97afcdf475 to 880a59b1588f8a52ebc89caad12d452d86428369
+Command:      git -C /workspaces/firestarter.wiki push origin master
+
+APPROVAL_SHA: 880a59b1588f8a52ebc89caad12d452d86428369
+
+PREFLIGHT PASS

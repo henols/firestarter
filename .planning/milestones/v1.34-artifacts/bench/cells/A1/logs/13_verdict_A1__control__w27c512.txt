@@ -1,0 +1,4 @@
+Single control-arm read of the full 65536 B W27C512 device matched the written image byte-for-byte
+(judge_wrv.py sha_verdict_judged=match, read_count=1, distinct_read_shas=1). The write completed
+under the 165 s W27C512 ceiling with wall-clock 41.305 s (app-reported 37.48 s), no re-seat needed,
+no size violations, app's own read exit code (0) agreed with the judged SHA verdict.

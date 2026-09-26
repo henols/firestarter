@@ -1,0 +1,135 @@
+=== 172-09 Task 3: closing sweep — each requirement paired with the evidence that discharges it ===
+
+Written BEFORE the REQUIREMENTS.md checkboxes were flipped, so the marks follow the evidence rather
+than the other way round. This project has previously seen executors mark a multi-plan requirement
+complete ahead of its evidence; this file exists so that cannot happen quietly. Every file cited
+below was confirmed to exist and be non-empty before any box was ticked.
+
+-------------------------------------------------------------------------------
+POLICY-01 — one tracker, stated plainly; the other two repositories link rather than restate
+-------------------------------------------------------------------------------
+  evidence/172-01-wiki-links-postpush-freshclone.txt
+      The canonical Contributing page live on the wiki and reachable, verified from a FRESH clone
+      rather than the working copy the phase edited.
+  evidence/172-04-pointer-and-trim.txt
+      One sha256 shared by all three .github/CONTRIBUTING.md pointer files, plus the three README
+      tracker sections each trimmed to a single link.
+  evidence/172-08-post-merge-surfaces.txt
+      All three pointers readable at ?ref=main — a pointer on a feature branch points nowhere.
+  evidence/172-09-full-suite-final.txt
+      `OK: 11 pages, all reachable from Home.md` against a fresh clone at the phase's final state.
+  VERDICT: complete.
+
+-------------------------------------------------------------------------------
+POLICY-02 — three template kinds plus the chooser config, schema-valid and live
+-------------------------------------------------------------------------------
+  evidence/172-02-issue-forms-validation.txt
+      The two YAML issue forms schema-validated, plus the Markdown dev-test template and config.yml.
+  evidence/172-08-post-merge-surfaces.txt
+      `templates=bug-report.yml,config.yml,dev-test-report.md,feature-request.yml` read from
+      contents/.github/ISSUE_TEMPLATE?ref=main — the ONLY path GitHub builds the chooser from.
+  evidence/172-08-pre-merge-baseline.txt
+      The same path returned 404 before the merge, so the read above is a paired observation rather
+      than a coincidence.
+  evidence/172-08-prefill-check.txt
+      D-07's open question closed PREFILLED: templates did not cost the browser tier of
+      `dev test --submit` its prefill, so blank_issues_enabled: true is doing its job.
+  VERDICT: complete.
+
+-------------------------------------------------------------------------------
+POLICY-03 — three enforcing rulesets, identical, four clauses
+-------------------------------------------------------------------------------
+  evidence/172-06-ruleset-readback.txt
+      All three `enforcement: active`, normalised three-way equality CLEAN, order-insensitivity
+      control run, and id 4998759 proven AMENDED rather than recreated (creation date preserved).
+  evidence/172-05-ruleset-4998759-pre-delete.json
+      The record of what was replaced, captured before anything could destroy it.
+  evidence/172-08-post-merge-surfaces.txt
+      All three still 1:active with unchanged ids and bypass lists AFTER three merges, which is
+      what proves the merges went through the route rather than around it.
+  evidence/172-08-merge-record.txt
+      Three merge commits with two parents each, and current_user_can_bypass=never throughout.
+  VERDICT: complete — for the four clauses D-11 scopes it to, and no more. See NON-CLAIM 2.
+
+-------------------------------------------------------------------------------
+LEGACY-01 — zero dead tracker links outside .planning/, behind a registered guard
+-------------------------------------------------------------------------------
+  evidence/172-09-legacy01-final.txt
+      Zero matches across all four surfaces at the final state, scanned with GNU grep scoped to
+      tracked files, with the 46-match .planning/ exclusion recorded so the green is not vacuous.
+  evidence/172-03-legacy01-redgreen.txt
+      The guard demonstrated RED before being trusted — a check never seen to fail is not evidence.
+  evidence/172-08-post-merge-surfaces.txt
+      `workflow_registered=Catalog sync check,Wiki check` — the guard is REGISTERED with Actions,
+      not merely committed. It was inert before this phase, and that is the difference.
+  VERDICT: complete. See NON-CLAIM 3 for what "registered" does and does not yet prove.
+
+===============================================================================
+WHAT THIS PHASE DOES *NOT* CLAIM — recorded beside the marks so they absorb nothing
+===============================================================================
+
+NON-CLAIM 1 — There is no GitHub Actions bypass, and there never was one to prove.
+  Evidence: evidence/172-05-actions-bypass-probe.txt
+  This plan's Task 3 instruction asks for a row saying the Actions bypass is "configured and,
+  unless the throwaway-repo probe was run, unproven". That describes a state that never came to
+  exist, and recording it as written would be recording a fiction. What actually happened:
+  the Integration:15368 bypass was REJECTED at creation with HTTP 422 — "Actor GitHub Actions
+  integration must be part of the ruleset source or owner organization" — because all three
+  repositories are owned by the personal User account `henols`, which has no owner organization.
+  The planned probe was rendered moot: it was designed to test whether an established Integration
+  bypass covers GITHUB_TOKEN at push time, and the actor cannot be established at all.
+  D-09 was revised by the operator to DeployKey:null:always, which all three rulesets now carry.
+  All three repositories measure ZERO deploy keys, so that bypass grants nothing to anyone today —
+  making POLICY-03's "no direct push" literally true of every person AND every bot right now, a
+  stronger honesty position than the original design would have reached even had it validated.
+  RESIDUAL, named: actor_id: null means ANY deploy key, present or FUTURE — not a specific key.
+  Adding a deploy key to any of the three repositories later silently confers bypass on whatever
+  holds it, with no further ruleset change. Inert today only because the count is zero.
+
+NON-CLAIM 2 — gh#6's required status checks and required review-thread resolution are knowingly
+  not implemented, per D-11.
+  Both are declined deliberately, not overlooked. Status checks are the trap: pinning a check name
+  that never reports deadlocks that repository's `main` behind a check that can never go green, and
+  prom has only one registered workflow to pin. Review-thread resolution is a one-field addition
+  (`required_review_thread_resolution: true`) that changes nothing for a single maintainer but sits
+  outside POLICY-03's four clauses. Both are carried in the phase's Deferred Ideas and belong to
+  whoever revisits the ruleset next. Phase 173's ledger should state them as non-claims rather than
+  let them read as quietly delivered.
+
+NON-CLAIM 3 — the wiki guard is registered but has never run.
+  `Wiki check` has ZERO runs; its first fire is the weekly cron or a manual workflow_dispatch. Its
+  three legs were run green against fresh clones in plan 172-03 and again in
+  evidence/172-09-full-suite-final.txt, so the confidence is real, but "registered" and "observed
+  green in CI" are different facts and only the first is true today.
+
+NON-CLAIM 4 — the prefill check came back PREFILLED, so the plan's conditional third row is not
+  owed. No regression, no backlog item, and submit.py was not touched (blob 179af6ed identical
+  across the whole phase, per evidence/172-08-prefill-check.txt).
+
+===============================================================================
+FINDINGS CARRIED OUT OF THIS PHASE
+===============================================================================
+
+FINDING A — the rulesets BREAK the stable-release path in both sub-repositories. Filed as
+  .planning/todos/pending/2026-09-02-rulesets-block-stable-release-version-bump.md — a todo rather
+  than a 999.x ROADMAP row, because this plan is forbidden from writing ROADMAP.md and its verify
+  asserts as much; promoting it to a numbered backlog phase is a ROADMAP write for the orchestrator.
+  This is real, operator-accepted breakage, not something the bypass "handles":
+  both sub-repos auto-commit a version bump back onto `main` from CI using the default
+  GITHUB_TOKEN, and a DeployKey bypass does not cover a GITHUB_TOKEN-authenticated push.
+  `firestarter_app/.github/workflows/release.yml` and `firestarter/.github/workflows/build.yml`
+  both run stefanzweifel/git-auto-commit-action@v5 against `main`; in firestarter the
+  softprops/action-gh-release publish step depends on that push succeeding. The next stable release
+  in both repositories will fail at the version-bump step until the workflows are reworked.
+  evidence/172-05-actions-bypass-probe.txt required this be carried "for backlog filing"; it had
+  not been filed, and 999.46 discharges that.
+
+FINDING B — prom's default branch was already red before this phase's merges. The failing
+  Catalog sync check run sits on ad08a06, the first parent of the prom merge commit, dated
+  2026-08-31, belonging to pull request #34. Not caused here and not fixed here; recorded in
+  evidence/172-08-post-merge-surfaces.txt so no reader misattributes it.
+
+FINDING C — an unattributed rename in firestarter_app/tools/build_db.py, filed as Backlog 999.45,
+  which also carries a second pre-existing defect it exposed: the docstring citation
+  `build_db.py:594` has been stale by ~49 lines since the v1.33 Phase 154 comment sweep. Left
+  uncommitted in the working tree; product source, which this milestone may not touch.

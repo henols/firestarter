@@ -1,0 +1,13 @@
+RENAME-01 identity evidence
+Captured: 2026-09-13T13:59:50Z
+
+repos/henols/firestarter .id        = 810276812
+repos/henols/firestarter .full_name = henols/firestarter_fw
+repos/henols/firestarter_fw .id     = 810276812
+repos/henols/firestarter_prom .id   = 1232995399
+
+Rationale (D-12): the numeric id is asserted alongside the name because the name alone cannot
+distinguish a live rename redirect from a re-occupied slug — the old slug henols/firestarter still
+resolving to id 810276812 (the firmware repository) rather than to id 1232995399 (the meta
+repository, henols/firestarter_prom) is what proves the rename landed without milestone decision
+D-1 being violated.

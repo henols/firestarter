@@ -1,0 +1,10 @@
+dup_rows_for_that_id=2
+== LEG A1 duplicate ledger_id against PRE-FIX blob 5c0c7c9 -- RED expected, it exits 0 where non-zero is required
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc_prefix_dup=0
+== LEG A2 the same file against the FIXED checker -- GREEN expected, exit 2 naming the duplicate
+ERROR: duplicate MILESTONES.md row for ledger_id 'RK-174-01-p177-readback-gating'
+rc_fixed_dup=2
+== LEG A3 the real unmutated pair still binds
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc_fixed_clean=0

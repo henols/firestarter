@@ -1,0 +1,1 @@
+not applicable -- this is a control-arm arbitration row (control_rerun_for names the v133 position it arbitrates), not a primary sweep position; known_carried is a primary-row judgement. See CHIP__v133__w27e512's own known_carried for the full characterisation this row settles.

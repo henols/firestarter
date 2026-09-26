@@ -1,0 +1,31 @@
+== all sixteen, computed beside frozen, with ladder
+n_shapes=16
+at28c256-full-all-ok-sdp frozen=52fb759dc48c computed=52fb759dc48c ladder=('inconclusive -- needs N>=2 agreement (advisory)', '')
+gh20-at28c256-fail frozen=00e121446ceb computed=00e121446ceb ladder=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail')
+gh23-w27e257-fail frozen=7a89fcea856a computed=7a89fcea856a ladder=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail')
+gh28-m27c512-fail frozen=31547956e56b computed=31547956e56b ladder=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail')
+gh47-sst27sf512-pass frozen=f9dbc31dcd27 computed=f9dbc31dcd27 ladder=('inconclusive -- needs N>=2 agreement (advisory)', '')
+m27c512-full-all-ok frozen=6d3afbc52315 computed=6d3afbc52315 ladder=('suggests: candidate for community-reported (advisory)', 'community-reported')
+m27c512-full-blank-check-bad frozen=077a32d1a5c4 computed=077a32d1a5c4 ladder=('suggests: community-fail signal (advisory -- human triage required)', 'community-fail')
+m27c512-full-canonical-name frozen=776846bf2dc8 computed=776846bf2dc8 ladder=('suggests: candidate for community-reported (advisory)', 'community-reported')
+m27c512-full-comma-joined-name frozen=37ad34d39a19 computed=37ad34d39a19 ladder=('suggests: candidate for community-reported (advisory)', 'community-reported')
+m27c512-full-runs-1 frozen=e4838f7bb1d3 computed=e4838f7bb1d3 ladder=('suggests: candidate for community-reported (advisory)', 'community-reported')
+sst27sf512-full-all-ok frozen=4b3e52cab987 computed=4b3e52cab987 ladder=('suggests: candidate for community-reported (advisory)', 'community-reported')
+sst27sf512-six-step frozen=4dc282a5d596 computed=4dc282a5d596 ladder=('inconclusive -- needs N>=2 agreement (advisory)', '')
+sst27sf512-six-step-readback-gated frozen=60a031573aab computed=60a031573aab ladder=('suggests: candidate for community-reported (advisory)', 'community-reported')
+synthetic-arm4-empty-results frozen=8d6208d00be7 computed=8d6208d00be7 ladder=('no change suggested (advisory)', '')
+synthetic-arm4-no-ok frozen=f90dfe1a44f7 computed=f90dfe1a44f7 ladder=('no change suggested (advisory)', '')
+w27e257-full-all-ok frozen=22908e2954c3 computed=22908e2954c3 ladder=('suggests: candidate for community-reported (advisory)', 'community-reported')
+distinct_arms=4
+rc=0
+== snapshot check across sixteen
+OK: 16 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+== the invariance module, timed
+...........................................                              [100%]
+============================= slowest 3 durations ==============================
+0.09s call     tests/test_blast_radius_invariance.py::test_dedup_fingerprint_is_frozen[sst27sf512-full-all-ok-4b3e52cab987]
+0.08s call     tests/test_blast_radius_invariance.py::test_dedup_fingerprint_is_frozen[w27e257-full-all-ok-22908e2954c3]
+0.07s call     tests/test_blast_radius_invariance.py::test_dedup_fingerprint_is_frozen[m27c512-full-all-ok-6d3afbc52315]
+43 passed in 0.82s
+rc=0

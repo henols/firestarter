@@ -213,7 +213,7 @@ Per SCOPE BOUNDARY rule (only auto-fix issues directly caused by the current tas
   - These mirror latent type drifts that already existed in main.py's argparse dispatcher (argparse uses `type=float` for `--rev` but `set_hardware_config` declares `Optional[int]`; argparse builds `channel` as a plain `str` but `manage_firmware_update` declares `Literal[...]`). Mypy didn't flag main.py only because `args.<field>` is untyped via `argparse.Namespace`.
   - Pre-existing latent issues; not introduced by Phase 41-03. Watermark (44) still passes (41 errors total, 3 below).
   - Candidate for Phase 42 (ERR-02 mypy-strict territory) or a separate Phase 41-04 cleanup pass.
-- **`firestarter/ic_layout.py:396` `_generate_pin_names_for_display` TypeError** — every chip in `info` still crashes via this path; preserved verbatim per GATE-1.8b (same as 41-02).
+- **`firestarter/ic_layout.py:394` `_generate_pin_names_for_display` TypeError** — every chip in `info` still crashes via this path; preserved verbatim per GATE-1.8b (same as 41-02).
 - **`firestarter/serial_comm.py`, `eprom_operations.py`, `firmware.py`, `ic_layout.py`** — pre-existing mypy errors carried forward; gate passes.
 - **`tools/check_dispatch.py` + 6 other `tools/` files** — pre-existing ruff/format violations; not in CI scope.
 

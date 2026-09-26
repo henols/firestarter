@@ -1,0 +1,20 @@
+== 1 the hardened one-connect pin (WR-01, Phase 180, plan 180-04)
+anchor_count=1
+head_context_count=1
+head_connect_route_calls=1
+old_pin_at_head=GREEN
+new_pin_at_head=GREEN
+rc=0
+== 2 discrimination against the planted stray-connect mutant
+planted_context_count=1
+planted_connect_route_calls=2
+old_pin_at_planted=GREEN
+new_pin_at_planted=RED
+rc=0
+== 3 docstring scalar
+wr01_doc_names_hardened_claim=True
+rc=0
+== 4 the readback inventory module, full run
+............                                                             [100%]
+12 passed in 0.27s
+rc=0

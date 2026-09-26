@@ -1,0 +1,77 @@
+PHASE 192 BOUNDARY-AWARE BARE-SLUG SWEEP (D-01)
+================================================
+capture_date: 2026-09-14T04:52:04Z
+capture_commit: f04a19155cba94431c22e578927b3dffb9d50d03
+
+The naive sweep `grep -rn "henols/firestarter" | grep -v
+"firestarter_fw\|firestarter_app\|firestarter_prom"` is vacuous here:
+`henols/firestarter` is a substring of `henols/firestarter_fw`, so a
+line-filtering negative grep under-reports whenever the bare slug and one
+of the renamed forms appear on the same line. The pattern below is
+boundary-aware instead: it requires the bare slug be followed by a
+non-identifier character or the end of the line, so it cannot match
+`firestarter_fw`, `firestarter_app` or `firestarter_prom`, all of which
+extend the slug with `_`. `/usr/bin/grep` is used throughout because PATH
+`grep` in this devcontainer is ugrep and honours `.gitignore`, silently
+under-scanning.
+
+Reading 1: the bare-slug sweep over README.md
+-----------------------------------------------
+command: /usr/bin/grep -cE 'henols/firestarter($|[^_A-Za-z0-9])' /workspaces/README.md
+matching lines: (none)
+reading_1_total: 0
+
+Reading 2: the non-vacuity positive control
+--------------------------------------------
+command: /usr/bin/grep -nE 'henols/firestarter_(app|prom|fw)' /workspaces/README.md
+matching lines:
+  1:<p align="left"><img src="https://raw.githubusercontent.com/henols/firestarter_app/refs/heads/main/images/firestarter_logo.png" alt="Firestarter EPROM Programmer" width="200"></p>
+  17:**→ [The Firestarter wiki](https://github.com/henols/firestarter_prom/wiki)**
+  27:| [firestarter_fw](https://github.com/henols/firestarter_fw) | The AVR firmware that runs on the Arduino and drives the chip |
+  28:| [firestarter_app](https://github.com/henols/firestarter_app) | The `firestarter` command you run on your computer |
+  35:See the [Contributing](https://github.com/henols/firestarter_prom/wiki/Contributing) wiki page for where to report a problem and where to open a pull request.
+reading_2_control_total: 5
+
+A zero bare-slug reading paired with a zero control is a failed gate, not
+a pass -- it would mean the pattern itself matched nothing, which is
+indistinguishable from a clean tree without the control. Here the control
+returns its expected non-zero count (5), so the zero bare-slug reading
+above is a genuine clean result, not an artefact of a broken pattern or an
+empty scan.
+
+Untouched-neighbours control: lines 1, 17, 28 and 35 (the sites that must
+stay byte-identical) carry exactly 4 `_app`/`_prom` references:
+
+  command: awk 'NR==1||NR==17||NR==28||NR==35' /workspaces/README.md | /usr/bin/grep -cE 'henols/firestarter_(app|prom)'
+  result: 4
+
+Reading 3: the endpoint resolves without a redirect
+------------------------------------------------------
+command: gh api repos/henols/firestarter_fw --jq '.full_name'
+result: henols/firestarter_fw
+
+The repointed URL in README.md line 27 targets the repository's own
+`full_name` as returned live by the GitHub API, not a redirect target --
+proving the link resolves directly rather than through the rename
+redirect a bare `henols/firestarter` URL would still traverse.
+
+What this sweep deliberately does NOT cover
+---------------------------------------------
+- Everything under `.planning/milestones/` (D-5). That path is
+  historical-by-intent; a sweep proving it untouched is a diff, not a
+  grep, and is taken separately as `git status --porcelain -- .planning/milestones/`
+  after every task in this plan.
+- The record files under `.planning/phases/`, `.planning/notes/`,
+  `.planning/seeds/`, `.planning/todos/`, `.planning/debug/` and
+  `.planning/v1.3x/`. D-01's rule is: edit only what a reader could act on
+  today; everything else in `.planning/` is a record of what the
+  repository was called when the record was written, and repairing it
+  destroys that evidence.
+- `.planning/PROJECT.md`, which is deliberately untouched despite matching
+  the bare slug. Two of its lines show why the record/act-on test is the
+  right cut: line 1396 carries a live
+  `https://github.com/henols/firestarter/actions/runs/30722352902` link
+  that now resolves only through the redirect, and line 69 says the
+  destructive act in backlog item 999.9 is *claiming* `henols/firestarter`
+  -- correct exactly as written. Both are records of history, not live
+  references a reader could act on today, so neither is edited.

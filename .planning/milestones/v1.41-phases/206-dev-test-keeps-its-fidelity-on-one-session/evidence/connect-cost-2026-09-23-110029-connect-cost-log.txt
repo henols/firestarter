@@ -1,0 +1,23 @@
+# per-connect cost (one pinned port, restrict_to_port=True)
+port: /dev/ttyACM0  controller_identity: Ready
+samples_collected: 10
+sample_0: 2.746s
+sample_1: 2.611s
+sample_2: 2.619s
+sample_3: 2.607s
+sample_4: 2.613s
+sample_5: 2.705s
+sample_6: 2.612s
+sample_7: 2.611s
+sample_8: 2.613s
+sample_9: 2.616s
+min: 2.607s
+median: 2.613s
+max: 2.746s
+structural_floor: 2.500s
+remainder: 0.113s
+decode_failures: 0
+probe_timeouts: 0
+resync_body_truncated: 0
+resync_length_missing: 0
+timeouts: 0

@@ -1,0 +1,11 @@
+Milestone's first 262144 B write and read on silicon. Single control-arm read of the full
+262144 B W29C020 device matched the written image byte-for-byte (judge_wrv.py
+sha_verdict_judged=match, read_count=1, distinct_read_shas=1). Write completed under the 600 s
+absolute fallback ceiling (no derived ceiling existed yet for this position — it is the one that
+creates it) with wall-clock 97.937 s (app-reported 94.47s), no re-seat needed, no size violations,
+app's own read exit code (0) agreed with the judged SHA verdict. D-09 smoke check (id + standalone
+blank, outside the P-01..P-11 step list) preceded this write: chip-id matched, blank check reported
+not-blank at 0x000000 - a valid, expected addressability proof, not a failure. Derived D-08 W29C020
+ceiling for every later W29C020 position: 4x this write's wall-clock = 391.748 s. First 262144 B
+read wall-clock: 73.344 s (app-reported 69.86s) - a baseline for A2/A3-B2 to compare against, not a
+portable constant (the Uno moves 512 B chunks, the Leonardo 1024 B).

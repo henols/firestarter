@@ -1,0 +1,5 @@
+Reading flash memory ...
+Reading | ################################################## | 100% 0.32s
+Writing 32768 bytes to output file flash_readback.bin
+
+Avrdude done.  Thank you.

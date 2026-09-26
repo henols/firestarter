@@ -1,0 +1,133 @@
+EXISTING CLONE WORKAROUND (GATE-03)
+====================================
+capture_date: 2026-09-14T10:47:00Z
+capture_host_commit: eee9312e00f913f72714117e489ceda1547b3af7
+
+Captured by: `git clone`, `git checkout`, `git config`, `git submodule update`, `git -C firestarter
+<cmd>`, all run inside a directory created by `mktemp -d`. Observables read with `/usr/bin/grep`
+and shell builtins, never PATH `grep` (ugrep, honours .gitignore, silently under-scans).
+
+This transcript demonstrates D-16's second case: a clone that already exists in a maintained,
+post-rename state, then travels back to a pre-rename ref. `.git/config` records a `git config
+submodule.firestarter.url` override for `firestarter_fw` -- the standing state of a maintained
+clone, and what /workspaces itself carries -- and the question is whether that override survives
+and is honoured after checking out `v1.35`, whose own `.gitmodules` still names the old slug.
+
+====================================================================
+READING 1 -- the standing, post-rename state
+====================================================================
+capture_date: 2026-09-14T10:46:15Z
+
+Fresh temp directory, clone without submodules, left on the default branch:
+
+  $ git clone --no-recurse-submodules https://github.com/henols/firestarter_prom.git existing
+  Cloning into 'existing'...
+  $ git rev-parse HEAD
+  6b518c74831c6d3cf56513d80134684fbd673fef
+  $ git symbolic-ref --short HEAD
+  main
+
+meta_source: https://github.com/henols/firestarter_prom.git
+meta_ref: main
+meta_commit: 6b518c74831c6d3cf56513d80134684fbd673fef
+
+.gitmodules at this ref, verbatim:
+
+  [submodule "firestarter"]
+  	path = firestarter
+  	url = git@github.com:henols/firestarter_fw.git
+  [submodule "firestarter_app"]
+  	path = firestarter_app
+  	url = git@github.com:henols/firestarter_app.git
+
+gitmodules_url(firestarter): git@github.com:henols/firestarter_fw.git
+
+Set the override -- this is the maintained-clone standard state, matching /workspaces:
+
+  $ git config submodule.firestarter.url git@github.com:henols/firestarter_fw.git
+  $ git config --get submodule.firestarter.url
+  git@github.com:henols/firestarter_fw.git
+
+config_url(firestarter): git@github.com:henols/firestarter_fw.git
+
+At this point the two values agree: .gitmodules and the override both name firestarter_fw. Nothing
+observable distinguishes "the override is set" from "no override is needed" -- that indistinguishability
+is exactly why the divergence has to be forced by checking out an old ref.
+
+====================================================================
+READING 2 -- checkout v1.35, the divergence appears
+====================================================================
+capture_date: 2026-09-14T10:46:45Z
+
+  $ git checkout v1.35
+  HEAD is now at 6e84030b Merge pull request #56: v1.35 close (Phases 171-173 remainder, beta
+  lockstep cut)
+  $ git rev-parse HEAD
+  6e84030bb526da7bde603b94c4d899c0b80adc30
+
+meta_ref: v1.35
+meta_commit: 6e84030bb526da7bde603b94c4d899c0b80adc30
+
+.gitmodules at the new HEAD, verbatim:
+
+  [submodule "firestarter"]
+  	path = firestarter
+  	url = git@github.com:henols/firestarter.git
+  [submodule "firestarter_app"]
+  	path = firestarter_app
+  	url = git@github.com:henols/firestarter_app.git
+
+gitmodules_url(firestarter): git@github.com:henols/firestarter.git
+
+The override in .git/config, re-read after the checkout:
+
+  $ git config --get submodule.firestarter.url
+  git@github.com:henols/firestarter_fw.git
+
+config_url(firestarter): git@github.com:henols/firestarter_fw.git
+
+DIVERGENCE: .gitmodules at this HEAD names the OLD slug (git@github.com:henols/firestarter.git).
+.git/config's override still names the NEW one (git@github.com:henols/firestarter_fw.git). The
+checkout changed .gitmodules underneath the override and left the override itself untouched. When
+the two disagree, .git/config wins -- READING 1 already showed that when they agree, nothing
+observable changes and a reader looking only at that reading cannot tell whether the override was in
+force at all. This reading is the one that proves it was.
+
+clean_state_proof: firestarter/ is the empty placeholder directory from clone (0 entries).
+.git/modules/firestarter is absent.
+
+  $ git submodule update --init --depth 1 firestarter
+  Cloning into '/.../existing/firestarter'...
+  From github.com:henols/firestarter_fw
+   * branch            4f73c80cfa2915fb22812dde55b2923a86120c5f -> FETCH_HEAD
+  Submodule path 'firestarter': checked out '4f73c80cfa2915fb22812dde55b2923a86120c5f'
+
+Child directory confirmed non-empty before reading its remote (an empty firestarter/ would cause
+`git -C firestarter <cmd>` to silently walk up and answer for the parent repository instead):
+
+  $ [ -n "$(ls -A firestarter)" ] && echo non-empty
+  non-empty
+  $ git -C firestarter remote get-url origin
+  git@github.com:henols/firestarter_fw.git
+  $ git -C firestarter rev-parse HEAD
+  4f73c80cfa2915fb22812dde55b2923a86120c5f
+
+remote_origin(firestarter): git@github.com:henols/firestarter_fw.git
+firestarter_head: 4f73c80cfa2915fb22812dde55b2923a86120c5f
+head(firestarter): 4f73c80cfa2915fb22812dde55b2923a86120c5f
+
+The fetch followed .git/config, not the checked-out ref's .gitmodules -- despite the working tree
+declaring the old slug at HEAD, the child was cloned from firestarter_fw.
+
+====================================================================
+Working-clone integrity confirmation
+====================================================================
+The temp clone was created under a directory from `mktemp -d` and removed after this transcript was
+captured. No command in this file ran against /workspaces.
+
+  $ git -C /workspaces config --get submodule.firestarter.url
+  git@github.com:henols/firestarter_fw.git
+
+Same value as before this task ran.
+
+EXISTING CLONE WORKAROUND OK

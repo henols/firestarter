@@ -1,0 +1,214 @@
+Phase 181 Plan 08 -- Task 2 evidence: one write-refusal predicate, two folded defects (D-20, D-21)
+=============================================================================
+
+1. THE PREDICATE
+-----------------------------------------------------------------------------
+predicate_name=_write_step_was_refused
+predicate_call_sites=2
+call_site_1=firestarter.diagnostic_report._write_coverage_line (D-20's slots-remaining arithmetic)
+call_site_2=firestarter.diagnostic_report.build_db_diff (D-21's fourth-arm disqualifier)
+
+Unit-level proof (constructed StepResults, `chip_test.OP_WRITE`/`OP_WRITE_PARTIAL`,
+`VERDICT_SKIPPED`/`OK`/`BAD`/`NA`, and a non-write op / empty list):
+  _write_step_was_refused([R(OP_WRITE, SKIPPED)])          == True
+  _write_step_was_refused([R(OP_WRITE_PARTIAL, SKIPPED)])  == True
+  _write_step_was_refused([R(OP_WRITE, OK)])                == False
+  _write_step_was_refused([R(OP_WRITE, BAD)])                == False
+  _write_step_was_refused([R(OP_WRITE, NA)])                 == False
+  _write_step_was_refused([R(OP_READ, SKIPPED)])             == False
+  _write_step_was_refused([])                                == False
+
+2. D-20: THE SLOTS SENTENCE, BOTH BRANCHES
+-----------------------------------------------------------------------------
+slots_line_write_ran='slot 0xFF00 (256 bytes), 512 bits cleared this cycle; 255 of 256 slots left on this part'
+slots_line_write_refused='slot 0xFF00 (256 bytes), 512 bits cleared this cycle; 256 of 256 slots left on this part'
+
+Both computed against the SAME resolved target (slots_remaining=256,
+slots_total=256) -- the only difference is the result's own verdict (OK vs
+SKIPPED), proving the arithmetic reads the run's outcome, not a second
+target shape.
+
+resolver_slots_remaining_changed=false
+  `/usr/bin/grep -qF 'slots_remaining=slots_total - slot_index'
+  firestarter/chip_test.py` -- present, byte-unchanged.
+virgin_part_assertion_changed=false
+  `/usr/bin/grep -qF 'assert target.slots_remaining == target.slots_total'
+  tests/test_chip_test_cycle.py` -- present, byte-unchanged. A virgin
+  part's resolve-time count is still equal to its total; the subtraction
+  happens only at the disclosure point (`_write_coverage_line`), never at
+  resolution.
+
+3. D-21: THE LADDER GUARD
+-----------------------------------------------------------------------------
+ladder_skipped_write_proposes=no change suggested (advisory)   ladder_state=""
+ladder_na_write_proposes=suggests: candidate for community-reported (advisory)   ladder_state="community-reported"
+ladder_ok_write_proposes=suggests: candidate for community-reported (advisory)   ladder_state="community-reported"
+
+A SKIPPED write (applicable, did not run) withholds the candidate
+disposition and the community-reported ladder state; an NA write (never
+going to run) and a clean OK write are both unaffected -- confirming the
+disqualifier is keyed on SKIPPED, not merely on "not OK".
+
+4. THE 19-SHAPE DISPOSITION CENSUS
+-----------------------------------------------------------------------------
+shapes_measured=19
+shapes_with_disposition_flip=5
+
+Method: for each of the 19 frozen shapes, `build_db_diff` was composed onto
+the shape's own `report.results` (the same composition
+`_to_dict_with_db_diff`/`tools/snapshot_report_shapes.py:render_shape` use)
+twice -- once through the OLD fourth-arm condition (the pre-181-08 arm,
+re-implemented inline from the base source for comparison purposes only,
+never landed in product code) and once through the real, current
+`build_db_diff`. A flip is recorded when either `proposed_disposition` or
+`ladder_state` differs between the two.
+
+  FLIP: m27c512-full-all-ok
+    OLD: suggests: candidate for community-reported (advisory) / community-reported
+    NEW: no change suggested (advisory) / ""
+  FLIP: m27c512-full-blank-check-bad
+    OLD: suggests: candidate for community-reported (advisory) / community-reported
+    NEW: no change suggested (advisory) / ""
+  FLIP: m27c512-full-canonical-name
+    OLD: suggests: candidate for community-reported (advisory) / community-reported
+    NEW: no change suggested (advisory) / ""
+  FLIP: m27c512-full-comma-joined-name
+    OLD: suggests: candidate for community-reported (advisory) / community-reported
+    NEW: no change suggested (advisory) / ""
+  FLIP: m27c512-full-runs-1
+    OLD: suggests: candidate for community-reported (advisory) / community-reported
+    NEW: no change suggested (advisory) / ""
+
+All five flipped shapes are M27C512 (a UV/monotonic part) and, measured
+directly, EVERY ONE has its `write` step's verdict at `SKIPPED` with the
+reason "every UV slot exhausted without clearing >= 64 bits and retaining
+>= 64 bits under this pattern -- the chip is saturated; a UV erase is
+required before writing further" -- these are exactly the T-179-05
+exhausted-slots ladder-flip shapes the todo describes, and this flip is
+the fix taking effect, not a regression. Per the plan's own stop condition,
+a flip on a shape whose write is OK or NA would mean the predicate is
+wrong; NONE of the 14 non-flipped shapes have a SKIPPED write step, and
+none of the 5 flipped ones have an OK or NA write -- the predicate behaves
+exactly as specified.
+
+The remaining 14 shapes are UNCHANGED (byte-identical proposed_disposition
+and ladder_state before/after), including `uv-slot-write-pass` (a UV write
+that genuinely RAN, verdict OK -- unaffected by the ladder guard, though its
+`write_coverage` slots sentence DOES change per Section 2/5 below) and every
+non-UV shape.
+
+5. SNAPSHOT REGENERATION
+-----------------------------------------------------------------------------
+`tools/snapshot_report_shapes.py --check` exits 0 after regeneration. 6 of
+19 fixture files changed:
+  - 5 `db_diff` disposition/ladder_state changes (the flipped shapes above)
+  - 1 `write_coverage` slots-sentence change (`uv-slot-write-pass`, a write
+    that ran: 256 -> 255 of 256)
+`git diff 04fd982 -- tests/fixtures/report_shapes.py` is empty -- no
+frozen-hash literal line moved, confirmed both by the direct diff and by
+`test_dedup_fingerprint_is_frozen` (19 passed). `db_diff` is not in
+`dedup_fingerprint`'s pre-image (confirmed: `m27c512-full-all-ok`'s
+`dedup_fingerprint` stays `6d3afbc52315` across the disposition flip).
+
+frozen_hash_md5=555a6d762d528102b74061b504183df6 (matches base, unchanged)
+
+6. PRE-EXISTING TESTS THIS CHANGE COLLIDED WITH, ALL UPDATED
+-----------------------------------------------------------------------------
+Three pre-existing tests hand-constructed a "PASS-only, no BAD" shape whose
+SKIPPED step was specifically a WRITE-op result -- exactly the shape D-21's
+disqualifier now correctly withholds candidate/community-reported for.
+Updated rather than left red:
+
+  - `tests/test_diagnostic_report.py::test_db_diff_verdict_mapping` and
+    `::test_ladder_state_verdict_mapping`: the SKIPPED step in their
+    "pass_results" fixture changed from `op="write"` to `op="blank-check"`,
+    preserving each test's original claim (an OK+NA/SKIPPED shape with no
+    BAD verdict is a candidate) without colliding with the new
+    write-specific disqualifier. Both docstrings note the retarget and
+    point at the new dedicated disqualifier test.
+
+  - `tests/test_blast_radius_invariance.py::LADDER_PINS`: the five
+    `m27c512-*` shapes' pinned (disposition, ladder_state) pairs moved from
+    CANDIDATE/community-reported to NO_CHANGE/"" -- this is the re-key
+    D-08's own historical convention on this exact dict requires (an
+    accompanying-narrative paragraph was added to the module-level
+    docstring above `LADDER_PINS`, following the same style as Phase 179's
+    prior move of `m27c512-full-blank-check-bad`), landed in the SAME
+    commit as the behavior change per the file's own re-key discipline
+    (`test_dedup_fingerprint_is_frozen`'s failure message: "land the
+    behaviour change and the re-key ... as SEPARATE commits" applies to
+    FROZEN_HASHES, whose pre-image `db_diff` is NOT part of -- LADDER_PINS
+    is a different, non-hash pin and moves with its behavior in this
+    project's established pattern, matching how `at28c256-full-all-ok-sdp`
+    and `sst27sf512-six-step` moved in Phase 177). The coverage sentinel
+    `test_ladder_pins_cover_all_four_build_db_diff_arms` still passes: all
+    four `_DISPOSITION_*` arms remain populated (NO_CHANGE already had two
+    non-m27c512 shapes; CANDIDATE retains five shapes after the move).
+
+END OF TASK 2 TRANSCRIPT (Task 3 appends its own numbered section below)
+
+7. TASK 3 -- THE PLANTED COUNTER-EXAMPLES, OBSERVED RED
+-----------------------------------------------------------------------------
+A gate is not trusted here until it has been observed RED against a planted
+violation. Three legs, all in-memory/in-process, zero fixture files
+written:
+
+na_disqualifier_planted=RED
+  `test_a_planted_na_as_refusal_disqualifier_reddens_the_na_case_claim`
+  (tests/test_diagnostic_report.py). Anchors `_write_step_was_refused`
+  returning `False` for an NA write BEFORE mutating. Monkeypatches
+  `diagnostic_report._write_step_was_refused` with an over-broad predicate
+  that ALSO treats NA as a refusal, confirmed to differ on the anchor input
+  first (`over_broad_predicate(na_write_results) is True`), then asserts
+  the claim "the mutated build_db_diff still proposes candidate for the
+  NA case" raises AssertionError -- observed RED. Proves the NA/SKIPPED
+  distinction in `_write_step_was_refused` is load-bearing, not decorative.
+
+missing_condition_planted=RED
+  `test_a_planted_missing_write_ran_condition_reddens_the_refused_slots_claim`
+  (tests/test_diagnostic_report.py). Anchors the RAN case's real "255 of
+  256" sentence first, then computes what a no-condition (always-subtract)
+  implementation would have produced for the SAME target's REFUSED case
+  ("255 of 256"), and asserts that claim against the real refused-case
+  output -- observed RED (the real function correctly says "256 of 256").
+
+empty_expected_set=RED
+  `test_comparing_a_real_disposition_against_an_empty_expected_set_fails_rather_than_passes_vacuously`
+  (tests/test_diagnostic_report.py). A real `build_db_diff` disposition
+  compared against `set()` via `in` raises AssertionError rather than
+  passing -- observed RED, the standalone vacuity leg.
+
+fixture_files_written=0
+  All three legs build `StepResult`/`WriteTarget`/`Step` objects and
+  monkeypatch one module attribute (leg 1 only) in memory; none writes to
+  disk.
+
+shapes_reproducing=19/19
+  `tests/test_blast_radius_invariance.py -k test_dedup_fingerprint_is_frozen`
+  -- 19 passed. All 19 `FROZEN_HASHES` literals re-confirmed byte-identical
+  to app base `04fd982` after every Task 1/2/3 edit in this plan.
+
+frozen_hash_literal_count=19
+frozen_hash_lines_added_or_removed_since_04fd982=0
+
+todo_uv_ladder_resolves_phase=181
+todo_slots_off_by_one_resolves_phase=181
+  Both `.planning/todos/pending/2026-09-08-uv-ladder-flip-on-exhausted-
+  slots.md` and `.planning/todos/pending/2026-09-08-slots-remaining-off-
+  by-one-at-target-resolution.md` edited in place, `resolves_phase: none`
+  -> `resolves_phase: 181`. Neither moved to `completed/` or deleted --
+  plan `181-10` owns that step, after the phase's own verification.
+
+VERDICT: this plan's two folded defects (D-20, D-21) are closed by one
+shared predicate, proven correct on the frozen 19-shape corpus (5 flips,
+all and only the shapes whose write step is genuinely SKIPPED) and proven
+NOT vacuous by three planted-RED legs. What is EXCLUDED: this plan does
+not re-run the seven-leg green-tree battery, does not invoke
+`check_rekey_ledger.py`, and does not assert a suite floor -- per the
+plan's own `<verification>` section, that battery runs once, in `181-10`.
+The gate that would redden if this predicate regressed is
+`test_a_refused_write_disqualifies_the_fourth_arm_but_na_and_ok_do_not`
+plus the three planted legs above, all re-run on every future edit to
+`build_db_diff`/`_write_coverage_line`/`_write_step_was_refused` via the
+normal test suite -- no separate battery is required to catch a
+regression here.

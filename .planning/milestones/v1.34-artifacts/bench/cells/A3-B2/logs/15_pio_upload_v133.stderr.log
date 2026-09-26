@@ -1,0 +1,33 @@
+
+Connecting to programmer: .
+Found programmer: Id = "CATERIN"; type = S
+    Software Version = 1.0; No Hardware Version given.
+Programmer supports auto addr increment.
+Programmer supports buffered memory access with buffersize=128 bytes.
+
+Programmer supports the following devices:
+    Device code: 0x44
+
+avrdude: AVR device initialized and ready to accept instructions
+
+Reading | ################################################## | 100% 0.00s
+
+avrdude: Device signature = 0x1e9587 (probably m32u4)
+avrdude: reading input file ".pio/build/leonardo/firestarter_leonardo.hex"
+avrdude: writing flash (25098 bytes):
+
+Writing | ################################################## | 100% 1.93s
+
+avrdude: 25098 bytes of flash written
+avrdude: verifying flash memory against .pio/build/leonardo/firestarter_leonardo.hex:
+avrdude: load data flash data from input file .pio/build/leonardo/firestarter_leonardo.hex:
+avrdude: input file .pio/build/leonardo/firestarter_leonardo.hex contains 25098 bytes
+avrdude: reading on-chip flash data:
+
+Reading | ################################################## | 100% 0.24s
+
+avrdude: verifying ...
+avrdude: 25098 bytes of flash verified
+
+avrdude done.  Thank you.
+

@@ -1,0 +1,18 @@
+== RED against the PRE-FIX report_shapes blob dc7e40a -- aliasing True and the base hash moves
+prefix_alias_results=True
+prefix_base_before=6d3afbc52315
+prefix_base_after=e9df6ca4627c
+rc_prefix=0
+== GREEN against the committed module -- aliasing False and the base hash holds
+fixed_alias_results=False
+fixed_alias_plan=False
+fixed_alias_results_joined=False
+fixed_base_before=6d3afbc52315
+fixed_base_after=6d3afbc52315
+fixed_base_matches_frozen=True
+rc_fixed=0
+== the four phase test modules
+........................................................................ [ 59%]
+..................................................                       [100%]
+122 passed in 8.84s
+rc_suite=0

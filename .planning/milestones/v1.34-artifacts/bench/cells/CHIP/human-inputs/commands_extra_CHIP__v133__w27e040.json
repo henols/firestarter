@@ -1,0 +1,60 @@
+[
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "vpp"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-03 single reading for position 5 (timeout -s INT 4 wrapper + FIRESTARTER_CONFIG_DIR inline elided): 12400 mV, in band, unchanged since position 1 (pot untouched, JP4-only handover)"
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "dev",
+      "test",
+      "W27E040"
+    ],
+    "cwd": "/workspaces",
+    "note": "ATTEMPT 1, DISCARDED (timeout 3920 wrapper + FIRESTARTER_CONFIG_DIR inline elided): exit 1, ~14s -- id/read/blank-check BAD on chip-ID mismatch (0x8201 vs expected 0xDA86), write/verify/erase gated off, chip left pristine. JP4 position not explicitly confirmed prior to this attempt."
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "dev",
+      "test",
+      "W27E040"
+    ],
+    "cwd": "/workspaces",
+    "note": "ATTEMPT 2, DISCARDED (same wrapper elided), after operator adjusted JP4 (resulting position not stated in words): exit 1, ~19s -- byte-identical chip-ID mismatch (0x8201 vs 0xDA86) to attempt 1. JP4 correction produced no change; diagnosis moved to seating/orientation."
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "dev",
+      "test",
+      "W27E040"
+    ],
+    "cwd": "/workspaces",
+    "note": "C-05, ATTEMPT 3, RECORDED (same wrapper elided), after operator reseated the part: exit 1, wall-clock 768s (ceiling 3920s, first measured 512 KiB total). Chip ID cleared (0xDA86) confirming seating was the cause of attempts 1-2. id/read/write/verify/erase all OK; blank-check BAD (Empty input, error_code 164) -- a live FAIL earning C-08 under the operator ruling."
+  },
+  {
+    "argv": [
+      "/workspaces/.v1.34-arms/v133/.venv/bin/firestarter",
+      "-p",
+      "/dev/ttyACM0",
+      "dev",
+      "test",
+      "W27E040"
+    ],
+    "cwd": "/workspaces",
+    "note": "REPRODUCIBILITY RE-RUN (timeout 3072 wrapper + FIRESTARTER_CONFIG_DIR inline elided), same seating, board confirmed still at v1.33 SHA (no re-flash): exit 1, wall-clock 767s -- IDENTICAL failure to the recorded attempt 3 (blank-check BAD, Empty input, error_code 164, same step) -- confirms a reproducible transport-integrity fault, not a one-off transient"
+  }
+]

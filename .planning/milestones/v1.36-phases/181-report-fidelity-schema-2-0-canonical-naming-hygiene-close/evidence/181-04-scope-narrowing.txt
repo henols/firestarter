@@ -1,0 +1,82 @@
+# 181-04 Task 1 -- scope narrowing + locked_destructive/locked_steps deletion
+# Measured against firestarter_app app base 04fd982, after plans 181-01/181-02/181-03.
+
+write_scopes_members=2
+derive_plan_write_scope_has_default=false
+derive_plan_write_scope_kind=KEYWORD_ONLY
+bare_call_raises=TypeError
+none_value_raises=ValueError
+_WRITE_SCOPE_NONE_exists=false
+_SDP_LOCKED_REASON_exists=false
+
+full_device_permitted_line_changed=false
+write_op_line_changed=false
+uv_full_op=write full_device_permitted=True
+uv_partial_op=write-partial full_device_permitted=False
+
+Plan_has_locked_destructive_field=false
+BannerCounts_has_locked_steps_field=false
+banner_keys_count=2
+banner_keys_with_banner=m_applicable,n_ran
+banner_keys_none_branch=m_applicable,n_ran
+
+# locked_destructive_occurrences_in_firestarter / locked_steps_occurrences_in_firestarter
+# are scoped strictly to firestarter_app/firestarter/ (product source), per the
+# task's acceptance criterion "No file under firestarter/ mentions locked_destructive,
+# locked_steps, write_execute or _WRITE_SCOPE_NONE."
+locked_destructive_occurrences_in_firestarter=0
+locked_steps_occurrences_in_firestarter=0
+write_execute_occurrences_in_firestarter=0
+_WRITE_SCOPE_NONE_occurrences_in_firestarter=0
+
+# Whole-tree (firestarter/ + tests/ + tools/, *.py only) locked_destructive|locked_steps
+# sweep, before this task's edits (git HEAD at task start, commit 3078e0a) and after.
+locked_name_occurrences_before=43
+locked_name_occurrences_after=5
+
+locked_name_residue_after (all legitimate, none in firestarter/):
+  tests/test_blast_radius_invariance.py:137 -- docstring naming RPT-B2's own delete
+  tests/test_blast_radius_invariance.py:579 -- forward-only parse pin: asserts a
+    FROZEN schema-1.2 fixture body (pre-2.0) still carries the key when parsed
+    (RPT-E2). The fixture itself is historical and D-04-class "never rewritten".
+  tests/test_blast_radius_invariance.py:587 -- same, for the frozen schema-1.4 fixture.
+  tests/test_parse_devtest_issue.py:530 -- frozen `3.0.0b11` legacy body fixture,
+    schema_version "1.1", explicitly "hand-written and NEVER regenerated from
+    current code" (this file's own module docstring). Pins a shape the codebase
+    can no longer produce; must still parse (RPT-E2 forward-only contract).
+  tests/test_parse_devtest_issue.py:668 -- frozen `3.0.0b15` legacy body fixture,
+    schema_version "1.2", same "must never be regenerated" contract (PROV-04).
+
+None of the five residual sites make a claim about CURRENT derive_plan/BannerCounts
+behaviour -- all five are either (a) documentation of what was deleted, or (b)
+pins on already-filed/historical report bodies that RPT-E2 requires to keep parsing.
+
+# tools/snapshot_report_shapes.py --check drift, caused by the locked_steps deletion
+# (RPT-B2) reaching to_dict()["banner"]. Regenerated in this same commit, matching
+# the ec1db5c precedent (181-PATTERNS.md): only the "locked_steps": [] line is
+# removed from each of the 19 fixtures; every dedup_fingerprint literal is
+# byte-unchanged (confirmed separately below and by the frozen-hash diff leg).
+snapshot_drift_files_before_regen=19
+snapshot_drift_files_after_regen=0
+snapshot_diff_lines_per_file=1 (the removed "locked_steps": [] line only)
+
+# D-16 spot-check (Task 3 re-proves this properly; recorded here as a sanity check
+# after Task 1's own edits, before Task 2/3 land):
+frozen_hash_diff_vs_04fd982=empty
+
+# Per-module pytest tails (bare pytest, -o addopts="")
+tests/test_blast_radius_invariance.py: 103 passed
+tests/test_chip_test.py: 152 passed
+tests/test_chip_test_sdp_leg.py: 81 passed
+tests/test_erase_flag_invariants.py: 5 passed
+tests/test_chip_test_blank_check_order.py: 4 passed
+tests/test_diagnostic_report.py: 77 passed
+tests/test_parse_devtest_issue.py: 29 passed
+tests/test_provenance.py: 4 passed
+tests/test_derive_plan_structural_sentinel.py: 30 passed
+combined (all nine modules, one pytest invocation): 485 passed
+
+# tokenize COMMENT-token census -- non-increase gate (baselines from the plan's
+# <comment_discipline> section; only firestarter/cli_handlers.py is untouched by
+# Task 1 and is re-measured against its own baseline for completeness).
+phase_added_comments=0

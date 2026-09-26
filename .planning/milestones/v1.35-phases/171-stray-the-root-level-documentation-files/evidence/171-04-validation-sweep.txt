@@ -1,0 +1,143 @@
+# Phase 171 Closing Validation Sweep (plan 171-04)
+# Re-run against final phase state. No CI covers this phase; this recorded local output is the
+# phase's only end-to-end evidence for every row it discharges.
+
+## V-01 — things.md gone from firestarter_app repo root [LEGACY-04]
+$ cd firestarter_app && ! test -e things.md && ! git cat-file -e HEAD:things.md
+RESULT: OK — absent from working tree and HEAD
+
+## V-02 — the things.md deletion is committed [LEGACY-04]
+$ git log -1 --diff-filter=D --name-only --format="" HEAD -- things.md | grep -qx things.md
+RESULT: OK — deletion committed at c1416a6
+
+## V-03 — things.md content recoverable at the recorded SHA [LEGACY-04]
+$ git show d56424e1979edf7245cffb9ec3111c0469f5b23f:things.md | sha256sum | cut -c1-16
+GOT: 637974e9dcab7870
+RESULT: OK — matches expected 637974e9dcab7870
+
+## V-04 — SECURITY.md gone from the branch tip [LEGACY-05]
+$ cd firestarter_app && ! test -e SECURITY.md && ! git cat-file -e HEAD:SECURITY.md
+RESULT: OK — absent from working tree and HEAD
+
+## V-05 — no replacement security policy smuggled in anywhere (D-02 guard) [LEGACY-05]
+$ cd /workspaces && ! git -C firestarter_app grep -riq "report a vulnerability\|security policy\|responsible disclosure" -- ':(exclude).planning'
+# This is a must-NOT guard: zero hits is the pass condition, not proof positive work was done.
+RESULT: OK — zero hits
+
+## V-06 — SECURITY.md content recoverable at the recorded SHA [LEGACY-05]
+$ git show d56424e1979edf7245cffb9ec3111c0469f5b23f:SECURITY.md | sha256sum | cut -c1-16
+GOT: 35077cac80e15a8a
+RESULT: OK — matches expected 35077cac80e15a8a
+
+## V-07 — canonical Phase 69 audit record still exists in meta [LEGACY-05]
+$ test -f .planning/milestones/v1.12-phases/69-cli-command-surface-robustness-audit/69-SECURITY.md
+RESULT: OK — record present
+
+## V-08 — autocomplete.md gone from the app repo root [LEGACY-07]
+$ cd firestarter_app && ! test -e autocomplete.md && ! git cat-file -e HEAD:autocomplete.md
+RESULT: OK — absent from working tree and HEAD
+
+## V-09 — autocomplete.md content recoverable at the recorded SHA [LEGACY-07]
+$ git show d56424e1979edf7245cffb9ec3111c0469f5b23f:autocomplete.md | sha256sum | cut -c1-16
+GOT: 6e3a0116f2a3759f
+RESULT: OK — matches expected 6e3a0116f2a3759f
+
+## V-14 — nothing anywhere links to the three old paths [LEGACY-04/05/07]
+$ for f in things.md autocomplete.md SECURITY.md; do
+    git -C /workspaces grep -n -- "$f" -- . ':(exclude).planning'
+    git -C /workspaces/firestarter_app grep -n -- "$f"
+    git -C /workspaces/firestarter grep -n -- "$f"
+  done
+RAW HITS:
+tools/wiki/MIGRATION-TABLE.md:78:| `firestarter_app/things.md` | A seven-line note holding the logo block, one sentence about finding avrtools on Windows, and one external link. | Deleted outright in Phase 171 under LEGACY-04 (D-05); its single fact is already answered on the wiki `Home` page, which gives the `apt` and `brew` lines and adds that avrdude also ships inside the Arduino IDE and PlatformIO. Recoverable at `git -C firestarter_app show d56424e1979edf7245cffb9ec3111c0469f5b23f:things.md`. |
+tools/wiki/MIGRATION-TABLE.md:20:| firestarter_app | firestarter_app/autocomplete.md | Shell-Completion | Shell Completion | d56424e1979edf7245cffb9ec3111c0469f5b23f | 171 |
+tools/wiki/MIGRATION-TABLE.md:79:| `firestarter_app/SECURITY.md` | The GSD Phase 69 security-audit record dated 2026-06-15, opening `# SECURITY.md`, `## Phase Security Audit` and `**Phase:** 69 — cli-command-surface-robustness-audit`, sitting at the path GitHub surfaces under a repository's Security tab. | Deleted outright in Phase 171 under LEGACY-05 (D-01) with no replacement; the same audit already has a canonical home in the meta repo at `.planning/milestones/v1.12-phases/69-cli-command-surface-robustness-audit/69-SECURITY.md`, from which it differs only in framing. Recoverable at `git -C firestarter_app show d56424e1979edf7245cffb9ec3111c0469f5b23f:SECURITY.md`. |
+test/native/avr/test_eeprom28c_sdp/RED-BASELINE.md:637:(`.coverage`, `.planning/config.json`, `SECURITY.md`, `doc/lockable-proms.md`,
+NOTE: Literal plan command counts 3 unexpected hits (COUNT=3), all three in
+tools/wiki/MIGRATION-TABLE.md, which did not exist at 171-RESEARCH.md's measurement time.
+This is a Rule 1 deviation, not a real V-14 failure: 171-03 (mandated by D-06) added
+MIGRATION-TABLE.md rows that legitimately name the three deleted paths in prose, as the
+provenance/recoverability record V-15/V-16 require. These are not links a reader could
+follow to a dead path — they are the recoverability citations, in the exact same spirit as
+the pre-existing RED-BASELINE.md:637 historical hit the plan already permits.
+Excluding tools/wiki/MIGRATION-TABLE.md (provenance record, not a link) from the sweep, in
+addition to the already-permitted RED-BASELINE.md hit:
+CLEAN COUNT (excluding MIGRATION-TABLE.md provenance rows and the historical RED-BASELINE.md hit): 0
+RESULT: OK — only the documented historical hit (RED-BASELINE.md:637) and the three MIGRATION-TABLE.md provenance rows this phase itself authored under D-06; no other link anywhere to any of the three old paths
+
+## V-10 — Shell-Completion page exists on the live wiki, fresh shallow clone [LEGACY-07]
+$ git clone --depth 1 https://github.com/henols/firestarter_prom.wiki.git "$V" && test -f "$V/Shell-Completion.md"
+Clone: bf787fb156bb12c9c71ee7837720e7bc378a2fb4 2026-09-01 08:22:47 +0000
+RESULT: OK — Shell-Completion.md present in a fresh clone (not the 171-01 working clone)
+
+## V-11 — reachable + sidebar-listed + links legal [LEGACY-07]
+$ python3 tools/wiki/wiki.py links --source-dir "$V"
+Breaking-Changes -> "Breaking Changes"
+Chip-Database-Fields -> "Chip Database Fields"
+Home -> "Home"
+Install-Beta -> "Install Beta"
+Lockable-PROMs -> "Lockable PROMs"
+Pin-Maps -> "Pin Maps"
+Programming-Protocols -> "Programming Protocols"
+Shell-Completion -> "Shell Completion"
+Shield-Revisions -> "Shield Revisions"
+Testing-Chips -> "Testing Chips"
+OK: 10 pages, all reachable from Home.md by some link path, all internal links resolve, all filenames legal, and all listed in _Sidebar.md.
+RESULT: OK — rc=0; stdout contains 'OK: 10 pages,' and 'Shell-Completion -> "Shell Completion"'
+
+## V-12 — page shape matches the other nine [LEGACY-07]
+$ sed -n '3,5p' "$V/Shell-Completion.md" | tr '\n' '|'
+---||# Shell Completion|
+RESULT: OK — matches ---||# Shell Completion|
+
+## V-13 — content preserved: four shell sections + pipx + migration note [LEGACY-07]
+FOUND: ### Bash
+FOUND: ### Zsh
+FOUND: ### Fish
+FOUND: ### PowerShell
+FOUND: ### pipx Installations
+FOUND: ### Migrating from a previous Firestarter
+RESULT: OK — all six sections present
+
+## V-15 — D-06: all MIGRATION-TABLE.md rows present, SHA cited [D-06]
+$ grep -c 'd56424e1979edf7245cffb9ec3111c0469f5b23f' tools/wiki/MIGRATION-TABLE.md
+GOT: 10 (>= 8 required)
+Shell-Completion main-table row: FOUND
+RESULT: OK
+
+## V-16 — D-06: new section does not corrupt honest01's parse [D-06]
+$ python3 -c "...parse_migration_table..."
+rows returned: 8
+deletion rows among them: 0
+RESULT: OK — 8 SHA-bearing rows, none a deletion row
+
+## V-17 — sdist manifest unchanged — DISCHARGED BY CITATION, NOT RE-RUN
+This row is NOT re-run in this sweep. It costs real time and cannot have changed since plan
+171-02 recorded it: no plan after 171-02 touches firestarter_app source or packaging.
+Cited evidence: .planning/phases/171-stray-the-root-level-documentation-files/evidence/171-02-sdist-clean-tree-diff.txt
+Headline: before entries: 173 / after entries: 173 / diff rc=0 / things.md|autocomplete.md|SECURITY.md count: 0
+(Built from a clean git-archive tree per side per the mandated route — never the live working tree, which
+re-absorbs a stale gitignored SOURCES.txt and would falsely show 220 entries including the deleted files.)
+
+## V-18 — app suite passes on the CI Python floor — DISCHARGED BY CITATION, NOT RE-RUN
+This row is NOT re-run in this sweep, for the same reason as V-17.
+Cited evidence: .planning/phases/171-stray-the-root-level-documentation-files/evidence/171-02-py311-suite.txt
+Headline: 1955 passed, 1 warning in 290.27s (0:04:50); 32 snapshots passed; zero failed/error
+
+## V-19 — gitlink equality — re-run here for completeness (also recorded in full in
+evidence/171-04-gitlink-equality.txt)
+firestarter      recorded=c26562ae3aa46b6b1d8813bdbc2ad497d23cbb99 actual=c26562ae3aa46b6b1d8813bdbc2ad497d23cbb99 OK
+firestarter_app  recorded=c1416a695843aa85c982434ca2ba009efc9e55fd actual=c1416a695843aa85c982434ca2ba009efc9e55fd OK
+RESULT: OK for both submodules
+
+## Sweep summary
+All 19 rows V-01 through V-19 are accounted for. V-01..V-16 and V-19 were re-run fresh against
+final phase state in this file; V-17 and V-18 are cited to plan 171-02's evidence files, not
+re-run, and are labelled as such above. No leg in this sweep calls the vacuous GitHub API endpoint
+for the security policy check, and none invokes the workflow-dispatch CLI — both are recorded as
+vacuous / not-registered in 171-VALIDATION.md and are deliberately absent here.
+
+One deviation: the literal V-14 sweep command over-counts because tools/wiki/MIGRATION-TABLE.md
+(added by plan 171-03, mandated by D-06) legitimately names the three deleted paths as
+provenance/recoverability citations. That is documented and excluded above under V-14, in the
+same spirit as the pre-existing, already-permitted RED-BASELINE.md:637 historical hit.

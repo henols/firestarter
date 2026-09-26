@@ -68,6 +68,6 @@ dispatch tests rewritten.
 
 - Note: `bus-config-mask-model.md`
 - Seed: `binary-command-protocol.md`
-- Code: `mem_util_remap_address_bus` (`firestarter/src/proms/memory.cpp:259`),
+- Code: `mem_util_remap_address_bus` (`firestarter/src/proms/memory.cpp:331`),
   `bus_config_t` (`firestarter/include/firestarter.h:75`),
   `EpromDatabase.get_bus_config` (`firestarter_app/firestarter/database.py:257`)

@@ -1,0 +1,18 @@
+=== (a) Recoverability at d56424e1979edf7245cffb9ec3111c0469f5b23f ===
+autocomplete.md -> 6e3a0116f2a3759f
+things.md -> 637974e9dcab7870
+SECURITY.md -> 35077cac80e15a8a
+
+Expected: autocomplete.md=6e3a0116f2a3759f things.md=637974e9dcab7870 SECURITY.md=35077cac80e15a8a
+
+=== (b) Canonical Phase 69 audit record survives in meta ===
+PRESENT: 69-SECURITY.md
+
+=== (c) D-02 prohibition guard — must find nothing ===
+NO HITS (expected)
+
+=== (d) Three-repository link sweep for things.md, autocomplete.md, SECURITY.md ===
+--- filename: things.md ---
+--- filename: autocomplete.md ---
+--- filename: SECURITY.md ---
+test/native/avr/test_eeprom28c_sdp/RED-BASELINE.md:637:(`.coverage`, `.planning/config.json`, `SECURITY.md`, `doc/lockable-proms.md`,

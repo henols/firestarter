@@ -34,7 +34,7 @@ Iteration-2 note: when this agent started, all four targetable findings had alre
 **Commit (firestarter_app):** `86aa29f`
 **Applied fix:** Regenerated the three snapshots that drifted when WR-03 (commit `86bd1b8`) changed the `fw` command's docstring AND the format of the mutex error string:
 
-- `test_help_fw` (snapshot at `.ambr:163-201`) — `fw --help` docstring now matches the post-WR-03 cli_handlers.py:777-784 prose ("single post-parse check at the top of the command body — WR-03; replaces the earlier per-option callback _check_install_mutex which depended on Click's left-to-right option-processing order").
+- `test_help_fw` (snapshot at `.ambr:163-201`) — `fw --help` docstring now matches the post-WR-03 cli_handlers.py:775-782 prose ("single post-parse check at the top of the command body — WR-03; replaces the earlier per-option callback _check_install_mutex which depended on Click's left-to-right option-processing order").
 - `test_error_fw_pre_stable_mutex` (snapshot at `.ambr:11-18`) — now pins `Error: --pre is mutually exclusive with --stable.` (the new `UsageError` form).
 - `test_error_fw_pre_firmware_version_mutex` (snapshot at `.ambr:1-9`) — now pins `Error: --pre is mutually exclusive with --firmware-version.`
 
@@ -52,12 +52,12 @@ The deterministic option-naming behaviour (the new mutex check always cites `--p
 """TRAP #4 / D-13.4: --pre + --firmware-version exits 2 (mutually exclusive).
 
 Enforced by a single post-parse check at the top of fw()'s body
-(cli_handlers.py:792-805 — WR-03) raising click.UsageError when more
+(cli_handlers.py:790-803 — WR-03) raising click.UsageError when more
 than one of --pre / --firmware-version / --stable is set.
 """
 ```
 
-The two other call-out sites in the REVIEW (cli_handlers.py:670 section banner, cli_handlers.py:779 fw() docstring) were explicitly LEFT as accurate retrospective annotations per the reviewer's "LEAVE as historical breadcrumb" directive.
+The two other call-out sites in the REVIEW (cli_handlers.py:670 section banner, cli_handlers.py:777 fw() docstring) were explicitly LEFT as accurate retrospective annotations per the reviewer's "LEAVE as historical breadcrumb" directive.
 
 **Verification:** `python -m pytest tests/test_cli_handlers.py::test_fw_mutex_pre_and_firmware_version` → 1/1 passed.
 
@@ -89,7 +89,7 @@ if not eprom_details:
 eprom_data_for_programmer = app.db.convert_to_programmer(eprom_details)
 ```
 
-**Follow-up snapshot regen (`d50aa27`):** Removing the dead block shifted the `info` function body — specifically the `structured_details = app.eprom_presenter.prepare_detailed_eprom_data(...)` call — from line 356 to line 324. The `test_info_known_chip[test_info_known_chip_stderr]` snapshot embeds this line number in a pinned traceback (the test characterizes an unrelated pre-existing `TypeError` from `ic_layout.py:396` when the chip database returns a list-typed `vpp-pin` for W27C512). The only delta between old/new snapshot is the literal `line 356` → `line 324` at the `File "<PATH>", line N, in info` frame; the captured TypeError and all other frames are byte-identical. This is informational drift, not a real test failure.
+**Follow-up snapshot regen (`d50aa27`):** Removing the dead block shifted the `info` function body — specifically the `structured_details = app.eprom_presenter.prepare_detailed_eprom_data(...)` call — from line 356 to line 324. The `test_info_known_chip[test_info_known_chip_stderr]` snapshot embeds this line number in a pinned traceback (the test characterizes an unrelated pre-existing `TypeError` from `ic_layout.py:394` when the chip database returns a list-typed `vpp-pin` for W27C512). The only delta between old/new snapshot is the literal `line 356` → `line 324` at the `File "<PATH>", line N, in info` frame; the captured TypeError and all other frames are byte-identical. This is informational drift, not a real test failure.
 
 **Verification:** `python -m pytest tests/test_characterization.py tests/test_cli_handlers.py` → 100% pass (82 passed). Also `python -m pytest` over the full suite → 241 passed, 1 xfailed (pre-existing BUG-tracking xfail unrelated to Phase 41).
 

@@ -1,0 +1,13 @@
+=== Pre-bump snapshot (before staging) ===
+$ git -C /workspaces ls-tree HEAD firestarter firestarter_app
+160000 commit bbcdc39f292dfad378f84124bc5a4c7fbc3244ad	firestarter
+160000 commit 50f85b20b2948e31d2db77f1cf685e306ab01705	firestarter_app
+
+$ git -C firestarter rev-parse HEAD
+c26562ae3aa46b6b1d8813bdbc2ad497d23cbb99
+$ git -C firestarter_app rev-parse HEAD
+c1416a695843aa85c982434ca2ba009efc9e55fd
+
+=== Post-bump equality assertion (V-19) ===
+firestarter      recorded=c26562ae3aa46b6b1d8813bdbc2ad497d23cbb99 actual=c26562ae3aa46b6b1d8813bdbc2ad497d23cbb99 OK
+firestarter_app  recorded=c1416a695843aa85c982434ca2ba009efc9e55fd actual=c1416a695843aa85c982434ca2ba009efc9e55fd OK

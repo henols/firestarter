@@ -1,0 +1,19 @@
+{
+  "app_verdict_unjudged": 0,
+  "commands": [],
+  "distinct_read_shas": 1,
+  "expect_size": 65536,
+  "n3_disagreement": false,
+  "position_id": "A1__control__w27c512",
+  "read_count": 1,
+  "read_files": [
+    "/workspaces/.planning/v1.34/bench/cells/A1/reads/A1__control__w27c512/run_01.bin"
+  ],
+  "read_shas": [
+    "8ee568689ae9ab14ac5e34179542fecbe44373c7ef8b4400a1b6f3e3f0d563a4"
+  ],
+  "sha_verdict_judged": "match",
+  "size_violations": [],
+  "verdict_disagreement": false,
+  "written_sha": "8ee568689ae9ab14ac5e34179542fecbe44373c7ef8b4400a1b6f3e3f0d563a4"
+}

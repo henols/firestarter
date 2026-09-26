@@ -1,0 +1,199 @@
+---
+title: Host tools/ checker apparatus — measured mass, per-gate ratios, and the one-shot-gate diagnosis
+date: 2026-09-12
+context: /gsd-explore session during v1.37 Phase 187; operator was reading through firestarter_app/tools/ suspecting over-engineering. All figures measured live against the working tree at that date, not estimated.
+---
+
+# Host `tools/` checker apparatus — audit
+
+## VERDICT
+
+The operator's over-engineering suspicion is **confirmed on mass and disproportion**, and
+**refuted on quality**. The ten `check_*.py` gates are well built — they are simply one-shot
+phase gates that were never retired, and they have accumulated to roughly the size of the
+product they guard.
+
+## Where the scripts actually live
+
+`firestarter/tools/` holds **only** the catalog (`codegen.py`, `codegen_vectors.py`,
+`messages.toml`, `frame-vectors.toml`). The firmware sub-repo has no checker family at all.
+The entire mass is in `firestarter_app/tools/` — 24 scripts, ~10,300 lines of Python plus
+two shell scripts.
+
+## Measured mass
+
+| | lines |
+|---|---|
+| Product — `firestarter_app/firestarter/*.py` | 21,153 |
+| The 10 `check_*.py` gates | 3,984 |
+| Test files named for a checker (`tests/test_check_*.py`) | 3,537 |
+| **Checker apparatus — lower bound** | **7,521** |
+| Checker apparatus — upper bound (any test file mentioning a checker) | 19,514 |
+| All of `tests/*.py` | 62,909 |
+
+The two bounds differ because a test file that merely *mentions* a checker name is counted in
+full by the upper measure, and files are counted once regardless of how much of their content
+is checker-related. The honest statement is **7,521–19,514 lines**; even the floor is 36% of
+the product codebase.
+
+## Per-gate ratio
+
+| Gate | gate LOC | its tests LOC | guards | target LOC |
+|---|---|---|---|---|
+| `check_sdp_capability_invariants.py` | 364 | 248 | `firestarter/sdp_capability.py` | 246 |
+| `check_protection_readability_invariants.py` | 524 | 394 | `firestarter/protection_readability.py` | 935 |
+| `check_diagnostic_report_claims.py` | 269 | 119 | `firestarter/diagnostic_report.py` | 1,147 |
+| `check_no_community_support_status_write.py` | 261 | 232 | `firestarter/diagnostic_report.py` | 1,147 |
+
+`check_sdp_capability_invariants` is 612 lines of gate-plus-tests guarding a 246-line file —
+**2.5:1**.
+
+## What CI actually invokes
+
+Exactly one checker is named in `firestarter_app/.github/workflows/ci.yml`:
+`check_mypy_watermark.py`. The other nine reach CI only indirectly, through `pytest tests/`,
+and only where their test file runs them against the real tree rather than against a fixture.
+That indirection is real but is not uniform across the ten, and was not resolved per-gate in
+this session — see the research question below.
+
+## Live-run result (all ten, against the real tree, 2026-09-12)
+
+Nine exit 0. `check_mypy_watermark` exits 2 in the devcontainer **only** because Python 3.12
+rejects numpy's `.pyi` type statements; CI pins 3.11 and is unaffected. This is the known
+devcontainer-masking effect, not a gate defect.
+
+**Every one of the ten reports what it scanned** — `scanned ../firestarter/sdp_capability.py`,
+`scanned 78 file(s)`, `all 746 chips scanned; 736 supported`. None is a silent zero-scan gate.
+They carry planted-violation fixtures, and `check_mypy_watermark` deliberately **fails closed**
+on mypy's rc=2 rather than reading a tool crash as a clean tree. On construction quality these
+are above the bar, and the audit should not be read as criticising how they were written.
+
+## The diagnosis
+
+Each gate locks in exactly one decision from exactly one phase — SDP capability, protection
+readability, no-logging-inside-the-SDP-timing-window, `is_memory_cmd()` carrying no `#ifdef`.
+The decision shipped, unit tests were written for it, and the AST checker then stayed on the
+payroll permanently. All ten now report **zero findings on every run**, which is the signature
+of a gate whose risk is no longer live.
+
+The retirement question is one sentence per gate: *what breaks if this is deleted, that the
+existing unit tests would not already catch?*
+
+## Second finding: tools doing GSD's work, inside the product repo
+
+Raised by the operator mid-session and confirmed. Several tools in `firestarter_app/tools/` are
+not product tooling at all — they are GSD process bookkeeping that was committed into the
+shipped package repo.
+
+Measured by counting planning vocabulary per file:
+
+| tool | LOC | `.planning` refs | phase/plan refs | `D-NN` | REQ-shaped IDs |
+|---|---|---|---|---|---|
+| `audit_coverage_matrix.py` | 1,924 | 13 | 12 | 10 | 31 |
+| `diff_db.py` | 984 | 9 | 19 | 9 | 13 |
+| `measure_plan_shapes.py` | 370 | 0 | 5 | 5 | 2 |
+| `snapshot_report_shapes.py` | 190 | 0 | 2 | 2 | 3 |
+| `measure_part_number_delta.py` | 303 | 0 | 1 | 1 | 1 |
+
+Their own docstrings state it plainly:
+
+- `measure_plan_shapes.py` — *"Generator for the committed plan-shape pin (Phase 175,
+  D-10/D-11/D-16, plan 175-03) -- the frozen half of D-10's no-drop proof."*
+- `measure_part_number_delta.py` — *"(Phase 174, D-14/D-15/D-16, GATE-04, plan 174-04 task 3)"*
+- `snapshot_report_shapes.py` — *"(Phase 174, GATE-05, D-01, D-07)"*
+- `audit_coverage_matrix.py` — *"Wave 1 lands §1 (Summary Statistics) + §2 (DB Count
+  Reconciliation). §3/§4/§5 are placeholder headers populated by Waves 2-4 (Plans 11-03 / 04 /
+  05)."*
+
+### The structural case, not the stylistic one
+
+`audit_coverage_matrix.py` is the clearest instance and it is broken, not merely misplaced. Its
+own source comment says:
+
+> the tool lives at `<repo-root>/firestarter_app/tools/audit_coverage_matrix.py`, so the repo
+> root is three `dirname()` hops up
+
+Resolved live, `_REPO_ROOT` is `/workspaces` — **the meta repo**. So a script committed inside
+the published pip-package repo climbs out of its own submodule to write
+`.planning/milestones/v1.3-COVERAGE-MATRIX.md` (184 KB, tracked in meta) and to mutate
+`.planning/milestones/v1.3-defect-coverage-ids.json`.
+
+The consequence for anyone who is not this operator: in a standalone clone of
+`henols/firestarter_app`, the same three-hop arithmetic resolves to the **parent of the clone
+directory**. The tool is only correct under one person's submodule layout.
+
+**Corrected characterisation (measured 2026-09-12 while fixing it).** This note first said the
+tool "writes a `.planning/` tree outside the repository entirely". That overstates it. The tool
+never creates directories — there is no `makedirs`, `mkdir` or `parents=True` anywhere in it —
+so the two cases are:
+
+| Parent directory | Pre-fix behaviour |
+|---|---|
+| has no `.planning/` | unhandled `FileNotFoundError` traceback, exit **1** — colliding with the drift/DB-parse exit code |
+| has a foreign `.planning/` (e.g. the clone sits inside another GSD project) | writes into **that** project's planning directory |
+
+The first case is the common one and is a usability and exit-code defect, not a data-integrity
+one. The second is the genuinely harmful case and is rarer.
+
+Quick task `260912-mo6` fixed the first: `resolve_default_paths()` now exits 2 with an
+actionable message naming `--output`/`--ledger`, and writes nothing. **It does not fix the
+second** — its oracle is "a `.planning/` directory exists at the resolved root", which is true
+for the operator and true for a foreign GSD project alike. Closing that would need a stronger
+oracle (for example, confirming the root's `.gitmodules` actually registers this submodule).
+Recorded as an open residual rather than claimed as closed.
+
+### It also breaks the project's own hard rule
+
+`CLAUDE.md` states, non-overridably, that no GSD process commentary may appear in source under
+`firestarter/` or `firestarter_app/` — *"no `// Phase NNN (REQ-NN):`, no `// D-06`, no
+plan/task/milestone citations… The reader of the firmware or the pip package does not have
+`.planning/` and never will."* The docstrings quoted above are exactly that, and they sit under
+`firestarter_app/`. This is consistent with the known-incomplete host-side provenance sweep;
+`tools/` is where the remainder is concentrated.
+
+The two findings compound in a way worth stating: these citations **cannot** simply be stripped,
+because without them the tools are unexplainable — a generator whose only reason to exist is
+"the frozen half of D-10's no-drop proof" has no product-facing rationale to substitute. That
+inability to write a product-facing docstring is the diagnostic: the tool does not belong in the
+product repo at all.
+
+## CORRECTED — there is no "unambiguous dead weight" section
+
+This note first claimed `tools/ci_replica_venv.sh` (363 lines) and
+`tools/derive_sdp_partition.py` (263 lines) were unambiguous dead weight, deletable without
+analysis, on the evidence that no workflow, test or script references either. **That was wrong.**
+Both are live, operator-invoked verification tools:
+
+- `ci_replica_venv.sh` — `STATE.md:579-582`: a whole-milestone verification leg run beside
+  `ci_parity.sh` (`CI-REPLICA: PASS`, `mypy 33/35`, 129 source files). It reproduces CI's
+  Python 3.11 against a 3.12 devcontainer — a known masking hazard.
+- `derive_sdp_partition.py` — `STATE.md:768-770`: re-run against the cached pinned-commit XML,
+  `PASS, 43/41/84, zero disagreement`. `STATE.md:2482` records a deliberate decision that it
+  stay fully standalone rather than import from `tests/`.
+
+### Why the error matters more than the two files
+
+The scan that produced the wrong answer — reference counts over workflows, tests and scripts —
+is precisely the scan a future cleanup pass would run. It returns **zero for a load-bearing
+operator tool and zero for a genuinely dead one**, because an invocation contract that lives
+only in `.planning/` prose is invisible to code.
+
+So the third finding of this audit is the one with the clearest fix: **no script in
+`firestarter_app/tools/` declares its consumer.** Until each does, "is this still used?" is
+unanswerable except by grepping a 52,000-line `STATE.md`, and every cleanup attempt carries a
+live risk of deleting working tooling. See
+`todos/pending/2026-09-12-retire-two-orphaned-host-tools.md`, rewritten around this.
+
+This also revises finding 1: the ten `check_*.py` gates cannot be assessed for retirement by
+reference-counting either. Their reachability question (research Q1) must be answered by
+reading each test, not by scanning.
+
+## Adjacent finding, out of scope here
+
+`frame-vectors.toml` and `codegen_vectors.py` are duplicated in both sub-repos with **no**
+meta-canonical copy and are absent from `sync_to_subrepos.sh`'s `FILES=(messages.toml
+codegen.py)`. Measured consequence: the two synced files are byte-identical across all three
+repos, while the unsynced `codegen_vectors.py` has already drifted between the sub-repos
+(`01fb1a9b` firmware vs `53b4190d` host — comment-only, output unaffected). A CI gate is *not*
+the remedy; that route was already tried and retired (see
+`catalog-sync-check-retirement.md`). Folding the two files into the existing sync script is.

@@ -1,0 +1,27 @@
+{
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "avrdude_version": "8.1",
+  "board_signature": "0x1e950f",
+  "connected_part": "atmega328p",
+  "controller_string": "not measured -- the `hw` CLI subcommand's handler (firestarter_app/firestarter/cli_handlers.py:969, `_build_op_flags()` called with zero kwargs) never forwards the CLI's -v/--verbose into the wire command's `flags` field, so FLAG_VERBOSE (0x80) is never set on the command `hw` sends; firmware's MSG_INFO_FW echo line (firestarter.cpp:150, FLAG_VERBOSE-gated per include/logging_id.h) is therefore never emitted by `hw`, regardless of CLI verbosity or which arm's firmware is running. Measured twice: pre-flash (this board's then-current firmware) and post-flash (the control arm, just-flashed) both via `firestarter -v -p /dev/ttyACM0 hw`, captured to logs/03_hw_probe_pre_flash.std{out,err}.log and logs/06_hw_probe_post_flash.std{out,err}.log -- neither shows an I:/INFO: FW line. This is a genuine host-app limitation, out of scope for this phase to fix (D-16 boundary: no product-code changes); every later cell's controller_string field (via capture_provenance.py's identical hw-based probe) will hit the same limitation until a future host-app fix forwards verbose into hw's wire flags.",
+  "controller_string_post_flash_capture": "logs/06_hw_probe_post_flash.stdout.log",
+  "controller_string_pre_flash_capture": "logs/03_hw_probe_pre_flash.stdout.log",
+  "device_node_enumeration_check": {
+    "enumerated_before_gate": [
+      "/dev/ttyACM0"
+    ],
+    "match": true,
+    "note": "/dev/ttyACM0 was the ONLY /dev/ttyACM*|/dev/ttyUSB* node present when the orchestrator enumerated before presenting the gate (appeared 2026-08-27T05:27Z, after the phase had halted with no node present at all). The operator's reported node matches the sole enumerated node exactly.",
+    "operator_reported_node": "/dev/ttyACM0"
+  },
+  "mcu_expected": "atmega328p",
+  "mcu_matches": true,
+  "operator_declared_board": "Arduino Uno (ATmega328P)",
+  "operator_declared_socket_state": "Yes \u2014 shield on, chip removed",
+  "operator_probe_agreement": true,
+  "operator_probe_agreement_note": "Operator declared 'Arduino Uno (ATmega328P)'; the avrdude signature probe independently identified connected_part=atmega328p via board_signature=0x1e950f (the known-good value for this board, probe_board.py's _SIGNATURE_TO_MCU table). The two agree; the plan's stop-and-report clause was not triggered.",
+  "raw_stderr_path": ".planning/v1.34/bench/cells/BRINGUP-uno/probe.json.stderr.log",
+  "signature_route": "route1",
+  "urclock_probes": {}
+}

@@ -1,0 +1,69 @@
+=== firestarter_fw remote baseline ===
+a6ba2b724ac51f5eba7a035ee991d85edd1c1c63	refs/heads/beta
+b21f94a0f1c50ed528b38c9cca6b11dba078381c	refs/heads/main
+
+=== firestarter_app remote baseline ===
+c6e48ff87cef396f9dc39ee33b5845c7c65bad85	refs/heads/beta
+02d020a9d92831947f3e355e8caff8d08978104a	refs/heads/main
+
+=== meta (/workspaces) remote baseline ===
+efd3614045e69b98d98205b8cece52bf64c660b6	refs/heads/beta
+0d784cabd8e4febce249330e99d43684dbef8c08	refs/heads/main
+
+
+=== Task 1 (firestarter_fw) oracles ===
+$ git fetch -q --tags origin
+(no output expected)
+
+$ GITHUB_REF=refs/heads/beta python3 .github/scripts/update_version.py --dry-run
+DRY_RUN: 3.1.0b1
+
+$ git merge-tree --write-tree --name-only HEAD origin/beta | wc -l
+1
+
+$ git show --name-only --format= HEAD
+include/version.h
+
+$ git status --porcelain
+(nothing expected)
+
+$ /usr/local/py-utils/bin/pytest tests/ -q -p no:cacheprovider (tail)
+316 passed in 10.10s
+
+=== Task 2 (firestarter_app) oracles ===
+$ git fetch -q --tags origin
+(no output expected)
+
+$ GITHUB_REF=refs/heads/beta python3 .github/scripts/update_version.py --dry-run
+DRY_RUN: 3.1.0b1
+
+$ git merge-tree --write-tree --name-only HEAD origin/beta | wc -l
+1
+
+$ git show --name-only --format= HEAD
+firestarter/__init__.py
+
+$ .venv311/bin/firestarter --version
+Firestarter, version 3.1.0b1
+
+$ .venv311/bin/python -c 'from firestarter.channel import is_prerelease_build; print(is_prerelease_build())'
+True
+
+$ .venv311/bin/ruff check firestarter/ tests/
+All checks passed!
+
+$ .venv311/bin/ruff format --check firestarter/ tests/
+153 files already formatted
+
+$ .venv311/bin/python -m pytest tests/ -o addopts="" -p no:cacheprovider -q (tail)
+2363 passed in 216.66s (0:03:36)
+
+=== Task 3 whole-pair proof ===
+$ PASS-207-01-PAIR leg
+PASS-207-01-PAIR
+
+$ PASS-207-01-ORACLE leg (note: first attempt hit a transient SSH publickey error mid-loop; retry succeeded — see SUMMARY deviations)
+PASS-207-01-ORACLE
+
+$ PASS-207-PROHIBITION leg
+PASS-207-PROHIBITION

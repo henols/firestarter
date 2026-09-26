@@ -1,0 +1,118 @@
+# 181-05 Task 1 -- canonical database naming, end to end on one real chip
+# Measured against firestarter_app app HEAD ddc0c1c (plans 181-01..181-04 landed),
+# selector = firestarter.cli_handlers._canonical_part_number, chip = w27c020.
+
+## Section 1: the four canonical surfaces + the two raw-token surfaces
+
+raw_token=w27c020
+matched_part_number=W27C02,W27C020,W27E02,W27E020,W27L02
+canonical=W27C020
+issue_title=[dev test] W27C020 — PASS (f7489be9aa03)
+body_canonical_line=canonical part number: W27C020
+console_table_title=dev test -- W27C020
+saved_heading=# dev test -- W27C020
+saved_json_filename=dev-test-w27c020.json
+saved_md_filename=dev-test-w27c020.md
+ac_chip=w27c020
+
+# Command tail (script run via `./.venv311/bin/python`, real EpromDatabase,
+# skip_local_override=True, no live serial/hardware):
+#   full = db.get_eprom("w27c020"); matched_part_number = full["name"]
+#   canonical = _canonical_part_number(matched_part_number, "w27c020")
+#   title = submit.build_title(report_after, "w27c020")
+#   body = submit.build_body(sanitize_dict(report_after.to_dict()), results, include_json=False)
+#   console_table_title = report_after.render().title
+rc=0
+
+## Section 2: dedup_fingerprint provably unmoved by the additive key
+
+dedup_fingerprint_before=f7489be9aa03
+dedup_fingerprint_after=f7489be9aa03
+dedup_fingerprint_equal=true
+auto_capture_key_count_before=8
+auto_capture_key_count_after=9
+is_submittable_changed=false
+rc=0
+
+## Section 3: real end-to-end CliRunner proof (same four surfaces, real Click path)
+
+Test: tests/test_dev_test_cmd.py::test_canonical_part_number_reaches_all_four_surfaces_while_the_raw_token_stays_on_ac_chip_and_the_filenames
+Command tail: ./.venv311/bin/python -m pytest tests/test_dev_test_cmd.py::test_canonical_part_number_reaches_all_four_surfaces_while_the_raw_token_stays_on_ac_chip_and_the_filenames -o addopts="" -q
+Result: 1 passed
+rc=0
+
+## Section 4: whole-module pytest tails after this task's edits (bare pytest, -o addopts="")
+
+tests/test_blast_radius_invariance.py: 103 passed
+tests/test_submit.py: 110 passed
+tests/test_diagnostic_report.py: 78 passed
+tests/test_parse_devtest_issue.py: 29 passed
+tests/test_dev_test_cmd.py: 62 passed
+combined (submit+diagnostic_report+parse_devtest_issue, one invocation): 217 passed
+rc=0
+
+## Section 5: frozen-hash literal diff vs app base 04fd982 (report_shapes.py)
+
+Command tail: git diff 04fd982 -- tests/fixtures/report_shapes.py | /usr/bin/grep -E '^[-+][[:space:]]*"[a-z0-9-]+": "[0-9a-f]{12}",'
+Result: (empty -- zero twelve-hex literal lines added or removed)
+devtest_issue_corpus_json_modified=false
+rc=0
+
+## Section 6: is_submittable byte-unchanged (Phase 178 D-11)
+
+is_submittable_return=return bool(ac.chip) and bool(ac.protocol) and bool(ac.host_version)
+rc=0
+
+## Section 7: tokenize COMMENT-token census -- non-increase gate
+
+# Pre-task baselines, measured at the head of this task against app HEAD ddc0c1c
+# (plans 181-01/181-04 have already moved cli_handlers.py and
+# check_devtest_orchestrator.py off their app-base 04fd982 numbers, so those two
+# baselines are re-measured live rather than trusted from the plan's stated
+# app-base upper bounds).
+comment_tokens_pretask firestarter/cli_handlers.py=357
+comment_tokens_pretask firestarter/diagnostic_report.py=214
+comment_tokens_pretask firestarter/submit.py=48
+comment_tokens_pretask tests/test_submit.py=123
+comment_tokens_pretask tests/test_dev_test_cmd.py=216
+comment_tokens_pretask tests/test_diagnostic_report.py=183
+comment_tokens_pretask tests/test_blast_radius_invariance.py=0
+comment_tokens_pretask tools/check_devtest_orchestrator.py=91
+comment_tokens_pretask tests/test_check_devtest_orchestrator.py=98
+
+# Post-task measurement, this task's own seven declared files.
+comment_tokens_posttask firestarter/cli_handlers.py=357
+comment_tokens_posttask firestarter/diagnostic_report.py=214
+comment_tokens_posttask firestarter/submit.py=48
+comment_tokens_posttask tests/test_submit.py=123
+comment_tokens_posttask tests/test_dev_test_cmd.py=216
+comment_tokens_posttask tests/test_diagnostic_report.py=183
+comment_tokens_posttask tests/test_blast_radius_invariance.py=0
+
+phase_added_comments=0
+
+# One self-caught regression during this task, fixed before this transcript was
+# written: a new section-header comment block (three `#` lines) was briefly added
+# above the new end-to-end test in tests/test_dev_test_cmd.py, tripping the file's
+# baseline from 216 to 219. Removed outright (not reworded) -- the test function's
+# own docstring already carries the same context. Re-measured at 216/216 above.
+rc=0
+
+## Section 8: porcelain (run AFTER this task's commit, see Task 1 commit)
+
+firestarter_submodule_porcelain=clean
+app_repo_porcelain=clean
+rc=0
+
+## Anchors that had moved since the plan was written (measured, not the plan's stated line numbers)
+
+- The console table title (`diagnostic_report.py`) is at line 950 pre-task /
+  959 post-task (this task added one docstring line above it), not the plan's
+  orchestrator_dispositions-stated :943, nor CONTEXT.md's :826.
+- `dev_test`'s saved-report heading is at line 2420 pre-task (now inside a
+  `canonical_heading_name = (...)` block ending at :2478 post-task), not the
+  plan's stated :2497.
+- `dev_test` itself spans roughly :2300-2500 post-task (181-04 already
+  shortened/restructured it), not the plan's stated :2381-2500 range.
+- `get_eprom_config`'s ladder is confirmed at database.py:446-486 exactly as
+  181-PATTERNS.md re-measured (CONTEXT.md's :466-485 remains wrong).

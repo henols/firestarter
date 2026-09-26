@@ -1,0 +1,31 @@
+# 187-06 — Draft link check: every URL in evidence/bodies/187-gh23.md, 187-gh28.md, 187-gh31.md
+# Checked 2026-09-12. Extraction method (matches 187-05's own leg):
+#   /usr/bin/grep -o 'https://[^) ]*' evidence/bodies/187-gh23.md evidence/bodies/187-gh28.md evidence/bodies/187-gh31.md
+
+## Result
+
+Zero `https://` URLs found across all three bodies. Command exit code: 1 (grep found no match — no
+output was suppressed or filtered).
+
+## Why these three bodies carry no links, unlike 187-05's gh#60/gh#62
+
+The plan's own read_first and action for Task 1 (gh#23) and Task 2 (gh#28/gh#31) name no
+`.planning/notes/` document to cite — unlike gh#60 (`jumper-display-ground-truth.md`) and gh#62
+(`ae29f2008-classification-verdict.md`), which each answer against an existing verdict document
+written for exactly that purpose. There is no equivalent public-facing notes document for the three
+standing datasheet defects (W27E257's `vpp_mv`, M27C512's `vdd_mv`/`vcc_mv` mismatch, M27C1001's
+pin-30 mapping) or for the D-11 status-axis mechanism gh#23's reply explains — that material is
+sourced from `chip_database.json` field values and from `diagnostic_report.py`'s in-code disclosure
+constant, both of which are described and quoted in prose rather than linked to a permalink. No
+plan instruction in Task 1, 2 or 3 asked for a link to be constructed for this material, and
+inventing one would add a citation the plan never specified.
+
+Consequence: with zero URLs, there is nothing to resolve against the pinned SHA
+(`ebd80b53b06b49678e41f12d31136f5b9d3edd26`, `evidence/187-02-merge-sha.txt` line 1) for this plan's
+three bodies. The zero-`blob/beta/`-or-`blob/main/`-link acceptance criterion for all three bodies is
+satisfied trivially and is independently confirmed by each task's own `<verify>` leg (`grep -E
+'blob/(beta|main)/'` on all three files, each returning 0).
+
+## Summary
+0 distinct URLs across the three bodies drafted by this plan (187-gh23.md, 187-gh28.md, 187-gh31.md).
+0 to resolve; 0 unresolved; 0 `blob/beta/` or `blob/main/` links.

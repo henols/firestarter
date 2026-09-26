@@ -1,0 +1,58 @@
+== corpus facts
+rows_n=26
+gen=True
+all_repro=True
+all_hex=True
+issues=18,20,21,22,23,24,25,26,27,28,29,30,31,32,39,40,41,42,45,46,47,48,49,50,51,52
+unique_issues=True
+group_00e121446ceb=[20, 21, 32]
+group_334c3fa198bf=[39, 40]
+nplus2_groups=[2, 3]
+gh45_token=W27E040
+rc=0
+== generator check mode
+OK: /workspaces/firestarter_app/tests/fixtures/devtest_issue_corpus.json matches a fresh regeneration
+rc=0
+== collected case count
+tests/test_devtest_issue_corpus.py::test_loader_raises_for_non_json_file
+
+35 tests collected in 0.10s
+rc=0
+== the corpus gate
+...................................                                      [100%]
+35 passed in 0.11s
+rc=0
+== per-row filed beside recomputed, through the real function
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ImportError: cannot import name 'REGION_POLICY_FULL_DEVICE' from 'firestarter.constants' (/workspaces/firestarter_app/firestarter/constants.py)
+rc=1
+== per-row filed beside recomputed, through the real function
+gh18 filed=a6915f4437ee recomputed=a6915f4437ee
+gh20 filed=00e121446ceb recomputed=00e121446ceb
+gh21 filed=00e121446ceb recomputed=00e121446ceb
+gh22 filed=0eec03f6821b recomputed=0eec03f6821b
+gh23 filed=7a89fcea856a recomputed=7a89fcea856a
+gh24 filed=3870f9b5f6ca recomputed=3870f9b5f6ca
+gh25 filed=ed1b5dc79022 recomputed=ed1b5dc79022
+gh26 filed=f8cb30c62aac recomputed=f8cb30c62aac
+gh27 filed=ea556a61c3db recomputed=ea556a61c3db
+gh28 filed=31547956e56b recomputed=31547956e56b
+gh29 filed=7c6997788e25 recomputed=7c6997788e25
+gh30 filed=317d6b1e6e18 recomputed=317d6b1e6e18
+gh31 filed=d8771536cb43 recomputed=d8771536cb43
+gh32 filed=00e121446ceb recomputed=00e121446ceb
+gh39 filed=334c3fa198bf recomputed=334c3fa198bf
+gh40 filed=334c3fa198bf recomputed=334c3fa198bf
+gh41 filed=137e93501512 recomputed=137e93501512
+gh42 filed=8236361b75a5 recomputed=8236361b75a5
+gh45 filed=957307f7b750 recomputed=957307f7b750
+gh46 filed=2f4fb4f62ff3 recomputed=2f4fb4f62ff3
+gh47 filed=f9dbc31dcd27 recomputed=f9dbc31dcd27
+gh48 filed=969aa43f48c3 recomputed=969aa43f48c3
+gh49 filed=0e86f636df87 recomputed=0e86f636df87
+gh50 filed=52af74c52f2c recomputed=52af74c52f2c
+gh51 filed=e62e68e1c93a recomputed=e62e68e1c93a
+gh52 filed=e09213a69a71 recomputed=e09213a69a71
+reproduced=26/26
+rc=0

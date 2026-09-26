@@ -10,7 +10,7 @@ Phase 2 is a low-risk mechanical rename phase, but with one important factual co
 
 **Primary recommendation:** Adopt CONTEXT.md's atomic-flip approach (D-01, D-02) and 3-plan split (D-13) with one correction (CONTEXT.md misdescribes today's wire emit; see User Constraints note below) and three augmentations identified during verification:
 
-1. Add `ic_layout.py:516` and `eprom_info.py:271` to the D-04 `vpp_volts` consumer rename list — both were anticipated by D-04 but not enumerated; they read the `_map_data()` output dict's `"vpp"` float-volts key.
+1. Add `ic_layout.py:513` and `eprom_info.py:271` to the D-04 `vpp_volts` consumer rename list — both were anticipated by D-04 but not enumerated; they read the `_map_data()` output dict's `"vpp"` float-volts key.
 2. Add `pyproject.toml:64-69` package-data fix to Plan 02-02 — the rename will break `pip install -e .` (and SC#5 smoke) unless package-data references the renamed file; the existing entries are already stale (`database_generated.json` / `database_overrides.json` / `pin-maps.json`).
 3. Resolve D-15 dependency: `check_dispatch.py` today imports only stdlib (`json`/`os`/`sys`); adding `db.convert_to_programmer(chip)` introduces a runtime dependency on the installed `firestarter` package. Two viable shapes — pick one explicitly.
 
@@ -36,7 +36,7 @@ Phase 2 is a low-risk mechanical rename phase, but with one important factual co
 
 **D-08-compat — Loader stays tolerant on internal read.** `_map_data()` upstream-schema chain at `database.py:373-381` preserved unchanged (handles legacy user-override DBs).
 
-**D-08 (macro semantics) — `extract_num` is single-key probe with early return.** Verified by direct read of `json_parser.c:260-273`.
+**D-08 (macro semantics) — `extract_num` is single-key probe with early return.** Verified by direct read of `json_parser.c:447-460`.
 
 **D-09 — Single load-bearing attribution stays.** `tools/build_db.py:10` keeps `MINIPRO_XML_URL` constant. `:23` comment softened to "upstream's XML".
 
@@ -415,7 +415,7 @@ Verified by direct grep — exactly two consumer sites:
    Context: `ic` is an element of `eproms_data` passed to `print_eprom_list_table()`. The caller chain is `main.py:451` → `db_instance.get_eproms(verified=args.verified)` (`database.py:438`) which returns a list of `_map_data()` outputs. **In scope for D-04 rename.**
    **Change required:** `ic.get('vpp', '-')` → `ic.get('vpp_volts', '-')`.
 
-2. **`firestarter_app/firestarter/ic_layout.py:516`**:
+2. **`firestarter_app/firestarter/ic_layout.py:513`**:
    ```python
    output_data["vpp_str"] = f"{eprom_data.get('vpp', 'N/A')}v"
    ```
@@ -443,7 +443,7 @@ CONTEXT.md D-12 lists `:42` as one option for the surviving attribution line —
 
 **Claim under test:** Renaming `key_vpp` PROGMEM literal at `json_parser.c:62` from `"vpp"` to `"vpp_mv"`, flipping the dispatch row at `:74`, AND flipping the macro arg at `:309` from `"vpp"` to `"vpp_mv"` correctly parses the new wire key.
 
-**Direct read of `json_parser.c:260-273` (the macros):**
+**Direct read of `json_parser.c:447-460` (the macros):**
 ```c
 static int jsoneq_(const char* json, jsmntok_t* tok, const char* s) {
     if (tok->type == JSMN_STRING && (int)strlen_P(s) == tok->end - tok->start &&
@@ -676,13 +676,13 @@ def main():
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | `firestarter_handle_t.vpp_mv` is zero on a fresh command (so SAF-04 trips under partial upgrade). | Common Pitfalls #3 | If the handle is reused across commands without reset, `vpp_mv` might carry over from a prior command. **[VERIFIED in part]** — `json_parser.c:78-85` resets `address`, `ctrl_flags`, bus_config fields, `chip_id` at parse start, but NOT `vpp_mv`. The reset happens in `eprom_operations.cpp` or `firestarter.cpp` (whichever calls `json_parse`). Need to confirm in the planner phase that the handle is zero-initialized per command. Low risk — Phase 1's SAF-04 tests presumably exercised this. |
+| A1 | `firestarter_handle_t.vpp_mv` is zero on a fresh command (so SAF-04 trips under partial upgrade). | Common Pitfalls #3 | If the handle is reused across commands without reset, `vpp_mv` might carry over from a prior command. **[VERIFIED in part]** — `json_parser.c:164-274` resets `address`, `ctrl_flags`, bus_config fields, `chip_id` at parse start, but NOT `vpp_mv`. The reset happens in `eprom_operations.cpp` or `firestarter.cpp` (whichever calls `json_parse`). Need to confirm in the planner phase that the handle is zero-initialized per command. Low risk — Phase 1's SAF-04 tests presumably exercised this. |
 | A2 | `pip install -e .` from `firestarter_app/` picks up the new filename despite the stale package-data declaration. | Don't Hand-Roll | If `include-package-data = true` (line 62) ALSO reads from the source tree on editable install (it does, per setuptools docs), the smoke command works in dev — but a built wheel would not. **[CITED: setuptools docs on editable installs]** — confirmed by setuptools behavior; risk is for downstream wheel consumers, not for SC#5 dev smoke. |
 | A3 | Network access for `build_db.py` to fetch `infoic.xml` from `gitlab.com/DavidGriffith/minipro` is OPTIONAL — phase output byte-identical without regeneration. | "DB regeneration" below | If the committed `minipro_complete_db.json` is out of date vs upstream, "byte-identical after rename" is true but the DB content is also stale. Acceptable per D-16. **[ASSUMED]** based on D-16 text. |
 | A4 | The user's `firestarter info W27C512` smoke (SC#5) runs from `firestarter_app/` with `pip install -e .` already done. | Don't Hand-Roll | If run from a fresh venv without install, `firestarter` CLI script isn't available. **[ASSUMED]** based on dev workflow documented in `firestarter_app/CLAUDE.md`. |
 | A5 | The orphan `firestarter_app/firestarter/data/database_overrides.json` (not loaded) does not need touching despite containing legacy `"voltages": {"vpp": "25"}` entries. | "Pre-existing stale state" | If a future restore of the override loading mechanism re-enables this file, the legacy format would still parse (Pythonside D-08-compat path handles `electrical.vpp` strings). **[VERIFIED]** by direct read of `database.py:191` showing `override_proms = None`. |
 | A6 | Phase 1 (SAF-04) shipped successfully; `flash_intel_check_vpp` is in production firmware. | Common Pitfalls #3 | If SAF-04 didn't ship, partial-upgrade safety story collapses to "user hopefully notices". **[VERIFIED]** by direct read of `firestarter/src/proms/flash_intel.cpp:25-50` AND STATE.md line 65: "WARNING-1 — CLOSED by Plan 01-01". |
-| A7 | `eprom_info.py:271` and `ic_layout.py:516` are the ONLY two consumers of the `_map_data()` output's `"vpp"` key (besides the `convert_to_programmer` fallback at `:510`). | Missed Callsites | If there are more consumers (e.g., in a downstream tool or test), they would break silently. **[VERIFIED]** by exhaustive `grep -rn '"vpp"\|\.get\(.vpp.' firestarter_app/`. |
+| A7 | `eprom_info.py:271` and `ic_layout.py:513` are the ONLY two consumers of the `_map_data()` output's `"vpp"` key (besides the `convert_to_programmer` fallback at `:510`). | Missed Callsites | If there are more consumers (e.g., in a downstream tool or test), they would break silently. **[VERIFIED]** by exhaustive `grep -rn '"vpp"\|\.get\(.vpp.' firestarter_app/`. |
 
 ## Open Questions (RESOLVED)
 
@@ -892,7 +892,7 @@ cd ..
 **Confidence breakdown:**
 - Standard stack: HIGH — all touched code is in the working tree and directly verified.
 - Architecture: HIGH — sub-repo boundaries confirmed via `.gitmodules` and `ls`; meta-repo's tracking scope confirmed via CLAUDE.md.
-- Pitfalls: HIGH — SAF-04 confirmed shipped; macro semantics directly read from source; partial-upgrade analysis cross-checked against `json_parser.c:78-85` (handle initialization) and SAF-04 source.
+- Pitfalls: HIGH — SAF-04 confirmed shipped; macro semantics directly read from source; partial-upgrade analysis cross-checked against `json_parser.c:164-274` (handle initialization) and SAF-04 source.
 - CONTEXT.md verification: HIGH — every load-bearing claim verified except one (the "BOTH `"vpp"` and `"vpp_mv"` on the wire today" claim, which is WRONG and corrected above).
 - D-15 augmentation: HIGH — the stdlib-only import constraint and proposed Shape A/B documented from direct inspection.
 - D-04 consumer sweep: HIGH — exhaustive grep enumerated all two consumer sites and verified the read-context for each.

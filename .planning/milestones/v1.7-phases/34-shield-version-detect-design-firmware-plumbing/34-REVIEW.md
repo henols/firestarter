@@ -145,7 +145,7 @@ and all address-line routes — and **every** EPROM/Flash write through
 `dev_tools.cpp:100` + `:145` becomes a no-op-with-VPP-off. The chip
 appears unresponsive; the operator has no idea why because no error is
 emitted — `rurp_get_hardware_revision()` happily returns 0xFE and the
-LOG_INFO_ID_U8(MSG_INFO_HW, ...) emit on every boot (firestarter.cpp:138)
+LOG_INFO_ID_U8(MSG_INFO_HW, ...) emit on every boot (firestarter.cpp:134)
 just shows `"HW: Rev254"` (see WR-02 below).
 
 This interacts catastrophically with CR-01 (the `INPUT_PULLUP` bug shifts
@@ -179,7 +179,7 @@ in-spec boards.
 
 **File:** `firestarter_app/firestarter/serial_comm.py:171-179` (silkscreen dict)
 **File:** `firestarter_app/firestarter/messages.py:145-146` (catalog entries — out of phase scope but load-bearing)
-**File:** `firestarter/src/firestarter.cpp:137-138` (the two emit sites)
+**File:** `firestarter/src/firestarter.cpp:133-134` (the two emit sites)
 **Issue:** Phase 34 added `_REVISION_SILKSCREEN` to map revision bytes to
 silkscreen strings, and threaded it into `_format_message()` only for the
 `MSG_OK_REV` (P-02) path (serial_comm.py:351-357). But the firmware ALSO
@@ -188,7 +188,7 @@ emits the same revision byte through two other catalog entries every boot:
 0x5B: MessageDef(id=0x5B, name="MSG_INFO_HW",          format="HW: Rev%u",          params=(("u8", "dec"),) ...)
 0x5C: MessageDef(id=0x5C, name="MSG_INFO_PHYSICAL_HW", format="Physical HW: Rev%u", params=(("u8", "dec"),) ...)
 ```
-emitted from `firestarter.cpp:137-138`:
+emitted from `firestarter.cpp:133-134`:
 ```cpp
 LOG_INFO_ID_U8(MSG_INFO_PHYSICAL_HW, (uint8_t)rurp_get_physical_hardware_revision());
 LOG_INFO_ID_U8(MSG_INFO_HW,          (uint8_t)rurp_get_hardware_revision());
@@ -301,7 +301,7 @@ byte-stability"). However:
 - Any call to `rurp_get_physical_hardware_revision()` between MCU boot
   and `rurp_detect_hardware_revision()` will return 0xFF.
 
-In normal boot flow `setup()` (firestarter.cpp:42) calls
+In normal boot flow `setup()` (firestarter.cpp:39) calls
 `rurp_detect_hardware_revision()` immediately, so the file-scope
 initializer's lifetime is microseconds. But:
 1. Any future code path that queries the physical revision before

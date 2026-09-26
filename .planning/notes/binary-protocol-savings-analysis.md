@@ -29,7 +29,7 @@ already tiny. The savings ceiling is modest for flash and more interesting for R
 | `key_parsers` dispatch table | flash | 64 B |
 | JSON field-name strings (`"algorithm"`, `"memory-size"`, …) | flash | ~110 B |
 | `parse_json` + `jsmn_parse` bodies | inlined into `main` | est. ~700–1200 B |
-| **jsmn token array** `static jsmntok_t tokens[64]` (`firestarter.cpp:56`) | **RAM (.bss)** | **512 B** |
+| **jsmn token array** `static jsmntok_t tokens[64]` (`firestarter.cpp:53`) | **RAM (.bss)** | **512 B** |
 
 Exact flash figure is blocked by LTO inlining — pinning it needs an A/B stub build.
 
@@ -67,7 +67,7 @@ This is exactly the structured data JSON is worst at.
 
 ## Incidental find (latent bug)
 
-`json_parser.c:50` `json_init()` computes `sizeof(tokens)/sizeof(tokens[0])` on
+`json_parser.c:42` `json_init()` computes `sizeof(tokens)/sizeof(tokens[0])` on
 a **pointer** parameter → evaluates to `0`, passing `num_tokens=0` to jsmn.
-Appears dead (live path in `firestarter.cpp:59` calls `jsmn_parse` directly with
+Appears dead (live path in `firestarter.cpp:56` calls `jsmn_parse` directly with
 `NUMBER_JSNM_TOKENS`), but it is a latent trap. Tracked as a todo.

@@ -1,0 +1,7 @@
+Reading 26074 bytes for flash from input file firestarter_uno328pb.hex
+Writing 26240 bytes to flash
+Writing | ################################################## | 100% 3.70s
+Reading | ################################################## | 100% 2.83s
+26240 bytes of flash verified
+
+Avrdude done.  Thank you.

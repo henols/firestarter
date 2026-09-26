@@ -1,0 +1,10 @@
+== 1 the four-row return/verdict matrix (D-06 legs 1 and 2, roadmap criterion 3 positive half)
+leg1 return_sequence=True,False verdict=BAD expected_verdict=BAD run_count=2
+leg2 return_sequence=False,True verdict=OK expected_verdict=OK run_count=2
+ctl_both_pass return_sequence=True,True verdict=OK expected_verdict=OK run_count=2
+ctl_both_fail return_sequence=False,False verdict=BAD expected_verdict=BAD run_count=2
+rc=0
+== 2 the read-step test selection, full run
+....                                                                     [100%]
+4 passed, 158 deselected in 0.08s
+rc=0

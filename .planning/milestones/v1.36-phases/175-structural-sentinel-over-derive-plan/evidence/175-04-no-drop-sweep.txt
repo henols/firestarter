@@ -1,0 +1,196 @@
+== 0 measured child-suite wall time BEFORE this plan's changes (branch base with 175-01/02/03 present)
+child_seconds_before=139
+== 1 the no-drop sweep census
+sweep_plans=1354
+sweep_steps=16248
+sweep_results=16248
+sweep_misaligned=0
+sweep_unsupported=9304
+sweep_na_violations=0
+single_run_len=1
+single_run_op=__plan__
+single_run_verdict=BAD
+rc=0
+== 2 the new module
+...                                                                      [100%]
+3 passed in 29.73s
+rc_sweep_module=0
+== 3 child suite wall time with the new modules present
+rc_child=0
+child_seconds=167
+child_seconds_is_lower_bound=1 wave-2 siblings 175-02 and 175-03 may not be on disk yet; the 420 cap is sized against the combined estimate for all four new modules, and 175-05 Gate 5 is the authoritative post-merge figure
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+32 snapshots passed.
+== 4 test_skip_census after the cap raise
+.....                                                                    [100%]
+5 passed in 171.62s (0:02:51)
+rc_census=0
+== N1 weaken alignment_violations to return an empty list unconditionally -- RED expected
+...F..                                                                   [100%]
+=================================== FAILURES ===================================
+_____________ test_dropping_a_result_is_flagged_as_a_misalignment ______________
+
+    def test_dropping_a_result_is_flagged_as_a_misalignment():
+        """`alignment_violations` is sensitive at 40 of 40 on the pinned slice:
+        for every one of the 40 plans, a results list one entry shorter than
+        `plan.steps` (a NEW list -- never `del`, `pop`, or an in-place mutation
+        of the corpus's cached `Step`/`StepResult` objects, per T-175-20) makes
+        `alignment_violations` non-empty."""
+        assert len(SENSITIVITY_SLICE) == 40, (
+            f"SENSITIVITY_SLICE has {len(SENSITIVITY_SLICE)} members, expected "
+            "exactly 40 -- this leg's absolute floor is not intact"
+        )
+        corpus = plan_corpus()
+        unflagged = []
+        for key in SENSITIVITY_SLICE:
+            plan = corpus[key]
+            results = chip_test.run_plan(plan, mock_operator(), REAL_DB)
+            dropped_results = results[:-1]
+            if not alignment_violations(plan, dropped_results):
+                unflagged.append(key)
+>       assert unflagged == [], (
+            f"{len(unflagged)} of 40 plans in SENSITIVITY_SLICE were NOT "
+            f"flagged after dropping their last result -- alignment_violations "
+            f"is not sensitive on these: {unflagged[:10]}"
+        )
+E       AssertionError: 40 of 40 plans in SENSITIVITY_SLICE were NOT flagged after dropping their last result -- alignment_violations is not sensitive on these: [('2516', 'full'), ('2532', 'full'), ('27128,D27128', 'full'), ('27128A,D27128A,D27128B', 'full'), ('2732,2732A,M2732,M2732A', 'full'), ('27512', 'full'), ('2764', 'full'), ('2764A', 'full'), ('27C010', 'full'), ('27C010,27C010A', 'full')]
+E       assert [('2516', 'fu... 'full'), ...] == []
+E         
+E         Left contains 40 more items, first extra item: ('2516', 'full')
+E         Use -v to get more diff
+
+tests/test_derive_plan_no_drop_sweep.py:252: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_no_drop_sweep.py::test_dropping_a_result_is_flagged_as_a_misalignment
+1 failed, 5 passed in 32.08s
+rc_n1=1
+== N2 weaken na_verdict_violations to return an empty list unconditionally -- RED expected
+....FF                                                                   [100%]
+=================================== FAILURES ===================================
+___________ test_a_non_na_verdict_on_an_unsupported_step_is_flagged ____________
+
+    def test_a_non_na_verdict_on_an_unsupported_step_is_flagged():
+        """`na_verdict_violations` is sensitive at 40 of 40 on the pinned slice:
+        for every one of the 40 plans, replacing one unsupported step's result
+        with a `dataclasses.replace` copy carrying a non-NA verdict (a NEW
+        `StepResult`, never an in-place attribute assignment on the corpus's
+        shared object, per T-175-20) makes `na_verdict_violations` non-empty. A
+        slice member with no unsupported step at all is a fixture-setup failure,
+        reported rather than silently skipped."""
+        assert len(SENSITIVITY_SLICE) == 40, (
+            f"SENSITIVITY_SLICE has {len(SENSITIVITY_SLICE)} members, expected "
+            "exactly 40 -- this leg's absolute floor is not intact"
+        )
+        corpus = plan_corpus()
+        unflagged = []
+        for key in SENSITIVITY_SLICE:
+            plan = corpus[key]
+            results = chip_test.run_plan(plan, mock_operator(), REAL_DB)
+            target_index = next(
+                (i for i, s in enumerate(plan.steps) if not s.supported), None
+            )
+            if target_index is None:
+                raise AssertionError(
+                    f"fixture setup error: {key} has no unsupported step to "
+                    "flip a verdict on -- SENSITIVITY_SLICE's assumption that "
+                    "every member has at least one unsupported step does not "
+                    "hold for this key"
+                )
+            flipped_results = list(results)
+            flipped_results[target_index] = dataclasses.replace(
+                flipped_results[target_index], verdict=chip_test.VERDICT_BAD
+            )
+            if not na_verdict_violations(plan, flipped_results):
+                unflagged.append(key)
+>       assert unflagged == [], (
+            f"{len(unflagged)} of 40 plans in SENSITIVITY_SLICE were NOT "
+            f"flagged after flipping one unsupported step's verdict away from "
+            f"NA -- na_verdict_violations is not sensitive on these: "
+            f"{unflagged[:10]}"
+        )
+E       AssertionError: 40 of 40 plans in SENSITIVITY_SLICE were NOT flagged after flipping one unsupported step's verdict away from NA -- na_verdict_violations is not sensitive on these: [('2516', 'full'), ('2532', 'full'), ('27128,D27128', 'full'), ('27128A,D27128A,D27128B', 'full'), ('2732,2732A,M2732,M2732A', 'full'), ('27512', 'full'), ('2764', 'full'), ('2764A', 'full'), ('27C010', 'full'), ('27C010,27C010A', 'full')]
+E       assert [('2516', 'fu... 'full'), ...] == []
+E         
+E         Left contains 40 more items, first extra item: ('2516', 'full')
+E         Use -v to get more diff
+
+tests/test_derive_plan_no_drop_sweep.py:282: AssertionError
+_____________ test_a_short_results_list_is_reported_not_truncated ______________
+
+    def test_a_short_results_list_is_reported_not_truncated():
+        """A results list shorter than `plan.steps` is reported by
+        `na_verdict_violations`, not silently truncated by a positional `zip` --
+        the precise failure PRUNE-05 forbids, since a truncating zip could drop
+        exactly the unsupported step whose result was cut and read that as
+        "nothing wrong"."""
+        corpus = plan_corpus()
+        plan = corpus[("M8720", "full")]
+        full_results = chip_test.run_plan(plan, mock_operator(), REAL_DB)
+        short_results = list(full_results[:-1])
+        violations = na_verdict_violations(plan, short_results)
+>       assert violations, (
+            "na_verdict_violations returned no violations for a results list "
+            "one entry shorter than the step list -- a positional zip that "
+            "truncates silently would let a dropped tail pass unnoticed, which "
+            "is the precise failure PRUNE-05 forbids"
+        )
+E       AssertionError: na_verdict_violations returned no violations for a results list one entry shorter than the step list -- a positional zip that truncates silently would let a dropped tail pass unnoticed, which is the precise failure PRUNE-05 forbids
+E       assert []
+
+tests/test_derive_plan_no_drop_sweep.py:301: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_no_drop_sweep.py::test_a_non_na_verdict_on_an_unsupported_step_is_flagged
+FAILED tests/test_derive_plan_no_drop_sweep.py::test_a_short_results_list_is_reported_not_truncated
+2 failed, 4 passed in 32.28s
+rc_n2=1
+== N3 change the sensitivity slice size assertion from 40 to 41 -- RED expected
+...FF.                                                                   [100%]
+=================================== FAILURES ===================================
+_____________ test_dropping_a_result_is_flagged_as_a_misalignment ______________
+
+    def test_dropping_a_result_is_flagged_as_a_misalignment():
+        """`alignment_violations` is sensitive at 40 of 40 on the pinned slice:
+        for every one of the 40 plans, a results list one entry shorter than
+        `plan.steps` (a NEW list -- never `del`, `pop`, or an in-place mutation
+        of the corpus's cached `Step`/`StepResult` objects, per T-175-20) makes
+        `alignment_violations` non-empty."""
+>       assert len(SENSITIVITY_SLICE) == 41, (
+            f"SENSITIVITY_SLICE has {len(SENSITIVITY_SLICE)} members, expected "
+            "exactly 40 -- this leg's absolute floor is not intact"
+        )
+E       AssertionError: SENSITIVITY_SLICE has 40 members, expected exactly 40 -- this leg's absolute floor is not intact
+E       assert 40 == 41
+E        +  where 40 = len((('2516', 'full'), ('2532', 'full'), ('27128,D27128', 'full'), ('27128A,D27128A,D27128B', 'full'), ('2732,2732A,M2732,M2732A', 'full'), ('27512', 'full'), ...))
+
+tests/test_derive_plan_no_drop_sweep.py:242: AssertionError
+___________ test_a_non_na_verdict_on_an_unsupported_step_is_flagged ____________
+
+    def test_a_non_na_verdict_on_an_unsupported_step_is_flagged():
+        """`na_verdict_violations` is sensitive at 40 of 40 on the pinned slice:
+        for every one of the 40 plans, replacing one unsupported step's result
+        with a `dataclasses.replace` copy carrying a non-NA verdict (a NEW
+        `StepResult`, never an in-place attribute assignment on the corpus's
+        shared object, per T-175-20) makes `na_verdict_violations` non-empty. A
+        slice member with no unsupported step at all is a fixture-setup failure,
+        reported rather than silently skipped."""
+>       assert len(SENSITIVITY_SLICE) == 41, (
+            f"SENSITIVITY_SLICE has {len(SENSITIVITY_SLICE)} members, expected "
+            "exactly 40 -- this leg's absolute floor is not intact"
+        )
+E       AssertionError: SENSITIVITY_SLICE has 40 members, expected exactly 40 -- this leg's absolute floor is not intact
+E       assert 40 == 41
+E        +  where 40 = len((('2516', 'full'), ('2532', 'full'), ('27128,D27128', 'full'), ('27128A,D27128A,D27128B', 'full'), ('2732,2732A,M2732,M2732A', 'full'), ('27512', 'full'), ...))
+
+tests/test_derive_plan_no_drop_sweep.py:269: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_no_drop_sweep.py::test_dropping_a_result_is_flagged_as_a_misalignment
+FAILED tests/test_derive_plan_no_drop_sweep.py::test_a_non_na_verdict_on_an_unsupported_step_is_flagged
+2 failed, 4 passed in 32.00s
+rc_n3=1
+== RESTORED module returned to clean state, all weakenings reverted
+......                                                                   [100%]
+6 passed in 32.11s
+rc_clean=0
+== 5 full app suite after both tasks landed
+full_suite_result=2151 passed, 1 warning in 346.66s

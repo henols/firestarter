@@ -1,0 +1,160 @@
+# Captured 2026-09-13. STABLE-02's bench leg: the update-check half of 999.9's
+# chain, run against the stable this phase published (2.0.9, verified live in
+# 191-stable-01-pypi.txt), on the Leonardo attached at /dev/ttyACM0.
+#
+# The fixture (191-stable-install-fixture.sh, evidence/191-stable-02-fixture-*)
+# covers install -> query -> locate release -> download asset, board-free.
+# This transcript covers the fifth leg -- the update-check on real hardware --
+# per D-09's operator instruction. No no-flash guard, no confirmation prompt,
+# no question asked at flash time: D-09 is a standing operator instruction and
+# this is a test board.
+#
+# This install is SEPARATE from the fixture's own venv: the fixture tears its
+# venv down on exit, and this leg needs a persistent one to drive the CLI
+# interactively (stdin feed for the Confirm.ask prompt).
+
+--- Environment ---
+port: /dev/ttyACM0 (crw-rw-rw-+ root:dialout, present before the leg started)
+avrdude: /usr/bin/avrdude (version 7.1)
+scratch venv: /tmp/tmp.OzGHAbagta (mktemp -d, outside /workspaces; removed by
+  explicit path at the end of this leg)
+
+--- Install: clean pip install of the published stable, no --pre, no local path ---
+
+$ python3 -m venv /tmp/tmp.OzGHAbagta/venv
+$ /tmp/tmp.OzGHAbagta/venv/bin/pip install --no-cache-dir --disable-pip-version-check firestarter
+...
+Downloading firestarter-2.0.9-py3-none-any.whl (68 kB)
+...
+Successfully installed argcomplete-3.7.2 certifi-2026.7.22 charset_normalizer-3.5.1 firestarter-2.0.9 idna-3.19 markdown-it-py-4.2.0 mdurl-0.1.2 pygments-2.21.0 pyserial-3.5 requests-2.34.2 rich-15.0.0 tqdm-4.70.1 urllib3-2.7.0
+
+--- Provenance first (D-08's shadowing trap) ---
+
+$ /tmp/tmp.OzGHAbagta/venv/bin/python -P -c "
+import firestarter
+from firestarter.constants import FIRESTARTER_RELEASE_URL
+print('file:', firestarter.__file__)
+print('version:', firestarter.__version__)
+print('release_url:', FIRESTARTER_RELEASE_URL)
+"
+file: /tmp/tmp.OzGHAbagta/venv/lib/python3.12/site-packages/firestarter/__init__.py
+version: 2.0.9
+release_url: https://api.github.com/repos/henols/firestarter_fw/releases/latest
+
+ASSERTION: installed_file resolves inside the scratch venv (/tmp/tmp.OzGHAbagta/venv/...),
+not a sibling editable install. version (2.0.9) equals the version recorded in
+191-stable-01-pypi.txt (info.version: 2.0.9). release_url is the repointed
+firestarter_fw endpoint. No shadowing install possible -- this transcript
+proves which artefact was exercised.
+
+--- Pre-flash reading and flash attempt: the no-flag path, answered y ---
+
+Capture timestamp (UTC): 2026-09-13T22:04:27Z
+
+$ echo "y" | firestarter fw -b leonardo -p /dev/ttyACM0
+Reading current firmware version...
+Connecting...
+Timeout waiting for a response from /dev/ttyACM0.
+Connecting... Failed
+Failed to read firmware version: No compatible programmer found on any port.
+Could not determine current firmware version. Use --install or --force to proceed with installation.
+EXIT_CODE=1
+
+Re-run at 2026-09-13T22:04:51Z produced the identical result (ruled out a
+one-shot transient):
+
+$ echo "y" | firestarter fw -b leonardo -p /dev/ttyACM0
+Reading current firmware version...
+Connecting...
+Timeout waiting for a response from /dev/ttyACM0.
+Connecting... Failed
+Failed to read firmware version: No compatible programmer found on any port.
+Could not determine current firmware version. Use --install or --force to proceed with installation.
+EXIT_CODE=1
+
+FINDING: the no-flag path could not complete a version handshake against the
+board's actual firmware (3.0.0b22). This is the plan's own named contingency
+("The stable host is 951 commits older than the firmware currently on the
+board, so a version handshake against 3.0.0b22 may not succeed"), not a
+retry-until-clean workaround -- the same result on two consecutive attempts
+is recorded here rather than smoothed over. Because no current version could
+be read at all, the predicted version-parse warning and downgrade prompt
+(which only fire when BOTH a current and a latest version resolve) never had
+an opportunity to appear; that is a consequence of the handshake failing
+outright, not a defect introduced by this leg.
+
+--- Named fallback taken: firestarter fw --install (the no-current-version arm) ---
+
+Capture timestamp (UTC): 2026-09-13T22:05:10Z
+
+$ firestarter fw --install -b leonardo -p /dev/ttyACM0
+Reading current firmware version...
+Connecting...
+Timeout waiting for a response from /dev/ttyACM0.
+Connecting... Failed
+Failed to read firmware version: No compatible programmer found on any port.
+Proceeding with firmware update for leonardo (current: None, latest: 2.0.6).
+Downloading firmware from https://github.com/henols/firestarter_fw/releases/download/2.0.6/firestarter_leonardo.hex...
+Firmware downloaded to: /home/vscode/.firestarter/firestarter_leonardo.hex (0.41s)
+Attempting to flash firmware to leonardo on port /dev/ttyACM0 using Avrdude...
+Firmware successfully updated on /dev/ttyACM0 (5.26s)
+EXIT_CODE=0
+
+WHY THIS PATH: exactly the plan's named fallback -- "if the CLI reports it
+could not determine the current firmware version, re-run as `firestarter fw
+--install -b leonardo -p /dev/ttyACM0`, which proceeds through the
+no-current-version arm without a prompt." No prompt of the executor's own
+was substituted; --avrdude-path was not needed (avrdude was found on PATH).
+The download resolved 2.0.6 for leonardo, matching the version cited in
+191-CONTEXT.md and read in the earlier board-free fixture runs.
+
+--- Closing reading: contemporary host vs. contemporary firmware ---
+
+Capture timestamp (UTC): 2026-09-13T22:05:34Z
+
+$ firestarter fw -b leonardo -p /dev/ttyACM0   (no stdin, no flags)
+Reading current firmware version...
+Connecting...Connecting... OK
+Current firmware version: 2.0.6, for controller: leonardo on port /dev/ttyACM0
+Firmware is already up to date (version 2.0.6 for leonardo). Use --force to reinstall.
+EXIT_CODE=0
+
+RESULT: "Current firmware version: 2.0.6, for controller: leonardo on port
+/dev/ttyACM0" and "Firmware is already up to date" -- the board is left on
+2.0.6, and this line is also the per-port controller identity confirmation
+this project requires (ttyACM numbering shuffles across replug; this reading
+is the CLI's own confirmation of which controller answered on this port,
+taken AFTER the flash, at the point where the host and firmware are
+contemporaries and the identity read is unambiguous).
+
+--- Cleanup ---
+
+$ ls /home/vscode/.firestarter/
+config.json
+reports/
+(no .hex present -- manage_firmware_update removed the downloaded file
+itself after the successful install, before this check ran)
+
+$ test -f /home/vscode/.firestarter/config.json && echo config_survived=0
+config_survived=0
+
+$ rm -rf -- /tmp/tmp.OzGHAbagta
+(scratch venv removed by explicit path; no directory-wide removal, no
+git clean anywhere in this leg)
+
+--- Summary ---
+
+installed_version:        2.0.9 (matches 191-stable-01-pypi.txt's confirmed version)
+installed_file:           resolved inside /tmp/tmp.OzGHAbagta/venv (scratch, not shadowed)
+flash path taken:         named fallback (`fw --install`), because the no-flag
+                           path could not complete a version handshake against
+                           firmware 3.0.0b22 (two consecutive attempts, same result)
+firmware flashed:         2.0.6, for controller: leonardo, on /dev/ttyACM0
+closing state:            "Current firmware version: 2.0.6, for controller: leonardo
+                           on port /dev/ttyACM0" / "Firmware is already up to date"
+hex residue:               none (auto-removed by manage_firmware_update)
+~/.firestarter/config.json: survived
+~/.firestarter/reports/:    survived
+
+This is a real capture of real commands run against the attached board in
+this session. The board is left on 2.0.6, per D-09.

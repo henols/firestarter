@@ -1,0 +1,37 @@
+CONFIRMS: NOT a v1.33 regression -- the control arm reproduces the IDENTICAL failure. `dev test
+W27E040` on the control arm (fw_sha 8695ee52c27a4bee4387c5c489afd5f3d7275e8a, independently
+read-back-proven, judged_span_bytes=28170): id OK x1 (3.48s, chip_id 0xDA86 matched -- confirming
+the earlier chip-ID mismatch was a seating fault, not arm-dependent), read OK x2 (165.3s), write OK
+x1 (392.4s, full device 0-524288), verify OK x1 (68.9s), erase OK x1 (62.6s), blank-check BAD x1
+(69.4s, reason "Empty input", same error_code 164) -- banner 6 of 6 ran, wall-clock 767s,
+essentially identical timing to the v133 runs step for step. This is a byte-for-byte reproduction
+of CHIP__v133__w27e040's own failure shape on the OTHER arm, under the SAME seating (Leonardo
+chip-out-exempt, chip never removed between the two runs).
+
+CORROBORATED FURTHER (see CHIP__v133__w27e040's own updated verdict): a subsequent reproducibility
+re-run on the v133 arm ALSO reproduced this identical failure at the same step, without any
+re-flash. The fault now has THREE observations -- v133 twice, control once -- all at the same step,
+same error, near-identical timing. This strengthens (not just corroborates) the arm-independence
+finding: intermittent transport corruption, not a v1.33-specific behaviour.
+
+ERROR-IDENTITY CORRECTION (same finding as the primary row, restated for this row's own
+completeness): `MSG_ERR_EMPTY_INPUT` (error_code 164/0xA4) is overloaded in
+firestarter/src/firestarter.cpp -- `:124` (genuine empty buffer) and `:251-255` (frame-integrity
+path: CRC mismatch, COBS violation, overflow, or read underrun -- reused because a distinct
+`MSG_ERR_BAD_FRAME` was deliberately deferred, messages.h being codegen-generated). The control
+arm's blank-check failure is therefore also far more likely a transport-layer frame corruption than
+a literal empty input, and its own `erase: OK` is likewise not independent proof the device was
+left blank -- the step that would confirm that died first, identically to the v133 run.
+
+CONCLUSION: `ERROR: Empty input` is an ARM-INDEPENDENT transport-integrity fault, not a v1.33
+behavioural change. It has now been observed on BOTH arms, at multiple points in the sweep as a
+benign transient (positions 1-4) and now, on this part, as a step-killing failure reproduced THREE
+times (v133 x2, control x1) at the identical point in the sequence. Recorded as a rig/protocol
+finding, cross-referenced against position 1's own CELL.md note and the project's prior write-path
+"Empty input"/0xA4 regression (resolved historically by ack_data=False on INIT/END) -- worth a
+fresh filing on its own merits, out of scope to fix in this bench phase (D-16 boundary).
+
+Per the operator ruling's own stated purpose for C-08 ("to establish whether control firmware
+fails the same way (not v1.33-attributable) or passes where v1.33 fails"): control failed the SAME
+way, and the v1.33 arm's own re-run confirms it fails the same way TWICE. CHIP__v133__w27e040's
+live FAIL is therefore NOT a v1.33 regression.

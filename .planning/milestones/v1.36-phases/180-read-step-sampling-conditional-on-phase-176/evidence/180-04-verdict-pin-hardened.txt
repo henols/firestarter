@@ -1,0 +1,22 @@
+== 1 the hardened verdict-shape pin (WR-02, Phase 180, plan 180-04)
+anchor_count=1
+head_names=VERDICT_BAD,VERDICT_OK,last_ok
+head_tags=const_true,read_eprom_call
+old_pin_at_head=GREEN
+new_pin_at_head=GREEN
+rc=0
+== 2 discrimination against the planted last_ok-reassignment mutant
+planted_names=VERDICT_BAD,VERDICT_OK,last_ok
+planted_tags=const_true,read_eprom_call,other
+old_pin_at_planted=GREEN
+new_pin_at_planted=RED
+rc=0
+== 3 docstring scalars
+wr02_doc_drops_overclaim=True
+wr02_doc_names_assignment_claim=True
+stale_line_citations=0
+rc=0
+== 4 the readback inventory module, full run
+............                                                             [100%]
+12 passed in 0.27s
+rc=0

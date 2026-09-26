@@ -64,7 +64,7 @@
 |------|----------------|-----------------------------------|
 | `protocol-id` (algorithm) | `_map_data` line ~420 / `convert_to_programmer` `algorithm` | Firmware dispatch key. `PROTOCOL_MAP` (database.py:35) names them: 0x05 FLASH_AMD_STD, 0x06 FLASH_AMD_ALT, 0x07 EPROM_STD, 0x08 EPROM_QUICK, 0x0B EPROM_LEGACY, 0x0D EEPROM_POLL, 0x10 FLASH_INTEL, 0x28 SRAM_STD |
 | `electrical-type` | `_map_data` `electrical-type` | `UV-EPROM` / `EEPROM` / `Flash/EEPROM` / `SRAM`. The technology-aware destructiveness axis (UV = no electrical erase; small-region write). |
-| erase-capability | `convert_to_programmer` sets `FLAG_CAN_ERASE` (0x02) when `electrical-type ∈ {EEPROM, Flash/EEPROM}` AND `algorithm != 5` (database.py:582–595) | Whether an `erase` step is even applicable. **Reuse this exact predicate** — do not re-derive erase-capability independently. |
+| erase-capability | `convert_to_programmer` sets `FLAG_CAN_ERASE` (0x02) when `electrical-type ∈ {EEPROM, Flash/EEPROM}` AND `algorithm != 5` (database.py:581–595) | Whether an `erase` step is even applicable. **Reuse this exact predicate** — do not re-derive erase-capability independently. |
 | SRAM/FRAM | `_SRAM_PROTO_IDS = {0x0E,0x27,0x28,0x29}` (eprom_operations.py:1656) | Blank-check is N/A (short-circuits, eprom_operations.py:1669); these have no factory-blank state. |
 | chip-id present | `info-flags & 0x20` set from `programming.chip_id_check`; `chip-id` key present | Whether the `id` step can produce an expected-vs-actual comparison. |
 | `support_status` | raw config via `db.get_eprom_config()` (NOT carried through `_map_data`) | `resolve_chip` refuses non-`supported` chips (chip_resolver.py:54). See design note below. |

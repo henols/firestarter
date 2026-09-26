@@ -1,0 +1,70 @@
+== 1 module pytest count, before this task's edit (measured against precondition)
+./.venv311/bin/python -m pytest tests/test_chip_test.py -o addopts="" -q
+162 passed in 3.88s
+pre_edit_passed=162
+rc=0
+
+== 2 module pytest count, after this task's edit
+./.venv311/bin/python -m pytest tests/test_chip_test.py -o addopts="" -q
+162 passed in 1.38s
+162 passed
+rc=0
+
+== 3 -k read_step selection, after this task's edit
+./.venv311/bin/python -m pytest tests/test_chip_test.py -o addopts="" -q -k read_step
+4 passed
+rc=0
+
+== 4 builder call sites
+grep -c '_alternating_read_side_effect' tests/test_chip_test.py
+builder_call_sites=3
+rc=0
+
+== 5 nested closure removal, both refactored legs
+sed range test_read_step_last_run_failure_yields_bad .. test_read_step_first_run_failure_with_passing_last_run_yields_ok
+nested_read_side_effect_in_leg_one=0
+sed range test_read_step_first_run_failure_with_passing_last_run_yields_ok .. test_write_step_attaches_fingerprint_with_region_start_addr_base
+nested_read_side_effect_in_leg_two=0
+rc=0
+
+== 6 pre-existing divergence closure, untouched
+grep -c 'def _read_side_effect' tests/test_chip_test.py
+1 (inside test_read_step_disagreement_is_divergence_metric_not_marginal, unrenamed, still present)
+pre_existing_divergence_closure_intact=1
+rc=0
+
+== 7 assertion-safety diff since pinned app anchor 93a1672
+git diff 93a1672 -- tests/test_chip_test.py
+removed_assert_lines=0
+added_hash_comment_lines=0
+assert_lines_removed=0
+rc=0
+
+== 8 scope diff — firmware and fixtures untouched
+git diff 93a1672 --quiet -- firestarter/
+git diff 93a1672 --quiet -- tests/fixtures/
+both exit 0
+rc=0
+
+== 9 lint/format
+./.venv311/bin/python -m ruff check tests/
+All checks passed!
+./.venv311/bin/python -m ruff format --check tests/
+139 files already formatted
+rc=0
+
+== 10 tokenize comment counts (both touched modules, both gap-closure plans)
+comments_test_chip_test_py=621
+comments_test_readback_inventory_py=0
+rc=0
+
+== summary scalars
+builder_call_sites=3
+nested_read_side_effect_in_leg_one=0
+nested_read_side_effect_in_leg_two=0
+pre_existing_divergence_closure_intact=1
+assert_lines_removed=0
+module_passed_before=162
+module_passed_after=162
+read_step_passed=4
+162 passed

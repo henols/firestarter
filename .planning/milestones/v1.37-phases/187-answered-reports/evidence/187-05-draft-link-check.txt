@@ -1,0 +1,45 @@
+# 187-05 — Draft link check: every URL in evidence/bodies/187-gh60.md and 187-gh62.md
+# Resolved 2026-09-12T15:03:50Z. Pinned SHA for every in-repo permalink: ebd80b53b06b49678e41f12d31136f5b9d3edd26
+# (the one meta merge commit SHA recorded on line 1 of evidence/187-02-merge-sha.txt)
+
+## URL 1 — https://github.com/henols/firestarter_prom/blob/ebd80b53b06b49678e41f12d31136f5b9d3edd26/.planning/notes/jumper-display-ground-truth.md#which-operations-energize-socket-pin-1--the-answer-to-gh60
+Cited in: evidence/bodies/187-gh60.md
+Method: gh api "repos/henols/firestarter_prom/contents/.planning/notes/jumper-display-ground-truth.md?ref=ebd80b53b06b49678e41f12d31136f5b9d3edd26"
+Result:
+{"path":".planning/notes/jumper-display-ground-truth.md","sha":"b464bc2fef30247c9516de729c7da53843f8b4cd","size":22340}
+Pinned SHA confirmed present in file (not a pre-merge stub — DRIFT-3's 76-line/4334-byte stub is a
+different, earlier SHA; this file is 22340 bytes at the pinned SHA, the full document).
+Anchor check: decoded content contains the exact heading the anchor targets, at line 170:
+170:## Which operations energize socket pin 1 — the answer to gh#60
+Anchor slug used: 'which-operations-energize-socket-pin-1--the-answer-to-gh60' — copied verbatim from
+the rendered-page anchor recorded in evidence/187-02-meta-merge.txt:161-162 (Plan 187-02's own copy
+of GitHub's emitted id="user-content-..." / href="#..." pair), not derived from the heading text.
+STATUS: RESOLVED — content confirmed at the pinned SHA, heading present, anchor matches the copied slug.
+
+## URL 2 — https://github.com/henols/firestarter_prom/issues/68
+Cited in: evidence/bodies/187-gh62.md
+Method: gh api repos/henols/firestarter_prom/issues/68
+Result:
+{"html_url":"https://github.com/henols/firestarter_prom/issues/68","number":68,"state":"open"}
+STATUS: RESOLVED — issue exists, state OPEN, matches Task 1's before-state capture.
+
+## URL 3 — https://github.com/henols/firestarter_prom/blob/ebd80b53b06b49678e41f12d31136f5b9d3edd26/.planning/notes/ae29f2008-classification-verdict.md#why-the-reporters---force-erase-worked-and-why-that-is-not-a-licence
+Cited in: evidence/bodies/187-gh62.md
+Method: gh api "repos/henols/firestarter_prom/contents/.planning/notes/ae29f2008-classification-verdict.md?ref=ebd80b53b06b49678e41f12d31136f5b9d3edd26"
+Result:
+{"path":".planning/notes/ae29f2008-classification-verdict.md","sha":"0fd2e65572273cb2d6d4ed8636168839a0b54f8c","size":13552}
+Pinned SHA confirmed present. This file does not exist at all on origin/beta before the meta merge
+(RESEARCH.md §7.1) — a pre-merge SHA would 404 outright, which is the failure this check exists to catch.
+Anchor check: decoded content contains the exact heading the anchor targets, at line 77:
+77:## WHY THE REPORTER'S `--force` ERASE WORKED, AND WHY THAT IS NOT A LICENCE
+Anchor slug used: 'why-the-reporters---force-erase-worked-and-why-that-is-not-a-licence' — copied
+verbatim from the rendered-page anchor recorded in evidence/187-02-meta-merge.txt:167-168, not derived
+from the heading text (the heading contains a backtick-quoted '--force' and an em-dash, both of which
+make a hand-derived slug unreliable per RESEARCH §7.2's anchor caution).
+STATUS: RESOLVED — content confirmed at the pinned SHA, heading present, anchor matches the copied slug.
+
+## Summary
+3 distinct URLs across both bodies; all 3 RESOLVED to the correct content at the pinned SHA
+ebd80b53b06b49678e41f12d31136f5b9d3edd26. Zero blob/beta/ or blob/main/ links. Zero URLs resolved at or before the meta merge's
+parent commit (0629e4ad365a3ef8d3fde38a1e28272e3c49ef59), which is the failure mode that would
+return 200 while pointing at a stub or a nonexistent file.

@@ -13,7 +13,7 @@ chip-database data model.
 ## Where the code lives
 
 - Display render: [eprom_info.py:286-292](../../firestarter_app/firestarter/eprom_info.py#L286-L292)
-- Jumper computation: [ic_layout.py:621-658](../../firestarter_app/firestarter/ic_layout.py#L621-L658)
+- Jumper computation: [ic_layout.py:618-655](../../firestarter_app/firestarter/ic_layout.py#L621-L658)
 - Rev 0/1 structure (`_get_rev1_jumper_settings_data`): [ic_layout.py:140-167](../../firestarter_app/firestarter/ic_layout.py#L140-L167)
 - Rev 2.x structure (`_get_rev2_jumper_settings_data`): [ic_layout.py:169-184](../../firestarter_app/firestarter/ic_layout.py#L169-L184)
 - Dead phantom-JP5 method (`_get_rev2_2_jumper_settings_data`): [ic_layout.py:186-199](../../firestarter_app/firestarter/ic_layout.py#L186-L199)

@@ -1,0 +1,1 @@
+argv: FIRESTARTER_CONFIG_DIR=/workspaces/.planning/v1.34/config /workspaces/.v1.34-arms/v133/.venv/bin/firestarter -v -p /dev/ttyACM0 hw (cwd=/workspaces) rc=0 elapsed=3.945s

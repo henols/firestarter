@@ -1,0 +1,86 @@
+# 187-12 — Live post-post state of all six issues plus the pinnedIssues read
+# Captured 2026-09-12 (this plan), after all five posts (187-07 through 187-11) and the gh#60 close.
+
+## Six target issues (number, state, stateReason, labels, comment_count)
+
+```bash
+$ for N in 9 23 28 31 60 62; do
+  gh issue view $N --repo henols/firestarter_prom \
+    --json number,title,state,stateReason,labels,comments \
+    --jq '{n:.number,state:.state,reason:.stateReason,labels:[.labels[].name],ncomments:(.comments|length)}'
+done
+```
+
+```json
+[
+  {"n": 9,  "state": "OPEN",   "reason": "",          "labels": [],                                                          "ncomments": 1},
+  {"n": 23, "state": "OPEN",   "reason": "",          "labels": ["dev-test", "needs:report", "cause:database", "cause:rig"], "ncomments": 4},
+  {"n": 28, "state": "OPEN",   "reason": "",          "labels": ["dev-test", "needs:report", "cause:harness"],               "ncomments": 5},
+  {"n": 31, "state": "OPEN",   "reason": "",          "labels": ["dev-test", "needs:report", "cause:harness", "cause:database"], "ncomments": 3},
+  {"n": 60, "state": "CLOSED", "reason": "COMPLETED", "labels": ["fix:released"],                                            "ncomments": 1},
+  {"n": 62, "state": "OPEN",   "reason": "",          "labels": ["cause:firmware"],                                         "ncomments": 1}
+]
+```
+
+## pinnedIssues GraphQL read (D-06 verification — this phase never called pinIssue)
+
+```bash
+$ gh api graphql -f query='{repository(owner:"henols",name:"firestarter_prom"){pinnedIssues(first:10){totalCount nodes{issue{number state}}}}}'
+{"data":{"repository":{"pinnedIssues":{"totalCount":1,"nodes":[{"issue":{"number":9,"state":"OPEN"}}]}}}}
+```
+
+Result: unchanged from the 187-05 before-capture — `totalCount: 1`, naming issue 9, state OPEN. The
+`pinIssue` mutation was never called by this phase (read-only verification only).
+
+## gh#9 comment-identity check (D-06 — proves the 2026-09-02 comment was never edited)
+
+```bash
+$ gh api repos/henols/firestarter_prom/issues/comments/5511487546 --jq '{id:.id,created_at:.created_at,updated_at:.updated_at}'
+{"created_at":"2026-09-02T14:50:37Z","id":5511487546,"updated_at":"2026-09-02T14:50:37Z"}
+```
+
+`created_at == updated_at` → UNEDITED. Same id as the 173-07 posting. gh#9 changed in no respect at all.
+
+## v1.37 tag check, all three repositories (no `v1.37` tag anywhere)
+
+```bash
+$ git ls-remote --tags origin | /usr/bin/grep 'v1\.37'              # meta   -> no match (grep rc=1)
+$ (cd firestarter && git ls-remote --tags origin | /usr/bin/grep 'v1\.37')      # firmware -> no match (grep rc=1)
+$ (cd firestarter_app && git ls-remote --tags origin | /usr/bin/grep 'v1\.37') # app -> no match (grep rc=1)
+```
+
+All three: zero matches. No `v1.37` tag exists in any of the three repositories.
+
+## Reconciliation — before (187-05) vs. after (this plan), field by field
+
+| Issue | Field | Before (187-05) | After (this plan) | Difference | Approved act of this phase? |
+|---|---|---|---|---|---|
+| 9  | state       | OPEN | OPEN | none | n/a |
+| 9  | stateReason | ""   | ""   | none | n/a |
+| 9  | labels      | []   | []   | none | n/a |
+| 9  | ncomments   | 1    | 1    | none | n/a |
+| 9  | pin         | pinned (#9, totalCount 1) | pinned (#9, totalCount 1) | none | n/a — read-only verification, `pinIssue` never called |
+| 9  | comment 5511487546 identity | created 2026-09-02T14:50:37Z | created==updated 2026-09-02T14:50:37Z | none (never edited) | n/a |
+| 23 | state       | OPEN | OPEN | none | expected — REPLY-06 |
+| 23 | stateReason | ""   | ""   | none | expected |
+| 23 | labels      | dev-test, cause:database | dev-test, cause:database, cause:rig, needs:report | +cause:rig, +needs:report | YES — approved 187-09 (evidence/187-09-gh23-operator-approval.txt) |
+| 23 | ncomments   | 3    | 4    | +1 | YES — issuecomment-5647009393 (187-09) |
+| 28 | state       | OPEN | OPEN | none | expected — REPLY-06 |
+| 28 | stateReason | ""   | ""   | none | expected |
+| 28 | labels      | dev-test, cause:harness | dev-test, cause:harness, needs:report | +needs:report (fix:released deliberately withheld) | YES — approved 187-10 (evidence/187-10-gh28-operator-approval.txt) |
+| 28 | ncomments   | 4    | 5    | +1 | YES — issuecomment-5647056983 (187-10) |
+| 31 | state       | OPEN | OPEN | none | expected — REPLY-06 |
+| 31 | stateReason | ""   | ""   | none | expected |
+| 31 | labels      | dev-test, cause:harness, cause:database | dev-test, cause:harness, cause:database, needs:report | +needs:report (fix:released deliberately withheld) | YES — approved 187-11 (evidence/187-11-gh31-operator-approval.txt) |
+| 31 | ncomments   | 2    | 3    | +1 | YES — issuecomment-5647114539 (187-11) |
+| 60 | state       | OPEN | CLOSED | OPEN -> CLOSED | YES — approved 187-07 (evidence/187-07-gh60-operator-approval.txt) |
+| 60 | stateReason | ""   | COMPLETED | "" -> COMPLETED | YES — the approved close reason (D-15) |
+| 60 | labels      | enhancement | fix:released | enhancement removed, fix:released added | YES — approved 187-07 |
+| 60 | ncomments   | 0    | 1    | +1 | YES — issuecomment-5646849372 (187-07) |
+| 62 | state       | OPEN | OPEN | none | expected — D-15 (stays open) |
+| 62 | stateReason | ""   | ""   | none | expected |
+| 62 | labels      | (none) | cause:firmware | +cause:firmware | YES — approved 187-08 (evidence/187-08-gh62-operator-approval.txt) |
+| 62 | ncomments   | 0    | 1    | +1 | YES — issuecomment-5646897010 (187-08) |
+
+**Every difference above is an approved act of this phase, traced to its own posting plan's approval
+file. No unapproved or unexplained difference was found on any of the six issues.**

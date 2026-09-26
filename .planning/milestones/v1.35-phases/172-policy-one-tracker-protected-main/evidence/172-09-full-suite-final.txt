@@ -1,0 +1,31 @@
+=== 172-09 Task 1: the three-checker suite, FINAL state, against fresh clones ===
+
+Run 2026-09-02, after plan 172-08's three merges landed, so this is the phase's final state.
+Recipe verbatim from 172-VALIDATION.md — a fresh --depth 1 wiki clone plus fresh --depth 1 -b beta
+clones of both sub-repositories. NOT the working trees: those sit on the milestone branch and the
+local wiki clone is the one this phase edited, so neither can testify to what a fresh consumer sees.
+
+Clone provenance (fresh, this run):
+  wiki-clone      dc07042cc18ab6ab039c294ee1cc0ce6f0d2a2fc master
+  firestarter     4363639045b163dba63e8b03a88e44e1275e8bbc beta
+  firestarter_app 21785a327351842f9f4b34aa7b4ec3fe94ebeb1a beta
+Contributing.md present in the fresh wiki clone: yes (11 files total, 10 pages + _Sidebar.md)
+
+== leg 1: wiki.py links --source-dir <wiki-clone> ==
+OK: 11 pages, all reachable from Home.md by some link path, all internal links resolve, all filenames legal, and all listed in _Sidebar.md.
+== leg 2: honest02_truth.py --wiki-dir <wiki-clone> --db <cloned app db> --allowlist tools/wiki/claim-allowlist.json ==
+OK: leg1 stamp-present 5 matched/0 missing, leg2 claims-resolve 1 regions/39 claims/5 unchecked, leg3 stamp-freshness 6 checked/0 stale.
+== leg 3: dispatch_mirror.py --app-dir <cloned app> --fw-dir <cloned fw>   (no --wiki-dir, deliberately) ==
+OK: 12 protocols compared across firmware doc, host tool and firmware.
+exit 0
+
+=== Correction: this plan's read_first expectation about the page count was already stale ===
+172-09-PLAN.md Task 1 says the only expected difference from 172-03's run is "the page count moving
+from 10 to 11". It did not move. 172-03-full-suite.txt ALREADY reads "OK: 11 pages," — plan 172-01
+published Contributing.md to the live wiki before plan 172-03 ran its suite, so the eleventh page
+was already counted mid-phase. All three OK lines above are byte-identical to 172-03's.
+
+That makes this run a stability result rather than a progression one, and it is the more useful of
+the two: the suite is unchanged across the three merges, the ruleset delete-and-create, and the
+whole second half of the phase. The plan's hard stop ("a report of OK: 10 pages, is a hard stop")
+never armed because the condition it guards against was already false when it was written.

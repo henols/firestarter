@@ -72,7 +72,7 @@ established format.
     parser reads only `"vpp_mv"`). Forward-link Phase 2 (this milestone).
   - **02-VERIFICATION.md** — REQ-SER-02 (unknown-key skip) was PARTIAL only for
     verification-gap reasons. WIRED unchanged. No content change needed beyond
-    citing `json_parser.c:128-131,:251-255`.
+    citing `json_parser.c:316-318,:251-255`.
   - **05-VERIFICATION.md** — REQ-SAF-01 (Intel-flash VPP ADC compare). Was
     UNSATISFIED in v1.0. Closed by v1.1 Plan 01-01 (SAF-04). **SC#3 locks the
     record:** explicitly cite `flash_intel.cpp:25-50` (`flash_intel_check_vpp`)
@@ -315,7 +315,7 @@ For Phase 01 (DB pipeline):
 - `firestarter_app/firestarter/data/chip_database.json` (renamed by CLEAN-01)
 
 For Phase 02 (firmware JSON):
-- `firestarter/src/json_parser.c:128-131,:251-255` (unknown-key skip in
+- `firestarter/src/json_parser.c:316-318,:251-255` (unknown-key skip in
   both `json_parse` and `parse_bus_config`)
 
 For Phase 03 (UV-EPROM):

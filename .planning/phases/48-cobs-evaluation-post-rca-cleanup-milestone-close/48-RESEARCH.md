@@ -125,7 +125,7 @@ host→fw data block                  →  rurp_serial_utils.cpp:44-79
 fw→host data block                  ←  rurp_serial_utils.cpp:81-93
   [len_u16][xor][payload]              same structure
 
-fw→host log/telemetry frame         ←  rurp_serial_utils.cpp:95-227
+fw→host log/telemetry frame         ←  rurp_serial_utils.cpp:92-224
   [0xAA55AA55][len_u16][id]            magic preamble + CRC8-CCITT
   [params][crc8][0x0A]                 poly 0x07, seed 0x00
 

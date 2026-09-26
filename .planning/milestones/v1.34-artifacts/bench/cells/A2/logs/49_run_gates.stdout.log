@@ -1,0 +1,192 @@
+===== run_gates.sh: discovered 12 tool(s) under /workspaces/.planning/v1.34/tools =====
+--- selftest: append_evidence.py ---
+PASS: positive 1: complete fixture triple derives all 40 record_keys in schema order and round-trips through render_evidence.append_row_to_file -- rc=0 violations=[]
+PASS: positive 2: blank_state='not measured — <reason>' is accepted -- rc=0 violations=[]
+PASS: positive 3: sha_verdict_judged != match derives outcome=skipped-with-reason and is written when verdict prose names a symptom -- rc=0 violations=[] outcome=skipped-with-reason
+PASS: negative 1 (D-05's own argument): --position-id disagreeing with provenance AND wrv is refused, both disagreements named in one pass -- ["position_id vs provenance.position_id: 'SELFTEST__control__w27c512' != 'WRONG-PROV'", "position_id vs wrv.position_id: 'SELFTEST__control__w27c512' != 'WRONG-WRV'"]
+PASS: negative 2: wrv.written_sha != provenance.image_sha is refused -- ["wrv.written_sha vs provenance.image_sha: 'different_sha_value' != 'image_sha_value'", "wrv.written_sha vs image_plan.sha256: 'different_sha_value' != 'image_sha_value'"]
+PASS: negative 3: provenance.arm != readback.flashed_arm is refused -- ["provenance.arm vs readback.flashed_arm: 'control' != 'v133'"]
+PASS: negative 4: provenance.target_env != readback.target is refused -- ["provenance.target_env vs readback.target: 'uno' != 'leonardo'"]
+PASS: negative 5: bare 'not measured' (no reason) in --blank-state is refused via the imported gate_record._NOT_MEASURED_RE, never a re-derived regex -- ["required field 'blank_state' is null/blank/placeholder: 'not measured'"]
+PASS: negative 6: an empty --verdict-file and an empty --anomalies-file are each refused -- verdict-empty=["required field 'verdict' is null/blank/placeholder: ''"] anomalies-empty=["required field 'anomalies' is null/blank/placeholder: ''"]
+PASS: negative 7 (the leg gate_record.check_cross_oracle() cannot perform): outcome is never 'validated' when sha_verdict_judged != match, verdict_disagreement is true, or size_violations is non-empty -- ['skipped-with-reason', 'skipped-with-reason', 'skipped-with-reason']
+PASS: negative 8: a missing WRV-VERDICT.json and an unparseable one are each refused with the path named -- missing=['WRV-VERDICT artifact not found at /tmp/append_evidence_selftest_pij__p6w/neg8/WRV-VERDICT-MISSING.json'] unparseable=['WRV-VERDICT artifact at /tmp/append_evidence_selftest_pij__p6w/neg8/WRV-VERDICT-BAD.json is not valid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)']
+PASS: negative 9: a duplicate position_id already present in EVIDENCE.jsonl is refused, surfacing render_evidence.append_row_to_file's own message -- ["position_id 'SELFTEST__control__w27c512' already exists -- a row is never rewritten once appended"]
+PASS: negative 10 (the P-H2 record contract): outcome derived as skipped-with-reason whose verdict prose names no observed symptom is refused -- ["outcome derives as 'skipped-with-reason' but --verdict-file names no observed symptom (P-H2 record contract)"]
+append_evidence.py --selftest overall: ok
+selftest PASS: append_evidence.py
+--- selftest: capture_provenance.py ---
+PASS: negative: missing --shield-rev exits non-zero
+PASS: negative: out-of-set --shield-rev value is rejected
+PASS: negative: --cell-id '../etc/passwd' is rejected
+PASS: negative: --cell-id '/abs/path' is rejected
+PASS: negative: --cell-id 'a b' is rejected
+PASS: negative: --cell-id 'a..b' is rejected
+PASS: positive: --cell-id 'A3/B2' is accepted and slugs to 'A3-B2'
+PASS: negative: a git HEAD probe on a nonexistent worktree fails hard (never null) -- git rev-parse HEAD exited 128: fatal: cannot change to '/nonexistent-worktree-for-selftest': No such file or directory
+PASS: negative: an empty/None __file__ probe result is a hard failure -- __file__ probe returned empty/None (Pitfall 1 -- was -P dropped?)
+PASS: negative: a nonzero __file__ probe exit is a hard failure -- __file__ probe exited 1: boom
+PASS: negative: --out outside .planning/v1.34/ is rejected -- --out '/tmp/outside-milestone.json' resolves to /tmp/outside-milestone.json, whose parent is outside /workspaces/.planning/v1.34 -- refusing a path that traverses out of the milestone dir
+PASS: positive: --out inside .planning/v1.34/ is accepted
+PASS: positive: a complete record has every documented key present and non-null after round-trip
+PASS: positive: exit-0 `hw` output with no 'I: FW:' line is not-measured, not a hard failure
+PASS: negative: a genuine `hw` execution failure (nonzero exit) is still a hard failure -- controller: string not found in `hw` output (exit 1): 'could not open port /dev/ttyACM0'
+PASS: positive: a genuine 'I: FW:' line is still parsed when present
+PASS: positive: read_readback_verdict reads judge_readback.py's real READBACK-VERDICT.json filename and sha_actual_judged/sha_whole_flash_unjudged keys
+PASS: negative: the old aspirational filename/keys are no longer what this tool reads (confirms the fix is against judge_readback.py's real shape, not a second guess at it) -- readback verdict artifact not found at /tmp/capture_provenance_selftest_readback_ibs6qysd/cells/_selftest_readback_old_name_only/READBACK-VERDICT.json -- judge_readback.py must run and write this artifact before capture_provenance.py for this cell
+OK: readback fields patched for /tmp/capture_provenance_selftest_readback_ibs6qysd/provenance_patch_test.json
+PASS: positive: --patch-readback completes only the two readback fields on an existing --pending-readback record, leaving every other field untouched
+PASS: negative: --patch-readback with no existing record is a hard failure
+PASS: positive: resolve_image_plan_fields finds this position's mask/stamp_width/sha256 by position_id, no device or git probe
+PASS: negative: resolve_image_plan_fields with an unknown position_id is a hard failure, never a null field -- no image plan row found for position_id 'no-such-position-id' in '/tmp/capture_provenance_selftest_imageplan_0y2h4gnh/IMAGE-PLAN.json'
+PASS: negative: an image-plan row missing mask/stamp_width/sha256 is a hard failure, never a null field -- image plan row for position_id 'incomplete__row' is missing mask/stamp_width/sha256: {'position_id': 'incomplete__row', 'mask': None, 'stamp_width': 16, 'sha256': 'x'}
+OK: image-plan fields patched for /tmp/capture_provenance_selftest_imageplan_0y2h4gnh/provenance_patch_test.json
+PASS: positive: --patch-image-plan completes only the three image_* fields on an existing record, leaving every other field untouched
+PASS: negative: --patch-image-plan with no existing record is a hard failure
+PASS: positive: resolve_board_signature_from_json reads an already-obtained probe_board.py --out JSON's board_signature, no subprocess invoked
+PASS: negative: a probe JSON missing 'board_signature' is a hard failure, never null -- --board-probe-json '/tmp/capture_provenance_selftest_boardprobe_ycn_bmgh/board_probe_missing_sig.json' has no 'board_signature' key
+PASS: negative: --board-probe-json pointing at a nonexistent file is a hard failure -- --board-probe-json '/tmp/capture_provenance_selftest_boardprobe_ycn_bmgh/does-not-exist.json' unreadable: [Errno 2] No such file or directory: '/tmp/capture_provenance_selftest_boardprobe_ycn_bmgh/does-not-exist.json'
+PASS: negative: --board-probe-json pointing at invalid JSON is a hard failure -- --board-probe-json '/tmp/capture_provenance_selftest_boardprobe_ycn_bmgh/invalid.json' unreadable: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+PASS: positive: build_no_image_plan_reason names the position_id and the reason, starts with 'not measured —' per the anti-fabrication recording discipline -- not measured — no bench/IMAGE-PLAN.json row exists for position_id 'BRINGUP-leonardo-provenance' (bring-up pre-proof cell, no chip write ever runs here, --no-image-plan was passed explicitly)
+PASS: positive: the --no-image-plan placeholder is distinct for each field but all three carry the identical reason (image_mask/image_stamp_width/image_sha)
+selftest PASS: capture_provenance.py
+--- selftest: check_arms.py ---
+PASS: positive: git-head matches pinned SHA -- 2f7ee75707887281882fcd7c480a33d54b54994e
+PASS: positive: porcelain is clean
+PASS: negative 1: HEAD mismatch is caught -- HEAD 2f7ee75707887281882fcd7c480a33d54b54994e != pinned 0000000000000000000000000000000000000000
+PASS: negative 2: dirty porcelain is caught -- worktree not clean: 'M f.txt'
+PASS: negative 3: empty __file__ probe is caught -- probe returned ''
+PASS: negative 4: dependency-set diff is caught -- dependency sets differ: only in A=['requests==2.34.2'] only in B=['requests==2.34.3']
+PASS: positive: identical dependency sets pass
+PASS: positive: config-dir sha matches expected -- a5d0ec9751ee5447a0f36b11cb8c8dd09363cdb0d7f3ea4783004bb237a0515b
+PASS: negative 5: config-dir sha mismatch is caught -- config dir sha a5d0ec9751ee5447a0f36b11cb8c8dd09363cdb0d7f3ea4783004bb237a0515b != expected 0000000000000000000000000000000000000000000000000000000000000000
+PASS: positive: identical CLI surfaces pass
+PASS: negative: differing CLI surfaces are caught -- CLI surface sets differ: only in A=[] only in B=["('opt', ('cli',), '-x')"]
+selftest PASS: check_arms.py
+--- selftest: check_rebuild.py ---
+PASS: positive: matching committed image set passes -- fatal=[] missing=[]
+PASS: negative 1: one-byte-flipped rebuild is caught, names the file and offset -- entry={'arm': 'armA', 'env': 'envA', 'file': 'firestarter_envA.armA.hex', 'actual_sha256': '2975ac7399e2082c54080be64158a3f84b621c6cb2124513aa79fd6dec181a03', 'expected_sha256': 'fb251687b84f2dfa4e537fb31ef76f98c69e23e358f71d206acd92d40c33e097', 'match': False, 'divergence_cause': 'sha256 mismatch against manifest (expected fb251687b84f2dfa4e537fb31ef76f98c69e23e358f71d206acd92d40c33e097, got 2975ac7399e2082c54080be64158a3f84b621c6cb2124513aa79fd6dec181a03); byte-level diff against reference /tmp/check_rebuild_selftest_eq4m4r8c/committed/firestarter_envA.armA.hex: 1 differing byte(s), first 1 shown: offset=0x00003 expected=0x74 actual=0x75'}
+PASS: negative 1b: the untouched sibling image still matches -- entry={'arm': 'armA', 'env': 'envB', 'file': 'firestarter_envB.armA.hex', 'actual_sha256': '38eaf37ce6988c2ab367a3905ba82a6f9e62a10cff5dcf0488df9a953c52aee6', 'expected_sha256': '38eaf37ce6988c2ab367a3905ba82a6f9e62a10cff5dcf0488df9a953c52aee6', 'match': True, 'divergence_cause': None}
+PASS: negative 2: empty images directory fails closed (no silent pass) -- fatal=['--images directory contains no .hex files: /tmp/check_rebuild_selftest_eq4m4r8c/empty']
+PASS: negative 3: nonexistent --images directory fails closed -- fatal=['--images directory does not exist: /tmp/check_rebuild_selftest_eq4m4r8c/does-not-exist']
+PASS: negative 4: fewer .hex files than arms x envs expects fails closed -- fatal=["--images directory holds 1 .hex file(s), fewer than the 2 expected for 1 arm(s) x 2 env(s); missing: ['firestarter_envB.armA.hex']"]
+PASS: unit: cmp_style_diff finds exactly one differing byte -- 1 differing byte(s), first 1 shown: offset=0x00001 expected=0x01 actual=0x99
+PASS: unit: parse_sha256sums parses a well-formed line -- {'some_file.hex': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'}
+selftest PASS: check_rebuild.py
+--- selftest: gate_record.py ---
+PASS: positive: complete self-consistent record passes
+PASS: positive: a pinned git_binary checkout command is allowed by argv0
+PASS: positive: a pinned arm venv_python command is allowed by argv0
+PASS: positive: two-row jsonl with a valid header passes
+PASS: negative 1: null required field is caught -- required field 'cell_id' is null/blank/placeholder: None
+PASS: negative 2: placeholder value is caught -- required field 'cell_id' is null/blank/placeholder: 'TBD'
+PASS: negative 3: bare 'not measured' with no reason is caught -- required field 'note' is null/blank/placeholder: 'not measured'
+PASS: negative 4: bare first-token command is caught -- commands[0]: first token 'firestarter' is not an absolute path -- a bare invocation would resolve to the un-named user-site editable install
+PASS: negative 5: forbidden flag is caught -- commands[0]: forbidden flag(s) ['--force'] present -- Phase 145 D-17's withdrawn permission is enforced mechanically here
+PASS: positive: avrdude's own -b <baud> argument is not the withdrawn app flag
+PASS: negative 5b: -b on a non-avrdude binary is still caught (exemption is scoped) -- commands[0]: forbidden flag(s) ['-b'] present -- Phase 145 D-17's withdrawn permission is enforced mechanically here
+PASS: negative 6: pio wrong-cwd is caught -- commands[0]: pio invoked with cwd '/wrong/dir', expected '/fake/firestarter' -- the same command string succeeds or fails depending on cwd (Pitfall 4)
+PASS: negative 7: out-of-domain outcome is caught -- outcome 'inconclusive' is outside the two-state domain ['skipped-with-reason', 'validated'] -- a third state belongs only to Phase 165's triage classification of a failure after the fact, never to a cell result
+PASS: negative 8: written/read SHA contradiction under a validated outcome is caught -- outcome is 'validated' but written_image_sha256 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb' != read_sha256 '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d' -- a disagreement between the two SHAs is itself the result
+PASS: negative 9: jsonl missing line-1 header is caught -- line 1: missing the '_schema' header record
+PASS: negative 10: jsonl blank line is caught -- line 2: blank line in a JSONL file
+PASS: negative 11: jsonl row missing a declared key is caught -- line 2: required field 'note' is missing
+PASS: negative 12a: missing input file is caught -- input file /tmp/gate_record_selftest_4hkoyaov/does-not-exist.json does not exist
+PASS: negative 12b: empty input file is caught -- input file /tmp/gate_record_selftest_4hkoyaov/empty.json is empty
+selftest PASS: gate_record.py
+--- selftest: gen_addr_image.py ---
+PASS: width16 image is 65536 bytes
+PASS: width16 positive: probe offsets decode to their own stamp
+PASS: width32 image is 262144 bytes
+PASS: width32 positive: probe offsets 0x00000/0x0FFFF/0x10000/0x20000/0x3FFFF decode correctly
+PASS: positive: differing masks produce differing sha256
+PASS: negative: 262144 B @ stamp_width=16 is refused -- stamp_width=16 covers only 16 address bits (65536 B); refusing a 262144 B image, which would leave A16/A17 (and above) unattributable on aliasing faults -- use --stamp-width 32
+PASS: negative: width32 A17-alias injection is DETECTED -- byte at 0x20002 changed from 0x20 to 0x22
+PASS: negative: width32 A17-alias injection is ATTRIBUTED to address bits [16:23] -- offset=0x20002 observed=0x22 unmasked=0x00 -> address byte index 2 (width=32), carries bits [16:23] of the source address, value=0x00
+PASS: negative: width16 A17-alias injection is UNDETECTABLE (not merely unattributable) -- the asymmetry that justifies stamp_width=32 -- width16 stamp at src=0x00002 is 0x02, at alias=0x20002 is 0x02
+selftest PASS: gen_addr_image.py
+--- selftest: judge_readback.py ---
+PASS: positive: matching read-back prefix judges as a match
+PASS: positive: whole-flash SHA differs from judged-span SHA (two distinct data)
+PASS: negative 1: read-back shorter than flash_size is caught -- len=199 expected=200
+PASS: negative 2: corrupted prefix produces a mismatch with a differing-offset report -- diffs=[(5, 5, 6)]
+PASS: negative 3: cross-arm expectation (other arm's hex) against this arm's read-back is a mismatch -- diff_count=100
+PASS: negative 4: placeholder judged_span_policy is refused -- judged_span_policy is still the placeholder value 'PENDING-xshowvector' -- the bootloader interrogation (-xshowvector) has not yet been recorded for this target; judging now would risk a false mismatch at 0x0000 on every correctly-flashed board
+PASS: objcopy invocation on the synthetic fixture succeeds
+PASS: objcopy output matches the synthetic hex's own data (bring-up proof of the normalize step)
+PASS: negative 5: objcopy output size disagreeing with BUILD-MANIFEST.json hex_span is caught -- objcopy output is 100 B but BUILD-MANIFEST.json records hex_span=101 B for 'fixture.hex' -- the image is not the artifact the manifest describes
+PASS: positive: list-shaped BUILD-MANIFEST.json 'images' (the real file's actual shape) is normalized and matched by 'file', not crashed on
+PASS: positive: hex_span_expected_by_arm[expect_arm] overrides a stale flat hex_span_expected for the arm actually being judged
+PASS: negative 7: hex_span_expected_by_arm still catches a genuine mismatch for the OTHER arm's expected span -- objcopy output is 100 B but the expected span for arm 'v133' is 101 B for this target -- the image is not the artifact the manifest describes
+PASS: negative 6: missing read-back file path does not exist (precondition)
+selftest PASS: judge_readback.py
+--- selftest: judge_wrv.py ---
+PASS: positive: three matching reads + app verdict 0 -> match, distinct=1, no disagreement -- {'position_id': 'POS-1', 'written_sha': '4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', 'expect_size': 65536, 'read_files': ['/tmp/judge_wrv_selftest_296230k8/run_01.bin', '/tmp/judge_wrv_selftest_296230k8/run_02.bin', '/tmp/judge_wrv_selftest_296230k8/run_03.bin'], 'read_count': 3, 'read_shas': ['4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', '4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', '4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2'], 'distinct_read_shas': 1, 'sha_verdict_judged': 'match', 'app_verdict_unjudged': 0, 'verdict_disagreement': False, 'n3_disagreement': False, 'size_violations': [], 'commands': []}
+PASS: negative 1 (Pitfall 6): three self-consistent but wrong reads with app_verdict=0 -> mismatch AND verdict_disagreement true (the false green the app's own PASS would otherwise hide) -- {'position_id': 'POS-2', 'written_sha': '4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', 'expect_size': 65536, 'read_files': ['/tmp/judge_wrv_selftest_296230k8/run_01.bin', '/tmp/judge_wrv_selftest_296230k8/run_02.bin', '/tmp/judge_wrv_selftest_296230k8/run_03.bin'], 'read_count': 3, 'read_shas': ['0a2c327ab502df2085c5bb4d2bcf3ff92619c42615faf4e84be24f2595e31d46', '0a2c327ab502df2085c5bb4d2bcf3ff92619c42615faf4e84be24f2595e31d46', '0a2c327ab502df2085c5bb4d2bcf3ff92619c42615faf4e84be24f2595e31d46'], 'distinct_read_shas': 1, 'sha_verdict_judged': 'mismatch', 'app_verdict_unjudged': 0, 'verdict_disagreement': True, 'n3_disagreement': False, 'size_violations': [], 'commands': []}
+PASS: negative 2: two-of-three-differ -> disagreement, n3_disagreement true, all three read_shas present, no retry performed -- {'position_id': 'POS-3', 'written_sha': '4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', 'expect_size': 65536, 'read_files': ['/tmp/judge_wrv_selftest_296230k8/run_01.bin', '/tmp/judge_wrv_selftest_296230k8/run_02.bin', '/tmp/judge_wrv_selftest_296230k8/run_03.bin'], 'read_count': 3, 'read_shas': ['4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', '4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', '167b1e89f2fea59fc651321309bdc79c0dfc36a50c1f16cedb9247f88647a3eb'], 'distinct_read_shas': 2, 'sha_verdict_judged': 'disagreement', 'app_verdict_unjudged': 1, 'verdict_disagreement': False, 'n3_disagreement': True, 'size_violations': [], 'commands': []}
+PASS: negative 3: app_verdict=2 (hardware/serial error) -> incomplete-read-set regardless of file count, not a retry trigger -- {'position_id': 'POS-4', 'written_sha': '4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', 'expect_size': 65536, 'read_files': ['/tmp/judge_wrv_selftest_296230k8/run_01.bin', '/tmp/judge_wrv_selftest_296230k8/run_02.bin'], 'read_count': 2, 'read_shas': ['4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', '4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2'], 'distinct_read_shas': 1, 'sha_verdict_judged': 'incomplete-read-set', 'app_verdict_unjudged': 2, 'verdict_disagreement': False, 'n3_disagreement': False, 'size_violations': [], 'commands': []}
+PASS: negative 4: a wrong-sized read file is recorded in size_violations -- [{'file': '/tmp/judge_wrv_selftest_296230k8/run_03.bin', 'size_bytes': 65535}]
+PASS: negative 5: --expect-size outside {65536,262144} is rejected -- --expect-size must be one of (65536, 262144) (rig-pins.json chips.*.size_bytes), got 65535
+PASS: negative 6: empty reads directory -> incomplete-read-set (read_count=0) -- {'position_id': 'POS-6', 'written_sha': '4b640d85ab3ba30fd02c9fc9db4a8928f416322ad27022ea58a65aaee68a4df2', 'expect_size': 65536, 'read_files': [], 'read_count': 0, 'read_shas': [], 'distinct_read_shas': 0, 'sha_verdict_judged': 'incomplete-read-set', 'app_verdict_unjudged': 0, 'verdict_disagreement': True, 'n3_disagreement': False, 'size_violations': [], 'commands': []}
+PASS: negative 7: missing --written path does not exist (CLI-layer precondition)
+selftest PASS: judge_wrv.py
+--- selftest: probe_board.py ---
+PASS: positive: route1 parses connected-part line
+PASS: positive: route2 parses signature line and part guess
+PASS: positive: route1 parses avrdude 8.1's real 'Device signature = ... (Name, ...)' wording on the wrong-partno attempt (the actual live-device bug this bring-up found)
+PASS: positive: route1 parses avrdude 8.1's real wording on a matching -p attempt too
+PASS: positive: matching target sets mcu_matches true
+PASS: negative 1: unparseable stderr is a hard failure, not a null identity -- neither parse route matched avrdude stderr: 'avrdude: some unrelated diagnostic text with no signature information\n\navrdude: some unrelated diagnostic text with no signature information'
+PASS: negative 2: mcu mismatch is caught -- connected=atmega328pb expected=atmega328p
+PASS: negative 3: forbidden avrdude binary is rejected -- resolved avrdude binary '/fake/avrdude-6.3' is listed in forbidden_binaries (selftest fixture)
+selftest PASS: probe_board.py
+--- selftest: render_evidence.py ---
+PASS: positive: rendering twice is byte-identical
+PASS: positive: --check against a freshly rendered target is green
+PASS: positive: append preserves earlier rows byte-for-byte
+PASS: negative 1: one-character-edited target fails --check with a named diff
+PASS: negative 2: jsonl missing the line-1 header is caught -- line 1 does not carry the '_schema' header record
+PASS: negative 3: empty jsonl is caught -- --jsonl file is empty: /tmp/render_evidence_selftest_kv7frzu7/empty.jsonl
+PASS: negative 4: append omitting a declared key is caught -- row omits declared key(s): ['note']
+PASS: negative 5: append with an out-of-domain outcome is caught -- row outcome 'inconclusive' is outside the schema's outcome domain ['validated', 'skipped-with-reason']
+PASS: negative 6: append with a duplicate position_id is caught -- position_id 'A1__control__w27c512' already exists -- a row is never rewritten once appended
+PASS: negative 7: append against a mid-operation-altered prefix is caught -- existing rows changed on disk between read and append -- refusing to write (append-only integrity: the prefix must be byte-unchanged before replace)
+render_evidence.py --selftest overall: ok
+selftest PASS: render_evidence.py
+--- selftest: render_steps.py ---
+PASS: positive: unannotated fixture renders identically for both arms (diff empty)
+PASS: negative: a single [arm: control]-annotated step produces a NON-empty diff (the gate's own falsification)
+PASS: negative: absent '## Step list' section exits non-zero
+PASS: negative: empty '## Step list' section exits non-zero
+PASS: negative: duplicate step id exits non-zero
+PASS: negative: step ids out of ascending order exits non-zero
+PASS: negative: annotation naming an unknown arm exits non-zero
+PASS: render_steps.py --selftest (7/7 legs)
+selftest PASS: render_steps.py
+--- selftest: touch_1200.py ---
+PASS: argument parsing: --settle-s defaults to 2, --wait-new-port defaults to False -- settle_s=2.0 wait_new_port=False timeout_s=10.0
+PASS: negative: non-existent port path is rejected -- port does not exist: /dev/definitely-not-a-port
+PASS: negative: --timeout-s 0 against an unchanging stubbed enumeration times out non-zero -- success=False new_port=None after=['/dev/ttyACM0']
+PASS: positive (device-free): a genuinely new node is detected and named
+PASS: device-enumeration helper returns a sorted list against a stubbed directory -- ['/tmp/touch_1200_selftest_uu66c0tc/ttyACM0', '/tmp/touch_1200_selftest_uu66c0tc/ttyACM1']
+NOTE: the device-enumeration LOGIC above is exercised against a stubbed directory only -- whether a real Leonardo re-enumerates on the SAME port or a NEW one after this touch, and whether the read-back chain fits inside the Caterina window at all, is UNPROVEN here and is proven only at Leonardo bring-up (plan 10).
+selftest PASS: touch_1200.py
+--- live gate: check_rebuild.py (committed images self-check) ---
+OK: check_rebuild -- 6 (arm, env) pair(s) verified against /workspaces/.planning/v1.34/images/SHA256SUMS.txt, all hashes match
+live gate PASS: check_rebuild.py
+--- live gate: check_arms.py (both live host arms) ---
+check_arms OK: 2 arms verified (SHA+porcelain+file-probe+dep-freeze+interpreter+config-sha+cli-surface)
+live gate PASS: check_arms.py
+--- live gate: render_steps.py (SC#3 empty-step-list diff, control vs v133) ---
+live gate PASS: render_steps.py -- diff empty, control=11 v133=11 lines
+--- live gate: render_evidence.py --check (bench/EVIDENCE.md vs a fresh render) ---
+OK: /workspaces/.planning/v1.34/bench/EVIDENCE.md matches a fresh render of /workspaces/.planning/v1.34/bench/EVIDENCE.jsonl (--check green)
+live gate PASS: render_evidence.py --check
+--- live gate: gate_record.py (bench/EVIDENCE.jsonl record-shape gate) ---
+PASS: gate_record validated --jsonl /workspaces/.planning/v1.34/bench/EVIDENCE.jsonl with 0 violations
+live gate PASS: gate_record.py
+
+===== run_gates.sh SUMMARY =====
+  tool self-tests run: 12 / 12
+  mode: full
+ALL GATES PASSED

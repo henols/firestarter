@@ -102,4 +102,4 @@ plumbing the real type through over widening the algorithm set.
 - `firestarter_app/firestarter/chip_test.py:382,393` — the type-agnostic gate
 - `firestarter_app/firestarter/chip_test.py:404` — erase composition
 - `firestarter_app/firestarter/chip_test.py:619-670` — write-region constants + `_write_region_for`
-- `firestarter_app/firestarter/cli_handlers.py:1836-1842` — the confirm prompt
+- `firestarter_app/firestarter/cli_handlers.py:1833-1839` — the confirm prompt

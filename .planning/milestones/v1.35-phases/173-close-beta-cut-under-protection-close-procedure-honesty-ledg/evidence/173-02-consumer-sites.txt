@@ -1,0 +1,26 @@
+== complete-milestone.md:734
+BASE_BRANCH=$(gsd_run query git.base-branch)
+== complete-milestone.md:775
+git checkout ${BASE_BRANCH}
+== complete-milestone.md:789
+  git merge --squash "$MILESTONE_BRANCH"
+== complete-milestone.md:804
+git checkout ${BASE_BRANCH}
+== git-tag.md:26
+git push origin v[X.Y]
+== ship.md:46
+BASE_BRANCH=$(gsd_run query git.base-branch)
+== ship.md:316
+RANGE_BASE=$(git merge-base "${BASE_BRANCH}" HEAD)
+== ship.md:373
+  --base "${BASE_BRANCH}"
+== execute-phase.md:290
+DEFAULT_BRANCH=$(gsd_run query git.base-branch 2>/dev/null \
+== quick.md:197
+DEFAULT_BRANCH=$(gsd_run query git.base-branch 2>/dev/null \
+== pr-branch.md:28
+TARGET=${1:-$(gsd_run query git.base-branch)}
+== git-base-branch.cjs:305
+    const protectedBranches = [...new Set([baseBranch, ...effectiveConfig.protectedBranches])];
+== every git push in the complete-milestone tree
+.claude/gsd-core/workflows/complete-milestone/steps/git-tag.md:26:git push origin v[X.Y]

@@ -1,0 +1,6 @@
+{
+  "_comment": "test fixture for 152-check-not-auto.py -- NOT the live configuration -- never read by anything except the guard's own test legs and its manual verification runs",
+  "workflow": {
+    "_auto_chain_active": true
+  }
+}

@@ -125,7 +125,7 @@ attribution to one load-bearing site:
 - **D-03:** **No firmware C-struct rename.** `firestarter_handle_t.vpp_mv` at
   `firestarter/include/firestarter.h:85` already has the correct name. Out of
   scope. `bus_config.vpp_line` (different concept — pinout, not voltage) is
-  also untouched. `get_vpp_pin` (`json_parser.c:320-321`) keys on `"vpp-pin"`
+  also untouched. `get_vpp_pin` (`json_parser.c:503-497`) keys on `"vpp-pin"`
   — a separate field, not affected.
 
 ### Internal `_map_data()` rename
@@ -227,7 +227,7 @@ attribution to one load-bearing site:
 ### Firmware parser semantics
 
 - **D-08 (macro semantics):** **`extract_num` has implicit early returns.**
-  `firestarter/src/json_parser.c:268-273`:
+  `firestarter/src/json_parser.c:455-460`:
 
   ```c
   #define extract_num(element, register, type)           \
@@ -382,19 +382,19 @@ attribution to one load-bearing site:
   protocol_id) → …` comment (CLEAN-02 D-10 edit).
 
 ### Codebase entry points — Firmware (firestarter sub-repo)
-- `firestarter/src/json_parser.c:25-29` — forward decls for `get_vpp_mv` /
+- `firestarter/src/json_parser.c:20-21` — forward decls for `get_vpp_mv` /
   `get_vpp_pin`.
 - `firestarter/src/json_parser.c:62` — `const char key_vpp[] PROGMEM = "vpp"`
   → rename to `key_vpp_mv[] PROGMEM = "vpp_mv"` (D-01).
-- `firestarter/src/json_parser.c:74` — `key_parsers[]` dispatch row
+- `firestarter/src/json_parser.c:164` — `key_parsers[]` dispatch row
   `{key_vpp, get_vpp_mv}` → `{key_vpp_mv, get_vpp_mv}` (D-01).
-- `firestarter/src/json_parser.c:260-273` — `jsoneq_` + `extract_num` /
+- `firestarter/src/json_parser.c:447-460` — `jsoneq_` + `extract_num` /
   `extract_long` / `extract_int` macros. **First arg IS the parse key (not a
   debug label).** Single-key probe with early return — see D-08.
-- `firestarter/src/json_parser.c:308-310` — `get_vpp_mv` body:
+- `firestarter/src/json_parser.c:503-497` — `get_vpp_mv` body:
   `extract_int("vpp", handle->vpp_mv);` → `extract_int("vpp_mv",
   handle->vpp_mv);` (D-01).
-- `firestarter/src/json_parser.c:320-321` — `get_vpp_pin` keys on `"vpp-pin"`
+- `firestarter/src/json_parser.c:503-497` — `get_vpp_pin` keys on `"vpp-pin"`
   (separate field; **NOT in scope**).
 - `firestarter/include/firestarter.h:85` — `uint16_t vpp_mv;` (C-struct field
   name; already correct, NOT renamed).
@@ -453,7 +453,7 @@ attribution to one load-bearing site:
   with `failures` counter + exit-code 0/1 contract. Two new asserts inside the
   loop cover WIRE-02 without a new file. Reuse the existing buffer-size fork
   (covers Uno + Leonardo simulator paths).
-- **`key_parsers[]` table (json_parser.c:74):** `{PROGMEM_key, fn_ptr}` array.
+- **`key_parsers[]` table (json_parser.c:164):** `{PROGMEM_key, fn_ptr}` array.
   Single-row edit for the atomic flip — no new row needed (atomic flip per
   D-01, not dual-key per the rejected soft-retention option).
 - **`git mv` for the DB file rename:** mirrors Phase 11's `git mv parse_db_2.py
@@ -463,7 +463,7 @@ attribution to one load-bearing site:
 
 ### Established Patterns
 
-- **`extract_num` is a single-key probe with early return** (json_parser.c:268-273).
+- **`extract_num` is a single-key probe with early return** (json_parser.c:455-460).
   The macro returns 1 on match (writes target), 0 on no-match (no write). It
   does NOT chain — back-to-back invocations don't OR together because each
   one returns unconditionally. For an atomic-flip wire-key rename, we only

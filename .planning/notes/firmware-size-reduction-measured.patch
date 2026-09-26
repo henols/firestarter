@@ -1,0 +1,705 @@
+diff --git a/include/firestarter.h b/include/firestarter.h
+index 0d67d90..dd5c9ca 100644
+--- a/include/firestarter.h
++++ b/include/firestarter.h
+@@ -206,7 +206,7 @@ typedef struct firestarter_handle {
+     uint8_t cmd;
+     uint8_t operation_state;
+     uint8_t response_code;
+-    uint32_t protocol;
++    uint8_t protocol;
+     uint8_t pins;
+     uint32_t mem_size;
+     uint32_t address;
+@@ -214,7 +214,7 @@ typedef struct firestarter_handle {
+     uint32_t pulse_delay;
+     uint32_t read_settling_us;   /* address-settling delay before /CE assert (µs; 0 = no settling delay) */
+     uint32_t read_strobe_us;     /* /CE read-strobe pulse width (µs; 0 = use default 3µs) */
+-    uint32_t ctrl_flags;
++    uint16_t ctrl_flags;
+     uint16_t chip_id;
+     uint16_t page_size;          /* per-chip page-write size delivered by the host over the wire
+                                    * (Phase 149, PGSZ-01/PGSZ-02); 0 = absent, so the 0x0D handler
+@@ -223,7 +223,6 @@ typedef struct firestarter_handle {
+     char data_buffer[DATA_BUFFER_SIZE];
+     uint32_t data_size;
+     bus_config_t bus_config;
+-    void* progress_data;
+ 
+     void (*firestarter_operation_init)(struct firestarter_handle*);
+     void (*firestarter_operation_main)(struct firestarter_handle*);
+diff --git a/include/memory_utils.h b/include/memory_utils.h
+index 524f407..f577490 100644
+--- a/include/memory_utils.h
++++ b/include/memory_utils.h
+@@ -48,6 +48,9 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
+  * delayMicroseconds calls, so the arithmetic is the only part a test off
+  * real hardware can verify.
+  */
++void mem_util_report_voltage(firestarter_handle_t* handle, uint16_t measured_mv,
++                             uint16_t expected_mv, uint8_t msg_id, uint8_t response_code);
++void mem_util_report_chip_id(firestarter_handle_t* handle, uint16_t actual, bool warn_only);
+ void mem_util_split_delay(uint32_t us, uint32_t* out_ms, uint16_t* out_us);
+ void mem_util_delay_us(uint32_t us);
+ 
+diff --git a/src/boards/rurp_common.cpp b/src/boards/rurp_common.cpp
+index 5de1c8a..e16840c 100644
+--- a/src/boards/rurp_common.cpp
++++ b/src/boards/rurp_common.cpp
+@@ -61,12 +61,41 @@ uint16_t rurp_read_voltage_mv() {
+     long bandgap_adc_reading = rurp_get_bandgap_adc_reading();
+     if (bandgap_adc_reading == 0 || r2 == 0) return 0; // Avoid division by zero
+ 
+-    // For higher precision, we use the raw bandgap ADC reading directly.
+     // Vin_mV = (voltage_adc_reading * 1100 * (R1 + R2)) / (bandgap_adc_reading * R2)
+-    uint64_t numerator = (uint64_t)voltage_adc_reading * 1100UL * (r1 + r2);
+-    uint64_t denominator = (uint64_t)bandgap_adc_reading * r2;
+-
+-    // Add half of the divisor to the numerator to round the result
+-    return (numerator + (denominator / 2)) / denominator;
++    //
++    // Evaluated entirely in 32-bit by folding the resistor divider into a
++    // single scale factor FIRST, rather than forming a 64-bit numerator:
++    //
++    //     k   = 1100 * (R1 + R2) / R2
++    //     Vin = (adc * k + bandgap/2) / bandgap
++    //
++    // At the shipped calibration (VALUE_R1 270000, VALUE_R2 44000) k is 7850
++    // exactly and this is BIT-IDENTICAL to the uint64 form it replaces --
++    // adc=1023, bandgap=225 gives 35691 mV either way. Across a sweep of
++    // off-nominal calibrations (R2 39k-47k, bandgap 200-250, full ADC range)
++    // the worst deviation is 5 mV, against the +/-5% VPP validation windows
++    // (+/-600 mV at 12 V) that consume this value.
++    //
++    // WHY: the uint64 form made this function the ONLY user-code caller of the
++    // entire 64-bit runtime -- __muldi3 (158 B), __udivmod64 (162 B),
++    // __lshrdi3 (54 B), __udivdi3_umoddi3, __adddi3, __muldi3_6, __umoddi3,
++    // __udivdi3 = 438 B of linked helpers for one 7-line function.
++    //
++    // Both products are kept inside uint32 by the guards below: 1100*(R1+R2)
++    // needs R1+R2 <= 3904515, and adc*k needs k <= 4194303 given adc <= 1023.
++    // An implausible calibration returns 0, exactly as r2 == 0 already does.
++    //
++    // NOT covered by any native test: this TU is outside [env:native]'s
++    // src_filter (+<proms/>), so this arithmetic is bench-verified only.
++    uint32_t sum = r1 + r2;
++    if (sum > 3900000UL) {
++        return 0;
++    }
++    uint32_t k = (1100UL * sum) / r2;
++    if (k > 4000000UL) {
++        return 0;
++    }
++    uint32_t bg = (uint32_t)bandgap_adc_reading;
++    return (uint16_t)((voltage_adc_reading * k + bg / 2) / bg);
+ }
+ #endif
+\ No newline at end of file
+diff --git a/src/json_parser.c b/src/json_parser.c
+index e490b1c..2c13d0c 100644
+--- a/src/json_parser.c
++++ b/src/json_parser.c
+@@ -5,6 +5,9 @@
+  * Permission is hereby granted under MIT license.
+  */
+ 
++#include <stddef.h>
++#include <string.h>
++
+ #include "json_parser.h"
+ #include <stdio.h>
+ 
+@@ -15,16 +18,6 @@ uint8_t get_cmd(const char* json, jsmntok_t* tokens, int pos);
+ int parse_bus_config(const char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle);
+ 
+ bool get_flags(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_memory_size(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_address(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_chip_id(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_pin_count(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_delay(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_vpp_mv(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_algorithm(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_read_settling(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_read_strobe(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-bool get_page_size(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+ 
+ bool get_rw_pin(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+ bool get_vpp_pin(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+@@ -65,21 +58,87 @@ const char key_read_strobe[]   PROGMEM = "read-strobe-us";
+  * against the underscore form would silently never match. */
+ const char key_page_size[]     PROGMEM = "page-size";
+ 
++/* T-44-01 sane max (~1ms); caps both read-timing knobs. Hoisted above the
++ * field table below, which is now the site that applies it. */
++#define READ_TIMING_MAX_US 1000UL   /* T-44-01 sane max (~1ms); caps both knobs */
++
++/* Phase-agnostic field table (replaces key_parser_t / key_parsers[]).
++ *
++ * WHY THIS SHAPE. The old table matched the wire key, then called a get_*
++ * stub that RE-MATCHED the very same key via extract_num's hidden jsoneq --
++ * so every key lived in flash twice and every field cost a redundant
++ * jsoneq_ call. Worse, those stubs were reached through a PROGMEM function
++ * pointer, so gcc could not inline them: each kept a full 4-argument ABI
++ * prologue for what is one strtoul and one store. Measured at 1012 B across
++ * 11 stubs, against 0 B for the five IDENTICAL stubs (get_r1/r2/rev/rw_pin/
++ * vpp_pin) that are called directly with a literal key and inline away.
++ *
++ * This table is now the single source of truth for wire key -> handle field
++ * -> clamp. `width` is derived from the member itself with sizeof, so it can
++ * never drift from the field it writes.
++ *
++ * get_flags is deliberately NOT here: json_parse_config calls it directly at
++ * two sites, where it must still match its own key. It inlines there, so it
++ * costs nothing. */
+ typedef struct {
+-    PGM_P key;
+-    bool (*parser_func)(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle);
+-} key_parser_t;
+-
+-static const key_parser_t key_parsers[] PROGMEM = {
+-    {key_mem_size, get_memory_size}, {key_address, get_address},         {key_flags, get_flags},
+-    {key_chip_id, get_chip_id},      {key_pin_count, get_pin_count},     {key_pulse_delay, get_delay},
+-    {key_vpp_mv, get_vpp_mv},        {key_algorithm, get_algorithm},
+-    /* Phase 44 — read-timing sweep knobs (RCA-01 causal proof, D-04) */
+-    {key_read_settling, get_read_settling},                              {key_read_strobe, get_read_strobe},
+-    /* Phase 149 — page-size seam (PGSZ-01/PGSZ-02) */
+-    {key_page_size, get_page_size},
++    PGM_P    key;
++    uint8_t  offset; /* offsetof() into firestarter_handle_t */
++    uint8_t  width;  /* 1, 2 or 4 -- sizeof the member, never hand-written */
++    uint16_t clamp;  /* 0 = unclamped */
++} field_desc_t;
++
++#define FIELD(k, member, cl)                                     \
++    { k, (uint8_t)offsetof(firestarter_handle_t, member),          \
++      (uint8_t)sizeof(((firestarter_handle_t*)0)->member), (cl) }
++
++static const field_desc_t FIELDS[] PROGMEM = {
++    FIELD(key_mem_size,      mem_size,          0),
++    FIELD(key_address,       address,           0),
++    FIELD(key_flags,         ctrl_flags,        0),
++    FIELD(key_chip_id,       chip_id,           0),
++    FIELD(key_pin_count,     pins,              0),
++    FIELD(key_pulse_delay,   pulse_delay,       0),
++    FIELD(key_vpp_mv,        vpp_mv,            0),
++    FIELD(key_algorithm,     protocol,          0),
++    /* Phase 44 -- read-timing sweep knobs, clamp preserved from the deleted
++     * get_read_settling / get_read_strobe stubs (T-44-01). */
++    FIELD(key_read_settling, read_settling_us,  READ_TIMING_MAX_US),
++    FIELD(key_read_strobe,   read_strobe_us,    READ_TIMING_MAX_US),
++    /* Phase 149 -- page-size seam (PGSZ-01/PGSZ-02) */
++    FIELD(key_page_size,     page_size,         0),
+ };
+ 
++/* Every field above must sit below data_buffer, or a uint8_t offset truncates
++ * and this writes into the wrong member. Guarded, not assumed. */
++_Static_assert(offsetof(firestarter_handle_t, page_size) < 256,
++               "firestarter_handle_t reordered: a FIELDS offset no longer fits uint8_t");
++
++/* Writes the low `width` bytes of v at the member's offset. Correct on AVR and
++ * on the little-endian PY32F071 ARM port; a big-endian target would break HERE
++ * and nowhere else. */
++static void store_field(firestarter_handle_t* handle, const field_desc_t* fd,
++                        unsigned long v) {
++    uint16_t clamp = pgm_read_word(&fd->clamp);
++    if (clamp && v > clamp) {
++        v = clamp;
++    }
++    uint8_t width = pgm_read_byte(&fd->width);
++    /* Saturate rather than truncate. A wire value wider than its member would
++     * otherwise have its high bytes silently dropped -- and for `algorithm`
++     * that is a SAFETY issue, not cosmetics: 0x105 would land as 0x05 and
++     * dispatch into configure_flash_5v_page instead of reaching
++     * configure_memory's fail-closed tail. Saturating sends it to the member's
++     * max instead, which is not a known protocol, so it still fail-closes.
++     * One site covers every narrow field (pins, chip_id, vpp_mv, page_size),
++     * which the deleted per-stub form could never do. */
++    if (width < sizeof(v)) {
++        unsigned long max = (1UL << (width * 8)) - 1UL;
++        if (v > max) {
++            v = max;
++        }
++    }
++    memcpy((uint8_t*)handle + pgm_read_byte(&fd->offset), &v, width);
++}
+ int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter_handle_t* handle) {
+     handle->address = 0;
+     handle->ctrl_flags = 0;
+@@ -123,11 +182,11 @@ int json_parse(const char* json, jsmntok_t* tokens, int token_count, firestarter
+         }
+ 
+         bool found = false;
+-        for (size_t j = 0; j < sizeof(key_parsers) / sizeof(key_parsers[0]); j++) {
+-            PGM_P key = (PGM_P)pgm_read_ptr(&key_parsers[j].key);
++        for (uint8_t j = 0; j < sizeof(FIELDS) / sizeof(FIELDS[0]); j++) {
++            PGM_P key = (PGM_P)pgm_read_ptr(&FIELDS[j].key);
+             if (jsoneq_(json, key_token, key) == 0) {
+-                bool (*parser_func)(const char*, jsmntok_t*, int, firestarter_handle_t*) = (void*)pgm_read_ptr(&key_parsers[j].parser_func);
+-                parser_func(json, tokens, token_idx, handle);
++                store_field(handle, &FIELDS[j],
++                            simple_strtoul(json + tokens[token_idx + 1].start));
+                 token_idx += 2; // Skip key and simple value
+                 found = true;
+                 break;
+@@ -298,33 +357,12 @@ bool get_flags(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_
+     extract_long("flags", handle->ctrl_flags);
+ }
+ 
+-bool get_memory_size(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    extract_long("memory-size", handle->mem_size);
+-}
+ 
+-bool get_address(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    extract_long("address", handle->address);
+-}
+ 
+-bool get_chip_id(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    extract_int("chip-id", handle->chip_id);
+-}
+ 
+-bool get_pin_count(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    extract_int("pin-count", handle->pins);
+-}
+ 
+-bool get_delay(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    extract_long("pulse-delay", handle->pulse_delay);
+-}
+ 
+-bool get_vpp_mv(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    extract_int("vpp_mv", handle->vpp_mv);
+-}
+ 
+-bool get_algorithm(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    extract_long("algorithm", handle->protocol);
+-}
+ 
+ bool get_rw_pin(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+     extract_int("rw-pin", handle->bus_config.rw_line);
+@@ -358,25 +396,8 @@ bool get_rev(const char* json, jsmntok_t* tokens, int pos, rurp_configuration_t*
+  *   read_settling_us == 0 → no settling delay (explicit test point; D-04)
+  *   read_strobe_us   == 0 → use firmware default 3µs (preserves current behaviour)
+  */
+-#define READ_TIMING_MAX_US 1000UL   /* T-44-01 sane max (~1ms); caps both knobs */
+ 
+-bool get_read_settling(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    if (jsoneq(json, &tokens[pos], "read-settling-delay") == 0) {
+-        unsigned long v = simple_strtoul(json + tokens[pos + 1].start);
+-        handle->read_settling_us = (uint32_t)(v > READ_TIMING_MAX_US ? READ_TIMING_MAX_US : v);
+-        return 1;
+-    }
+-    return 0;
+-}
+ 
+-bool get_read_strobe(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    if (jsoneq(json, &tokens[pos], "read-strobe-us") == 0) {
+-        unsigned long v = simple_strtoul(json + tokens[pos + 1].start);
+-        handle->read_strobe_us = (uint32_t)(v > READ_TIMING_MAX_US ? READ_TIMING_MAX_US : v);
+-        return 1;
+-    }
+-    return 0;
+-}
+ 
+ /*
+  * Phase 149 — page-size seam (PGSZ-01/PGSZ-02, D-07).
+@@ -386,6 +407,3 @@ bool get_read_strobe(const char* json, jsmntok_t* tokens, int pos, firestarter_h
+  * silent fallback) lives in the 0x0D handler (eeprom28c_page_mask), which
+  * keeps json_parse algorithm-agnostic and costs the fewest bytes here.
+  */
+-bool get_page_size(const char* json, jsmntok_t* tokens, int pos, firestarter_handle_t* handle) {
+-    extract_int("page-size", handle->page_size);
+-}
+diff --git a/src/proms/eeprom_28c.cpp b/src/proms/eeprom_28c.cpp
+index 836f427..d8f1082 100644
+--- a/src/proms/eeprom_28c.cpp
++++ b/src/proms/eeprom_28c.cpp
+@@ -300,22 +300,7 @@ static void eeprom28c_check_chip_id(firestarter_handle_t* handle) {
+     uint16_t chip_id = handle->firestarter_get_data(handle, mfr_addr) << 8;
+     chip_id |= handle->firestarter_get_data(handle, mfr_addr + 1);
+     handle->firestarter_set_control_register(handle, CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_A9_ENABLE, 0);
+-    if (chip_id != handle->chip_id) {
+-        {
+-            uint8_t _b[4];
+-            _b[0] = (uint8_t)(((uint16_t)chip_id >> 8) & 0xFF);
+-            _b[1] = (uint8_t)((uint16_t)chip_id & 0xFF);
+-            _b[2] = (uint8_t)(((uint16_t)handle->chip_id >> 8) & 0xFF);
+-            _b[3] = (uint8_t)((uint16_t)handle->chip_id & 0xFF);
+-            if (is_flag_set(FLAG_FORCE)) {
+-                LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
+-                handle->response_code = RESPONSE_CODE_WARNING;
+-            } else {
+-                LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+-                handle->response_code = RESPONSE_CODE_ERROR;
+-            }
+-        }
+-    }
++    mem_util_report_chip_id(handle, chip_id, is_flag_set(FLAG_FORCE));
+ }
+ 
+ // FIX-01: a 0x0D-local, remap-aware command-sequence emitter. Unlike the
+diff --git a/src/proms/eprom.cpp b/src/proms/eprom.cpp
+index 838aca4..8ebe182 100644
+--- a/src/proms/eprom.cpp
++++ b/src/proms/eprom.cpp
+@@ -712,44 +712,15 @@ void eprom_check_vpp(firestarter_handle_t* handle) {
+     LOG_DEBUG_ID_SUB_U16(DBG_CHECKING_VPP_VOLTAGE, vpp_mv);
+     if (vpp_mv > (uint32_t)handle->vpp_mv + 500) {
+         {
+-            uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
+-            uint16_t _v1 = (uint16_t)((((vpp_mv + 50) / 100) % 10));
+-            uint16_t _v2 = (uint16_t)((handle->vpp_mv + 50) / 1000);
+-            uint16_t _v3 = (uint16_t)((((handle->vpp_mv + 50) / 100) % 10));
+-            uint8_t _b[8];
+-            _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
+-            _b[1] = (uint8_t)(_v0 & 0xFF);
+-            _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
+-            _b[3] = (uint8_t)(_v1 & 0xFF);
+-            _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
+-            _b[5] = (uint8_t)(_v2 & 0xFF);
+-            _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
+-            _b[7] = (uint8_t)(_v3 & 0xFF);
+-            if (is_flag_set(FLAG_FORCE)) {
+-                LOG_WARN_ID_BYTES(MSG_WARN_VPP_HIGH, _b, 8);
+-                handle->response_code = RESPONSE_CODE_WARNING;
+-            } else {
+-                LOG_ERROR_ID_BYTES(MSG_ERR_VPP_HIGH, _b, 8);
+-                handle->response_code = RESPONSE_CODE_ERROR;
+-            }
++            bool force = is_flag_set(FLAG_FORCE);
++            mem_util_report_voltage(handle, vpp_mv, handle->vpp_mv,
++                                    force ? MSG_WARN_VPP_HIGH : MSG_ERR_VPP_HIGH,
++                                    force ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR);
+         }
+     } else if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100) {
+         {
+-            uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
+-            uint16_t _v1 = (uint16_t)((((vpp_mv + 50) / 100) % 10));
+-            uint16_t _v2 = (uint16_t)((handle->vpp_mv + 50) / 1000);
+-            uint16_t _v3 = (uint16_t)((((handle->vpp_mv + 50) / 100) % 10));
+-            uint8_t _b[8];
+-            _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
+-            _b[1] = (uint8_t)(_v0 & 0xFF);
+-            _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
+-            _b[3] = (uint8_t)(_v1 & 0xFF);
+-            _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
+-            _b[5] = (uint8_t)(_v2 & 0xFF);
+-            _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
+-            _b[7] = (uint8_t)(_v3 & 0xFF);
+-            LOG_WARN_ID_BYTES(MSG_WARN_VPP_LOW, _b, 8);
+-            handle->response_code = RESPONSE_CODE_WARNING;
++            mem_util_report_voltage(handle, vpp_mv, handle->vpp_mv,
++                                    MSG_WARN_VPP_LOW, RESPONSE_CODE_WARNING);
+         }
+     }
+     handle->firestarter_set_control_register(handle, EPROM_HV_ALL_OFF_MASK, 0);  // VPP-03: shared composite (was REGULATOR | DROP)
+@@ -795,20 +766,7 @@ void eprom_generic_init(firestarter_handle_t* handle) {
+ void eprom_internal_check_chip_id(firestarter_handle_t* handle, uint8_t error_code) {
+     LOG_DEBUG_ID_SUB(DBG_CHECK_CHIP_ID);
+     uint16_t chip_id = eprom_get_chip_id(handle);
+-    if (chip_id != handle->chip_id) {
+-        uint8_t _b[4];
+-        _b[0] = (uint8_t)((chip_id >> 8) & 0xFF);
+-        _b[1] = (uint8_t)(chip_id & 0xFF);
+-        _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
+-        _b[3] = (uint8_t)(handle->chip_id & 0xFF);
+-        if (error_code == RESPONSE_CODE_WARNING) {
+-            LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
+-            handle->response_code = RESPONSE_CODE_WARNING;
+-        } else {
+-            LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+-            handle->response_code = RESPONSE_CODE_ERROR;
+-        }
+-    }
++    mem_util_report_chip_id(handle, chip_id, error_code == RESPONSE_CODE_WARNING);
+ }
+ // Use this function to set the control register and flip CTRL_VPE_ENABLE bit to CTRL_VPE_ENABLE or CTRL_VPP_P1_ENABLE
+ void eprom_internal_set_control_register(firestarter_handle_t* handle, rurp_register_t bit, bool state) {
+diff --git a/src/proms/flash_intel.cpp b/src/proms/flash_intel.cpp
+index 057bf44..3fc8791 100644
+--- a/src/proms/flash_intel.cpp
++++ b/src/proms/flash_intel.cpp
+@@ -38,44 +38,15 @@ static void flash_intel_check_vpp(firestarter_handle_t* handle) {
+     LOG_DEBUG_ID_SUB_U16(DBG_CHECKING_VPP_VOLTAGE, vpp_mv);
+     if (vpp_mv > (uint32_t)handle->vpp_mv + 500) {
+         {
+-            uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
+-            uint16_t _v1 = (uint16_t)((((vpp_mv + 50) / 100) % 10));
+-            uint16_t _v2 = (uint16_t)((handle->vpp_mv + 50) / 1000);
+-            uint16_t _v3 = (uint16_t)((((handle->vpp_mv + 50) / 100) % 10));
+-            uint8_t _b[8];
+-            _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
+-            _b[1] = (uint8_t)(_v0 & 0xFF);
+-            _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
+-            _b[3] = (uint8_t)(_v1 & 0xFF);
+-            _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
+-            _b[5] = (uint8_t)(_v2 & 0xFF);
+-            _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
+-            _b[7] = (uint8_t)(_v3 & 0xFF);
+-            if (is_flag_set(FLAG_FORCE)) {
+-                LOG_WARN_ID_BYTES(MSG_WARN_VPP_HIGH, _b, 8);
+-                handle->response_code = RESPONSE_CODE_WARNING;
+-            } else {
+-                LOG_ERROR_ID_BYTES(MSG_ERR_VPP_HIGH, _b, 8);
+-                handle->response_code = RESPONSE_CODE_ERROR;
+-            }
++            bool force = is_flag_set(FLAG_FORCE);
++            mem_util_report_voltage(handle, vpp_mv, handle->vpp_mv,
++                                    force ? MSG_WARN_VPP_HIGH : MSG_ERR_VPP_HIGH,
++                                    force ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR);
+         }
+     } else if (vpp_mv < (uint32_t)handle->vpp_mv * 95 / 100) {
+         {
+-            uint16_t _v0 = (uint16_t)((vpp_mv + 50) / 1000);
+-            uint16_t _v1 = (uint16_t)((((vpp_mv + 50) / 100) % 10));
+-            uint16_t _v2 = (uint16_t)((handle->vpp_mv + 50) / 1000);
+-            uint16_t _v3 = (uint16_t)((((handle->vpp_mv + 50) / 100) % 10));
+-            uint8_t _b[8];
+-            _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
+-            _b[1] = (uint8_t)(_v0 & 0xFF);
+-            _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
+-            _b[3] = (uint8_t)(_v1 & 0xFF);
+-            _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
+-            _b[5] = (uint8_t)(_v2 & 0xFF);
+-            _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
+-            _b[7] = (uint8_t)(_v3 & 0xFF);
+-            LOG_WARN_ID_BYTES(MSG_WARN_VPP_LOW, _b, 8);
+-            handle->response_code = RESPONSE_CODE_WARNING;
++            mem_util_report_voltage(handle, vpp_mv, handle->vpp_mv,
++                                    MSG_WARN_VPP_LOW, RESPONSE_CODE_WARNING);
+         }
+     }
+     // NO regulator clear — caller continues to use CTRL_VPP_REGULATOR_ENABLE | CTRL_VPP_P1_ENABLE through the write pulse.
+@@ -189,18 +160,5 @@ void flash_intel_check_chip_id(firestarter_handle_t* handle) {
+     uint16_t chip_id = handle->firestarter_get_data(handle, 0x0000) << 8;
+     chip_id |= handle->firestarter_get_data(handle, 0x0001);
+     handle->firestarter_set_data(handle, 0, 0xFF);  // exit autoselect
+-    if (chip_id != handle->chip_id) {
+-        uint8_t _b[4];
+-        _b[0] = (uint8_t)((chip_id >> 8) & 0xFF);
+-        _b[1] = (uint8_t)(chip_id & 0xFF);
+-        _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
+-        _b[3] = (uint8_t)(handle->chip_id & 0xFF);
+-        if (is_flag_set(FLAG_FORCE)) {
+-            LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
+-            handle->response_code = RESPONSE_CODE_WARNING;
+-        } else {
+-            LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+-            handle->response_code = RESPONSE_CODE_ERROR;
+-        }
+-    }
++    mem_util_report_chip_id(handle, chip_id, is_flag_set(FLAG_FORCE));
+ }
+diff --git a/src/proms/flash_utils.cpp b/src/proms/flash_utils.cpp
+index 1397ef8..5384b27 100644
+--- a/src/proms/flash_utils.cpp
++++ b/src/proms/flash_utils.cpp
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include "flash_utils.h"
++#include "memory_utils.h"
+ #include <Arduino.h>
+ #include "rurp_shield.h"
+ #include "rurp_pinout.h"
+@@ -102,18 +103,5 @@ uint8_t flash_util_read_in_id_mode(firestarter_handle_t* handle, uint32_t addres
+ 
+ void flash_util_check_chip_id_execute(firestarter_handle_t* handle) {
+     uint16_t chip_id = flash_util_get_chip_id(handle);
+-    if (chip_id != handle->chip_id) {
+-        uint8_t _b[4];
+-        _b[0] = (uint8_t)((chip_id >> 8) & 0xFF);
+-        _b[1] = (uint8_t)(chip_id & 0xFF);
+-        _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
+-        _b[3] = (uint8_t)(handle->chip_id & 0xFF);
+-        if (is_flag_set(FLAG_FORCE)) {
+-            LOG_WARN_ID_BYTES(MSG_WARN_CHIP_ID_MISMATCH, _b, 4);
+-            handle->response_code = RESPONSE_CODE_WARNING;
+-        } else {
+-            LOG_ERROR_ID_BYTES(MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
+-            handle->response_code = RESPONSE_CODE_ERROR;
+-        }
+-    }
++    mem_util_report_chip_id(handle, chip_id, is_flag_set(FLAG_FORCE));
+ }
+diff --git a/src/proms/memory.cpp b/src/proms/memory.cpp
+index faf4608..5af3e52 100644
+--- a/src/proms/memory.cpp
++++ b/src/proms/memory.cpp
+@@ -230,6 +230,52 @@ rurp_register_t mem_util_calculate_top_address_register(firestarter_handle_t* ha
+     return top_address;
+ }
+ 
++
++/* Shared VPP-mismatch report (payload unchanged):
++ *   [measured_V u16 BE][measured_tenths u16 BE][expected_V u16 BE][expected_tenths u16 BE]
++ * Four byte-identical copies existed -- eprom.cpp x2, flash_intel.cpp x2 --
++ * holding 24 of the firmware's 30 __udivmodhi4 call sites between them.
++ * Arithmetic preserved EXACTLY, so this is de-duplication, not a behaviour
++ * change. Severity rides entirely in msg_id, because every
++ * LOG_{WARN,ERROR}_ID_BYTES macro is the same alias of LOG_ID_BYTES. */
++void mem_util_report_voltage(firestarter_handle_t* handle, uint16_t measured_mv,
++                             uint16_t expected_mv, uint8_t msg_id, uint8_t response_code) {
++    uint16_t _v0 = (uint16_t)((measured_mv + 50) / 1000);
++    uint16_t _v1 = (uint16_t)((((measured_mv + 50) / 100) % 10));
++    uint16_t _v2 = (uint16_t)((expected_mv + 50) / 1000);
++    uint16_t _v3 = (uint16_t)((((expected_mv + 50) / 100) % 10));
++    uint8_t _b[8];
++    _b[0] = (uint8_t)((_v0 >> 8) & 0xFF);
++    _b[1] = (uint8_t)(_v0 & 0xFF);
++    _b[2] = (uint8_t)((_v1 >> 8) & 0xFF);
++    _b[3] = (uint8_t)(_v1 & 0xFF);
++    _b[4] = (uint8_t)((_v2 >> 8) & 0xFF);
++    _b[5] = (uint8_t)(_v2 & 0xFF);
++    _b[6] = (uint8_t)((_v3 >> 8) & 0xFF);
++    _b[7] = (uint8_t)(_v3 & 0xFF);
++    LOG_ID_BYTES(msg_id, _b, 8);
++    handle->response_code = response_code;
++}
++
++/* Shared chip-ID mismatch report: 4 bytes, actual then expected, each u16 BE.
++ * Four copies existed -- flash_utils.cpp, flash_intel.cpp, eprom.cpp,
++ * eeprom_28c.cpp -- and they had already DRIFTED: three tested
++ * is_flag_set(FLAG_FORCE) inline while eprom.cpp took an error_code parameter,
++ * and eeprom_28c.cpp carried redundant casts. Callers now pass the decision as
++ * warn_only, so the semantic is stated once. */
++void mem_util_report_chip_id(firestarter_handle_t* handle, uint16_t actual, bool warn_only) {
++    if (actual == handle->chip_id) {
++        return;
++    }
++    uint8_t _b[4];
++    _b[0] = (uint8_t)((actual >> 8) & 0xFF);
++    _b[1] = (uint8_t)(actual & 0xFF);
++    _b[2] = (uint8_t)((handle->chip_id >> 8) & 0xFF);
++    _b[3] = (uint8_t)(handle->chip_id & 0xFF);
++    LOG_ID_BYTES(warn_only ? MSG_WARN_CHIP_ID_MISMATCH : MSG_ERR_CHIP_ID_MISMATCH, _b, 4);
++    handle->response_code = warn_only ? RESPONSE_CODE_WARNING : RESPONSE_CODE_ERROR;
++}
++
+ void mem_util_split_delay(uint32_t us, uint32_t* out_ms, uint16_t* out_us) {
+     if (us <= MEM_UTIL_DELAY_US_MAX) {
+         *out_ms = 0;
+@@ -386,9 +432,17 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
+     return reorg_address;
+ }
+ 
+-typedef struct {
+-    uint32_t address;
+-} blank_check_progress_data_t;
++/* Saved across the multi-call blank check.
++ *
++ * This WAS a 4-byte malloc of a one-uint32_t struct. That single allocation
++ * pulled the whole avr-libc allocator into the image -- malloc 312 B + free
++ * 274 B = 586 B -- and mem_util_blank_check was its ONLY caller. It also
++ * dereferenced the result UNCHECKED (`progress_data->address = ...` straight
++ * after the malloc), on a part with roughly 470 B of free RAM once `handle`
++ * (1115 B) and the jsmn token array (512 B) are accounted for. A file-scope
++ * static has the identical lifetime -- one command runs at a time -- with none
++ * of that. handle->progress_data is removed with it; nothing else read it. */
++static uint32_t blank_check_saved_address;
+ 
+ #define BLANK_CHECK_CHUNK_SIZE 2048
+ void uint32_to_bytes(char* buffer, int pos, uint32_t value) {
+@@ -399,20 +453,14 @@ void uint32_to_bytes(char* buffer, int pos, uint32_t value) {
+ }
+ 
+ void mem_util_blank_check(firestarter_handle_t* handle) {
+-    blank_check_progress_data_t* progress_data;
+     if (!is_operation_in_progress(handle)) {
+         set_operation_in_progress(handle);
+-        handle->progress_data = malloc(sizeof(blank_check_progress_data_t));
+-        progress_data = (blank_check_progress_data_t*)handle->progress_data;
+-        progress_data->address = handle->address;
++        blank_check_saved_address = handle->address;
+         handle->address = 0;
+     } else {
+-        progress_data = (blank_check_progress_data_t*)handle->progress_data;
+         if (handle->address >= handle->mem_size) {
+             clear_operation_in_progress(handle);
+-            handle->address = progress_data->address;
+-            free(handle->progress_data);
+-            handle->progress_data = NULL;
++            handle->address = blank_check_saved_address;
+             return;
+         }
+     }
+diff --git a/test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp b/test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp
+index 345bb28..6df7b1e 100644
+--- a/test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp
++++ b/test/native/avr/test_eeprom28c_sdp/test_eeprom28c_sdp.cpp
+@@ -1785,10 +1785,13 @@ void test_case30_write_init_no_blank_check_with_flag_clear_erase01(void) {
+         "eeprom28c_write_init call with FLAG_SKIP_BLANK_CHECK clear -- mem_util_blank_check is "
+         "the only setter of this flag on the write-INIT path, so TRUE here would mean the "
+         "pre-write blank check still ran and left a multi-call INIT loop pending");
+-    TEST_ASSERT_NULL_MESSAGE(h.progress_data,
+-        "Case 30 (ERASE-01): h.progress_data must be NULL -- a non-NULL value means "
+-        "mem_util_blank_check allocated a blank_check_progress_data_t block, i.e. the "
+-        "pre-write blank check still ran");
++    /* The companion `h.progress_data must be NULL` assertion is GONE, and so is
++     * the field: mem_util_blank_check no longer mallocs a
++     * blank_check_progress_data_t (it keeps its saved address in a file-scope
++     * static), so there is no allocation left to observe. This is a loss of a
++     * redundant PROBE, not of coverage -- is_operation_in_progress above is set
++     * by the same statement of the same function that used to do the malloc, so
++     * the behaviour under test is still pinned. */
+     sdp_assert_stream_equals(SDP_FIXED_DIP28_28C256, SDP_FIXED_DIP28_28C256_LEN,
+         "Case 30 (ERASE-01): with FLAG_SKIP_BLANK_CHECK clear, the AT28C256/DIP28_28C256 stream "
+         "must now be byte-identical to the golden captured with the flag SET -- the D-07 policy "
+diff --git a/test/native/avr/test_val_5v_page/test_val_5v_page.cpp b/test/native/avr/test_val_5v_page/test_val_5v_page.cpp
+index 14769ed..9bd31ab 100644
+--- a/test/native/avr/test_val_5v_page/test_val_5v_page.cpp
++++ b/test/native/avr/test_val_5v_page/test_val_5v_page.cpp
+@@ -235,9 +235,10 @@ static firestarter_handle_t make_write_handle_with_data(void) {
+  * entered, and is_flag_set(FLAG_SKIP_BLANK_CHECK) is false so the deleted
+  * conditional's guard would have been satisfied. mem_size is a small 2048 --
+  * BLANK_CHECK_CHUNK_SIZE (memory.cpp:393) -- because mem_util_blank_check
+- * sets is_operation_in_progress and mallocs progress_data on its FIRST call
+- * regardless of mem_size, so the oracle below does not depend on how large
+- * mem_size is. */
++ * sets is_operation_in_progress on its FIRST call regardless of mem_size, so
++ * the oracle below does not depend on how large mem_size is. (It used to save
++ * its address into a 4-byte malloc as well; that is now a file-scope static and
++ * the handle field is gone, which changes nothing about this oracle.) */
+ static firestarter_handle_t make_write_init_handle_blank_check_enabled(void) {
+     firestarter_handle_t h = {};
+     h.protocol   = 0x05;
+@@ -317,12 +318,17 @@ void test_5v_page_write_execute_no_vpp(void) {
+ /* Case (ERASE-02): with FLAG_SKIP_BLANK_CHECK and FLAG_CAN_ERASE both clear,
+  * one call to flash_5v_page_write_init, driven through the dispatch
+  * pointer (not by function name, so this exercises what configure_memory
+- * actually wired), must leave is_operation_in_progress FALSE and
+- * progress_data NULL. mem_util_blank_check is the ONLY setter of either
+- * observable on this path (memory.cpp:401-405), so a FALSE/NULL pair here
+- * is the single-shot-INIT proof, not an assumption of symmetry with the
++ * actually wired), must leave is_operation_in_progress FALSE.
++ * mem_util_blank_check is the ONLY setter of that flag on this path, so FALSE
++ * here is the single-shot-INIT proof, not an assumption of symmetry with the
+  * 0x0D case (test_case30, test_eeprom28c_sdp.cpp). RED before Task 2's
+- * deletion, GREEN after. */
++ * deletion, GREEN after.
++ *
++ * The second observable this case used to pair with it -- progress_data NULL --
++ * no longer exists: mem_util_blank_check keeps its saved address in a
++ * file-scope static instead of a 4-byte malloc, and the handle field went with
++ * the allocation. Same statement still sets the flag above, so the behaviour
++ * under test is unchanged. */
+ void test_5v_page_write_init_no_blank_check_with_flag_clear_erase02(void) {
+     firestarter_handle_t h = make_write_init_handle_blank_check_enabled();
+     configure_memory(&h);
+@@ -336,10 +342,13 @@ void test_5v_page_write_init_no_blank_check_with_flag_clear_erase02(void) {
+         "mem_util_blank_check is the only setter of this flag on the write-INIT "
+         "path, so TRUE here would mean the pre-write blank check still ran and "
+         "left a multi-call INIT loop pending");
+-    TEST_ASSERT_NULL_MESSAGE(h.progress_data,
+-        "ERASE-02: h.progress_data must be NULL -- a non-NULL value means "
+-        "mem_util_blank_check allocated a blank_check_progress_data_t block, "
+-        "i.e. the pre-write blank check still ran");
++    /* The companion `h.progress_data must be NULL` assertion is GONE, and so is
++     * the field: mem_util_blank_check no longer mallocs a
++     * blank_check_progress_data_t (it keeps its saved address in a file-scope
++     * static), so there is no allocation left to observe. This is a loss of a
++     * redundant PROBE, not of coverage -- is_operation_in_progress above is set
++     * by the same statement of the same function that used to do the malloc, so
++     * the behaviour under test is still pinned. */
+     TEST_ASSERT_NOT_EQUAL_MESSAGE(RESPONSE_CODE_ERROR, h.response_code,
+         "ERASE-02: the removed blank check can no longer fail a write on a "
+         "non-blank part");

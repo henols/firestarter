@@ -1,0 +1,62 @@
+APPROVED-FOR-POST: gh23
+
+Operator: Henrik Olsson <henrik@predictly.se>
+Date: 2026-09-12
+
+DELEGATION RECORD — read this section before the decision below.
+
+This gate was NOT answered by the operator selecting one of the three menu options
+(`approve` / `amend` / `hold`) offered at Task 1. The operator instead delegated the
+decision itself, in their own words, verbatim:
+
+    "you decide"
+
+That is the full extent of the operator's direct input to this specific gate. Everything
+that follows — the body decision, the label decision, and the no-close decision — was
+SELECTED BY THE ORCHESTRATOR under that delegation, not by the operator. No menu option
+was chosen by the operator's own hand, and this file does not claim otherwise. The
+delegation itself is legitimate: the operator had already read the full gh#23 body
+verbatim when Plan 187-06 drafted it, and had personally answered four prior
+blocking-human gates in this same phase (the meta merge, the app merge, the firmware
+merge, and gh#60's post/label/close). Delegating this fifth, structurally identical gate
+is a considered choice by the operator, not an absence of one — but the selection that
+follows is the orchestrator's, made under that delegation, and is recorded as such.
+
+Harness: invoked as `/gsd-execute-phase 187` with no flags; `_auto_chain_active: false`;
+`auto_advance: false`; Claude Code harness auto mode OFF. This gate was not auto-approved
+by any automation — it was answered by the delegation above.
+
+ORCHESTRATOR'S SELECTION AND REASONING, under the operator's delegation:
+
+1. Body: approve as drafted — post byte-for-byte, NO amendment.
+   Reasoning: the body concedes the reporter's diagnosis in its first two sentences,
+   states the tool's remaining limit plainly (it cannot see an unhooked VPP and a re-run
+   with the same wiring will still FAIL), and explicitly declines to imply a w27e257 PASS
+   exists when the tracker carries none.
+
+2. Labels: add `cause:rig` and `needs:report`; KEEP the standing `cause:database`.
+   Final label set must be exactly: `dev-test`, `cause:database`, `cause:rig`,
+   `needs:report`. (gh#23 currently carries `dev-test` and `cause:database` —
+   `dev-test` is pre-existing and stays.) This matches what the body's own label
+   paragraph announces.
+   Reasoning: `cause:database` stays because the W27E257 `13.5 V` vs datasheet `12 V`
+   defect is real and unfixed, so that label was never wrong — just not the whole story;
+   `cause:rig` is added because a rig fault is what actually produced this report;
+   `needs:report` is added because the body genuinely asks for a fresh run once the VPP
+   wiring is fixed.
+
+3. NO close. gh#23 stays OPEN.
+   Reasoning: a close requires the reporter's confirmation or a superseding PASS, and
+   neither exists.
+
+SCOPE: gh#23 ONLY. Nothing here approves anything for gh#28, gh#31 or gh#9. gh#60 and
+gh#62 are already posted by plans 187-07 and 187-08 and are not touched by this approval.
+
+APPROVED LABEL LIST (verbatim, final set): dev-test, cause:database, cause:rig, needs:report
+
+NO CLOSE approved — gh#23 stays OPEN.
+
+No amendment was requested — the body is posted exactly as drafted by Plan 187-06, so the
+sha256 below is that plan's unchanged hash, not recomputed by this gate.
+
+sha256(evidence/bodies/187-gh23.md) = c9cf850628ed9fcaa2e168d98868707c235a10b844442ab1cbc25520c2fe2596

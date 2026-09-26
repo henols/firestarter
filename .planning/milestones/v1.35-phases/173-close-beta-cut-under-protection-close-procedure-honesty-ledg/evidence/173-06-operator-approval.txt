@@ -1,0 +1,14 @@
+APPROVED-FOR-MAIN-PR: wiki-check.yml provenance footer leg
+
+Narrowing: this authorization covers opening the pull request into henols/firestarter_prom's
+main only. Merging is explicitly withheld and remains the operator's own act — no gh pr merge,
+no admin bypass, no auto-merge, no --squash/--rebase/--merge, and no push to main by any other
+route is authorized by this file.
+
+Operator: Henrik Olsson
+Date: 2026-09-02
+
+The operator was shown the exact diff to wiki-check.yml, Task 1's local run of the leg green
+against a reproduced runner layout, and plan 173-05's fresh-clone evidence showing the six
+footers published, and answered with the three literal characters-plus-words "just s PR", which
+the orchestrator read as "just a PR" — open the pull request, do not merge it.

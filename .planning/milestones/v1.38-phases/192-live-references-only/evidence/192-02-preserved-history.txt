@@ -1,0 +1,89 @@
+PRESERVED-HISTORY CAPTURE (D-05, D-06) — taken before the 192-02 remap
+=======================================================================
+pre_remap_commit: b1311abda967492d2fb8825eb5530c3949ab362a
+
+Captured by: `git -C /workspaces rev-parse HEAD`, then `/usr/bin/grep -n -F` (never PATH
+`grep`, which is ugrep here and honours `.gitignore`) locating each anchor by content in
+the pre-remap tree at the SHA above. All seven `.planning/codebase/` documents are
+captured here, not just the two this plan remaps (STACK.md, INTEGRATIONS.md) plus the two
+plan 02 also owns (ARCHITECTURE.md, STRUCTURE.md) — CONCERNS.md, CONVENTIONS.md and
+TESTING.md are captured too so plan 03 inherits a capture taken before any of the seven
+documents was rewritten.
+
+-----------------------------------------------------------------------
+STACK.md
+-----------------------------------------------------------------------
+line 9 (verbatim):
+**Prior analysis:** 2026-05-08 (submodule layer — preserved below, not re-verified this run)
+
+line 185 (verbatim):
+# Part 2 — Submodule stacks (from 2026-05-08 analysis; not re-verified this run)
+
+-----------------------------------------------------------------------
+INTEGRATIONS.md
+-----------------------------------------------------------------------
+line 9 (verbatim):
+**Prior analysis:** 2026-05-08 (submodule layer — preserved below, not re-verified this run)
+
+line 143 (verbatim):
+# Part 2 — Submodule integrations (from 2026-05-08 analysis; not re-verified this run)
+
+lines 145-146 (verbatim, the caveat sentence):
+All statements in this part are carried forward verbatim and are
+`[unverified in 2026-08-26 scoped remap]`.
+
+-----------------------------------------------------------------------
+ARCHITECTURE.md
+-----------------------------------------------------------------------
+line 184 (verbatim, closes Part 1):
+*Submodule architecture analysis: 2026-05-08*
+
+line 188 (verbatim, opens Part 2 — bounds Part 1 from above with line 184):
+# Part 2 — Meta-Repo Architecture (agent tooling & dev environment)
+
+-----------------------------------------------------------------------
+STRUCTURE.md
+-----------------------------------------------------------------------
+line 206 (verbatim):
+## Python Application: `firestarter_app/`
+
+line 281 (verbatim):
+## Arduino Firmware: `firestarter/`
+
+line 397 (verbatim, closes both preserved sections):
+*Submodule structure analysis: 2026-05-08*
+
+-----------------------------------------------------------------------
+CONCERNS.md
+-----------------------------------------------------------------------
+line 15 (verbatim, opens the caveat — quoted in full below):
+> All findings in the "Submodule Findings (2026-05-08)" section below are preserved verbatim and
+
+line 168 (verbatim):
+# Submodule Findings (2026-05-08)
+
+-----------------------------------------------------------------------
+CONVENTIONS.md
+-----------------------------------------------------------------------
+line 106 (verbatim):
+# Host-app conventions (submodule — preserved from 2026-05-08)
+
+lines 107-109 (verbatim, the caveat paragraph):
+*The sections below describe `firestarter_app/firestarter/`, a submodule that was out of
+scope for the 2026-08-26 scoped remap. They are preserved verbatim and are*
+*`[unverified in 2026-08-26 scoped remap]`.*
+
+-----------------------------------------------------------------------
+TESTING.md
+-----------------------------------------------------------------------
+line 150 (verbatim):
+## Host-app integration scripts (submodule — preserved from 2026-05-08)
+
+lines 152-154 (verbatim, the caveat paragraph):
+*`[unverified in 2026-08-26 scoped remap]` — `firestarter_app/` was out of scope. Paths
+below have been rewritten from the stale `/home/henrik/dev/...` prefix to repo-relative
+form; the descriptions are otherwise preserved.*
+
+=======================================================================
+End of capture. A dropped preserved section in any of the seven documents after the
+remap(s) that follow is now a diff against this file, not a memory exercise.

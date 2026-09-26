@@ -1,0 +1,120 @@
+# D-14 review artifact — 152-GH12-COMMENT.md adapted from the 137 original
+#
+# --- a: .planning/phases/137-close-honesty-ledger-claim-gate-gh12-followup/137-GH12-COMMENT.md
+# +++ b: .planning/phases/152-outward-facing-close-operator-gated/152-GH12-COMMENT.md
+# Generated: 2026-08-21
+#
+# This header is prose, kept outside the diff hunks below so the file stays a
+# machine-readable unified diff. One sentence per change class:
+#
+# KEPT   — the two donor paragraphs D-14 pins: the "two halves don't survive
+#           equally" framing (with the disable-survives-as-write's-default
+#           bullet and --skip-sdp-unlock opt-out intact) and the "this isn't
+#           the enable/disable you asked for" paragraph, including the
+#           unreadable-protection-bit limitation.
+# CHANGED — the donor's "the design for one is settled and the work is
+#           queued" sentence, no longer honest after a second deferral,
+#           replaced with a second-release withdrawal naming Backlog 999.28
+#           and promising no version; the intro drops the `3.0.0b14` release
+#           tag and past-tense-corrects "is being removed" to "is gone now";
+#           the closing sentence drops "SDP lock" in favor of "the lock".
+# ADDED   — three "What did get better" items (lock-status framed as
+#           refusal-as-feature, the write path's dropped pre-write blank
+#           check plus its software AN-0544B standalone erase step, and
+#           firmware-identifying dev test reports); a one-clause
+#           acknowledgment that this is the second install-and-test ask in a
+#           row; the firmware half of the install (`firestarter fw
+#           --install`) alongside the pre-release install, with the reason
+#           both are needed; the mandated "No AT28C part was tested at any
+#           point in v1.32" sentence, replacing the donor's "No AT28C silicon
+#           was tested during this milestone".
+# OMITTED — any process-failure narration, any phase number presented as
+#           process, any promise of a version, and the donor's "checkable"
+#           framing of the old lock (superseded by the new lock-status
+#           section); the deferred deliberate-protection command is never
+#           named, matching the donor's own discipline.
+#
+--- /workspaces/.planning/phases/137-close-honesty-ledger-claim-gate-gh12-followup/137-GH12-COMMENT.md	2026-08-05 20:10:41.720387507 +0000
++++ /workspaces/.planning/phases/152-outward-facing-close-operator-gated/152-GH12-COMMENT.md	2026-08-21 15:05:21.788902654 +0000
+@@ -1,7 +1,8 @@
+-Following up here, because `firestarter dev sdp` was named in this thread and in the `3.0.0b14`
+-release notes, and it's being removed.
++Following up again here. `firestarter dev sdp <chip> enable|disable` is gone now — it was removed in
++the release right after my last note on this thread — and I want to close the loop honestly rather
++than let the release notes speak for themselves.
+ 
+-**What's changing**
++**What changed**
+ 
+ `dev sdp <chip> enable|disable` is gone. The two halves don't survive equally, and I'd rather be
+ plain about that than let the release notes imply otherwise:
+@@ -9,9 +10,10 @@
+ - **`disable`'s behaviour survives, and you no longer need a command for it.** Unlocking is already
+   what `write` does by default on every protocol-`0x0D` part — it auto-unlocks unless you pass
+   `--skip-sdp-unlock`. So `dev sdp disable` was genuinely redundant, not merely dropped.
+-- **`enable` is withdrawn, with no replacement in this release.** If you want a part deliberately
+-  left protected, there is currently no supported way to do it. The design for one is settled and the
+-  work is queued, but it is not in this release and I'm not going to promise a version for it.
++- **`enable` is withdrawn, with no replacement — for a second release now.** If you want a part
++  deliberately left protected, there is still no supported way to do it. The ask is half-answered
++  for a second release: deliberate protection stays tracked as Backlog 999.28, and I'm not going to
++  promise a version for it.
+ 
+ This isn't the "enable/disable" you asked for. You asked for both, and what you get is one of them
+ automatically and none of the other. There's a second limitation worth stating: the protection bit on
+@@ -19,22 +21,40 @@
+ 
+ **What did get better**
+ 
+-The lock is now *checkable*, which it never was before. `dev test` on an SDP-capable part derives a
+-leg that writes a known pattern, locks the part, attempts a write without unlocking, and reads back
+-to see whether the contents changed — reporting `HELD` / `NOT-HELD` / `NOT-RUN` with a reason. If a
+-lock silently fails to hold, that leg is built to surface it rather than let the run look clean.
++- **`lock-status`.** The honest answer for this chip family is usually a refusal, and that's the
++  feature, not a limitation of it: `firestarter dev lock-status <chip>` either reports a real
++  protection state read back from the chip, or it refuses and names why — an actionable reason, not a
++  guess. It's beta-channel only right now, and it needs firmware that matches: install the pre-release
++  and run `firestarter fw --install`, or the command won't be recognized at all.
++- **The write path no longer blank-checks before writing.** On this protocol, a page write auto-erases
++  internally as part of the write itself, so a pre-write blank check was never actually protecting
++  you — it's gone. A standalone erase step exists now too, using the manufacturer's own software erase
++  sequence for this protocol rather than the 12 V-on-OE hardware path some older programmers use; the
++  software path was chosen precisely because it carries no over-voltage hazard on this pinout. The
++  standalone blank check is unaffected and still exists as its own step.
++- **`dev test` reports now say which firmware they ran on.** That's new since the last time I asked
++  you to test, and it's part of why the ask below is worth making at all.
++
++I know this is the second time in a row I'm asking you to install a fresh pre-release and run
++`dev test` on this thread — the last time pointed at a build whose reports couldn't say which
++firmware they'd run on, and whose write step failed on a non-blank part for a reason that's since
++been removed. I'd rather say that plainly than pretend this is the first ask.
+ 
+ **This is where I need help, and it's the honest reason `dev test` exists**
+ 
+-I don't have most of these parts. No AT28C silicon was tested during this milestone — I can't buy
+-one of everything, and a lot of what the database
+-claims about a chip has never been checked against the actual silicon — including the AT28C family in
+-this thread. That's not a gap I can close on my own bench.
++I don't have most of these parts. No AT28C part was tested at any point in v1.32 — I can't buy one
++of everything, and a lot of what the database claims about a chip has never been checked against the
++actual silicon — including the AT28C family in this thread. That's not a gap I can close on my own
++bench.
+ 
+ `dev test` is built for exactly that. If you have a part — the AT28C from this thread, or anything
+-else:
++else — you'll need two things first, and both matter: the pre-release install, and a firmware update.
++The write-path change lives in the firmware, and the host's test step doesn't send an override flag,
++so on older firmware the old failure reproduces exactly as it did before.
+ 
+ ```
++pip install --pre firestarter
++firestarter fw --install
+ firestarter dev test <chip>
+ ```
+ 
+@@ -43,4 +63,4 @@
+ `--destructive` only on a chip you're willing to risk, and it'll tell you what it skipped without it.
+ 
+ One run from a part in someone's hand tells us more than anything I can derive from the database. If
+-the SDP lock doesn't actually hold on real AT28C silicon, a report is how we find out.
++the lock doesn't actually hold on real AT28C silicon, a report is how we find out.

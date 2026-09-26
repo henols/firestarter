@@ -1,0 +1,3 @@
+no -- this is a control-rerun row, not a primary chip-disposition row; known_carried is not the
+relevant judgement here. The failure it reproduces (Empty input / blank-check) does not match the
+recorded v1.15 stuck-bit-on-erase disposition on either arm.

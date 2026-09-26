@@ -44,7 +44,7 @@ warnings from the prior review (WR-01..WR-05). Verification of each fix:
   preserved. **Closed.**
 - WR-03 (firmware-install mutex): per-option callback `_check_install_mutex`
   deleted; replaced with a single post-parse check at the top of `fw()`'s
-  body (`cli_handlers.py:792-805`) raising `click.UsageError`. Deterministic
+  body (`cli_handlers.py:790-803`) raising `click.UsageError`. Deterministic
   error message regardless of option order. **Closed — but see CR-01:
   snapshot regen was skipped, breaking three snapshot tests in CI.**
 - WR-04 (`id` shadows builtin): function renamed to `chip_id`, decorator
@@ -82,7 +82,7 @@ pertinent only to a post-py39 bump.
 single post-parse `click.UsageError` inside `fw()`'s body. This changed:
 
 1. The fw command's docstring (visible in `firestarter fw --help` output) —
-   `cli_handlers.py:777-784` now reads:
+   `cli_handlers.py:775-782` now reads:
    ```
    Implements TRAP #4 (3-way --pre / --firmware-version / --stable mutex via
    a single post-parse check at the top of the command body — WR-03; replaces
@@ -168,7 +168,7 @@ function but three docstring/comment references survived the fix commit:
    callback _check_install_mutex, now removed)". This one is accurate
    forward-pointer commentary; LEAVE as historical breadcrumb.
 
-3. `cli_handlers.py:779` — the fw() docstring itself says "replaces the
+3. `cli_handlers.py:777` — the fw() docstring itself says "replaces the
    earlier per-option callback _check_install_mutex which depended on
    Click's left-to-right option-processing order". Again, accurate as
    migration history. LEAVE.
@@ -182,7 +182,7 @@ def test_fw_mutex_pre_and_firmware_version(runner: CliRunner) -> None:
     """TRAP #4 / D-13.4: --pre + --firmware-version exits 2 (mutually exclusive).
 
     Enforced by a single post-parse check at the top of fw()'s body
-    (cli_handlers.py:792-805 — WR-03) raising click.UsageError when more
+    (cli_handlers.py:790-803 — WR-03) raising click.UsageError when more
     than one of --pre / --firmware-version / --stable is set.
     """
 ```

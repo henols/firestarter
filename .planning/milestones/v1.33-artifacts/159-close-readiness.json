@@ -1,0 +1,121 @@
+{
+  "status": "READY_TO_REMOVE_MARKER",
+  "generated": "2026-08-24",
+  "phase": "159-citation-remap-milestone-close",
+  "plan": "159-06",
+  "production_apply_events": 1,
+  "production_apply_event_id": "04390458f8ee4776bd75c2656a62a809",
+  "post_apply_rewrites": 0,
+  "post_apply_documents_would_change": 0,
+  "post_apply_fixed_point_note": "The genuine corpus-wide second dry run (0 rewritten / 0 documents) was captured at plan 159-05, with .planning/STATE.md's disk bytes temporarily holding its verified postimage. That is the authoritative REMAP-05 idempotency proof and is what these two fields record.",
+  "disk_dry_run_residual_at_this_task": {
+    "affected_documents": [".planning/STATE.md"],
+    "rewritten": 1,
+    "documents_would_change": 1,
+    "actionable_counts": {
+      "needs_review": 0,
+      "no_match_in_document": 0,
+      "not_at_recorded_line": 0,
+      "retarget": 0,
+      "unreviewed_retarget": 0,
+      "violation": 0
+    },
+    "cause": "preserve_unstaged design (auth-state-md-dirty): .planning/STATE.md's disk bytes are permanently pinned at the preserved dirty preimage rather than the citation-fixed postimage, so any fresh disk-based dry run will report exactly this one-document residual, forever. Not a regression -- see 159-remap-record.md's dedicated note.",
+    "measured_by": "159-06, this task, re-running the identical dry command"
+  },
+  "affected_corpus_hashes_match": true,
+  "affected_corpus_hashes": {
+    "corpus_fingerprint": "95c5f522872da2e774008104b32974acc5df5cc8cd7306804715c65611333fed",
+    "topology_digest": "0d7c095d109f37dba5f3375a7644153ade4abe4e5f5862eb64b91ed85d56932e"
+  },
+  "range": {
+    "old_start": 128,
+    "old_end": 131,
+    "new_start": 316,
+    "new_end": 318,
+    "old_span": 4,
+    "new_span": 3
+  },
+  "range_detail": {
+    "file": "firestarter/src/json_parser.c",
+    "citing_records": 10
+  },
+  "archive_superseded_count": 12,
+  "archive_gate": {
+    "command": "python3 .planning/phases/130-close-honesty-ledger-claim-gate-release-decision/check_record_corrections.py",
+    "result": "PASS",
+    "verdict_counts": {"block": 22, "line-label": 4, "inline-history": 6, "inline-allow": 10, "superseded": 12}
+  },
+  "source_heads": {
+    "firestarter": "2ccda8d43c8161a34fb5f83b9ab12c37a443bf22",
+    "firestarter_app": "38f0d839a1984fa71cb16ea98afa4d8a4e6bcfe2"
+  },
+  "source_worktrees_clean": true,
+  "firestarter_gitlink_pinned_sha": "2ad5b322a37ba4a88afd09cc946f5c4114e51483",
+  "firestarter_gitlink_current_head": "2ccda8d43c8161a34fb5f83b9ab12c37a443bf22",
+  "firestarter_gitlink_drift_note": "Pre-existing per 158-07-SUMMARY.md; never staged by this plan.",
+  "firestarter_app_pre_existing_untracked": [
+    ".planning/config.json",
+    "SECURITY.md",
+    "datasheets/M27C1001.pdf",
+    "datasheets/M27C512.pdf",
+    "datasheets/W27C512.pdf",
+    "datasheets/W27E257.pdf",
+    "write_test_port.sh"
+  ],
+  "marker_present": true,
+  "marker_sha256": "405d24777ef8abe7c0924fd47dcd8556c027ba12bf285727ba8e98cbf78becc0",
+  "real_index_staged_paths": 0,
+  "gates": {
+    "focused_test_modules_pass_98": true,
+    "production_receipt_applied_1_event": true,
+    "no_recovery_tar_present": true,
+    "corpus_wide_second_dry_run_0_0": true,
+    "disk_residual_expected_shape": true,
+    "zero_actionable_open_ids": true,
+    "range_shrink_proof": true,
+    "archive_gate_pass_superseded_12": true,
+    "source_heads_match_receipt": true,
+    "source_worktrees_clean": true,
+    "real_meta_index_empty": true,
+    "closure_targets_tracked_no_unrelated_overlap": true,
+    "preserved_dirty_paths_hash_identical_to_plan05": true,
+    "marker_still_present": true
+  },
+  "preserved_dirty_hashes": {
+    ".planning/STATE.md": "e866ab7ad7840e69931b4af62709c33ce9e5a69537c6c5abd24eda14bba8d71f",
+    ".planning/config.json": "df14969db00665c456b1e06ccaafb168f19b0386320d6a80db7c42ab0aa7c24f",
+    ".planning/phases/159-citation-remap-milestone-close/159-01-PLAN.md": "261aff408e180a6f6e607f8f287ae906abba2270498e733a3a784d24673eee40",
+    ".planning/phases/159-citation-remap-milestone-close/159-02-PLAN.md": "0d1aa01276b3351a948989533272ff8d407998905f073319f1c801a49f1b16de",
+    ".planning/phases/159-citation-remap-milestone-close/159-03-PLAN.md": "60a81583d6067a05fe4c13d91264f01d43f6ee2403f046f8bb01a28a0a02766c",
+    ".planning/phases/159-citation-remap-milestone-close/159-04-PLAN.md": "fbc3ada2dcc07756f221e58f5b716fa82004c002cad6efb8dfa671c6fe067726",
+    ".planning/phases/159-citation-remap-milestone-close/159-05-PLAN.md": "fba5f1136c9d0db8cad4412e56fd4dcc4900225a7856fd66c70099ce65f53c05",
+    ".planning/phases/159-citation-remap-milestone-close/159-06-PLAN.md": "5a07b0b5e945cc44ea8ae0bb9b57af038cc871e5385d329eddc5697927fa3aa8",
+    ".planning/phases/159-citation-remap-milestone-close/159-RESEARCH.md": "f535095467b5d0c3271056061c35f1ca87cbf394a8c282b228db66d5fdecc44f",
+    ".planning/phases/159-citation-remap-milestone-close/159-VALIDATION.md": "83f46988e9d4240883025f9c33d866ced6691953a8eae7353e658e73ed30f370",
+    "package.json": "80b4670556d4bc1e3ae7c711163fe6213dd0c533bfcd8b234cd08d179b7c1e31",
+    "package-lock.json": "dc1578151b7fcbdf4f922958a6ac049cf6f5524f1a76bcfbfd070e25df5cf71d"
+  },
+  "closure_target_hashes_before_edit": {
+    ".planning/REQUIREMENTS.md": "9506151ddac74053d8d59fab6b4946760187a64536d052cd643c316f324ea15d",
+    ".planning/ROADMAP.md": "f6b3a0fb7d6ac8c4d03bbf5b47c662f6994cbbf1a2ffe0267ccfa388ea2d5122",
+    ".planning/v1.33/159-remap-record.md": "395cbba3385b09023dda9012e5cd9d2626caf59a536aa973242aab47390271e8",
+    ".planning/v1.33/CITATIONS-STALE.md": "405d24777ef8abe7c0924fd47dcd8556c027ba12bf285727ba8e98cbf78becc0"
+  },
+  "allowed_regions": {
+    ".planning/REQUIREMENTS.md": "Exactly the five REMAP-0N bullet lines (checkbox + appended discharge sentence each) and the five REMAP-0N traceability table rows. No other requirement family, no SWEEP-13, no other prose.",
+    ".planning/ROADMAP.md": "Phase 159 region only: the six 159-0N-PLAN.md checkboxes and appended measured-fact sentences on each of the five existing Success Criteria. Goal / Depends on / Requirements lines and every other phase stay byte-identical.",
+    ".planning/v1.33/159-remap-record.md": "Append-only: a new 'Scoped closure readiness and final marker transition' section. No existing production facts rewritten.",
+    ".planning/v1.33/CITATIONS-STALE.md": "Deletion only, performed last, after every other edit and gate re-check."
+  },
+  "replacement_payload_sha256": {
+    "requirements_md_postimage": "00bcd91e2bf4005f2c335568ecb3c6cf98cfc8b6740d699950ef2d779399ea4f",
+    "roadmap_md_postimage": "f570c6d15be85585ef84e10c5aeb0652fdf09ff55db7b452530649aa1a7f2684",
+    "combined": "a505ee8508ec1f94f642d50bde3a2691936f6d56b7e982492a18f56225034952"
+  },
+  "sweep_13_note": "SWEEP-13's one-meta-commit clause remains intentionally open and unticked; this plan does not touch it.",
+  "state_mutation_authorized": false,
+  "milestone_completion_authorized": false,
+  "prohibited_actions": ["archive", "release", "push", "pull_request", "merge", "milestone_completion"],
+  "next_action": "/gsd-complete-milestone (operator-gated, not invoked by this plan)"
+}

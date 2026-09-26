@@ -1,0 +1,53 @@
+=== orphan_exit_1 ===
+OK: orphan_exit_1_control exit 0
+OK: orphan_exit_1 exit 1
+=== sidebar_link_is_not_evidence ===
+OK: sidebar_link_is_not_evidence_control exit 0
+OK: sidebar_link_is_not_evidence exit 1
+=== broken_link_exit_1 ===
+OK: broken_link_exit_1_control exit 0
+OK: broken_link_exit_1 exit 1
+=== md_suffix_link_exit_1 ===
+OK: md_suffix_link_exit_1_control exit 0
+OK: md_suffix_link_exit_1 exit 1
+=== illegal_filename_exit_1 ===
+OK: illegal_filename_exit_1_control exit 0
+OK: illegal_filename_exit_1 exit 1
+=== wiki05_unreferenced_page_exit_1 ===
+OK: wiki05_unreferenced_page_exit_1_control exit 0
+OK: wiki05_unreferenced_page_exit_1 exit 1
+=== reference_style_external_citation_exit_0 ===
+OK: reference_style_external_citation_exit_0_control exit 0
+OK: reference_style_external_citation_exit_0 exit 0
+OK: reference_style_external_citation_exit_0_unresolved exit 1
+=== dotdir_ignored_exit_0 ===
+OK: dotdir_ignored_exit_0 exit 0
+=== dispatch_mirror_planted_drift_exit_1 ===
+OK: dispatch_mirror_planted_drift_exit_1_control exit 0
+OK: dispatch_mirror_planted_drift_exit_1 exit 1
+OK: dispatch_mirror_planted_drift_exit_1_comment_only exit 0
+=== honest01_weakened_claim_exit_1 ===
+OK: honest01_weakened_claim_exit_1_control exit 0
+OK: honest01_weakened_claim_exit_1 exit 1
+=== honest02_absent_part_number_exit_1 ===
+OK: honest02_absent_part_number_exit_1_control exit 0
+OK: honest02_absent_part_number_exit_1 exit 1
+OK: honest02_absent_part_number_exit_1_missing_stamp exit 1
+OK: honest02_absent_part_number_exit_1_stale_stamp exit 1
+case | expected | observed | control | note | verdict
+orphan_exit_1 | 1 | 1 | 0 | orphan absent from Home.md | PASS
+sidebar_link_is_not_evidence | 1 | 1 | 0 | home-only evidence | PASS
+broken_link_exit_1 | 1 | 1 | 0 | unresolved internal link target | PASS
+md_suffix_link_exit_1 | 1 | 1 | 0 | md-suffixed internal link rejected | PASS
+illegal_filename_exit_1 | 1 | 1 | 0 | illegal filename character | PASS
+wiki05_unreferenced_page_exit_1 | 1 | 1 | 0 | sidebar-containment leg (Page-Two) and Home-reachability leg (Page-Three) both trip | PASS
+reference_style_external_citation_exit_0 | 0 | 0 | 0 | external [text][ref] resolved by a [ref]: url definition is not flagged; an unresolved [text][ref] is still rejected | PASS
+dotdir_ignored_exit_0 | 0 | 0 | 0 | a git clone's .git directory is not a wiki page and must not fail filename legality | PASS
+dispatch_mirror_planted_drift_exit_1 | 1 | 1 | 0 | planted missing bucket row (0xA5) detected by name | PASS
+dispatch_mirror_planted_drift_exit_1_comment_only | 0 | 0 | 0 | commented-out firmware entry (0xB5) is not counted as a dispatch entry; count unchanged at 13 | PASS
+honest01_weakened_claim_exit_1 | 1 | 1 | 0 | softened adapter-required (2->1) on the wiki side, source side unchanged; DROPPED bucket names the token and Fixture-Page | PASS
+honest02_absent_part_number_exit_1 | 1 | 1 | 0 | region token GHOSTPART01 absent from the fixture database; UNRESOLVED names the token and the page | PASS
+honest02_absent_part_number_exit_1_missing_stamp | 1 | 1 | 0 | stamp removed from a page that still matches the claim signature; MISSING STAMP names the page | PASS
+honest02_absent_part_number_exit_1_stale_stamp | 1 | 1 | 0 | stamp hash altered to a value the current fixture database does not match; STALE STAMP is textually distinct from UNRESOLVED and MISSING STAMP | PASS
+OK: selftest complete (11 cases)
+exit status: 0

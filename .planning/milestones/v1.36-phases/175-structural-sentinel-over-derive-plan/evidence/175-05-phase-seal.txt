@@ -1,0 +1,59 @@
+== 1 the test-only claim
+app_product_diff=clean
+firmware_diff=clean
+chip_database_diff=clean
+== 2 the no-move check
+........................................................................ [ 63%]
+..........................................                               [100%]
+114 passed in 1.42s
+rc_nomove=0
+rc_ledger_bytes=0
+rc_reports_bytes=0
+OK: 6 ledger row(s), 6 MILESTONES.md row(s) bound
+rc_ledger_checker=0
+rekey_ledger_rows=6
+== 3 comment and skip census
+comments_plan_corpus=0
+comments_sentinel=0
+comments_no_drop=0
+comments_drift=0
+comments_generator=1
+skip_markers=0
+== 4 the CI tooling gates
+All checks passed!
+rc_ruff=0
+167 files already formatted
+rc_ruff_format=0
+checked 169 source files
+mypy errors: 35 (watermark: 35)
+OK: error count at watermark.
+rc_watermark=0
+== 5 the four new modules together
+................................................                         [100%]
+48 passed in 209.22s (0:03:29)
+
+real	3m29.573s
+user	1m46.821s
+sys	0m11.196s
+rc_new_modules=0
+== 6 evidence inventory
+evidence_files=6
+.planning/phases/175-structural-sentinel-over-derive-plan/evidence/175-01-anti-vacuity-red-green.txt
+.planning/phases/175-structural-sentinel-over-derive-plan/evidence/175-01-tracer-end-to-end.txt
+.planning/phases/175-structural-sentinel-over-derive-plan/evidence/175-02-erase-and-uv-pins.txt
+.planning/phases/175-structural-sentinel-over-derive-plan/evidence/175-03-plan-shapes-drift.txt
+.planning/phases/175-structural-sentinel-over-derive-plan/evidence/175-04-no-drop-sweep.txt
+.planning/phases/175-structural-sentinel-over-derive-plan/evidence/175-05-phase-seal.txt
+== 7 the whole app suite
+rc_full_suite=0
+    assert getattr(click, attr_name) is not None
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+32 snapshots passed.
+2151 passed, 1 warning in 344.75s (0:05:44)
+full_suite_passed=2151
+== 8 paperwork
+todo_filed=yes
+coverage_declared=yes
+requirements_complete=2

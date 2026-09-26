@@ -1,0 +1,4 @@
+Connecting...Connecting... OK      
+Reading EPROM W27C512, saving to /workspaces/.planning/v1.34/bench/cells/A2/ESCALATION_A2__control__w27c512/run_02.bin
+ERROR: VPP is high: 12.5V > 12.0V
+Programmer error during READ: Programmer error during init: VPP is high: 12.5V > 12.0V

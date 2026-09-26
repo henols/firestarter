@@ -2,100 +2,75 @@
 #
 # Firestarter v1.2 catalog sync.
 #
-# 1. Copies the canonical messages.toml + codegen.py from the meta-repo into
-#    both sub-repos' tools/catalog/ directories.
-# 2. Regenerates messages.h (firmware) and messages.py (host) in each sub-repo
-#    using the freshly-copied codegen.py.
-# 3. Verifies byte-identical copies and asserts sub-repo catalog invariant.
+# Generation happens HERE, in the meta repo, and nowhere else. This script
+# regenerates messages.h (firmware) and messages.py (host) from the canonical
+# catalog and writes them into the sub-repos. The sub-repos receive generated
+# ARTIFACTS only -- they do not carry codegen.py or messages.toml, and must
+# never regenerate for themselves.
 #
 # Authoritative source: tools/catalog/{messages.toml,codegen.py}
-# Generated firmware artifact: firestarter/include/messages.h
+# Generated firmware artifact: firestarter_fw/include/messages.h
 # Generated host artifact:     firestarter_app/firestarter/messages.py
 #
 # Idempotent: re-running with no upstream change is a no-op.
 # Run after every catalog or codegen edit.
 #
-# Requirements: bash, cp, diff, python3, mkdir.
+# Requirements: bash, cp, diff, python3, mktemp; ruff for the host artifact.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 META_REPO_CATALOG="$SCRIPT_DIR"
+FS_ROOT="$META_REPO_CATALOG/../../firestarter_fw"
+FA_ROOT="$META_REPO_CATALOG/../../firestarter_app"
 
-FILES=(messages.toml codegen.py)
-
-# Sub-repo tools/catalog/ targets
-TARGETS=(
-    "$META_REPO_CATALOG/../../firestarter/tools/catalog"
-    "$META_REPO_CATALOG/../../firestarter_app/tools/catalog"
-)
-
-exit_code=0
-
-# ---------------------------------------------------------------------------
-# Step 1: copy messages.toml + codegen.py to each sub-repo
-# ---------------------------------------------------------------------------
-for target in "${TARGETS[@]}"; do
-    mkdir -p "$target"
-    for f in "${FILES[@]}"; do
-        src="$META_REPO_CATALOG/$f"
-        dst="$target/$f"
-        if [[ ! -f "$src" ]]; then
-            echo "ERROR: source missing: $src" >&2
-            exit 1
-        fi
-        cp "$src" "$dst"
-        if diff -q "$src" "$dst" >/dev/null; then
-            echo "  copied: $f -> $target"
-        else
-            echo "ERROR: copy mismatch: $src vs $dst" >&2
-            exit_code=1
-        fi
-    done
+for f in messages.toml codegen.py; do
+    if [[ ! -f "$META_REPO_CATALOG/$f" ]]; then
+        echo "ERROR: canonical source missing: $META_REPO_CATALOG/$f" >&2
+        exit 1
+    fi
 done
 
-if [[ $exit_code -ne 0 ]]; then
-    exit $exit_code
-fi
+# ---------------------------------------------------------------------------
+# Firmware artifact: firestarter_fw/include/messages.h
+# ---------------------------------------------------------------------------
+echo "Regenerating firestarter_fw/include/messages.h ..."
+tmp_h="$(mktemp)"
+trap 'rm -f "$tmp_h" "${tmp_py:-}"' EXIT
+python3 "$META_REPO_CATALOG/codegen.py" \
+    --catalog "$META_REPO_CATALOG/messages.toml" \
+    --language cpp \
+    --target "$tmp_h"
+cp "$tmp_h" "$FS_ROOT/include/messages.h"
 
-# Cross-sub-repo invariant: both vendored messages.toml copies must be
-# byte-identical to each other.
-fs_toml="$META_REPO_CATALOG/../../firestarter/tools/catalog/messages.toml"
-fa_toml="$META_REPO_CATALOG/../../firestarter_app/tools/catalog/messages.toml"
-if diff -q "$fs_toml" "$fa_toml" >/dev/null; then
-    echo "OK: sub-repo catalogs are byte-identical."
+if diff -q "$tmp_h" "$FS_ROOT/include/messages.h" >/dev/null 2>&1; then
+    echo "  OK: firestarter_fw/include/messages.h regenerated."
 else
-    echo "ERROR: sub-repo catalogs diverge: $fs_toml vs $fa_toml" >&2
+    echo "ERROR: regenerated messages.h did not land at $FS_ROOT/include/messages.h" >&2
     exit 1
 fi
 
 # ---------------------------------------------------------------------------
-# Step 2: regenerate messages.h in firestarter sub-repo
-# ---------------------------------------------------------------------------
-FS_ROOT="$META_REPO_CATALOG/../../firestarter"
-FA_ROOT="$META_REPO_CATALOG/../../firestarter_app"
-
-echo "Regenerating firestarter/include/messages.h ..."
-python3 "$META_REPO_CATALOG/codegen.py" \
-    --catalog "$META_REPO_CATALOG/messages.toml" \
-    --language cpp \
-    --target "$FS_ROOT/include/messages.h"
-
-if diff -q "$FS_ROOT/include/messages.h" "$FS_ROOT/include/messages.h" >/dev/null 2>&1; then
-    echo "  OK: firestarter/include/messages.h regenerated."
-fi
-
-# ---------------------------------------------------------------------------
-# Step 3: regenerate messages.py in firestarter_app sub-repo
+# Host artifact: firestarter_app/firestarter/messages.py
+#
+# The committed file is ruff-normalized like all host source, so the raw
+# codegen text is normalized here before landing. Skipping this step is what
+# makes a later `git diff` report drift that is purely formatting.
 # ---------------------------------------------------------------------------
 echo "Regenerating firestarter_app/firestarter/messages.py ..."
+tmp_py="$(mktemp)"
 python3 "$META_REPO_CATALOG/codegen.py" \
     --catalog "$META_REPO_CATALOG/messages.toml" \
     --language python \
-    --target "$FA_ROOT/firestarter/messages.py"
+    --target "$tmp_py"
+cp "$tmp_py" "$FA_ROOT/firestarter/messages.py"
 
-if diff -q "$FA_ROOT/firestarter/messages.py" "$FA_ROOT/firestarter/messages.py" >/dev/null 2>&1; then
-    echo "  OK: firestarter_app/firestarter/messages.py regenerated."
+if command -v ruff >/dev/null 2>&1; then
+    (cd "$FA_ROOT" && ruff format -q firestarter/messages.py && ruff check -q --add-noqa firestarter/messages.py)
+    echo "  OK: firestarter_app/firestarter/messages.py regenerated and ruff-normalized."
+else
+    echo "WARNING: ruff not found -- messages.py written WITHOUT normalization." >&2
+    echo "         Install ruff and re-run, or the committed file will show formatting drift." >&2
 fi
 
 echo "OK: catalog synced to both sub-repos."

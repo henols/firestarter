@@ -17,7 +17,7 @@ requires:
     provides: "src/proms/*.cpp + src/hardware_operations.cpp migrated to CTRL_*"
   - phase: 33-silkscreen-label-code-alias-migration
     plan: 03
-    provides: "firmware-side rename complete — dispatcher + settle-check + board adapters + native test + atomic D-06 rurp_shield.h:25-94 delete; check-migration.sh PASS"
+    provides: "firmware-side rename complete — dispatcher + settle-check + board adapters + native test + atomic D-06 rurp_shield.h:25-89 delete; check-migration.sh PASS"
 provides:
   - "firestarter_app/firestarter/constants.py — RURP_CONTROL_REGISTER_BITS block mirroring rurp_pinout.h (9 CTRL_* constants, wide-layout hex values, with `# was OLD_NAME` annotations)"
   - "firestarter_app/firestarter/main.py — `--firestarter` argparse docstring refreshed to CTRL_* names with cross-reference line to constants.RURP_CONTROL_REGISTER_BITS"
@@ -185,7 +185,7 @@ None — plan executed exactly as written. Task 1 + Task 2 ran clean, no Rules 1
 | Requirement | Met in | Evidence |
 |-------------|--------|----------|
 | ALIAS-01 (silkscreen → code alias inventory in §7) | 33-04 Task 2 | 17-row populated table in `.planning/v1.7-SHIELD-REVS.md` §7; 4-way namespace split (13 CTRL_* / 2 PIN_* / 1 RES_* / 1 JMP_*); mine-notes.md + rurp_pinout.h cross-citations; D-09 sentinels |
-| ALIAS-02 (firmware aliases land + call-sites migrated + Python mirror) | 33-01 (header create) + 33-02 (src/proms call-sites) + 33-03 (remaining headers + native test + atomic D-06 delete) + 33-04 Task 1 (Python parity) | Firmware: rurp_pinout.h created, all 13 files migrated, rurp_shield.h:25-94 deleted atomically. Python: RURP_CONTROL_REGISTER_BITS block added; main.py docstring refreshed; firestarter_app/CLAUDE.md sync rule extended. |
+| ALIAS-02 (firmware aliases land + call-sites migrated + Python mirror) | 33-01 (header create) + 33-02 (src/proms call-sites) + 33-03 (remaining headers + native test + atomic D-06 delete) + 33-04 Task 1 (Python parity) | Firmware: rurp_pinout.h created, all 13 files migrated, rurp_shield.h:25-89 deleted atomically. Python: RURP_CONTROL_REGISTER_BITS block added; main.py docstring refreshed; firestarter_app/CLAUDE.md sync rule extended. |
 | ALIAS-03 (GATE-1.7 non-regression — .hex byte-identical) | 33-00 (baseline) + 33-01/02/03 (per-wave cmp) + 33-04 (post-Wave-4 cmp) | All 3 AVR envs: Δ = 0 B from Wave 0 baseline to post-Wave-4. check-migration.sh PASS at every wave boundary including post-Wave-4. pio test -e native 20/20 PASS. pytest 82/82 PASS. |
 
 **Pending (Phase 33 closes the firmware + host migration; Phase 34/35 consume the substrate):**

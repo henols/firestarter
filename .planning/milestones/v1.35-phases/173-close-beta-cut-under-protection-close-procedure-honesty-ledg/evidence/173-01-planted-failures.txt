@@ -1,0 +1,36 @@
+== setup: cloned wiki, emitted footers from the corrected table into the scratch clone, committed as the scratch-clone-only baseline ==
+== baseline ==
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+rc=0
+== plant 1: footer drift (Shell-Completion.md, one SHA character altered) ==
+ERROR: FOOTER DRIFTED: Shell-Completion — footer says '*Relocated from `firestarter_app/autocomplete.md` in `firestarter_app` at `d56424e1979edf7245cffb9ec3111c0469f5b23e`. Moved intact and not edited since; not re-verified against the code.*', table says '*Relocated from `firestarter_app/autocomplete.md` in `firestarter_app` at `d56424e1979edf7245cffb9ec3111c0469f5b23f`. Moved intact and not edited since; not re-verified against the code.*'
+rc=1
+== plant 1 restore ==
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+rc=0
+== plant 2: footer removed (Lockable-PROMs.md) ==
+ERROR: FOOTER MISSING: Lockable-PROMs
+rc=1
+== plant 2 restore ==
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+rc=0
+== plant 3: an unrecorded page ==
+ERROR: UNRECORDED PAGE: Scratch-Unrecorded-Page has no row in the migration table
+rc=1
+== plant 3 restore ==
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+rc=0
+== plant 4: a degenerate table ==
+ERROR: 3 footer-eligible row(s) parsed, fewer than the required minimum of 6
+rc=2
+== plant 4 restore ==
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+rc=0
+== plant 5: a row that escapes the wiki directory ==
+ERROR: UNSAFE ROW: ../../../../../../../../etc/passwd resolves outside the wiki directory
+rc=1
+== plant 5 restore ==
+OK: 6 footers verified, 11 pages accounted for, 0 unrecorded.
+rc=0
+scratch clone porcelain=0
+neither the live wiki nor tools/wiki/MIGRATION-TABLE.md in the working tree was touched by this task

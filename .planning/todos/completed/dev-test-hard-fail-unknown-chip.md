@@ -21,7 +21,7 @@ Today `dev test <unknown-chip>` does **not** fail directly. `derive_plan()` retu
 empty plan with `reason="<chip>: not found in database"`
 ([chip_test.py:336](../../../firestarter_app/firestarter/chip_test.py#L336)), and the
 handler then keeps going: it **energizes the board** to read the hardware revision
-([cli_handlers.py:1839](../../../firestarter_app/firestarter/cli_handlers.py#L1839)), runs
+([cli_handlers.py:1836](../../../firestarter_app/firestarter/cli_handlers.py#L1839)), runs
 the empty plan, and renders a full-but-hollow diagnostic report — for a chip that doesn't
 exist.
 

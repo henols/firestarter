@@ -1,0 +1,59 @@
+APPROVED-FOR-POST: gh60
+
+Operator: Henrik Olsson <henrik@predictly.se>
+Date: 2026-09-12
+
+Harness mode disclosed and confirmed uncontradicted before the decision below: invoked as
+`/gsd-execute-phase 187` with no flags; `_auto_chain_active: false`; `auto_advance: false`;
+`check auto-mode` measured `false`; Claude Code harness auto mode OFF. This gate carries
+`gate="blocking-human"` and was not auto-approved.
+
+--- Decision prose ---
+
+The prose below is the orchestrator's rendering of the operator's menu selections at this gate,
+plus each selected option's own description, as required by this task's `<context>` (D-16). It is
+NOT a verbatim operator quotation — the operator chose among presented options; they did not
+dictate this prose.
+
+1. Body: the operator selected option `amend` — "Approve with wording or label amendments." The
+   orchestrator had additionally flagged, alongside the four required disclosures (full verbatim
+   body contents, its pre-amendment sha256, the label candidates from the repository's own
+   taxonomy, and the close-reason assumption), a defect in the draft: the quoted hazard text
+   contains a literal `{operation}`, faithful to the f-string source at
+   `firestarter_app/firestarter/jp5_gate.py:79` but rendering to a reporter as an unsubstituted
+   placeholder that looks like a bug in the warning. The operator's amendment: replace the literal
+   `{operation}` in the quoted warning with `write or erase` — the exact runtime substitution that
+   f-string renders for this issue's operations, so the quotation remains truthful. No other
+   wording, punctuation, or whitespace was changed.
+
+   The amendment was applied to `evidence/bodies/187-gh60.md` and to the byte-identical inline
+   copy inside `187-UPSTREAM-REPLIES.md`. A unified diff of the amendment is saved beside the body
+   at `evidence/bodies/187-gh60.amendment.diff`. The sha256 below was recomputed AFTER the
+   amendment, over the body exactly as it will be posted. The pre-amendment hash
+   (`0bd11b1d18d605a89b7595dfc2f37faeb8be89a0f2a72018f9a266460e2a1cf1`, previously recorded in
+   `evidence/187-05-body-hashes.txt`) is now stale and does not appear as a live record anywhere;
+   that file has been updated to mark it stale and point here for the current hash.
+
+2. Labels: the operator selected `fix:released`, dropping `enhancement` — exactly the presented
+   candidate description: "the only taxonomy label that fits a delivered-and-closed feature
+   request," replacing gh#60's current sole label. No wording change was needed for label
+   consistency, since the body's closing paragraph already announces this exact label swap in its
+   own words.
+
+3. Close reason: the operator selected `completed` — confirming the presented assumption
+   (`gh issue close 60 --repo henols/firestarter_prom --reason completed`) explicitly, rather than
+   leaving it as an unconfirmed assumption.
+
+--- Approved label list (verbatim) ---
+
+Add: fix:released
+Remove: enhancement
+Resulting label set: fix:released
+
+--- Approved close reason (verbatim) ---
+
+completed
+
+--- Hash binding ---
+
+sha256(evidence/bodies/187-gh60.md) = 5e4d9b57f5f2259ab575683b9272733189256fec95fd17019d70457ecca0ca3d

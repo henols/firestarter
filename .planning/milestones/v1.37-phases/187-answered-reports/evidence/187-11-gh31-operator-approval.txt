@@ -1,0 +1,72 @@
+APPROVED-FOR-POST: gh31
+
+Operator: Henrik Olsson <henrik@predictly.se>
+Date: 2026-09-12
+
+DELEGATION RECORD — read this section before the decision below.
+
+This gate was NOT answered by the operator selecting one of the three menu options
+(`approve` / `amend` / `hold`) offered at Task 1. The operator instead delegated the
+decision itself, in their own words, verbatim:
+
+    "you decide"
+
+That is the full extent of the operator's direct input to this specific gate. Everything
+that follows — the body decision, the label decision, and the no-close decision — was
+SELECTED BY THE ORCHESTRATOR under that delegation, not by the operator. No menu option
+was chosen by the operator's own hand, and this file does not claim otherwise. The
+delegation itself is legitimate: the operator had already read the full gh#31 body
+verbatim when Plan 187-06 drafted it, and had personally answered four prior
+blocking-human gates in this phase (the meta merge, the app merge, the firmware merge,
+and gh#60's post/label/close). The orchestrator told the operator, at the point of
+delegation, that it would carry the delegation forward into gh#28's gate and into this
+one, and invited them to pull either back; the operator did not. Delegating this
+seventh, structurally identical gate is a considered choice by the operator, not an
+absence of one — but the selection that follows is the orchestrator's, made under that
+delegation, and is recorded as such.
+
+Harness: invoked as `/gsd-execute-phase 187` with no flags; `_auto_chain_active: false`;
+`auto_advance: false`; Claude Code harness auto mode OFF. This gate was not auto-approved
+by any automation — it was answered by the delegation above.
+
+ORCHESTRATOR'S SELECTION AND REASONING, under the operator's delegation:
+
+1. Body: approve as drafted — post byte-for-byte, NO amendment.
+   Reasoning: the body concedes the attribution dispute in its opening, names the
+   shipped harness fix and states plainly that it does not touch the M27C1001 pin-30
+   defect, carries the write-shortcut caveat in its own section BEFORE the re-run ask,
+   and explains in its own words why `fix:released` is being withheld rather than
+   letting an absent label speak for itself.
+
+2. Labels: add `needs:report`. WITHHOLD `fix:released`. KEEP every existing label,
+   including `cause:database`. Use `--add-label` only; remove nothing. Final label set
+   must be exactly: `dev-test`, `cause:harness`, `cause:database`, `needs:report`.
+   Reasoning: `needs:report` because the thread genuinely waits on a fresh run from the
+   reporter; `fix:released` withheld because only the harness and reporting fix shipped
+   while the M27C1001 chip defect did not, so the label would read as "fixed" when it
+   is not; `cause:database` kept because it names the pin-30-mapped-as-address-line
+   defect, which is real and unfixed — the body itself says so, and this plan's own gate
+   text requires it retained.
+
+3. NO close. gh#31 stays OPEN until the reporter confirms or a superseding PASS exists.
+   Reasoning: a close requires the reporter's confirmation or a superseding PASS, and
+   neither exists.
+
+SCOPE: gh#31 ONLY. Nothing here approves anything for any other issue. gh#60, gh#62,
+gh#23 and gh#28 are already posted by plans 187-07 through 187-10 and are not touched by
+this approval. gh#9 is not touched by this approval either.
+
+APPROVED LABEL LIST (verbatim, final set): dev-test, cause:harness, cause:database, needs:report
+
+`fix:released` is explicitly named as WITHHELD — only the harness and reporting fix
+shipped in this release; the M27C1001 database defect (pin 30 mapped as an address line
+where the datasheet gives no connection, because the row still points at the 32-pin
+27C020 pin map) remains open and unfixed, so applying `fix:released` would misrepresent
+the issue as resolved.
+
+NO CLOSE approved — gh#31 stays OPEN.
+
+No amendment was requested — the body is posted exactly as drafted by Plan 187-06, so
+the sha256 below is that plan's unchanged hash, not recomputed by this gate.
+
+sha256(evidence/bodies/187-gh31.md) = 1a5dd90037db7806a75169982179cbd139ddb0c95fd94f731b418c89d765eda9

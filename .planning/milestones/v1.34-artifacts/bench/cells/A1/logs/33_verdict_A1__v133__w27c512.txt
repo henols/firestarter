@@ -1,0 +1,8 @@
+Three independent v1.33-arm reads of the full 65536 B W27C512 device all agreed with each other
+(distinct_read_shas=1) and with the written image (judge_wrv.py sha_verdict_judged=match). No
+disagreement, so no retroactive three-run escalation is owed to the control arm's matching
+position (A1__control__w27c512). Write completed under the 165 s W27C512 ceiling with wall-clock
+41.037 s (app-reported 37.48s). The three-run dev consistency-check whole-invocation wall-clock
+was 53.571 s (app's own per-run elapsed figure 17.62 s x3), compared against BRINGUP-wrv's 53.437 s
+baseline for the same chip/board class - consistent, not a regression. App's own consistency-check
+exit code (0) agreed with the judged SHA verdict.

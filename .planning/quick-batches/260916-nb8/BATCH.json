@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "batch_id": "260916-nb8",
+  "created_at": "2026-09-16T16:47:05.824Z",
+  "options": {},
+  "base_revision": "5fbbe9a53539ff4b2979e756531946627c206804",
+  "items": [
+    {
+      "quick_id": "260916-nb9",
+      "client_id": null,
+      "description": "Expose a resolved `error_name` alongside `error_code` in the `dev test` report JSON, and bump `schema_version` from 2.0 to 2.1. Today every failing step in a report carries an opaque integer (issue #86 carries 183, 175 and 185) while `firestarter.messages` already maps all 124 ids to names (`MSG_ERR_OP_TIMEOUT`, `MSG_ERR_VERIFY`, `MSG_ERR_CHIP_ID_MISMATCH`). Nothing reading the report can name the failure without importing that module. Resolution must degrade safely: an id absent from `messages` must not raise, and `error_name` must be null when `error_code` is null. Scope: `firestarter_app/firestarter/chip_test.py` plus its tests.",
+      "status": "complete",
+      "depends_on": [],
+      "planned_files": [
+        "firestarter_app/firestarter/chip_test.py",
+        "firestarter_app/firestarter/diagnostic_report.py",
+        "firestarter_app/tests/test_chip_test.py",
+        "firestarter_app/tests/test_diagnostic_report.py",
+        "firestarter_app/tests/test_blast_radius_invariance.py"
+      ],
+      "directory": null,
+      "worktree": null,
+      "dispatched_worktree": null,
+      "dispatched_branch": null,
+      "dispatched_base": null,
+      "wave": 0,
+      "commit": "e4cbfdf",
+      "failure_reason": null
+    },
+    {
+      "quick_id": "260916-nba",
+      "client_id": null,
+      "description": "Render the firmware error code and its symbolic name in the markdown step table of the `dev test` report. The JSON already carries `error_code` but the human-readable table a reporter pastes into an issue shows only Step/Verdict/Runs/Took/Reason, so nobody opening the issue ever sees it. Add it as a column (or equivalent) so a triager reads the failing message id without opening the JSON block or the firmware source. Keep NA/SKIPPED rows unchanged and keep the table readable when no step has an error code. Scope: `firestarter_app/firestarter/chip_test.py` plus its tests.",
+      "status": "complete",
+      "depends_on": [
+        "260916-nb9"
+      ],
+      "planned_files": [
+        "firestarter_app/firestarter/submit.py",
+        "firestarter_app/firestarter/cli_handlers.py",
+        "firestarter_app/tests/test_submit.py",
+        "firestarter_app/tests/test_dev_test_cmd.py"
+      ],
+      "directory": null,
+      "worktree": null,
+      "dispatched_worktree": null,
+      "dispatched_branch": null,
+      "dispatched_base": null,
+      "wave": 1,
+      "commit": "7bbaf3c",
+      "failure_reason": null
+    },
+    {
+      "quick_id": "260916-nbb",
+      "client_id": null,
+      "description": "Capture the actual `ERROR:` and `WARN:` log lines the host app and the firmware emit during a `dev test` run and attach them to the report. Today only the terminal exception string survives, as a one-line `reason` per step; every other diagnostic line the run produced is discarded. This is the single biggest gap when triaging a failure: issue #86's `write` step reports only \"Operation timed out\" with no indication of which firmware code path timed out. Buffer the lines, associate them with the step that was running, and cap the total size so an issue body stays manageable. Scope: `firestarter_app/firestarter/` plus its tests.",
+      "status": "complete",
+      "depends_on": [
+        "260916-nb9",
+        "260916-nba"
+      ],
+      "planned_files": [
+        "firestarter_app/firestarter/log_capture.py",
+        "firestarter_app/firestarter/chip_test.py",
+        "firestarter_app/firestarter/diagnostic_report.py",
+        "firestarter_app/firestarter/cli_handlers.py",
+        "firestarter_app/firestarter/submit.py",
+        "firestarter_app/pyproject.toml",
+        "firestarter_app/tests/test_log_capture.py",
+        "firestarter_app/tests/test_blast_radius_invariance.py",
+        "firestarter_app/tests/test_dev_test_cmd.py"
+      ],
+      "directory": null,
+      "worktree": null,
+      "dispatched_worktree": null,
+      "dispatched_branch": null,
+      "dispatched_base": null,
+      "wave": 2,
+      "commit": "5ab7dac",
+      "failure_reason": null
+    },
+    {
+      "quick_id": "260916-nbc",
+      "client_id": null,
+      "description": "Teach the triage skill's own parser to print the firmware error code and its symbolic name for each failing step. `python3 .claude/skills/devtest-triage/scripts/devtest_issues.py show <n>` currently prints op/verdict/reason and drops `error_code` entirely, so triage cannot see the failing message id without hand-parsing the JSON block. It must resolve the name itself from the integer rather than trusting the report, because the ten reports already open were generated before any `error_name` field existed and will never be regenerated; when a newer report does carry `error_name`, prefer it. The script is stdlib-only and must not import `firestarter_app`, so it needs its own id-to-name table plus a drift check against the app's `messages.py`. Scope: `.claude/skills/devtest-triage/scripts/` plus its `tests/`.",
+      "status": "complete",
+      "depends_on": [],
+      "planned_files": [
+        ".claude/skills/devtest-triage/scripts/firmware_messages.py",
+        ".claude/skills/devtest-triage/scripts/devtest_issues.py",
+        ".claude/skills/devtest-triage/scripts/tests/test_firmware_messages.py",
+        ".claude/skills/devtest-triage/scripts/tests/test_devtest_issues.py",
+        ".claude/skills/devtest-triage/fixtures/dev-test-error-codes-populated.md",
+        ".claude/skills/devtest-triage/SKILL.md"
+      ],
+      "directory": null,
+      "worktree": null,
+      "dispatched_worktree": null,
+      "dispatched_branch": null,
+      "dispatched_base": null,
+      "wave": 0,
+      "commit": "81080882",
+      "failure_reason": null
+    }
+  ]
+}

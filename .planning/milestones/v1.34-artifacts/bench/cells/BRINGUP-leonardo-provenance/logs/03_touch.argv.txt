@@ -1,0 +1,1 @@
+argv1: python3 /workspaces/.planning/v1.34/tools/touch_1200.py --port /dev/ttyACM0 --settle-s 2.0 --out /workspaces/.planning/v1.34/bench/cells/BRINGUP-leonardo-provenance/touch.json (cwd=/workspaces) rc=0 elapsed=2.262s

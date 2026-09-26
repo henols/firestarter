@@ -1,0 +1,33 @@
+firmware pr=58 head_sha=579f04a6fde93bae86845cc446fe61f0b8a9fad2
+(zero check-runs listed above -- confirmed stable across two reads 15s apart, and zero workflow_runs of any kind exist for head_branch=policy/contributor-policy)
+verdict recorded below
+
+=== Pitfall 5 verdict ===
+The firmware CI build check is ABSENT. The merge into main will be skipped identically.
+
+Root cause, confirmed by direct tree inspection rather than inference from the check-run list alone:
+1. git -C firestarter ls-tree -r --name-only origin/main -- .github/workflows/ lists ONLY build.yml.
+   py32f071.yml does not exist on origin/main at all -- it is a later addition present only on
+   beta/the milestone branch, main being 531 commits behind. For a push event, GitHub Actions
+   evaluates the workflow files present AT THE PUSHED REF, not the default branch's current
+   tree, so a workflow absent from origin/main (and therefore from a branch cut from it) simply
+   cannot trigger -- this is why no PY32F071 run appears either, contrary to this plan's
+   read_first assumption (written against the milestone branch's current tree, where
+   py32f071.yml:20-23 has no push path filter) that it would appear regardless.
+2. build.yml AS IT EXISTS ON origin/main (58 lines, single job -- an OLDER, pre-refactor version
+   than the 200+-line milestone-branch copy this plan's read_first cites at :35-43/:173-204)
+   already lists '.github/**' explicitly in its push trigger's paths-ignore, alongside '**.md'
+   and eleven other patterns. The only changed file in this PR, .github/CONTRIBUTING.md,
+   matches '.github/**' on its own; GitHub skips a workflow run when every changed file matches
+   a paths-ignore pattern, so build.yml's push trigger will not fire on this merge.
+3. Both of these are independently sufficient to explain the empty check-run list; together
+   they make the outcome overdetermined, not a registration-timing artifact. The list was read
+   twice, 15 seconds apart, both times empty (total_count=0), and gh api
+   /repos/henols/firestarter/actions/runs shows zero workflow_runs of any kind for
+   head_branch=policy/contributor-policy.
+
+No fallback is needed and none is proposed. This differs from the coordinator's pre-Task-3
+prediction only in mechanism (measured '.github/**' exclusion in main's own build.yml, not
+solely '**.md') and in the second, independent cause (py32f071.yml absent from main's tree) --
+the coordinator's bottom-line prediction, no release cut, is confirmed and strengthened, not
+contradicted, so nothing here triggers the 'stop and report' branch of that instruction.

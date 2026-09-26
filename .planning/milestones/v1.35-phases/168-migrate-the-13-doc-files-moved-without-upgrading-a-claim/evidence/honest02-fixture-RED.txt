@@ -1,0 +1,9 @@
+command: python3 tools/wiki/honest02_truth.py --wiki-dir <fixture>/wiki --db <fixture-db.json> --allowlist tools/wiki/claim-allowlist.json
+mutation: renamed the claims-region part token FIXPART01 to GHOSTPART01, absent from the fixture database
+control: exit 0 (both FIXPART01 and 0x05 resolve in the fixture database)
+exit status: 1
+--- captured output ---
+ERROR: UNRESOLVED: Fixture-Chip-Page.md: part token 'GHOSTPART01' does not resolve in the database and is not in the allowlist
+LEG 1 -- stamp present: 2 pages scanned, 1 matched the claim signature, 0 missing stamp
+LEG 2 -- claims resolve: 1 regions found, 2 claims checked, 0 pages stamp-only unchecked
+LEG 3 -- stamp freshness: 1 stamps checked against db-sha256-16=86d2559db852a5c6, 0 stale

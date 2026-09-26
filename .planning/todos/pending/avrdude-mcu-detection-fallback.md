@@ -81,3 +81,21 @@ Then a `firestarter fw -i --detect-mcu` flag would call this when the firmware h
 - Phase 23 D-11: bounds Phase 23 edit surface; this idea is explicitly outside that surface
 - Memory `project-bench-findings-v15`: operator's specific bootloader is Urclock @ 115200
 - `firestarter_app/firestarter/firmware.py:_install_with_avrdude` — the function this would extend
+
+## 2026-08-27 annotation (v1.34 Phase 160)
+
+Phase 160 (v1.34, RIG — Dual-Arm Build, Flash Provenance & the Shared Cell Procedure) reused
+this idea's bench-verified avrdude signature-probe mechanism (the deliberately-wrong-`-p`
+route and the verbose `(probably mXXX)` fallback route described above) in a **phase-owned
+rig tool**, `.planning/milestones/v1.34-artifacts/tools/probe_board.py` — RIG-02's "board identity by signature,
+never by handshake" requirement is built directly on the two parse routes sketched in this
+todo. This is mechanism reuse only: the tool lives under the meta-repo's own
+`.planning/milestones/v1.34-artifacts/tools/`, is invoked by this milestone's bench procedure, and is never
+imported by or copied into `firestarter_app/`.
+
+This phase does **not** build this todo's product deliverable — a `firestarter fw -i
+--detect-mcu` flag in `firestarter_app/firestarter/firmware.py` — because that would be a
+product-code change untraceable to a v1.33-caused regression, and `REQUIREMENTS.md`'s Out of
+Scope table forbids exactly that class of change for this milestone. This todo's `status` and
+`resolves_phase` fields are left unchanged by this annotation: the product-side flag remains
+unbuilt and unowned by any phase.

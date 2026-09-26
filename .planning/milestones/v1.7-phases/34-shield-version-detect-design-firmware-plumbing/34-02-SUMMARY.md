@@ -39,7 +39,7 @@ key-files:
     - "firestarter/include/rurp_shield.h (+2 lines — REVISION_2_3 = 5 and REVISION_UNKNOWN = 0xFE inside the existing #ifdef HARDWARE_REVISION block)"
 
 key-decisions:
-  - "D-07 enum carve-out honored verbatim: REVISION_2_3 = 5 (dense extension of 0..4 numbering); REVISION_UNKNOWN = 0xFE (NOT 0xFF — 0xFF stays exclusively reserved as the EEPROM-override-absent sentinel, load-bearing at rurp_hw_rev_utils.h:63, rurp_config_utils.cpp:37, hardware_operations.cpp:100/102/112/114)"
+  - "D-07 enum carve-out honored verbatim: REVISION_2_3 = 5 (dense extension of 0..4 numbering); REVISION_UNKNOWN = 0xFE (NOT 0xFF — 0xFF stays exclusively reserved as the EEPROM-override-absent sentinel, load-bearing at rurp_hw_rev_utils.h:63, rurp_config_utils.cpp:37, hardware_operations.cpp:99/102/112/114)"
   - "Both new #defines land INSIDE the existing #ifdef HARDWARE_REVISION block at lines 22-32 — native env continues to bypass via [env:native] build_src_filter = +<proms/> exclusion (no native test regression possible)"
   - "Inline-comment carries the carve-out rationale verbatim per D-07 + RESEARCH §REVISION_UNKNOWN Non-Collision Audit"
   - "No detect-rev logic change in this plan — Plans 03/04 consume the symbols; landing the enum alone preserves bisect granularity (Phase 33 D-06 atomic-commit precedent)"

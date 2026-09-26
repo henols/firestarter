@@ -1,0 +1,1 @@
+argv2: python3 /workspaces/.planning/v1.34/tools/probe_board.py --target leonardo --port /dev/ttyACM0 --pins /workspaces/.planning/v1.34/rig-pins.json --out /workspaces/.planning/v1.34/bench/cells/BRINGUP-leonardo-provenance/board_probe.json (cwd=/workspaces) rc=0 elapsed=1.399s total_from_touch_onset=3.661s

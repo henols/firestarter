@@ -1,0 +1,18 @@
+== 1 Leg A -- the whole corpus reproduces
+corpus_size=18
+stale_frozen=
+inherited_drifted=
+rc=0
+== 2 the ledger, deliberately untouched
+rows=8
+ids_unique=True
+ids_ascending=True
+rk09_shape=sst27sf512-full-all-ok
+rk09_before=14d306256076
+rk09_after_is_none=True
+undeclared_count=4
+rc=0
+ledger_diff=0
+== 3 the cross-tree binding
+OK: 8 ledger row(s), 8 MILESTONES.md row(s) bound
+rc=0

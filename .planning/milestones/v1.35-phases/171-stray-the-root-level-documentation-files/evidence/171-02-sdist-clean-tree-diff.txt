@@ -1,0 +1,9 @@
+before entries: 173
+after entries: 173
+--- diff (before vs after) ---
+diff rc=0
+
+--- filename count check (after manifest) ---
+things.md|autocomplete.md|SECURITY.md count: 0
+
+NOTE on the 220-entry false positive: a build run directly in /workspaces/firestarter_app (the live working tree) re-absorbs the gitignored firestarter.egg-info/SOURCES.txt via setuptools' manifest_maker when no revision-control file-finder plugin is installed. That stale SOURCES.txt still lists two of the deleted files and inflates the manifest to 220 entries. This route (extracting a clean git archive tree per side and building there) avoids that artifact entirely.

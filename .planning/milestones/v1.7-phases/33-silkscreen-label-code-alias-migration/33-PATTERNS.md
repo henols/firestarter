@@ -14,7 +14,7 @@ The structural precedent for the entire phase is **Phase 9** (`.planning/phases/
 
 | New/Modified File | Role | Data Flow | Touch Kind | Closest Analog | Match Quality |
 |-------------------|------|-----------|------------|----------------|---------------|
-| `firestarter/include/rurp_pinout.h` | firmware header (macro substrate) | n/a | CREATE | `firestarter/include/rurp_shield.h:21-94` (hosts the macros today; new header carves them out verbatim into a dedicated TU) | exact — same `#define` style, same `#ifdef HARDWARE_REVISION` gating, same per-rev REV_* variant block |
+| `firestarter/include/rurp_pinout.h` | firmware header (macro substrate) | n/a | CREATE | `firestarter/include/rurp_shield.h:21-89` (hosts the macros today; new header carves them out verbatim into a dedicated TU) | exact — same `#define` style, same `#ifdef HARDWARE_REVISION` gating, same per-rev REV_* variant block |
 | `firestarter/include/rurp_shield.h` | firmware header (decls + latch selectors) | n/a | DELETE-LINES + ADD-INCLUDE | Phase 9 `firestarter/include/rurp_shield.h` (Phase 9 also deleted lines from this header while leaving live decls intact) | exact — same surgical-deletion pattern: drop the `#define VPE_TO_VPP …` block at `:25-94`, keep `CONFIG_VERSION`, `LEAST_SIGNIFICANT_BYTE`, function prototypes; add `#include "rurp_pinout.h"` at `:20` |
 | `firestarter/include/rurp_hw_rev_utils.h` | firmware header (dispatcher inline) | request-response | MODIFY-IN-PLACE (textual rename only) | Same file: function body at `:13-35` — only macro identifiers change; `switch`/`case`/dispatcher shape preserved verbatim | exact — Pattern 3 from RESEARCH.md |
 | `firestarter/include/rurp_register_utils.h` | firmware header (register write) | request-response | MODIFY-IN-PLACE (2-line rename) | Same file: settle-check at `:42` references `P1_VPP_ENABLE`; `case CONTROL_REGISTER` at `:38` | exact — single-symbol rename, no logic change |
@@ -44,7 +44,7 @@ The structural precedent for the entire phase is **Phase 9** (`.planning/phases/
 
 **Role:** firmware header (macro substrate) · **Data Flow:** n/a · **Touch:** CREATE
 
-**Analog:** `firestarter/include/rurp_shield.h:21-94` — the existing file IS the macro substrate; Phase 33 carves it out verbatim into a dedicated TU.
+**Analog:** `firestarter/include/rurp_shield.h:21-89` — the existing file IS the macro substrate; Phase 33 carves it out verbatim into a dedicated TU.
 
 **Header guard + extern "C" pattern** (`rurp_shield.h:8-13, 190-194`):
 ```c
@@ -95,7 +95,7 @@ Phase 33 copies this exact shape: `#ifndef __RURP_PINOUT_H__` / `#define __RURP_
 
 After Phase 33 the SAME shape appears in `rurp_pinout.h` with the new identifier names (`CTRL_VPP_VPE_DROP_ENABLE`, `CTRL_ADDRESS_LINE_16`, `PIN_VPP_VOLTAGE_ADC`, `PIN_HW_REVISION_DETECT_ADC`, …) and the SAME hex values + SAME `#ifndef HARDWARE_REVISION` / `#else` / `#endif` gating + SAME `#define CTRL_ADDRESS_LINE_16 CTRL_VPP_VPE_DROP_ENABLE` aliasing in the legacy branch (Pitfall 1).
 
-**REV_* per-rev variant pattern (carved from `rurp_shield.h:70-94`):**
+**REV_* per-rev variant pattern (carved from `rurp_shield.h:70-89`):**
 ```c
 #ifdef HARDWARE_REVISION
 // REV 1
@@ -126,7 +126,7 @@ Renamed verbatim to `CTRL_VPP_VPE_DROP_ENABLE_REV1`, `CTRL_VPP_VPE_DROP_ENABLE_R
 
 **Lines to delete** (current state — to be removed entirely after `rurp_pinout.h` exists):
 ```c
-// rurp_shield.h:21-94 — DELETE
+// rurp_shield.h:21-89 — DELETE
 #define VOLTAGE_MEASURE_PIN A2
 
 #ifndef HARDWARE_REVISION
@@ -263,7 +263,7 @@ uint8_t rurp_map_ctrl_reg_for_hardware_revision(rurp_register_t data) {
         break;
 ```
 
-**Preservation:** `CONTROL_REGISTER` (74HC573 latch selector at `rurp_shield.h:108`) is NOT renamed — different semantic layer per Anti-Pattern bullet.
+**Preservation:** `CONTROL_REGISTER` (74HC573 latch selector at `rurp_shield.h:103`) is NOT renamed — different semantic layer per Anti-Pattern bullet.
 
 ---
 
@@ -402,7 +402,7 @@ Apply identically to `:116` (state=1) and `:132` (state=0).
 
 **Analog:** Same file — `:70, :72, :77` share the same `REGULATOR` / `A9_VPP_ENABLE` chip-ID-read idiom that also appears in `eprom.cpp:197-204`.
 
-**Current call-sites** (`eeprom_28c.cpp:70, :72, :77`):
+**Current call-sites** (`eeprom_28c.cpp:66, :72, :77`):
 ```cpp
 handle->firestarter_set_control_register(handle, REGULATOR, 1);
 handle->firestarter_set_control_register(handle, A9_VPP_ENABLE, 1);
@@ -740,7 +740,7 @@ echo "PASS: alias migration verified clean"
 
 ### Pattern A: `#define`-only aliases, never `constexpr` / `enum class`
 
-**Source:** Project convention — every existing alias is a `#define` (see `rurp_shield.h:21-94`, `firestarter.h:53-58` for `FLAG_*`, all of `constants.py:60-69`). `constexpr` is reserved for type-anchored values like `VCC_CALC_CONSTANT` in `rurp_common.cpp:27`.
+**Source:** Project convention — every existing alias is a `#define` (see `rurp_shield.h:21-89`, `firestarter.h:53-58` for `FLAG_*`, all of `constants.py:60-69`). `constexpr` is reserved for type-anchored values like `VCC_CALC_CONSTANT` in `rurp_common.cpp:27`.
 
 **Apply to:** New `rurp_pinout.h` header. Per D-07 and Anti-Pattern bullet in RESEARCH, `constexpr` would risk emitting AVR symbol-table metadata that breaks the .hex byte-identical gate (ALIAS-03 / GATE-1.7).
 
@@ -752,7 +752,7 @@ echo "PASS: alias migration verified clean"
 
 ### Pattern B: `#ifdef HARDWARE_REVISION` compile-flag gating (CRITICAL — Pitfall 2)
 
-**Source:** `rurp_shield.h:24-53` AND `rurp_shield.h:70-94` — set via `-D HARDWARE_REVISION` in `platformio.ini:23` for all 3 AVR envs (uno, uno328pb, leonardo) but NOT set in the `[env:native]` Unity build path.
+**Source:** `rurp_shield.h:24-53` AND `rurp_shield.h:70-89` — set via `-D HARDWARE_REVISION` in `platformio.ini:23` for all 3 AVR envs (uno, uno328pb, leonardo) but NOT set in the `[env:native]` Unity build path.
 
 **Apply to:** `rurp_pinout.h` (mirror the existing structure VERBATIM — same `#ifndef HARDWARE_REVISION` / `#else` / `#endif` shape; same `#ifdef HARDWARE_REVISION` for the REV_* variant block).
 
@@ -829,7 +829,7 @@ grep -rn '\b\(VPE_ENABLE\|VPE_TO_VPP\|P1_VPP_ENABLE\|A9_VPP_ENABLE\|READ_WRITE\|
 
 ## No Analog Found
 
-None. Every file Phase 33 touches has at least one direct in-tree analog. The `rurp_pinout.h` NEW file's body is carved verbatim from `rurp_shield.h:21-94`; §7 reuses §1 + §6 column-shape conventions; the verifier script reuses `check_dispatch.py`'s wrap-an-assertion-in-a-CLI idiom.
+None. Every file Phase 33 touches has at least one direct in-tree analog. The `rurp_pinout.h` NEW file's body is carved verbatim from `rurp_shield.h:21-89`; §7 reuses §1 + §6 column-shape conventions; the verifier script reuses `check_dispatch.py`'s wrap-an-assertion-in-a-CLI idiom.
 
 ---
 
@@ -840,7 +840,7 @@ These four handoffs are explicitly called out in CONTEXT.md and mapped here:
 | Handoff | Source Analog | Phase 33 Use |
 |---------|---------------|---------------|
 | **Phase 9 macro-rename precedent** | `.planning/phases/09-delete-old-log-macros-measure-flash-savings/09-PATTERNS.md` (entire file shape) + `09-MEASUREMENT.md` (`.hex` capture protocol) | (a) Wave decomposition (small atomic diffs); (b) per-wave verifier (`pio run` + `pio test -e native` + `cmp`); (c) fix-commit message must include per-board `wc -c` (Pattern G). Confidence HIGH — Phase 9 closed clean. |
-| **HARDWARE_REVISION ifdef pattern** | `rurp_shield.h:24-94` (existing) | Pattern B above — `rurp_pinout.h` mirrors the `#ifndef HARDWARE_REVISION` / `#else` / `#endif` shape VERBATIM. Same gate, same hex-value duality (Pitfall 2), same `ADDRESS_LINE_16 == VPE_TO_VPP` aliasing in the legacy branch (Pitfall 1). |
+| **HARDWARE_REVISION ifdef pattern** | `rurp_shield.h:24-89` (existing) | Pattern B above — `rurp_pinout.h` mirrors the `#ifndef HARDWARE_REVISION` / `#else` / `#endif` shape VERBATIM. Same gate, same hex-value duality (Pitfall 2), same `ADDRESS_LINE_16 == VPE_TO_VPP` aliasing in the legacy branch (Pitfall 1). |
 | **`rurp_map_ctrl_reg_for_hardware_revision()` dispatcher** | `rurp_hw_rev_utils.h:13-35` (existing) | Pattern Assignment §3 above — function body is its own analog. Switch shape, case-fallthrough, REVISION_* enum constants ALL preserved verbatim; only the macro identifiers inside the body change (LHS canonical input mask + RHS per-rev output bits BOTH rename — Pitfall 3). |
 | **`constants.py` flag-bits block** | `constants.py:59-69` (existing `# Control Flags` block) | Pattern Assignment §15 above — same section-header style, same `NAME = 0xNN` shape, same "no type annotations" convention. New `# RURP Control Register Bits` block appended after the existing FLAG_* block; inline `# was OLD_NAME` annotation traces the rename. |
 | **`v1.7-SHIELD-REVS.md` §1-§6 column conventions** | `.planning/v1.7-SHIELD-REVS.md` §1 at `:16-25` (8r × 9c) + §6 at `:82-91` (8r × 9c) | Pattern Assignment §17 above — §7 is a 12-column table (1 silkscreen + 1 type + 1 alias + 1 hex + 7 per-rev + 1 citation) but reuses §1's sentinel-cell vocabulary (`not-present`, `(inherits Rev 0)`, `as-modified — pending Phase 35`) and §1's source-citation column format. |

@@ -1,0 +1,128 @@
+== w1: delete the increment from _decode_id_frame entirely
+..FFF..                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_decode_id_frame_corrupt_crc_raises_decode_failures_by_one_and_nothing_else _
+
+make_comm = <function make_comm.<locals>._factory at 0x7fe1fbb35760>
+
+    def test_decode_id_frame_corrupt_crc_raises_decode_failures_by_one_and_nothing_else(
+        make_comm,
+    ) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        good_params = b"\x02\x00"
+        good_msg_id_byte = bytes([MSG_OK_READY])
+        good_crc = _crc8_ccitt(good_msg_id_byte + good_params)
+        good_body = good_msg_id_byte + good_params + bytes([good_crc])
+    
+        good_result = comm._decode_id_frame(len(good_body), good_body)
+        unmoved = transport_counters.snapshot()
+        assert good_result is not None
+        assert unmoved["decode_failures"] == 0
+    
+        bad_body = _corrupted_ok_ready_body()
+        bad_result = comm._decode_id_frame(len(bad_body), bad_body)
+        after = transport_counters.snapshot()
+    
+        assert bad_result is None
+>       assert after["decode_failures"] == unmoved["decode_failures"] + 1
+E       assert 0 == (0 + 1)
+
+tests/test_transport_counters.py:109: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  Codec:codec.py:200 CRC mismatch for ID 0x01: expected 0x41, got 0x40
+_ test_corrupt_frame_through_read_and_parse_lines_raises_decode_failures_by_one _
+
+make_comm = <function make_comm.<locals>._factory at 0x7fe1fbb91b20>
+fake_serial = <tests.conftest._FakeSerial object at 0x7fe1fbe36e10>
+
+    def test_corrupt_frame_through_read_and_parse_lines_raises_decode_failures_by_one(
+        make_comm, fake_serial
+    ) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        wire = bytearray(build_frame(MSG_OK_READY, b"\x02\x00"))
+        wire[-2] ^= 1
+        fake_serial.feed(bytes(wire))
+    
+        before = transport_counters.snapshot()
+        list(comm._read_and_parse_lines(0.05))
+        after = transport_counters.snapshot()
+    
+>       assert after["decode_failures"] == before["decode_failures"] + 1
+E       assert 0 == (0 + 1)
+
+tests/test_transport_counters.py:128: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  Codec:codec.py:200 CRC mismatch for ID 0x01: expected 0x41, got 0x40
+_________________ test_counter_survives_communicator_teardown __________________
+
+make_comm = <function make_comm.<locals>._factory at 0x7fe1fbb91c60>
+
+    def test_counter_survives_communicator_teardown(make_comm) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        body = _corrupted_ok_ready_body()
+        comm._decode_id_frame(len(body), body)
+        del comm
+>       assert transport_counters.snapshot()["decode_failures"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:140: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  Codec:codec.py:200 CRC mismatch for ID 0x01: expected 0x41, got 0x40
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_decode_id_frame_corrupt_crc_raises_decode_failures_by_one_and_nothing_else
+FAILED tests/test_transport_counters.py::test_corrupt_frame_through_read_and_parse_lines_raises_decode_failures_by_one
+FAILED tests/test_transport_counters.py::test_counter_survives_communicator_teardown
+3 failed, 4 passed in 0.27s
+rc_w1=1
+== w2: make the increment unconditional
+..F....                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_decode_id_frame_corrupt_crc_raises_decode_failures_by_one_and_nothing_else _
+
+make_comm = <function make_comm.<locals>._factory at 0x7fcbe3ffd800>
+
+    def test_decode_id_frame_corrupt_crc_raises_decode_failures_by_one_and_nothing_else(
+        make_comm,
+    ) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        good_params = b"\x02\x00"
+        good_msg_id_byte = bytes([MSG_OK_READY])
+        good_crc = _crc8_ccitt(good_msg_id_byte + good_params)
+        good_body = good_msg_id_byte + good_params + bytes([good_crc])
+    
+        good_result = comm._decode_id_frame(len(good_body), good_body)
+        unmoved = transport_counters.snapshot()
+        assert good_result is not None
+>       assert unmoved["decode_failures"] == 0
+E       assert 1 == 0
+
+tests/test_transport_counters.py:102: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_decode_id_frame_corrupt_crc_raises_decode_failures_by_one_and_nothing_else
+1 failed, 6 passed in 0.32s
+rc_w2=1
+== w3: change TransportHealth.decode_failures default from None to 0
+.....F.                                                                  [100%]
+=================================== FAILURES ===================================
+__________ test_default_transport_health_decode_failures_not_measured __________
+
+    def test_default_transport_health_decode_failures_not_measured() -> None:
+        report = _build_report()
+        d = report.to_dict()
+>       assert d["transport_health"]["decode_failures"] == NOT_MEASURED
+E       AssertionError: assert 0 == 'not measured'
+
+tests/test_transport_counters.py:146: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_default_transport_health_decode_failures_not_measured
+1 failed, 6 passed in 0.31s
+rc_w3=1
+== clean: restored implementation
+........................................................................ [ 57%]
+.....................................................                    [100%]
+125 passed in 2.10s
+rc_clean=0

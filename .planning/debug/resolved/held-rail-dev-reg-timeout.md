@@ -102,7 +102,7 @@ next_action: none — return diagnosis to orchestrator. See Resolution.
   (expect_ack timeout) and closes the port → reset. RAIL CONFIRMED HELD until reset.
 
 - checked: `rurp_set_programmer_mode` / `rurp_set_communication_mode`
-  `uno_rurp_shield.cpp:99-103, 66-97` and the boot init at lines 56-63. found: board
+  `uno_rurp_shield.cpp:96-100, 66-97` and the boot init at lines 56-63. found: board
   init writes CONTROL_REGISTER=0x00 (line 61) then enters communication mode. A reset
   therefore zeroes the control latch → rail = 0V. implication: a DTR-reset at port
   close re-runs init, which explicitly clears the rail to 0x00. This is the mechanism
@@ -118,7 +118,7 @@ next_action: none — return diagnosis to orchestrator. See Resolution.
     • 0x188 & A16(0x01) = 0 ; 0x188 & A18(0x20) = 0
   → physical CTRL = 0x88 | 0x01 = **0x89 = REGULATOR + P1 + VPE_DROP_REV2**.
   implication: the P1-route bit (0x08) IS correctly asserted on Rev 2.0 — the
-  CTRL_VPP_P1_ENABLE_REV2 == CTRL_ADDRESS_LINE_18_REV2 aliasing (rurp_pinout.h:128) is
+  CTRL_VPP_P1_ENABLE_REV2 == CTRL_ADDRESS_LINE_18_REV2 aliasing (rurp_pinout.h:127) is
   NOT triggered because address-line-18 is only aliased onto P1 when A18(0x20) is set
   in the INPUT, and 0x188 does not set 0x20. So 0x188 does route VPP to socket pin 1.
   H2's "host value fails to assert P1" premise is FALSE.
@@ -163,7 +163,7 @@ root_cause: |
      open and de-asserts on close; on the Leonardo (ATmega32u4 native USB-CDC)
      that DTR transition resets the MCU (Caterina bootloader behavior).
   6. The reset re-runs board init, which writes CONTROL_REGISTER = 0x00
-     (uno_rurp_shield.cpp:61) -> the latch is zeroed -> socket pin 1 reads ~0V.
+     (uno_rurp_shield.cpp:58) -> the latch is zeroed -> socket pin 1 reads ~0V.
 
   So the "timeout" and the "~0V" are one event chain: the timeout's `finally`
   closes the port, the close resets the Leonardo, and init zeroes the rail. The

@@ -1,0 +1,18 @@
+== computed beside frozen, table 1
+n_shapes=8
+gh20-at28c256-fail frozen=00e121446ceb computed=00e121446ceb
+gh23-w27e257-fail frozen=7a89fcea856a computed=7a89fcea856a
+gh28-m27c512-fail frozen=31547956e56b computed=31547956e56b
+gh47-sst27sf512-pass frozen=f9dbc31dcd27 computed=f9dbc31dcd27
+sst27sf512-six-step frozen=4dc282a5d596 computed=4dc282a5d596
+sst27sf512-six-step-readback-gated frozen=60a031573aab computed=60a031573aab
+synthetic-arm4-empty-results frozen=8d6208d00be7 computed=8d6208d00be7
+synthetic-arm4-no-ok frozen=f90dfe1a44f7 computed=f90dfe1a44f7
+rc=0
+== snapshot check
+OK: 8 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+== the invariance module
+..................                                                       [100%]
+18 passed in 0.18s
+rc=0

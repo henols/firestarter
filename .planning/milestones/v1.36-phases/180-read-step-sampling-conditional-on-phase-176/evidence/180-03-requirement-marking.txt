@@ -1,0 +1,35 @@
+== 1 closing document precondition
+closure_doc=.planning/phases/180-read-step-sampling-conditional-on-phase-176/180-PRUNE-08-CLOSURE.md
+closure_doc_exists=1
+closure_doc_bytes=13482
+closure_doc_headings=6
+closure_doc_committed=1
+rc=0
+
+== 2 requirement ledger edits (measured, not transcribed)
+edit_1_line=60
+edit_1_before=- [ ] **PRUNE-08**: The read step's second full sweep is replaced by a bit-structured sample **only if** MEAS-01 shows the sample is cheaper on the measured board class. If it is not, this requirement closes as *measured, not worth doing*, with the measurement recorded — that is a success, not a miss.
+edit_1_after=- [x] **PRUNE-08**: The read step's second full sweep is replaced by a bit-structured sample **only if** MEAS-01 shows the sample is cheaper on the measured board class. If it is not, this requirement closes as *measured, not worth doing*, with the measurement recorded — that is a success, not a miss.
+edit_2_line=175
+edit_2_before=| PRUNE-08 | Phase 180 | Pending |
+edit_2_after=| PRUNE-08 | Phase 180 | Complete |
+changed_lines=2
+rc=0
+
+== 3 ledger counts, before and after (recomputed from disk, not this plan's stated expectation)
+unchecked_before=19
+unchecked_after=18
+checked_before=27
+checked_after=28
+pending_before=19
+pending_after=18
+complete_before=27
+complete_after=28
+rc=0
+
+== 4 untouched-row spot checks
+meas_01_line_103_untouched=1
+r4_01_line_122_untouched=1
+coverage_block_195_199_untouched=1
+rpt_a1_traceability_row_untouched=1
+rc=0

@@ -1,0 +1,37 @@
+=== route1 (rc=1) ===
+Error: initialization failed  (rc = -1)
+ - double check the connections and try again
+ - use -B to set lower the bit clock frequency, e.g. -B 125kHz
+ - use -F to override this check
+Error: protocol error for command: leave prog mode
+Error: protocol error for command: exit bootloader
+
+Avrdude done.  Thank you.
+
+=== route2 (rc=1) ===
+Avrdude version 8.1
+Copyright see https://github.com/avrdudes/avrdude/blob/main/AUTHORS
+
+System wide configuration file is /home/vscode/.platformio/packages/tool-avrdude/avrdude.conf
+User configuration file /home/vscode/.avrduderc does not exist
+
+Using port            : /dev/ttyACM0
+Using programmer      : avr109
+Setting baud rate     : 57600
+AVR part              : ATmega32U4
+Programming modes     : SPM, ISP, HVPP, JTAG
+Programmer type       : butterfly
+Description           : Atmel bootloader (AVR109, AVR911)
+connecting to programmer: .
+Programmer id    = �U�U; type = Software version = �.U; Hardware version = �.U
+Buffered memory access not supported; maybe it isn't
+a butterfly/AVR109 but a AVR910 device?
+Error: initialization failed  (rc = -1)
+ - double check the connections and try again
+ - use -B to set lower the bit clock frequency, e.g. -B 125kHz
+ - use -F to override this check
+Error: protocol error for command: leave prog mode
+Error: protocol error for command: exit bootloader
+
+Avrdude done.  Thank you.
+

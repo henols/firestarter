@@ -1,0 +1,4 @@
+Connecting...Connecting... OK      
+Reading EPROM W29C020, saving to /workspaces/.planning/v1.34/bench/cells/A2/reads/A2__control__w29c020/run_01.bin
+Timeout waiting for a response from /dev/ttyUSB0.
+Communication error during READ: Timeout waiting for a significant response from /dev/ttyUSB0.

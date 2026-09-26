@@ -1,0 +1,26 @@
+== 1 every frozen hash is a fresh build
+stale_frozen=
+shape_count=17
+hashes_pairwise_distinct=True
+new_shape_registered=True
+new_shape_unreserved=True
+gh23_unmoved=True
+unmoved_drifted=
+gated_off_stale_projection=True
+gated_distinct_from_tracer=True
+rc=0
+== 2 the four-arm sentinel and the anchor
+distinct_arms=4
+ladder_keys_match_shapes=True
+anchor_matches=True
+rc=0
+== 3 snapshots regenerate clean
+OK: 17 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+snapshot_count=17
+== 4 the 174 oracle
+........................................................................ [ 36%]
+........................................................................ [ 73%]
+.....................................................                    [100%]
+197 passed in 0.84s
+rc=0

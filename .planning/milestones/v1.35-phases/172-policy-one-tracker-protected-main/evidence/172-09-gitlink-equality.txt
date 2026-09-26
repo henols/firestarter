@@ -1,0 +1,29 @@
+=== 172-09 Task 2: per-submodule gitlink equality, recorded vs actual ===
+Phase 171 plan 04's idiom: recorded sha from `git ls-tree HEAD <sub>`, actual from
+`git -C <sub> rev-parse HEAD`, compared PER SUBMODULE so an aggregate pass cannot hide a stale one.
+Re-pinned by commit 4ab6b4fa; each gitlink advanced exactly ONE commit, both plan 172-04's own
+(`git rev-list --count recorded..actual` = 1 each), so this re-pin sweeps up no earlier movement.
+
+firestarter      recorded=4f73c80cfa2915fb22812dde55b2923a86120c5f actual=4f73c80cfa2915fb22812dde55b2923a86120c5f branch=gsd/v1.35-documentation-consolidation-wiki-migration OK
+firestarter_app  recorded=0a9399956f3ba2dc0c1bebbd6d12a44896138893 actual=0a9399956f3ba2dc0c1bebbd6d12a44896138893 branch=gsd/v1.35-documentation-consolidation-wiki-migration OK
+
+== Worktree state after cleanup ==
+The three throwaway PR worktrees plan 172-07 created are gone and pruned from all three
+repositories: /tmp/gsd-172-pr-prom (meta), /tmp/gsd-172-pr-fw (firestarter),
+/tmp/gsd-172-pr-app (firestarter_app). None appears in any `git worktree list`.
+
+FOUR pre-existing, unrelated worktrees were left untouched — one more than this plan's
+read_first names. The plan mentions only `firestarter_py32_ci`; the full set that must survive is:
+  firestarter:      /workspaces/firestarter_py32_ci      feature/py32f071-release-assets
+  firestarter_app:  /workspaces/firestarter_app_py32     feature/py32f071-fw-install
+  firestarter_app:  /workspaces/.v1.34-arms/control      detached 6bfa645
+  firestarter_app:  /workspaces/.v1.34-arms/v133         detached cb189a9
+All four are still listed. The v1.34 arms in particular are the pinned control/v133 host arms whose
+loss would invalidate recorded bench rows, so naming them here rather than relying on the plan's
+single-name mention is the safer record.
+
+== Note on this file's own spec ==
+The plan's artifact block requires min_lines: 4 while its acceptance criteria require "exactly two
+lines". Both cannot hold. The two data lines above are kept assertion-exact (two lines ending in
+the verdict token, both carrying recorded, actual and branch) and the line floor is met with real
+content rather than padding; the "exactly two lines" prose is the clause that yields.

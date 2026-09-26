@@ -1,0 +1,2352 @@
+== w1: delete the increment from get_response ==
+.......FFF...                                                            [100%]
+=================================== FAILURES ===================================
+__________ test_established_timeout_raises_timeouts_and_nothing_else ___________
+
+make_comm = <function make_comm.<locals>._factory at 0x7f96655d4f40>
+
+    def test_established_timeout_raises_timeouts_and_nothing_else(make_comm) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        with pytest.raises(SerialTimeoutError):
+            comm.get_response(timeout=0.02)
+        snap = transport_counters.snapshot()
+>       assert snap["timeouts"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:170: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:559 Timeout waiting for a response from /dev/null.
+_______ test_probe_scoped_timeout_raises_probe_timeouts_and_nothing_else _______
+
+make_comm = <function make_comm.<locals>._factory at 0x7f966560e5c0>
+
+    def test_probe_scoped_timeout_raises_probe_timeouts_and_nothing_else(
+        make_comm,
+    ) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        with transport_counters.probe_scope():
+            with pytest.raises(SerialTimeoutError):
+                comm.get_response(timeout=0.02)
+        snap = transport_counters.snapshot()
+>       assert snap["probe_timeouts"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:184: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:559 Timeout waiting for a response from /dev/null.
+_________ test_timeout_after_scope_exit_counts_as_established_timeout __________
+
+make_comm = <function make_comm.<locals>._factory at 0x7f966560e840>
+
+    def test_timeout_after_scope_exit_counts_as_established_timeout(make_comm) -> None:
+        transport_counters.reset()
+        comm = make_comm()
+        with transport_counters.probe_scope():
+            pass
+        with pytest.raises(SerialTimeoutError):
+            comm.get_response(timeout=0.02)
+        snap = transport_counters.snapshot()
+>       assert snap["timeouts"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:197: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  SerialComm:serial_comm.py:559 Timeout waiting for a response from /dev/null.
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_established_timeout_raises_timeouts_and_nothing_else
+FAILED tests/test_transport_counters.py::test_probe_scoped_timeout_raises_probe_timeouts_and_nothing_else
+FAILED tests/test_transport_counters.py::test_timeout_after_scope_exit_counts_as_established_timeout
+3 failed, 10 passed in 0.42s
+rc_w1=1
+== restore after w1, confirm green ==
+.............                                                            [100%]
+13 passed in 0.36s
+rc_clean=0
+== w2: delete the probe_scope() wrapper from find_and_connect ==
+............F                                                            [100%]
+=================================== FAILURES ===================================
+__________ test_find_and_connect_wraps_probe_port_call_in_probe_scope __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f19fec24d50>
+
+    def test_find_and_connect_wraps_probe_port_call_in_probe_scope(monkeypatch) -> None:
+        from firestarter.config import ConfigManager
+        from firestarter.exceptions import ProgrammerNotFoundError
+        from firestarter.serial_comm import SerialCommunicator
+    
+        transport_counters.reset()
+    
+        def fake_probe(port_name, baud_rate, command_to_send, config_manager, **kwargs):
+            transport_counters.record_response_timeout()
+            return None
+    
+        monkeypatch.setattr(
+            SerialCommunicator,
+            "_list_potential_ports",
+            staticmethod(lambda p=None, **_kw: ["/dev/fake0"]),
+        )
+        monkeypatch.setattr(SerialCommunicator, "_probe_port", staticmethod(fake_probe))
+    
+        with pytest.raises(ProgrammerNotFoundError):
+            SerialCommunicator.find_and_connect({"cmd": 1}, ConfigManager())
+    
+        snap = transport_counters.snapshot()
+>       assert snap["probe_timeouts"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:245: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_find_and_connect_wraps_probe_port_call_in_probe_scope
+1 failed, 12 passed in 0.27s
+rc_w2=1
+== restore after w2, confirm green ==
+.............                                                            [100%]
+13 passed in 0.28s
+rc_clean=0
+== w3: probe_scope() restores hard False instead of previous value ==
+.............                                                            [100%]
+13 passed in 0.18s
+rc_w3=0
+== restore after w3, confirm green ==
+.............                                                            [100%]
+13 passed in 0.19s
+rc_clean=0
+== w3 (redone with nesting test): probe_scope() restores hard False instead of previous value ==
+..........F...                                                           [100%]
+=================================== FAILURES ===================================
+________ test_nested_probe_scope_restores_previous_value_not_hard_false ________
+
+    def test_nested_probe_scope_restores_previous_value_not_hard_false() -> None:
+        transport_counters.reset()
+        with transport_counters.probe_scope():
+            with transport_counters.probe_scope():
+                pass
+            transport_counters.record_response_timeout()
+        snap = transport_counters.snapshot()
+>       assert snap["probe_timeouts"] == 1
+E       assert 0 == 1
+
+tests/test_transport_counters.py:208: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_nested_probe_scope_restores_previous_value_not_hard_false
+1 failed, 13 passed in 0.22s
+rc_w3=1
+== restore after w3 (redone), confirm green ==
+..............                                                           [100%]
+14 passed in 0.19s
+rc_clean=0
+== w5: change guard from >= to > (must break boundary_5 exactly at threshold) ==
+..............FFFFFF.F.FFFFF...                                          [100%]
+=================================== FAILURES ===================================
+_________ test_none_field_never_contributes_to_suspicion[cobs_errors] __________
+
+field_name = 'cobs_errors'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(TransportHealth(**all_none)) is False
+    
+        others_elevated = {name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS}
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(TransportHealth(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False) = TransportHealth(**{'cobs_errors': None, 'crc_failures': 5, 'decode_failures': 5, 'retries': 5, ...})
+
+tests/test_transport_counters.py:276: AssertionError
+_________ test_none_field_never_contributes_to_suspicion[crc_failures] _________
+
+field_name = 'crc_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(TransportHealth(**all_none)) is False
+    
+        others_elevated = {name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS}
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(TransportHealth(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False) = TransportHealth(**{'cobs_errors': 5, 'crc_failures': None, 'decode_failures': 5, 'retries': 5, ...})
+
+tests/test_transport_counters.py:276: AssertionError
+_______ test_none_field_never_contributes_to_suspicion[decode_failures] ________
+
+field_name = 'decode_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(TransportHealth(**all_none)) is False
+    
+        others_elevated = {name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS}
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(TransportHealth(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False) = TransportHealth(**{'cobs_errors': 5, 'crc_failures': 5, 'decode_failures': None, 'retries': 5, ...})
+
+tests/test_transport_counters.py:276: AssertionError
+___________ test_none_field_never_contributes_to_suspicion[retries] ____________
+
+field_name = 'retries'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(TransportHealth(**all_none)) is False
+    
+        others_elevated = {name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS}
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(TransportHealth(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False) = TransportHealth(**{'cobs_errors': 5, 'crc_failures': 5, 'decode_failures': 5, 'retries': None, ...})
+
+tests/test_transport_counters.py:276: AssertionError
+___________ test_none_field_never_contributes_to_suspicion[timeouts] ___________
+
+field_name = 'timeouts'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(TransportHealth(**all_none)) is False
+    
+        others_elevated = {name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS}
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(TransportHealth(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False) = TransportHealth(**{'cobs_errors': 5, 'crc_failures': 5, 'decode_failures': 5, 'retries': 5, ...})
+
+tests/test_transport_counters.py:276: AssertionError
+___________ test_zero_is_present_and_not_elevated_while_threshold_is ___________
+
+    def test_zero_is_present_and_not_elevated_while_threshold_is() -> None:
+        assert _is_transport_suspect(TransportHealth(timeouts=0)) is False
+>       assert _is_transport_suspect(TransportHealth(timeouts=_SUSPECT_THRESHOLD)) is True
+E       assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False) = TransportHealth(timeouts=5)
+
+tests/test_transport_counters.py:281: AssertionError
+____________ test_threshold_boundary_stays_greater_or_equal[5-True] ____________
+
+value = 5, expected = True
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (_SUSPECT_THRESHOLD - 1, False),
+            (_SUSPECT_THRESHOLD, True),
+            (_SUSPECT_THRESHOLD + 1, True),
+        ],
+    )
+    def test_threshold_boundary_stays_greater_or_equal(
+        value: int, expected: bool
+    ) -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=value)) is expected
+E       assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False) = TransportHealth(timeouts=5)
+
+tests/test_transport_counters.py:295: AssertionError
+____ test_any_single_scanned_field_alone_at_threshold_suffices[cobs_errors] ____
+
+field_name = 'cobs_errors'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(TransportHealth(**{field_name: _SUSPECT_THRESHOLD}))
+            is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False) = TransportHealth(**{'cobs_errors': 5})
+
+tests/test_transport_counters.py:300: AssertionError
+___ test_any_single_scanned_field_alone_at_threshold_suffices[crc_failures] ____
+
+field_name = 'crc_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(TransportHealth(**{field_name: _SUSPECT_THRESHOLD}))
+            is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False) = TransportHealth(**{'crc_failures': 5})
+
+tests/test_transport_counters.py:300: AssertionError
+__ test_any_single_scanned_field_alone_at_threshold_suffices[decode_failures] __
+
+field_name = 'decode_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(TransportHealth(**{field_name: _SUSPECT_THRESHOLD}))
+            is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False) = TransportHealth(**{'decode_failures': 5})
+
+tests/test_transport_counters.py:300: AssertionError
+______ test_any_single_scanned_field_alone_at_threshold_suffices[retries] ______
+
+field_name = 'retries'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(TransportHealth(**{field_name: _SUSPECT_THRESHOLD}))
+            is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False) = TransportHealth(**{'retries': 5})
+
+tests/test_transport_counters.py:300: AssertionError
+_____ test_any_single_scanned_field_alone_at_threshold_suffices[timeouts] ______
+
+field_name = 'timeouts'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(TransportHealth(**{field_name: _SUSPECT_THRESHOLD}))
+            is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False) = TransportHealth(**{'timeouts': 5})
+
+tests/test_transport_counters.py:300: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[cobs_errors]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[crc_failures]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[decode_failures]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[retries]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[timeouts]
+FAILED tests/test_transport_counters.py::test_zero_is_present_and_not_elevated_while_threshold_is
+FAILED tests/test_transport_counters.py::test_threshold_boundary_stays_greater_or_equal[5-True]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[cobs_errors]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[crc_failures]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[decode_failures]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[retries]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[timeouts]
+12 failed, 19 passed in 0.29s
+rc_w5=1
+== restore after w5, confirm green ==
+...............................                                          [100%]
+31 passed in 0.21s
+rc_clean=0
+== w6: reorder conjuncts so comparison runs before the None check (must raise on an absent counter) ==
+.....FF.....F.FFFFFFFFF.FFFFF..                                          [100%]
+=================================== FAILURES ===================================
+__________ test_default_transport_health_decode_failures_not_measured __________
+
+    def test_default_transport_health_decode_failures_not_measured() -> None:
+        report = _build_report()
+>       d = report.to_dict()
+            ^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:161: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+firestarter/diagnostic_report.py:823: in to_dict
+    "transport_health": self._transport_dict(),
+                        ^^^^^^^^^^^^^^^^^^^^^^
+firestarter/diagnostic_report.py:657: in _transport_dict
+    "transport_suspect": _is_transport_suspect(th),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+____________ test_to_dict_decode_failures_reflects_assigned_integer ____________
+
+    def test_to_dict_decode_failures_reflects_assigned_integer() -> None:
+        report = _build_report()
+        report.transport.decode_failures = 3
+>       d = report.to_dict()
+            ^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:169: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+firestarter/diagnostic_report.py:823: in to_dict
+    "transport_health": self._transport_dict(),
+                        ^^^^^^^^^^^^^^^^^^^^^^
+firestarter/diagnostic_report.py:657: in _transport_dict
+    "transport_suspect": _is_transport_suspect(th),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=3, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+________ test_to_dict_carries_integers_for_timeouts_and_probe_timeouts _________
+
+    def test_to_dict_carries_integers_for_timeouts_and_probe_timeouts() -> None:
+        report = _build_report()
+        report.transport.timeouts = 2
+        report.transport.probe_timeouts = 1
+>       d = report.to_dict()
+            ^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+firestarter/diagnostic_report.py:823: in to_dict
+    "transport_health": self._transport_dict(),
+                        ^^^^^^^^^^^^^^^^^^^^^^
+firestarter/diagnostic_report.py:657: in _transport_dict
+    "transport_suspect": _is_transport_suspect(th),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=1, retries=None, timeouts=2, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+_________ test_none_field_never_contributes_to_suspicion[cobs_errors] __________
+
+field_name = 'cobs_errors'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(TransportHealth(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+_________ test_none_field_never_contributes_to_suspicion[crc_failures] _________
+
+field_name = 'crc_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(TransportHealth(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+_______ test_none_field_never_contributes_to_suspicion[decode_failures] ________
+
+field_name = 'decode_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(TransportHealth(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___________ test_none_field_never_contributes_to_suspicion[retries] ____________
+
+field_name = 'retries'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(TransportHealth(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___________ test_none_field_never_contributes_to_suspicion[timeouts] ___________
+
+field_name = 'timeouts'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(TransportHealth(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___________ test_zero_is_present_and_not_elevated_while_threshold_is ___________
+
+    def test_zero_is_present_and_not_elevated_while_threshold_is() -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=0)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:280: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=0, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___________ test_threshold_boundary_stays_greater_or_equal[4-False] ____________
+
+value = 4, expected = False
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (_SUSPECT_THRESHOLD - 1, False),
+            (_SUSPECT_THRESHOLD, True),
+            (_SUSPECT_THRESHOLD + 1, True),
+        ],
+    )
+    def test_threshold_boundary_stays_greater_or_equal(
+        value: int, expected: bool
+    ) -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=value)) is expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:295: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=4, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+____________ test_threshold_boundary_stays_greater_or_equal[5-True] ____________
+
+value = 5, expected = True
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (_SUSPECT_THRESHOLD - 1, False),
+            (_SUSPECT_THRESHOLD, True),
+            (_SUSPECT_THRESHOLD + 1, True),
+        ],
+    )
+    def test_threshold_boundary_stays_greater_or_equal(
+        value: int, expected: bool
+    ) -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=value)) is expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:295: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+____________ test_threshold_boundary_stays_greater_or_equal[6-True] ____________
+
+value = 6, expected = True
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (_SUSPECT_THRESHOLD - 1, False),
+            (_SUSPECT_THRESHOLD, True),
+            (_SUSPECT_THRESHOLD + 1, True),
+        ],
+    )
+    def test_threshold_boundary_stays_greater_or_equal(
+        value: int, expected: bool
+    ) -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=value)) is expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:295: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=6, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___ test_any_single_scanned_field_alone_at_threshold_suffices[crc_failures] ____
+
+field_name = 'crc_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+        assert (
+>           _is_transport_suspect(TransportHealth(**{field_name: _SUSPECT_THRESHOLD}))
+            is True
+        )
+
+tests/test_transport_counters.py:301: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+__ test_any_single_scanned_field_alone_at_threshold_suffices[decode_failures] __
+
+field_name = 'decode_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+        assert (
+>           _is_transport_suspect(TransportHealth(**{field_name: _SUSPECT_THRESHOLD}))
+            is True
+        )
+
+tests/test_transport_counters.py:301: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+______ test_any_single_scanned_field_alone_at_threshold_suffices[retries] ______
+
+field_name = 'retries'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+        assert (
+>           _is_transport_suspect(TransportHealth(**{field_name: _SUSPECT_THRESHOLD}))
+            is True
+        )
+
+tests/test_transport_counters.py:301: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+_____ test_any_single_scanned_field_alone_at_threshold_suffices[timeouts] ______
+
+field_name = 'timeouts'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+        assert (
+>           _is_transport_suspect(TransportHealth(**{field_name: _SUSPECT_THRESHOLD}))
+            is True
+        )
+
+tests/test_transport_counters.py:301: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+______________ test_probe_timeouts_excluded_from_suspicion_domain ______________
+
+    def test_probe_timeouts_excluded_from_suspicion_domain() -> None:
+>       assert _is_transport_suspect(TransportHealth(probe_timeouts=1000)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:307: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=1000, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_default_transport_health_decode_failures_not_measured
+FAILED tests/test_transport_counters.py::test_to_dict_decode_failures_reflects_assigned_integer
+FAILED tests/test_transport_counters.py::test_to_dict_carries_integers_for_timeouts_and_probe_timeouts
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[cobs_errors]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[crc_failures]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[decode_failures]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[retries]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[timeouts]
+FAILED tests/test_transport_counters.py::test_zero_is_present_and_not_elevated_while_threshold_is
+FAILED tests/test_transport_counters.py::test_threshold_boundary_stays_greater_or_equal[4-False]
+FAILED tests/test_transport_counters.py::test_threshold_boundary_stays_greater_or_equal[5-True]
+FAILED tests/test_transport_counters.py::test_threshold_boundary_stays_greater_or_equal[6-True]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[crc_failures]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[decode_failures]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[retries]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[timeouts]
+FAILED tests/test_transport_counters.py::test_probe_timeouts_excluded_from_suspicion_domain
+17 failed, 14 passed in 0.42s
+rc_w6=1
+== restore after w6, confirm green ==
+...............................                                          [100%]
+31 passed in 0.20s
+rc_clean=0
+== w7: add probe_timeouts to _SUSPECT_SCANNED_FIELDS (must break the exclusion test) ==
+..............................F..                                        [100%]
+=================================== FAILURES ===================================
+______________ test_probe_timeouts_excluded_from_suspicion_domain ______________
+
+    def test_probe_timeouts_excluded_from_suspicion_domain() -> None:
+>       assert _is_transport_suspect(TransportHealth(probe_timeouts=1000)) is False
+E       assert True is False
+E        +  where True = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=1000, retries=None, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=1000, retries=None, timeouts=None, transport_suspect=False) = TransportHealth(probe_timeouts=1000)
+
+tests/test_transport_counters.py:307: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_probe_timeouts_excluded_from_suspicion_domain
+1 failed, 32 passed in 0.22s
+rc_w7=1
+== restore after w7, confirm green ==
+...............................                                          [100%]
+31 passed in 0.20s
+rc_clean=0
+
+== re-run w5/w6/w7 against the finalized _health_with-based test file ==
+== w5 (redo): change guard from >= to > ==
+..............FFFFFF.F.FFFFF...                                          [100%]
+=================================== FAILURES ===================================
+_________ test_none_field_never_contributes_to_suspicion[cobs_errors] __________
+
+field_name = 'cobs_errors'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(_health_with(**all_none)) is False
+    
+        others_elevated: dict[str, int | None] = {
+            name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS
+        }
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(_health_with(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False) = _health_with(**{'cobs_errors': None, 'crc_failures': 5, 'decode_failures': 5, 'retries': 5, ...})
+
+tests/test_transport_counters.py:285: AssertionError
+_________ test_none_field_never_contributes_to_suspicion[crc_failures] _________
+
+field_name = 'crc_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(_health_with(**all_none)) is False
+    
+        others_elevated: dict[str, int | None] = {
+            name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS
+        }
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(_health_with(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False) = _health_with(**{'cobs_errors': 5, 'crc_failures': None, 'decode_failures': 5, 'retries': 5, ...})
+
+tests/test_transport_counters.py:285: AssertionError
+_______ test_none_field_never_contributes_to_suspicion[decode_failures] ________
+
+field_name = 'decode_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(_health_with(**all_none)) is False
+    
+        others_elevated: dict[str, int | None] = {
+            name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS
+        }
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(_health_with(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=5, timeouts=5, transport_suspect=False) = _health_with(**{'cobs_errors': 5, 'crc_failures': 5, 'decode_failures': None, 'retries': 5, ...})
+
+tests/test_transport_counters.py:285: AssertionError
+___________ test_none_field_never_contributes_to_suspicion[retries] ____________
+
+field_name = 'retries'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(_health_with(**all_none)) is False
+    
+        others_elevated: dict[str, int | None] = {
+            name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS
+        }
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(_health_with(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False) = _health_with(**{'cobs_errors': 5, 'crc_failures': 5, 'decode_failures': 5, 'retries': None, ...})
+
+tests/test_transport_counters.py:285: AssertionError
+___________ test_none_field_never_contributes_to_suspicion[timeouts] ___________
+
+field_name = 'timeouts'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+        assert _is_transport_suspect(_health_with(**all_none)) is False
+    
+        others_elevated: dict[str, int | None] = {
+            name: _SUSPECT_THRESHOLD for name in _SUSPECT_SCANNED_FIELDS
+        }
+        others_elevated[field_name] = None
+>       assert _is_transport_suspect(_health_with(**others_elevated)) is True
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=5, decode_failures=5, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False) = _health_with(**{'cobs_errors': 5, 'crc_failures': 5, 'decode_failures': 5, 'retries': 5, ...})
+
+tests/test_transport_counters.py:285: AssertionError
+___________ test_zero_is_present_and_not_elevated_while_threshold_is ___________
+
+    def test_zero_is_present_and_not_elevated_while_threshold_is() -> None:
+        assert _is_transport_suspect(TransportHealth(timeouts=0)) is False
+>       assert _is_transport_suspect(TransportHealth(timeouts=_SUSPECT_THRESHOLD)) is True
+E       assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False) = TransportHealth(timeouts=5)
+
+tests/test_transport_counters.py:290: AssertionError
+____________ test_threshold_boundary_stays_greater_or_equal[5-True] ____________
+
+value = 5, expected = True
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (_SUSPECT_THRESHOLD - 1, False),
+            (_SUSPECT_THRESHOLD, True),
+            (_SUSPECT_THRESHOLD + 1, True),
+        ],
+    )
+    def test_threshold_boundary_stays_greater_or_equal(value: int, expected: bool) -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=value)) is expected
+E       assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False) = TransportHealth(timeouts=5)
+
+tests/test_transport_counters.py:302: AssertionError
+____ test_any_single_scanned_field_alone_at_threshold_suffices[cobs_errors] ____
+
+field_name = 'cobs_errors'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(_health_with(**{field_name: _SUSPECT_THRESHOLD})) is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=5, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=5, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False) = _health_with(**{'cobs_errors': 5})
+
+tests/test_transport_counters.py:307: AssertionError
+___ test_any_single_scanned_field_alone_at_threshold_suffices[crc_failures] ____
+
+field_name = 'crc_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(_health_with(**{field_name: _SUSPECT_THRESHOLD})) is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False) = _health_with(**{'crc_failures': 5})
+
+tests/test_transport_counters.py:307: AssertionError
+__ test_any_single_scanned_field_alone_at_threshold_suffices[decode_failures] __
+
+field_name = 'decode_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(_health_with(**{field_name: _SUSPECT_THRESHOLD})) is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False) = _health_with(**{'decode_failures': 5})
+
+tests/test_transport_counters.py:307: AssertionError
+______ test_any_single_scanned_field_alone_at_threshold_suffices[retries] ______
+
+field_name = 'retries'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(_health_with(**{field_name: _SUSPECT_THRESHOLD})) is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False) = _health_with(**{'retries': 5})
+
+tests/test_transport_counters.py:307: AssertionError
+_____ test_any_single_scanned_field_alone_at_threshold_suffices[timeouts] ______
+
+field_name = 'timeouts'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+>       assert (
+            _is_transport_suspect(_health_with(**{field_name: _SUSPECT_THRESHOLD})) is True
+        )
+E       AssertionError: assert False is True
+E        +  where False = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False) = _health_with(**{'timeouts': 5})
+
+tests/test_transport_counters.py:307: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[cobs_errors]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[crc_failures]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[decode_failures]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[retries]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[timeouts]
+FAILED tests/test_transport_counters.py::test_zero_is_present_and_not_elevated_while_threshold_is
+FAILED tests/test_transport_counters.py::test_threshold_boundary_stays_greater_or_equal[5-True]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[cobs_errors]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[crc_failures]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[decode_failures]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[retries]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[timeouts]
+12 failed, 19 passed in 0.44s
+rc_w5=1
+== w6 (redo): reorder conjuncts ==
+.....FF.....F.FFFFFFFFF.FFFFF..                                          [100%]
+=================================== FAILURES ===================================
+__________ test_default_transport_health_decode_failures_not_measured __________
+
+    def test_default_transport_health_decode_failures_not_measured() -> None:
+        report = _build_report()
+>       d = report.to_dict()
+            ^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:161: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+firestarter/diagnostic_report.py:823: in to_dict
+    "transport_health": self._transport_dict(),
+                        ^^^^^^^^^^^^^^^^^^^^^^
+firestarter/diagnostic_report.py:657: in _transport_dict
+    "transport_suspect": _is_transport_suspect(th),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+____________ test_to_dict_decode_failures_reflects_assigned_integer ____________
+
+    def test_to_dict_decode_failures_reflects_assigned_integer() -> None:
+        report = _build_report()
+        report.transport.decode_failures = 3
+>       d = report.to_dict()
+            ^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:169: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+firestarter/diagnostic_report.py:823: in to_dict
+    "transport_health": self._transport_dict(),
+                        ^^^^^^^^^^^^^^^^^^^^^^
+firestarter/diagnostic_report.py:657: in _transport_dict
+    "transport_suspect": _is_transport_suspect(th),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=3, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+________ test_to_dict_carries_integers_for_timeouts_and_probe_timeouts _________
+
+    def test_to_dict_carries_integers_for_timeouts_and_probe_timeouts() -> None:
+        report = _build_report()
+        report.transport.timeouts = 2
+        report.transport.probe_timeouts = 1
+>       d = report.to_dict()
+            ^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+firestarter/diagnostic_report.py:823: in to_dict
+    "transport_health": self._transport_dict(),
+                        ^^^^^^^^^^^^^^^^^^^^^^
+firestarter/diagnostic_report.py:657: in _transport_dict
+    "transport_suspect": _is_transport_suspect(th),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=1, retries=None, timeouts=2, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+_________ test_none_field_never_contributes_to_suspicion[cobs_errors] __________
+
+field_name = 'cobs_errors'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(_health_with(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:279: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+_________ test_none_field_never_contributes_to_suspicion[crc_failures] _________
+
+field_name = 'crc_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(_health_with(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:279: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+_______ test_none_field_never_contributes_to_suspicion[decode_failures] ________
+
+field_name = 'decode_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(_health_with(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:279: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___________ test_none_field_never_contributes_to_suspicion[retries] ____________
+
+field_name = 'retries'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(_health_with(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:279: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___________ test_none_field_never_contributes_to_suspicion[timeouts] ___________
+
+field_name = 'timeouts'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_none_field_never_contributes_to_suspicion(field_name: str) -> None:
+        all_none = {name: None for name in _SUSPECT_SCANNED_FIELDS}
+>       assert _is_transport_suspect(_health_with(**all_none)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:279: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___________ test_zero_is_present_and_not_elevated_while_threshold_is ___________
+
+    def test_zero_is_present_and_not_elevated_while_threshold_is() -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=0)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:289: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=0, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___________ test_threshold_boundary_stays_greater_or_equal[4-False] ____________
+
+value = 4, expected = False
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (_SUSPECT_THRESHOLD - 1, False),
+            (_SUSPECT_THRESHOLD, True),
+            (_SUSPECT_THRESHOLD + 1, True),
+        ],
+    )
+    def test_threshold_boundary_stays_greater_or_equal(value: int, expected: bool) -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=value)) is expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:302: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=4, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+____________ test_threshold_boundary_stays_greater_or_equal[5-True] ____________
+
+value = 5, expected = True
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (_SUSPECT_THRESHOLD - 1, False),
+            (_SUSPECT_THRESHOLD, True),
+            (_SUSPECT_THRESHOLD + 1, True),
+        ],
+    )
+    def test_threshold_boundary_stays_greater_or_equal(value: int, expected: bool) -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=value)) is expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:302: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+____________ test_threshold_boundary_stays_greater_or_equal[6-True] ____________
+
+value = 6, expected = True
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (_SUSPECT_THRESHOLD - 1, False),
+            (_SUSPECT_THRESHOLD, True),
+            (_SUSPECT_THRESHOLD + 1, True),
+        ],
+    )
+    def test_threshold_boundary_stays_greater_or_equal(value: int, expected: bool) -> None:
+>       assert _is_transport_suspect(TransportHealth(timeouts=value)) is expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:302: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=6, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+___ test_any_single_scanned_field_alone_at_threshold_suffices[crc_failures] ____
+
+field_name = 'crc_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+        assert (
+>           _is_transport_suspect(_health_with(**{field_name: _SUSPECT_THRESHOLD})) is True
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        )
+
+tests/test_transport_counters.py:308: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=5, decode_failures=None, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+__ test_any_single_scanned_field_alone_at_threshold_suffices[decode_failures] __
+
+field_name = 'decode_failures'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+        assert (
+>           _is_transport_suspect(_health_with(**{field_name: _SUSPECT_THRESHOLD})) is True
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        )
+
+tests/test_transport_counters.py:308: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=5, probe_timeouts=None, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+______ test_any_single_scanned_field_alone_at_threshold_suffices[retries] ______
+
+field_name = 'retries'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+        assert (
+>           _is_transport_suspect(_health_with(**{field_name: _SUSPECT_THRESHOLD})) is True
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        )
+
+tests/test_transport_counters.py:308: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=5, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+_____ test_any_single_scanned_field_alone_at_threshold_suffices[timeouts] ______
+
+field_name = 'timeouts'
+
+    @pytest.mark.parametrize("field_name", _SUSPECT_SCANNED_FIELDS)
+    def test_any_single_scanned_field_alone_at_threshold_suffices(field_name: str) -> None:
+        assert (
+>           _is_transport_suspect(_health_with(**{field_name: _SUSPECT_THRESHOLD})) is True
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        )
+
+tests/test_transport_counters.py:308: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=None, retries=None, timeouts=5, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+______________ test_probe_timeouts_excluded_from_suspicion_domain ______________
+
+    def test_probe_timeouts_excluded_from_suspicion_domain() -> None:
+>       assert _is_transport_suspect(TransportHealth(probe_timeouts=1000)) is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_transport_counters.py:313: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+th = TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=1000, retries=None, timeouts=None, transport_suspect=False)
+
+    def _is_transport_suspect(th: TransportHealth) -> bool:
+        """True only when a counter is PRESENT (not None) AND elevated.
+    
+        Absent counters can never fabricate suspicion -- mirrors the
+        honest `indeterminate` fingerprint bucket. Scans `_SUSPECT_SCANNED_FIELDS`
+        by name rather than a hard-coded tuple, so extending the scanned domain
+        (as `decode_failures` does here) is a data change, not a rule change --
+        the guard clause itself, both conjuncts and their order, is unchanged.
+    
+        `probe_timeouts` is deliberately in `_SUSPECT_EXCLUDED_FIELDS`, never in
+        `_SUSPECT_SCANNED_FIELDS`: port-discovery failures are ordinary on a
+        multi-board rig and are not link sickness, so counting them toward
+        suspicion would report a healthy rig as sick.
+    
+        `_SUSPECT_THRESHOLD` stays `5`. Its basis: the counter that would have
+        inflated it is `timeouts`, which pays one timeout per wrong candidate
+        port on every connect that has to walk past one -- at the 32 connects a
+        single at28c256 run costs, an unscoped global counter would cross `5` by
+        the sixth wrong-port probe and report a healthy three-board rig as
+        transport-suspect. Scoping those into `probe_timeouts` (Phase 176 plan
+        02) is what justifies `5` against how the remaining scanned counters
+        actually behave, rather than leaving it as the untouched default chosen
+        while every counter was still dormant. A per-counter threshold was
+        considered and rejected: it is more work for a distinction the scoping
+        above already draws.
+        """
+        for name in _SUSPECT_SCANNED_FIELDS:
+            value = getattr(th, name)
+>           if value >= _SUSPECT_THRESHOLD and value is not None:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
+firestarter/diagnostic_report.py:165: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_default_transport_health_decode_failures_not_measured
+FAILED tests/test_transport_counters.py::test_to_dict_decode_failures_reflects_assigned_integer
+FAILED tests/test_transport_counters.py::test_to_dict_carries_integers_for_timeouts_and_probe_timeouts
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[cobs_errors]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[crc_failures]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[decode_failures]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[retries]
+FAILED tests/test_transport_counters.py::test_none_field_never_contributes_to_suspicion[timeouts]
+FAILED tests/test_transport_counters.py::test_zero_is_present_and_not_elevated_while_threshold_is
+FAILED tests/test_transport_counters.py::test_threshold_boundary_stays_greater_or_equal[4-False]
+FAILED tests/test_transport_counters.py::test_threshold_boundary_stays_greater_or_equal[5-True]
+FAILED tests/test_transport_counters.py::test_threshold_boundary_stays_greater_or_equal[6-True]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[crc_failures]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[decode_failures]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[retries]
+FAILED tests/test_transport_counters.py::test_any_single_scanned_field_alone_at_threshold_suffices[timeouts]
+FAILED tests/test_transport_counters.py::test_probe_timeouts_excluded_from_suspicion_domain
+17 failed, 14 passed in 0.49s
+rc_w6=1
+== w7 (redo): add probe_timeouts to _SUSPECT_SCANNED_FIELDS ==
+..............................F..                                        [100%]
+=================================== FAILURES ===================================
+______________ test_probe_timeouts_excluded_from_suspicion_domain ______________
+
+    def test_probe_timeouts_excluded_from_suspicion_domain() -> None:
+>       assert _is_transport_suspect(TransportHealth(probe_timeouts=1000)) is False
+E       assert True is False
+E        +  where True = _is_transport_suspect(TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=1000, retries=None, timeouts=None, transport_suspect=False))
+E        +    where TransportHealth(cobs_errors=None, crc_failures=None, decode_failures=None, probe_timeouts=1000, retries=None, timeouts=None, transport_suspect=False) = TransportHealth(probe_timeouts=1000)
+
+tests/test_transport_counters.py:313: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_transport_counters.py::test_probe_timeouts_excluded_from_suspicion_domain
+1 failed, 32 passed in 0.26s
+rc_w7=1
+== final restore, confirm green ==
+...............................                                          [100%]
+31 passed in 0.21s
+rc_clean=0

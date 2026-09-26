@@ -1,0 +1,93 @@
+== operator authorization (Task 2)
+
+evidence/173-06-operator-approval.txt carries the exact literal
+"APPROVED-FOR-MAIN-PR: wiki-check.yml provenance footer leg", narrowed by the
+operator's answer ("just s PR", read as "just a PR") to: open the pull request only.
+Merging is explicitly withheld and remains the operator's own act. This task does not
+merge anything.
+
+== precondition check: is the checker itself already on main?
+
+$ git cat-file -e origin/main:tools/wiki/provenance_footers.py
+fatal: path 'tools/wiki/provenance_footers.py' exists on disk, but not in 'origin/main'
+
+tools/wiki/provenance_footers.py is NOT on origin/main. Per the plan, the branch
+therefore carries both files. Checking further: the leg's --table argument also
+resolves to tools/wiki/MIGRATION-TABLE.md, which is likewise absent from origin/main
+(same failure mode — the leg would raise FileNotFoundError on its first run even with
+the workflow step itself present). Both files are therefore carried on the branch
+alongside the workflow change so the new leg's command has the inputs it needs to
+resolve once merged.
+
+DISCOVERED, OUT OF SCOPE FOR THIS PLAN: tools/wiki/ is entirely absent from origin/main
+-- wiki.py, honest02_truth.py, dispatch_mirror.py and claim-allowlist.json are also
+missing, even though wiki-check.yml's three pre-existing legs (WIKI-05, HONEST-02,
+Dispatch-mirror) already reference them. This means those three earlier legs would
+also fail to resolve the first time the workflow runs on main, independent of anything
+this plan adds. This predates plan 173-06 (wiki-check.yml was registered by prom#54,
+Phase 172) and is not this task's file set to fix; it is filed here as a finding, not
+remediated. See SUMMARY.md's Threat Flags / Known Stubs sections.
+
+== pull request
+
+pull request: #55
+url: https://github.com/henols/firestarter_prom/pull/55
+head branch: 173-06-provenance-footer-leg (pushed from commit-tree, off origin/main)
+base branch: main
+state: OPEN (confirmed via `gh pr view 55 --json state` -> "OPEN")
+created: 2026-09-02T15:10:13Z
+merged: NO -- this PR has not been merged. No merge commit SHA exists because the PR
+is not merged. Per Task 2's narrowing, this task performed no merge and no push to
+main by any other route.
+
+changed files (gh pr view 55 --json files):
+  .github/workflows/wiki-check.yml
+  tools/wiki/MIGRATION-TABLE.md
+  tools/wiki/provenance_footers.py
+No .planning/ path appears in the file set.
+
+== main, read back from the API (not the settings page)
+
+$ gh api "repos/henols/firestarter_prom/contents/.github/workflows/wiki-check.yml?ref=main" --jq .content | base64 -d | grep -c 'name: Provenance footer check'
+0
+
+main's copy of wiki-check.yml does NOT contain the "Provenance footer check" step.
+This is the expected and correct state for an unmerged PR: the leg is on the PR
+branch, not on main.
+
+$ gh run list --repo henols/firestarter_prom --workflow 'Wiki check' --limit 5
+(zero rows)
+
+The Wiki check workflow has zero runs in CI, matching Phase 172's NON-CLAIM 3.
+
+== POLICY-05 evidence -- instance count
+
+This is the fourth pull request opened against a protected `main` under the rulesets
+Phase 172 put in place, joining the three already MERGED on 2026-09-02:
+  prom#54 (merge commit 71148eda)
+  firestarter#58
+  firestarter_app#57
+all merged 2026-09-02T08:56:58Z-ish per 173-RESEARCH.md:704.
+
+This fourth instance is DIFFERENT IN KIND from the first three: it is OPEN, not
+merged, by explicit operator narrowing ("just a PR" -- open, do not merge). It still
+counts as a live exercise of the pull-request route -- `current_user_can_bypass` is
+`never` on prom's ruleset, so opening this PR went through the same pull_request rule
+the other three did -- but it is evidence of the ROUTE, not evidence of a completed
+merge. The route was exercised; the destination was not reached.
+
+== what is still not true (record, not gloss)
+
+"On main" and "observed green in CI" are two different claims, and neither is true
+here yet:
+  - The leg is NOT on main (confirmed above by API read-back returning 0 matches).
+  - The leg has NEVER been observed green in CI (zero runs in the workflow's history,
+    confirmed above).
+  - Because the leg is not merged, D-10's mechanical guard is not live. It exists as
+    code, on an open pull request awaiting the operator's own merge, exactly the shape
+    of Phase 172's NON-CLAIM 3 -- registered intent without an observed run -- except
+    this leg is not yet even registered on the branch that would be scheduled.
+
+Reaching prom's default branch, the scheduled cron actually protecting the footers, and
+a first observed-green CI run are all three still pending on the operator's own future
+merge of https://github.com/henols/firestarter_prom/pull/55.

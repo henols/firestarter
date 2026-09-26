@@ -1,0 +1,146 @@
+# 181-07 Task 2 -- an agreeing read records a zero-bad divergence mapping,
+# the reason keys on disagreement, the declared-cost test is edited (RPT-A3, D-11)
+# Measured against firestarter_app app HEAD 539312e (plans 181-01..181-06 landed,
+# plus this plan's Task 1 + its own follow-up census fix).
+
+## Section 1: the four reachable cases, side by side
+
+case=agreeing
+divergence={'repeat_divergent': False, 'cmp_len': 64, 'bad': 0, 'pct': 0.0, 'first_offset': None}
+key_set=bad,cmp_len,first_offset,pct,repeat_divergent
+verdict=OK
+reason=
+
+case=diverging
+divergence={'repeat_divergent': True, 'cmp_len': 64, 'bad': 64, 'pct': 100.0, 'first_offset': 0}
+key_set=bad,cmp_len,first_offset,pct,repeat_divergent
+verdict=OK
+reason=read runs diverged
+
+case=single_run
+divergence=None
+key_set=n/a
+verdict=OK
+reason=
+
+case=all_empty_read
+divergence=None
+key_set=n/a
+verdict=BAD
+reason=
+
+## Section 2: the nine named scalars
+
+agreeing_key_set_equals_diverging_key_set=true
+agreeing_bad=0
+agreeing_reason_is_empty=true
+single_run_divergence=None
+empty_read_divergence=None
+diff_primitive_called_on_agreement=false
+fold_preserves_zero_bad_mapping=true
+edited_test_old_claim=assert not read_result.divergence
+edited_test_new_claim=assert read_result.divergence == {"repeat_divergent": False, "cmp_len": 32, "bad": 0, "pct": 0.0, "first_offset": None}
+
+## Section 3: whole-module pytest tail after this task's edits (bare pytest, -o addopts="")
+
+tests/test_chip_test.py: 156 passed (was 152 pre-task; +4 new tests: the
+renamed agreement test's stronger assertion, the identical-key-set leg, the
+None-cases leg, the fold-preserves-zero-bad leg)
+rc=0
+
+## Section 4: tokenize COMMENT-token census -- non-increase gate, measured at Task 1 head
+
+comment_tokens_pretask firestarter/chip_test.py=893
+comment_tokens_pretask tests/test_chip_test.py=563
+
+comment_tokens_posttask firestarter/chip_test.py=893
+comment_tokens_posttask tests/test_chip_test.py=563
+
+phase_added_comments=0
+rc=0
+
+Note: an interim edit added two `#` inline-comment annotations to the new
+import names in tests/test_chip_test.py's import block (matching that
+block's own pre-existing per-name-comment style) -- caught by re-running
+this census before commit, removed, verified back to baseline (563) before
+the commit above.
+
+## Section 5: ruff, snapshot-check, frozen-hash re-proof
+
+ruff_check=All checks passed! (firestarter/chip_test.py, tests/test_chip_test.py)
+ruff_format_check=174 files already formatted
+snapshot_report_shapes_check=OK: 19 snapshot(s) match a fresh regeneration
+dedup_fingerprint_frozen_test=19 passed, 84 deselected
+frozen_hash_literal_lines_moved_since_04fd982=0
+
+## Section 6: full mandated comment census (git diff --name-only 04fd982..HEAD, all .py files)
+
+files over baseline: 0 / 25
+
+## Verdict (177-READBACK-INVENTORY.md form)
+
+VERDICT: `divergence: null` now means exactly one thing -- no comparison was
+possible (a single-run `--fast` read, or a read whose runs all produced
+empty bytes). An agreeing read now says so explicitly with a zero-bad
+mapping carrying the same five keys a disagreeing read uses, mirroring
+PRUNE-03's rule for the fingerprint.
+
+EXCLUDED, and why: the per-byte diff primitive is never called on the
+agreeing path (sha equality already proves the zero-mismatch fact); no
+second divergence implementation exists anywhere in this module; the read
+step's verdict is never flipped by a divergence result and never becomes
+`marginal` (that gate is `test_read_step_disagreement_is_divergence_metric_not_marginal`,
+byte-unchanged and green).
+
+GATE that would redden if this regressed:
+`test_read_step_agreement_records_a_zero_bad_divergence_mapping` (the
+declared-cost test's stronger replacement),
+`test_agreeing_and_diverging_divergence_mappings_share_the_same_key_set`
+(a ragged shape), `test_a_single_run_and_an_all_empty_read_leave_divergence_none`
+(the None-means-no-comparison property), and
+`test_aggregate_cycle_results_preserves_a_zero_bad_divergence_mapping` (the
+truthiness-filtered fold silently discarding a zero-bad mapping).
+
+## Section 7 (Task 3): steps[].divergence exported, key pin re-measured
+
+steps_key_count_before=18
+steps_key_count_after=19
+divergence_present_on_every_step=true
+frozen_hash_literal_count=19
+frozen_hash_lines_added_or_removed_since_04fd982=0
+shapes_reproducing=19/19
+snapshot_files_changed=18
+snapshot_files_diff_confined_to_added_key=18
+
+No hash could move: `dedup_fingerprint` reads a step's `op`, `verdict` and
+`fingerprint.classification` and nothing else (plus `repeat_policy_tag`/
+`coverage_tag` at the report level); `divergence` is not in that five-entry
+allow-list at all.
+
+## Section 8 (Task 3): final re-proof of the md5 anchor
+
+git show 04fd982:tests/fixtures/report_shapes.py | grep -oE '"[0-9a-f]{12}"' | sort | md5sum
+= 555a6d762d528102b74061b504183df6
+tests/fixtures/report_shapes.py (working tree, post-Task-3) | grep -oE '"[0-9a-f]{12}"' | sort | md5sum
+= 555a6d762d528102b74061b504183df6
+match=true
+
+## Section 9 (Task 3): whole-suite tail across every touched/dependent module
+
+tests/test_blast_radius_invariance.py + tests/test_diagnostic_report.py +
+tests/test_parse_devtest_issue.py + tests/test_chip_test.py: 371 passed
+rc=0
+
+comment_tokens_posttask firestarter/chip_test.py=893
+comment_tokens_posttask firestarter/diagnostic_report.py=207
+comment_tokens_posttask tests/test_chip_test.py=563
+comment_tokens_posttask tests/test_diagnostic_report.py=182
+comment_tokens_posttask tests/test_blast_radius_invariance.py=0 (pin_module)
+
+full mandated census (git diff --name-only 04fd982..HEAD, all .py files):
+files over baseline: 0 / 25
+
+porcelain legs (run after this task's commits):
+git -C /workspaces/firestarter status --porcelain -> empty
+git -C /workspaces/firestarter_app status --porcelain firestarter/ -> empty
+git -C /workspaces/firestarter_app status --porcelain -> empty

@@ -1,0 +1,12 @@
+destructive_sentence_present=0
+affirmative_exclusion=1
+names_both_exclusions=5
+states_the_seam=1
+r2_cross_cycle=2
+r2_synthesized=1
+dated_block=1
+frontmatter_fields=4
+status_still_dormant=0
+r3_intact=1
+r4_intact=1
+projection_table_intact=1

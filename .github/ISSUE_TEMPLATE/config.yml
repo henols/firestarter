@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
   - name: Firestarter wiki
-    url: https://github.com/henols/firestarter_prom/wiki
+    url: https://github.com/henols/firestarter/wiki
     about: Installation, chip testing, protocols and pin maps.

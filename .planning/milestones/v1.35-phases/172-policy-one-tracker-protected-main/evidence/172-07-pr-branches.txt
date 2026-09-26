@@ -1,0 +1,31 @@
+== prom branch=policy/contributor-policy base=ad08a067 ahead=1
+.github/CONTRIBUTING.md
+.github/ISSUE_TEMPLATE/bug-report.yml
+.github/ISSUE_TEMPLATE/config.yml
+.github/ISSUE_TEMPLATE/dev-test-report.md
+.github/ISSUE_TEMPLATE/feature-request.yml
+.github/workflows/wiki-check.yml
+== fw branch=policy/contributor-policy base=b3b6cce ahead=1
+.github/CONTRIBUTING.md
+== app branch=policy/contributor-policy base=584bcdb ahead=1
+.github/CONTRIBUTING.md
+
+== second automated verify — file counts and clean-checkout check ==
+prom ISSUE_TEMPLATE path count: 4 (expected 4) -- PASS
+prom includes .github/workflows/wiki-check.yml -- PASS
+prom includes .github/CONTRIBUTING.md -- PASS
+fw diff path count: 1 (expected 1) -- PASS
+app diff path count: 1 (expected 1) -- PASS
+/workspaces status --porcelain .github/: empty -- PASS
+firestarter status --porcelain: empty -- PASS
+firestarter_app status --porcelain: " M tools/build_db.py" -- NOT EMPTY
+
+Note: firestarter_app/tools/build_db.py was already modified in the working tree
+before this plan's Task 1 ran (confirmed via git status at session start, prior to
+any fetch/worktree/checkout operation performed here). It is explicitly out of
+scope for this plan (orchestrator's working_tree_note: "UNRELATED pre-existing
+modifications that are NOT yours and must NOT be committed") and was never staged,
+committed, or otherwise touched by this task. The worktree operations added zero
+net change to it. The invariant this check exists to prove -- that the worktree
+operations did not disturb the working checkout -- holds; the one non-empty line
+above is a pre-existing, out-of-scope file, not evidence of disturbance.

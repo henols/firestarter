@@ -1,0 +1,207 @@
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Reading EPROM FM1608, saving to /tmp/chip_test_read_90q4bufs/run_00.bin
+EPROM read complete.
+Read complete (0.98s). Data saved to /tmp/chip_test_read_90q4bufs/run_00.bin
+Connecting...Connecting... OK      
+Reading EPROM FM1608, saving to /tmp/chip_test_read_90q4bufs/run_01.bin
+EPROM read complete.
+Read complete (0.98s). Data saved to /tmp/chip_test_read_90q4bufs/run_01.bin
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Writing /tmp/chip_test_pattern_ul_ond6c.bin to FM1608
+Write to FM1608 successful (0.75s).
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Verifying /tmp/chip_test_pattern_wyzz1xtz.bin against FM1608
+Verify for FM1608 successful (0.76s).
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Writing /tmp/chip_test_pattern_g95x78wa.bin to FM1608
+Write to FM1608 successful (0.75s).
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Connecting...Connecting... OK      
+Reading EPROM FM1608, saving to /tmp/chip_test_region_d01vu3cm/region.bin
+EPROM read complete.
+Read complete (0.98s). Data saved to /tmp/chip_test_region_d01vu3cm/region.bin
+Connecting...Connecting... OK      
+Verifying /tmp/chip_test_pattern_5kgzc4nt.bin against FM1608
+Verify for FM1608 successful (0.76s).
+Connecting...Connecting... OK      
+Reading EPROM FM1608, saving to /tmp/chip_test_region_wt830wkr/region.bin
+EPROM read complete.
+Read complete (0.98s). Data saved to /tmp/chip_test_region_wt830wkr/region.bin
+                        dev test -- FM1608                        
+┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Field              ┃ Value                                     ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ host_version       │ 3.0.0b32                                  │
+│ fw_board_identity  │ 3.0.0b22:leonardo                         │
+│ hw_revision        │ Rev 2.0-class, Override HW: Rev 2.0-class │
+│ protocol           │ 0x28                                      │
+│ chip_id            │ None                                      │
+│ step: read         │ OK  x2  8.37s                             │
+│ step: write        │ OK  x2  50.5s                             │
+│ step: verify       │ OK  x2  12.2s                             │
+│ banner             │ 3 of 3 ran                                │
+│ steps total        │ 71.0s                                     │
+│ sdp_hold_state     │ NOT-RUN                                   │
+│ vpp (before/after) │ 12400 / 12400 mV                          │
+│ vpe (before/after) │ 14300 / 14300 mV                          │
+└────────────────────┴───────────────────────────────────────────┘
+Report written to 
+/workspaces/.planning/v1.34/config/reports/dev-test-FM1608.json
+https://github.com/henols/firestarter_prom/issues/new?title=%5Bdev%20test%5D%20F
+M1608%20%E2%80%94%20PASS%20%28cbbba44c0c67%29&body=%7C%20Step%20%7C%20Verdict%20
+%7C%20Runs%20%7C%20Took%20%7C%20Reason%20%7C%0A%7C%20----%20%7C%20-------%20%7C%
+20----%20%7C%20----%20%7C%20------%20%7C%0A%7C%20id%20%7C%20NA%20%7C%20-%20%7C%2
+0-%20%7C%20-%20%7C%0A%7C%20read%20%7C%20OK%20%7C%202%20%7C%208.37s%20%7C%20-%20%
+7C%0A%7C%20blank-check%20%7C%20NA%20%7C%20-%20%7C%20-%20%7C%20-%20%7C%0A%7C%20wr
+ite%20%7C%20OK%20%7C%202%20%7C%2050.5s%20%7C%20-%20%7C%0A%7C%20verify%20%7C%20OK
+%20%7C%202%20%7C%2012.2s%20%7C%20-%20%7C%0A%7C%20erase%20%7C%20NA%20%7C%20-%20%7
+C%20-%20%7C%20-%20%7C%0A%7C%20write-baseline-b%20%7C%20NA%20%7C%20-%20%7C%20-%20
+%7C%20-%20%7C%0A%7C%20write-baseline-a%20%7C%20NA%20%7C%20-%20%7C%20-%20%7C%20-%
+20%7C%0A%7C%20sdp-lock%20%7C%20NA%20%7C%20-%20%7C%20-%20%7C%20-%20%7C%0A%7C%20wr
+ite-inhibited%20%7C%20NA%20%7C%20-%20%7C%20-%20%7C%20-%20%7C%0A%7C%20sdp-unlock%
+20%7C%20NA%20%7C%20-%20%7C%20-%20%7C%20-%20%7C%0A%7C%20write-restored%20%7C%20NA
+%20%7C%20-%20%7C%20-%20%7C%20-%20%7C%0A%0A%60%60%60json%0A%7B%0A%20%20%22schema_
+version%22%3A%20%221.7%22%2C%0A%20%20%22generated%22%3A%20%222026-08-28T23%3A45%
+3A59Z%22%2C%0A%20%20%22auto_capture%22%3A%20%7B%0A%20%20%20%20%22host_version%22
+%3A%20%223.0.0b32%22%2C%0A%20%20%20%20%22fw_board_identity%22%3A%20%223.0.0b22%3
+Aleonardo%22%2C%0A%20%20%20%20%22hw_revision%22%3A%20%22Rev%202.0-class%2C%20Ove
+rride%20HW%3A%20Rev%202.0-class%22%2C%0A%20%20%20%20%22chip%22%3A%20%22FM1608%22
+%2C%0A%20%20%20%20%22protocol%22%3A%20%2240%22%2C%0A%20%20%20%20%22chip_id_expec
+ted%22%3A%20null%2C%0A%20%20%20%20%22chip_id_actual%22%3A%20null%2C%0A%20%20%20%
+20%22chip_id_mismatch_reason%22%3A%20null%0A%20%20%7D%2C%0A%20%20%22transport_he
+alth%22%3A%20%7B%0A%20%20%20%20%22cobs_errors%22%3A%20%22not%20measured%22%2C%0A
+%20%20%20%20%22crc_failures%22%3A%20%22not%20measured%22%2C%0A%20%20%20%20%22ret
+ries%22%3A%20%22not%20measured%22%2C%0A%20%20%20%20%22timeouts%22%3A%20%22not%20
+measured%22%2C%0A%20%20%20%20%22transport_suspect%22%3A%20false%0A%20%20%7D%2C%0
+A%20%20%22steps%22%3A%20%5B%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20
+%22id%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20%20%20%20%20
+%20%22run_count%22%3A%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%22%2C%0A%
+20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22fingerprin
+t%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%20null%2C%0A%20%20%20%
+20%20%20%22write_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_regio
+n_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A%20null%
+2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%20%20%20%
+20%22write_current_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_coverage%
+22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22
+%3A%20%22read%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22OK%22%2C%0A%20%20%
+20%20%20%20%22run_count%22%3A%202%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%2
+2%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22fi
+ngerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%208.367%2C%0A%
+20%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22wr
+ite_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3
+A%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%
+20%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_
+coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%2
+0%22op%22%3A%20%22blank-check%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22NA
+%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%200%2C%0A%20%20%20%20%20%20%22reas
+on%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%
+20%20%20%20%22fingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3
+A%20null%2C%0A%20%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A%20%20%2
+0%20%20%20%22write_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bi
+ts_cleared%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A%20nu
+ll%2C%0A%20%20%20%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%20%20%20
+%20%20%22write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%2
+0%20%20%20%20%20%22op%22%3A%20%22write%22%2C%0A%20%20%20%20%20%20%22verdict%22%3
+A%20%22OK%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%202%2C%0A%20%20%20%20%20%
+20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%
+0A%20%20%20%20%20%20%22fingerprint%22%3A%20%22indeterminate%22%2C%0A%20%20%20%20
+%20%20%22duration_s%22%3A%2050.504%2C%0A%20%20%20%20%20%20%22write_region_start%
+22%3A%200%2C%0A%20%20%20%20%20%20%22write_region_length%22%3A%208192%2C%0A%20%20
+%20%20%20%20%22write_bits_cleared%22%3A%200%2C%0A%20%20%20%20%20%20%22write_bits
+_retained%22%3A%200%2C%0A%20%20%20%20%20%20%22write_current_source%22%3A%20%22ad
+dress-derived%20pattern%2C%20bit-inverted%20%28cycle%20complement%29%22%2C%0A%20
+%20%20%20%20%20%22write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%2
+0%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22verify%22%2C%0A%20%20%20%20%20%20%22ve
+rdict%22%3A%20%22OK%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%202%2C%0A%20%20
+%20%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%
+20null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A%20%22indeterminate%22%2C%0A%2
+0%20%20%20%20%20%22duration_s%22%3A%2012.172%2C%0A%20%20%20%20%20%20%22write_reg
+ion_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_length%22%3A%20nul
+l%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20
+%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_current_s
+ource%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%20null%0A%20%2
+0%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22erase%22%2C
+%0A%20%20%20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20%20%20%20%20%20%22run_c
+ount%22%3A%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20
+%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A%20n
+ull%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%20null%2C%0A%20%20%20%20%20%20%22
+write_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_length%22
+%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A%20null%2C%0A%20%20
+%20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_
+current_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%20nul
+l%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22wr
+ite-baseline-b%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20%20
+%20%20%20%20%22run_count%22%3A%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%
+22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22f
+ingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%20null%2C%0A%
+20%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22wr
+ite_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3
+A%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%
+20%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_
+coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%2
+0%22op%22%3A%20%22write-baseline-a%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20
+%22NA%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%200%2C%0A%20%20%20%20%20%20%2
+2reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%2
+0%20%20%20%20%20%22fingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s
+%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A%20
+%20%20%20%20%20%22write_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22wri
+te_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A
+%20null%2C%0A%20%20%20%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%20%
+20%20%20%20%22write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B
+%0A%20%20%20%20%20%20%22op%22%3A%20%22sdp-lock%22%2C%0A%20%20%20%20%20%20%22verd
+ict%22%3A%20%22NA%22%2C%0A%20%20%20%20%20%20%22run_count%22%3A%200%2C%0A%20%20%2
+0%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20
+null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%
+22duration_s%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_start%22%3A%20n
+ull%2C%0A%20%20%20%20%20%20%22write_region_length%22%3A%20null%2C%0A%20%20%20%20
+%20%20%22write_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_re
+tained%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_current_source%22%3A%20null%
+2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%20null%0A%20%20%20%20%7D%2C%0A%20
+%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22write-inhibited%22%2C%0A%20%20
+%20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20%20%20%20%20%20%22run_count%22%3
+A%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%20%20%20%20%22
+error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3A%20null%2C%0A
+%20%20%20%20%20%20%22duration_s%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_reg
+ion_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_length%22%3A%20nul
+l%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A%20null%2C%0A%20%20%20%20%20
+%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_current_s
+ource%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%20null%0A%20%2
+0%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20%22sdp-unlock%
+22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20%20%20%20%20%20%22
+run_count%22%3A%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%22%22%2C%0A%20%20%
+20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%22fingerprint%22%3
+A%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%20null%2C%0A%20%20%20%20%20%
+20%22write_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_region_leng
+th%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%22%3A%20null%2C%0A%
+20%20%20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%20%20%20%20%20%22w
+rite_current_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_coverage%22%3A%
+20null%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22op%22%3A%20
+%22write-restored%22%2C%0A%20%20%20%20%20%20%22verdict%22%3A%20%22NA%22%2C%0A%20
+%20%20%20%20%20%22run_count%22%3A%200%2C%0A%20%20%20%20%20%20%22reason%22%3A%20%
+22%22%2C%0A%20%20%20%20%20%20%22error_code%22%3A%20null%2C%0A%20%20%20%20%20%20%
+22fingerprint%22%3A%20null%2C%0A%20%20%20%20%20%20%22duration_s%22%3A%20null%2C%
+0A%20%20%20%20%20%20%22write_region_start%22%3A%20null%2C%0A%20%20%20%20%20%20%2
+2write_region_length%22%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_cleared%2
+2%3A%20null%2C%0A%20%20%20%20%20%20%22write_bits_retained%22%3A%20null%2C%0A%20%
+20%20%20%20%20%22write_current_source%22%3A%20null%2C%0A%20%20%20%20%20%20%22wri
+te_coverage%22%3A%20null%0A%20%20%20%20%7D%0A%20%20%5D%2C%0A%20%20%22banner%22%3
+A%20%7B%0A%20%20%20%20%22n_ran%22%3A%203%2C%0A%20%20%20%20%22m_applicable%22%3A%
+203%2C%0A%20%20%20%20%22locked_steps%22%3A%20%5B%5D%0A%20%20%7D%2C%0A%20%20%22vo
+ltage%22%3A%20%7B%0A%20%20%20%20%22vpp_before_mv%22%3A%2012400%2C%0A%20%20%20%20
+%22vpp_after_mv%22%3A%2012400%2C%0A%20%20%20%20%22vpe_before_mv%22%3A%2014300%2C
+%0A%20%20%20%20%22vpe_after_mv%22%3A%2014300%2C%0A%20%20%20%20%22vpp_mv%22%3A%20
+%22not%20measured%22%2C%0A%20%20%20%20%22vpe_mv%22%3A%20%22not%20measured%22%0A%
+20%20%7D%2C%0A%20%20%22is_submittable%22%3A%20true%2C%0A%20%20%22dedup_fingerpri
+nt%22%3A%20%22cbbba44c0c67%22%2C%0A%20%20%22db_diff%22%3A%20%7B%0A%20%20%20%20%2
+2current_support_status%22%3A%20%22supported%22%2C%0A%20%20%20%20%22proposed_dis
+position%22%3A%20%22inconclusive%20--%20needs%20N%3E%3D2%20agreement%20%28adviso
+ry%29%22%2C%0A%20%20%20%20%22ladder_state%22%3A%20%22%22%0A%20%20%7D%2C%0A%20%20
+%22sdp_hold_state%22%3A%20%22NOT-RUN%22%0A%7D%0A%60%60%60

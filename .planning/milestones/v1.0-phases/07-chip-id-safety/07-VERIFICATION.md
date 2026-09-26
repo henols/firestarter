@@ -67,7 +67,7 @@ follow_ups:
 | `json_parser.c::parse_json` | `handle->chip_id` | `extract_int("chip_id", handle->chip_id)` | Yes — integer wire value lands on the firmware handle | FLOWING |
 | Intel-flash `:87` | chip_id branch dispatched | Branch on `handle->chip_id > 0` | Yes — 39 algo=0x10 chips reach the check when ID is populated | FLOWING |
 | UV-EPROM `eprom_generic_init` | chip_id branch dispatched | Standard `firestarter_operation_main` CMD_CHECK_CHIP_ID | Yes — flash3-style autoselect re-used | FLOWING |
-| 28C `eeprom_28c.cpp:82-83` | chip_id branch dispatched | Branch on `handle->chip_id > 0`; A9-12V identification | Yes — forward-compat ready; vacuous today (no 0x0D entry in DB has `chip_id_value` populated; AT28C256 doesn't reach 0x0D — WARNING-5 caveat) | FLOWING |
+| 28C `eeprom_28c.cpp:78-79` | chip_id branch dispatched | Branch on `handle->chip_id > 0`; A9-12V identification | Yes — forward-compat ready; vacuous today (no 0x0D entry in DB has `chip_id_value` populated; AT28C256 doesn't reach 0x0D — WARNING-5 caveat) | FLOWING |
 
 ---
 
@@ -80,7 +80,7 @@ follow_ups:
 | 28C chip-ID check (SAF-05 matching / mismatching / zero-skip / FORCE) | `pio test -e native` (test_eeprom28c_chip_id) | 4/4 PASS | `01-VERIFICATION.md` Truth #4 |
 | Full Phase 1 native suite (no regression after SAF-05 helper added) | `pio test -e native` | 25/25 PASS | `01-VERIFICATION.md` Behavioral Spot-Check |
 | Intel-flash chip-id check linked into both AVR builds | `pio run -e uno` / `-e leonardo` | both SUCCESS | `12-VERIFICATION.md` Truth #7 |
-| CR-02 regression: `mem_size < 64` underflow guard intact in `eeprom28c_check_chip_id` | `eeprom_28c.cpp:60-64` (inside helper at `:55-77`) | Guard present; `01-VERIFICATION.md` Behavioral Spot-Checks records this as PASS | `01-VERIFICATION.md` Post-Review Fixes |
+| CR-02 regression: `mem_size < 64` underflow guard intact in `eeprom28c_check_chip_id` | `eeprom_28c.cpp:56-60` (inside helper at `:55-77`) | Guard present; `01-VERIFICATION.md` Behavioral Spot-Checks records this as PASS | `01-VERIFICATION.md` Post-Review Fixes |
 
 ---
 

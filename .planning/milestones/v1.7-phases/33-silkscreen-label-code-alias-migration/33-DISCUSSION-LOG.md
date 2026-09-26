@@ -28,7 +28,7 @@
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| Reuse existing HARDWARE_REVISION ifdef + REV_1_*/REV_2_* pattern | rurp_shield.h:70-94 + rurp_hw_rev_utils.h:13-35 already proven for Rev 0/1/2.0/2.1/2.2 | ✓ |
+| Reuse existing HARDWARE_REVISION ifdef + REV_1_*/REV_2_* pattern | rurp_shield.h:70-89 + rurp_hw_rev_utils.h:13-35 already proven for Rev 0/1/2.0/2.1/2.2 | ✓ |
 | New compile-time RURP_SHIELD_REV env switch | Would add platformio envs per rev | |
 | Runtime-only via Phase 34 ADC detect | No compile-time divergence; all branching at runtime | |
 | Hybrid (compile-time floor + runtime override) | | |

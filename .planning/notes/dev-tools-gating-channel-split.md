@@ -11,8 +11,8 @@ Design decisions from a `/gsd-explore` session on Backlog **999.15** / [gh#8](ht
 and **resolved the recorded v1.21 conflict**. Read this before scoping 999.15 — the stub's
 original design is partly superseded.
 
-Anchor code: `dev` group at `firestarter_app/firestarter/cli_handlers.py:962`; `DEV_TOOLS`
-guards at `firestarter/include/firestarter.h:42` and `firestarter/src/firestarter.cpp:78,90,235`;
+Anchor code: `dev` group at `firestarter_app/firestarter/cli_handlers.py:960`; `DEV_TOOLS`
+guards at `firestarter/include/firestarter.h:42` and `firestarter/src/firestarter.cpp:75,90,230`;
 shared `[env] build_flags` at `firestarter/platformio.ini:20-28`.
 
 ## The load-bearing finding: only 2 of 8 dev subcommands are firmware-gateable
@@ -53,7 +53,7 @@ Consequence: the "install dev firmware to unlock the dev tools" framing only eve
 **1. The firmware channel flag already exists and is bench-validated.**
 `firestarter fw --pre` is shipped, with help text literally *"Fetch latest pre-release
 firmware (mirrors pip install --pre)"* (`cli_handlers.py:797`), plus `--stable` as its
-counterpart (`cli_handlers.py:810`). The prerelease-asset route was bench-validated in
+counterpart (`cli_handlers.py:808`). The prerelease-asset route was bench-validated in
 v1.21 Phase 115. So:
 
 - **No new `fw --dev` flag is needed.**
@@ -82,10 +82,10 @@ inheritance from `[env] build_flags` is pure leak, not a dependency.
 **5. The build marker comes for free.** Dev tools now only ever exist in `bN`/`rcN`-versioned
 builds, so `3.0.0b11` *means* "has dev tools" and `3.0.1` *means* "doesn't". That distinction
 already flows into `fw_board_identity` (`version:board`) in every `dev test` report
-(`diagnostic_report.py:336`), which is what community submissions file into the tracker. **No
+(`diagnostic_report.py:330`), which is what community submissions file into the tracker. **No
 `+dev` version suffix and no handshake capability bit are required.** (Worth knowing what was
 *not* needed: `fw_get_version` returns a bare `OK: FW: 3.0.0b11`
-(`firestarter/src/hardware_operations.cpp:98-99`) and `MSG_OK_READY` carries only
+(`firestarter/src/hardware_operations.cpp:97-98`) and `MSG_OK_READY` carries only
 `DATA_BUFFER_SIZE` — there is **no dev-capability bit in the handshake today**, and this design
 means none has to be added. Adding one would be a wire change colliding with v1.23.)
 
@@ -139,7 +139,7 @@ assumed** — see the paired todo `prove-pio-dev-flag-fails-closed.md`.
 ## Smaller items
 
 - **The `dev` group docstring becomes misleading.** It reads *"Debug command for development
-  purposes. USR button will break command and return."* (`cli_handlers.py:965`). If `dev read`
+  purposes. USR button will break command and return."* (`cli_handlers.py:963`). If `dev read`
   + `dev test` are the supported stable surface, that text actively warns off the users they
   are being kept for. Either reword it per-channel or revisit the namespace.
 - **The namespace question stays open but deferred.** The operator chose to keep both survivors

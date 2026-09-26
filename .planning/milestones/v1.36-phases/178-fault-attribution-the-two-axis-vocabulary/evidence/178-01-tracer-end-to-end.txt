@@ -1,0 +1,45 @@
+== 1 the faulted path across every layer
+const_complete=COMPLETE
+const_error=ERROR
+const_skip=SKIP
+schema=1.8
+id_verdict=SKIPPED
+id_status=ERROR
+id_reason_nonempty=True
+gate_closes=True
+sdp_lock_calls=0
+fold=ERROR
+top_key_run_status=True
+exported_run_status=ERROR
+step_key_status=True
+exported_schema=1.8
+title_has_harness=True
+title_is_fail=False
+exit_error_only=2
+exit_bad_and_error=1
+ladder_state_empty=True
+ladder_inconclusive=True
+still_submittable=True
+hash_unmoved_across_status=True
+rc=0
+== 2 no frozen hash moved and no parts.append was written
+stale_frozen=
+shape_count=17
+hash_reads_status=False
+parts_append_count=3
+rc=0
+== 3 the repaired and pinned modules
+........................................................................ [ 27%]
+........................................................................ [ 55%]
+........................................................................ [ 82%]
+.............................................                            [100%]
+261 passed in 49.56s
+rc=0
+== 4 snapshots regenerate clean
+OK: 17 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+== 5 the two AST gates
+PASS: scanned ../firestarter/chip_test.py, ../firestarter/cli_handlers.py, ../firestarter/submit.py; 0 VPP-set, 0 raw-wire-dict, 0 --force, 0 broad-except; firmware untouched (host-only, asserted)
+rc=0
+PASS: scanned /workspaces/firestarter_app/tools/../firestarter/diagnostic_report.py, 211 string literals checked, zero forbidden matches
+rc=0

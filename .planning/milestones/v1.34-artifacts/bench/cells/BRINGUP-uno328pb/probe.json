@@ -1,0 +1,50 @@
+{
+  "avrdude_binary": "/home/vscode/.platformio/packages/tool-avrdude/avrdude",
+  "avrdude_conf": "/home/vscode/.platformio/packages/tool-avrdude/avrdude.conf",
+  "avrdude_version": "8.1",
+  "board_signature": "0x1e9516",
+  "connected_part": "atmega328pb",
+  "device_node_enumeration_check": {
+    "enumerated_before_gate": [
+      "/dev/ttyACM0"
+    ],
+    "match": true,
+    "note": "Pre-swap enumeration (2026-08-27T06:14:55Z): ['/dev/ttyACM0'] (the wave-5 Uno, still connected at gate time). Post-swap enumeration (2026-08-27T06:19:38Z): ['/dev/ttyUSB0'] (ttyACM0 gone, ttyUSB0 appeared 06:18 per the operator-reported USB device 'Bus 003 Device 023: ID 1a86:7523 QinHeng Electronics CH340 serial converter'). The operator's reported node matches the sole enumerated node exactly.",
+    "operator_reported_node": "/dev/ttyUSB0"
+  },
+  "device_node_reenumeration_midrun_replug": {
+    "node": "/dev/ttyUSB0",
+    "note": "A second, mid-run re-enumeration of the SAME node path, /dev/ttyUSB0, observed when the operator unplugged the board to fit the shield (corrected declaration, see operator_declared_socket_state above) and replugged it -- the node's creation time moved from 06:18 to 06:34:40, corroborating the operator's own confirmed sequence ('Yes -- unplugged, fitted, replugged'). This event happened AFTER task 3 Event 3's correction flash completed (avrdude self-verified 26240 bytes at 06:34:30.52Z) and BEFORE the final judged read-back ran (06:34:43.55Z) -- see 160-09-SUMMARY.md and CROSSFLASH.md's 'Mid-run replug' section for the full timing table and the harmlessness derivation (flash is non-volatile; a post-reset read of already-written, self-verified flash content is a valid read).",
+    "occurred_at": "2026-08-27T06:34:40Z"
+  },
+  "mcu_expected": "atmega328pb",
+  "mcu_matches": true,
+  "operator_declared_board": "ATmega328PB",
+  "operator_declared_socket_state": "SUPERSEDED 2026-08-27 -- originally recorded verbatim (160-09-SUMMARY.md task 1) as 'Yes -- shield on, chip removed'. The operator has since corrected that declaration as mistaken: no shield was fitted for any of this bring-up's flash-and-judge events (06:23:xx-06:34:30Z); a shield was fitted afterward, ~06:34:40Z, via an unplug/fit/replug sequence, corroborated by /dev/ttyUSB0's device-node creation time moving from 06:18 to 06:34:40. A chip is seated only as of the current, post-run state. See bench/EVIDENCE.jsonl row 3's 'shield' field and 160-09-SUMMARY.md's Deviation/Finding for the full correction record. Task 1's own text ('A shield is not required -- the flash and read-back need the board only') means this correction does not affect any measurement in this cell.",
+  "operator_probe_agreement": true,
+  "operator_probe_agreement_note": "Operator declared 'ATmega328PB'; the avrdude signature probe independently identified connected_part=atmega328pb via board_signature=0x1e9516 (the known-good value for this exact board, probe_board.py's _SIGNATURE_TO_MCU table -- corrected once before in this project's record after a v1.7 bench note mislabeled this board's silicon as a plain Uno). The two agree; the plan's stop-and-report clause was not triggered. A second, independent corroborating signal: the arduino programmer fails to open against this board ('unable to open port /dev/ttyUSB0 for programmer arduino'), consistent with it not being a plain ATmega328P.",
+  "raw_stderr_path": ".planning/v1.34/bench/cells/BRINGUP-uno328pb/probe.json.stderr.log",
+  "signature_route": "route1",
+  "urclock_probes": {
+    "-xshowall": {
+      "returncode": 0,
+      "stderr": "\nAvrdude done.  Thank you.\n",
+      "stdout": "ffffffffffff 2026-08-21 20.05 firestarter_uno328pb.hex 25598 store 6750 meta 36 boot 384 u7.7 weu-jPrac vector 25 (SPM_Ready) ATmega328PB\n"
+    },
+    "-xshowboot": {
+      "returncode": 0,
+      "stderr": "\nAvrdude done.  Thank you.\n",
+      "stdout": "384\n"
+    },
+    "-xshowvector": {
+      "returncode": 0,
+      "stderr": "\nAvrdude done.  Thank you.\n",
+      "stdout": "vector 25 (SPM_Ready)\n"
+    },
+    "-xshowversion": {
+      "returncode": 0,
+      "stderr": "\nAvrdude done.  Thank you.\n",
+      "stdout": "u7.7 weu-jPrac\n"
+    }
+  }
+}

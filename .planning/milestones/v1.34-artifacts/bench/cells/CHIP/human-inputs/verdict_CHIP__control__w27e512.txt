@@ -1,0 +1,15 @@
+CONTROL ARM RE-RUN, arbitrating CHIP__v133__w27e512's divergence. Field-by-field comparison against the v133 run on the SAME seating (chip unmoved, pot unmoved):
+
+Step        | v133 verdict/reason/fingerprint                | control verdict/reason/fingerprint
+id          | OK / "" / null                                  | OK / "" / null
+read        | OK / "read runs diverged" / null                | OK / "" / null
+write       | OK / "" / "indeterminate"                        | OK / "" / "indeterminate"
+verify      | OK / "" / "indeterminate"                        | OK / "" / "indeterminate"
+erase       | OK / "" / null                                   | OK / "" / null
+blank-check | OK / "" / null                                   | OK / "" / null
+
+All six steps OK on BOTH arms -- id x1 (3.54s), read x2 (21.3s), write x2 (122.1s), verify x2 (28.5s), erase x2 (16.7s), blank-check x2 (16.1s); banner 6 of 6 ran, steps total 208.2s, wall-clock 213s. VPP before/after 12400/12400 mV. fw_board_identity 3.0.0b22:leonardo, non-null (same string as the v133 run -- this firmware pair does not differ in its reported version tag).
+
+RESULT: the control arm (pre-v1.33 firmware) does NOT produce a hard FAIL. It reproduces the SAME OK-with-indeterminate-write/verify-fingerprint shape v133 produced. The ONE difference: v133's read step carried reason "read runs diverged"; the control run's read step carried no such reason ("" -- clean). Given PD-7's own standing read-instability question (this project's own read repeatability has been an open issue across multiple parts/boards, not something either arm-specific), this single-run difference on the read step is not treated as arm-attributable on this evidence alone.
+
+CONCLUSION: this is NOT a v1.33 regression in failure detection. Both arms report the same core signal (OK + indeterminate write/verify fingerprints) on this exact silicon, at this exact pot setting. The v1.15 Phase 82 disposition (deterministic stuck erase bit at 0x3d) does not reproduce as a hard failure on EITHER arm here -- the behavior observed is not v1.33-attributable, and the original v1.15 disposition needs revisiting by Phase 165/166, not the current firmware. Filed as such, not bent toward the more dramatic "v1.33 broke detection" reading -- the control arm rules that out.

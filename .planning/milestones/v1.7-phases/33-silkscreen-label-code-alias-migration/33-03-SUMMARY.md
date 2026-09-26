@@ -14,7 +14,7 @@ requires:
     provides: "firestarter/include/rurp_pinout.h — canonical CTRL_*/PIN_* alias substrate consumed by all Wave 2 + 3 call-sites"
   - phase: 33-silkscreen-label-code-alias-migration
     plan: 02
-    provides: "src/proms/*.cpp + src/hardware_operations.cpp migrated to CTRL_*; rurp_shield.h:25-94 unchanged (D-06 backward-compat substrate awaiting atomic delete)"
+    provides: "src/proms/*.cpp + src/hardware_operations.cpp migrated to CTRL_*; rurp_shield.h:25-89 unchanged (D-06 backward-compat substrate awaiting atomic delete)"
 provides:
   - "firestarter/include/rurp_hw_rev_utils.h — rurp_map_ctrl_reg_for_hardware_revision() dispatcher fully renamed (LHS canonical + RHS CTRL_*_REV1/REV2 suffix family); rurp_detect_hardware_revision() pin refs migrated"
   - "firestarter/include/rurp_register_utils.h — settle-check at case CONTROL_REGISTER renamed to CTRL_VPP_P1_ENABLE"
@@ -70,7 +70,7 @@ completed: 2026-05-25
 
 # Phase 33 Plan 03: Wave 3 — Remaining Headers + Native Test + Atomic D-06 Delete Summary
 
-**Closed the firmware-side rename sweep: 6 firmware files migrated (dispatcher + settle-check + board adapter comment + ADC-read + native test + atomic rurp_shield.h:25-94 deletion), plus a latent Wave-1 bug fix in rurp_pinout.h's extern-C/Arduino.h bracketing uncovered by the D-06 atomic delete. Post-Wave-3 grep-zero + REV_*-zero + cmp byte-identical for all 3 AVR envs — GATE-1.7 ALIAS-03 met.**
+**Closed the firmware-side rename sweep: 6 firmware files migrated (dispatcher + settle-check + board adapter comment + ADC-read + native test + atomic rurp_shield.h:25-89 deletion), plus a latent Wave-1 bug fix in rurp_pinout.h's extern-C/Arduino.h bracketing uncovered by the D-06 atomic delete. Post-Wave-3 grep-zero + REV_*-zero + cmp byte-identical for all 3 AVR envs — GATE-1.7 ALIAS-03 met.**
 
 ## Performance
 
@@ -141,7 +141,7 @@ completed: 2026-05-25
 - uno328pb: `d9e51b7e54fe26af6a3286ae8a6e483b56892936c4efd15c13dad9ed22e91ee7`
 - leonardo: `9bc0ed128fb0729c6952c2a8e922516fc42a47f49426f3d6e641a6536ed6095e`
 
-Wave 3 expectation honored: `#define` expansion of CTRL_*/PIN_* names in `rurp_pinout.h` produces identical token streams as the (now-deleted) old `rurp_shield.h:25-94` names, so AVR-toolchain output is byte-identical across the atomic rename. The 0-B drift is well under the GATE-1.7 ALIAS-03 ≤ ~50 B per-board budget.
+Wave 3 expectation honored: `#define` expansion of CTRL_*/PIN_* names in `rurp_pinout.h` produces identical token streams as the (now-deleted) old `rurp_shield.h:25-89` names, so AVR-toolchain output is byte-identical across the atomic rename. The 0-B drift is well under the GATE-1.7 ALIAS-03 ≤ ~50 B per-board budget.
 
 **Baseline commit SHA cross-reference** (`.planning/v1.7/phase-33-baseline-hex/BASELINE_COMMIT.txt`):
 `bc0f5ac05b37c94eb7ddc706f65dbdc94c47899e` — cross-referenced in Task 4 fix-commit message per RESEARCH B2 traceability protocol.
@@ -153,7 +153,7 @@ Wave 3 expectation honored: `#define` expansion of CTRL_*/PIN_* names in `rurp_p
 | 1 | Rename rurp_hw_rev_utils.h dispatcher LHS+RHS (10 macro refs) + detect-fn pin refs (6 macro refs) + `#include rurp_pinout.h` | `9560c13` | `6ea9cd4` |
 | 2 | Rename rurp_register_utils.h settle-check (2 refs) + uno_rurp_shield.cpp comment refresh + rurp_common.cpp ADC read + Arduino.h include-order fix + `#include rurp_pinout.h` | `255c775` | `bc59b98` |
 | 3 | Rename test_flash_intel_vpp.cpp mock recorder + SAF-04 assertions (7 refs, incl. comments) + `#include rurp_pinout.h` | `02c8933` | `7698e18` |
-| 4 | Atomic D-06 delete of rurp_shield.h:25-94 old-#define block (70 lines removed) + `#include rurp_pinout.h` added; Rule-1 fix to rurp_pinout.h Arduino.h bracketing | `2707f8c` | `b747ac3` |
+| 4 | Atomic D-06 delete of rurp_shield.h:25-89 old-#define block (70 lines removed) + `#include rurp_pinout.h` added; Rule-1 fix to rurp_pinout.h Arduino.h bracketing | `2707f8c` | `b747ac3` |
 | Plan-metadata | SUMMARY.md + STATE.md + ROADMAP.md updates | n/a | (this commit) |
 
 ## Files Created/Modified
@@ -182,7 +182,7 @@ Wave 3 expectation honored: `#define` expansion of CTRL_*/PIN_* names in `rurp_p
 
 ## Decisions Made
 
-- **D-06 atomic enforcement: rurp_shield.h:25-94 deleted in ONE commit, not split.** The entire 70-line block came out via a single Edit-tool replacement; post-commit grep-zero + cmp-byte-identical + native-test-green gates all passed together. The "rollback path" documented in the plan (Pitfall 1 preservation check via Unity native test) was implicitly verified by the test_dispatch + test_messages 20/20 PASS after the delete — confirming that `rurp_pinout.h`'s legacy `#ifndef HARDWARE_REVISION` branch correctly preserves the `CTRL_ADDRESS_LINE_16 == CTRL_VPP_VPE_DROP_ENABLE` macro-alias-as-macro semantics.
+- **D-06 atomic enforcement: rurp_shield.h:25-89 deleted in ONE commit, not split.** The entire 70-line block came out via a single Edit-tool replacement; post-commit grep-zero + cmp-byte-identical + native-test-green gates all passed together. The "rollback path" documented in the plan (Pitfall 1 preservation check via Unity native test) was implicitly verified by the test_dispatch + test_messages 20/20 PASS after the delete — confirming that `rurp_pinout.h`'s legacy `#ifndef HARDWARE_REVISION` branch correctly preserves the `CTRL_ADDRESS_LINE_16 == CTRL_VPP_VPE_DROP_ENABLE` macro-alias-as-macro semantics.
 
 - **Rule 1 fix applied to rurp_pinout.h — Arduino.h removed from inside extern-C wrapper.** The header's A2/A3 pin macros are simple integer literals that resolve via consumers' own `<Arduino.h>` includes. The latent bug from Wave 1 was masked through Waves 1+2 because every .cpp file that consumed CTRL_* names also pre-included `<Arduino.h>` BEFORE rurp_pinout.h (the per-file include pattern from Wave 2). The bug surfaced ONLY when rurp_shield.h itself started including rurp_pinout.h in Task 4 — at which point every TU that pulls rurp_shield.h (which is most of the codebase) hit the conflicting C++ String operator+ declarations inside extern-C. Fixing the header was cleaner than ordering Arduino.h inclusions across ~20 .cpp files.
 
@@ -263,7 +263,7 @@ Per the 33-03-PLAN.md output spec:
 
 ## D-06 Restructure Note
 
-No transient shim block was ever introduced. Per the D-06 restructure plan, the rurp_shield.h:25-94 #defines remained unchanged through Waves 1+2 as the backward-compat substrate — the original declarations themselves served as the resolution path for old-name references in Wave 1's untouched call-sites and Wave 2's still-being-migrated call-sites. Wave 3's final task atomically removed them in one commit, completing the D-06 hard-rename enforcement.
+No transient shim block was ever introduced. Per the D-06 restructure plan, the rurp_shield.h:25-89 #defines remained unchanged through Waves 1+2 as the backward-compat substrate — the original declarations themselves served as the resolution path for old-name references in Wave 1's untouched call-sites and Wave 2's still-being-migrated call-sites. Wave 3's final task atomically removed them in one commit, completing the D-06 hard-rename enforcement.
 
 ## Next Plan Readiness
 

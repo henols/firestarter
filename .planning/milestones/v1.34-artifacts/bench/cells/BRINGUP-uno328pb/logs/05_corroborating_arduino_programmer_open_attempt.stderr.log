@@ -1,0 +1,13 @@
+Warning: attempt 1 of 10: not in sync: resp=0xa0
+Warning: attempt 2 of 10: not in sync: resp=0xfc
+Warning: attempt 3 of 10: not in sync: resp=0xfe
+Warning: attempt 4 of 10: not in sync: resp=0xfe
+Warning: attempt 5 of 10: not in sync: resp=0xfc
+Warning: attempt 6 of 10: not in sync: resp=0xfe
+Warning: attempt 7 of 10: not in sync: resp=0xfe
+Warning: attempt 8 of 10: not in sync: resp=0xfc
+Warning: attempt 9 of 10: not in sync: resp=0xfe
+Warning: attempt 10 of 10: not in sync: resp=0xfc
+Error: unable to open port /dev/ttyUSB0 for programmer arduino
+
+Avrdude done.  Thank you.

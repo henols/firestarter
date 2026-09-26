@@ -648,7 +648,7 @@ uint32_t mem_util_remap_address_bus(const firestarter_handle_t* handle, uint32_t
 - `using_p1_as_vpp()` returns `false` because `vpp_line (11) != VPP_P1_28_DIP (15)`
 - Therefore, `VPE_ENABLE` is **NOT redirected** to `P1_VPP_ENABLE` (eprom_internal_set_control_register, line 269 condition fails)
 - The firmware asserts `VPE_ENABLE` which routes 12V to the **PGM pin**, not pin 1
-- Bus line 11 (DIP24 socket pin 21) is driven HIGH in address remapping (memory.cpp:244) during reads to keep VPP disconnected during read cycles
+- Bus line 11 (DIP24 socket pin 21) is driven HIGH in address remapping (memory.cpp:316) during reads to keep VPP disconnected during read cycles
 
 ---
 
@@ -689,7 +689,7 @@ However, if an **older hand-crafted JSON** or **unapplied manual override** rout
 **Verification:**
 - ✅ **CORRECT**
 - eeprom28c_write_init() calls optional `eeprom28c_check_chip_id()` which asserts REGULATOR + A9_VPP_ENABLE, but only if `handle->chip_id > 0`
-- eeprom28c_write_execute() calls `handle->firestarter_set_data()` → `memory_set_data()` (memory.cpp:202–212) → no VPP bits asserted
+- eeprom28c_write_execute() calls `handle->firestarter_set_data()` → `memory_set_data()` (memory.cpp:206–212) → no VPP bits asserted
 - All data writes are pure 5V
 
 ---
@@ -827,7 +827,7 @@ void eprom_internal_set_control_register(firestarter_handle_t* handle, rurp_regi
 
 1. **Per-socket-pin voltage measurement:** The current ADC measures regulator output, NOT the voltage at individual socket pins. A shorted VPP line or misfired control bit could still place 12V on the wrong pin without triggering an ADC error.
 
-2. **Address-line remapping for VPP lines:** When `vpp_line` is NOT a P1_VPP magic constant, the firmware drives it HIGH via address remapping (memory.cpp:242–245). This is correct for protecting the chip during READ cycles (VPP must be low during reads), but there is NO validation that the remapped bus line actually connects to the VPP pin.
+2. **Address-line remapping for VPP lines:** When `vpp_line` is NOT a P1_VPP magic constant, the firmware drives it HIGH via address remapping (memory.cpp:314–245). This is correct for protecting the chip during READ cycles (VPP must be low during reads), but there is NO validation that the remapped bus line actually connects to the VPP pin.
 
 3. **Chip-ID verification:** The chip-ID check is optional (only if `chip_id > 0`). Without it, the wrong chip type can be programmed with the wrong VPP voltage.
 

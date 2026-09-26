@@ -1,0 +1,29 @@
+== 1 the registry closure
+shape_count=18
+registered=True
+unreserved=True
+reserved_left=uv-slot-write-pass
+stale_frozen=
+hashes_distinct=True
+inherited_count=17
+inherited_drifted=
+new_hash=93cef8030c40
+ladder_pinned=True
+ladder_is_candidate_arm=False
+pinned_set_len=18
+pinned_set_matches=True
+anchor_matches=True
+snapshot_has_run_status=True
+snapshot_step_status_values=COMPLETE,ERROR,SKIP
+snapshot_schema=1.8
+rc=0
+== 2 snapshots
+OK: 18 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+snapshot_count=18
+== 3 the oracle and the ledger
+........................................................................ [ 45%]
+........................................................................ [ 91%]
+.............                                                            [100%]
+157 passed in 1.37s
+rc=0

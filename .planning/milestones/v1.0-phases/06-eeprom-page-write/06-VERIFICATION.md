@@ -50,8 +50,8 @@ follow_ups:
 |------|----|----|--------|---------|
 | `json_parser.c::parse_json` | `handle->protocol` | `extract_long("algorithm", handle->protocol)` (Phase 02 wire) | WIRED | `handle->protocol == 0x0D` set at deserialization time for every EEPROM_POLL chip. |
 | `memory.cpp:77` | `configure_eeprom28c` (`eeprom_28c.cpp:34`) | Algo-first dispatch branch | WIRED | Branch precedes mem_type fallback — locks REQ-FW-03 reachability for every algo=0x0D chip in the DB. |
-| `configure_eeprom28c:34` | `eeprom28c_write_init` (`eeprom_28c.cpp:79`) | `handle->firestarter_operation_init` assignment at `:40` | WIRED | Init runs (v1.1) chip-id check first (`:83`, SAF-05, gated on `chip_id > 0`), then SDP_DISABLE (`:91`), then blank-check (`:96-97`). |
-| `eeprom28c_write_init:91` | `EEPROM_SDP_DISABLE` table (`eeprom_28c.cpp:25`) | `flash_execute_command(EEPROM_SDP_DISABLE)` | WIRED | 6-write SDP unlock sequence — `pulse_delay` held at 0 (set by `configure_eeprom28c`) to respect tBLC=150µs page window. |
+| `configure_eeprom28c:34` | `eeprom28c_write_init` (`eeprom_28c.cpp:75`) | `handle->firestarter_operation_init` assignment at `:40` | WIRED | Init runs (v1.1) chip-id check first (`:83`, SAF-05, gated on `chip_id > 0`), then SDP_DISABLE (`:91`), then blank-check (`:96-97`). |
+| `eeprom28c_write_init:91` | `EEPROM_SDP_DISABLE` table (`eeprom_28c.cpp:23`) | `flash_execute_command(EEPROM_SDP_DISABLE)` | WIRED | 6-write SDP unlock sequence — `pulse_delay` held at 0 (set by `configure_eeprom28c`) to respect tBLC=150µs page window. |
 
 ---
 

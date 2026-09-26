@@ -1,0 +1,13 @@
+== 1 the one-connect structural pin (Ruling 1, D-02's structural half)
+anchor_count=1
+head_contexts=1
+planted_contexts=2
+connect_chain=True
+disconnect_in_finalbody=True
+pin_at_head=GREEN
+pin_at_planted=RED
+rc=0
+== 2 the readback inventory module, full run
+..........                                                               [100%]
+10 passed in 0.20s
+rc=0

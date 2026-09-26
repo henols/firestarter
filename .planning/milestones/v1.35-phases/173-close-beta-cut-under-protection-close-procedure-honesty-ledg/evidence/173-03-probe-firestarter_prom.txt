@@ -1,0 +1,51 @@
+=== Ruleset rejection probe: henols/firestarter_prom ===
+phase: 173-03
+started: 2026-09-02T14:23:16Z
+
+--- clone ---
+clone exit code: 0
+
+--- fetch origin main ---
+From https://github.com/henols/firestarter_prom
+ * branch              main       -> FETCH_HEAD
+
+--- checkout -B ruleset-probe origin/main ---
+Switched to a new branch 'ruleset-probe'
+branch 'ruleset-probe' set up to track 'origin/main'.
+
+--- commit --allow-empty ---
+[ruleset-probe bf2d120c] ruleset rejection probe (POLICY-04), phase 173 plan 03
+
+--- push origin HEAD:main (the attack half) ---
+remote: error: GH013: Repository rule violations found for refs/heads/main.        
+remote: Review all repository rules at https://github.com/henols/firestarter_prom/rules?ref=refs%2Fheads%2Fmain        
+remote: 
+remote: - Changes must be made through a pull request.        
+remote: 
+To https://github.com/henols/firestarter_prom.git
+ ! [remote rejected]   HEAD -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/henols/firestarter_prom.git'
+push exit code: 1
+
+verdict: PASS
+
+--- control half: push same branch to a new throwaway ref ---
+throwaway ref name: ruleset-probe-control-1788359014
+remote: 
+remote: Create a pull request for 'ruleset-probe-control-1788359014' on GitHub by visiting:        
+remote:      https://github.com/henols/firestarter_prom/pull/new/ruleset-probe-control-1788359014        
+remote: 
+To https://github.com/henols/firestarter_prom.git
+ * [new branch]        HEAD -> ruleset-probe-control-1788359014
+control push exit code: 0
+control push: accepted
+
+--- CI check: workflow runs on ruleset-probe-control-1788359014 (brief pause to let runs register) ---
+
+--- deleting throwaway ref ---
+To https://github.com/henols/firestarter_prom.git
+ - [deleted]           ruleset-probe-control-1788359014
+delete exit code: 0
+throwaway ref deleted
+
+finished: 2026-09-02T14:23:49Z

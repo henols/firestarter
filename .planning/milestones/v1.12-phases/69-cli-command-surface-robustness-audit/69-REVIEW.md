@@ -46,7 +46,7 @@ incorrect behavior, security exposure, or data-loss risk.
 
 ### WR-01: Pin-number guards check only the upper bound — `pin_num < 1` would produce a negative index write
 
-**File:** `firestarter_app/firestarter/ic_layout.py:397,402,408,413,419`
+**File:** `firestarter_app/firestarter/ic_layout.py:395,400,406,411,417`
 **Issue:** Every guarded pin assignment checks only `pin <= pin_count` before doing
 `pin_names[pin - 1] = ...`. If any pin field resolved to `0` (or a negative value), the
 guard passes and `pin_names[-1]` silently overwrites the **last** pin (VCC) instead of
@@ -70,7 +70,7 @@ Apply the same `1 <= n <= pin_count` bound to the `vpp`, `oe`, and `address-bus-
 
 ### WR-02: Empty / non-int list extraction is unguarded — `[]` or `[null]` pin field raises IndexError / TypeError
 
-**File:** `firestarter_app/firestarter/ic_layout.py:396,401,407,412`
+**File:** `firestarter_app/firestarter/ic_layout.py:394,399,405,410`
 **Issue:** The fix assumes a list-valued pin field is always a non-empty list of ints.
 `val[0]` on an empty list (`"vpp-pin": []`) raises `IndexError`, and a list of a non-int
 (`"vpp-pin": [null]` → `[None]`) makes the subsequent `None <= pin_count` raise the exact
@@ -112,7 +112,7 @@ pin the registered `dev write-cycle` / `dev fault-inject` 3-way verdict contract
 
 ### IN-01: Redundant `get_chip_type_string` call — computed and assigned twice
 
-**File:** `firestarter_app/firestarter/ic_layout.py:470-472,484-487`
+**File:** `firestarter_app/firestarter/ic_layout.py:467-469,484-487`
 **Issue:** `output_data["type_str"]` is set by a `get_chip_type_string(...)` call inside the
 dict literal (line 470-472), then immediately recomputed with identical arguments and
 reassigned at lines 484-487. The first computation is dead.

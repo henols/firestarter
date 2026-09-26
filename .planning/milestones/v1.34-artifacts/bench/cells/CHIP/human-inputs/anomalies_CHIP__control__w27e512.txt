@@ -1,0 +1,3 @@
+Same transient `ERROR: Empty input` (0xA4) line at the identical point in the sequence as both prior runs (position 1 and the v133 w27e512 run) -- reproducible across all three runs on this rig session, self-recovering, no effect on any step verdict.
+
+The read step's "read runs diverged" reason did NOT reproduce on this control run (v133's run had it; this run's read.reason is empty). Recorded as a single-run difference, not attributed to either arm -- the standing read-instability question (PD-7) predates this milestone and is not resolved by one data point either way.

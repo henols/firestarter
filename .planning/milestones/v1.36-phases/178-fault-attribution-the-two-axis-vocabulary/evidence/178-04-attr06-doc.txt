@@ -1,0 +1,11 @@
+attr06_names_regulator=1
+attr06_names_drop=1
+attr06_keeps_conclusion=1
+attr06_keeps_noclaim=1
+stale_req=0
+stale_feat=0
+fresh_req=1
+fresh_feat=3
+rig01_deferred=1
+fw_clean=yes
+app_clean=yes

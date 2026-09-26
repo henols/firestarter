@@ -41,7 +41,7 @@ case B and defeat the command. See SWEEP-01 / SAFE-02 in REQUIREMENTS.md.
 
 ## Implementation shape
 
-In `dev_test` ([cli_handlers.py:1827](../../firestarter_app/firestarter/cli_handlers.py#L1827)),
+In `dev_test` ([cli_handlers.py:1824](../../firestarter_app/firestarter/cli_handlers.py#L1827)),
 before building `AutoCapture`/reading hardware:
 
 ```python

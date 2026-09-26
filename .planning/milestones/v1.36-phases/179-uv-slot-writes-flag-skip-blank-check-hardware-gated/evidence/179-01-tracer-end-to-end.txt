@@ -1,0 +1,50 @@
+== 1 the UV slot write across every layer
+plan_is_uv=True
+bc_index=2
+bc_supported=True
+bc_uv_prewrite=True
+nonuv_bc_uv_prewrite=False
+cycle_block=(3, 6)
+bc_verdict=SKIPPED
+bc_reason_nonempty=True
+bc_error_code=176
+write_verdict=OK
+write_run_count=2
+verify_verdict=OK
+verify_run_count=2
+flags_seen=0x8,0x8
+tranche_source_prefix=True
+tranche_witness=True
+overall=PASS
+title_pass=True
+reason_cell_survives=True
+rc=0
+== 2 the witness, both disagreement directions and every empty case
+witness_none=False
+witness_ok=True
+witness_empty_current=False
+witness_unmasked=False
+disagree_A_policy_uvslot_witness_absent=0x0
+disagree_A_reads=0
+disagree_B_policy_fixed_witness_present=0x8
+disagree_B_reads=0
+rc=0
+== 3 exactly one frozen hash moved, and it is the pre-seeded one
+shape_count=18
+moved_shapes=m27c512-full-blank-check-bad
+moved_count=1
+new_hash_m27c512-full-blank-check-bad=e42f1567967a
+rc=0
+== 4 the modules that must stay green
+........................................................................ [ 22%]
+........................................................................ [ 44%]
+........................................................................ [ 67%]
+........................................................................ [ 89%]
+.................................                                        [100%]
+321 passed in 19.10s
+rc=0
+== 5 the two AST gates
+PASS: scanned ../firestarter/chip_test.py, ../firestarter/cli_handlers.py, ../firestarter/submit.py; 0 VPP-set, 0 raw-wire-dict, 0 --force, 0 broad-except; firmware untouched (host-only, asserted)
+rc=0
+PASS: scanned /workspaces/firestarter_app/tools/../firestarter/diagnostic_report.py, 216 string literals checked, zero forbidden matches
+rc=0

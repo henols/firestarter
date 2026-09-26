@@ -1,0 +1,1179 @@
+{
+  "2516": {
+    "is_uv_eprom": true,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": "no chip-id in DB entry",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "uv-tranche",
+        "op": "write-partial",
+        "reason": null,
+        "region_policy": "uv-slot",
+        "supported": true,
+        "write_region": [
+          1792,
+          256
+        ]
+      },
+      {
+        "cycle_payload": "uv-tranche",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "uv-slot",
+        "supported": true,
+        "write_region": [
+          1792,
+          256
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": "UV-EPROM has no electrical erase (UV light only)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "2516: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x0B)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "2516: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x0B)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "2516: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x0B)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "2516: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x0B)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "2516: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x0B)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "2516: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x0B)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "AM27C020": {
+    "is_uv_eprom": true,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "uv-tranche",
+        "op": "write-partial",
+        "reason": null,
+        "region_policy": "uv-slot",
+        "supported": true,
+        "write_region": [
+          261888,
+          256
+        ]
+      },
+      {
+        "cycle_payload": "uv-tranche",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "uv-slot",
+        "supported": true,
+        "write_region": [
+          261888,
+          256
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": "UV-EPROM has no electrical erase (UV light only)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "AM27C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "AM27C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "AM27C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "AM27C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "AM27C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "AM27C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "FM1608": {
+    "is_uv_eprom": false,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": "no chip-id in DB entry",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": "blank-check not applicable to FRAM (volatile/byte-rewritable, no factory-blank state)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "alternate",
+        "op": "write",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          8192
+        ]
+      },
+      {
+        "cycle_payload": "alternate",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          8192
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": "FLAG_CAN_ERASE not set for this chip",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "FM1608: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x28)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "FM1608: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x28)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "FM1608: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x28)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "FM1608: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x28)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "FM1608: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x28)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "FM1608: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x28)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "M27C512": {
+    "is_uv_eprom": true,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "uv-tranche",
+        "op": "write-partial",
+        "reason": null,
+        "region_policy": "uv-slot",
+        "supported": true,
+        "write_region": [
+          65280,
+          256
+        ]
+      },
+      {
+        "cycle_payload": "uv-tranche",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "uv-slot",
+        "supported": true,
+        "write_region": [
+          65280,
+          256
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": "UV-EPROM has no electrical erase (UV light only)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "M27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "M27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "M27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "M27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "M27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "M27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "SST27SF512": {
+    "is_uv_eprom": false,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          65536
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          65536
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "SST27SF512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "SST27SF512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "SST27SF512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "SST27SF512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "SST27SF512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "SST27SF512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "SST39SF040": {
+    "is_uv_eprom": false,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          524288
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          524288
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "SST39SF040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x06)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "SST39SF040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x06)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "SST39SF040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x06)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "SST39SF040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x06)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "SST39SF040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x06)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "SST39SF040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x06)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "W27C512": {
+    "is_uv_eprom": false,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          65536
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          65536
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "W27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "W27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "W27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "W27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "W27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "W27C512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "W27E040": {
+    "is_uv_eprom": false,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          524288
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          524288
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "W27E040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "W27E040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "W27E040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "W27E040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "W27E040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "W27E040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x08)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "W27E512": {
+    "is_uv_eprom": false,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          65536
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          0,
+          65536
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "W27E512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "W27E512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "W27E512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "W27E512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "W27E512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "W27E512: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x07)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "W29C020": {
+    "is_uv_eprom": false,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": "protocol 0x05 (flash4) auto-erases per page during write; no step in this plan can ever leave the device blank",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write",
+        "reason": "full-device write excludes the first and last 16384 bytes (flash4/protocol 0x05 boot blocks, W29C040 datasheet section 6.6 -- permanently locked, no unlock command exists)",
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          16384,
+          229376
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          16384,
+          229376
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": "flash4 (0x05) auto-erases per page; no separate erase op",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "W29C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "W29C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "W29C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "W29C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "W29C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "W29C020: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  },
+  "W29C040": {
+    "is_uv_eprom": false,
+    "steps": [
+      {
+        "cycle_payload": "same",
+        "op": "id",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "read",
+        "reason": null,
+        "region_policy": "fixed",
+        "supported": true,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "blank-check",
+        "reason": "protocol 0x05 (flash4) auto-erases per page during write; no step in this plan can ever leave the device blank",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write",
+        "reason": "full-device write excludes the first and last 16384 bytes (flash4/protocol 0x05 boot blocks, W29C040 datasheet section 6.6 -- permanently locked, no unlock command exists)",
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          16384,
+          491520
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "verify",
+        "reason": null,
+        "region_policy": "full-device",
+        "supported": true,
+        "write_region": [
+          16384,
+          491520
+        ]
+      },
+      {
+        "cycle_payload": "same",
+        "op": "erase",
+        "reason": "flash4 (0x05) auto-erases per page; no separate erase op",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-b",
+        "reason": "W29C040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-baseline-a",
+        "reason": "W29C040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-lock",
+        "reason": "W29C040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-inhibited",
+        "reason": "W29C040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "sdp-unlock",
+        "reason": "W29C040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      },
+      {
+        "cycle_payload": "same",
+        "op": "write-restored",
+        "reason": "W29C040: SDP lock/unlock applies only to protocol 0x0D parallel EEPROMs (observed protocol 0x05)",
+        "region_policy": "fixed",
+        "supported": false,
+        "write_region": null
+      }
+    ]
+  }
+}

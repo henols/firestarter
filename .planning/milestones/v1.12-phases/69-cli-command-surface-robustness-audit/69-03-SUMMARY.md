@@ -63,8 +63,8 @@ Verification at Plan 03 start: `pytest tests/test_characterization.py::test_info
 Updated `pyproject.toml` watermark comment from 26 → 29.
 
 **Why 29:** After Plans 01+02, the honest mypy floor is 29 errors:
-- `firestarter/ic_layout.py:444` — `"Sequence[str]" has no attribute "append"` (Plan 69-01 fix: `pin_names` typed as `Sequence[str]` but appended to)
-- `firestarter/ic_layout.py:528` — `arg-type: Any | None` expected `str` (Plan 69-01 fix: `get_pin_map` call site)
+- `firestarter/ic_layout.py:442` — `"Sequence[str]" has no attribute "append"` (Plan 69-01 fix: `pin_names` typed as `Sequence[str]` but appended to)
+- `firestarter/ic_layout.py:525` — `arg-type: Any | None` expected `str` (Plan 69-01 fix: `get_pin_map` call site)
 - `tests/test_protocol_not_implemented_production_path.py:92` — `Incompatible types in assignment (_FakeSerial → Serial | None)` (Phase 65)
 - `tests/test_characterization.py:431` — `Incompatible types: None → ConfigManager` (pre-existing in strict-island test)
 - 25 other pre-existing errors in `firestarter/config.py`, `database.py`, `firmware.py`, `eprom_operations.py`, `tests/test_serial_comm.py`, `tests/test_eprom_database.py`

@@ -80,7 +80,7 @@ Close two v1.0 audit gaps with surgical firmware edits and host-side Unity cover
 - `firestarter/src/proms/eprom.cpp:199-232` — `eprom_check_vpp` — the canonical VPP-compare pattern (REV0 guard, regulator gating, tolerance bands, warn-low / error-high). SAF-04 mirrors this.
 - `firestarter/src/proms/eprom.cpp:250-258` — `eprom_generic_init` — the canonical "check vpp THEN check chip_id" init order.
 - `firestarter/src/proms/eeprom_28c.cpp:25-32` — `EEPROM_SDP_DISABLE[]` table; the AT28C JEDEC chip-id sequence uses the same magic addresses (0x5555 / 0x2AAA) and the `byte_flip_t` table style is the project convention for this kind of sequence.
-- `firestarter/src/proms/eeprom_28c.cpp:49-61` — current `eeprom28c_write_init` (the SAF-05 edit site).
+- `firestarter/src/proms/eeprom_28c.cpp:45-57` — current `eeprom28c_write_init` (the SAF-05 edit site).
 - `firestarter/src/proms/eeprom_28c.cpp:79-90` — `eeprom28c_wait_for_write` — used by the SDP-disable wait; the chip-id read does not need it (autoselect mode is immediate, no polling).
 - `firestarter/include/firestarter.h:75-106` — `firestarter_handle_t` struct: `vpp_mv` (uint16, line 85), `chip_id` (uint16, line 88), `response_code`, the `firestarter_*` function pointers (lines 94-104) that the SAF-06 tests will set to mock handlers.
 - `firestarter/include/firestarter.h:40-62` — response codes + `is_flag_set` / `FLAG_FORCE`.

@@ -120,7 +120,7 @@ Notes:
 **Rationale:**
 1. Single-shot ADC reads on AVR with AVcc reference exhibit ±2–4 LSB jitter at low band reads ([CITED: ATmega328P datasheet electrical characteristics — ADC noise typical ≤ 2 LSB with quiet AVcc, up to 4 LSB with switching loads]). The RURP shield's AVcc is shared with the digital rail (5V VCC plane carries the data buffer + control register switching) — not a quiet reference.
 2. The worst-case gap between the 4k7 bucket ceiling (ADC≈195 at Rpu=20kΩ) and the 10k bucket floor (ADC≈170 at Rpu=50kΩ) — 25 ADC counts — exceeds single-shot noise but is within 2σ jitter range on a noisy supply.
-3. 8 samples × ~13 µs per ADC conversion ≈ 104 µs added boot latency — negligible against the existing ~50 ms boot-handshake sequence in `firestarter.cpp:42-50`.
+3. 8 samples × ~13 µs per ADC conversion ≈ 104 µs added boot latency — negligible against the existing ~50 ms boot-handshake sequence in `firestarter.cpp:39-47`.
 4. Code cost: ≈ 30 bytes additional Flash (loop + accumulator + shift). Well within the D-10 expected 50–200 B delta budget.
 
 **Code:**
@@ -249,11 +249,11 @@ The EEPROM override-absent sentinel `0xFF` appears at:
 - `firestarter/src/rurp_config_utils.cpp:37` (`config->hardware_revision = 0xFF;` — factory-fresh default)
 - `firestarter/include/rurp_hw_rev_utils.h:12` (`uint8_t revision = 0xFF;` — initial detect-result placeholder)
 - `firestarter/include/rurp_hw_rev_utils.h:63` (`if (rurp_config->hardware_revision < 0xFF)` — override-active gate)
-- `firestarter/src/hardware_operations.cpp:100, 102, 112, 114` (`MSG_OK_REV` + `MSG_OK_CFG` payload assembly)
+- `firestarter/src/hardware_operations.cpp:99, 102, 112, 114` (`MSG_OK_REV` + `MSG_OK_CFG` payload assembly)
 
 **`0xFE` is reserved exclusively by Phase 34 for `REVISION_UNKNOWN`. No existing call-site reads `0xFE`. No EEPROM consumer compares against `0xFE`.** Safe.
 
-Note on `uint8_t revision = 0xFF;` at `rurp_hw_rev_utils.h:12`: this static-storage initializer fires BEFORE `rurp_detect_hardware_revision()` runs at boot. If `rurp_get_physical_hardware_revision()` is somehow called before detect runs (it isn't in current code — `firestarter.cpp:42` calls detect first), it would return `0xFF`. Phase 34 may want to change this initializer to `REVISION_UNKNOWN` for symbolic clarity, but it's NOT load-bearing — the initializer value is overwritten by `rurp_detect_hardware_revision()` on the first boot path before any caller reads it. Discretion — leave it alone for byte-identical Wave 1, or refactor to `REVISION_UNKNOWN` if the planner wants symbolic consistency.
+Note on `uint8_t revision = 0xFF;` at `rurp_hw_rev_utils.h:12`: this static-storage initializer fires BEFORE `rurp_detect_hardware_revision()` runs at boot. If `rurp_get_physical_hardware_revision()` is somehow called before detect runs (it isn't in current code — `firestarter.cpp:39` calls detect first), it would return `0xFF`. Phase 34 may want to change this initializer to `REVISION_UNKNOWN` for symbolic clarity, but it's NOT load-bearing — the initializer value is overwritten by `rurp_detect_hardware_revision()` on the first boot path before any caller reads it. Discretion — leave it alone for byte-identical Wave 1, or refactor to `REVISION_UNKNOWN` if the planner wants symbolic consistency.
 
 ### Caller Audit (verification that detect-rev rework doesn't break anything)
 
@@ -261,8 +261,8 @@ Note on `uint8_t revision = 0xFF;` at `rurp_hw_rev_utils.h:12`: this static-stor
 
 | Function | Caller | Behavior depends on... |
 |----------|--------|------------------------|
-| `rurp_detect_hardware_revision()` | `firestarter/src/firestarter.cpp:42` (boot init) | Side effect only — sets the file-scope `revision` static |
-| `rurp_get_physical_hardware_revision()` | `hardware_operations.cpp:99`, `firestarter.cpp:49, 137` | Returns the static `revision` byte. **Tolerates any 0–255 value** — caller just emits the byte as part of `MSG_OK_REV` / `MSG_INFO_PHYSICAL_HW` / debug logging |
+| `rurp_detect_hardware_revision()` | `firestarter/src/firestarter.cpp:39` (boot init) | Side effect only — sets the file-scope `revision` static |
+| `rurp_get_physical_hardware_revision()` | `hardware_operations.cpp:98`, `firestarter.cpp:46, 137` | Returns the static `revision` byte. **Tolerates any 0–255 value** — caller just emits the byte as part of `MSG_OK_REV` / `MSG_INFO_PHYSICAL_HW` / debug logging |
 | `rurp_get_hardware_revision()` | `eprom.cpp:212`, `flash_intel.cpp:29`, `hardware_operations.cpp:20`, `rurp_register_utils.h:48` (via `rurp_map_ctrl_reg_for_hardware_revision`) | Compares against `REVISION_0` symbolically. **`REVISION_UNKNOWN` correctly falls through** to the `default: break;` arm in `rurp_map_ctrl_reg_for_hardware_revision()` → `ctrl_reg = 0` → fail-safe (no VPP enables, no VPE enables). Same behavior as the current `0xFF` fall-through, but without the EEPROM-sentinel collision. |
 
 **No caller depends on the old `0xFF` semantic of the detect function.** The `0xFF`-vs-`REVISION_UNKNOWN` swap is purely a sentinel cleanup; behavior is preserved.
@@ -591,12 +591,12 @@ def test_revision_byte_values_match_firmware_enum():
 
 ### Pattern 3: EEPROM Sentinel `0xFF` Carve-Out
 
-[VERIFIED: `firestarter/include/rurp_hw_rev_utils.h:63` + `firestarter/src/hardware_operations.cpp:100, 102, 112, 114` + `firestarter/src/rurp_config_utils.cpp:37` read]
+[VERIFIED: `firestarter/include/rurp_hw_rev_utils.h:63` + `firestarter/src/hardware_operations.cpp:99, 102, 112, 114` + `firestarter/src/rurp_config_utils.cpp:37` read]
 
 `0xFF` is load-bearing as the EEPROM "no override active" sentinel:
 - Set at factory-fresh boot in `rurp_validate_config()` (`rurp_config_utils.cpp:37`).
 - Checked by `rurp_get_hardware_revision()` (`rurp_hw_rev_utils.h:63` — `if (rurp_config->hardware_revision < 0xFF)` selects override path).
-- Echoed as sentinel byte in `MSG_OK_REV` effective-byte (`hardware_operations.cpp:100-102`) and `MSG_OK_CFG` override-byte (`hardware_operations.cpp:112-114`).
+- Echoed as sentinel byte in `MSG_OK_REV` effective-byte (`hardware_operations.cpp:99-101`) and `MSG_OK_CFG` override-byte (`hardware_operations.cpp:111-113`).
 
 **Phase 34 carve-out:** `0xFE = REVISION_UNKNOWN` is the new "physical detect inconclusive" sentinel. **`0xFF` remains EEPROM-only.** The current `default: revision = 0xFF;` in `rurp_detect_hardware_revision()` (`rurp_hw_rev_utils.h:54-57`) is a latent bug — it briefly puts a `0xFF` into the physical-detect register (until detect rewrites it on the next boot). Phase 34's swap to `REVISION_UNKNOWN` cleans this up.
 

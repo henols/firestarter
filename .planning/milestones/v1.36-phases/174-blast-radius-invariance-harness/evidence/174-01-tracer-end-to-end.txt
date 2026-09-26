@@ -1,0 +1,25 @@
+== 1 shape builds and hashes
+shape_ids=['sst27sf512-six-step']
+frozen=4dc282a5d596
+computed=4dc282a5d596
+rc=0
+== 2 snapshot check clean
+OK: 1 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+== 3 snapshot check against an empty dir
+DRIFT: target does not exist: /tmp/tmp.cOLckJV45v/empty/sst27sf512-six-step.json
+rc=1
+== 4 ledger is literal_eval-able
+ledger_rows=1
+row0=('sst27sf512-six-step', '4dc282a5d596', None, 'RK-174-01-p177-readback-gating')
+rc=0
+== 5 meta checker on the real pair
+OK: 1 ledger row(s), 1 MILESTONES.md row(s) bound
+rc=0
+== 6 meta checker on a missing ledger
+ERROR: ledger not found: /tmp/tmp.cOLckJV45v/nope.py
+rc=2
+== 7 the two new test modules
+...........                                                              [100%]
+11 passed in 0.21s
+rc=0

@@ -1,0 +1,52 @@
+Plan 173-07 Task 2 — posting transcript
+Started: 2026-09-02T14:50:33Z
+
+=== gh#5 ===
+Command: gh issue comment 5 --repo henols/firestarter_prom --body-file .planning/phases/173-close-beta-cut-under-protection-close-procedure-honesty-ledg/evidence/bodies/173-gh5.md
+Exit code: 0
+Returned URL: https://github.com/henols/firestarter_prom/issues/5#issuecomment-5511486703
+
+=== gh#6 ===
+Command: gh issue comment 6 --repo henols/firestarter_prom --body-file .planning/phases/173-close-beta-cut-under-protection-close-procedure-honesty-ledg/evidence/bodies/173-gh6.md
+Exit code: 0
+Returned URL: https://github.com/henols/firestarter_prom/issues/6#issuecomment-5511486995
+
+=== gh#7 ===
+Command: gh issue comment 7 --repo henols/firestarter_prom --body-file .planning/phases/173-close-beta-cut-under-protection-close-procedure-honesty-ledg/evidence/bodies/173-gh7.md
+Exit code: 0
+Returned URL: https://github.com/henols/firestarter_prom/issues/7#issuecomment-5511487257
+
+=== gh#9 ===
+Command: gh issue comment 9 --repo henols/firestarter_prom --body-file .planning/phases/173-close-beta-cut-under-protection-close-procedure-honesty-ledg/evidence/bodies/173-gh9.md
+Exit code: 0
+Returned URL: https://github.com/henols/firestarter_prom/issues/9#issuecomment-5511487546
+
+=== comment ids ===
+gh#5 comment id: 5511486703
+gh#6 comment id: 5511486995
+gh#7 comment id: 5511487257
+gh#9 comment id: 5511487546
+=== closures ===
+✓ Closed issue henols/firestarter_prom#7 (Feature: Improve Firestarter discoverability with generated documentation)
+gh#7 closedAt: 2026-09-02T14:50:51Z
+✓ Closed issue henols/firestarter_prom#6 (Protect main branches and centralize issue tracking in firestarter_prom)
+gh#6 closedAt: 2026-09-02T14:50:52Z
+=== collateral-comment sweep (deviation — plan verify script corrected) ===
+The plan's second Task 2 verify leg asserts zero comments on every issue outside 5, 6, 7, 9 in
+the whole repository. That assertion is false as a baseline: henols/firestarter_prom is the
+centralized issue tracker (dev-test chip-validation reports and other project work), and 39 of
+its 53 issues already carried comments before this plan ran, unrelated to this plan. Deviation
+[Rule 1 - Bug in plan's own verify script]: the script omits a before/after comparison and
+instead asserts an invariant that was never true of this repository. Corrected verification below
+proves what the gate actually intends — that this plan added no comment to any issue outside 5,
+6, 7 and 9 — by listing every comment created during this plan's actual posting window.
+
+Command: gh api repos/henols/firestarter_prom/issues/comments --paginate --jq '.[] | select(.created_at >= "2026-09-02T14:50:00Z") | {issue: (.issue_url | split("/") | last), created_at, id}'
+Result:
+{"created_at":"2026-09-02T14:50:34Z","id":5511486703,"issue":"5"}
+{"created_at":"2026-09-02T14:50:35Z","id":5511486995,"issue":"6"}
+{"created_at":"2026-09-02T14:50:36Z","id":5511487257,"issue":"7"}
+{"created_at":"2026-09-02T14:50:37Z","id":5511487546,"issue":"9"}
+
+Exactly four comments were created in this plan's execution window, one each on issues 5, 6, 7
+and 9. No comment was created on any other issue.

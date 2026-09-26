@@ -1,0 +1,55 @@
+FAIL (live, per dev test's own exit code 1) -- under the operator ruling this earns the C-08
+control-arm arbitration. `dev test W27E040` (this position's THIRD attempt, after two discarded
+diagnostic attempts -- see anomalies): id OK x1 (3.54s), read OK x2 (165.345s, reason "read runs
+diverged"), write OK x1 (392.429s, full device write_region_start=0, write_region_length=524288),
+verify OK x1 (68.974s), erase OK x1 (62.617s), blank-check BAD x1 (69.392s, reason "Empty input",
+error_code 164 / 0xA4). Banner 6 of 6 ran, steps total ~762s, wall-clock 768s -- well inside the
+3920s 512 KiB fallback ceiling (no ceiling widening needed; this position supplies the phase's
+first measured 512 KiB total). fw_board_identity: 3.0.0b22:leonardo, non-null.
+
+**REPRODUCIBILITY RE-RUN (same seating, no re-flash -- board confirmed already at the v1.33 SHA):**
+a fourth `dev test W27E040` invocation on the v133 arm reproduced the IDENTICAL failure: exit 1,
+wall-clock 767s, id/read/write/verify/erase all OK (durations within 0.2s of the recorded run),
+blank-check BAD at the SAME step, same reason "Empty input", same error_code 164. Same error, same
+step, twice on the v133 arm alone (plus the control arm's own identical failure, see below) --
+this is a REPRODUCIBLE fault at this exact point in the sequence, not a one-off transient. Not
+booked as a second row: SC#4's control-count identity (count(control) == count(diverging-v133))
+would otherwise demand a second, redundant control row for a re-run of the same position under
+identical conditions. This corroborating run is recorded as evidence strengthening this row's own
+disposition, not as a new position.
+
+**ERROR-IDENTITY CORRECTION -- `Empty input` does not mean what its name says.**
+`MSG_ERR_EMPTY_INPUT` (0xA4) has two emit sites in firestarter/src/firestarter.cpp: `:124`, a
+genuine empty-buffer check (`data_size == 0`); and `:251-255`, the frame-integrity path, reused
+for "CRC mismatch, COBS violation, overflow, or read underrun" specifically BECAUSE a distinct
+`MSG_ERR_BAD_FRAME` was deferred (messages.h is codegen-generated from meta's messages.toml; a new
+ID needs a TOML catalog update -- deferred, per the comment at that line). The blank-check failure
+recorded here is therefore far more likely a TRANSPORT-LAYER frame corruption than a literal empty
+input. **Consequence for this row's own erase result: `erase: OK` means the ERASE COMMAND was
+accepted, not that erase was independently verified to have cleared the device** -- the step that
+would have checked that (blank-check) is precisely the one that died at the transport layer before
+returning a verdict. This row does NOT assert the device was actually erased; it asserts only that
+the erase command completed and returned OK.
+
+Diagnostic sequence preceding this result (recorded in full in anomalies and in CELL.md): attempts
+1 and 2 both failed immediately (~14-19s) on a chip-ID mismatch (reported 0x8201, expected 0xDA86)
+-- id/read/blank-check all BAD, write/verify/erase gated off, chip left pristine both times. A JP4
+adjustment between attempts 1 and 2 made no difference (byte-identical failure), so the diagnosis
+moved from JP4 to seating/orientation; a reseat before the third attempt (this row's recorded run)
+cleared the chip-ID mismatch entirely. Seating is confirmed as the cause of the first two attempts'
+total ID failure -- a genuine rig/handling issue, not a chip or v1.33 finding.
+
+DISPOSITION: this is a TRANSPORT-INTEGRITY finding (intermittent frame corruption at the serial
+layer), not a chip finding and not a firmware-logic finding. It does NOT match the recorded v1.15
+disposition (a stuck bit failing to clear specifically on erase; here erase returned OK and the
+failure is a transport fault on the following step, unrelated to erase's own data-level outcome).
+CONFIRMED NOT v1.33-attributable: the control arm (fw_sha 8695ee52c27a4bee4387c5c489afd5f3d7275e8a)
+failed IDENTICALLY on the same seating (see the control-rerun row). The same `MSG_ERR_EMPTY_INPUT`
+(0xA4) text has also appeared, benignly and at a different point in the sequence, in every earlier
+position's log this sweep (positions 1-4, both arms) -- consistent with intermittent, arm- and
+step-independent frame corruption rather than a step-specific or arm-specific logic defect.
+
+Recorded detail, kept but NOT itself the divergence trigger (per the operator ruling, dev test's
+own verdict is the arbiter): read step's reason = "read runs diverged" (verdict OK, run_count 2).
+The structured `read_divergence` metric is not exported by the report (the known, already-filed
+diagnostic_report.py export gap) -- `not measured` per row schema, not re-derived here.

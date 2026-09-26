@@ -1,0 +1,373 @@
+== 1 erase leg and carve-out census
+erase_violations=0
+live_erase_plans=608
+blank_check_removed_unflagged=0
+carveout_plans=162
+carveout_chips=81
+carveout_reasons=1
+rc=0
+== 2 UV pins and the handler leg
+uv_plans=540
+uv_policy_violations=0
+uv_slot_steps=1080
+uv_slot_on_non_uv=0
+uv_blank_check_order_violations=0
+scope_partial=270
+scope_full=407
+scope_disagreements=0
+rc=0
+== E1 erase_blank_check_violations returns empty unconditionally
+.....................F.FFF.....                                          [100%]
+=================================== FAILURES ===================================
+__________ test_removing_the_blank_check_flags_every_live_erase_plan ___________
+
+    def test_removing_the_blank_check_flags_every_live_erase_plan():
+        """D-05's mutated-corpus sensitivity leg, the erase-leg counterpart to
+        `test_removing_the_verify_flags_every_write_bearing_plan` above. Copy
+        rule follows `_write_bearing_plans`' own docstring:
+        `dataclasses.replace` on the steps list, never `copy.copy` and never an
+        in-place `Step` mutation -- the corpus is module-cached and shared
+        across every test in the process."""
+        corpus = plan_corpus()
+        live_erase = {
+            key: plan
+            for key, plan in corpus.items()
+            if any(s.op == chip_test.OP_ERASE and s.supported for s in plan.steps)
+        }
+        assert len(live_erase) == 608, (
+            f"live-erase plan count drifted to {len(live_erase)} -- a sweep "
+            "that visits zero rows must not pass"
+        )
+    
+        unflagged = []
+        for key, plan in live_erase.items():
+            mutant = dataclasses.replace(
+                plan,
+                steps=[s for s in plan.steps if s.op != chip_test.OP_BLANK_CHECK],
+            )
+            if not erase_blank_check_violations(mutant):
+                unflagged.append(key)
+>       assert not unflagged, (
+            f"{len(unflagged)} of {len(live_erase)} live-erase plans were NOT "
+            f"flagged after their blank-check step was removed; first ten: "
+            f"{unflagged[:10]}"
+        )
+E       AssertionError: 608 of 608 live-erase plans were NOT flagged after their blank-check step was removed; first ten: [('2804', 'full'), ('2804', 'partial'), ('2816', 'full'), ('2816', 'partial'), ('2817', 'full'), ('2817', 'partial'), ('28C010,28C010T,28C011,28C011T', 'full'), ('28C010,28C010T,28C011,28C011T', 'partial'), ('28C04A', 'full'), ('28C04A', 'partial')]
+E       assert not [('2804', 'full'), ('2804', 'partial'), ('2816', 'full'), ('2816', 'partial'), ('2817', 'full'), ('2817', 'partial'), ...]
+
+tests/test_derive_plan_structural_sentinel.py:737: AssertionError
+_____________ test_an_erase_with_no_blank_check_at_all_is_flagged ______________
+
+    def test_an_erase_with_no_blank_check_at_all_is_flagged():
+        plan = plan_with_steps(
+            step(chip_test.OP_ID),
+            step(chip_test.OP_READ),
+            step(chip_test.OP_ERASE),
+            step(chip_test.OP_VERIFY),
+        )
+        violations = erase_blank_check_violations(plan)
+>       assert len(violations) == 1, violations
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_derive_plan_structural_sentinel.py:798: AssertionError
+___________ test_a_blank_check_ahead_of_the_erase_is_not_its_oracle ____________
+
+    def test_a_blank_check_ahead_of_the_erase_is_not_its_oracle():
+        """The exact regression D-05 exists to catch: a future edit moving the
+        blank-check back ahead of the erase. This fixture carries no write
+        step, so `cycle_block_bounds` (which can only open on a write) returns
+        `None`, and the erase is flagged via the `bounds is None` arm of the
+        outside-the-block check -- the no-cycle-at-all case, distinct from
+        `test_a_second_erase_outside_the_block_is_a_violation_not_a_skip`
+        below, which pins the same outside-the-block reason via a REAL,
+        non-`None` block a second erase sits past."""
+        plan = plan_with_steps(
+            step(chip_test.OP_ID),
+            step(chip_test.OP_READ),
+            step(chip_test.OP_BLANK_CHECK),
+            step(chip_test.OP_ERASE),
+            step(chip_test.OP_VERIFY),
+        )
+        bounds = chip_test.cycle_block_bounds(plan.steps)
+        assert bounds is None, (
+            f"fixture setup error: expected bounds None (no write step opens "
+            f"a cycle block), got {bounds}"
+        )
+    
+        violations = erase_blank_check_violations(plan)
+>       assert violations == [(3, "erase sits outside the cycle block")], violations
+E       AssertionError: []
+E       assert [] == [(3, 'erase s...cycle block')]
+E         
+E         Right contains one more item: (3, 'erase sits outside the cycle block')
+E         Use -v to get more diff
+
+tests/test_derive_plan_structural_sentinel.py:824: AssertionError
+_______ test_a_second_erase_outside_the_block_is_a_violation_not_a_skip ________
+
+    def test_a_second_erase_outside_the_block_is_a_violation_not_a_skip():
+        """The load-bearing analog to
+        `test_a_second_write_outside_the_block_is_a_violation_not_a_skip`
+        above, for the erase leg, and the only fixture in this module that
+        exercises the outside-the-block check against a REAL (non-`None`)
+        bounds tuple rather than the `bounds is None` short-circuit: without
+        it, dropping the upper-bound half of `not (bounds[0] <= index <
+        bounds[1])` -- turning it into `index < bounds[0]` -- is invisible to
+        every other leg in this module, because every real corpus erase sits
+        strictly inside its own block and the two `bounds is None` fixtures
+        above never reach the `bounds[1]` comparison at all. `cycle_block_
+        bounds` finds only the FIRST maximal run, so an erase past the end of
+        that run (here, after an `sdp-lock` step that is not itself a
+        cycle-block op) must still be flagged, never silently passed over."""
+        plan = plan_with_steps(
+            step(chip_test.OP_WRITE),
+            step(chip_test.OP_VERIFY),
+            step(chip_test.OP_SDP_LOCK),
+            step(chip_test.OP_ERASE),
+        )
+        bounds = chip_test.cycle_block_bounds(plan.steps)
+        assert bounds == (0, 2), (
+            f"fixture setup error: expected bounds (0, 2), got {bounds}"
+        )
+    
+        violations = erase_blank_check_violations(plan)
+>       assert violations == [(3, "erase sits outside the cycle block")], violations
+E       AssertionError: []
+E       assert [] == [(3, 'erase s...cycle block')]
+E         
+E         Right contains one more item: (3, 'erase sits outside the cycle block')
+E         Use -v to get more diff
+
+tests/test_derive_plan_structural_sentinel.py:853: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_removing_the_blank_check_flags_every_live_erase_plan
+FAILED tests/test_derive_plan_structural_sentinel.py::test_an_erase_with_no_blank_check_at_all_is_flagged
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_blank_check_ahead_of_the_erase_is_not_its_oracle
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_second_erase_outside_the_block_is_a_violation_not_a_skip
+4 failed, 27 passed in 6.30s
+rc_e1=1
+== E2 drop the upper-bound half of the in-block index check
+.........................F.....                                          [100%]
+=================================== FAILURES ===================================
+_______ test_a_second_erase_outside_the_block_is_a_violation_not_a_skip ________
+
+    def test_a_second_erase_outside_the_block_is_a_violation_not_a_skip():
+        """The load-bearing analog to
+        `test_a_second_write_outside_the_block_is_a_violation_not_a_skip`
+        above, for the erase leg, and the only fixture in this module that
+        exercises the outside-the-block check against a REAL (non-`None`)
+        bounds tuple rather than the `bounds is None` short-circuit: without
+        it, dropping the upper-bound half of `not (bounds[0] <= index <
+        bounds[1])` -- turning it into `index < bounds[0]` -- is invisible to
+        every other leg in this module, because every real corpus erase sits
+        strictly inside its own block and the two `bounds is None` fixtures
+        above never reach the `bounds[1]` comparison at all. `cycle_block_
+        bounds` finds only the FIRST maximal run, so an erase past the end of
+        that run (here, after an `sdp-lock` step that is not itself a
+        cycle-block op) must still be flagged, never silently passed over."""
+        plan = plan_with_steps(
+            step(chip_test.OP_WRITE),
+            step(chip_test.OP_VERIFY),
+            step(chip_test.OP_SDP_LOCK),
+            step(chip_test.OP_ERASE),
+        )
+        bounds = chip_test.cycle_block_bounds(plan.steps)
+        assert bounds == (0, 2), (
+            f"fixture setup error: expected bounds (0, 2), got {bounds}"
+        )
+    
+        violations = erase_blank_check_violations(plan)
+>       assert violations == [(3, "erase sits outside the cycle block")], violations
+E       AssertionError: [(3, 'no blank-check behind the erase in the block')]
+E       assert [(3, 'no blan...n the block')] == [(3, 'erase s...cycle block')]
+E         
+E         At index 0 diff: (3, 'no blank-check behind the erase in the block') != (3, 'erase sits outside the cycle block')
+E         Use -v to get more diff
+
+tests/test_derive_plan_structural_sentinel.py:868: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_a_second_erase_outside_the_block_is_a_violation_not_a_skip
+1 failed, 30 passed in 1.86s
+rc_e2=1
+== E3 carve-out expected plan count changed 162 -> 163
+......................F........                                          [100%]
+=================================== FAILURES ===================================
+____________ test_the_28c_family_na_blank_check_carve_out_is_pinned ____________
+
+    def test_the_28c_family_na_blank_check_carve_out_is_pinned():
+        """Phase 153's `FLAG_CAN_ERASE` restoration on all 84 algorithm-13 rows
+        is the cause -- named here so an executor who re-derives the "obvious"
+        stronger supportedness reading meets this docstring before meeting a
+        162-plan RED they cannot fix. This is a pinned fact about the shipped
+        database, not a defect. Pinned by absolute count AND reason string
+        together, per D-05: the reason match says the population is the one we
+        understand, and the absolute count is what catches a silent
+        widening -- asserted as three separate assertions, not folded into
+        one, so each can name its own drift."""
+        corpus = plan_corpus()
+        carveout_plans = []
+        reasons = set()
+        for key, plan in corpus.items():
+            bounds = chip_test.cycle_block_bounds(plan.steps)
+            if bounds is None:
+                continue
+            start, stop = bounds
+            for index, candidate_step in enumerate(plan.steps):
+                if (
+                    candidate_step.op != chip_test.OP_ERASE
+                    or not candidate_step.supported
+                    or not (start <= index < stop)
+                ):
+                    continue
+                behind = [
+                    s
+                    for s in plan.steps[index + 1 : stop]
+                    if s.op == chip_test.OP_BLANK_CHECK
+                ]
+                if behind and not any(s.supported for s in behind):
+                    carveout_plans.append(key)
+                    reasons.add(behind[0].reason)
+    
+>       assert len(carveout_plans) == 163, (
+            f"28C-family NA blank-check carve-out plan count drifted to "
+            f"{len(carveout_plans)}, expected 163"
+        )
+E       AssertionError: 28C-family NA blank-check carve-out plan count drifted to 162, expected 163
+E       assert 162 == 163
+E        +  where 162 = len([('2804', 'full'), ('2804', 'partial'), ('2816', 'full'), ('2816', 'partial'), ('2817', 'full'), ('2817', 'partial'), ...])
+
+tests/test_derive_plan_structural_sentinel.py:793: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_the_28c_family_na_blank_check_carve_out_is_pinned
+1 failed, 30 passed in 6.20s
+rc_e3=1
+== U1 uv_policy_violations returns empty unconditionally
+.............................F.                                          [100%]
+=================================== FAILURES ===================================
+_______________ test_uv_policy_violations_flags_both_directions ________________
+
+    def test_uv_policy_violations_flags_both_directions():
+        """The anti-vacuity leg for the two `derive_plan`-level D-12 pins
+        above, each a hand-built plan `uv_policy_violations` cannot reach
+        vacuously on the shipped corpus."""
+        uv_plan_claiming_full_device = plan_with_steps(
+            step(chip_test.OP_ID),
+            step(
+                chip_test.OP_WRITE_PARTIAL,
+                region_policy=chip_test.REGION_POLICY_FULL_DEVICE,
+            ),
+            is_uv=True,
+        )
+        violations = uv_policy_violations(uv_plan_claiming_full_device)
+>       assert len(violations) == 1, violations
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_derive_plan_structural_sentinel.py:977: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_uv_policy_violations_flags_both_directions
+1 failed, 30 passed in 4.64s
+rc_u1=1
+== U2 drop the converse arm from uv_policy_violations
+.............................F.                                          [100%]
+=================================== FAILURES ===================================
+_______________ test_uv_policy_violations_flags_both_directions ________________
+
+    def test_uv_policy_violations_flags_both_directions():
+        """The anti-vacuity leg for the two `derive_plan`-level D-12 pins
+        above, each a hand-built plan `uv_policy_violations` cannot reach
+        vacuously on the shipped corpus."""
+        uv_plan_claiming_full_device = plan_with_steps(
+            step(chip_test.OP_ID),
+            step(
+                chip_test.OP_WRITE_PARTIAL,
+                region_policy=chip_test.REGION_POLICY_FULL_DEVICE,
+            ),
+            is_uv=True,
+        )
+        violations = uv_policy_violations(uv_plan_claiming_full_device)
+        assert len(violations) == 1, violations
+        assert violations[0][2] == "a UV plan claimed the full-device region policy", (
+            violations
+        )
+    
+        non_uv_plan_claiming_uv_slot = plan_with_steps(
+            step(chip_test.OP_ID),
+            step(chip_test.OP_WRITE, region_policy=chip_test.REGION_POLICY_UV_SLOT),
+            is_uv=False,
+        )
+        violations = uv_policy_violations(non_uv_plan_claiming_uv_slot)
+>       assert len(violations) == 1, violations
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_derive_plan_structural_sentinel.py:1001: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_uv_policy_violations_flags_both_directions
+1 failed, 30 passed in 4.86s
+rc_u2=1
+== U3 handler leg expected UV count changed 270 -> 271
+..............................F                                          [100%]
+=================================== FAILURES ===================================
+__________ test_resolve_write_scope_returns_partial_for_every_uv_row ___________
+
+    def test_resolve_write_scope_returns_partial_for_every_uv_row():
+        """The handler-level leg D-12 says matters most: the `derive_plan`-
+        level pins above stay true even if `_resolve_write_scope`
+        (`cli_handlers.py:2236`) is changed to return `"full"` for UV tomorrow,
+        so without this leg the operator-agreed ceiling is unguarded at the
+        only level that actually decides it.
+    
+        Generalizes `TestUVWriteHasNoPrompt`
+        (`tests/test_dev_test_cmd.py:708-801`) from two named chips to the
+        whole database, and from the report's rendered op string to the
+        resolver's own return value -- `TestUVWriteHasNoPrompt` never calls
+        `_resolve_write_scope` for its return value at all, so this leg is not
+        a restatement of it. Does not repeat that class's absence-of-`Confirm`
+        assertion, its parameter-name-set assertion, or its TTY-invariance
+        assertions; the both-`interactive`-values comparison here is a
+        by-product of the sweep, not a restatement of that TTY-invariance
+        claim.
+    
+        Builds the context ONCE with `make_app_context(db=REAL_DB,
+        config_manager=Mock())`: `db=REAL_DB` reuses the corpus module's single
+        database instance instead of building a second one that could
+        desynchronise from the corpus (D-07); `config_manager=Mock()` avoids
+        constructing a real `ConfigManager`, which is where this project's
+        documented `~/.firestarter/config.json` write leak lives and which
+        `_resolve_write_scope` never touches."""
+        corpus = plan_corpus()
+        app = make_app_context(db=REAL_DB, config_manager=Mock())
+        offenders = []
+        partial_count = 0
+        full_count = 0
+        for name in PART_NUMBERS:
+            want = "partial" if corpus[(name, "full")].is_uv else "full"
+            if want == "partial":
+                partial_count += 1
+            else:
+                full_count += 1
+            for interactive in (False, True):
+                got = _resolve_write_scope(app, name, interactive=interactive)
+                if got != want:
+                    offenders.append((name, interactive, want, got))
+    
+>       assert partial_count == 271, (
+            f"UV (partial-scope) name count drifted to {partial_count}, expected 271"
+        )
+E       AssertionError: UV (partial-scope) name count drifted to 270, expected 271
+E       assert 270 == 271
+
+tests/test_derive_plan_structural_sentinel.py:1059: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_derive_plan_structural_sentinel.py::test_resolve_write_scope_returns_partial_for_every_uv_row
+1 failed, 30 passed in 4.94s
+rc_u3=1
+== RESTORED
+...............................                                          [100%]
+31 passed in 3.02s
+rc_clean=0

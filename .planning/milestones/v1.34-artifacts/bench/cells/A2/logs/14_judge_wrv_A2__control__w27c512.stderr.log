@@ -1,0 +1,1 @@
+FAIL: position A2__control__w27c512 judged sha_verdict_judged='mismatch' read_count=1 distinct_read_shas=1 verdict_disagreement=True size_violations=[]

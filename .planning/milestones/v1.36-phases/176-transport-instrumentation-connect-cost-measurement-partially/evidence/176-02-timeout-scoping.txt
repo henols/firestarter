@@ -1,0 +1,26 @@
+== 1 routing in both directions
+established_timeouts=1
+established_probe=0
+established_others=0
+probe_timeouts=1
+probe_leaked_to_timeouts=0
+probe_others=0
+after_raising_scope_timeouts=1
+after_raising_scope_others=0
+keys=decode_failures,probe_timeouts,timeouts
+rc=0
+== 2 the report surface
+report_keys=cobs_errors,crc_failures,decode_failures,probe_timeouts,retries,timeouts,transport_suspect
+rc=0
+== 3 the counter and report modules
+........................................................................ [ 81%]
+................                                                         [100%]
+88 passed in 1.79s
+rc=0
+== 4 the 174 oracle
+OK: 16 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc=0
+........................................................................ [ 63%]
+..........................................                               [100%]
+114 passed in 3.46s
+rc=0

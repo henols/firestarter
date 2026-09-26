@@ -1,0 +1,176 @@
+Plan 181-09 -- D-12's voltage-field census (RPT-B1)
+=====================================================
+
+Section 1 -- Task 1's deletion, measured
+------------------------------------------
+census_assignment_sites=0
+census_emit_sites=0
+census_surviving_rail_sites=4
+census_enclosing_functions=1
+textual_hits_package_and_tests=115
+false_positive_modules=ic_layout.py, test_check_dispatch_invariants.py, test_chip_resolver.py, test_diff_db_gate.py, test_eprom_database.py, test_extra_chips_supplement.py, test_sdp_capability.py, test_variant_decode_evidence_stability.py, test_wire_dict_equivalence.py
+census_at_head=GREEN
+census_at_planted_assignment=RED
+empty_expected_set=RED
+fixture_files_written=0
+
+Detail
+------
+The census over `firestarter/diagnostic_report.py` and `firestarter/cli_handlers.py`
+finds ZERO assignment sites whose target is an `ast.Attribute` named `vpp_mv` or
+`vpe_mv` on any object -- the positive claim `test_no_code_path_assigns_the_deleted_
+rail_fields` asserts directly. The same census over the SAME two modules finds the
+four surviving before/after names (`vpp_before_mv`, `vpp_after_mv`, `vpe_before_mv`,
+`vpe_after_mv`) assigned exactly once each, all four attributed to `_sampler` --
+`_make_sampler`'s inner closure in `cli_handlers.py` -- confirming the census is
+finding real sites, not passing on an empty tree (`census_enclosing_functions=1`:
+one distinct enclosing function name across all four survivor sites).
+
+The emit-site half: `_dict_literal_keys()` walks every `ast.Dict` literal in
+`diagnostic_report.py` (not only `_voltage_dict()`'s own) and finds neither deleted
+name among any dict-literal string key in the module.
+
+`textual_hits_package_and_tests=115`: a plain substring count of `"vpp_mv"` +
+`"vpe_mv"` across every `.py` file under `firestarter/` and `tests/`, EXCLUDING this
+census module itself and the six modules the census's own AST walk already scans or
+whose self-reference would inflate the count meaninglessly
+(`diagnostic_report.py`, `cli_handlers.py`, `test_voltage_field_census.py`,
+`test_blast_radius_invariance.py`, `test_diagnostic_report.py`,
+`test_dev_test_cmd.py`, `test_parse_devtest_issue.py` -- the last four carry the
+deleted names as historical prose, forward-only parse-input JSON literals, or
+now-corrected docstring text, not as assignment targets). Even after excluding all
+seven self-referential modules, 115 textual hits remain versus the census's own 0
+assignment sites for the deleted names -- a materially larger count, exactly as
+`test_a_textual_scan_would_return_false_positives_a_census_does_not` asserts. Nine
+of those hits land in modules carrying the DATABASE's `vpp_mv` field (a chip-record
+dict key, never a report attribute): `ic_layout.py`,
+`test_check_dispatch_invariants.py`, `test_chip_resolver.py`, `test_diff_db_gate.py`,
+`test_eprom_database.py`, `test_extra_chips_supplement.py`, `test_sdp_capability.py`,
+`test_variant_decode_evidence_stability.py`, `test_wire_dict_equivalence.py` -- the
+false-positive class a textual scan cannot avoid. (`tools/check_devtest_
+orchestrator.py`'s wire-dict key set is a tenth member of the same class, outside
+this census's `firestarter/`+`tests/` scan scope but named in the module's own
+docstring and in CONTEXT.md's D-12 measurement.)
+
+`census_at_planted_assignment=RED`: a single in-memory `str.replace` inserting
+`report.vpp_mv = vpp` immediately after the real `report.vpp_before_mv = vpp`
+assignment line (anchor-uniqueness asserted first: occurs exactly once in the
+unmutated source) reddens the positive claim -- the mutant's census reports a
+non-zero site for `vpp_mv`, and asserting the positive claim against that mutant
+raises `AssertionError`. No fixture file was written; the mutation existed only in
+process memory for the duration of the test.
+
+`empty_expected_set=RED`: a separate, explicitly named vacuity leg
+(`test_an_empty_expected_site_set_fails_rather_than_passing_vacuously`) asserts the
+real, non-empty survivor-site set against an empty expected set and confirms that
+raises `AssertionError` -- an accidentally-empty expectation could not have passed
+this census silently.
+
+pytest tail
+-----------
+$ ./.venv311/bin/python -m pytest tests/test_voltage_field_census.py -o addopts="" -v
+tests/test_voltage_field_census.py::test_no_code_path_assigns_the_deleted_rail_fields PASSED [ 25%]
+tests/test_voltage_field_census.py::test_a_planted_assignment_reddens_the_census PASSED [ 50%]
+tests/test_voltage_field_census.py::test_an_empty_expected_site_set_fails_rather_than_passing_vacuously PASSED [ 75%]
+tests/test_voltage_field_census.py::test_a_textual_scan_would_return_false_positives_a_census_does_not PASSED [100%]
+4 passed in 0.60s
+
+Section 2 -- Task 3's re-proof, post-deletion
+------------------------------------------------
+frozen_hash_literal_count=19
+frozen_hash_lines_added_or_removed_since_04fd982=0
+shapes_reproducing=19/19
+forward_only_parse_after_deletion=GREEN
+skill_fixtures_changed=0
+context_amendment_marker=present
+falsified_claim_present=false
+
+Detail
+------
+`test_frozen_pre_2_0_fixtures_still_parse_forward_only` (RPT-E2) re-run explicitly
+AFTER the deletion landed in commit c994849 -- the run that actually establishes the
+forward-only property, since before that deletion there was nothing forward about the
+claim. Both frozen fixture bodies still parse and still carry `vpp_mv`/`vpe_mv` as
+their own frozen pre-2.0 content (the test asserts their presence directly, since it
+parses the fixture's raw JSON and never constructs a `DiagnosticReport`):
+
+  $ ./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -o addopts="" -q -k "forward_only"
+  1 passed, 102 deselected
+
+Both frozen fixtures under `.claude/skills/devtest-triage/fixtures/` remain
+byte-identical to the phase's meta base `2facbc8f`:
+
+  $ git diff 2facbc8f --name-only -- .claude/skills/devtest-triage/fixtures/
+  (empty)
+
+All 19 `FROZEN_HASHES` literals stay byte-identical to app base `04fd982` (the
+deleted `vpp_mv`/`vpe_mv` keys were never in `dedup_fingerprint`'s five-entry
+pre-image, so their deletion cannot move a hash):
+
+  $ git diff 04fd982 -- tests/fixtures/report_shapes.py | /usr/bin/grep -E '^[-+][[:space:]]*"[a-z0-9-]+": "[0-9a-f]{12}",'
+  (empty, exit 1)
+  $ /usr/bin/grep -oE '"[0-9a-f]{12}"' tests/fixtures/report_shapes.py | sort | md5sum
+  555a6d762d528102b74061b504183df6
+
+  $ ./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -o addopts="" -q -k "dedup_fingerprint_is_frozen"
+  19 passed, 84 deselected
+
+Full module re-run, post-amendment:
+
+  $ ./.venv311/bin/python -m pytest tests/test_blast_radius_invariance.py -o addopts="" -q
+  103 passed
+
+`181-CONTEXT.md` carries a second `## Status: Phase 181 amendment` marker (the first
+was 181-04's D-09 amendment), labelled `measured correction`, dated 2026-09-09,
+identifying the `:375` datasheet row as the DATABASE field via the `firestarter info`
+view. The originally-instructed replacement text (naming the row for rewrite as
+`vpp_before_mv`/`vpp_after_mv`) is removed outright, not merely annotated --
+confirmed absent by exact-string grep against the file.
+
+Comment census (mandated, at Task 3's close) -- no file's count rose above the value
+measured at the head of Task 1:
+  firestarter/diagnostic_report.py: base=199 now=199
+  tests/test_diagnostic_report.py: base=182 now=180
+  tests/test_dev_test_cmd.py: base=216 now=216
+  tests/test_blast_radius_invariance.py (pin module): 0
+
+Full mandated census (git diff --name-only 04fd982..HEAD, all .py files): files over
+baseline: 0/27 (re-run at Task 3's close, unchanged from Task 1's measurement).
+
+Porcelain, run AFTER this task's own commits:
+  git -C /workspaces/firestarter status --porcelain         -> empty
+  git -C /workspaces/firestarter_app status --porcelain firestarter/ -> empty
+  git -C /workspaces/firestarter_app status --porcelain     -> empty
+
+Verdict (state-the-verdict form, mirroring 177-READBACK-INVENTORY.md)
+-----------------------------------------------------------------------
+VERDICT: RPT-B1 is discharged by test, not by sentence. `voltage.vpp_mv` and
+`voltage.vpe_mv` are gone from the dataclass, from `_voltage_dict()`'s emits and from
+`_VOLTAGE_KEYS`' pin; the attribute-scoped AST census in
+`tests/test_voltage_field_census.py` proves zero code paths ever assigned them,
+observed RED against both a planted assignment and an empty expected-site set. RPT-F2
+is discharged as the skill's paired half, landing first. D-16 holds: all 19 frozen
+hashes are byte-identical to app base `04fd982`; the voltage sub-dict was never in
+`dedup_fingerprint`'s five-entry pre-image, so this deletion structurally cannot
+re-key anything.
+
+EXCLUDED, by name: the skill's `:375` datasheet-versus-database example row (a
+different field, same name -- proven untouched by a dedicated diff leg); both frozen
+`devtest-triage` fixtures (proven untouched by a porcelain leg and a base-diff leg);
+both parse-INPUT fixtures in `tests/test_parse_devtest_issue.py` carrying the deleted
+keys as historical evidence of forward-only parsing (left unmodified, never asserted
+against).
+
+REASON each exclusion holds: the example row and the frozen fixtures are proven by a
+literal-content diff against a named base commit, not by inspection; the parse-input
+fixtures are read_first material this task was explicitly told not to touch, and
+their own test (`test_parse_devtest_issue.py`, full module) stayed green throughout.
+
+GATE that would redden if any of this moved: `tools/snapshot_report_shapes.py
+--check` (any voltage-shape drift), `test_to_dict_voltage_key_list_is_pinned` (any
+`_VOLTAGE_KEYS` drift), `test_dedup_fingerprint_is_frozen` (any of the 19 hashes),
+`test_frozen_pre_2_0_fixtures_still_parse_forward_only` (either frozen fixture body
+or the parser's presence-only acceptance), and
+`test_no_code_path_assigns_the_deleted_rail_fields` plus its planted-RED sibling (any
+future reintroduction of an assignment to either deleted name).
+

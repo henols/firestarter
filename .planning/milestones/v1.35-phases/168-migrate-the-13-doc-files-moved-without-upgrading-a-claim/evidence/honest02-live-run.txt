@@ -1,0 +1,17 @@
+command: python3 tools/wiki/honest02_truth.py --wiki-dir <fresh clone of firestarter_prom.wiki.git> --db firestarter_app/firestarter/data/chip_database.json --allowlist tools/wiki/claim-allowlist.json
+wiki clone: firestarter_prom.wiki.git master @ aa4a5c7a917b7ee7926181edc309857bc5c0bdfb
+database: firestarter_app/firestarter/data/chip_database.json (sha256sum truncated-16: ccbc8d2c4866a5af)
+--- captured output ---
+LEG 1 -- stamp present: 12 pages scanned, 11 matched the claim signature, 0 missing stamp
+LEG 2 -- claims resolve: 3 regions found, 60 claims checked, 8 pages stamp-only unchecked
+UNCHECKED (stamp only): Community-Validation.md carries a stamp but no firestarter-claims-begin/end region -- its claims are not resolved against the database
+UNCHECKED (stamp only): Infoic-Field-Dictionary.md carries a stamp but no firestarter-claims-begin/end region -- its claims are not resolved against the database
+UNCHECKED (stamp only): Lockable-PROMs.md carries a stamp but no firestarter-claims-begin/end region -- its claims are not resolved against the database
+UNCHECKED (stamp only): Package-Details.md carries a stamp but no firestarter-claims-begin/end region -- its claims are not resolved against the database
+UNCHECKED (stamp only): Pinout-Safety-Review.md carries a stamp but no firestarter-claims-begin/end region -- its claims are not resolved against the database
+UNCHECKED (stamp only): Protocol-Flags.md carries a stamp but no firestarter-claims-begin/end region -- its claims are not resolved against the database
+UNCHECKED (stamp only): SRAM-and-NVRAM-Behavior.md carries a stamp but no firestarter-claims-begin/end region -- its claims are not resolved against the database
+UNCHECKED (stamp only): Shield-Revisions.md carries a stamp but no firestarter-claims-begin/end region -- its claims are not resolved against the database
+LEG 3 -- stamp freshness: 11 stamps checked against db-sha256-16=ccbc8d2c4866a5af, 0 stale
+OK: leg1 stamp-present 11 matched/0 missing, leg2 claims-resolve 3 regions/60 claims/8 unchecked, leg3 stamp-freshness 11 checked/0 stale.
+exit status: 0

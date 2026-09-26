@@ -1,0 +1,6 @@
+v1.34 cell A3/B2 (Phase 161, rows A3-B2__v133__w27c512 and A3-B2__control__w27c512 in .planning/v1.34/bench/EVIDENCE.jsonl, both outcome: validated) -- a full-device write, read and judged verify on this exact rig, on the v1.33 arm, with no forbidden flag. Strongest comparison available for this part; source of prior_disposition_source.
+v1.16 Phase 91 FIX-91 (.planning/v1.16/ledger/PROTOCOL-LEDGER.md:24): PASS -- "chip-ID PASSED (0xDA08); read N=3 + write-cycle byte-identical to v1.15 e16b2a5b..." via erase-enabled plain write A->B plus a three-run consistency check, on leonardo + Rev 2.0. Newest pre-v1.34 disposition.
+v1.15 Phase 81 read sweep (.planning/v1.15/bench/EVIDENCE.md:52): PASS, N=3, with a VPP-high read refusal cleared by a board reset before the read.
+v1.15 Phase 82 A->B write (.planning/v1.15/bench/EVIDENCE.md:96): PASS, auto-erase proven, negative-control verify RC=1.
+v1.16 Phase 90 (.planning/v1.16/ledger/PROTOCOL-LEDGER.md, pre-FIX-91 bench, superseded by the FIX-91 re-bench above).
+Comparable steps: id, read, write, verify (all OK here, matching every one of the above). erase and blank-check were never measured as separate operations by any prior sweep -- no comparable prior measurement, never a flip.

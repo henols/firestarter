@@ -1,0 +1,136 @@
+191-03 Task 3 — live release.yml run observation for the merge of PR #66
+Capture timestamp: 2026-09-13T21:42:22Z
+
+CONCLUSION: Branch A — the run failed. D-04's prediction is confirmed.
+
+=== Matching the run to this merge ===
+
+Command:
+  export XDG_CACHE_HOME=/tmp/ghcache
+  gh run list -R henols/firestarter_app --workflow release.yml --limit 10 \
+    --json databaseId,headSha,event,status,conclusion,createdAt,headBranch,url
+
+Result (three runs total; the newest is this merge's):
+  id 34784468070 | headSha 1d526ea30f0a00c23ad8198b4679ee9459f31a88 | event push
+    | createdAt 2026-09-13T21:39:15Z | conclusion failure | headBranch main
+    | url https://github.com/henols/firestarter_app/actions/runs/34784468070
+  id 31204939844 | headSha e4112ef776ccfd5aa6eea40cbc070e0abe4d2d8e | event push
+    | createdAt 2026-08-07T18:00:25Z | conclusion success (pre-existing, cited in
+    the plan's context as the two runs that existed before this phase)
+  id 20956544976 | headSha 5d0ed256649d8d6c76f098b2d6575f4b3e15a006 | event push
+    | createdAt 2026-01-13T12:22:30Z | conclusion success (older still)
+
+headSha 1d526ea30f0a00c23ad8198b4679ee9459f31a88 of run 34784468070 is an exact match to the
+merge_commit_sha read from the PR #66 object in Task 2's evidence file
+(191-url-02-merged-main.txt). This run is this merge's run, not merely "the newest".
+
+Run id:         34784468070
+Run URL:        https://github.com/henols/firestarter_app/actions/runs/34784468070
+Event:          push
+Head sha:       1d526ea30f0a00c23ad8198b4679ee9459f31a88
+Conclusion:     failure
+
+=== D-04 prediction, quoted for comparison ===
+
+"Merging should fire release.yml. Predicted: it fails — its stefanzweifel/git-auto-commit-action@v5
+step pushes a version-bump commit directly to main with the default GITHUB_TOKEN, which cannot
+bypass ruleset 22046179's pull_request rule (only bypass actor is DeployKey). Expected: push
+rejected, job aborts before the Release step, no tag, no GitHub release, nothing new on PyPI. If
+the run instead succeeds, the bot will have cut 2.0.10 (bumping on top of the 2.0.9 the PR
+carries), not 2.0.9."
+
+Observed conclusion: failure. The prediction is CONFIRMED, not merely consistent — see the
+step-by-step and job-log evidence below.
+
+=== Branch A — failing step identified ===
+
+Command:
+  gh run view 34784468070 -R henols/firestarter_app --json jobs
+
+Job "github" steps:
+  1  Set up job              success
+  2  Checkout                success
+  3  Create new patch release   success   (update_version.py ran, bumped __init__.py locally
+                                             to 2.0.10 in the runner's working copy — never pushed)
+  4  Commit updated version  FAILURE   <-- the predicted failing step
+  5  Release                skipped   <-- never reached, exactly as predicted
+  10 Post Checkout           success
+  11 Complete job            success
+
+Step 4 ("Commit updated version") runs stefanzweifel/git-auto-commit-action@v5. Its log
+(gh run view 34784468070 -R henols/firestarter_app --log-failed) shows exactly the predicted
+mechanism:
+
+  [main 598d039] Apply automatic changes
+   Author: henols <2527331+henols@users.noreply.github.com>
+   1 file changed, 1 insertion(+), 1 deletion(-)
+  ...
+  remote: error: GH013: Repository rule violations found for refs/heads/main.
+  remote: Review all repository rules at https://github.com/henols/firestarter_app/rules?ref=refs%2Fheads%2Fmain
+  remote:
+  remote: - Changes must be made through a pull request.
+  remote:
+   ! [remote rejected] main -> main (push declined due to repository rule violations)
+  error: failed to push some refs to 'https://github.com/henols/firestarter_app'
+  Error: Invalid status code: 1
+
+This is ruleset 22046179 ("Protect main") rejecting the default GITHUB_TOKEN's direct push, as
+predicted. Step 5 ("Release") shows conclusion "skipped" — the job aborted before it, exactly as
+predicted; the Release step (softprops/action-gh-release@v2) never ran.
+
+=== Checked, not inferred: no tag, no GitHub release ===
+
+Command:
+  gh api repos/henols/firestarter_app/releases --jq '.[0:5] | .[] | {tag_name, name, published_at, draft}'
+Result: the five most recent releases are all pre-existing beta prereleases
+  (3.0.0b42, 3.0.0b41, 3.0.0b40, 3.0.0b39, 3.0.0b38) — none is 2.0.9 or 2.0.10.
+
+Command:
+  gh api repos/henols/firestarter_app/tags --jq '.[] | select(.name | test("2.0.9|2.0.10")) | .name'
+Result: empty — no tag matching 2.0.9 or 2.0.10 exists.
+
+Command:
+  gh api repos/henols/firestarter_app/releases --jq '.[] | select(.tag_name | test("2.0.9|2.0.10")) | {tag_name, published_at}'
+Result: empty — no release matching 2.0.9 or 2.0.10 exists.
+
+Both checked directly against the live API, not inferred from the run conclusion alone.
+
+=== Exact operator commands for 191-04 (NOT run by the agent) ===
+
+The real merge sha, read from Task 2's evidence, is 1d526ea30f0a00c23ad8198b4679ee9459f31a88.
+Since this file's local worktree of firestarter_app is the origin/main-tracking checkout, the
+operator should fetch first so the local ref for `main` includes this commit before tagging.
+The three exact commands, filled in, for the operator to run in 191-04:
+
+  1) Tag creation and push (annotated tag on the merge commit, in the firestarter_app repo):
+     git fetch origin main
+     git tag -a 2.0.9 1d526ea30f0a00c23ad8198b4679ee9459f31a88 -m "2.0.9"
+     git push origin 2.0.9
+
+  2) GitHub release creation for tag 2.0.9, targeting the merge sha:
+     gh release create 2.0.9 \
+       --repo henols/firestarter_app \
+       --target 1d526ea30f0a00c23ad8198b4679ee9459f31a88 \
+       --title "2.0.9" \
+       --notes "Repoint firmware release URL to firestarter_fw (URL-02)."
+
+  3) publish.yml workflow_dispatch, with its tag input set to 2.0.9:
+     gh workflow run publish.yml \
+       --repo henols/firestarter_app \
+       --field tag=2.0.9
+
+None of these three commands were run by the agent. They are recorded here, not executed, per
+this plan's prohibition and per Task 3's explicit instruction to write them out without running
+them.
+
+=== Summary of assertions ===
+
+| # | Assertion                                                          | Result  | Status |
+|---|---------------------------------------------------------------------|---------|--------|
+| 1 | Run matched to merge commit sha (not just "newest run")             | exact match on headSha | PASS |
+| 2 | Run id, URL, event, head sha, conclusion recorded, D-04 quoted       | recorded above | PASS |
+| 3 | Exactly one D-06 branch stated                                      | Branch A | PASS |
+| 4 | Failing step named                                                  | "Commit updated version" (git-auto-commit-action@v5) | PASS |
+| 5 | Absence of tag and of GitHub release CHECKED (not inferred)          | both empty via live API | PASS |
+| 6 | Three exact 191-04 operator commands written out with real merge sha | written above, none executed | PASS |
+| 7 | No tag, release, push or workflow dispatch performed by the agent    | none performed | PASS |

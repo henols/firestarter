@@ -1,0 +1,31 @@
+== 1 the named legs exist and none is skipped
+rc=0
+leg_test_the_double_refuses_a_non_blank_write_without_the_flag=1
+leg_test_the_double_accepts_a_non_blank_write_with_the_flag=1
+leg_test_uv_slot_write_on_a_non_blank_part_reaches_pass_with_run_count_two=1
+leg_test_the_flag_reaches_the_wire_on_every_cycle=1
+leg_test_the_blank_check_adjudication_is_what_lifts_the_run_to_pass=1
+leg_test_uv_slot_write_preserves_the_not_blank_finding=1
+skip_markers=0
+== 2 the criterion-4 claim, measured independently of the module
+direct_noflag_return=False
+direct_noflag_code=176
+direct_flag_return=True
+direct_flag_code=None
+write_verdict=OK
+write_run_count=2
+verify_verdict=OK
+verify_run_count=2
+overall=PASS
+flags_seen=8,8
+title_matches=True
+forced_bad_folds=FAIL
+bc_verdict=SKIPPED
+bc_reason_nonempty=True
+bc_error_code=176
+bc_reason_cell_verbatim=True
+rc=0
+== 3 the module
+......                                                                   [100%]
+6 passed in 0.11s
+rc=0

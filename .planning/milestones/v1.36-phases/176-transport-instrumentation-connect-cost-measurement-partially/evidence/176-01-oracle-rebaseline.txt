@@ -1,0 +1,32 @@
+== 1 regenerate then check
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/at28c256-full-all-ok-sdp.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/gh20-at28c256-fail.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/gh23-w27e257-fail.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/gh28-m27c512-fail.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/gh47-sst27sf512-pass.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/m27c512-full-all-ok.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/m27c512-full-blank-check-bad.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/m27c512-full-canonical-name.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/m27c512-full-comma-joined-name.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/m27c512-full-runs-1.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/sst27sf512-full-all-ok.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/sst27sf512-six-step.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/sst27sf512-six-step-readback-gated.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/synthetic-arm4-empty-results.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/synthetic-arm4-no-ok.json
+OK: wrote /workspaces/firestarter_app/tests/fixtures/reports/w27e257-full-all-ok.json
+rc_write=0
+OK: 16 snapshot(s) under /workspaces/firestarter_app/tests/fixtures/reports match a fresh regeneration
+rc_check=0
+== 2 the diff shape
+changed_files=0
+insertions_not_one=0
+deletions_not_zero=0
+== 3 the oracle
+........................................................................ [ 63%]
+..........................................                               [100%]
+114 passed in 3.61s
+rc_oracle=0
+== 4 the ledger is byte-unchanged
+rc_ledger_bytes=0
+p176_rows=0

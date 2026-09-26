@@ -1,0 +1,1 @@
+PASS: gate_record validated --jsonl /workspaces/.planning/v1.34/bench/EVIDENCE.jsonl with 0 violations

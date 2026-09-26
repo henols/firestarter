@@ -1,0 +1,3 @@
+None observed in the write/read/judge cycle itself. Pre-write D-09 blank check reported not-blank
+(expected, recorded in SMOKE-W29C020.md - not an anomaly of this position, a deliberate
+addressability proof outside the step list).

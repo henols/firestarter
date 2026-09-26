@@ -1,0 +1,110 @@
+Plan 187-10 — Task 2 post transcript: gh#28
+
+=== Gate re-assertion (mechanical, before any public act) ===
+
+$ sha256sum evidence/bodies/187-gh28.md
+f861d85399b508321080ee69b49ccfef66894916b35673b00a8cdc4152f644d1  evidence/bodies/187-gh28.md
+Matches the hash recorded in evidence/187-10-gh28-operator-approval.txt. Proceeded.
+
+=== Pre-post baseline (re-confirmed live, matches evidence/187-05-issue-state-before.json) ===
+
+$ gh issue view 28 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":4,"labels":["dev-test","cause:harness"],"state":"OPEN"}
+
+$ gh issue view 31 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+2
+
+$ gh issue view 9 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+1
+
+$ gh issue view 60 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":1,"labels":["fix:released"],"state":"CLOSED","stateReason":"COMPLETED"}
+
+$ gh issue view 62 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":1,"labels":["cause:firmware"],"state":"OPEN"}
+
+$ gh issue view 23 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":4,"labels":["dev-test","needs:report","cause:database","cause:rig"],"state":"OPEN"}
+
+=== Post ===
+
+$ gh issue comment 28 --repo henols/firestarter_prom --body-file evidence/bodies/187-gh28.md
+https://github.com/henols/firestarter_prom/issues/28#issuecomment-5647056983
+EXIT: 0
+
+Comment id (trailing fragment): 5647056983
+Written alone to evidence/187-10-comment-id.txt.
+
+=== Byte-identity proof (Python JSON round trip — NOT gh api --jq '.body' | diff) ===
+
+$ gh api "repos/henols/firestarter_prom/issues/comments/5647056983" > /tmp/c187gh28.json
+$ python3 -c "..."
+api 2840 f861d85399b508321080ee69b49ccfef66894916b35673b00a8cdc4152f644d1
+disk 2840 f861d85399b508321080ee69b49ccfef66894916b35673b00a8cdc4152f644d1
+BYTE-IDENTICAL
+EXIT: 0
+
+=== Label edit (add-only, dev-test and cause:harness must survive) ===
+
+$ gh issue edit 28 --repo henols/firestarter_prom --add-label "needs:report"
+https://github.com/henols/firestarter_prom/issues/28
+EXIT: 0
+
+=== Post-edit state (reconciled against evidence/187-05-issue-state-before.json) ===
+
+$ gh issue view 28 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:[.labels[].name]|sort,comments:(.comments|length)}'
+{"comments":5,"labels":["cause:harness","dev-test","needs:report"],"state":"OPEN","stateReason":""}
+
+=== Collateral proof: gh#31, gh#9, gh#60, gh#62, gh#23 all unchanged/undisturbed ===
+
+$ gh issue view 31 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:[.labels[].name]|sort,comments:(.comments|length)}'
+{"comments":2,"labels":["cause:database","cause:harness","dev-test"],"state":"OPEN"}
+
+$ gh issue view 9 --repo henols/firestarter_prom --json comments --jq '.comments|length'
+1
+
+$ gh issue view 60 --repo henols/firestarter_prom --json state,stateReason,labels,comments --jq '{state,stateReason,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":1,"labels":["fix:released"],"state":"CLOSED","stateReason":"COMPLETED"}
+
+$ gh issue view 62 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:[.labels[].name],comments:(.comments|length)}'
+{"comments":1,"labels":["cause:firmware"],"state":"OPEN"}
+
+$ gh issue view 23 --repo henols/firestarter_prom --json state,labels,comments --jq '{state,labels:[.labels[].name]|sort,comments:(.comments|length)}'
+{"comments":4,"labels":["cause:database","cause:rig","dev-test","needs:report"],"state":"OPEN"}
+
+=== Plan <verify> legs re-run ===
+
+-- leg 1: head -1 approval --
+APPROVED-FOR-POST: gh28
+-- leg 2: sha256 BOUND --
+BOUND
+-- leg 3: byte-identity round trip --
+api 2840 f861d85399b508321080ee69b49ccfef66894916b35673b00a8cdc4152f644d1
+disk 2840 f861d85399b508321080ee69b49ccfef66894916b35673b00a8cdc4152f644d1
+BYTE-IDENTICAL
+-- leg 4: state OPEN --
+OPEN
+-- leg 5: comment count 5 --
+5
+-- leg 6: labels sorted --
+cause:harness,dev-test,needs:report
+-- leg 7: gh#31 comments = 2 --
+2
+-- leg 8: gh#9 comments = 1 --
+1
+-- leg 9: raw grep PENDING OPERATOR REVIEW (known non-defect count, see 187-07/08/09) --
+4
+
+=== 187-UPSTREAM-REPLIES.md updated ===
+
+Line 18 (top-level Status) flipped to POSTED with comment URL, needs:report label,
+fix:released withheld note, deliberately left OPEN.
+Line 203-204 area: added Posted line with comment URL, sha256 (unchanged from 187-06
+draft), label decision, deliberate non-close rationale.
+gh#31's status line (line 19) left untouched: PENDING OPERATOR REVIEW.
+
+Known non-defect (per environment_notes / 187-07/08/09 precedent): raw
+'grep -c PENDING OPERATOR REVIEW' over the whole file counts pre-existing 187-05 prose
+sentences containing that literal, in addition to per-issue Status lines. The real
+invariant — grep '^**Status — gh#' | grep -c 'PENDING OPERATOR REVIEW' — correctly reads 1
+(gh#31) after this plan's flip.

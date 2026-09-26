@@ -33,7 +33,7 @@ Communication error during WRITE: Timeout ← firmware never emits the data requ
 ```
 
 The write MAIN phase is **pull-based**: `_process_incoming_data()`
-(`firestarter/src/eprom_operations.cpp:57-77`) is supposed to emit
+(`firestarter/src/eprom_operations.cpp:57-74`) is supposed to emit
 `MSG_OK_REQ_DATA` when `op_get_message()` returns `OP_MSG_INCOMPLETE`, prompting
 the host to send the first chunk. The host enters "Main start", sends OK, and
 **never receives `MSG_OK_REQ_DATA`** → times out. So the firmware enters write

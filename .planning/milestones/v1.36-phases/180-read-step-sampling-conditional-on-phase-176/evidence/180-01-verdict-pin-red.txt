@@ -1,0 +1,11 @@
+== 1 the verdict-source pin (D-06 leg 3, roadmap criterion 3)
+anchor_count=1
+head_names=VERDICT_BAD,VERDICT_OK,last_ok
+planted_names=VERDICT_BAD,VERDICT_OK,divergence,last_ok
+pin_at_head=GREEN
+pin_at_planted=RED
+rc=0
+== 2 the readback inventory module, full run
+........                                                                 [100%]
+8 passed in 0.17s
+rc=0

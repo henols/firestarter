@@ -1,0 +1,65 @@
+# 181-04 Task 3 -- D-16 re-proof after the deletion
+# Measured against firestarter_app app base 04fd982, after this plan's Tasks 1-2 land.
+
+frozen_hash_literal_count=19
+frozen_hash_lines_added_or_removed_since_04fd982=0
+shapes_reproducing=19/19
+baseline_mismatches=0
+
+# tests/test_blast_radius_invariance.py pytest tail (bare pytest, -o addopts="")
+tests/test_blast_radius_invariance.py: 103 passed
+tests/test_blast_radius_invariance.py -k test_dedup_fingerprint_is_frozen: 19 passed, 84 deselected
+
+# git diff 04fd982 -- tests/fixtures/report_shapes.py, restricted to twelve-hex
+# FROZEN_HASHES literal lines (added or removed): EMPTY. (Same leg as Task 1's
+# evidence/181-04-scope-narrowing.txt; re-run here after Tasks 2-3's own edits
+# to prove the re-proof holds after the WHOLE plan, not only after Task 1.)
+
+# The seven before/after pairs the adjudication's narrowing AVOIDED. Independently
+# re-measured (not merely copied from CONTEXT.md/181-CONTEXT.md's prior text) by
+# building each of the 19 registered shapes, confirming its dedup_fingerprint
+# reproduces the committed FROZEN_HASHES literal (the "before" column), then
+# simulating the REJECTED mutant -- replacing the write-op selector's
+# `write_scope == _WRITE_SCOPE_PARTIAL` test with `is_uv` -- by flipping every
+# `op="write"` StepResult to `op="write-partial"` on shapes whose chip is
+# genuinely UV-erasable (`is_uv_eprom`) AND whose report was built through the
+# real `derive_plan` route (`_build_real_path_report`, never a hand-transcribed
+# `gh*`/synthetic step-vector shape, which never calls `derive_plan` at all and
+# is therefore immune to this mutation by construction) -- and recomputing
+# `dedup_fingerprint` on the mutated report via the unmodified production
+# function. Restricting to the real-path-built shapes is what separates this
+# measurement from a naive "every UV chip + op=write" sweep: `gh28-m27c512-fail`
+# is also chip="m27c512" (UV) with a hand-transcribed `op="write"` step, but
+# because it is built via `build_shape_from_step_specs` (never `derive_plan`),
+# the mutation cannot reach it -- it is correctly EXCLUDED from the seven, and
+# an unfiltered sweep that included it would have produced eight, not seven.
+
+1. attr01-status-axis-transport-fault: 93cef8030c40 -> d40335a45702
+2. m27c512-full-all-ok: 6d3afbc52315 -> 71869ccc23b4
+3. m27c512-full-blank-check-bad: e42f1567967a -> 8aba8efea9c6
+4. m27c512-full-canonical-name: 776846bf2dc8 -> c4ab2e895c1a
+5. m27c512-full-comma-joined-name: 37ad34d39a19 -> 34ea6230b5cb
+6. m27c512-full-runs-1: e4838f7bb1d3 -> d9d4724e0c2a
+7. uv-slot-write-pass: 927571e5110f -> dea6e2474d30
+
+All seven "after" values match CONTEXT.md's/orchestrator_dispositions' stated
+pairs byte-for-byte, independently re-derived rather than copied.
+
+Two of the seven -- m27c512-full-canonical-name and m27c512-full-comma-joined-name
+-- are the shapes Phase 174 froze expressly as D-02's rejected alternatives, and
+this phase's own RPT-F1 depends on them as a tripwire against a future
+canonical-spelling normalization of parts[0]/auto_capture.chip.
+
+Ten real-path-built shapes exist in the corpus in total (m27c512-full-all-ok,
+m27c512-full-blank-check-bad, m27c512-full-canonical-name,
+m27c512-full-comma-joined-name, m27c512-full-runs-1, at28c256-full-all-ok-sdp,
+sst27sf512-full-all-ok, w27e257-full-all-ok, uv-slot-write-pass,
+attr01-status-axis-transport-fault -- ten names, seven of which reach a real
+op="write" step through a UV-chip; at28c256/sst27sf512/w27e257 are all NON-UV
+(electrically-erasable EEPROM, not genuine UV-EPROM) and correctly do not
+move). Nine hand-transcribed/synthetic shapes (sst27sf512-six-step,
+sst27sf512-six-step-readback-gated, gh47-sst27sf512-pass, gh28-m27c512-fail,
+gh20-at28c256-fail, gh23-w27e257-fail, synthetic-arm4-no-ok,
+synthetic-arm4-empty-results, prune03-synthesized-fingerprint-match) never call
+derive_plan and are therefore categorically immune to this mutation class.
+10 + 9 = 19, matching SHAPE_IDS.
