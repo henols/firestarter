@@ -77,17 +77,20 @@ params      = [
 ]
 wire_format = "id_frame"
 
-# P-03: Fixed-shape u32 r1 + u32 r2 + u8 override. override=0xFF means no override.
-# 9 wire bytes fixed. Host renders override branch host-side.
+# Fixed-shape u32 r1 + u32 r2 + u8 override + u16 bandgap_mv. override=0xFF
+# means no override. 11 wire bytes fixed. Host renders the override branch
+# host-side. bandgap_mv is this MCU's calibrated internal reference; it reads
+# 1100 (the nominal) on a board that has never been calibrated.
 [[messages]]
 id          = 0x05
 name        = "MSG_OK_CFG"
 severity    = "OK"
-format      = "R1: %lu, R2: %lu, Cfg: %u"
+format      = "R1: %lu, R2: %lu, Cfg: %u, Bandgap: %u mV"
 params      = [
-    { type = "u32" },
-    { type = "u32" },
-    { type = "u8" },
+    { type = "u32", render = "dec" },
+    { type = "u32", render = "dec" },
+    { type = "u8", render = "dec" },
+    { type = "u16", render = "dec" },
 ]
 wire_format = "id_frame"
 

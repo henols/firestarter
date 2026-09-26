@@ -1,7 +1,9 @@
 ---
 title: "CONFIG_VERSION is not bumped when a calibration default changes — stale EEPROM values are stranded forever"
 date: 2026-08-09
-status: pending
+status: resolved
+resolved: 2026-09-26
+resolved_by: "v1.43 per-board bandgap calibration; option 2 (range-validate)"
 priority: medium
 area: firmware
 source: .planning/debug/resolved/firmware-vpp-misread.md (diagnosed 2026-06-04, root cause confirmed still live 2026-08-09)
@@ -11,7 +13,7 @@ files:
 needs_decision: true
 ---
 
-# `CONFIG_VERSION` is not bumped on a default change — stale EEPROM calibration is stranded
+# RESOLVED 2026-09-26 — `CONFIG_VERSION` is not bumped on a default change — stale EEPROM calibration is stranded
 
 Carried out of the `firmware-vpp-misread` debug session, which was diagnosed but never
 fixed (`fix: ""`). The board-specific symptom is long gone; **the latent firmware defect
@@ -78,3 +80,34 @@ against the AVR budget before committing.
 Non-destructive: `firestarter config` reports live EEPROM `r1`/`r2` (host renders
 `MSG_OK_CFG` via `codec.py`). A board with stale calibration shows `r1` far below
 `270000`. After the fix, either the value is corrected or the user is warned.
+
+
+---
+
+## Resolution, 2026-09-26 (v1.43)
+
+**Option 2 was taken: range-validate instead of version-gate.**
+`rurp_validate_config` now delegates to a pure `rurp_config_migrate`
+(`src/rurp_config_migrate.cpp`) that checks each field against a band and keeps
+whatever is still plausible:
+
+- `r1` 202500–337500, `r2` 33000–55000 (±25 % of the defaults, the same
+  tolerance the host already applied in `_R1_LO`/`_R1_HI`)
+- `bandgap_mv` 1000–1200 mV (the ATmega datasheet window)
+- `hardware_revision` is preserved **unconditionally**
+
+This reaches the stale value the version gate never could: a board carrying
+`r1 = 1000` under a matching version string is now corrected, because the band
+check does not depend on the version string at all.
+
+It also fixes a second defect the original note did not name: the old wipe reset
+`hardware_revision` on every version bump, silently destroying an operator's
+shield-revision override. Verified on hardware — the Leonardo still reports
+`Rev 2.2 (override)` after migrating VER06 → VER07.
+
+`CONFIG_VERSION` did move to `VER07`, because v1.43 appended `bandgap_mv` to the
+struct. The bump is no longer destructive.
+
+Covered by behaviour in `test/native/avr/test_config_migrate` (7 cases),
+including the stranded `r1` reproduced with a **matching** version string and an
+operator override surviving a bump.

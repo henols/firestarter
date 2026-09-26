@@ -2,10 +2,35 @@
 title: White-box voltage-reading calibration (per-board bandgap + divider trim)
 trigger_condition: An accuracy/hardware-focused milestone opens, or a user reports inaccurate VPP/VPE readings that today's hand-tuned r1 hack can't fix
 planted_date: 2026-07-03
-status: dormant
+status: implemented
+implemented: 2026-09-26
 ---
 
 # White-box voltage-reading calibration
+
+> **IMPLEMENTED 2026-09-26 (v1.43). Stage 1 only; Stage 2 deliberately not built.**
+>
+> The design below held up. Three corrections from measurement, recorded so a
+> later reader does not re-derive them:
+>
+> 1. **D1 is retired.** This seed hedged on the error model and had the
+>    procedure discover it. It is measured: **pure gain, no offset** (two paired
+>    ratios agreeing to 0.3 % across a 5 V span). Do not build offset fitting.
+> 2. **Stage 2 is worth about 1 %, not 1-2 %, and was not built.** The divider
+>    is nominal on all three shield revisions — rails-off ADC counts 137/138/136
+>    — so `VALUE_R2 = 44000` is confirmed and the residual is below this
+>    instrument's one-count resolution of 0.7 %.
+> 3. **Two things this seed did not anticipate.** The calibration must sample in
+>    PROGRAMMER mode, because that is the mode every real measurement is taken
+>    in and the I/O state moves the bandgap by a whole count on a SERIAL_ON_IO
+>    board. And D6's "existing configs default to 1100 = identity, no behaviour
+>    change" understated the migration: the old version-gated wipe also reset
+>    `hardware_revision`, destroying the operator's shield override, so the
+>    migration had to become a per-field range check rather than a wipe.
+>
+> Results: `agent-os/specs/2026-09-26-2108-per-board-bandgap-calibration/RESULT.md`.
+> The measurement that selected this arm:
+> `agent-os/specs/2026-09-26-1826-voltage-reading-accuracy/BENCH-RECORD.md`.
 
 A guided, two-stage calibration procedure that makes the firmware's VPP/VPE (and
 VCC) voltage readings accurate per physical board, by replacing today's
