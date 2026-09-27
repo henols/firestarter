@@ -15,6 +15,40 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 `pip install firestarter` does not install a pre-release. Refer to
 [Beta Channel](https://github.com/henols/firestarter/wiki/Beta-Channel).
 
+## [Unreleased] (beta)
+
+These changes are for the next pre-release. They are not in 3.1.0 or 3.1.0b5.
+
+### Fixed
+
+- **CLI:** the 24-pin 5 V EEPROMs on the `DIP24_2816` pin map (AT28C04, AT28C16, X2816A,
+  CAT28C16A, 28C16A and their siblings, 19 database entries) now write one byte at a time.
+  Before, each write failed verification, because the tool sent 64-byte pages to parts that
+  accept one byte for each write cycle.
+- **CLI:** `erase` refuses the `DIP24_2816` chips. They have no erase command. Before, the erase
+  stored bytes in the chip as data and reported success. To clear such a chip, write a file of
+  `0xFF` bytes to it.
+- **CLI:** `config --rev` accepts only the revision codes -1 to 5. Before, `--rev 2.2` set code 2
+  (Rev 2.0) with no message. Use `--rev 4` for Rev 2.2.
+- **CLI:** `info -c` prints the chip's real database entry and pin map. Before, it printed an
+  "Unknown" entry in the 2.x format.
+- **CLI:** an entry in `~/.firestarter/database.json` now replaces the shipped entry with the same
+  `part_number`. Before, the tool added it as a second entry and continued to use the shipped one.
+- **CLI:** `firestarter list | head` and `search` stop without a traceback when the reader closes
+  the pipe.
+
+### Changed
+
+- **CLI:** the nine chips AT28C04, AT28C04E/F, AT28C16, AT28C16E/F, 28C04A, 28C04AF, 28C16A,
+  28C16AF and UPD28C04 changed from `adapter-required` to `supported`. No chip of the
+  `DIP24_2816` family is validated on real hardware yet.
+- **CLI:** Click 8.5 or later is necessary. It adds PowerShell completion.
+
+### Removed
+
+- **CLI:** `list -v` (`--verified`). It always showed nothing. The validated chips are in
+  [VALIDATED-EPROMS.md](VALIDATED-EPROMS.md).
+
 ## [3.1.0b5] - 2026-09-27 (pre-release)
 
 ### Added
