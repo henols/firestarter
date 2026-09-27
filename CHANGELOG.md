@@ -15,9 +15,7 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 `pip install firestarter` does not install a pre-release. Refer to
 [Beta Channel](https://github.com/henols/firestarter/wiki/Beta-Channel).
 
-## [Unreleased] (beta)
-
-These changes are for the next pre-release. They are not in 3.1.0b6.
+## [3.1.0b7] - 2026-09-27 (pre-release)
 
 ### Fixed
 
