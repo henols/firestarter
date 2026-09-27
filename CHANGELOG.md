@@ -15,6 +15,16 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 `pip install firestarter` does not install a pre-release. Refer to
 [Beta Channel](https://github.com/henols/firestarter/wiki/Beta-Channel).
 
+## [Unreleased] (beta)
+
+These changes are for the next pre-release. They are not in 3.1.0b6.
+
+### Fixed
+
+- **CLI:** an entry in `~/.firestarter/database.json` that names the shipped chip in `name`
+  replaces the shipped entry again. In 3.1.0b6, only `part_number` matched, so such an entry
+  was added as a second entry and the shipped entry stayed in use. 3.1.0 is not affected.
+
 ## [3.1.0b6] - 2026-09-27 (pre-release)
 
 ### Fixed
@@ -30,8 +40,8 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
   (Rev 2.0) with no message. Use `--rev 4` for Rev 2.2.
 - **CLI:** `info -c` prints the chip's real database entry and pin map. Before, it printed an
   "Unknown" entry in the 2.x format.
-- **CLI:** an entry in `~/.firestarter/database.json` now replaces the shipped entry with the same
-  `part_number`. Before, the tool added it as a second entry and continued to use the shipped one.
+- **CLI:** an entry in `~/.firestarter/database.json` can name the shipped chip in `part_number`,
+  as `info -c` prints it. Before, only a `name` field matched the shipped chip.
 - **CLI:** `firestarter list | head` and `search` stop without a traceback when the reader closes
   the pipe.
 
