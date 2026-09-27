@@ -1,6 +1,0 @@
-Connecting...Connecting... OK      
-Reading 1 bytes from address 0x400FF of W29C040
-  0%|          | 0x0000/0x0001 bytes                                        0%|          | 0x0000/0x0001 bytes 000400ff: 1b                                               .
-                                     100%|██████████| 0x0001/0x0001 bytes EPROM read complete.
-100%|██████████| 0x0001/0x0001 bytes 
-Read complete (0.05s)

@@ -1,6 +1,0 @@
-# XACT-02 fault-injection log (incoming, corrupt-crc8)
-corrupted_transfer_surfaced_clean_error: True
-error_latency: 4.429s
-sub_second_clean_error_no_2s_cascade: YES (>=2s cascade)
-detail: incoming: connected; corrupted read verdict ok=False (expected False)
-clean follow-on transfer PASSED (recovery byte-exact)

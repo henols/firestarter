@@ -8,6 +8,8 @@ _DB_FILE = _APP_ROOT / "firestarter" / "data" / "chip_database.json"
 ```
 
 - A test reads only files inside its own repo. Never a sibling repo, the meta repo or `.planning/`.
+  `firestarter_fw/tests/test_flash_path_record_sync.py::test_no_test_reads_outside_this_repo`
+  enforces this by parsing every `tests/*.py` with `ast`.
 - Resolve paths from `Path(__file__)`.
 - To check "inside repo X", use `Path.is_relative_to()`, never a name substring.
 - Never write a test that skips when a sibling is absent. In CI it never runs.

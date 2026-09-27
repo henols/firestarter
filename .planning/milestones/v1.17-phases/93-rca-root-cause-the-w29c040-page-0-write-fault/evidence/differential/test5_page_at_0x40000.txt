@@ -1,4 +1,0 @@
-Connecting...Connecting... OK      
-Writing /workspaces/.planning/phases/93-rca-root-cause-the-w29c040-page-0-write-fault/evidence/differential/w29c040_256b_seed44.bin to W29C040
-  0%|          | 0x0000/0x0100 bytes 100%|██████████| 0x0100/0x0100 bytes 
-Write to W29C040 successful (0.09s).

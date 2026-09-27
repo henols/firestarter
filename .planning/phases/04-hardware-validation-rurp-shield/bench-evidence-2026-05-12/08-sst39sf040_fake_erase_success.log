@@ -1,5 +1,0 @@
-Connecting...Connecting... OK      
-Erasing EPROM SST39SF040
-WARN: Chip ID 0000 dont match expected ID 0xbfb7
-Programmer warning: Chip ID 0000 dont match expected ID 0xbfb7
-Erase for SST39SF040 successful (0.16s). 

@@ -1,134 +1,0 @@
-DEBUG  :Firestarter  : 442: Firestarter version: 2.0.7_dev
-DEBUG  :Firestarter  : 443: Running on Python: 3.12.13
-DEBUG  :Firestarter  : 444: Platform: Linux 6.12.85+deb13-amd64
-DEBUG  :Firestarter  : 445: Architecture: 64bit
-DEBUG  :Firestarter  : 446: OS: Linux-6.12.85+deb13-amd64-x86_64-with-glibc2.41
-DEBUG  :EpromOperator: 166: Performing WRITE for W27C512
-DEBUG  :EpromOperator: 170: EPROM data: {'memory-size': 65536, 'type': 1, 'algorithm': 7, 'pin-count': 28, 'vpp_mv': 12000, 'pulse-delay': 0, 'chip-id': 55816, 'bus-config': {'bus': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]}, 'flags': 2}
-DEBUG  :SerialComm   : 328: Potential programmer ports found: ['/dev/ttyACM0']
-DEBUG  :SerialComm   : 359: Probing for programmer on /dev/ttyACM0...
-DEBUG  :SerialComm   :  98: Attempting to connect to /dev/ttyACM0 at 250000 baud.
-DEBUG  :SerialComm   : 107: Successfully connected to /dev/ttyACM0.
-DEBUG  :SerialComm   : 283: Sending command to programmer: {'memory-size': 65536, 'type': 1, 'algorithm': 7, 'pin-count': 28, 'vpp_mv': 12000, 'pulse-delay': 0, 'chip-id': 55816, 'bus-config': {'bus': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]}, 'flags': 130, 'cmd': 2}
-DEBUG  :SerialComm   : 302:   Flags set: CanErase (0x82)
-DEBUG  :SerialComm   : 134: Sending string: {"memory-size":65536,"type":1,"algorithm":7,"pin-count":28,"vpp_mv":12000,"pulse-delay":0,"chip-id":55816,"bus-config":{"bus":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]},"flags":130,"cmd":2}
-DEBUG  :SerialComm   : 126: Sent 187 bytes to /dev/ttyACM0.
-DEBUG  :RURP         : 195: I: Token count: 39
-DEBUG  :RURP         : 195: OK: FW: 2.0.6:uno, HW: Rev2, Cmd: 0x02
-DEBUG  :SerialComm   : 402: Programmer found on /dev/ttyACM0: FW: 2.0.6:uno, HW: Rev2, Cmd: 0x02
-DEBUG  :EpromOperator: 198: Operation WRITE setup for W27C512 (state 2) complete (3.59s). Buffer size: 512
-INFO   :EpromOperator: 548: Writing test_W27C512.bin to W27C512
-DEBUG  :SerialComm   : 134: Sending string: OK
-DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-DEBUG  :EpromOperator: 270: init start
-DEBUG  :RURP         : 195: I: Init start
-DEBUG  :RURP         : 195: DATA: 2048/65536
-  0%|          | 0x0000/0x10000 bytes   3%|▎         | 0x0800/0x10000 bytes                                         3%|▎         | 0x0800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                        3%|▎         | 0x0800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                        3%|▎         | 0x0800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 4096/65536
-  6%|▋         | 0x1000/0x10000 bytes                                         6%|▋         | 0x1000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                        6%|▋         | 0x1000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                        6%|▋         | 0x1000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 6144/65536
-  9%|▉         | 0x1800/0x10000 bytes                                         9%|▉         | 0x1800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                        9%|▉         | 0x1800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                        9%|▉         | 0x1800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 8192/65536
- 12%|█▎        | 0x2000/0x10000 bytes                                        12%|█▎        | 0x2000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       12%|█▎        | 0x2000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       12%|█▎        | 0x2000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 10240/65536
- 16%|█▌        | 0x2800/0x10000 bytes                                        16%|█▌        | 0x2800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       16%|█▌        | 0x2800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       16%|█▌        | 0x2800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 12288/65536
- 19%|█▉        | 0x3000/0x10000 bytes                                        19%|█▉        | 0x3000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       19%|█▉        | 0x3000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       19%|█▉        | 0x3000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 14336/65536
- 22%|██▏       | 0x3800/0x10000 bytes                                        22%|██▏       | 0x3800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       22%|██▏       | 0x3800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       22%|██▏       | 0x3800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 16384/65536
- 25%|██▌       | 0x4000/0x10000 bytes                                        25%|██▌       | 0x4000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       25%|██▌       | 0x4000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       25%|██▌       | 0x4000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 18432/65536
- 28%|██▊       | 0x4800/0x10000 bytes                                        28%|██▊       | 0x4800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       28%|██▊       | 0x4800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       28%|██▊       | 0x4800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 20480/65536
- 31%|███▏      | 0x5000/0x10000 bytes                                        31%|███▏      | 0x5000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       31%|███▏      | 0x5000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       31%|███▏      | 0x5000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 22528/65536
- 34%|███▍      | 0x5800/0x10000 bytes                                        34%|███▍      | 0x5800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       34%|███▍      | 0x5800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       34%|███▍      | 0x5800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 24576/65536
- 38%|███▊      | 0x6000/0x10000 bytes                                        38%|███▊      | 0x6000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       38%|███▊      | 0x6000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       38%|███▊      | 0x6000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 26624/65536
- 41%|████      | 0x6800/0x10000 bytes                                        41%|████      | 0x6800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       41%|████      | 0x6800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       41%|████      | 0x6800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 28672/65536
- 44%|████▍     | 0x7000/0x10000 bytes                                        44%|████▍     | 0x7000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       44%|████▍     | 0x7000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       44%|████▍     | 0x7000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 30720/65536
- 47%|████▋     | 0x7800/0x10000 bytes                                        47%|████▋     | 0x7800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       47%|████▋     | 0x7800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       47%|████▋     | 0x7800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 32768/65536
- 50%|█████     | 0x8000/0x10000 bytes                                        50%|█████     | 0x8000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       50%|█████     | 0x8000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       50%|█████     | 0x8000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 34816/65536
- 53%|█████▎    | 0x8800/0x10000 bytes                                        53%|█████▎    | 0x8800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       53%|█████▎    | 0x8800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       53%|█████▎    | 0x8800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 36864/65536
- 56%|█████▋    | 0x9000/0x10000 bytes                                        56%|█████▋    | 0x9000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       56%|█████▋    | 0x9000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       56%|█████▋    | 0x9000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 38912/65536
- 59%|█████▉    | 0x9800/0x10000 bytes                                        59%|█████▉    | 0x9800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       59%|█████▉    | 0x9800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       59%|█████▉    | 0x9800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 40960/65536
- 62%|██████▎   | 0xa000/0x10000 bytes                                        62%|██████▎   | 0xa000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       62%|██████▎   | 0xa000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       62%|██████▎   | 0xa000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 43008/65536
- 66%|██████▌   | 0xa800/0x10000 bytes                                        66%|██████▌   | 0xa800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       66%|██████▌   | 0xa800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       66%|██████▌   | 0xa800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 45056/65536
- 69%|██████▉   | 0xb000/0x10000 bytes                                        69%|██████▉   | 0xb000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       69%|██████▉   | 0xb000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       69%|██████▉   | 0xb000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 47104/65536
- 72%|███████▏  | 0xb800/0x10000 bytes                                        72%|███████▏  | 0xb800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       72%|███████▏  | 0xb800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       72%|███████▏  | 0xb800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 49152/65536
- 75%|███████▌  | 0xc000/0x10000 bytes                                        75%|███████▌  | 0xc000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       75%|███████▌  | 0xc000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       75%|███████▌  | 0xc000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 51200/65536
- 78%|███████▊  | 0xc800/0x10000 bytes                                        78%|███████▊  | 0xc800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       78%|███████▊  | 0xc800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       78%|███████▊  | 0xc800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 53248/65536
- 81%|████████▏ | 0xd000/0x10000 bytes                                        81%|████████▏ | 0xd000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       81%|████████▏ | 0xd000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       81%|████████▏ | 0xd000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 55296/65536
- 84%|████████▍ | 0xd800/0x10000 bytes                                        84%|████████▍ | 0xd800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       84%|████████▍ | 0xd800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       84%|████████▍ | 0xd800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 57344/65536
- 88%|████████▊ | 0xe000/0x10000 bytes                                        88%|████████▊ | 0xe000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       88%|████████▊ | 0xe000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       88%|████████▊ | 0xe000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 59392/65536
- 91%|█████████ | 0xe800/0x10000 bytes                                        91%|█████████ | 0xe800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       91%|█████████ | 0xe800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       91%|█████████ | 0xe800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 61440/65536
- 94%|█████████▍| 0xf000/0x10000 bytes                                        94%|█████████▍| 0xf000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       94%|█████████▍| 0xf000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       94%|█████████▍| 0xf000/0x10000 bytes DEBUG  :RURP         : 195: DATA: 63488/65536
- 97%|█████████▋| 0xf800/0x10000 bytes                                        97%|█████████▋| 0xf800/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       97%|█████████▋| 0xf800/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       97%|█████████▋| 0xf800/0x10000 bytes DEBUG  :RURP         : 195: DATA: 65536/65536
-100%|██████████| 0x10000/0x10000 bytes                                        100%|██████████| 0x10000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       100%|██████████| 0x10000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       100%|██████████| 0x10000/0x10000 bytes DEBUG  :RURP         : 195: INIT: Done
-                                       100%|██████████| 0x10000/0x10000 bytes DEBUG  :EpromOperator: 280: init complete.
-                                       100%|██████████| 0x10000/0x10000 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                       100%|██████████| 0x10000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                       100%|██████████| 0x10000/0x10000 bytes DEBUG  :EpromOperator: 246: Main start
-100%|██████████| 0x10000/0x10000 bytes 
-  0%|          | 0x0000/0x10000 bytes                                         0%|          | 0x0000/0x10000 bytes DEBUG  :RURP         : 195: I: Main start
-                                        0%|          | 0x0000/0x10000 bytes DEBUG  :RURP         : 195: OK: Req data
-                                        0%|          | 0x0000/0x10000 bytes DEBUG  :SerialComm   : 126: Sent 4 bytes to /dev/ttyACM0.
-                                        0%|          | 0x0000/0x10000 bytes ERROR  :RURP         : 195: ERROR: Data err -3
-ERROR  :EpromOperator: 262: Communication error during WRITE: Firmware did not acknowledge header: Data err -3
-  0%|          | 0x0000/0x10000 bytes 
-ERROR  :EpromOperator: 556: Write to W27C512 failed.
-DEBUG  :SerialComm   : 274: Disconnected from /dev/ttyACM0.

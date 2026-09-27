@@ -1,10 +1,0 @@
-=== Post-Fail Pages 1-3 Read-back (Run 2) ===
-Timestamp: 2026-06-27T06:40:18Z
-Reading addresses 0x100-0x3FF (pages 1-3 of the 1024B write range)
-
-Connecting...Connecting... OK      
-Reading EPROM W29C040, saving to W29C040.bin
-  0%|          | 0x0000/0x0300 bytes                                      100%|██████████| 0x0300/0x0300 bytes EPROM read complete.
-100%|██████████| 0x0300/0x0300 bytes 
-Read complete (0.15s). Data saved to W29C040.bin
-Exit code: 0

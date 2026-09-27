@@ -1,20 +1,0 @@
-=== Settled Read of 0x0000ff (H4 fork determination) ===
-Timestamp: 2026-06-27T06:38:57Z
-Expected (if H4): 0x04 (page committed, poll gave up)
-Expected (if H1/H3): 0x00 (page never committed)
-
-Read 1 of 0x0000ff:   0%|          | 0x0000/0x0001 bytes                                        0%|          | 0x0000/0x0001 bytes 000000ff: 00                                               .
-                                     100%|██████████| 0x0001/0x0001 bytes EPROM read complete.
-100%|██████████| 0x0001/0x0001 bytes 
-Read 2 of 0x0000ff:   0%|          | 0x0000/0x0001 bytes                                        0%|          | 0x0000/0x0001 bytes 000000ff: 00                                               .
-                                     100%|██████████| 0x0001/0x0001 bytes EPROM read complete.
-100%|██████████| 0x0001/0x0001 bytes 
-Read 3 of 0x0000ff:   0%|          | 0x0000/0x0001 bytes                                        0%|          | 0x0000/0x0001 bytes 000000ff: 00                                               .
-                                     100%|██████████| 0x0001/0x0001 bytes EPROM read complete.
-100%|██████████| 0x0001/0x0001 bytes 
-Read 4 of 0x0000ff:   0%|          | 0x0000/0x0001 bytes                                        0%|          | 0x0000/0x0001 bytes 000000ff: 00                                               .
-                                     100%|██████████| 0x0001/0x0001 bytes EPROM read complete.
-100%|██████████| 0x0001/0x0001 bytes 
-Read 5 of 0x0000ff:   0%|          | 0x0000/0x0001 bytes                                        0%|          | 0x0000/0x0001 bytes 000000ff: 00                                               .
-                                     100%|██████████| 0x0001/0x0001 bytes EPROM read complete.
-100%|██████████| 0x0001/0x0001 bytes 

@@ -1,8 +1,0 @@
-# 53-03 Uno (ACM1) read leg — N=5 consistency-check, verdict 0 (self-consistency, UNFORCED)
-# board: uno (512B chunks), Rev 2.0 (operator-confirmed); chip-id 0xda08 passed unforced (no VPP issue)
-8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  run_01.bin
-8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  run_02.bin
-8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  run_03.bin
-8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  run_04.bin
-8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  run_05.bin
-# verdict: 0 (PASS) — 1 distinct SHA across N=5 (8144ae57...)
