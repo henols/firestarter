@@ -1,34 +1,0 @@
-DEBUG  :Config       :  93: ConfigManager initialized for /home/vscode/.firestarter/config.json.
-DEBUG  :Database     : 198: EpromDatabase initialized.
-DEBUG  :EpromOperator: 222: Performing WRITE for W29C040
-DEBUG  :EpromOperator: 226: EPROM data: {'memory-size': 524288, 'type': 5, 'algorithm': 5, 'pin-count': 32, 'vpp_mv': 12000, 'pulse-delay': 0, 'chip-id': 55878, 'bus-config': {'bus': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21], 'rw-pin': 22}, 'flags': 2}
-DEBUG  :SerialComm   : 531: Potential programmer ports found: ['/dev/ttyACM0']
-DEBUG  :SerialComm   : 607: Probing for programmer on /dev/ttyACM0...
-DEBUG  :SerialComm   : 129: Attempting to connect to /dev/ttyACM0 at 250000 baud.
-DEBUG  :SerialComm   : 138: Successfully connected to /dev/ttyACM0.
-DEBUG  :SerialComm   : 488: Sending command to programmer: {'state': 13}
-DEBUG  :SerialComm   : 160: Sent 15 bytes to /dev/ttyACM0.
-DEBUG  :RURP         : 247: OK: Ready
-DEBUG  :RURP         : 247: OK: FW: 3.0.0b10:leonardo
-DEBUG  :SerialComm   : 488: Sending command to programmer: {'memory-size': 524288, 'type': 5, 'algorithm': 5, 'pin-count': 32, 'vpp_mv': 12000, 'pulse-delay': 0, 'chip-id': 55878, 'bus-config': {'bus': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21], 'rw-pin': 22}, 'flags': 14, 'cmd': 2}
-DEBUG  :SerialComm   : 507:   Flags set: CanErase, SkipErase, SkipBlankCheck (0x0E)
-DEBUG  :SerialComm   : 160: Sent 211 bytes to /dev/ttyACM0.
-DEBUG  :RURP         : 247: OK: Ready
-DEBUG  :SerialComm   : 687: Programmer found on /dev/ttyACM0: Ready
-DEBUG  :EpromOperator: 258: Operation WRITE setup for W29C040 (state 2) complete (3.35s). Buffer size: 1024
-INFO   :EpromOperator:1475: Writing /workspaces/.planning/phases/93-rca-root-cause-the-w29c040-page-0-write-fault/evidence/signature/w29c040_test_1024b_seed42.bin to W29C040
-DEBUG  :SerialComm   : 170: Sending string: OK
-DEBUG  :SerialComm   : 160: Sent 2 bytes to /dev/ttyACM0.
-DEBUG  :EpromOperator: 360: init start
-DEBUG  :RURP         : 247: INIT: (init done)
-DEBUG  :EpromOperator: 381: init complete.
-DEBUG  :SerialComm   : 170: Sending string: OK
-DEBUG  :SerialComm   : 160: Sent 2 bytes to /dev/ttyACM0.
-DEBUG  :EpromOperator: 331: Main start
-  0%|          | 0x0000/0x0400 bytes                                        0%|          | 0x0000/0x0400 bytes DEBUG  :RURP         : 247: OK: Request data
-                                       0%|          | 0x0000/0x0400 bytes DEBUG  :SerialComm   : 160: Sent 1030 bytes to /dev/ttyACM0.
-                                     100%|██████████| 0x0400/0x0400 bytes ERROR  :RURP         : 247: ERROR: Timeout verifying 0x04 at 0x0000ff (got 0x00)
-ERROR  :EpromOperator: 350: Programmer error during WRITE: Timeout verifying 0x04 at 0x0000ff (got 0x00)
-100%|██████████| 0x0400/0x0400 bytes 
-ERROR  :EpromOperator:1490: Write to W29C040 failed.
-DEBUG  :SerialComm   : 479: Disconnected from /dev/ttyACM0.

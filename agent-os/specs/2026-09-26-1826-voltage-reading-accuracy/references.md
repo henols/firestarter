@@ -1,5 +1,8 @@
 # References for Voltage-Reading Accuracy
 
+> **`.planning/` paths below refer to the retired GSD tree.** Read them at the tag
+> `archive/planning-tree-final` — see [PLANNING-ARCHIVE.md](../../PLANNING-ARCHIVE.md).
+
 ## The code under change
 
 ### AVR conversion path — the whole of it

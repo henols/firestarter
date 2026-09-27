@@ -1,47 +1,0 @@
-DEBUG  :Firestarter  : 442: Firestarter version: 2.0.7_dev
-DEBUG  :Firestarter  : 443: Running on Python: 3.12.13
-DEBUG  :Firestarter  : 444: Platform: Linux 6.12.85+deb13-amd64
-DEBUG  :Firestarter  : 445: Architecture: 64bit
-DEBUG  :Firestarter  : 446: OS: Linux-6.12.85+deb13-amd64-x86_64-with-glibc2.41
-DEBUG  :EpromOperator: 166: Performing READ for FM1608
-DEBUG  :EpromOperator: 170: EPROM data: {'memory-size': 8192, 'type': 1, 'algorithm': 7, 'pin-count': 28, 'vpp_mv': 12000, 'pulse-delay': 0, 'chip-id': 0, 'bus-config': {'bus': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], 'vpp-pin': 15}, 'flags': 0}
-DEBUG  :SerialComm   : 328: Potential programmer ports found: ['/dev/ttyACM0']
-DEBUG  :SerialComm   : 359: Probing for programmer on /dev/ttyACM0...
-DEBUG  :SerialComm   :  98: Attempting to connect to /dev/ttyACM0 at 250000 baud.
-DEBUG  :SerialComm   : 107: Successfully connected to /dev/ttyACM0.
-DEBUG  :SerialComm   : 283: Sending command to programmer: {'memory-size': 256, 'type': 1, 'algorithm': 7, 'pin-count': 28, 'vpp_mv': 12000, 'pulse-delay': 0, 'chip-id': 0, 'bus-config': {'bus': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], 'vpp-pin': 15}, 'flags': 128, 'cmd': 1}
-DEBUG  :SerialComm   : 134: Sending string: {"memory-size":256,"type":1,"algorithm":7,"pin-count":28,"vpp_mv":12000,"pulse-delay":0,"chip-id":0,"bus-config":{"bus":[0,1,2,3,4,5,6,7,8,9,10,11,12,13],"vpp-pin":15},"flags":128,"cmd":1}
-DEBUG  :SerialComm   : 126: Sent 188 bytes to /dev/ttyACM0.
-DEBUG  :RURP         : 195: I: Token count: 39
-DEBUG  :RURP         : 195: OK: FW: 2.0.6:uno, HW: Rev2, Cmd: 0x01
-DEBUG  :SerialComm   : 402: Programmer found on /dev/ttyACM0: FW: 2.0.6:uno, HW: Rev2, Cmd: 0x01
-DEBUG  :EpromOperator: 198: Operation READ setup for FM1608 (state 1) complete (3.58s). Buffer size: 512
-INFO   :EpromOperator: 392: Reading EPROM FM1608, saving to fm1608_probe.bin
-DEBUG  :SerialComm   : 134: Sending string: OK
-DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-DEBUG  :EpromOperator: 270: init start
-DEBUG  :RURP         : 195: I: Init start
-DEBUG  :RURP         : 195: INIT: Done
-DEBUG  :EpromOperator: 280: init complete.
-DEBUG  :SerialComm   : 134: Sending string: OK
-DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-DEBUG  :EpromOperator: 246: Main start
-  0%|          | 0x0000/0x0100 bytes                                        0%|          | 0x0000/0x0100 bytes DEBUG  :RURP         : 195: I: Main start
-                                       0%|          | 0x0000/0x0100 bytes DEBUG  :RURP         : 195: DATA: Sending data
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :RURP         : 195: I: Main done
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :RURP         : 195: MAIN: Done
-                                     100%|██████████| 0x0100/0x0100 bytes INFO   :EpromOperator: 361: EPROM read complete.
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :EpromOperator: 253: Main complete.
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :EpromOperator: 270: end start
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :RURP         : 195: I: End start
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :RURP         : 195: END: Done
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :EpromOperator: 280: end complete.
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :SerialComm   : 134: Sending string: OK
-                                     100%|██████████| 0x0100/0x0100 bytes DEBUG  :SerialComm   : 126: Sent 2 bytes to /dev/ttyACM0.
-100%|██████████| 0x0100/0x0100 bytes 
-INFO   :EpromOperator: 409: Read complete (0.32s). Data saved to fm1608_probe.bin
-DEBUG  :SerialComm   : 274: Disconnected from /dev/ttyACM0.

@@ -1,5 +1,8 @@
 # References for the info Jumper Table
 
+> **`.planning/` paths below refer to the retired GSD tree.** Read them at the tag
+> `archive/planning-tree-final` — see [PLANNING-ARCHIVE.md](../../PLANNING-ARCHIVE.md).
+
 ## Similar Implementations
 
 ### JP5 destructive-operation gate (v1.37 Phase 182)
