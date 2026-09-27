@@ -24,10 +24,11 @@ Two rules that are costly to get wrong, because getting them wrong publishes som
   documentation-only push cuts a pre-release and uploads a new PyPI version. A PyPI version can
   never be reused. Decide the scope of a beta push before making it.
 
-A push to `main` currently publishes **nothing**: the version-bump auto-commit is rejected by the
-`Protect main` ruleset and aborts the job before the release step. Do not read that as a safety
-net — it is a broken release path that fails closed, and it re-arms the moment the bump is fixed.
-`RELEASING.md` has the detail and the promotion runbook.
+A push to `main` in either sub-repo **publishes a stable release** when the version in the source
+(`firestarter/__init__.py` or `include/version.h`) has no tag yet. When the tag already exists,
+the workflow publishes nothing. A push that changes only ignored paths (`**.md`, `images/**`,
+`.github/**`, `tools/**`) does not start the workflow. `RELEASING.md` has the detail and the
+promotion runbook.
 
 ## System Overview
 

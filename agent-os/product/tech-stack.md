@@ -10,8 +10,8 @@
   `agent-os/PLANNING-ARCHIVE.md`.
 - `firestarter_app/` (`henols/firestarter_app`): the host CLI and the chip database generator.
 - `firestarter_fw/` (`henols/firestarter_fw`): the firmware.
-- User documentation: the `firestarter` GitHub wiki, plus each repo's `README.md` and
-  `firestarter_app/CHANGELOG.md`.
+- User documentation: the `firestarter` GitHub wiki, plus each repo's `README.md`. The only change
+  log is `CHANGELOG.md` in the meta repo.
 - Branches: `main` (stable), `beta` (pre-release), and one milestone branch with the same name in all
   three repos.
 - All three repos carry an identical active `Protect main` ruleset, scoped to `~DEFAULT_BRANCH`,
