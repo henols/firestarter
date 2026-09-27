@@ -86,6 +86,24 @@ H_FAMILIES = "## Families"
 H_VARIATION = "## Family variation"
 H_NOTES = "## Notes"
 
+LOGO = (
+    '<p align="left"><img src="https://raw.githubusercontent.com/henols/firestarter/main/'
+    'images/branding/firestarter_logo_horizontal.png" alt="Firestarter EPROM Programmer" '
+    'width="400"></p>'
+)
+
+INTRO = (
+    "This list shows the chips that passed a `firestarter dev test` run on real hardware.\n"
+    "A pass means that each applicable step (write, read back and compare) worked on the chip.\n"
+    "The Host and Firmware columns show the versions that made the evidence.\n"
+    "\n"
+    "A family is the programming protocol, the pin map and the VPP voltage of a chip.\n"
+    "Chips in one family use the same programming path.\n"
+    "\n"
+    "To add a chip, test it and send the report. Refer to\n"
+    "[Testing Chips](https://github.com/henols/firestarter/wiki/Testing-Chips)."
+)
+
 ROW_RE = re.compile(
     r"^\|\s*(?P<chip>[A-Za-z0-9_+.-]+)\s*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|"
     r"\s*(?P<host>[^|]+?)\s*\|\s*(?P<firmware>[^|]+?)\s*\|\s*(?P<issues>[^|]+?)\s*\|"
@@ -200,8 +218,18 @@ def render(records: list[dict], db_path: str, notes: str) -> str:
     known.sort(key=lambda r: (fam_of[entry[r["chip"]][2]], r["chip"]))
     valset = {r["chip"] for r in known}
 
+    entries: collections.Counter = collections.Counter(
+        (e["programming"]["algorithm"], e["pinout"], e["electrical"]["vpp_mv"])
+        for _, cs in db.items()
+        for e in cs
+    )
+
     L: list[str] = []
+    L.append(LOGO)
+    L.append("")
     L.append("# Validated EPROMs")
+    L.append("")
+    L.append(INTRO)
     L.append("")
 
     L.append(H_CHIPS)
@@ -241,18 +269,23 @@ def render(records: list[dict], db_path: str, notes: str) -> str:
 
     L.append(H_FAMILIES)
     L.append("")
-    L.append("| Family | Parts | Vendors | Validated members |")
-    L.append("|---|---|---|---|")
+    L.append(
+        "| Family | Database entries | Part numbers | Vendors | Validated members |"
+    )
+    L.append("|---|---|---|---|---|")
     for k, fid in sorted(fam_of.items(), key=lambda kv: kv[1]):
         members = sorted(r["chip"] for r in known if entry[r["chip"]][2] == k)
         L.append(
-            f"| {fid} | {len(parts[k])} | {len(vendors[k])} | {', '.join(members)} |"
+            f"| {fid} | {entries[k]} | {len(parts[k])} | {len(vendors[k])} | "
+            f"{', '.join(members)} |"
         )
     L.append("")
 
     L.append(H_VARIATION)
     L.append("")
-    L.append("| Family | Size range | Page sizes | Validated | Untested siblings |")
+    L.append(
+        "| Family | Size range | Page sizes | Validated | Untested part numbers |"
+    )
     L.append("|---|---|---|---|---|")
     for k, fid in sorted(fam_of.items(), key=lambda kv: kv[1]):
         members = [
