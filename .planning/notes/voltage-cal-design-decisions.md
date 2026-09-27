@@ -6,6 +6,12 @@ context: Captured during /gsd-explore 2026-07-03. Records the reasoning behind t
 
 # Voltage-reading calibration — why the design is what it is
 
+> **D1 IS RETIRED (2026-09-26).** It said "we do not assume the error model, the
+> procedure discovers it". The model is now measured: pure gain, no offset —
+> Phase 199's two paired ratios agree to 0.3 % across a 5 V span. A one-point
+> correction through the origin is sufficient and offset fitting must not be
+> built. Every other decision here (D2-D7) survived implementation unchanged.
+
 The idea: let the end-user measure real voltages with a DMM, guided by a
 calibration step, and correct the firmware's voltage-divider reading math.
 These are the forks we resolved during the explore session and the reasoning.

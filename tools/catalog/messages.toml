@@ -77,17 +77,20 @@ params      = [
 ]
 wire_format = "id_frame"
 
-# P-03: Fixed-shape u32 r1 + u32 r2 + u8 override. override=0xFF means no override.
-# 9 wire bytes fixed. Host renders override branch host-side.
+# Fixed-shape u32 r1 + u32 r2 + u8 override + u16 bandgap_mv. override=0xFF
+# means no override. 11 wire bytes fixed. Host renders the override branch
+# host-side. bandgap_mv is this MCU's calibrated internal reference; it reads
+# 1100 (the nominal) on a board that has never been calibrated.
 [[messages]]
 id          = 0x05
 name        = "MSG_OK_CFG"
 severity    = "OK"
-format      = "R1: %lu, R2: %lu, Cfg: %u"
+format      = "R1: %lu, R2: %lu, Cfg: %u, Bandgap: %u mV"
 params      = [
-    { type = "u32" },
-    { type = "u32" },
-    { type = "u8" },
+    { type = "u32", render = "dec" },
+    { type = "u32", render = "dec" },
+    { type = "u8", render = "dec" },
+    { type = "u16", render = "dec" },
 ]
 wire_format = "id_frame"
 
@@ -417,6 +420,32 @@ format      = "SDP unlock exceeded t_BLC budget: %lu us"
 params      = [{ type = "u32", render = "dec" }]
 wire_format = "id_frame"
 
+# The reported internal VCC is outside what the board can physically run at.
+# This is an INSTRUMENT fault, not a supply fault: rurp_scale_vcc_mv returns
+# supply * 1100 / bandgap_true, so an impossible figure measures how far the
+# real per-chip bandgap is from the assumed 1100 mV -- and the same error is
+# multiplicative on every VPP/VPE reading. Payload is the reported millivolts.
+[[messages]]
+id          = 0x88
+name        = "MSG_WARN_VCC_IMPLAUSIBLE"
+severity    = "WARN"
+format      = "Internal VCC reads %u mV, which the board cannot run at. The voltage readings are not trustworthy."
+params      = [{ type = "u16", render = "dec" }]
+wire_format = "id_frame"
+
+# This board has never been calibrated, so its voltage readings carry the full
+# per-die bandgap spread -- up to 10 %, which is three times the VPP acceptance
+# window. The verdict that follows is therefore not trustworthy in either
+# direction. Emitted once per voltage-gated operation, never as a refusal: it
+# reports a limit on what the firmware knows, not a fault in the hardware.
+[[messages]]
+id          = 0x89
+name        = "MSG_WARN_NOT_CALIBRATED"
+severity    = "WARN"
+format      = "Voltage readings are uncalibrated on this board. Run 'firestarter cal' to make them trustworthy."
+params      = []
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # ERROR (0xA0..0xDF)
 # ---------------------------------------------------------------------------
@@ -732,6 +761,21 @@ params      = [
 ]
 wire_format = "id_frame"
 
+# The stored divider calibration cannot be evaluated, so no voltage reading is
+# possible. Refused pre-flight, before any high-voltage bit is set: a caller
+# must NOT read the 0 mV that the conversion returns as "the rail is low".
+# Payload is the stored r1 and r2 so the operator can see what is wrong.
+[[messages]]
+id          = 0xC1
+name        = "MSG_ERR_CALIBRATION"
+severity    = "ERROR"
+format      = "Divider calibration unusable: R1 %lu, R2 %lu"
+params      = [
+    { type = "u32", render = "dec" },
+    { type = "u32", render = "dec" },
+]
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # DATA (0xE0..0xEF)
 # ---------------------------------------------------------------------------
@@ -773,8 +817,12 @@ format      = "Sending data"
 params      = []
 wire_format = "id_frame"
 
-# VPP voltage reading: u16 voltage_mv + u16 vcc_mv (4 wire bytes).
-# Host renders decimal from raw millivolt integers.
+# VPP voltage reading: FOUR u16 (8 wire bytes), not two.
+# The firmware pre-splits and pre-rounds in hardware_operations.cpp before
+# framing: [volts][tenths][vcc volts][vcc tenths]. The raw millivolt integer
+# NEVER reaches the host on this path, so wire resolution here is a 100 mV
+# grid. Anything needing better than that -- calibration, a paired bench
+# reading -- must use MSG_DATA_ADC_RAW instead.
 [[messages]]
 id          = 0xE4
 name        = "MSG_DATA_VPP_VOLTAGE"
@@ -788,7 +836,7 @@ params      = [
 ]
 wire_format = "id_frame"
 
-# VPE voltage reading: same shape as VPP_VOLTAGE with VPE prefix.
+# VPE voltage reading: same shape and same 100 mV grid as VPP_VOLTAGE.
 [[messages]]
 id          = 0xE5
 name        = "MSG_DATA_VPE_VOLTAGE"
@@ -802,8 +850,6 @@ params      = [
 ]
 wire_format = "id_frame"
 
-# Chip-read streaming wrapper. params[0] is the raw chip-byte payload (W-04).
-# format is documentation-only; host extracts raw bytes, never renders this string.
 [[messages]]
 id          = 0xE6
 name        = "MSG_DATA_CHUNK"
@@ -811,6 +857,34 @@ severity    = "DATA"
 format      = "<data chunk>"
 params      = [
     { type = "bytes" },
+]
+wire_format = "id_frame"
+
+# Chip-read streaming wrapper. params[0] is the raw chip-byte payload (W-04).
+# format is documentation-only; host extracts raw bytes, never renders this string.
+# Raw ADC diagnostic readout (dev-gated CMD_DEV_ADC). 17 wire bytes:
+#   [mode u8][divider_adc u16][bandgap_adc u16][voltage_mv u16][vcc_mv u16]
+#   [r1 u32][r2 u32]
+# mode: 0 = rails off, 1 = VPP composite, 2 = VPE composite. The firmware
+# emits one frame per mode from a single command, so all three are taken at
+# ONE pot setting -- which is what makes them a usable pair.
+#
+# This exists because MSG_DATA_VPP_VOLTAGE carries only tenths of a volt and
+# cannot support a calibration measurement. Every field here is a full
+# integer, printed in decimal, so the host loses no precision reading it back.
+[[messages]]
+id          = 0xE7
+name        = "MSG_DATA_ADC_RAW"
+severity    = "DATA"
+format      = "ADC mode %u: divider %u, bandgap %u, V %u mV, VCC %u mV, R1 %lu, R2 %lu"
+params      = [
+    { type = "u8",  render = "dec" },
+    { type = "u16", render = "dec" },
+    { type = "u16", render = "dec" },
+    { type = "u16", render = "dec" },
+    { type = "u16", render = "dec" },
+    { type = "u32", render = "dec" },
+    { type = "u32", render = "dec" },
 ]
 wire_format = "id_frame"
 

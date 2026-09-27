@@ -102,7 +102,21 @@ the meta repo is the runbook for it.
   X88C64 (PCB-blocked), AT28C04/16 (needs an adapter).
 - uno328pb + Rev 2.0 brownout hang during program.
 - Bench sweeps on the Rev 2.2 and modified Rev 0 shields. All systematic sweeps to date used Rev 2.0.
-- VPP ADC reads about +7.5 % high. `MSG_WARN_VPP_LOW`'s window is narrower than this error.
+- **RESOLVED 2026-09-26 (v1.43).** The VPP reading error is per-die ATmega bandgap spread, not
+  the divider. Measured on three boards across three shield revisions: the rails-off ADC count
+  measures the divider ratio with no meter and no bandgap involved, and came out 137/138/136 —
+  nominal, confirming `VALUE_R2 = 44000`. The bandgap counts were 206/228/210, giving real
+  references of 1024/1100/1050 mV against a firmware that assumed 1100 for every board. That alone
+  reproduces backlog 999.38's 6.8–8.3 % band: it was a sample of different chips, never a
+  systematic offset. **No firmware-only fix was possible** — AVR carries no factory trim word.
+  Fixed by per-board calibration: `firestarter cal --vcc <meter reading of the 5 V pin>`. The
+  leonardo's VPP reading moved 12994 → 12036 mV on an unchanged rail, so a correctly set 12.0 V rail
+  no longer trips `MSG_ERR_VPP_HIGH`. Specs
+  `agent-os/specs/2026-09-26-1826-voltage-reading-accuracy/` and
+  `agent-os/specs/2026-09-26-2108-per-board-bandgap-calibration/`.
+- **Now unblocked:** the `MSG_WARN_VPP_LOW` window is still narrower than the error it was meant to
+  catch, but the reading is trustworthy at last, so the −5 %/+500 mV window can finally be judged on
+  its merits rather than against instrument error. v1.40 RAIL-03 can close with it.
 
 **Database quality**
 - 215 algorithm 7/8 rows have `pulse_duration_us: 100` with no datasheet evidence.
