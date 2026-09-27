@@ -1,10 +1,0 @@
-=== Post-Fail Page-0 Read-back (Run 1) ===
-Timestamp: 2026-06-27T06:38:37Z
-Command: firestarter -p /dev/ttyACM0 read W29C040 -a 0 -s 256
-
-Connecting...Connecting... OK      
-Reading EPROM W29C040, saving to W29C040.bin
-  0%|          | 0x0000/0x0100 bytes                                      100%|██████████| 0x0100/0x0100 bytes EPROM read complete.
-100%|██████████| 0x0100/0x0100 bytes 
-Read complete (0.08s). Data saved to W29C040.bin
-Exit code: 0

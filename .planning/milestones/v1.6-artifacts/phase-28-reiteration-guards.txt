@@ -1,7 +1,0 @@
-PRE_GUARD_1: d78e963a8d70cb7dce9c0c776a3ff486b6af72dac67a79030437b0908e5b4d56
-PRE_GUARD_2: cedbe462104bc86e9716fcfcf34cb771863d601061bce9d47a56ff613b58a67c
-PRE_GUARD_3: 5b5903dbd382ffbf49e9a29141cf6ad76730d73450e4d442336ce7b4c4f0565d
-POST_GUARD_1: d78e963a8d70cb7dce9c0c776a3ff486b6af72dac67a79030437b0908e5b4d56
-POST_GUARD_2: 7740f70114b1591c62592e0f657c4d22394a01ad31c2d1acea436af5e0a0a8dd
-POST_GUARD_3: 5b5903dbd382ffbf49e9a29141cf6ad76730d73450e4d442336ce7b4c4f0565d
-VERDICT: PASS — Guards 1 and 3 byte-identical (Phase 28 v1 audit trail + Verdict section preserved). Guard 2 changed as expected: the new Phase 28 Re-iteration H2 was inserted at the end of Guard 2's range (between Re-open verdict tail and ## Verdict) — the insertion was intentional and no EXISTING content in the Phase 27/Re-open sections was modified. Guard 2 change is a design-limitation false-positive (range encompasses insertion point), not a tampering indicator.

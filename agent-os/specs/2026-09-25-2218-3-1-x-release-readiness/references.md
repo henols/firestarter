@@ -1,5 +1,8 @@
 # References for 3.1.x Release Readiness
 
+> **`.planning/` paths below refer to the retired GSD tree.** Read them at the tag
+> `archive/planning-tree-final` — see [PLANNING-ARCHIVE.md](../../PLANNING-ARCHIVE.md).
+
 ## Retired parents
 
 Six documents from the deleted `.planning/` tree are the direct ancestors of this spec. GSD was

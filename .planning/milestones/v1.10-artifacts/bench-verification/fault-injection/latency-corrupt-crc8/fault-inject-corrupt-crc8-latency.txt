@@ -1,8 +1,0 @@
-# XACT-02 per-frame NAK latency (established single-port connection)
-# port: /dev/ttyACM1  fault_form: corrupt-crc8
-baseline_clean_command_ok: True
-corrupted_frame_surfaced_error_no_silent_accept: True
-per_frame_nak_latency: 0.003s
-latency_verdict: SUB-SECOND (fast-fail)
-recovery_clean_command_same_connection_ok: True
-detail: corrupted frame response: ok=False msg=Empty input

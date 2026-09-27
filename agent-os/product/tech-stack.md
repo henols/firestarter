@@ -5,7 +5,9 @@
 - Meta repo `henols/firestarter`: the single issue tracker. It holds the submodule pointers,
   `tools/catalog/` (message codegen), `VALIDATED-EPROMS.md`, `RELEASING.md` (the stable-release
   runbook), `agent-os/` (mission, roadmap, tech stack, standards, specs), `.claude/skills/`, the
-  devcontainer, and `.planning/` (GSD history, read-only — GSD itself is uninstalled).
+  devcontainer, and `agent-os/todos/` (open defect records). The GSD-era `.planning/` tree was
+  retired on 2026-09-27; it is reachable at the tag `archive/planning-tree-final` and explained in
+  `agent-os/PLANNING-ARCHIVE.md`.
 - `firestarter_app/` (`henols/firestarter_app`): the host CLI and the chip database generator.
 - `firestarter_fw/` (`henols/firestarter_fw`): the firmware.
 - User documentation: the `firestarter` GitHub wiki, plus each repo's `README.md` and
