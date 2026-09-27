@@ -1,1 +1,0 @@
-                     0x4000-0x40FF = first page outside locked zone (PASS expected)

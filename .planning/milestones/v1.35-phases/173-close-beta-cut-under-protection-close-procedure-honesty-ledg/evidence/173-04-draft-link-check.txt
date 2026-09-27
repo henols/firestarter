@@ -1,3 +1,0 @@
-200 https://github.com/henols/firestarter_prom/issues/5
-200 https://github.com/henols/firestarter_prom/wiki/Contributing
-200 https://github.com/henols/firestarter_prom/wiki/Home

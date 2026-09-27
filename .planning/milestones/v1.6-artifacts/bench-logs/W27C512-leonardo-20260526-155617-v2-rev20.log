@@ -1,31 +1,0 @@
-Run 1/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-155617-v2-rev20/run_01.bin
-Connecting...Connecting... OK      
-WARN: VPP is high: 13.2V > 12.0V
-Programmer warning: VPP is high: 13.2V > 12.0V
-Run 1/5: SHA-256 19710f6e5243429210af121f34b6062193f2b1b93f54cf8312ec3a96225e9984  bytes=65536  elapsed=13.43s
-Run 2/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-155617-v2-rev20/run_02.bin
-Connecting...Connecting... OK      
-WARN: VPP is high: 13.1V > 12.0V
-Programmer warning: VPP is high: 13.1V > 12.0V
-Run 2/5: SHA-256 19710f6e5243429210af121f34b6062193f2b1b93f54cf8312ec3a96225e9984  bytes=65536  elapsed=13.34s
-Run 3/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-155617-v2-rev20/run_03.bin
-Connecting...Connecting... OK      
-WARN: VPP is high: 13.2V > 12.0V
-Programmer warning: VPP is high: 13.2V > 12.0V
-Run 3/5: SHA-256 19710f6e5243429210af121f34b6062193f2b1b93f54cf8312ec3a96225e9984  bytes=65536  elapsed=13.36s
-Run 4/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-155617-v2-rev20/run_04.bin
-Connecting...Connecting... OK      
-WARN: VPP is high: 13.2V > 12.0V
-Programmer warning: VPP is high: 13.2V > 12.0V
-Run 4/5: SHA-256 19710f6e5243429210af121f34b6062193f2b1b93f54cf8312ec3a96225e9984  bytes=65536  elapsed=13.38s
-Run 5/5: reading W27C512 -> /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-155617-v2-rev20/run_05.bin
-Connecting...Connecting... OK      
-WARN: VPP is high: 13.1V > 12.0V
-Programmer warning: VPP is high: 13.1V > 12.0V
-Run 5/5: SHA-256 19710f6e5243429210af121f34b6062193f2b1b93f54cf8312ec3a96225e9984  bytes=65536  elapsed=13.38s
-
-Consistency check: PASS
-Chip: W27C512  Board: unknown-board  Port: /dev/ttyACM1
-Runs: N=5
-Distinct SHAs: 1
-Output dir: /workspaces/.planning/v1.6/consistency-check-runs/W27C512-leonardo-20260526-155617-v2-rev20/

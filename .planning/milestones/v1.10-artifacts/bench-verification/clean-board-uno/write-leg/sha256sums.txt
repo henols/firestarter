@@ -1,8 +1,0 @@
-# 53-03 Uno write leg — 5x (write -b -> read <file>), readback SHA must == source SHA (UNFORCED)
-# source_image.bin SHA256 = 8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38 (chip's own content; net non-destructive)
-# plain-write path (erase W27C512 = Not supported); chip-id passes so no -f needed
-cycle_01_readback.bin  8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  == source PASS
-cycle_02_readback.bin  8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  == source PASS
-cycle_03_readback.bin  8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  == source PASS
-cycle_04_readback.bin  8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  == source PASS
-cycle_05_readback.bin  8144ae5745bd8de1a2ba2890938fb5e8e7b58e7402b9cccfbe80a93224e63e38  == source PASS

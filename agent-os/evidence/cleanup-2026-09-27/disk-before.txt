@@ -1,0 +1,11 @@
+607M	/workspaces/graphify-out
+106M	/workspaces/.cache-uv
+2.1M	/workspaces/.mypy_cache
+64K	/workspaces/.pytest_cache
+64K	/workspaces/.ruff_cache
+56M	/workspaces/.v1.34-arms
+44M	/workspaces/tmp
+138M	/workspaces/.planning
+40K	/workspaces/chip-test
+1.6M	/workspaces/firestarter-runs
+TOTAL /workspaces: 1.6G
