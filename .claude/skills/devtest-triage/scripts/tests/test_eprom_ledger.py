@@ -159,6 +159,31 @@ class TestEpromLedger(unittest.TestCase):
         second = el.render(RECORDS, self.db_path, reread_notes)
         self.assertEqual(rendered, second)
 
+    # -- Page header and family counts ------------------------------------
+
+    def test_render_starts_with_logo_then_title_then_intro(self):
+        lines = el.render(RECORDS, self.db_path, "").split("\n")
+        self.assertEqual(lines[0], el.LOGO)
+        self.assertEqual(lines[2], "# Validated EPROMs")
+        self.assertIn(el.INTRO, "\n".join(lines))
+
+    def _family_row(self, rendered: str, member: str) -> list[str]:
+        section = rendered.split(el.H_FAMILIES, 1)[1].split("\n## ", 1)[0]
+        rows = [l for l in section.split("\n") if l.startswith("|") and member in l]
+        self.assertEqual(len(rows), 1, rows)
+        return [c.strip() for c in rows[0].strip("|").split("|")]
+
+    def test_family_counts_database_entries_apart_from_part_numbers(self):
+        # One entry that carries two part numbers: the two counts must differ.
+        rendered = el.render(RECORDS, self.db_path, "")
+        _, entries, part_numbers, vendors, _ = self._family_row(rendered, "W29C040")
+        self.assertEqual((entries, part_numbers, vendors), ("1", "2", "1"))
+
+    def test_family_counts_agree_when_no_entry_has_an_alias(self):
+        rendered = el.render(RECORDS, self.db_path, "")
+        _, entries, part_numbers, _, _ = self._family_row(rendered, "M27C512")
+        self.assertEqual((entries, part_numbers), ("2", "2"))
+
     # -- Silent data loss is the failure mode this file exists to catch ----
 
     def test_dropped_row_is_reported_on_stderr_and_dropped_from_render(self):

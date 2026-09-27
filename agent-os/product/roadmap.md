@@ -1,9 +1,8 @@
 # Product Roadmap
 
-Current version: `3.1.0b2` in both sub-repos, published on the beta channel 2026-09-25. The stable
-channel is still on the 2.0.x line: PyPI `2.0.9`, firmware `2.0.6` (2025-11-16). No stable 3.x tag
-has ever existed. The operator alone decides when a 3.x stable release happens; `RELEASING.md` in
-the meta repo is the runbook for it.
+Current version: stable `3.1.0` in both sub-repos (2026-09-26, the first stable 3.x release).
+The beta channel continues at `3.1.0b5` (2026-09-27). The operator alone decides when a stable
+release happens. `RELEASING.md` in the meta repo is the runbook for it.
 
 ## Implemented
 
@@ -51,9 +50,10 @@ the meta repo is the runbook for it.
 
 **Release and docs**
 - Beta channel: a push to `beta` publishes a PyPI pre-release and a GitHub pre-release with a `.hex`
-  for each board. **The stable channel does not publish from a push to `main`** — the version-bump
-  auto-commit is rejected by the `Protect main` ruleset and aborts the job. See `RELEASING.md`.
-- User documentation is on the `firestarter` GitHub wiki, plus `firestarter_app/CHANGELOG.md`.
+  for each board. A push to `main` publishes a stable release when the version in the source has
+  no tag yet. The promotion PR carries the version. See `RELEASING.md`.
+- User documentation is on the `firestarter` GitHub wiki. The only change log is `CHANGELOG.md` in
+  the meta repo.
   Validated chips are in `VALIDATED-EPROMS.md`; all 11 rows are 3.0.0bNN evidence and none has been
   re-run on the 3.1.x line.
 
@@ -120,12 +120,6 @@ the meta repo is the runbook for it.
 - `dev test` session reuse. It measured 50–80 s saved per run.
 - An OLED status display on the RURP connector (gh#37).
 - Python 3.11 reaches EOL on 2027-10-31. The version guard does not run from the console script.
-- A path for the stable-release version bump. **Observed, not predicted:** the auto-commit is
-  rejected with `GH013` in `firestarter_app` run `34784468070`, and the identical `Protect main`
-  ruleset is on all **three** repos, the meta repo included. Because the bump is upstream of the
-  publish steps, a push to `main` in `firestarter_fw` currently publishes nothing rather than
-  cutting a surprise stable release — and that protection disappears the moment the bump is
-  unblocked. Options are compared in `RELEASING.md` §1.5.
 - Wiki content that is not written yet: a compatibility matrix and pages for each family.
 - Reverse firmware-pairing check: a CLI newer than the firmware on the board. The forward direction
   is gated by `firestarter/fw_release_gate.py`; this direction is not.
