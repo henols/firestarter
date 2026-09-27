@@ -1,10 +1,12 @@
+<p align="left"><img src="https://raw.githubusercontent.com/henols/firestarter/main/images/branding/firestarter_logo_horizontal.png" alt="Firestarter EPROM Programmer" width="400"></p>
+
 # Development container
 
 Everything needed to build the firmware, run the CLI and talk to a board over
 USB, without installing anything on your own machine.
 
-Open the repository in VS Code and choose **Reopen in Container**. First build
-takes a few minutes; after that it starts in seconds.
+Open the repository in VS Code and choose **Reopen in Container**. The first build
+takes a few minutes. After that, the container starts in seconds.
 
 ## Working on the CLI
 
@@ -23,7 +25,7 @@ cd firestarter_app && python -m pytest tests -o addopts="" -q
 ```
 
 **Before trusting a green run, repeat it on Python 3.11.** The container runs
-3.12, CI runs 3.11, and that difference has hidden real breakage before:
+3.12, CI runs 3.11, and that difference hid real breakage in the past:
 
 ```bash
 uv venv --python 3.11 /tmp/py311
@@ -34,7 +36,7 @@ uv venv --python 3.11 /tmp/py311
 ## Working on the firmware
 
 ```bash
-cd firestarter
+cd firestarter_fw
 pio run -e uno              # build
 pio test -e native          # unit tests
 pio run -t upload -e uno    # flash a connected board
@@ -62,8 +64,8 @@ did not check out:
 git submodule update --init --recursive
 ```
 
-**PlatformIO cannot find the project** — regenerate the wrapper it reads, which
-is needed after the firmware's own `platformio.ini` changes:
+**PlatformIO cannot find the project** — regenerate the wrapper that it reads.
+Do this after each change to the firmware's own `platformio.ini`:
 
 ```bash
 python3 .devcontainer/gen-platformio-ini.py

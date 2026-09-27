@@ -1,4 +1,16 @@
+<p align="left"><img src="https://raw.githubusercontent.com/henols/firestarter/main/images/branding/firestarter_logo_horizontal.png" alt="Firestarter EPROM Programmer" width="400"></p>
+
 # Validated EPROMs
+
+This list shows the chips that passed a `firestarter dev test` run on real hardware.
+A pass means that each applicable step (write, read back and compare) worked on the chip.
+The Host and Firmware columns show the versions that made the evidence.
+
+A family is the programming protocol, the pin map and the VPP voltage of a chip.
+Chips in one family use the same programming path.
+
+To add a chip, test it and send the report. Refer to
+[Testing Chips](https://github.com/henols/firestarter/wiki/Testing-Chips).
 
 ## Validated chips
 
@@ -30,20 +42,20 @@
 
 ## Families
 
-| Family | Parts | Vendors | Validated members |
-|---|---|---|---|
-| PROTO_EPROM_28PIN/DIP28_27512/12V | 25 | 14 | SST27SF512, W27C512 |
-| PROTO_EPROM_28PIN/DIP28_27512/13V | 31 | 16 | TMS27C512 |
-| PROTO_EPROM_32PIN/DIP32_27C020/12V | 62 | 25 | W27E020 |
-| PROTO_EPROM_32PIN/DIP32_STD/12V | 19 | 15 | W27C040 |
-| PROTO_EPROM_32PIN/DIP32_STD/13V | 15 | 10 | MX27C4000 |
-| PROTO_FLASH_5V_PAGE/DIP32_SST39SF040/12V | 40 | 4 | AE29F2008, W29C020, W29C040 |
-| PROTO_FLASH_NOR_UNLOCK/DIP32_SST39SF040/12V | 229 | 24 | SST39SF020 |
-| PROTO_SRAM_28PIN/DIP28_JEDEC_SRAM_8K/12V | 26 | 7 | FM1608 |
+| Family | Database entries | Part numbers | Vendors | Validated members |
+|---|---|---|---|---|
+| PROTO_EPROM_28PIN/DIP28_27512/12V | 21 | 25 | 14 | SST27SF512, W27C512 |
+| PROTO_EPROM_28PIN/DIP28_27512/13V | 24 | 31 | 16 | TMS27C512 |
+| PROTO_EPROM_32PIN/DIP32_27C020/12V | 47 | 62 | 25 | W27E020 |
+| PROTO_EPROM_32PIN/DIP32_STD/12V | 16 | 19 | 15 | W27C040 |
+| PROTO_EPROM_32PIN/DIP32_STD/13V | 14 | 15 | 10 | MX27C4000 |
+| PROTO_FLASH_5V_PAGE/DIP32_SST39SF040/12V | 25 | 40 | 4 | AE29F2008, W29C020, W29C040 |
+| PROTO_FLASH_NOR_UNLOCK/DIP32_SST39SF040/12V | 189 | 229 | 24 | SST39SF020 |
+| PROTO_SRAM_28PIN/DIP28_JEDEC_SRAM_8K/12V | 14 | 26 | 7 | FM1608 |
 
 ## Family variation
 
-| Family | Size range | Page sizes | Validated | Untested siblings |
+| Family | Size range | Page sizes | Validated | Untested part numbers |
 |---|---|---|---|---|
 | PROTO_EPROM_28PIN/DIP28_27512/12V | 64 KiB | not used | 2 | 23 |
 | PROTO_EPROM_28PIN/DIP28_27512/13V | 64 KiB | not used | 1 | 30 |
