@@ -1,5 +1,5 @@
 ---
-created: 2026-09-08T00:00:00Z
+created: 2026-09-08T02:00:00+02:00
 title: Separate the .gitignore classes — live state and bench measurements must not sweep with build junk
 area: meta
 files:

@@ -1,5 +1,5 @@
 ---
-created: 2026-09-17T20:15:00Z
+created: 2026-09-17T22:15:00+02:00
 title: A fired seed keeps matching /gsd-new-milestone's SEED-*.md glob
 area: tooling
 resolves_phase:

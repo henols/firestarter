@@ -1,5 +1,5 @@
 ---
-created: 2026-08-22T00:00:00Z
+created: 2026-08-22T02:00:00+02:00
 title: "29 chips ride a pinout too narrow or wrong for them — AM27C080 gets 13V on A19, AT28C040 addresses 64KB of 512KB, and all of them are support_status: supported"
 area: host
 resolves_phase: unassigned

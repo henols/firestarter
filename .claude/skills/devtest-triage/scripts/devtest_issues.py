@@ -29,6 +29,7 @@ import subprocess
 import sys
 
 import firmware_messages
+from cet import cet_text, parse_cet
 
 REPO = "henols/firestarter"
 def _repo_root() -> str:
@@ -246,6 +247,7 @@ def _summarize(issue: dict) -> dict | None:
     failing = [str(s.get("op")) for s in steps if isinstance(s, dict)
                and str(s.get("verdict", "")).upper() in BAD | SOFT]
     auto = rep.get("auto_capture") or {}
+    generated_at = parse_cet(rep.get("generated"))
     # op -> verdict, so the supersede test can ask whether a specific step
     # came back OK rather than trusting the title's overall verdict.
     step_verdicts = {str(s.get("op")): str(s.get("verdict", "")).upper()
@@ -257,8 +259,12 @@ def _summarize(issue: dict) -> dict | None:
         "fp": fingerprint(rep, body),
         "host": auto.get("host_version") or "?",
         "fw": auto.get("fw_board_identity") or "",
-        "generated": (rep.get("generated") or "?")[:10],
-        "generated_full": rep.get("generated") or "",
+        # The report's `generated` stamp in CET. Older reports carry UTC
+        # (`...Z`); newer ones carry an offset. Ordering compares instants,
+        # never strings, because `+02:00` and `Z` text do not sort by time.
+        "generated": (generated_at.date().isoformat() if generated_at
+                      else (rep.get("generated") or "?")[:10]),
+        "generated_at": generated_at,
         "steps": step_verdicts,
         "failing": failing,
     }
@@ -293,8 +299,8 @@ def supersedes(fail: dict, ok: dict) -> tuple[bool, list[str]]:
 
     # Leg 1 — later by the report's own `generated` stamp, never by issue
     # number or creation date: an old run can be filed late.
-    if not (ok["generated_full"] and fail["generated_full"]
-            and ok["generated_full"] > fail["generated_full"]):
+    if not (ok["generated_at"] and fail["generated_at"]
+            and ok["generated_at"] > fail["generated_at"]):
         return False, ["not later than the failure by report timestamp"]
 
     # Leg 2 — the software must have moved forward. A later PASS on the same
@@ -407,7 +413,7 @@ def cmd_fold(args: argparse.Namespace) -> int:
             for p in passes:
                 ok, notes = supersedes(f, p)
                 if ok:
-                    if best is None or p["generated_full"] > best[0]["generated_full"]:
+                    if best is None or p["generated_at"] > best[0]["generated_at"]:
                         best = (p, notes)
                 else:
                     why.extend(f"#{p['number']}: {r}" for r in notes)
@@ -585,7 +591,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     print(f"#{args.number if args.number is not None else '?'}  "
           f"{t['chip']}  —  {t['verdict'].upper()}")
     print(f"  schema      {report.get('schema_version')}   "
-          f"generated {report.get('generated')}")
+          f"generated {cet_text(report.get('generated'))}")
 
     # Two-clause `is None or == ""`, never `or`-coalescing: an `or` also
     # fires on "", which would hide an empty-string transport fault.

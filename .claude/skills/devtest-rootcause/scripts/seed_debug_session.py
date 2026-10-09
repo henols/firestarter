@@ -28,7 +28,8 @@ import os
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
+
+from cet import cet_text, now_cet
 
 REPO = "henols/firestarter_prom"
 MAX_BODY = 1_000_000
@@ -254,7 +255,7 @@ def main() -> int:
 
     slug = make_slug(chip, bad, args.slug)
     eliminated = parse_eliminated(triage)
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = now_cet().isoformat(timespec="seconds")
     issue_ref = f"#{args.number}" if args.number is not None else "(offline)"
 
     # ---- session file -----------------------------------------------------
@@ -283,7 +284,7 @@ expected: every applicable `dev test` step reports OK for {chip}
 actual: {', '.join(bad)} reported {verdict} (report schema {report.get('schema_version')})
 errors: {errors}
 reproduction: firestarter dev test {chip}  (ALWAYS WRITES — operator go-ahead required)
-started: report generated {report.get('generated')}; host {auto.get('host_version')}, hw {auto.get('hw_revision')}
+started: report generated {cet_text(report.get('generated'))}; host {auto.get('host_version')}, hw {auto.get('hw_revision')}
 
 ## Context
 
@@ -341,7 +342,7 @@ expected: every applicable `dev test` step reports OK for {chip}
 actual: {', '.join(bad)} reported {verdict}
 errors: {errors}
 reproduction: firestarter dev test {chip}
-timeline: host {auto.get('host_version')}, report {report.get('generated')}
+timeline: host {auto.get('host_version')}, report {cet_text(report.get('generated'))}
 </symptoms>
 """
 

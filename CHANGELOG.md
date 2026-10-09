@@ -15,6 +15,19 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 `pip install firestarter` does not install a pre-release. Refer to
 [Beta Channel](https://github.com/henols/firestarter/wiki/Beta-Channel).
 
+## [Unreleased]
+
+### Changed
+
+- **CLI:** each timestamp that the CLI writes is ISO 8601 in Central European Time: CET
+  (`+01:00`) in winter and CEST (`+02:00`) in summer. This applies to the `generated` field of a
+  `dev test` report and of `validation-matrix.json`, and to the "Published" column of
+  `fw --list`. Before, these timestamps were in UTC (`...Z`).
+- **CLI:** the default output directory of `dev consistency-check`, `dev write-cycle` and
+  `dev fault-inject` ends in an ISO 8601 basic-format time, for example
+  `20261009T143056+0200`. Before, the name ended in `2026-10-09-143056`, in the local time of
+  the computer, with no time zone.
+
 ## [3.1.0b7] - 2026-09-27 (pre-release)
 
 ### Fixed

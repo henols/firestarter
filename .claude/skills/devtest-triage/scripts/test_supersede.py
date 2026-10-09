@@ -9,13 +9,14 @@ cases 3-6 are the traps the rule exists to catch. Run this after touching
 """
 import sys
 
+from cet import parse_cet
 from devtest_issues import supersedes, version_key
 
 
 def rep(host, fw, generated, failing=(), steps=None):
     return {
         "number": 0, "chip": "x", "host": host, "fw": fw,
-        "generated": generated[:10], "generated_full": generated,
+        "generated": generated[:10], "generated_at": parse_cet(generated),
         "failing": list(failing), "steps": steps or {},
     }
 

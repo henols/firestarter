@@ -1,5 +1,5 @@
 ---
-created: 2026-08-27T16:53:09Z
+created: 2026-08-27T18:53:09+02:00
 title: "Drive outputs/pins to a safe state ASAP on power-up and on ANY fault — not only via the 1 s command timeout"
 area: firmware
 files:
