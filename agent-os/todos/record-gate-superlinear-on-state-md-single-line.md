@@ -1,5 +1,5 @@
 ---
-created: 2026-08-17T21:40:00Z
+created: 2026-08-17T23:40:00+02:00
 title: Phase 130 record gate degrades superlinearly on STATE.md's single-line last_activity_desc
 area: tooling
 files:

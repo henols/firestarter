@@ -1,5 +1,5 @@
 ---
-created: 2026-06-24T07:41:26Z
+created: 2026-06-24T09:41:26+02:00
 title: Skip VPP error/warning checks when VPP is unused (reads/blank-checks)
 area: firmware
 resolves_phase: 84

@@ -1,5 +1,5 @@
 ---
-created: 2026-08-31T00:00:00Z
+created: 2026-08-31T02:00:00+02:00
 title: Record which pin JP4's third position routes VPP to (Rev 2.2 / Rev 2.3)
 area: hardware-docs
 files:

@@ -1,5 +1,5 @@
 ---
-created: 2026-08-19T00:00:00Z
+created: 2026-08-19T02:00:00+02:00
 title: "66 promoted 0x0D rows keep the 64-byte page floor -- floor safety is unproven for 11 of them"
 area: host
 resolves_phase: unassigned

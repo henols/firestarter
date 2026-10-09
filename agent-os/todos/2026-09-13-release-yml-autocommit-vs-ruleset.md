@@ -1,5 +1,5 @@
 ---
-created: 2026-09-13T20:45:00Z
+created: 2026-09-13T22:45:00+02:00
 title: release.yml's git-auto-commit-action push to main is rejected by the Protect main ruleset
 area: tooling
 resolves_phase: unassigned

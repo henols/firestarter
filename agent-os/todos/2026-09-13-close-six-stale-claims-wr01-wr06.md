@@ -1,5 +1,5 @@
 ---
-created: 2026-09-13T03:10:00Z
+created: 2026-09-13T05:10:00+02:00
 title: Close the six stale enforcement claims WR-01..WR-06 left open by Phase 188
 area: both
 resolves_phase: unassigned

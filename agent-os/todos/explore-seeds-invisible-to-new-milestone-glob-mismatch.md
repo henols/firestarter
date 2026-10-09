@@ -1,5 +1,5 @@
 ---
-created: 2026-08-20T00:00:00Z
+created: 2026-08-20T02:00:00+02:00
 title: "All 13 seeds are invisible to /gsd-new-milestone -- explore.md writes {slug}.md, new-milestone.md globs SEED-*.md, and the miss is SILENT"
 area: tooling
 resolves_phase: unassigned

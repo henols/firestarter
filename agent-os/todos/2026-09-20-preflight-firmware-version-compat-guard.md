@@ -1,5 +1,5 @@
 ---
-created: 2026-09-20T00:00:00Z
+created: 2026-09-20T02:00:00+02:00
 title: Pre-flash firmware version guard — refuse a firmware whose feature version exceeds the CLI's
 area: host
 resolves_phase: null

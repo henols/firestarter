@@ -1,5 +1,5 @@
 ---
-created: 2026-09-19T00:00:00Z
+created: 2026-09-19T02:00:00+02:00
 title: test_flash_path_record_sync.py's _META_DOC_REL points at a path the .planning layout reorganisation moved — 17 local failures, invisible to CI
 area: firmware test suite
 files:
