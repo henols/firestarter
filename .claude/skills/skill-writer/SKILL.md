@@ -15,8 +15,8 @@ $EDITOR /workspaces/.claude/skills/<name>/SKILL.md  # frontmatter + body
 ```
 
 Skills live in the **meta repo** (`/workspaces/.claude/skills/`), not in a sub-repo.
-It is the only vantage point that sees all three trees — `.planning/`,
-`firestarter_app/`, and `firestarter/` — and most skills here touch more than one.
+It is the only vantage point that sees the project-level `agent-os/` records plus
+`firestarter_app/` and `firestarter_fw/`, and most skills here touch more than one.
 
 ## Frontmatter contract
 
@@ -106,31 +106,17 @@ however well it is written.
 | **Hardware is destructive and operator-gated** | `firestarter dev test <chip>` ALWAYS WRITES to the chip. No skill runs a hardware command, adjusts the VPP pot, or drives a bench board without explicit operator go-ahead in that session — and never while another agent may hold the serial port. |
 | **Keep the two-repo constants in sync** | Flag bits and constants are duplicated between `firestarter_app/firestarter/constants.py` and `firestarter/include/firestarter.h`; the serial protocol between `serial_comm.py` and `firestarter.cpp`. A skill that changes one must change the other. |
 | **Never work on `beta` or `main`** | Sub-repo work forks off `beta`, meta work off `main`, onto a `v1.X-slug` branch. Releases are operator-gated: nothing is stable until the operator says so. |
-| **File-changing work enters through GSD — where GSD exists** | `/gsd-quick`, a seeded `gsd-debugger` session, or `/gsd-execute-phase`, so it lands with atomic commits and state tracking. A skill routes the reader there rather than editing around the gate. |
-| **GSD is optional — degrade, never hard-fail** | A contributor may clone this repo without GSD installed. A skill that leans on `.planning/`, a `gsd-*` subagent, or a slash command must detect its absence and fall back to something self-contained, keeping the safety-critical parts intact. Key the prompt on whether `.claude/agents/gsd-<name>.md` exists (project or `~/`), and the file location on whether `.planning/` exists — they are independent signals. `devtest-rootcause`'s `--mode auto\|gsd\|standalone` is the worked example. |
+| **Use the current project workflow** | Project planning and reusable standards live under `agent-os/`. A skill must not depend on the retired `.planning/` tree or GSD commands. Keep the skill self-contained where possible and point durable project decisions to the current Agent OS records. |
 
-If a skill hands work to a subagent, it must carry the relevant rules **into the
-prompt**. A `gsd-debugger` has Write access and no idea the chip database is
-generated; without the constraint it will "fix" the JSON and the change will vanish.
+If a skill hands work to another agent, it must carry the relevant rules **into the
+prompt**. A general-purpose coding agent may not know the chip database is generated;
+without the constraint it can "fix" the JSON and the change will vanish.
 
 ## Registering it — there is nothing to register
 
-Skills in `.claude/skills/` are discovered automatically. This repo's `CLAUDE.md` is
-hand-written and has **no `GSD:skills` managed block**, so there is no Project Skills
-table to add a row to.
-
-**Do not run `gsd-tools generate-claude-md` to "register" a skill.** It does not touch
-the hand-written `/workspaces/CLAUDE.md` at all — it *creates* a second file at
-`/workspaces/.claude/CLAUDE.md`, 265 lines regenerated from `.planning/PROJECT.md` and
-`.planning/codebase/STACK.md`. Claude Code then loads **both** files as project
-instructions every session, and the generated one goes stale the moment those sources
-do. Verified 2026-08-08: the file did not exist, one invocation created it.
-
-If you run it by accident, delete the file it created:
-
-```bash
-rm /workspaces/.claude/CLAUDE.md      # only if it was absent before
-```
+Skills in `.claude/skills/` are discovered automatically. Do not generate a second
+project `CLAUDE.md` to register a skill. Keep the hand-written project instructions as
+the single project-level Claude instruction file.
 
 ## Tracking it
 

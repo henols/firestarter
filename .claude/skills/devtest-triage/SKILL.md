@@ -349,10 +349,9 @@ The ledger's `## Notes` section is for facts about specific rows that no column 
 carry. General rules for reading it belong here, not there. The script preserves Notes
 verbatim across a rewrite.
 
-**No GSD process references in Notes — ever.** No phase numbers, no `.planning/` paths, no
-plan/task/milestone citations, no decision ids like `D-06`. This is the same rule that keeps
-them out of product source, and for the same reason: the ledger is read by people who do not
-have `.planning/` and never will, so those identifiers resolve to nothing. Phase numbers are
+**No retired planning-process references in Notes.** No phase numbers, old `.planning/` paths,
+plan/task/milestone citations, or decision ids like `D-06`. The ledger is read by people who do
+not have the retired planning tree, so those identifiers resolve to nothing. Phase numbers are
 also renumbered at milestone close, so the citation rots. State the technical fact and stop —
 if it needs provenance, that belongs in the phase `SUMMARY.md` or the commit message.
 
