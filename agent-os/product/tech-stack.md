@@ -3,7 +3,7 @@
 ## Repository Layout
 
 - Meta repo `henols/firestarter`: the single issue tracker. It holds the submodule pointers,
-  `tools/catalog/` (message codegen), `VALIDATED-EPROMS.md`, `RELEASING.md` (the stable-release
+  `tools/catalog/` (message codegen), `VALIDATED-EPROMS.md`, `RELEASING.md` (the release
   runbook), `agent-os/` (mission, roadmap, tech stack, standards, specs), `.claude/skills/`, the
   devcontainer, and `agent-os/todos/` (open defect records). The GSD-era `.planning/` tree was
   retired on 2026-09-27; it is reachable at the tag `archive/planning-tree-final` and explained in
@@ -12,8 +12,8 @@
 - `firestarter_fw/` (`henols/firestarter_fw`): the firmware.
 - User documentation: the `firestarter` GitHub wiki, plus each repo's `README.md`. The only change
   log is `CHANGELOG.md` in the meta repo.
-- Branches: `main` (stable), `beta` (pre-release), and one milestone branch with the same name in all
-  three repos.
+- Branches: `main` only, in all three repos. Work branches fork from `main` and return by PR.
+  The `beta` branches were retired; their last state is at the tag `archive/beta`.
 - All three repos carry an identical active `Protect main` ruleset, scoped to `~DEFAULT_BRANCH`,
   with `deletion`, `non_fast_forward` and `pull_request`. The only bypass actor is `DeployKey`;
   GitHub Actions is not one, and `current_user_can_bypass` is `never`, so the owner cannot push to
@@ -59,18 +59,14 @@
 ## CI and Release
 
 - GitHub Actions in both sub-repos. The meta repo has no CI.
-- A push to `beta` publishes a PyPI pre-release (`X.Y.ZbN`) and a GitHub pre-release with a `.hex`
-  for each board. Neither sub-repo path-filters that trigger, so a documentation-only push publishes.
-- **A push to `main` publishes nothing today.** `release.yml` and `build.yml` both auto-commit a
-  version bump to `main` with the default `GITHUB_TOKEN`, which the `Protect main` ruleset rejects
-  (`GH013`), and the failure aborts the job before the release step. Observed in `firestarter_app`
-  run `34784468070`; `2.0.9` was cut by hand. The firmware therefore fails closed rather than
-  publishing a surprise stable release — but that re-arms the moment the bump is unblocked.
-- `release.yml` has no `pypi:` job, unlike `beta-release.yml`. The stable PyPI upload depends on
-  `publish.yml`'s `release: published` trigger, which is not delivered for a bot-created release:
-  `2.0.8` reached GitHub and never reached PyPI.
-- The stable-release procedure and the options for unblocking the bump are in `RELEASING.md`.
-- Stable firmware is built without `DEV_TOOLS`. Beta firmware is built with `DEV_TOOLS`.
+- Only a version-tag push publishes. A tag `X.Y.ZbN`/`X.Y.ZrcN` cuts a pre-release, and `X.Y.Z`
+  cuts a stable release marked Latest. For the app, both go to GitHub and PyPI in one
+  `release.yml` run. A merge to `main` publishes nothing.
+- The tag is the version. The app uses `setuptools-scm`, and the firmware uses
+  `version_from_git.py`. No file holds the version and no bot commits a bump.
+- The two sub-repos release independently. `tools/release.sh <version>` in each sub-repo checks
+  the version and pushes the tag. `RELEASING.md` is the runbook.
+- Stable firmware is built without `DEV_TOOLS`. Pre-release firmware is built with `DEV_TOOLS`.
 
 ## Architectural Decisions That Constrain Future Work
 

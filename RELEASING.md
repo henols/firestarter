@@ -5,105 +5,109 @@
 This runbook tells the maintainer how to make a release. It is written for the operator, and for a
 person who must make a release when the operator is not available.
 
-The current stable release is **3.1.0** (CLI and firmware, 2026-09-26). The beta channel continues
-from it (`3.1.0bN`).
+`firestarter_app` and `firestarter_fw` release independently. Each has its own version numbers,
+its own schedule and its own release workflow. No release in one repository needs a release in
+the other.
 
 ---
 
 ## 1. What publishes
 
+Each sub-repository has one branch, `main`. All work goes to `main` through pull requests.
+
 | Event | What occurs |
 |---|---|
-| A push to `beta` in `firestarter_app` | A GitHub pre-release and a PyPI pre-release. There is no path filter. |
-| A push to `beta` in `firestarter_fw` | A GitHub pre-release with one `.hex` file for each board. There is no path filter. |
-| A push to `main` whose version has no tag | A stable GitHub release, marked "Latest". For the app, also a PyPI release. |
-| A push to `main` whose version already has a tag | Nothing. The workflow writes "Tag already exists" and stops. |
-| A push to `main` that changes only ignored paths | Nothing. The workflow does not start. The ignored paths include `**.md`, `images/**`, `.github/**` and `tools/**`. |
+| A merge or a push to `main` | CI only. Nothing publishes. |
+| A push of a tag `X.Y.ZbN` or `X.Y.ZrcN` | A pre-release. The app: a GitHub pre-release and a PyPI pre-release. The firmware: a GitHub pre-release with dev tools in each `.hex`, and the `py32f071` image. |
+| A push of a tag `X.Y.Z` | A stable release, marked "Latest". The app: also a PyPI release. The firmware: `.hex` files without dev tools. |
 | A push or a tag in the meta repository | Nothing. |
 
-**A PyPI version can never be used again.** A documentation-only push to `beta` cuts a new
-pre-release and uses a new PyPI version. Decide the scope of a beta push before you make it.
+**The tag is the version.** No file in a sub-repository holds the version, and no bot commits a
+version change.
 
-The stable workflows read the version from the source. They do not calculate a version:
+- App: `setuptools-scm` reads the tag when it builds the package.
+- Firmware: `version_from_git.py` reads the tag when PlatformIO builds the image. The workflow also
+  writes the tag into `include/version.h` for the CMake build of `py32f071`.
 
-- App: `firestarter/__init__.py` (`__version__`), read by `.github/workflows/release.yml`.
-- Firmware: `include/version.h` (`#define VERSION`), read by `.github/workflows/build.yml`.
+Between two tags, a build gets a development version, for example `3.2.0b2.dev5`. This is a PEP 440
+pre-release, so a development build behaves as a beta build.
 
-The `Protect main` ruleset is active in all three repositories. It requires a pull request for
-each change to `main`. Nobody can push to `main` directly, the owner included.
+The release workflow (`.github/workflows/release.yml`) refuses a tag in these cases:
+
+- The tag does not have the shape `X.Y.Z`, `X.Y.ZbN` or `X.Y.ZrcN`.
+- The tag points at a commit that is not on `main`.
+
+**A PyPI version can never be used again.** A failed app release that reached PyPI needs a new
+version number. A test release is acceptable: use a spare `bN` number.
 
 ---
 
-## 2. Stable release runbook
+## 2. Make a release
 
-Release the app first, then the firmware, then the meta repository. The app must be on PyPI before
-the firmware release becomes "Latest". Then `pip install --upgrade firestarter` gives a CLI that
-can operate the new firmware.
+Do these steps in the sub-repository that you release.
 
-### 2.1 Before you start
+1. Merge the pull requests for the release to `main`. Make sure that CI is green.
+2. Select the version. Refer to section 3.
+3. Run `tools/release.sh <version>`. The script does these checks:
+   - The working tree is clean.
+   - The version has the correct shape.
+   - No tag with that version exists.
+   - The version sorts above every earlier release tag.
+4. The script shows the commit on `origin/main` and asks for a confirmation. Type `y`.
+5. The script pushes the tag and follows the release run with `gh run watch`.
+
+You can also push the tag yourself:
+
+```bash
+git fetch origin
+git tag -a 3.2.0b1 -m 3.2.0b1 origin/main
+git push origin 3.2.0b1
+```
+
+### 2.1 Before a stable release
 
 - [ ] The release entry in the meta [`CHANGELOG.md`](CHANGELOG.md) is written.
 - [ ] The wiki pages [Install](https://github.com/henols/firestarter/wiki/Install) and
-      [Known Issues](https://github.com/henols/firestarter/wiki/Known-Issues) are correct for the
+      [Known Issues](https://github.com/henols/firestarter/wiki/Known-Issues) agree with the
       release.
-- [ ] The newest `beta` pre-release is green in CI, in both sub-repositories.
-- [ ] You decided the version number. It has no `b` suffix.
+- [ ] A pre-release of the same commit is green and was tested.
 
-### 2.2 The app
+### 2.2 After a release
 
-1. Make a branch `release/X.Y.x` from `main`.
-2. Merge `origin/beta` into it. This is not a fast-forward, because `main` has commits that `beta`
-   does not have. Expect conflicts in `README.md` and `firestarter/__init__.py`.
-3. Set `__version__` in `firestarter/__init__.py` to the stable version.
-4. Open a pull request to `main`. Make sure that `ci.yml` is green.
-5. Merge the pull request with a **merge commit**. Do not squash.
-6. `release.yml` makes the tag and the GitHub release, and its `pypi` job publishes to PyPI.
-7. Examine the result: `pip download firestarter==X.Y.Z --no-deps` in a clean virtual environment.
+- App: in a clean virtual environment, run `pip install firestarter==<version>` (add `--pre` for a
+  pre-release). Then run `firestarter --version`.
+- Firmware: on a real board, run `firestarter fw -i -b <board>`, then `firestarter fw`. The two
+  versions agree.
 
-A pull request can contain commits that GitHub cannot attribute to an account. Then the ruleset
-asks for one approval. Before the merge, examine the state with
-`gh pr view <n> --json mergeStateStatus,reviewDecision`.
+### 2.3 If a release fails
 
-### 2.3 The firmware
-
-1. Make a branch `release/X.Y.x` from `main`. Merge `origin/beta` into it. Expect conflicts in
-   `README.md` and `include/version.h`.
-2. Set `VERSION` in `include/version.h` to the stable version.
-3. Open a pull request to `main`. The pull-request run of `build.yml` compiles each board and makes
-   sure that no stable image contains the `dev` commands. It publishes nothing. This run is the
-   only dry run. Wait until it is green.
-4. Merge the pull request with a merge commit.
-5. `build.yml` builds the `.hex` files, makes the tag and makes the GitHub release, marked
-   "Latest". **This is the step that you cannot undo.** Read section 3 first.
-6. Examine the result: `gh api repos/henols/firestarter_fw/releases/latest --jq .tag_name`.
-
-### 2.4 The meta repository
-
-1. Open a pull request that moves both gitlinks to the new `main` commits of the sub-repositories.
-   Merge it.
-2. Push a bare tag only, for example `git tag v1.44 && git push origin v1.44`.
-
-**Never publish a GitHub Release from the meta repository.** A tag such as `v1.42` parses as the
-PEP 440 version `1.42`. `Version("3.1.1") >= Version("1.42")` is true. A CLI that reads firmware
-releases from the meta repository would then report "firmware up to date" for all time.
-
-### 2.5 After the release
-
-1. In a clean virtual environment, run `pip install firestarter` and `firestarter --version`. The
-   version has no `b` suffix.
-2. On a real board, run `firestarter fw -i -b <board>`, then `firestarter fw`. The two versions
-   agree.
+- The run failed before the release was created: delete the tag, fix the cause on `main`, and tag
+  again. To delete the tag, run `git push origin :refs/tags/<version>` and `git tag -d <version>`.
+- The app reached GitHub but not PyPI: run the `Publish to PyPI.org` workflow by hand, with the
+  tag as input.
+- The app reached PyPI: do not use the version again. Fix the cause and release the next number.
 
 ---
 
-## 3. Users of an older CLI
+## 3. Version numbers
+
+PEP 440 sets the order: `3.1.0b8` < `3.1.0` < `3.1.1b1` < `3.1.1`.
+
+- A pre-release of the next version starts after the last stable release. After `3.1.0`, the next
+  pre-release is `3.1.1b1` or `3.2.0b1`, never `3.1.0b9`. `pip` and `firestarter fw` sort a
+  `3.1.0b9` below `3.1.0`, so they never offer it. `tools/release.sh` refuses such a version.
+- A firmware change that breaks the wire protocol increases `X.Y`. A 3.1 or later CLI refuses
+  firmware whose `X.Y` is higher than its own. This check is the only coupling between the two
+  repositories. It operates at run time, not at release time.
+
+---
+
+## 4. Users of an older CLI
 
 A 2.0.x CLI asks for the newest stable firmware at
 `https://api.github.com/repos/henols/firestarter_fw/releases/latest`. It offers that firmware even
 when it is a newer major version. After a 2.0.x CLI installs 3.x firmware, it cannot connect to
 the board. No chip is damaged. The user must upgrade the CLI.
-
-A 3.1 or later CLI refuses firmware whose first two version numbers are higher than its own.
 
 The protection for older CLIs is the documentation:
 
@@ -113,8 +117,13 @@ The protection for older CLIs is the documentation:
 
 ---
 
-## 4. Beta releases
+## 5. The meta repository
 
-Merge to `beta` in each sub-repository. Each merge publishes (refer to section 1). The firmware
-compiles its version into the binary. Thus each beta push must make a new version, or the firmware
-reports a wrong version.
+The meta repository publishes nothing. To mark a milestone:
+
+1. Open a pull request that moves the gitlinks to the commits that you want to record. Merge it.
+2. Push a bare tag only, for example `git tag v1.44 && git push origin v1.44`.
+
+**Never publish a GitHub Release from the meta repository.** A tag such as `v1.42` parses as the
+PEP 440 version `1.42`. `Version("3.1.1") >= Version("1.42")` is true. A CLI that reads firmware
+releases from the meta repository would then report "firmware up to date" for all time.

@@ -1,0 +1,160 @@
+# /workspaces/firestarter_app — branch inventory before cleanup, 2026-09-27
+
+## Local branches
+ca0d30d 2026-09-27 beta
+b7111f4 2026-09-26 v1.43-voltage-reading-accuracy
+a4f826a 2026-09-26 backmerge/3.1.0-to-beta
+e648147 2026-09-26 release/3.1.x
+ceb71cc 2026-09-26 feat/fw-release-gate
+3cf7664 2026-09-25 v1.42-hw-rev-gate
+f62072e 2026-09-25 v1.42-jumper-display
+9595231 2026-09-25 v1.41-verification-to-host
+5b3fe45 2026-09-20 v1.40-program-parameter-fidelity
+5603abb 2026-09-17 v1.39-protocol-0x05-write-correctness
+69db6d3 2026-09-17 docs-260917
+57a652b 2026-09-15 fix/point-at-firestarter-beta
+b96bb9f 2026-09-15 fix/point-at-firestarter
+b1468fc 2026-09-14 v1.38-repository-rename
+186a152 2026-09-13 v1.38-url-02-main
+71cc762 2026-09-13 quick/260913-e7t-close-stale-claims-wr02-wr06
+2d4f464 2026-09-13 chore/retire-unrun-gates-and-baselines
+f36113b 2026-09-13 gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+1a8d272 2026-09-09 gsd/v1.36-dev-test-fidelity
+dec94e1 2026-09-09 hotfix/probe-empty-input
+992f111 2026-09-01 policy/contributor-policy
+0a93999 2026-09-01 gsd/v1.35-documentation-consolidation-wiki-migration
+d56424e 2026-08-30 chore/strip-provenance-comments
+cb189a9 2026-08-25 gsd/v1.33-source-hygiene-firmware-size-reduction
+c23feef 2026-08-22 quick-devtest-coverage-dedup
+e04c331 2026-08-22 quick-devtest-holdstate-bare
+5fe007e 2026-08-22 quick-devtest-na-reason
+f39c125 2026-08-22 debug-w27c512-devtest-all-bad
+35aac31 2026-08-22 quick-devtest-runcount-fast
+1868ab3 2026-08-22 quick-devtest-fullsize-write
+a653807 2026-08-21 quick-sdp-hold-state-terse
+1fedb05 2026-08-21 quick-devtest-output-trim
+a0bfd5e 2026-08-21 gsd/v1.32-at28c-write-path-root-cause-report-provenance
+16f5680 2026-08-19 fix/fw-update-path-and-port-targeting
+3cf429f 2026-08-17 gsd/v1.31-27c-programming-algorithm-fidelity
+7fe8dea 2026-08-07 fix/dev-test-blank-check-after-erase
+b3de5d9 2026-08-07 ci/auto-publish-beta-to-pypi
+085dce2 2026-08-07 ci/beta-release-on-every-merge
+4209520 2026-08-06 ci/build-all-branches-publish-main-beta
+45e0b99 2026-08-06 fix/hw-revision-gate-ready-ack
+cc036e8 2026-08-05 gsd/v1.30-sdp-surface-retirement
+cc9452f 2026-08-01 v1.23-py32f071-integration
+4001396 2026-07-30 v1.22-at28c-software-data-protection-lifecycle
+4ee64a1 2026-07-28 feature/py32f071-fw-install
+86e4563 2026-07-27 v1.21-community-chip-validation-command
+0e9137f 2026-07-02 v1.20-protocol-only-dispatch
+f4f265f 2026-07-02 v1.19-protocol-naming-labels
+51621bc 2026-07-01 v1.16-protocol-first-architecture-rebuild
+bc55b29 2026-06-25 v1.15-bench-validation-of-operator-inventory
+26cc62d 2026-06-23 v1.14-feasible-gap-implementation
+9ce42dd 2026-06-18 v1.13-algo-validation
+e8132b3 2026-06-16 v1.12-protocol-dispatch-hardening
+e910e5e 2026-06-10 v1.11-infoic-decode-correctness
+8480ff3 2026-06-05 v1.10-serial-transport-hardening
+6dc1219 2026-05-29 v1.9-read-bug-rca
+aaa45e0 2026-05-29 v1.8-app-cleanup
+07d8daa 2026-05-25 v1.7-shield-investigation
+999c3cc 2026-05-21 v1.6-read-bug
+f8c7ce5 2026-05-20 main
+040cb67 2026-05-20 feature/phase-10-static-pins
+c8d762f 2026-05-08 feature/phases-01-09
+d3be93a 2025-11-28 28Cxxx
+10f811c 2025-09-09 amd_intel_flash_types
+10f811c 2025-09-09 binart_protocol
+44eb8de 2025-07-19 logo
+fa24d67 2025-07-12 adopt_to_ui
+a3ba1de 2025-06-25 cleanup
+99bd047 2025-06-09 move_db
+6ff100c 2025-06-05 Refactor_to_classes
+448af6c 2025-06-03 dev_tools2
+d605487 2025-05-14 fw_install
+43a8103 2025-05-05 fixes
+e12f9ca 2025-05-05 tool_updates
+e97ee67 2025-04-23 ARDUINO_AVR_ATmega328P
+e9d605e 2025-04-22 fixing_flags
+6c52192 2025-04-15 FWupdaterequest
+8b036b4 2025-04-14 DS1245W-pin-map
+b699c9a 2025-01-28 dev_tools
+77eeced 2025-01-15 fw_refactoring
+
+## Remote branches
+ca0d30d 2026-09-27 origin/beta
+b7111f4 2026-09-26 origin/v1.43-voltage-reading-accuracy
+a4f826a 2026-09-26 origin/backmerge/3.1.0-to-beta
+37e165c 2026-09-26 origin
+37e165c 2026-09-26 origin/main
+e648147 2026-09-26 origin/release/3.1.x
+ceb71cc 2026-09-26 origin/feat/fw-release-gate
+580ebc3 2026-09-25 origin/v1.42-jumper-display
+9595231 2026-09-25 origin/v1.41-verification-to-host
+9155b28 2026-09-24 origin/fix/dev-reg-help-constants
+bb5676a 2026-09-21 origin/branding/update-readme-logo
+47f5290 2026-09-21 origin/branding/concept-c-logo
+5b3fe45 2026-09-20 origin/v1.40-program-parameter-fidelity
+5ab7dac 2026-09-16 origin/v1.39-protocol-0x05-write-correctness
+21edf7a 2026-09-15 origin/quick/260915-gqp-no-prom-redirect
+57a652b 2026-09-15 origin/fix/point-at-firestarter-beta
+b96bb9f 2026-09-15 origin/fix/point-at-firestarter
+b1468fc 2026-09-14 origin/v1.38-repository-rename
+186a152 2026-09-13 origin/v1.38-url-02-main
+71cc762 2026-09-13 origin/quick/260913-e7t-close-stale-claims-wr02-wr06
+2d4f464 2026-09-13 origin/chore/retire-unrun-gates-and-baselines
+f36113b 2026-09-13 origin/gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+1a8d272 2026-09-09 origin/gsd/v1.36-dev-test-fidelity
+78b8ef8 2026-09-09 origin/snyk-fix-1d78d006b68faf0f6332471bf4909f12
+992f111 2026-09-01 origin/policy/contributor-policy
+0a93999 2026-09-01 origin/gsd/v1.35-documentation-consolidation-wiki-migration
+d56424e 2026-08-30 origin/chore/strip-provenance-comments
+cb189a9 2026-08-25 origin/gsd/v1.33-source-hygiene-firmware-size-reduction
+a0bfd5e 2026-08-21 origin/gsd/v1.32-at28c-write-path-root-cause-report-provenance
+16f5680 2026-08-19 origin/fix/fw-update-path-and-port-targeting
+3cf429f 2026-08-17 origin/gsd/v1.31-27c-programming-algorithm-fidelity
+7fe8dea 2026-08-07 origin/fix/dev-test-blank-check-after-erase
+085dce2 2026-08-07 origin/ci/beta-release-on-every-merge
+4209520 2026-08-06 origin/ci/build-all-branches-publish-main-beta
+45e0b99 2026-08-06 origin/fix/hw-revision-gate-ready-ack
+cc036e8 2026-08-05 origin/gsd/v1.30-sdp-surface-retirement
+a62ca76 2026-08-01 origin/v1.23-py32f071-integration
+4ee64a1 2026-07-28 origin/feature/py32f071-fw-install
+86e4563 2026-07-27 origin/v1.21-community-chip-validation-command
+751615d 2026-07-12 origin/chore/centralize-issue-tracking
+b23af87 2026-05-20 origin/snyk-fix-523ebb459084c7b6adb0d0567b01bbea
+040cb67 2026-05-20 origin/feature/phase-10-static-pins
+84101e6 2026-01-13 origin/snyk-fix-caa29f110744fa274f07c7a8423c53aa
+d3be93a 2025-11-28 origin/28Cxxx
+10f811c 2025-09-09 origin/amd_intel_flash_types
+fa24d67 2025-07-12 origin/adopt_to_ui
+6ff100c 2025-06-05 origin/Refactor_to_classes
+448af6c 2025-06-03 origin/dev_tools2
+43a8103 2025-05-05 origin/fixes
+e12f9ca 2025-05-05 origin/tool_updates
+77eeced 2025-01-15 origin/fw_refactoring
+b696676 2024-12-04 origin/refactoring
+d55c936 2024-11-21 origin/sst39sf
+5e70026 2024-10-01 origin/new_protocol
+
+## Archive tags created
+b8b42c0 archive/ARDUINO_AVR_ATmega328P
+d355b42 archive/amd_intel_flash_types
+87b7a45 archive/binart_protocol
+3b5aa85 archive/branding/concept-c-logo
+a7988f6 archive/chore/centralize-issue-tracking
+4468876 archive/ci/auto-publish-beta-to-pypi
+1903f60 archive/ci/beta-release-on-every-merge
+e57eb51 archive/ci/build-all-branches-publish-main-beta
+c8a2af6 archive/feature/phase-10-static-pins
+5476517 archive/feature/phases-01-09
+5df8230 archive/fix/dev-test-blank-check-after-erase
+8b39cd0 archive/fix/hw-revision-gate-ready-ack
+23ffcf1 archive/fixes
+bc8d6f0 archive/gsd/v1.30-sdp-surface-retirement
+ed834b2 archive/logo
+1d65ee1 archive/snyk-fix-1d78d006b68faf0f6332471bf4909f12
+df07505 archive/snyk-fix-523ebb459084c7b6adb0d0567b01bbea
+71bbd33 archive/tool_updates
+aac27de archive/v1.42-hw-rev-gate
+1ef2344 archive/v1.42-jumper-display
