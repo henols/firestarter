@@ -20,15 +20,14 @@ Two rules that are costly to get wrong, because getting them wrong publishes som
   like `v1.42` parses as PEP 440 `1.42`. `Version("3.1.1") >= Version("1.42")` then reads true, so
   `fw` reports firmware already up to date for every stranded CLI, silently and permanently. The
   risk is latent and is armed by a single future action.
-- **A push to `beta` in either sub-repo PUBLISHES.** Neither trigger has a path filter, so a
-  documentation-only push cuts a pre-release and uploads a new PyPI version. A PyPI version can
-  never be reused. Decide the scope of a beta push before making it.
+- **A version-tag push in either sub-repo PUBLISHES.** A tag `X.Y.ZbN` or `X.Y.ZrcN` cuts a
+  pre-release, and a tag `X.Y.Z` cuts a stable release marked Latest. For the app, both upload to
+  PyPI, and a PyPI version can never be reused. Push a version tag only when the operator asks for
+  a release.
 
-A push to `main` in either sub-repo **publishes a stable release** when the version in the source
-(`firestarter/__init__.py` or `include/version.h`) has no tag yet. When the tag already exists,
-the workflow publishes nothing. A push that changes only ignored paths (`**.md`, `images/**`,
-`.github/**`, `tools/**`) does not start the workflow. `RELEASING.md` has the detail and the
-promotion runbook.
+Each sub-repo has one branch, `main`. Branch from `main` and open pull requests to `main`. A merge
+to `main` publishes nothing. The tag is the version: no file holds it, and no bot commits a bump.
+The two sub-repos release independently. `RELEASING.md` has the runbook.
 
 ## System Overview
 

@@ -1,8 +1,8 @@
 # Product Roadmap
 
 Current version: stable `3.1.0` in both sub-repos (2026-09-26, the first stable 3.x release).
-The beta channel continues at `3.1.0b5` (2026-09-27). The operator alone decides when a stable
-release happens. `RELEASING.md` in the meta repo is the runbook for it.
+The pre-release channel continues from the next version (`3.1.1bN` or `3.2.0bN`), never `3.1.0bN`,
+which sorts below `3.1.0`. The operator alone decides when a stable release happens. `RELEASING.md` in the meta repo is the runbook for it.
 
 ## Implemented
 
@@ -49,9 +49,9 @@ release happens. `RELEASING.md` in the meta repo is the runbook for it.
   command that energises a PROM on this target.
 
 **Release and docs**
-- Beta channel: a push to `beta` publishes a PyPI pre-release and a GitHub pre-release with a `.hex`
-  for each board. A push to `main` publishes a stable release when the version in the source has
-  no tag yet. The promotion PR carries the version. See `RELEASING.md`.
+- Releases: a version-tag push on `main` publishes. A `bN`/`rcN` tag gives a pre-release (PyPI and
+  GitHub, with a `.hex` for each board), and a plain `X.Y.Z` tag gives a stable release. The tag is
+  the version. The two sub-repos release independently. See `RELEASING.md`.
 - User documentation is on the `firestarter` GitHub wiki. The only change log is `CHANGELOG.md` in
   the meta repo.
   Validated chips are in `VALIDATED-EPROMS.md`; all 11 rows are 3.0.0bNN evidence and none has been
