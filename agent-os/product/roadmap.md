@@ -42,7 +42,8 @@ which sorts below `3.1.0`. The operator alone decides when a stable release happ
   `validate-family`).
 
 **Transport and boards**
-- JSON commands and binary data blocks at 250000 baud, framed with COBS and CRC8, with resync.
+- Binary command frames and binary data blocks at 250000 baud, framed with COBS and CRC8, with
+  resync.
 - Board targets: Arduino Uno (ATmega328P), Uno with ATmega328PB, and Leonardo (ATmega32U4).
 - PY32F071 (Cortex-M0+) builds in CI and publishes a `.hex`, and the host can install it over USB
   DFU. **No PY32F071 PCB exists.** Nothing has run on this silicon, and the firmware refuses every
@@ -130,7 +131,6 @@ which sorts below `3.1.0`. The operator alone decides when a stable release happ
 - After PROBE-01, correct the `probe_pending` cells in `firestarter/jumper_table.py` and remove
   their "not measured" note.
 - PY32F071: a PCB, a closed-loop VPP DAC with a calibration model, and a bus-trace oracle for ARM.
-- A binary command protocol in place of the jsmn JSON layer. It measured −3.7 KB flash on Leonardo.
 - `dev test` session reuse. It measured 50–80 s saved per run.
 - An OLED status display on the RURP connector (gh#37).
 - Python 3.11 reaches EOL on 2027-10-31. The version guard does not run from the console script.

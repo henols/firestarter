@@ -15,6 +15,29 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 `pip install firestarter` does not install a pre-release. Refer to
 [Beta Channel](https://github.com/henols/firestarter/wiki/Beta-Channel).
 
+## [Unreleased]
+
+### Changed
+
+- **CLI, Firmware:** the CLI sends each command as a fixed-layout binary frame, not as JSON. The
+  COBS framing, the CRC8 and the data transfer do not change. This CLI cannot operate a board
+  with older firmware, and older CLIs cannot operate this firmware. Upgrade the CLI first, then
+  run `firestarter fw --install`. `fw` can still read the version of the older firmware so that
+  it can replace it.
+- **Firmware:** the JSON parser and the jsmn library are removed. Flash goes down by about
+  2.6 KB and RAM by 388 B on `leonardo`, `uno` and `uno328pb`.
+- **Firmware:** a read timing above 1000 µs is refused. The JSON parser reduced it to 1000 µs.
+
+### Fixed
+
+- **Firmware:** an address line, R/W line, VPP line or static-high line outside bus lines 0–23
+  is refused before the firmware uses it. The JSON parser used these values as shift counts with
+  no check (issue #115). An undefined flag bit, a duplicate address line and a frame with the
+  wrong length are refused too.
+- **CLI:** the TI 2532 is refused before the CLI connects. Its A11 is on socket pin 18, which the
+  shield connects to chip enable. The older firmware changed that pin to bus line 0, so bus
+  line 0 carried A11 in place of A0 at every address.
+
 ## [3.1.0b7] - 2026-09-27 (pre-release)
 
 ### Fixed

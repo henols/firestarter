@@ -450,11 +450,15 @@ wire_format = "id_frame"
 # ERROR (0xA0..0xDF)
 # ---------------------------------------------------------------------------
 
+# 0xA0 answers any frame that is not a binary command frame of this
+# firmware's version. JSON-era firmware sends the same id for every binary
+# frame, because jsmn rejects the 0xF5 magic -- so a host reads 0xA0 at setup
+# as "host and firmware speak different command protocols".
 [[messages]]
 id          = 0xA0
-name        = "MSG_ERR_BAD_JSON"
+name        = "MSG_ERR_BAD_FRAME"
 severity    = "ERROR"
-format      = "Bad JSON"
+format      = "Unsupported command frame"
 params      = []
 wire_format = "id_frame"
 
@@ -776,6 +780,17 @@ params      = [
 ]
 wire_format = "id_frame"
 
+# A binary command frame whose content is refused before any field reaches
+# the handle. The parameter is a CF_REFUSE_* code from
+# tools/protocol/command_frame.toml; the host renders its reason text.
+[[messages]]
+id          = 0xC2
+name        = "MSG_ERR_BAD_COMMAND"
+severity    = "ERROR"
+format      = "Command refused, reason %d"
+params      = [{ type = "u8", render = "dec" }]
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # DATA (0xE0..0xEF)
 # ---------------------------------------------------------------------------
@@ -937,8 +952,8 @@ params = [{ type = "u8" }]
 
 [[debug.messages]]
 id     = 0x03
-name   = "DBG_PARSE_JSON"
-format = "Parse JSON"
+name   = "DBG_PARSE_COMMAND"
+format = "Parse command"
 params = []
 
 [[debug.messages]]

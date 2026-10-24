@@ -35,8 +35,8 @@
 
 ## Firmware (`firestarter_fw`)
 
-- C/C++ with the Arduino framework on PlatformIO. AVR targets: `uno`, `uno328pb` and `leonardo`. The
-  vendored jsmn library parses JSON.
+- C/C++ with the Arduino framework on PlatformIO. AVR targets: `uno`, `uno328pb` and `leonardo`.
+  `src/command_decoder.c` decodes the fixed-layout binary command frames.
 - PY32F071 target: CMake and arm-none-eabi under `platform/py32f071/`, with the OpenPuya SDK and
   CherryUSB CDC. A fake Arduino core lets it share the command processor and the PROM algorithms.
 - Tests: Unity native tests (`pio test -e native` and `-e native_nodevtools`), with golden
@@ -48,8 +48,9 @@
 
 ## Wire Protocol
 
-- USB serial at 250000 baud. JSON commands and binary data blocks. Both are framed with COBS
-  (`0x00`) and CRC8.
+- USB serial at 250000 baud. Binary command frames and binary data blocks. Both are framed with
+  COBS (`0x00`) and CRC8. The command frame layout is generated from
+  `tools/protocol/command_frame.toml` in the meta repo.
 - Data buffer: Uno-class and PY32F071 512 B, Leonardo 1024 B. The host reads the size from the
   firmware identity string.
 - Message IDs have one byte and come from one catalog (`tools/catalog/messages.toml` in the meta
