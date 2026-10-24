@@ -15,6 +15,24 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 `pip install firestarter` does not install a pre-release. Refer to
 [Beta Channel](https://github.com/henols/firestarter/wiki/Beta-Channel).
 
+## [3.1.1] - 2026-10-24 (firmware release candidate)
+
+### Fixed
+
+- **Firmware:** reset per-command parameters before parsing a new memory operation, refuse
+  incomplete or invalid setup data, and return the board to a safe idle state on rejection.
+  Prevents a malformed command from inheriting parameters from an earlier command
+  ([#118](https://github.com/henols/firestarter/issues/118)).
+- **Firmware:** make the ACK wait, flash DQ7 and Intel status polling, and command watchdog
+  use 32-bit elapsed-time checks. This prevents early timeouts or incorrect wait durations
+  when `millis()` rolls over after approximately 49.7 days
+  ([#123](https://github.com/henols/firestarter/issues/123)).
+
+### Changed
+
+- **Firmware:** add behavioral regression tests for rejected commands and timer rollover.
+  Release builds remain without development commands.
+
 ## [3.1.0b7] - 2026-09-27 (pre-release)
 
 ### Fixed
