@@ -217,6 +217,11 @@ code = 10
 name = "MISSING_FIELD"
 text = "a memory command lacks memory-size, algorithm, pin-count or vpp_mv"
 
+[[refusals]]
+code = 11
+name = "ADDRESS_RANGE"
+text = "the start address is past the end of the device or the write region"
+
 # Golden vectors. Each one is encoded by the host and decoded by the
 # firmware's native tests. `fields` uses the host's command-dict keys.
 # A vector with `refusal` must be refused with that code; its `frame` is
@@ -258,6 +263,19 @@ name = "read_2716_vpp_line"
 cmd = 1
 flags = 0
 fields = { "memory-size" = 2048, "algorithm" = 11, "pin-count" = 24, "vpp_mv" = 25000, "bus-config" = { "bus" = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "vpp-pin" = 11, "static-high" = [13] } }
+
+# A start address equal to the end is accepted: the operation is empty.
+[[vectors]]
+name = "read_address_at_device_end"
+cmd = 1
+flags = 0
+fields = { "memory-size" = 2048, "address" = 2048, "algorithm" = 7, "pin-count" = 28, "vpp_mv" = 12500 }
+
+[[vectors]]
+name = "write_address_at_region_end"
+cmd = 2
+flags = 0
+fields = { "memory-size" = 2048, "address" = 1024, "region-end" = 1024, "algorithm" = 7, "pin-count" = 28, "vpp_mv" = 12500 }
 
 [[vectors]]
 name = "config_read"
@@ -414,3 +432,24 @@ name = "memory_no_vpp"
 cmd = 1
 raw = { mem_size = 2048, protocol = 7, pins = 28 }
 refusal = "MISSING_FIELD"
+
+# A start address past the end is refused before configure_memory() touches
+# the bus. A read always covers the whole device; a write ends at region-end
+# when the host sends one.
+[[refused_vectors]]
+name = "read_address_past_device"
+cmd = 1
+raw = { mem_size = 2048, address = 2049, region_end = 4096, protocol = 7, pins = 28, vpp_mv = 12500 }
+refusal = "ADDRESS_RANGE"
+
+[[refused_vectors]]
+name = "write_address_past_region"
+cmd = 2
+raw = { mem_size = 2048, address = 1025, region_end = 1024, protocol = 7, pins = 28, vpp_mv = 12500 }
+refusal = "ADDRESS_RANGE"
+
+[[refused_vectors]]
+name = "write_address_wraps"
+cmd = 2
+raw = { mem_size = 2048, address = 0xFFFFFFFF, protocol = 7, pins = 28, vpp_mv = 12500 }
+refusal = "ADDRESS_RANGE"
