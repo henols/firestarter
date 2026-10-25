@@ -24,6 +24,8 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
   with older firmware, and older CLIs cannot operate this firmware. Upgrade the CLI first, then
   run `firestarter fw --install`. `fw` can still read the version of the older firmware so that
   it can replace it.
+- **CLI, Firmware:** the binary command frame starts at version 3.3. Version 3.2 is skipped. The
+  CLI refuses to install firmware older than 3.3, because it cannot operate that firmware.
 - **Firmware:** the JSON parser and the jsmn library are removed. Flash goes down by about
   2.6 KB and RAM by 388 B on `leonardo`, `uno` and `uno328pb`.
 - **Firmware:** a read timing above 1000 µs is refused. The JSON parser reduced it to 1000 µs.
