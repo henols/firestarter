@@ -21,12 +21,14 @@ Two rules that are costly to get wrong, because getting them wrong publishes som
   `fw` reports firmware already up to date for every stranded CLI, silently and permanently. The
   risk is latent and is armed by a single future action.
 - **A version-tag push in either sub-repo PUBLISHES.** A tag `X.Y.ZbN` or `X.Y.ZrcN` cuts a
-  pre-release, and a tag `X.Y.Z` cuts a stable release marked Latest. For the app, both upload to
+  pre-release, and a tag `X.Y.Z` cuts a stable release, marked Latest when it is the highest. For the app, both upload to
   PyPI, and a PyPI version can never be reused. Push a version tag only when the operator asks for
   a release.
 
-Each sub-repo has one branch, `main`. Branch from `main` and open pull requests to `main`. A merge
-to `main` publishes nothing. The tag is the version: no file holds it, and no bot commits a bump.
+Each sub-repo has one working branch, `main`. Branch from `main` and open pull requests to `main`.
+A fix for an older line goes to its maintenance branch `release/X.Y` instead (firmware
+`release/3.2` is open: 3.2.x fixes go there first, then merge forward to `main`). A merge to `main`
+or `release/X.Y` publishes nothing. The tag is the version: no file holds it, and no bot commits a bump.
 The two sub-repos release independently. `RELEASING.md` has the runbook.
 
 ## System Overview
