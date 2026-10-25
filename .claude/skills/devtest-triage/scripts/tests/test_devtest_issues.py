@@ -279,6 +279,40 @@ class TestSupersedesNineOutcomes(unittest.TestCase):
         self.assertIn("host version not comparable", notes[0])
 
 
+class TestGeneratedStampOrdering(unittest.TestCase):
+    """Older reports stamp `generated` in UTC (`...Z`). Newer hosts stamp it
+    in CET with an offset (`...+02:00`). Leg 1 must order the two by instant:
+    as text, `11:30:00+02:00` sorts after `10:00:00Z`, but it is 30 minutes
+    earlier."""
+
+    def test_cest_stamp_earlier_by_instant_does_not_supersede(self):
+        ok = issue(20, "sst39sf040", "PASS", "2026-08-22T11:30:00+02:00",
+                   "3.0.0b33", "3.0.0b22:leonardo",
+                   [("write", "OK"), ("verify", "OK")])
+        result, notes = di.supersedes(di._summarize(FAIL), di._summarize(ok))
+        self.assertFalse(result)
+        self.assertIn("not later than the failure by report timestamp", notes[0])
+
+    def test_cest_stamp_later_by_instant_supersedes(self):
+        ok = issue(21, "sst39sf040", "PASS", "2026-08-22T12:30:00+02:00",
+                   "3.0.0b33", "3.0.0b22:leonardo",
+                   [("write", "OK"), ("verify", "OK")])
+        result, _ = di.supersedes(di._summarize(FAIL), di._summarize(ok))
+        self.assertTrue(result)
+
+    def test_stamp_without_offset_does_not_supersede(self):
+        ok = issue(22, "sst39sf040", "PASS", "2026-08-30T10:00:00",
+                   "3.0.0b33", "3.0.0b22:leonardo",
+                   [("write", "OK"), ("verify", "OK")])
+        result, _ = di.supersedes(di._summarize(FAIL), di._summarize(ok))
+        self.assertFalse(result)
+
+    def test_summary_date_is_the_cet_date(self):
+        late = issue(23, "sst39sf040", "PASS", "2026-08-22T22:30:00Z",
+                     "3.0.0b33", "3.0.0b22:leonardo", [("write", "OK")])
+        self.assertEqual(di._summarize(late)["generated"], "2026-08-23")
+
+
 class TestMutationGuards(unittest.TestCase):
     """Each guard loads a deliberately broken copy of `devtest_issues.py` and
     proves the intact-code answer flips to WRONG on the mutant. The third
@@ -289,8 +323,8 @@ class TestMutationGuards(unittest.TestCase):
     def test_leg1_generated_comparison_guard(self):
         mutant = load_mutant(
             MODULE_PATH,
-            'ok["generated_full"] > fail["generated_full"]',
-            'ok["generated_full"] != fail["generated_full"]',
+            'ok["generated_at"] > fail["generated_at"]',
+            'ok["generated_at"] != fail["generated_at"]',
         )
         ok = issue(11, "sst39sf040", "PASS", "2026-08-01T00:00:00Z",
                    "3.0.0b33", "3.0.0b22:leonardo",

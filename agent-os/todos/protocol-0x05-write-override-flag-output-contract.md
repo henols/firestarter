@@ -1,5 +1,5 @@
 ---
-created: 2026-09-16T00:00:00Z
+created: 2026-09-16T02:00:00+02:00
 title: "Decide the output contract for a protocol 0x05 write override, before any override flag ships"
 area: host
 resolves_phase: unassigned

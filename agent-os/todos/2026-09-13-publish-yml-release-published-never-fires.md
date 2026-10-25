@@ -1,6 +1,6 @@
 ---
-created: 2026-09-13T20:45:00Z
-corrected: 2026-09-13T23:30:00Z
+created: 2026-09-13T22:45:00+02:00
+corrected: 2026-09-14T01:30:00+02:00
 title: publish.yml's release published trigger is suppressed for bot-created releases — 2.0.8 was cut and never published
 area: tooling
 resolves_phase: unassigned

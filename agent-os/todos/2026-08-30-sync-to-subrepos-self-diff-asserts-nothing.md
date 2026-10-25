@@ -1,5 +1,5 @@
 ---
-created: 2026-08-30T11:20:00Z
+created: 2026-08-30T13:20:00+02:00
 title: sync_to_subrepos.sh runs `diff -q $X $X` twice — two verifications that assert nothing
 area: tooling
 found_in_phase: 167

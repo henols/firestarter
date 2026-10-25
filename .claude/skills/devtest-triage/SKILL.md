@@ -83,7 +83,7 @@ python3 $S/devtest_issues.py show --body-file $S/../fixtures/dev-test-at28c256-n
 
 ```
 #?  at28c256  —  FAIL
-  schema      1.2   generated 2026-08-07T12:07:39Z
+  schema      1.2   generated 2026-08-07T14:07:39+02:00
   host        3.0.0b15   hw Rev 2.0-class, Override HW: Rev 2.3
   firmware    not reported -- NOT attributable to a firmware version -- ask the reporter for a fresh dev test run on a current host build
   protocol    0x0D   chip at28c256
@@ -120,7 +120,7 @@ python3 $S/devtest_issues.py show --body-file $S/../fixtures/dev-test-error-code
 
 ```
 #?  w27c512  —  FAIL
-  schema      2.0   generated 2026-09-16T09:00:00Z
+  schema      2.0   generated 2026-09-16T11:00:00+02:00
   host        3.0.0b29   hw Rev 2.2
   firmware    3.0.0b22:leonardo
   protocol    0x05   chip w27c512

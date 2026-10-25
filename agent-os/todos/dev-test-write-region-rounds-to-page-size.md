@@ -1,5 +1,5 @@
 ---
-created: 2026-09-16T00:00:00Z
+created: 2026-09-16T02:00:00+02:00
 title: "dev test's fixed 256-byte write region refuses on the two protocol 0x05 parts with page size 512"
 area: host
 resolves_phase: unassigned

@@ -1,5 +1,5 @@
 ---
-created: 2026-09-24T00:00:00Z
+created: 2026-09-24T02:00:00+02:00
 title: platformio.ini Leonardo comment says the host reads DATA_BUFFER_SIZE from the identity string
 area: firmware
 found_in_phase: exploration (CLAUDE.md audit)

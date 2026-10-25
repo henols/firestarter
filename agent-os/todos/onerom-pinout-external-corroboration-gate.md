@@ -1,5 +1,5 @@
 ---
-created: 2026-08-20T00:00:00Z
+created: 2026-08-20T02:00:00+02:00
 title: "Lock pinouts.json against one-rom chip-types.json -- 3 families ARE the May-2026 defect fixes and nothing would notice them regressing"
 area: host
 resolves_phase: unassigned

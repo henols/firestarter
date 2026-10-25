@@ -151,7 +151,7 @@ This note records that **one half** of §"What this todo owes, and when" is disc
 
 **Discharged — the gh#12 follow-up half.** The reply owed on gh#12 is posted:
 [issuecomment-5373440001](https://github.com/henols/firestarter_prom/issues/12#issuecomment-5373440001),
-id `IC_kwDOSX4ER88AAAABQEgwAQ`, `2026-08-21T18:00:19Z`. It describes a **withdrawal spanning a second
+id `IC_kwDOSX4ER88AAAABQEgwAQ`, `2026-08-21T20:00:19+02:00`. It describes a **withdrawal spanning a second
 release**, not a migration, and it never names `write --sdp-relock` — satisfying both this todo's
 outward-facing obligation and the amended companion todo now at
 `.planning/todos/completed/gh12-followup-after-dev-sdp-retirement.md`.

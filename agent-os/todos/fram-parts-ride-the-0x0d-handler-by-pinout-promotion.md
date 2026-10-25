@@ -1,5 +1,5 @@
 ---
-created: 2026-08-19T00:00:00Z
+created: 2026-08-19T02:00:00+02:00
 title: "FM28V020 and MB85R256H (FRAM) ride the 0x0D EEPROM handler by pinout promotion -- a classification question"
 area: host
 resolves_phase: unassigned

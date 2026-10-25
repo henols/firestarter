@@ -1,5 +1,5 @@
 ---
-created: 2026-08-30T20:57:55Z
+created: 2026-08-30T22:57:55+02:00
 title: Add a `dev test` flag that files the issue automatically when the run finishes
 area: host app
 files:

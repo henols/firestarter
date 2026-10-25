@@ -1,5 +1,5 @@
 ---
-created: 2026-09-16T00:00:00Z
+created: 2026-09-16T02:00:00+02:00
 title: "Restore unaligned protocol 0x05 writes by splicing the head and tail page host-side before an aligned write"
 area: host
 resolves_phase: unassigned

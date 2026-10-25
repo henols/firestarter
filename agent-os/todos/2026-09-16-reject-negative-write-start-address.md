@@ -1,5 +1,5 @@
 ---
-created: 2026-09-16T13:05:00Z
+created: 2026-09-16T15:05:00+02:00
 title: Reject a negative write start address instead of silently clamping it to 0
 area: both
 resolves_phase: null
