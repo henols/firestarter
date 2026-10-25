@@ -450,10 +450,11 @@ wire_format = "id_frame"
 # ERROR (0xA0..0xDF)
 # ---------------------------------------------------------------------------
 
-# 0xA0 answers any frame that is not a binary command frame of this
-# firmware's version. JSON-era firmware sends the same id for every binary
+# 0xA0 answers a frame that is shorter than the header or does not start with
+# the binary magic. JSON-era firmware sends the same id for every binary
 # frame, because jsmn rejects the 0xF5 magic -- so a host reads 0xA0 at setup
-# as "host and firmware speak different command protocols".
+# as "the firmware predates the binary command frame". A binary frame with the
+# right magic and another frame version gets MSG_ERR_FRAME_VERSION (0xC3).
 [[messages]]
 id          = 0xA0
 name        = "MSG_ERR_BAD_FRAME"
@@ -462,6 +463,11 @@ format      = "Unsupported command frame"
 params      = []
 wire_format = "id_frame"
 
+# No emitter since the binary command frame: the JSON parser sent it for a
+# document without a "state" key, and the frame header always carries a
+# command. KEPT, not retired -- the host still renders it for JSON-era
+# firmware, and reusing the number would misread that firmware's logs. Not
+# free for reuse.
 [[messages]]
 id          = 0xA1
 name        = "MSG_ERR_NO_CMD"
@@ -788,6 +794,18 @@ id          = 0xC2
 name        = "MSG_ERR_BAD_COMMAND"
 severity    = "ERROR"
 format      = "Command refused, reason %d"
+params      = [{ type = "u8", render = "dec" }]
+wire_format = "id_frame"
+
+# A binary command frame with the right magic and a frame version this
+# firmware does not read. The parameter is the frame version the firmware
+# reads (CF_VERSION), so the host can tell which side is older. Every later
+# frame version must answer a mismatch with this id and this parameter.
+[[messages]]
+id          = 0xC3
+name        = "MSG_ERR_FRAME_VERSION"
+severity    = "ERROR"
+format      = "Firmware reads command frame version %d"
 params      = [{ type = "u8", render = "dec" }]
 wire_format = "id_frame"
 
@@ -1208,6 +1226,9 @@ name   = "DBG_BUF_VAL"
 format = "Buf val: 0x%02x"
 params = [{ type = "u8", render = "hex_byte" }]
 
+# No emitter since the binary command frame: the JSON parser logged its jsmn
+# token count. KEPT, not retired -- reusing the number would misread a
+# JSON-era firmware's debug stream. Not free for reuse.
 [[debug.messages]]
 id     = 0x2A
 name   = "DBG_TOKEN_COUNT"

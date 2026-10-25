@@ -29,6 +29,11 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 - **Firmware:** the JSON parser and the jsmn library are removed. Flash goes down by about
   2.6 KB and RAM by 388 B on `leonardo`, `uno` and `uno328pb`.
 - **Firmware:** a read timing above 1000 µs is refused. The JSON parser reduced it to 1000 µs.
+  `firestarter dev consistency-check` refuses `--read-settling` and `--read-strobe` above 1000
+  as a usage error, before it creates the output directory.
+- **CLI, Firmware:** firmware that reads another version of the binary command frame answers
+  with the version that it reads. The CLI then tells you to upgrade the CLI or the firmware,
+  whichever is older.
 
 ### Fixed
 

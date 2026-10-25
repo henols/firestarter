@@ -26,6 +26,10 @@
 magic = 0xF5        # >= 0x80: jsmn in every JSON-era firmware rejects it as JSMN_ERROR_INVAL
 version = 1
 header_size = 7     # magic u8, version u8, cmd u8, flags u16, length u16
+# The first feature version (major.minor) that may carry this frame. 3.2 is
+# skipped: 3.2.0b1 on PyPI is a JSON-era CLI. Both release scripts refuse a
+# tag below it, and the host refuses to install firmware below it.
+min_feature = "3.3"
 
 [limits]
 address_lines = 20          # ADDRESS_LINES_SIZE in firestarter.h
@@ -217,6 +221,8 @@ text = "a memory command lacks memory-size, algorithm, pin-count or vpp_mv"
 # firmware's native tests. `fields` uses the host's command-dict keys.
 # A vector with `refusal` must be refused with that code; its `frame` is
 # given as hex because the host encoder would refuse to build it.
+# `reason = "frame"` is refused as a frame (MSG_ERR_BAD_FRAME), and
+# `reason = "version"` as a frame version mismatch (MSG_ERR_FRAME_VERSION).
 [[vectors]]
 name = "fw_version"
 cmd = 13
@@ -297,7 +303,7 @@ reason = "frame"
 [[refused_vectors]]
 name = "bad_version"
 frame = "f5020d00000000"
-reason = "frame"
+reason = "version"
 
 [[refused_vectors]]
 name = "truncated_header"
