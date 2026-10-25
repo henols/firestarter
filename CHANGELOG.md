@@ -19,6 +19,8 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 
 ### Changed
 
+These changes are not in 3.2.0 or 3.2.1b1.
+
 - **CLI:** each timestamp that the CLI writes is ISO 8601 in Central European Time: CET
   (`+01:00`) in winter and CEST (`+02:00`) in summer. This applies to the `generated` field of a
   `dev test` report and of `validation-matrix.json`, and to the "Published" column of
@@ -27,6 +29,52 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
   `dev fault-inject` ends in an ISO 8601 basic-format time, for example
   `20261009T143056+0200`. Before, the name ended in `2026-10-09-143056`, in the local time of
   the computer, with no time zone.
+
+The next release is 3.2.0, for the CLI and the firmware. The first pre-release is 3.2.0b2.
+3.2.0 contains all the changes after 3.1.0: the changes in this section, and the changes in
+3.1.0b4 to 3.1.0b7. The most important new function is `firestarter cal`, which calibrates the
+voltage readings of a board.
+
+Upgrade the CLI first, then the firmware. A 3.1 CLI refuses to install 3.2 firmware.
+
+### Fixed
+
+- **CLI:** `blank` on a chip that is not blank, and `verify` on a chip that does not agree with
+  the file, no longer show `ERROR: Timeout` and `Programmer error during READ`. The CLI stops the
+  read at the first chunk that is different, and the firmware then stops the read with a
+  timeout. This timeout is expected, so the CLI now shows only the result of the compare. A
+  timeout that the CLI did not cause is still an error.
+- **Firmware:** each command starts with default parameters. Before, a parameter that a command
+  did not send kept its value from the previous command, for example the protocol, the VPP
+  target or the bus map of the previous chip (issue #118).
+- **Firmware:** a memory command with a missing parameter is refused, and the outputs go off
+  immediately (issue #118).
+- **Firmware:** the timeouts operate correctly when the millisecond counter of the board wraps
+  around. This occurs after approximately 49.7 days without a reset (issue #123).
+- **CLI:** `config` operates again with the 3.1.0 firmware. The CLI did not accept the shorter
+  configuration answer that this firmware sends.
+- **CLI:** `read`, `verify` and `blank` refuse a negative address, a size of 0 and an empty
+  input file before they open the port. Before, the firmware refused the command, and the CLI
+  then reported that it found no programmer. When the CLI finds no programmer, it now also
+  shows the answer of the firmware.
+- **CLI and firmware:** `config` refuses a value of R1, R2, the hardware revision or the
+  bandgap that is out of range, and shows the permitted range. Before, the firmware replaced
+  such a value with the default value and the CLI reported success. A refused command no
+  longer changes the configuration in the memory of the board.
+- **Firmware:** a configuration memory that holds data from a different program no longer sets
+  a hardware-revision override. The firmware resets all such data to the default values. An
+  override that you set yourself stays after a firmware update.
+- **Firmware:** on the py32f071 board, the firmware no longer shows the "not calibrated"
+  warning, and it refuses `cal`. This board does not use the bandgap calibration.
+- **CLI:** when the firmware refuses a command, `dev test` disconnects and connects again for
+  the next step.
+
+### Version numbers
+
+- The CLI 3.2.0b1 on PyPI was released by mistake on 2026-10-10. It has the same code as
+  3.1.1b1. 3.2.0b2 and later releases replace it. The firmware has no 3.2.0b1.
+- The CLI pre-releases 3.1.0b8 and 3.1.1b1, and the firmware pre-release 3.1.1b1, have no
+  changes for users. The firmware pre-release 3.1.1b2 has the firmware fixes in this section.
 
 ## [3.1.0b7] - 2026-09-27 (pre-release)
 

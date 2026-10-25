@@ -1,0 +1,134 @@
+# /workspaces/firestarter_fw — branch inventory before cleanup, 2026-09-27
+
+## Local branches
+a7ba59c 2026-09-27 beta
+694c3ee 2026-09-27 v1.43-voltage-reading-accuracy
+3fd7d8b 2026-09-26 backmerge/3.1.0-to-beta
+0ebbfbf 2026-09-26 release/3.1.x
+6ba0016 2026-09-25 v1.42-hw-rev-gate
+847f804 2026-09-25 v1.42-jumper-display
+dbdf9c8 2026-09-24 v1.41-verification-to-host
+e5842d8 2026-09-20 v1.40-program-parameter-fidelity
+5a7c18c 2026-09-17 v1.39-protocol-0x05-write-correctness
+43eedcc 2026-09-17 docs-260917
+f444348 2026-09-15 fix/point-at-firestarter-beta
+5906f48 2026-09-15 fix/point-at-firestarter
+e6888a9 2026-09-14 v1.38-repository-rename
+447b73e 2026-09-13 quick/260913-e7t-close-stale-claims-wr02-wr06
+6c9ae9f 2026-09-13 chore/retire-unrun-gates-and-baselines
+6c4d2e2 2026-09-13 gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+c14f191 2026-09-08 gsd/v1.36-dev-test-fidelity
+579f04a 2026-09-01 policy/contributor-policy
+4f73c80 2026-09-01 gsd/v1.35-documentation-consolidation-wiki-migration
+a218b4f 2026-08-29 gsd/v1.33-source-hygiene-firmware-size-reduction
+a6b46f8 2026-08-23 wip/v1.33-size-reduction-survey-preserved
+8695ee5 2026-08-22 size-reduction-survey
+6d4d6bc 2026-08-22 debug-w27c512-write-slow
+e58b2e3 2026-08-22 debug-w27c512-erase-pulse
+d990a4c 2026-08-21 gsd/v1.32-at28c-write-path-root-cause-report-provenance
+6992271 2026-08-18 gsd/v1.31-27c-programming-algorithm-fidelity
+64bee8a 2026-08-07 ci/beta-build-on-every-merge
+25235c4 2026-08-07 ci/build-all-branches-publish-main-beta
+13eb350 2026-08-06 fix/hw-revision-gate-ready-ack
+05c20bf 2026-08-02 v1.23-py32f071-integration
+953f748 2026-07-30 v1.22-at28c-software-data-protection-lifecycle
+ad47c3b 2026-07-28 feature/py32f071-release-assets
+0fd7992 2026-07-26 v1.21-community-chip-validation-command
+759f803 2026-07-02 v1.20-protocol-only-dispatch
+96b3138 2026-07-02 v1.19-protocol-naming-labels
+35706c2 2026-07-01 v1.16-protocol-first-architecture-rebuild
+cb947c7 2026-06-25 v1.15-bench-validation-of-operator-inventory
+a33513f 2026-06-18 v1.13-algo-validation
+b71c6fd 2026-06-11 v1.12-protocol-dispatch-hardening
+0266ee2 2026-06-05 v1.10-serial-transport-hardening
+5a91f1b 2026-05-29 v1.9-read-bug-rca
+efd203a 2026-05-26 v1.6-read-bug
+7b7748b 2026-05-25 v1.7-shield-investigation
+fd087f1 2026-05-20 feature/phase-10-static-pins
+4aa3dfe 2026-05-08 feature/phases-01-09
+db4e565 2025-11-16 main
+53ef31d 2025-10-30 binary_protocol
+1993d5f 2025-09-11 amd_intel_flash_types
+a000d83 2025-09-11 flickering_vpe
+821597e 2025-07-19 p21_on_24dip_as_vpp
+f84fe20 2025-07-19 logo
+9c01219 2025-07-18 flash_type_2
+
+## Remote branches
+a7ba59c 2026-09-27 origin/beta
+694c3ee 2026-09-27 origin/v1.43-voltage-reading-accuracy
+3fd7d8b 2026-09-26 origin/backmerge/3.1.0-to-beta
+0a7b6df 2026-09-26 origin
+0a7b6df 2026-09-26 origin/main
+0ebbfbf 2026-09-26 origin/release/3.1.x
+6db9688 2026-09-25 origin/v1.42-jumper-display
+dbdf9c8 2026-09-24 origin/v1.41-verification-to-host
+7037fba 2026-09-21 origin/branding/new-firestarter-logo
+e5842d8 2026-09-20 origin/v1.40-program-parameter-fidelity
+c2b8baa 2026-09-16 origin/v1.39-protocol-0x05-write-correctness
+1d37f49 2026-09-15 origin/quick/260915-gqp-no-prom-redirect
+f444348 2026-09-15 origin/fix/point-at-firestarter-beta
+5906f48 2026-09-15 origin/fix/point-at-firestarter
+8fda209 2026-09-15 origin/fix/readme-license-link
+e6888a9 2026-09-14 origin/v1.38-repository-rename
+447b73e 2026-09-13 origin/quick/260913-e7t-close-stale-claims-wr02-wr06
+6c9ae9f 2026-09-13 origin/chore/retire-unrun-gates-and-baselines
+6c4d2e2 2026-09-13 origin/gsd/v1.37-operator-safety-answered-reports-claim-hygiene
+c14f191 2026-09-08 origin/gsd/v1.36-dev-test-fidelity
+579f04a 2026-09-01 origin/policy/contributor-policy
+4f73c80 2026-09-01 origin/gsd/v1.35-documentation-consolidation-wiki-migration
+a218b4f 2026-08-29 origin/gsd/v1.33-source-hygiene-firmware-size-reduction
+6d4d6bc 2026-08-22 origin/debug-w27c512-write-slow
+d990a4c 2026-08-21 origin/gsd/v1.32-at28c-write-path-root-cause-report-provenance
+6992271 2026-08-18 origin/gsd/v1.31-27c-programming-algorithm-fidelity
+64bee8a 2026-08-07 origin/ci/beta-build-on-every-merge
+240fb19 2026-08-01 origin/v1.23-py32f071-integration
+ad47c3b 2026-07-28 origin/feature/py32f071-release-assets
+0fd7992 2026-07-26 origin/v1.21-community-chip-validation-command
+e5abb51 2026-07-21 origin/agent/py32f071-toolchain
+52d6c1f 2026-07-21 origin/agent/portability-macros
+52d6c1f 2026-07-21 origin/agent/rp2040-portability-macros
+cc4a815 2026-07-21 origin/feature/py32f071-full-support
+2c2ed10 2026-07-20 origin/feature/py32f071-adc-dac
+2c2ed10 2026-07-20 origin/feature/py32f071-toolchain
+2c2ed10 2026-07-20 origin/feature/py32f071-voltage-control
+a47228d 2026-07-19 origin/feature/common-vpp-calibration
+7f5bcaa 2026-07-11 origin/chore/centralize-issue-tracking
+fd087f1 2026-05-20 origin/feature/phase-10-static-pins
+4648ce8 2025-11-28 origin/28cXXX
+1993d5f 2025-09-11 origin/amd_intel_flash_types
+a000d83 2025-09-11 origin/flickering_vpe
+821597e 2025-07-19 origin/p21_on_24dip_as_vpp
+f84fe20 2025-07-19 origin/logo
+b808432 2025-07-12 origin/flash_type_2
+ecfc057 2025-03-03 origin/uno_r4_minima
+6d928ef 2025-02-12 origin/nucleo_L010RB
+
+## Archive tags created
+5dc821d archive/agent/portability-macros
+f36cba3 archive/agent/py32f071-toolchain
+d356f18 archive/agent/rp2040-portability-macros
+84ff175 archive/amd_intel_flash_types
+1c87859 archive/binary_protocol
+ff53615 archive/chore/centralize-issue-tracking
+abcdb3c archive/ci/beta-build-on-every-merge
+107e5ed archive/ci/build-all-branches-publish-main-beta
+5112f29 archive/feature/common-vpp-calibration
+29a7be9 archive/feature/py32f071-adc-dac
+1cd5b9b archive/feature/py32f071-full-support
+5273677 archive/feature/py32f071-release-assets
+73a5ebc archive/feature/py32f071-toolchain
+5aedb31 archive/feature/py32f071-voltage-control
+b80c573 archive/fix/hw-revision-gate-ready-ack
+60a3dd2 archive/fix/point-at-firestarter
+8841fbb archive/fix/readme-license-link
+09d7971 archive/flash_type_2
+bf7c5ba archive/logo
+4ec0ea1 archive/nucleo_L010RB
+1a766a5 archive/p21_on_24dip_as_vpp
+69a9a70 archive/uno_r4_minima
+6acc152 archive/v1.15-bench-validation-of-operator-inventory
+5bdae88 archive/v1.16-protocol-first-architecture-rebuild
+257924a archive/v1.42-hw-rev-gate
+34d50f1 archive/v1.42-jumper-display
+1c4404d archive/wip/v1.33-size-reduction-survey-preserved
