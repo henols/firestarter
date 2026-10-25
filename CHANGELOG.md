@@ -38,6 +38,23 @@ Upgrade the CLI first, then the firmware. A 3.1 CLI refuses to install 3.2 firmw
   immediately (issue #118).
 - **Firmware:** the timeouts operate correctly when the millisecond counter of the board wraps
   around. This occurs after approximately 49.7 days without a reset (issue #123).
+- **CLI:** `config` operates again with the 3.1.0 firmware. The CLI did not accept the shorter
+  configuration answer that this firmware sends.
+- **CLI:** `read`, `verify` and `blank` refuse a negative address, a size of 0 and an empty
+  input file before they open the port. Before, the firmware refused the command, and the CLI
+  then reported that it found no programmer. When the CLI finds no programmer, it now also
+  shows the answer of the firmware.
+- **CLI and firmware:** `config` refuses a value of R1, R2, the hardware revision or the
+  bandgap that is out of range, and shows the permitted range. Before, the firmware replaced
+  such a value with the default value and the CLI reported success. A refused command no
+  longer changes the configuration in the memory of the board.
+- **Firmware:** a configuration memory that holds data from a different program no longer sets
+  a hardware-revision override. The firmware resets all such data to the default values. An
+  override that you set yourself stays after a firmware update.
+- **Firmware:** on the py32f071 board, the firmware no longer shows the "not calibrated"
+  warning, and it refuses `cal`. This board does not use the bandgap calibration.
+- **CLI:** when the firmware refuses a command, `dev test` disconnects and connects again for
+  the next step.
 
 ### Version numbers
 
