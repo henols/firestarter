@@ -15,6 +15,37 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 `pip install firestarter` does not install a pre-release. Refer to
 [Beta Channel](https://github.com/henols/firestarter/wiki/Beta-Channel).
 
+## [Unreleased]
+
+The next release is 3.2.0, for the CLI and the firmware. The first pre-release is 3.2.0b2.
+3.2.0 contains all the changes after 3.1.0: the changes in this section, and the changes in
+3.1.0b4 to 3.1.0b7. The most important new function is `firestarter cal`, which calibrates the
+voltage readings of a board.
+
+Upgrade the CLI first, then the firmware. A 3.1 CLI refuses to install 3.2 firmware.
+
+### Fixed
+
+- **CLI:** `blank` on a chip that is not blank, and `verify` on a chip that does not agree with
+  the file, no longer show `ERROR: Timeout` and `Programmer error during READ`. The CLI stops the
+  read at the first chunk that is different, and the firmware then stops the read with a
+  timeout. This timeout is expected, so the CLI now shows only the result of the compare. A
+  timeout that the CLI did not cause is still an error.
+- **Firmware:** each command starts with default parameters. Before, a parameter that a command
+  did not send kept its value from the previous command, for example the protocol, the VPP
+  target or the bus map of the previous chip (issue #118).
+- **Firmware:** a memory command with a missing parameter is refused, and the outputs go off
+  immediately (issue #118).
+- **Firmware:** the timeouts operate correctly when the millisecond counter of the board wraps
+  around. This occurs after approximately 49.7 days without a reset (issue #123).
+
+### Version numbers
+
+- The CLI 3.2.0b1 on PyPI was released by mistake on 2026-10-10. It has the same code as
+  3.1.1b1. 3.2.0b2 and later releases replace it. The firmware has no 3.2.0b1.
+- The CLI pre-releases 3.1.0b8 and 3.1.1b1, and the firmware pre-release 3.1.1b1, have no
+  changes for users. The firmware pre-release 3.1.1b2 has the firmware fixes in this section.
+
 ## [3.1.0b7] - 2026-09-27 (pre-release)
 
 ### Fixed
