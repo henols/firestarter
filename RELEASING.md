@@ -13,13 +13,15 @@ the other.
 
 ## 1. What publishes
 
-Each sub-repository has one branch, `main`. All work goes to `main` through pull requests.
+Each sub-repository has one working branch, `main`. All work goes to `main` through pull requests.
+A sub-repository can also have a maintenance branch `release/X.Y` for patches to an older line `X.Y`.
+Refer to section 2.4.
 
 | Event | What occurs |
 |---|---|
-| A merge or a push to `main` | CI only. Nothing publishes. |
+| A merge or a push to `main` or `release/X.Y` | CI only. Nothing publishes. |
 | A push of a tag `X.Y.ZbN` or `X.Y.ZrcN` | A pre-release. The app: a GitHub pre-release and a PyPI pre-release. The firmware: a GitHub pre-release with dev tools in each `.hex`, and the `py32f071` image. |
-| A push of a tag `X.Y.Z` | A stable release, marked "Latest". The app: also a PyPI release. The firmware: `.hex` files without dev tools. |
+| A push of a tag `X.Y.Z` | A stable release, marked "Latest" only when it is the highest stable version. The app: also a PyPI release. The firmware: `.hex` files without dev tools. |
 | A push or a tag in the meta repository | Nothing. |
 
 **The tag is the version.** No file in a sub-repository holds the version, and no bot commits a
@@ -35,7 +37,8 @@ pre-release, so a development build behaves as a beta build.
 The release workflow (`.github/workflows/release.yml`) refuses a tag in these cases:
 
 - The tag does not have the shape `X.Y.Z`, `X.Y.ZbN` or `X.Y.ZrcN`.
-- The tag points at a commit that is not on `main`.
+- The tag points at a commit that is not on `main` and not on `release/X.Y` of its own line. (Only the
+  firmware accepts `release/X.Y` at this time.)
 
 **A PyPI version can never be used again.** A failed app release that reached PyPI needs a new
 version number. A test release is acceptable: use a spare `bN` number.
@@ -86,6 +89,23 @@ git push origin 3.2.0b1
 - The app reached GitHub but not PyPI: run the `Publish to PyPI.org` workflow by hand, with the
   tag as input.
 - The app reached PyPI: do not use the version again. Fix the cause and release the next number.
+
+### 2.4 A patch to an older line
+
+Use a maintenance branch when `main` has a change that must not go into the patch, for example a
+wire-protocol change for the next `X.Y`.
+
+1. Cut `release/X.Y` from the last stable tag of the line: `git branch release/3.2 3.2.1`, then
+   `git push origin release/3.2`.
+2. Branch from `release/X.Y` and open pull requests to `release/X.Y`.
+3. Run `tools/release.sh X.Y.Z`. When `origin/release/X.Y` exists, the script tags that branch, not
+   `main`. The version must sort above every earlier tag of the line.
+4. Merge `release/X.Y` forward into `main` through a pull request, so that `main` keeps every fix.
+
+A patch to an older line does not become "Latest" when a higher stable version exists. The app's
+stable channel reads `/releases/latest`.
+
+Open lines: firmware `release/3.2` (cut from `3.2.1`; `main` carries the 3.3 binary command frame).
 
 ---
 
