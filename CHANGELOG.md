@@ -17,9 +17,115 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 
 ## [Unreleased]
 
+## [3.2.6] - 2026-10-27 (CLI)
+
+### Added
+
+- **CLI:** `erase` erases the protocol-0x05 flash parts (AE29F2008, W29C010/020/040, AT29C and
+  similar) when the board has firmware 3.2.2 or later (issue #62). On older firmware the CLI
+  refuses the erase before the board starts it: some 3.0.0 pre-releases erased these parts with
+  VPP on. `info` shows "Can be erased: yes (needs firmware 3.2.2 or later)".
+
 ### Changed
 
-These changes are not in 3.2.0 or 3.2.1b1.
+- **CLI:** with a hardware-revision override, `hw` shows the revision that the board detected as
+  "Detected HW". Before, it showed it as "Override HW", which is the override itself. `config`
+  still shows the override as "Override HW".
+
+### Fixed
+
+- **CLI:** a pre-release CLI offers the highest firmware release, stable or pre-release. Before,
+  it chose only among pre-releases, and with firmware 3.2.2 published it offered 3.1.1b2.
+- **CLI:** the CLI operates a board with a development build of the firmware (a version such as
+  `3.2.2.dev48`). Before, it refused the board as outdated.
+
+## [3.2.5] - 2026-10-27 (CLI)
+
+### Fixed
+
+- **CLI:** `fw --install --force` gives `-F` to avrdude, so that it installs on a board whose
+  bootloader reports a different device signature, for example an ATmega328PB clone (issue #95).
+- **CLI:** the MBM27C1000, MBM27C2000, HN27C301 and M27C1000 (SGS-Thomson) parts use their own
+  pin map, with OE on pin 2 and A16 on pin 24. The shield drives pin 24 as OE, so these parts are
+  refused as "adapter required", with the reason (issue #70).
+- **CLI:** the TI 2532 is refused as "adapter required". The shield drives its pin 18 (A11) as CE,
+  so only the lower 2 KB could be addressed.
+- **CLI:** the AT27C011, D27011 and D27C011 are refused as "protocol not implemented", with the
+  reason. The pin map reaches only 16 KB of their 128 KB (issue #136).
+- **CLI:** the W27E257 programs at 12 V, from its datasheet. Before, the CLI used 13.5 V, the erase
+  voltage.
+
+### Added
+
+- **CLI:** the Toshiba TMM27128AD.
+
+## [3.2.4] - 2026-10-25 (CLI)
+
+### Fixed
+
+- **CLI:** the NEC uPD27128 and uPD27256 use the programming values from their datasheets.
+- **CLI:** a chip whose pin map cannot reach all of its memory is refused.
+- **CLI:** the 8 KB SRAM parts hold pin 26 high, and the 28-pin SRAM map is chosen by the address
+  width.
+- **CLI:** the 32-pin 28C EEPROMs strobe WE on pin 31.
+
+### Added
+
+- **CLI:** the Hitachi HN482764 / HN482764G and the Mitsubishi M5L2764K / M5L2764K-2.
+
+## [3.2.3] - 2026-10-25 (CLI)
+
+### Fixed
+
+- **CLI:** the 2764 and 27128 parts hold PGM high during a read. Before, PGM was low, and the
+  read and the verify of these parts were wrong.
+
+## [3.2.2] - 2026-10-25 (CLI), 2026-10-27 (firmware)
+
+The CLI 3.2.2 and the firmware 3.2.2 are two different releases with the same number.
+
+### Fixed
+
+- **CLI:** a chip name that selects rows that program differently (the same part number from two
+  manufacturers, for example) is refused, and the CLI lists a qualified name for each row. Use
+  `PART@MANUFACTURER` to select one row.
+- **Firmware:** a NOR flash erase (protocol 0x06) waits until the part is ready, and reports a
+  timeout or a part that is not blank after the erase. Before, the erase returned before the part
+  had finished, and a read after it could show the chip ID as 0xFFFF (issues #86, #122).
+- **Firmware:** a NOR flash sector erase above 64 KiB erases the correct sector (issue #117).
+  The same fault prevented the software data protection cycles on the 28-pin AT29C256.
+- **Firmware:** a NOR flash write at an address that is not 0 no longer erases a sector. Before,
+  it erased the sector at the start address, and so the bytes below the start in that sector.
+- **Firmware:** a 5 V page write (protocol 0x05) ends on the DQ7 data poll, confirmed by a second
+  read.
+- **Firmware:** the Intel 28F status register is decoded correctly, and a failed erase is no longer
+  reported as a success (issue #116). VPP is measured before it goes to pin 1.
+- **Firmware:** a command with a bus line that is not on the bus, a duplicate address line or a
+  number that does not fit in 32 bits is refused (issues #115, #124, #130).
+- **Firmware:** a write that ends with DONE before the end of its region is refused, and a stray
+  frame during a write or a read is refused (issues #121, #129).
+- **Firmware:** on the Uno, an error frame is no longer lost when the log buffer is full
+  (issue #125).
+- **Firmware:** the control pins start in the safe state (CE and OE high) before they become
+  outputs, and the hardware revision is detected after the serial port is ready.
+- **Firmware:** a VPP target above 25 V, a program pulse above 65535 µs, a calibration supply
+  voltage above 10 V and an out-of-range revision value are refused.
+- **Firmware:** a dev command that waits for the button stops after 30 s.
+
+### Added
+
+- **Firmware:** a software chip erase for the protocol-0x05 flash parts (issue #62). It needs the
+  CLI 3.2.6 or later.
+
+### Compatibility
+
+- The firmware 3.2.2 operates with the CLI 3.2.0 and later. Only the TI 2532 changes: the
+  firmware refuses its bus map. Its reads were already wrong. The CLI 3.2.5 refuses it with the
+  reason.
+
+## [3.2.1] - 2026-10-25
+
+### Changed
 
 - **CLI:** each timestamp that the CLI writes is ISO 8601 in Central European Time: CET
   (`+01:00`) in winter and CEST (`+02:00`) in summer. This applies to the `generated` field of a
@@ -30,7 +136,13 @@ These changes are not in 3.2.0 or 3.2.1b1.
   `20261009T143056+0200`. Before, the name ended in `2026-10-09-143056`, in the local time of
   the computer, with no time zone.
 
-The next release is 3.2.0, for the CLI and the firmware. The first pre-release is 3.2.0b2.
+### Fixed
+
+- **Firmware:** a read, a write or a verify whose address range goes past the end of the device
+  is refused before the bus is used, also when the range wraps around 32 bits (issue #120).
+
+## [3.2.0] - 2026-10-25
+
 3.2.0 contains all the changes after 3.1.0: the changes in this section, and the changes in
 3.1.0b4 to 3.1.0b7. The most important new function is `firestarter cal`, which calibrates the
 voltage readings of a board.
