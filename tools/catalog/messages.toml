@@ -47,8 +47,8 @@ wire_format = "id_frame"
 id          = 0x02
 name        = "MSG_OK_REQ_DATA"
 severity    = "OK"
-format      = "Request data"
-params      = []
+format      = "Request data at 0x%06x"
+params      = [{ type = "u32" }]
 wire_format = "id_frame"
 
 # Special: FW-version handshake stays text-format so the host can read the
@@ -809,6 +809,19 @@ format      = "Firmware reads command frame version %d"
 params      = [{ type = "u8", render = "dec" }]
 wire_format = "id_frame"
 
+# A data frame failed its COBS or CRC8 check FRAME_RESEND_MAX + 1 times in a
+# row: the first try and each resend. The firmware asks for each bad write
+# chunk again (MSG_OK_REQ_DATA with the same address) and sends each read
+# chunk again when the host answers "NK". The parameter is the number of bad
+# frames.
+[[messages]]
+id          = 0xC4
+name        = "MSG_ERR_RESEND_LIMIT"
+severity    = "ERROR"
+format      = "A data frame failed its check %d times in a row"
+params      = [{ type = "u8", render = "dec" }]
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # DATA (0xE0..0xEF)
 # ---------------------------------------------------------------------------
@@ -887,13 +900,16 @@ wire_format = "id_frame"
 id          = 0xE6
 name        = "MSG_DATA_CHUNK"
 severity    = "DATA"
-format      = "<data chunk>"
+format      = "<data chunk at 0x%06x>"
 params      = [
+    { type = "u32" },
     { type = "bytes" },
 ]
 wire_format = "id_frame"
 
-# Chip-read streaming wrapper. params[0] is the raw chip-byte payload (W-04).
+# Chip-read streaming wrapper. params[0] is the chip address of the first
+# byte, params[1] the raw chip-byte payload (W-04). The address lets the host
+# drop a chunk that the firmware sent again after a lost acknowledgement.
 # format is documentation-only; host extracts raw bytes, never renders this string.
 # Raw ADC diagnostic readout (dev-gated CMD_DEV_ADC). 17 wire bytes:
 #   [mode u8][divider_adc u16][bandgap_adc u16][voltage_mv u16][vcc_mv u16]
