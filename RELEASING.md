@@ -102,10 +102,12 @@ wire-protocol change for the next `X.Y`.
    `main`. The version must sort above every earlier tag of the line.
 4. Merge `release/X.Y` forward into `main` through a pull request, so that `main` keeps every fix.
 
-A patch to an older line does not become "Latest" when a higher stable version exists. The app's
-stable channel reads `/releases/latest`.
+A patch to an older line does not become "Latest" when a higher stable version exists. A stable
+CLI X.Y.z does not read `/releases/latest`. It installs the highest stable firmware X.Y.y, so a
+patch to an older firmware line still reaches the CLIs on that line.
 
-Open lines: firmware `release/3.2` (cut from `3.2.1`; `main` carries the 3.3 binary command frame).
+Open lines: none. Firmware `main` carries the 3.2.x line. The 3.3 binary command frame waits on
+`feat/binary-command-protocol`.
 
 ---
 

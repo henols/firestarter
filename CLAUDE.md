@@ -26,9 +26,9 @@ Two rules that are costly to get wrong, because getting them wrong publishes som
   a release.
 
 Each sub-repo has one working branch, `main`. Branch from `main` and open pull requests to `main`.
-A fix for an older line goes to its maintenance branch `release/X.Y` instead (firmware
-`release/3.2` is open: 3.2.x fixes go there first, then merge forward to `main`). A merge to `main`
-or `release/X.Y` publishes nothing. The tag is the version: no file holds it, and no bot commits a bump.
+A fix for an older line goes to its maintenance branch `release/X.Y` instead. No `release/3.2`
+branch exists: firmware `main` carries the 3.2.x line, and the 3.3 binary command frame waits on
+`feat/binary-command-protocol`. A merge to `main` or `release/X.Y` publishes nothing. The tag is the version: no file holds it, and no bot commits a bump.
 The two sub-repos release independently. `RELEASING.md` has the runbook.
 
 ## System Overview
