@@ -15,8 +15,8 @@ $EDITOR /workspaces/.claude/skills/<name>/SKILL.md  # frontmatter + body
 ```
 
 Skills live in the **meta repo** (`/workspaces/.claude/skills/`), not in a sub-repo.
-It is the only vantage point that sees the project-level `agent-os/` records plus
-`firestarter_app/` and `firestarter_fw/`, and most skills here touch more than one.
+It is the only vantage point that sees both `firestarter_app/` and `firestarter_fw/`,
+and most skills here touch more than one.
 
 ## Frontmatter contract
 
@@ -106,7 +106,7 @@ however well it is written.
 | **Hardware is destructive and operator-gated** | `firestarter dev test <chip>` ALWAYS WRITES to the chip. No skill runs a hardware command, adjusts the VPP pot, or drives a bench board without explicit operator go-ahead in that session — and never while another agent may hold the serial port. |
 | **Keep the two-repo constants in sync** | Flag bits and constants are duplicated between `firestarter_app/firestarter/constants.py` and `firestarter/include/firestarter.h`; the serial protocol between `serial_comm.py` and `firestarter.cpp`. A skill that changes one must change the other. |
 | **Never work on `beta` or `main`** | Sub-repo work forks off `beta`, meta work off `main`, onto a `v1.X-slug` branch. Releases are operator-gated: nothing is stable until the operator says so. |
-| **Use the current project workflow** | Project planning and reusable standards live under `agent-os/`. A skill must not depend on the retired `.planning/` tree or GSD commands. Keep the skill self-contained where possible and point durable project decisions to the current Agent OS records. |
+| **Do not depend on retired tooling** | A skill must not depend on the retired `.planning/` tree, GSD commands or Agent OS. Keep the skill self-contained. |
 
 If a skill hands work to another agent, it must carry the relevant rules **into the
 prompt**. A general-purpose coding agent may not know the chip database is generated;
