@@ -3,6 +3,7 @@
 
     release.py <app|fw> <pre|regular|minor|major>                 # dry run: checks + PLAN
     release.py <app|fw> <type> --yes --expect <VERSION>           # publish
+    release.py <app|fw> <pre|regular> --line X.Y                  # a patch on release/X.Y
     release.py --selftest                                         # offline tests
 
 The tag is the version (RELEASING.md section 1). A pushed tag PUBLISHES, and a PyPI
@@ -10,7 +11,7 @@ version can never be reused, so the dry run is the default and --yes needs --exp
 to name the exact version the operator confirmed.
 
 The meta repository is never tagged or released here (CLAUDE.md, Release Hazards).
-Stdlib only: the skill owns its logic and does not call the sub-repos' tools/release.sh.
+Stdlib only. This is the one release tool for both sub-repos.
 """
 import argparse
 import datetime
@@ -35,6 +36,7 @@ REPOS = {
         "suffix": "CLI",           # CHANGELOG heading: ## [V] - date (CLI)
         "pypi": "firestarter",
         "assets": [r"\.whl$", r"\.tar\.gz$"],
+        "frame": "firestarter/command_frame.py",
     },
     "fw": {
         "sub": "firestarter_fw",
@@ -44,6 +46,7 @@ REPOS = {
         "pypi": None,
         "assets": [r"^firestarter_leonardo\.hex$", r"^firestarter_uno\.hex$",
                    r"^firestarter_uno328pb\.hex$", r"^firestarter_py32f071\.hex$"],
+        "frame": "include/command_frame.h",
     },
 }
 TYPES = ("pre", "regular", "minor", "major")
@@ -88,8 +91,20 @@ def next_version(latest, kind):
 
 # --- CHANGELOG ----------------------------------------------------------------
 
-def _unreleased_span(lines):
-    start = next((i for i, l in enumerate(lines) if l.strip() == "## [Unreleased]"), None)
+def unreleased_name(line):
+    """The CHANGELOG section that collects the next release: [Unreleased], or [Unreleased X.Y]
+    for a patch on release/X.Y, so that the patch does not take the items of main."""
+    return f"Unreleased {line}" if line else "Unreleased"
+
+
+def _has_label(bullet, label):
+    # "- **CLI:**", "- **Firmware:**" or "- **CLI, Firmware:**".
+    m = re.match(r"- \*\*([^*]+):\*\*", bullet[0])
+    return bool(m) and label in [x.strip() for x in m.group(1).split(",")]
+
+
+def _unreleased_span(lines, name="Unreleased"):
+    start = next((i for i, l in enumerate(lines) if l.strip() == f"## [{name}]"), None)
     if start is None:
         return None, None
     end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
@@ -130,14 +145,14 @@ def _emit(items):
     return out
 
 
-def changelog_items(text, label):
-    """Bullets for `label` under [Unreleased]."""
+def changelog_items(text, label, line=None):
+    """Bullets for `label` under [Unreleased] (or [Unreleased X.Y])."""
     lines = text.splitlines()
-    start, end = _unreleased_span(lines)
+    start, end = _unreleased_span(lines, unreleased_name(line))
     if start is None:
         return []
     _, items = _parse_unreleased(lines[start + 1:end])
-    return [b for s, b in items if b[0].startswith(f"- **{label}:**")]
+    return [b for s, b in items if _has_label(b, label)]
 
 
 def changelog_heading(text, version):
@@ -174,27 +189,30 @@ def _merge_into(section, moved, date, suffix, version):
     return out + body + [""]
 
 
-def changelog_release(text, label, version, date, suffix):
+def changelog_release(text, label, version, date, suffix, line=None):
     """Move the `label` bullets out of [Unreleased] into the `## [version]` section.
 
     A new section goes directly under [Unreleased]. When the other sub-repo already has a
-    section with this number, the bullets merge into it.
+    section with this number, the bullets merge into it. For a patch on release/X.Y the
+    bullets come from [Unreleased X.Y], and that heading goes when it is empty.
     """
     lines = text.splitlines()
-    start, end = _unreleased_span(lines)
+    start, end = _unreleased_span(lines, unreleased_name(line))
     prose, items = _parse_unreleased(lines[start + 1:end])
-    moved = [(s, b) for s, b in items if b[0].startswith(f"- **{label}:**")]
-    kept = [(s, b) for s, b in items if not b[0].startswith(f"- **{label}:**")]
+    moved = [(s, b) for s, b in items if _has_label(b, label)]
+    kept = [(s, b) for s, b in items if not _has_label(b, label)]
     keep_block = ([*prose, ""] if prose else []) + _emit(kept)
+    head = lines[:start + 1] + [""] + keep_block
+    if line and not keep_block:
+        head = lines[:start]
     rest = lines[end:]
     h = next((i for i, l in enumerate(rest) if l.startswith(f"## [{version}]")), None)
     if h is None:
-        new = (lines[:start + 1] + [""] + keep_block
-               + [f"## [{version}] - {date} ({suffix})", ""] + _emit(moved) + rest)
+        new = head + [f"## [{version}] - {date} ({suffix})", ""] + _emit(moved) + rest
     else:
         e = next((i for i in range(h + 1, len(rest)) if rest[i].startswith("## ")), len(rest))
         merged = _merge_into(rest[h:e], moved, date, suffix, version)
-        new = lines[:start + 1] + [""] + keep_block + rest[:h] + merged + rest[e:]
+        new = head + rest[:h] + merged + rest[e:]
     return "\n".join(new) + ("\n" if text.endswith("\n") else ""), len(moved)
 
 
@@ -245,30 +263,57 @@ class Report:
         print(f"  {level:<4} {msg}")
 
 
-def plan(name, kind, root):
+FLOOR_RES = (
+    re.compile(r'^#define CF_MIN_FEATURE "(\d+)\.(\d+)"$', re.MULTILINE),
+    re.compile(r"^MIN_FEATURE = \((\d+), (\d+)\)$", re.MULTILINE),
+)
+
+
+def frame_floor(text):
+    """(major, minor) of the binary-frame floor in a generated command_frame file, or None.
+
+    A tree without the frame (the 3.2 JSON line) has no floor. release.yml in
+    both sub-repos refuses a tag below the floor, so a tag below it on main
+    would be pushed and then refused, and stay behind as a junk tag.
+    """
+    for pattern in FLOOR_RES:
+        m = pattern.search(text or "")
+        if m:
+            return int(m.group(1)), int(m.group(2))
+    return None
+
+
+def plan(name, kind, root, line=None):
     r = REPOS[name]
     path = root / r["sub"]
-    run(["git", "-C", str(path), "fetch", "--quiet", "origin", "main"])
-    sha = run(["git", "-C", str(path), "rev-parse", "origin/main"])
+    branch = f"release/{line}" if line else "main"
+    if line and not run(["git", "-C", str(path), "ls-remote", "--heads", "origin", branch]):
+        raise SystemExit(f"error: {r['sub']} has no branch {branch} on origin")
+    run(["git", "-C", str(path), "fetch", "--quiet", "origin", branch])
+    sha = run(["git", "-C", str(path), "rev-parse", f"origin/{branch}"])
     subject = run(["git", "-C", str(path), "log", "-1", "--format=%h %s", sha])
     tags = remote_tags(path)
-    latest = max(tags, key=sort_key)
+    # On release/X.Y the version continues the tags of that line only.
+    pool = [t for t in tags if not line or "{}.{}".format(*parse(t)[:2]) == line]
+    if not pool:
+        raise SystemExit(f"error: {r['sub']} has no release tag of line {line}")
+    latest = max(pool, key=sort_key)
     version = next_version(latest, kind)
     stable = parse(version)[3] is None
     say = Report()
 
     print(f"{r['sub']}: latest tag {latest} -> {version} ({'stable' if stable else 'pre-release'})")
-    print(f"  target origin/main {subject}")
+    print(f"  target origin/{branch} {subject}")
     since = run(["git", "-C", str(path), "log", "--first-parent", "--format=%h %s",
                  f"{tags[latest]}..{sha}"]).splitlines()
-    print(f"  changes since {latest}: {len(since)} commit(s) on main")
-    for line in since[:10]:
-        print(f"    {line}")
+    print(f"  changes since {latest}: {len(since)} commit(s) on {branch}")
+    for commit in since[:10]:
+        print(f"    {commit}")
     if len(since) > 10:
         print(f"    … {len(since) - 10} more")
 
     if not since and not stable:
-        say("WARN", f"main has nothing new since {latest}; {version} would publish the same code")
+        say("WARN", f"{branch} has nothing new since {latest}; {version} would publish the same code")
     if version in tags:
         say("FAIL", f"tag {version} already exists on origin")
     elif run(["git", "-C", str(path), "tag", "--list", version]):
@@ -276,18 +321,32 @@ def plan(name, kind, root):
                     f"remove it: git -C {path} tag -d {version}")
     else:
         say("ok", f"tag {version} is free")
-    if all(sort_key(version) > sort_key(t) for t in tags):
-        say("ok", f"{version} sorts above every release tag")
+    if all(sort_key(version) > sort_key(t) for t in pool):
+        say("ok", f"{version} sorts above every release tag" + (f" of line {line}" if line else ""))
     else:
         say("FAIL", f"{version} does not sort above {latest}")
+    if line:
+        workflow = run(["git", "-C", str(path), "show", f"{sha}:.github/workflows/release.yml"], check=False)
+        if "origin/release/" in workflow:
+            say("ok", f"release.yml on {branch} accepts a tag on {branch}")
+        else:
+            say("FAIL", f"release.yml on {branch} accepts a tag on main only, so it would refuse "
+                        f"{version}. {branch} needs the release/X.Y support of release.yml first")
+
+    floor = frame_floor(run(["git", "-C", str(path), "show", f"{sha}:{r['frame']}"], check=False))
+    if floor and parse(version)[:2] < floor:
+        say("FAIL", f"{version} is below {floor[0]}.{floor[1]}, the binary-frame floor on {branch}; "
+                    f"release.yml would refuse the tag. Start the line with 'minor'")
+    elif floor:
+        say("ok", f"{version} is at or above the binary-frame floor {floor[0]}.{floor[1]}")
 
     runs = gh_json(["run", "list", "-R", r["gh"], "--commit", sha, "--limit", "50",
                     "--json", "workflowName,headBranch,status,conclusion"]) or []
-    ci = [x for x in runs if x["headBranch"] == "main"]
+    ci = [x for x in runs if x["headBranch"] == branch]
     bad = [x for x in ci if x["status"] != "completed"
            or x["conclusion"] not in ("success", "skipped", "neutral")]
     if not ci:
-        say("WARN", "no CI run on main for this commit (build.yml skips doc-only commits)")
+        say("WARN", f"no CI run on {branch} for this commit (build.yml skips doc-only commits)")
     elif bad:
         say("FAIL", "CI not green: " + ", ".join(
             f"{x['workflowName']} {x['conclusion'] or x['status']}" for x in bad))
@@ -303,18 +362,22 @@ def plan(name, kind, root):
                         "test it first (RELEASING.md 2.1)")
         run(["git", "-C", str(root), "fetch", "--quiet", "origin", "main"])
         log = run(["git", "-C", str(root), "show", "origin/main:CHANGELOG.md"])
-        n = len(changelog_items(log, r["label"]))
+        section = unreleased_name(line)
+        n = len(changelog_items(log, r["label"], line))
         heading = changelog_heading(log, version)
         if heading and f"({r['suffix']})" in heading:
             say("FAIL", f"CHANGELOG already records {r['label']} {version}: {heading}")
         elif n:
-            say("ok", f"CHANGELOG [Unreleased] has {n} {r['label']} item(s) on meta main")
+            say("ok", f"CHANGELOG [{section}] has {n} {r['label']} item(s) on meta main")
             if heading:
                 say("ok", f"the items merge into the shared heading: {heading}")
         else:
-            say("FAIL", f"CHANGELOG [Unreleased] on meta main has no '- **{r['label']}:**' "
+            say("FAIL", f"CHANGELOG [{section}] on meta main has no '- **{r['label']}:**' "
                         "items; write the entry and merge it first (RELEASING.md 2.1)")
-        say("ok", "after the release: a meta PR records the CHANGELOG and moves the gitlink")
+        if line:
+            say("ok", "after the release: a meta PR records the CHANGELOG (the gitlink stays on main)")
+        else:
+            say("ok", "after the release: a meta PR records the CHANGELOG and moves the gitlink")
     else:
         say("ok", "pre-release: no meta follow-up")
 
@@ -398,7 +461,7 @@ def verify(r, version, stable):
     return ok
 
 
-def meta_followup(name, version, sha, root):
+def meta_followup(name, version, sha, root, line=None):
     r = REPOS[name]
     branch = f"docs/release-{name}-{version}"
     if run(["git", "-C", str(root), "ls-remote", "--heads", "origin", branch]):
@@ -409,18 +472,24 @@ def meta_followup(name, version, sha, root):
     try:
         log_path = wt / "CHANGELOG.md"
         date = datetime.date.today().isoformat()
-        text, n = changelog_release(log_path.read_text(), r["label"], version, date, r["suffix"])
+        text, n = changelog_release(log_path.read_text(), r["label"], version, date, r["suffix"], line)
         log_path.write_text(text)
-        run(["git", "-C", str(wt), "update-index", "--cacheinfo", f"160000,{sha},{r['sub']}"])
+        # The gitlink follows main. A patch on release/X.Y does not move it.
+        if not line:
+            run(["git", "-C", str(wt), "update-index", "--cacheinfo", f"160000,{sha},{r['sub']}"])
         run(["git", "-C", str(wt), "add", "CHANGELOG.md"])
         what = "CLI" if name == "app" else "firmware"
-        title = f"docs(changelog): record {what} {version}, and point the {r['sub']} gitlink at it"
+        title = f"docs(changelog): record {what} {version}"
+        if not line:
+            title += f", and point the {r['sub']} gitlink at it"
         run(["git", "-C", str(wt), "commit", "--quiet", "-m", title])
         run(["git", "-C", str(wt), "push", "--quiet", "-u", "origin", branch])
         body = (f"The {what} {version} is released: https://github.com/{r['gh']}/releases/tag/{version}\n\n"
-                f"- `CHANGELOG.md`: the {n} `{r['label']}` item(s) move from `[Unreleased]` to `[{version}]`.\n"
-                f"- `{r['sub']}`: the gitlink moves to `{sha[:7]}`, the commit of tag `{version}`.\n\n"
-                "This PR publishes nothing. Never publish a GitHub Release from this repository.")
+                f"- `CHANGELOG.md`: the {n} `{r['label']}` item(s) move from `[{unreleased_name(line)}]` "
+                f"to `[{version}]`.\n")
+        if not line:
+            body += f"- `{r['sub']}`: the gitlink moves to `{sha[:7]}`, the commit of tag `{version}`.\n"
+        body += "\nThis PR publishes nothing. Never publish a GitHub Release from this repository."
         url = run(["gh", "pr", "create", "-R", META_GH, "--base", "main", "--head", branch,
                    "--title", title, "--body", body], cwd=wt)
         print(f"  ok   meta PR {url}")
@@ -429,7 +498,7 @@ def meta_followup(name, version, sha, root):
         run(["git", "-C", str(root), "branch", "-D", branch], check=False)
 
 
-def publish(name, version, sha, stable, root, no_meta):
+def publish(name, version, sha, stable, root, no_meta, line=None):
     r = REPOS[name]
     path = root / r["sub"]
     run(["git", "-C", str(path), "tag", "-a", version, "-m", version, sha])
@@ -440,16 +509,16 @@ def publish(name, version, sha, stable, root, no_meta):
     if result is False:
         print("\nThe release run failed. Recovery (RELEASING.md 2.3):")
         if r["pypi"]:
-            print(f"  - If PyPI has {version}: do not use {version} again; fix main and release the next number.")
+            print(f"  - If PyPI has {version}: do not use {version} again; fix the cause and release the next number.")
             print("  - If GitHub has the release but PyPI does not: run 'Publish to PyPI.org' by hand with the tag.")
         print(f"  - If the run failed before the release was created: "
               f"git -C {path} push origin :refs/tags/{version} && git -C {path} tag -d {version}; "
-              "fix main, then release again.")
+              "fix the cause, then release again.")
         return 1
     if not verify(r, version, stable):
         return 1
     if stable and not no_meta:
-        meta_followup(name, version, sha, root)
+        meta_followup(name, version, sha, root, line)
     print(f"\nDONE {r['sub']} {version}")
     return 0
 
@@ -467,6 +536,10 @@ def selftest():
         got = next_version(latest, kind)
         assert got == want, (latest, kind, got, want)
         assert sort_key(got) > sort_key(latest), (latest, got)
+    assert frame_floor('#define CF_VERSION 1\n#define CF_MIN_FEATURE "3.3"\n') == (3, 3)
+    assert frame_floor("VERSION = 1\nMIN_FEATURE = (3, 3)\n") == (3, 3)
+    assert frame_floor("") is None and frame_floor(None) is None
+    assert parse("3.2.3b3")[:2] < (3, 3) and not parse("3.3.0b1")[:2] < (3, 3)
     order = ["3.1.0b8", "3.1.0rc1", "3.1.0", "3.1.1b1", "3.1.10", "3.10.0b1"]
     assert sorted(["3.1.10", "3.1.0", "3.10.0b1", "3.1.0rc1", "3.1.1b1", "3.1.0b8"], key=sort_key) == order
     assert parse("v1.42") is None and parse("archive/x") is None
@@ -501,6 +574,22 @@ def selftest():
         "### Added\n\n- **Firmware:** fw add.\n\n## [3.2.2] - x\n"
     )
     assert n == 2 and out == want, out
+    # A shared "CLI, Firmware" bullet belongs to both parts.
+    log = "## [Unreleased]\n\n- **CLI, Firmware:** both.\n- **Firmware:** fw.\n\n## [3.2.6] - x\n"
+    assert len(changelog_items(log, "CLI")) == 1 and len(changelog_items(log, "Firmware")) == 2
+    out, n = changelog_release(log, "CLI", "3.3.0", "2026-11-01", "CLI")
+    assert n == 1 and out == (
+        "## [Unreleased]\n\n- **Firmware:** fw.\n\n"
+        "## [3.3.0] - 2026-11-01 (CLI)\n\n- **CLI, Firmware:** both.\n\n## [3.2.6] - x\n"), out
+
+    # A patch on release/3.2 takes [Unreleased 3.2] only; the empty heading goes.
+    log = ("## [Unreleased]\n\n- **CLI:** 3.3 thing.\n\n"
+           "## [Unreleased 3.2]\n\n- **CLI:** patch fix.\n\n## [3.2.6] - x\n")
+    assert len(changelog_items(log, "CLI", "3.2")) == 1 and not changelog_items(log, "Firmware", "3.2")
+    out, n = changelog_release(log, "CLI", "3.2.7", "2026-11-01", "CLI", "3.2")
+    assert n == 1 and out == (
+        "## [Unreleased]\n\n- **CLI:** 3.3 thing.\n\n"
+        "## [3.2.7] - 2026-11-01 (CLI)\n\n- **CLI:** patch fix.\n\n## [3.2.6] - x\n"), out
     print(f"selftest ok ({len(cases)} version cases, changelog rewrite)")
     return 0
 
@@ -512,6 +601,7 @@ def main():
     ap.add_argument("--yes", action="store_true", help="push the tag and publish")
     ap.add_argument("--expect", metavar="VERSION", help="with --yes: the version the operator confirmed")
     ap.add_argument("--no-meta", action="store_true", help="skip the meta CHANGELOG/gitlink PR")
+    ap.add_argument("--line", metavar="X.Y", help="tag origin/release/X.Y: a patch to an older line")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     if a.selftest:
@@ -520,21 +610,27 @@ def main():
         ap.error("repo and type are required")
     if a.yes and not a.expect:
         ap.error("--yes needs --expect <VERSION> from the dry run")
+    if a.line and not re.fullmatch(r"\d+\.\d+", a.line):
+        ap.error("--line takes X.Y, for example 3.2")
+    if a.line and a.type not in ("pre", "regular"):
+        ap.error("--line takes 'pre' or 'regular'; a new line starts on main")
 
     root = meta_root()
-    version, sha, stable, fails = plan(a.repo, a.type, root)
+    version, sha, stable, fails = plan(a.repo, a.type, root, a.line)
     if fails:
         print(f"\nREFUSED {a.repo} {version}: {fails} check(s) failed. Nothing pushed.")
         return 1
     if not a.yes:
         kind = "stable" if stable else "pre-release"
-        print(f"\nPLAN {a.repo} {version} ({kind}) on origin/main {sha[:7]}")
-        print(f"  publish: python3 {Path(__file__).resolve()} {a.repo} {a.type} --yes --expect {version}")
+        branch = f"release/{a.line}" if a.line else "main"
+        line = f" --line {a.line}" if a.line else ""
+        print(f"\nPLAN {a.repo} {version} ({kind}) on origin/{branch} {sha[:7]}")
+        print(f"  publish: python3 {Path(__file__).resolve()} {a.repo} {a.type}{line} --yes --expect {version}")
         return 0
     if a.expect != version:
         print(f"\nREFUSED: the next version is now {version}, not the confirmed {a.expect}. Nothing pushed.")
         return 1
-    return publish(a.repo, version, sha, stable, root, a.no_meta)
+    return publish(a.repo, version, sha, stable, root, a.no_meta, a.line)
 
 
 if __name__ == "__main__":

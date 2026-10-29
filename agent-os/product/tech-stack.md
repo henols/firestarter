@@ -64,8 +64,8 @@
   `release.yml` run. A merge to `main` publishes nothing.
 - The tag is the version. The app uses `setuptools-scm`, and the firmware uses
   `version_from_git.py`. No file holds the version and no bot commits a bump.
-- The two sub-repos release independently. `tools/release.sh <version>` in each sub-repo checks
-  the version and pushes the tag. `RELEASING.md` is the runbook.
+- The two sub-repos release independently. The meta `release` skill
+  (`.claude/skills/release/scripts/release.py`) releases both. `RELEASING.md` is the runbook.
 - Stable firmware is built without `DEV_TOOLS`. Pre-release firmware is built with `DEV_TOOLS`.
 
 ## Architectural Decisions That Constrain Future Work
