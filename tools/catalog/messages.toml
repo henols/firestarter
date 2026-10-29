@@ -777,7 +777,8 @@ params      = [
 wire_format = "id_frame"
 
 # The RAM test found a cell that does not hold the value written to it. The
-# payload is the first failure only: the March element index (0-based), the
+# payload is the first failure only: the March element index (0-based, over
+# all four data backgrounds: background * 6 + March C- element, 0-23), the
 # address, the value expected and the value read. The test stops here.
 [[messages]]
 id          = 0xC2
