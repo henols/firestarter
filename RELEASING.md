@@ -95,19 +95,25 @@ git push origin 3.2.0b1
 Use a maintenance branch when `main` has a change that must not go into the patch, for example a
 wire-protocol change for the next `X.Y`.
 
-1. Cut `release/X.Y` from the last stable tag of the line: `git branch release/3.2 3.2.1`, then
-   `git push origin release/3.2`.
+1. Cut `release/X.Y` from the last commit of the line on `main`, before the next line merges into
+   `main`. When `main` has already moved on, cut it from the last stable tag of the line instead:
+   `git branch release/3.2 3.2.1`, then `git push origin release/3.2`.
 2. Branch from `release/X.Y` and open pull requests to `release/X.Y`.
-3. Run `tools/release.sh X.Y.Z`. When `origin/release/X.Y` exists, the script tags that branch, not
-   `main`. The version must sort above every earlier tag of the line.
+3. Run `tools/release.sh X.Y.Z` in the sub-repo. The release skill tags `main` only, so it does not
+   cut a patch to an older line. When `origin/release/X.Y` exists, `release.sh` tags that branch,
+   not `main`, and reads the binary-frame floor from that branch. The version must sort above every
+   earlier tag of the line. `release.yml` accepts a tag on `main` or on `release/X.Y` in both
+   sub-repos.
 4. Merge `release/X.Y` forward into `main` through a pull request, so that `main` keeps every fix.
 
 A patch to an older line does not become "Latest" when a higher stable version exists. A stable
 CLI X.Y.z does not read `/releases/latest`. It installs the highest stable firmware X.Y.y, so a
 patch to an older firmware line still reaches the CLIs on that line.
 
-Open lines: none. Firmware `main` carries the 3.2.x line. The 3.3 binary command frame waits on
-`feat/binary-command-protocol`.
+Open lines: `release/3.2` in `firestarter_fw` and `firestarter_app`, cut on 2026-10-29 from `main`
+(fw `c70ce14`, app `470db9f`). `main` becomes the 3.3 line (the binary command frame and the
+firmware offload) when the `perf/fw-offload` pull requests merge. Write 3.2.x fixes to
+`release/3.2` and merge them forward into `main`.
 
 ---
 
