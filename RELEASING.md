@@ -47,19 +47,33 @@ version number. A test release is acceptable: use a spare `bN` number.
 
 ## 2. Make a release
 
-Do these steps in the sub-repository that you release.
+The release script is in the meta repository. Run it from the meta checkout, with both
+sub-repositories checked out, and with `gh` logged in. In Claude Code, the `release` skill runs
+it.
 
-1. Merge the pull requests for the release to `main`. Make sure that CI is green.
-2. Select the version. Refer to section 3.
-3. Run `tools/release.sh <version>`. The script does these checks:
-   - The working tree is clean.
-   - The version has the correct shape.
-   - No tag with that version exists.
-   - The version sorts above every earlier release tag.
-4. The script shows the commit on `origin/main` and asks for a confirmation. Type `y`.
-5. The script pushes the tag and follows the release run with `gh run watch`.
+```bash
+S=.claude/skills/release/scripts
+python3 $S/release.py <app|fw> <pre|regular|minor|major>          # dry run: checks + PLAN
+python3 $S/release.py <app|fw> <type> --yes --expect <VERSION>    # publish
+```
 
-You can also push the tag yourself:
+| Type | From a beta `3.2.7b3` | From a stable `3.2.6` |
+|---|---|---|
+| `pre` | `3.2.7b4` | `3.2.7b1` |
+| `regular` (stable) | `3.2.7` | refused: a stable release needs a beta of the same commit |
+| `minor` | `3.3.0b1` | `3.3.0b1` |
+| `major` | `4.0.0b1` | `4.0.0b1` |
+
+1. Merge the pull requests for the release to `main`.
+2. Run the dry run. The script computes the version from the tags on origin. It checks that the
+   tag is free and sorts above every release tag, that CI on the commit is green, and that the
+   version is not below the binary-frame floor. For a stable release, it also checks section 2.1.
+3. Read the `PLAN`. To publish, run the `publish:` line that it prints. The script pushes the tag
+   on `origin/main`, follows the release run, and checks the GitHub release and PyPI. After a
+   stable release, it opens a meta pull request that records the CHANGELOG entry and moves the
+   gitlink.
+
+Without the meta checkout, you can push the tag yourself. `release.yml` still checks the tag:
 
 ```bash
 git fetch origin
@@ -99,11 +113,13 @@ wire-protocol change for the next `X.Y`.
    `main`. When `main` has already moved on, cut it from the last stable tag of the line instead:
    `git branch release/3.2 3.2.1`, then `git push origin release/3.2`.
 2. Branch from `release/X.Y` and open pull requests to `release/X.Y`.
-3. Run `tools/release.sh X.Y.Z` in the sub-repo. The release skill tags `main` only, so it does not
-   cut a patch to an older line. When `origin/release/X.Y` exists, `release.sh` tags that branch,
-   not `main`, and reads the binary-frame floor from that branch. The version must sort above every
-   earlier tag of the line. `release.yml` accepts a tag on `main` or on `release/X.Y` in both
-   sub-repos.
+3. Write the CHANGELOG entry under a `## [Unreleased X.Y]` heading, directly below
+   `## [Unreleased]`. Then run the release script with `--line X.Y` and the type `pre` or
+   `regular`: `python3 $S/release.py <app|fw> <pre|regular> --line X.Y`. It tags
+   `origin/release/X.Y`, and the version continues the tags of the line. The release follows the
+   steps of section 2. The meta pull request records the CHANGELOG entry and leaves the gitlink on
+   `main`. The `release.yml` of `release/X.Y` must accept a tag on that branch; the script checks
+   it.
 4. Merge `release/X.Y` forward into `main` through a pull request, so that `main` keeps every fix.
 
 A patch to an older line does not become "Latest" when a higher stable version exists. A stable
@@ -123,7 +139,7 @@ PEP 440 sets the order: `3.1.0b8` < `3.1.0` < `3.1.1b1` < `3.1.1`.
 
 - A pre-release of the next version starts after the last stable release. After `3.1.0`, the next
   pre-release is `3.1.1b1` or `3.2.0b1`, never `3.1.0b9`. `pip` and `firestarter fw` sort a
-  `3.1.0b9` below `3.1.0`, so they never offer it. `tools/release.sh` refuses such a version.
+  `3.1.0b9` below `3.1.0`, so they never offer it. The release script never gives such a version.
 - A firmware change that breaks the wire protocol increases `X.Y`. A 3.1 or later CLI refuses
   firmware whose `X.Y` is higher than its own. This check is the only coupling between the two
   repositories. It operates at run time, not at release time.
