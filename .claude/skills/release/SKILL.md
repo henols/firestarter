@@ -114,8 +114,7 @@ REFUSED fw 3.2.3: 1 check(s) failed. Nothing pushed.
 Refer to [RELEASING.md](/workspaces/RELEASING.md) for these:
 
 - A release from a maintenance branch `release/X.Y` (section 2.4). The script tags
-  `origin/main` only; the dry run's `target` line shows the commit. For `release/X.Y`, use the
-  sub-repo's `tools/release.sh`.
+  `origin/main` only; the dry run's `target` line shows the commit.
 - An `rc` tag for a new line. The types never start one.
 - After a firmware release, the check on a real board: `firestarter fw -i -b <board>` (section
   2.2). It is hardware, so the operator does it.
