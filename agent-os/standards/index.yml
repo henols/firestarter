@@ -44,14 +44,16 @@ host:
   typed-refusals:
     description: One exception per refusal, root-class prefix, subclass arm above parent, exit via ClickException
 protocol:
+  command-frame:
+    description: Binary command frame from tools/protocol/command_frame.toml; codegen only in meta; fixed layout per version; refusal codes append-only
   duplicated-constants:
-    description: Host/firmware constant pairs (COMMAND/FLAG/CTRL/JSON keys/buffer sizes); change both in one pair
+    description: Host/firmware constant pairs (COMMAND/FLAG/CTRL/buffer sizes); change both in one pair
   message-catalog:
     description: messages.toml in meta is the only source; sync script; never hand-edit messages.h/.py; ID bands
   retired-ordinals:
     description: Commands 4/6 and flag 0x08 are never reused; tombstone comments on both sides
   rollout-compatibility:
-    description: Firmware first; host may require latest fw; append-only length-discriminated acks; 0 = not sent
+    description: Firmware first; host may require latest fw; wire breaks need a new major.minor; append-only length-discriminated acks; 0 = not sent
 testing:
   native-firmware-tests:
     description: Register suites in both platformio lists; run both native envs; stub/time blind spots; explicit fork tests

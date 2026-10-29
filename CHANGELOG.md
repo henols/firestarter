@@ -17,6 +17,43 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 
 ## [Unreleased]
 
+### Changed
+
+- **CLI, Firmware:** the CLI sends each command as a fixed-layout binary frame, not as JSON. The
+  COBS framing, the CRC8 and the data transfer do not change. This CLI cannot operate a board
+  with older firmware, and older CLIs cannot operate this firmware. Upgrade the CLI first, then
+  run `firestarter fw --install`. `fw` can still read the version of the older firmware so that
+  it can replace it.
+- **CLI, Firmware:** the binary command frame starts at version 3.3. The CLI refuses to install
+  firmware older than 3.3, because it cannot operate that firmware.
+- **Firmware:** the JSON parser and the jsmn library are removed. With the changes below, the
+  firmware is about 3.9 KB smaller than 3.2.x on `uno`, `uno328pb` and `leonardo`.
+- **Firmware:** the data buffer is 1024 B on `uno` and `uno328pb` (was 512 B) and 1536 B on
+  `leonardo` (was 1024 B). The CLI sends bigger data chunks, so a read or write needs fewer
+  round trips.
+- **CLI, Firmware:** the firmware sends voltages in millivolts, and the CLI formats them. The
+  CLI shows the VPP to the millivolt. Before, it showed the VPP on a 100 mV grid, so a 12.449 V
+  rail showed as 12.4 V.
+- **CLI, Firmware:** `dev reg` and `dev addr` get the raw register values from the firmware, and
+  the CLI draws the table. Before, `dev reg` showed no table at all.
+- **CLI:** the CLI calculates the write time for each block. The firmware no longer sends it.
+- **CLI, Firmware:** `write --verify` tells the firmware to skip its final verify pass on the
+  `0x07` and `0x08` EPROMs, because the CLI reads the region back itself. This saves about 0.7 s
+  for each 64 KiB.
+- **Firmware:** a stable image no longer measures the 28C page-load time. A pre-release image
+  still measures it.
+- **Firmware:** the overprogram pulse is removed. No chip used it.
+- **Firmware:** a read timing above 1000 µs is refused. The JSON parser reduced it to 1000 µs.
+  `firestarter dev consistency-check` refuses `--read-settling` and `--read-strobe` above 1000
+  as a usage error, before it creates the output directory.
+- **CLI, Firmware:** firmware that reads another version of the binary command frame answers
+  with the version that it reads. The CLI then tells you to upgrade the CLI or the firmware,
+  whichever is older.
+- **Firmware:** an undefined flag bit and a command frame with the wrong length are refused.
+- **CLI, Firmware:** a VPP above 25000 mV, a calibration supply voltage above 10000 mV and a
+  hardware revision that is not 0–5 or 255 are refused. The 3.2.x firmware refused them too
+  (issue #140).
+
 ## [3.2.6] - 2026-10-27 (CLI)
 
 ### Added
