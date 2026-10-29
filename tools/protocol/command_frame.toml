@@ -21,6 +21,9 @@
 #     did. 0xFF in a bus-line field means "no line".
 #   - Never reorder or resize a field inside a version. A change to any
 #     layout is a new `version`.
+#   - A config field with `retired = true` keeps its offset and its present
+#     bit, but no side sends it: the firmware refuses its bit as an unknown
+#     field (CONFIG_FIELD), and the host has no key for it.
 
 [frame]
 magic = 0xF5        # >= 0x80: jsmn in every JSON-era firmware rejects it as JSMN_ERROR_INVAL
@@ -38,7 +41,6 @@ line_absent = 0xFF
 read_timing_max_us = 1000   # was a silent clamp in the JSON parser; now a refusal
 flags_mask = 0x03F7         # every defined FLAG_*; 0x08 is retired and refused
 vpp_max_mv = 25000          # the highest VPP in the chip database
-calibration_vcc_max_mv = 10000  # a larger supply overflows the bandgap back-solve
 revision_max = 5            # REVISION_2_3; config rev 0xFF clears the override
 
 # Which payload a command carries. A command absent from this table carries
@@ -156,11 +158,14 @@ key = "rev"
 type = "u8"
 present_bit = 0x04  # 0xFF clears the override
 
+# Retired: the measured supply that asked the firmware to back-solve its
+# bandgap. The host now computes the bandgap from the count in MSG_OK_CFG and
+# sends it as `bg`.
 [[config]]
 name = "vcc"
-key = "vcc"
 type = "u16"
-present_bit = 0x08  # measured supply in mV; requests a bandgap calibration
+present_bit = 0x08
+retired = true
 
 [[config]]
 name = "bg"
@@ -233,7 +238,7 @@ text = "vpp_mv is above 25000 mV, the highest VPP in the chip database"
 [[refusals]]
 code = 13
 name = "CALIBRATION_VCC"
-text = "the calibration supply voltage is above 10000 mV"
+text = "the calibration supply voltage is above 10000 mV (no longer sent)"
 
 [[refusals]]
 code = 14
@@ -318,18 +323,6 @@ name = "config_clear_rev"
 cmd = 14
 flags = 0
 fields = { "rev" = 0xFF }
-
-[[vectors]]
-name = "config_calibrate"
-cmd = 14
-flags = 0
-fields = { "vcc" = 5012 }
-
-[[vectors]]
-name = "config_calibrate_at_limit"
-cmd = 14
-flags = 0
-fields = { "vcc" = 10000 }
 
 [[vectors]]
 name = "config_highest_rev"
@@ -504,10 +497,10 @@ raw = { mem_size = 2048, protocol = 7, pins = 28, vpp_mv = 25001 }
 refusal = "VPP_RANGE"
 
 [[refused_vectors]]
-name = "config_calibration_vcc_implausible"
+name = "config_retired_vcc"
 cmd = 14
-raw = { present = 0x08, vcc = 10001 }
-refusal = "CALIBRATION_VCC"
+raw = { present = 0x08, vcc = 5012 }
+refusal = "CONFIG_FIELD"
 
 [[refused_vectors]]
 name = "config_unknown_rev"

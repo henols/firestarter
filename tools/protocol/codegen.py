@@ -98,6 +98,9 @@ def load(path: Path) -> dict:
         raise SpecError("config present_bit values must be distinct single bits")
     if spec["config"][0]["name"] != "present":
         raise SpecError("the first config field must be `present`")
+    for f in spec["config"][1:]:
+        if f.get("retired") and ("key" in f or "present_bit" not in f):
+            raise SpecError(f"retired config field {f['name']} keeps its present_bit and has no key")
 
     seen: dict = {}
     for kind in KINDS:
@@ -169,7 +172,7 @@ def _memory_values(spec: dict, fields: dict) -> dict:
 def _config_values(spec: dict, fields: dict) -> dict:
     values = {"present": 0}
     for f in spec["config"][1:]:
-        if f["key"] in fields:
+        if not f.get("retired") and f["key"] in fields:
             values["present"] |= f["present_bit"]
             values[f["name"]] = fields[f["key"]]
         else:
@@ -268,7 +271,6 @@ def emit_cpp(spec: dict) -> str:
         f"#define CF_READ_TIMING_MAX_US {limits['read_timing_max_us']}UL",
         f"#define CF_FLAGS_MASK 0x{limits['flags_mask']:04X}",
         f"#define CF_VPP_MAX_MV {limits['vpp_max_mv']}U",
-        f"#define CF_CALIBRATION_VCC_MAX_MV {limits['calibration_vcc_max_mv']}U",
         f"#define CF_REVISION_MAX {limits['revision_max']}",
         "",
         "#define CF_KIND_NONE 0",
@@ -284,6 +286,10 @@ def emit_cpp(spec: dict) -> str:
         lines.append("")
     mask = 0
     for f in spec["config"][1:]:
+        if f.get("retired"):
+            # Left out of the mask, so the decoder refuses the bit as CONFIG_FIELD.
+            lines.append(f"/* 0x{f['present_bit']:02X} was {_c_name(f['name'])}: retired, refused */")
+            continue
         lines.append(f"#define CF_CONFIG_PRESENT_{_c_name(f['name'])} 0x{f['present_bit']:02X}")
         mask |= f["present_bit"]
     lines.append(f"#define CF_CONFIG_PRESENT_MASK 0x{mask:02X}")
@@ -332,7 +338,6 @@ def emit_python(spec: dict) -> str:
         f"READ_TIMING_MAX_US = {limits['read_timing_max_us']}",
         f"FLAGS_MASK = 0x{limits['flags_mask']:04X}",
         f"VPP_MAX_MV = {limits['vpp_max_mv']}",
-        f"CALIBRATION_VCC_MAX_MV = {limits['calibration_vcc_max_mv']}",
         f"REVISION_MAX = {limits['revision_max']}",
         "",
         "# (name, command-dict key, struct format, count, inside bus-config)",
@@ -343,8 +348,11 @@ def emit_python(spec: dict) -> str:
             f'    ("{f["name"]}", "{f["key"]}", "{TYPE_FMT[f["type"]]}", '
             f'{f.get("count", 1)}, {bool(f.get("bus_config"))}),'
         )
-    lines += [")", f"MEMORY_SIZE = {payload_size(spec, 'memory')}", "", "# (name, command-dict key, struct format, present bit)", "CONFIG_FIELDS = ("]
+    lines += [")", f"MEMORY_SIZE = {payload_size(spec, 'memory')}", "", "# (name, command-dict key, struct format, present bit); a retired field has no key", "CONFIG_FIELDS = ("]
     for f in spec["config"][1:]:
+        if f.get("retired"):
+            lines.append(f'    ("{f["name"]}", None, "{TYPE_FMT[f["type"]]}", 0x00),')
+            continue
         lines.append(f'    ("{f["name"]}", "{f["key"]}", "{TYPE_FMT[f["type"]]}", 0x{f["present_bit"]:02X}),')
     lines += [")", f"CONFIG_SIZE = {payload_size(spec, 'config')}", "", "PAYLOAD_KIND = {"]
     for kind in ("memory", "config", "none"):
