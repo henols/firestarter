@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 #
-# Firestarter command-frame sync.
+# Firestarter protocol sync: the command frame and the 27C EPROM rows.
 #
 # Generation happens HERE, in the meta repo, and nowhere else. This script
-# regenerates the command-frame layout and the golden vectors from
-# command_frame.toml and writes them into the sub-repos. The sub-repos
-# receive generated ARTIFACTS only and never regenerate for themselves.
+# regenerates the command-frame layout, the golden vectors and the EPROM
+# write-time rows, and writes them into the sub-repos. The sub-repos receive
+# generated ARTIFACTS only and never regenerate for themselves.
 #
-# Authoritative source: tools/protocol/{command_frame.toml,codegen.py}
-# Firmware artifacts:   firestarter_fw/include/command_frame.h
-#                       firestarter_fw/test/native/avr/test_command_decode/command_vectors.h
-# Host artifacts:       firestarter_app/firestarter/command_frame.py
-#                       firestarter_app/tests/golden/command_vectors.json
+# Authoritative sources: tools/protocol/{command_frame.toml,codegen.py}
+#                        tools/protocol/{eprom_rows.toml,eprom_rows.py}
+# Firmware artifacts:    firestarter_fw/include/command_frame.h
+#                        firestarter_fw/test/native/avr/test_command_decode/command_vectors.h
+#                        firestarter_fw/include/eprom_rows.h
+# Host artifacts:        firestarter_app/firestarter/command_frame.py
+#                        firestarter_app/tests/golden/command_vectors.json
+#                        firestarter_app/firestarter/eprom_rows.py
 #
 # Idempotent: re-running with no upstream change is a no-op.
 #
@@ -26,21 +29,25 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FS_ROOT="$SCRIPT_DIR/../../firestarter_fw"
 FA_ROOT="$SCRIPT_DIR/../../firestarter_app"
-GEN=(python3 "$SCRIPT_DIR/codegen.py" --spec "$SCRIPT_DIR/command_frame.toml")
+GEN_FRAME=(python3 "$SCRIPT_DIR/codegen.py" --spec "$SCRIPT_DIR/command_frame.toml")
+GEN_ROWS=(python3 "$SCRIPT_DIR/eprom_rows.py" --spec "$SCRIPT_DIR/eprom_rows.toml")
 
 VERIFY=0
 if [[ "${1:-}" == "--verify" ]]; then
     VERIFY=1
 fi
 
-"${GEN[@]}" --check
+"${GEN_FRAME[@]}" --check
+"${GEN_ROWS[@]}" --check
 
-# Each artifact, as "<language> <path relative to FS_ROOT or FA_ROOT>".
+# Each artifact, as "<generator> <language> <path relative to FS_ROOT or FA_ROOT>".
 ARTIFACTS=(
-    "cpp fw:include/command_frame.h"
-    "cpp-vectors fw:test/native/avr/test_command_decode/command_vectors.h"
-    "python app:firestarter/command_frame.py"
-    "json-vectors app:tests/golden/command_vectors.json"
+    "frame cpp fw:include/command_frame.h"
+    "frame cpp-vectors fw:test/native/avr/test_command_decode/command_vectors.h"
+    "frame python app:firestarter/command_frame.py"
+    "frame json-vectors app:tests/golden/command_vectors.json"
+    "rows cpp fw:include/eprom_rows.h"
+    "rows python app:firestarter/eprom_rows.py"
 )
 
 resolve() {
@@ -55,22 +62,25 @@ trap 'rm -rf "$out_dir"' EXIT
 
 drift=0
 for entry in "${ARTIFACTS[@]}"; do
-    language="${entry%% *}"
-    rel="${entry#* }"
+    read -r generator language rel <<<"$entry"
     generated="$out_dir/$(basename "${rel#*:}")"
-    "${GEN[@]}" --language "$language" --target "$generated"
+    if [[ "$generator" == "rows" ]]; then
+        "${GEN_ROWS[@]}" --language "$language" --target "$generated"
+    else
+        "${GEN_FRAME[@]}" --language "$language" --target "$generated"
+    fi
     if [[ "$language" == "python" ]]; then
         if command -v ruff >/dev/null 2>&1; then
             # Format from inside the app repo so its ruff config applies.
             (cd "$FA_ROOT" && ruff format -q "$generated")
         else
-            echo "WARNING: ruff not found -- command_frame.py is not normalized." >&2
+            echo "WARNING: ruff not found -- $(basename "$generated") is not normalized." >&2
         fi
     fi
     target="$(resolve "$rel")"
     if [[ "$VERIFY" == 1 ]]; then
         if ! diff -q "$generated" "$target" >/dev/null 2>&1; then
-            echo "DRIFT: ${rel/:/ } differs from command_frame.toml" >&2
+            echo "DRIFT: ${rel/:/ } differs from its spec in tools/protocol/" >&2
             drift=1
         fi
     else
@@ -84,8 +94,8 @@ if [[ "$VERIFY" == 1 ]]; then
         echo "Run tools/protocol/sync_to_subrepos.sh, then commit in each sub-repo." >&2
         exit 1
     fi
-    echo "OK: both sub-repos carry the command frame command_frame.toml gives."
+    echo "OK: both sub-repos carry the command frame and EPROM rows the specs give."
     exit 0
 fi
 
-echo "OK: command frame synced to both sub-repos."
+echo "OK: command frame and EPROM rows synced to both sub-repos."

@@ -51,8 +51,8 @@
 - USB serial at 250000 baud. Binary command frames and binary data blocks. Both are framed with
   COBS (`0x00`) and CRC8. The command frame layout is generated from
   `tools/protocol/command_frame.toml` in the meta repo.
-- Data buffer: Uno-class and PY32F071 512 B, Leonardo 1024 B. The host reads the size from the
-  firmware identity string.
+- Data buffer: uno and uno328pb 1024 B, leonardo 1536 B, PY32F071 512 B. The host reads the size
+  from the `MSG_OK_READY` ack.
 - Message IDs have one byte and come from one catalog (`tools/catalog/messages.toml` in the meta
   repo). `codegen.py` generates `messages.h` and `messages.py`. Generate them in the meta repo only.
   Do not edit them by hand.

@@ -1,0 +1,43 @@
+# Firestarter 27C EPROM write-time rows (canonical source — meta-repo authoritative)
+#
+# The firmware programs a 27C EPROM byte by byte, with a fixed-width pulse and a
+# verify read, until the byte matches or a budget ends. The host sets its
+# write timeout from the same numbers. Both sides are generated from this
+# file, so they cannot drift apart.
+#
+# Generation happens in the meta repo only. tools/protocol/sync_to_subrepos.sh
+# writes:
+#   firestarter_fw/include/eprom_rows.h        (eprom_params.cpp, configure_eprom)
+#   firestarter_app/firestarter/eprom_rows.py   (write_budget.py)
+#
+# Edit ONLY this file. Never edit a generated artifact by hand.
+#
+# Per-cell datasheet citations stay in the firmware's
+# tests/golden/eprom_params_citations.json.
+
+# max_pulses         pulses per byte before MSG_ERR_MAX_PULSES (u8)
+# energy_cap_us      accumulated pulse time per byte before MSG_ERR_ENERGY_CAP;
+#                    0 = no cap (u32)
+# fallback_pulse_us  the pulse width configure_eprom() uses when the command's
+#                    pulse-delay is 0 (u32)
+
+[[rows]]
+protocol = 0x07
+name = "PROTO_EPROM_28PIN"
+max_pulses = 25
+energy_cap_us = 0
+fallback_pulse_us = 1000
+
+[[rows]]
+protocol = 0x08
+name = "PROTO_EPROM_32PIN"
+max_pulses = 25
+energy_cap_us = 0
+fallback_pulse_us = 100
+
+[[rows]]
+protocol = 0x0B
+name = "PROTO_EPROM_24PIN"
+max_pulses = 255
+energy_cap_us = 50000
+fallback_pulse_us = 500
