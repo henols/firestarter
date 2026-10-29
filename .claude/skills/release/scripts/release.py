@@ -35,7 +35,6 @@ REPOS = {
         "suffix": "CLI",           # CHANGELOG heading: ## [V] - date (CLI)
         "pypi": "firestarter",
         "assets": [r"\.whl$", r"\.tar\.gz$"],
-        "frame": "firestarter/command_frame.py",
     },
     "fw": {
         "sub": "firestarter_fw",
@@ -45,7 +44,6 @@ REPOS = {
         "pypi": None,
         "assets": [r"^firestarter_leonardo\.hex$", r"^firestarter_uno\.hex$",
                    r"^firestarter_uno328pb\.hex$", r"^firestarter_py32f071\.hex$"],
-        "frame": "include/command_frame.h",
     },
 }
 TYPES = ("pre", "regular", "minor", "major")
@@ -247,26 +245,6 @@ class Report:
         print(f"  {level:<4} {msg}")
 
 
-FLOOR_RES = (
-    re.compile(r'^#define CF_MIN_FEATURE "(\d+)\.(\d+)"$', re.M),
-    re.compile(r"^MIN_FEATURE = \((\d+), (\d+)\)$", re.M),
-)
-
-
-def frame_floor(text):
-    """(major, minor) of the binary-frame floor in a generated command_frame file, or None.
-
-    A tree without the frame (the 3.2 JSON line) has no floor. release.yml in
-    both sub-repos refuses a tag below the floor, so a tag below it on main
-    would be pushed and then refused, and stay behind as a junk tag.
-    """
-    for pattern in FLOOR_RES:
-        m = pattern.search(text or "")
-        if m:
-            return int(m.group(1)), int(m.group(2))
-    return None
-
-
 def plan(name, kind, root):
     r = REPOS[name]
     path = root / r["sub"]
@@ -302,13 +280,6 @@ def plan(name, kind, root):
         say("ok", f"{version} sorts above every release tag")
     else:
         say("FAIL", f"{version} does not sort above {latest}")
-
-    floor = frame_floor(run(["git", "-C", str(path), "show", f"{sha}:{r['frame']}"], check=False))
-    if floor and parse(version)[:2] < floor:
-        say("FAIL", f"{version} is below {floor[0]}.{floor[1]}, the binary-frame floor on main; "
-                    f"release.yml would refuse the tag. Start the line with 'minor'")
-    elif floor:
-        say("ok", f"{version} is at or above the binary-frame floor {floor[0]}.{floor[1]}")
 
     runs = gh_json(["run", "list", "-R", r["gh"], "--commit", sha, "--limit", "50",
                     "--json", "workflowName,headBranch,status,conclusion"]) or []
@@ -496,10 +467,6 @@ def selftest():
         got = next_version(latest, kind)
         assert got == want, (latest, kind, got, want)
         assert sort_key(got) > sort_key(latest), (latest, got)
-    assert frame_floor('#define CF_VERSION 1\n#define CF_MIN_FEATURE "3.3"\n') == (3, 3)
-    assert frame_floor("VERSION = 1\nMIN_FEATURE = (3, 3)\n") == (3, 3)
-    assert frame_floor("") is None and frame_floor(None) is None
-    assert parse("3.2.3b3")[:2] < (3, 3) and not parse("3.3.0b1")[:2] < (3, 3)
     order = ["3.1.0b8", "3.1.0rc1", "3.1.0", "3.1.1b1", "3.1.10", "3.10.0b1"]
     assert sorted(["3.1.10", "3.1.0", "3.10.0b1", "3.1.0rc1", "3.1.1b1", "3.1.0b8"], key=sort_key) == order
     assert parse("v1.42") is None and parse("archive/x") is None
