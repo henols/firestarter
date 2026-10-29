@@ -37,6 +37,9 @@ bus_lines = 24              # LSB (0-7), MSB (8-15), top register (16-23)
 line_absent = 0xFF
 read_timing_max_us = 1000   # was a silent clamp in the JSON parser; now a refusal
 flags_mask = 0x03F7         # every defined FLAG_*; 0x08 is retired and refused
+vpp_max_mv = 25000          # the highest VPP in the chip database
+calibration_vcc_max_mv = 10000  # a larger supply overflows the bandgap back-solve
+revision_max = 5            # REVISION_2_3; config rev 0xFF clears the override
 
 # Which payload a command carries. A command absent from this table carries
 # the empty payload, and the firmware's dispatch refuses it as before
@@ -222,6 +225,21 @@ code = 11
 name = "ADDRESS_RANGE"
 text = "the start address is past the end of the device or the write region"
 
+[[refusals]]
+code = 12
+name = "VPP_RANGE"
+text = "vpp_mv is above 25000 mV, the highest VPP in the chip database"
+
+[[refusals]]
+code = 13
+name = "CALIBRATION_VCC"
+text = "the calibration supply voltage is above 10000 mV"
+
+[[refusals]]
+code = 14
+name = "REVISION"
+text = "the hardware revision is not 0 to 5, or 255 to clear it"
+
 # Golden vectors. Each one is encoded by the host and decoded by the
 # firmware's native tests. `fields` uses the host's command-dict keys.
 # A vector with `refusal` must be refused with that code; its `frame` is
@@ -306,6 +324,24 @@ name = "config_calibrate"
 cmd = 14
 flags = 0
 fields = { "vcc" = 5012 }
+
+[[vectors]]
+name = "config_calibrate_at_limit"
+cmd = 14
+flags = 0
+fields = { "vcc" = 10000 }
+
+[[vectors]]
+name = "config_highest_rev"
+cmd = 14
+flags = 0
+fields = { "rev" = 5 }
+
+[[vectors]]
+name = "read_vpp_at_limit"
+cmd = 1
+flags = 0
+fields = { "memory-size" = 2048, "algorithm" = 11, "pin-count" = 24, "vpp_mv" = 25000, "bus-config" = { "bus" = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] } }
 
 [[vectors]]
 name = "config_bandgap"
@@ -459,3 +495,22 @@ name = "write_address_wraps"
 cmd = 2
 raw = { mem_size = 2048, address = 0xFFFFFFFF, protocol = 7, pins = 28, vpp_mv = 12500 }
 refusal = "ADDRESS_RANGE"
+
+# The three values the JSON parser of 3.2.x refused (issue #140).
+[[refused_vectors]]
+name = "vpp_above_database_maximum"
+cmd = 2
+raw = { mem_size = 2048, protocol = 7, pins = 28, vpp_mv = 25001 }
+refusal = "VPP_RANGE"
+
+[[refused_vectors]]
+name = "config_calibration_vcc_implausible"
+cmd = 14
+raw = { present = 0x08, vcc = 10001 }
+refusal = "CALIBRATION_VCC"
+
+[[refused_vectors]]
+name = "config_unknown_rev"
+cmd = 14
+raw = { present = 0x04, rev = 6 }
+refusal = "REVISION"

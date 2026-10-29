@@ -50,6 +50,9 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
   with the version that it reads. The CLI then tells you to upgrade the CLI or the firmware,
   whichever is older.
 - **Firmware:** an undefined flag bit and a command frame with the wrong length are refused.
+- **CLI, Firmware:** a VPP above 25000 mV, a calibration supply voltage above 10000 mV and a
+  hardware revision that is not 0–5 or 255 are refused. The 3.2.x firmware refused them too
+  (issue #140).
 
 ## [3.2.6] - 2026-10-27 (CLI)
 
