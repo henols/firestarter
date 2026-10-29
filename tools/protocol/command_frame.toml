@@ -1,0 +1,461 @@
+# Firestarter binary command frame (canonical source — meta-repo authoritative)
+#
+# The host sends each command as one binary frame. The transport is
+# unchanged: COBS(frame + CRC8(frame)) + 0x00, exactly as the JSON payload
+# travelled before. Only the bytes inside the CRC changed.
+#
+# Generation happens in the meta repo only. tools/protocol/sync_to_subrepos.sh
+# writes:
+#   firestarter_fw/include/command_frame.h        (offsets, sizes, limits)
+#   firestarter_app/firestarter/command_frame.py  (field tables, limits)
+#   firestarter_fw/test/native/avr/test_command_decode/command_vectors.h
+#   firestarter_app/tests/golden/command_vectors.json
+#
+# Edit ONLY this file. Never edit a generated artifact by hand.
+#
+# Layout rules:
+#   - Every multi-byte integer is big-endian.
+#   - Every field has a fixed width and a fixed offset. A payload has exactly
+#     one length per kind, and the header length must equal it.
+#   - 0 in a numeric field means "not sent", exactly as an absent JSON key
+#     did. 0xFF in a bus-line field means "no line".
+#   - Never reorder or resize a field inside a version. A change to any
+#     layout is a new `version`.
+
+[frame]
+magic = 0xF5        # >= 0x80: jsmn in every JSON-era firmware rejects it as JSMN_ERROR_INVAL
+version = 1
+header_size = 7     # magic u8, version u8, cmd u8, flags u16, length u16
+# The first feature version (major.minor) that may carry this frame. 3.2.x
+# is the JSON line. Both release scripts refuse a tag below it, and the host
+# refuses to install firmware below it.
+min_feature = "3.3"
+
+[limits]
+address_lines = 20          # ADDRESS_LINES_SIZE in firestarter.h
+bus_lines = 24              # LSB (0-7), MSB (8-15), top register (16-23)
+line_absent = 0xFF
+read_timing_max_us = 1000   # was a silent clamp in the JSON parser; now a refusal
+flags_mask = 0x03F7         # every defined FLAG_*; 0x08 is retired and refused
+
+# Which payload a command carries. A command absent from this table carries
+# the empty payload, and the firmware's dispatch refuses it as before
+# (MSG_ERR_UNKNOWN_CMD). Ordinals 4 and 6 are retired: never list them.
+[commands]
+memory = [1, 2, 3, 5, 7, 8, 9, 10, 16]
+config = [14]
+none = [11, 12, 13, 15, 17]
+
+# Memory payload: one row per handle member. `key` is the host's command-dict
+# key (database.convert_to_programmer and eprom_operations._setup_operation).
+# A `bus_config` key lives inside the dict's "bus-config" object.
+[[memory]]
+name = "mem_size"
+key = "memory-size"
+type = "u32"
+
+[[memory]]
+name = "address"
+key = "address"
+type = "u32"
+
+[[memory]]
+name = "region_end"
+key = "region-end"
+type = "u32"
+
+[[memory]]
+name = "protocol"
+key = "algorithm"
+type = "u8"
+
+[[memory]]
+name = "pins"
+key = "pin-count"
+type = "u8"
+
+[[memory]]
+name = "vpp_mv"
+key = "vpp_mv"
+type = "u16"
+
+[[memory]]
+name = "pulse_delay"
+key = "pulse-delay"
+type = "u32"
+
+[[memory]]
+name = "chip_id"
+key = "chip-id"
+type = "u16"
+
+[[memory]]
+name = "page_size"
+key = "page-size"
+type = "u16"
+
+[[memory]]
+name = "read_settling_us"
+key = "read-settling-delay"
+type = "u32"
+
+[[memory]]
+name = "read_strobe_us"
+key = "read-strobe-us"
+type = "u32"
+
+[[memory]]
+name = "address_lines"
+key = "bus"
+bus_config = true
+type = "u8"
+count = 20          # A0..An in order, then 0xFF to the end
+
+[[memory]]
+name = "rw_line"
+key = "rw-pin"
+bus_config = true
+type = "u8"         # 0xFF = no R/W line
+
+[[memory]]
+name = "vpp_line"
+key = "vpp-pin"
+bus_config = true
+type = "u8"         # 0xFF = no VPP line
+
+[[memory]]
+name = "static_high_mask"
+key = "static-high"
+bus_config = true
+type = "u32"        # the host's list of lines, as a mask
+
+# Config payload. `present` says which values the frame carries; an absent
+# value never overwrites the stored one, as an absent JSON key did not.
+[[config]]
+name = "present"
+type = "u8"
+
+[[config]]
+name = "r1"
+key = "r1"
+type = "u32"
+present_bit = 0x01
+
+[[config]]
+name = "r2"
+key = "r2"
+type = "u32"
+present_bit = 0x02
+
+[[config]]
+name = "rev"
+key = "rev"
+type = "u8"
+present_bit = 0x04  # 0xFF clears the override
+
+[[config]]
+name = "vcc"
+key = "vcc"
+type = "u16"
+present_bit = 0x08  # measured supply in mV; requests a bandgap calibration
+
+[[config]]
+name = "bg"
+key = "bg"
+type = "u16"
+present_bit = 0x10
+
+# Reasons the firmware refuses a frame with MSG_ERR_BAD_COMMAND (0xC2). The
+# code is the message's u8 parameter. Never renumber; append only.
+[[refusals]]
+code = 1
+name = "LENGTH"
+text = "payload length does not match the command"
+
+[[refusals]]
+code = 2
+name = "FLAGS"
+text = "an undefined flag bit is set"
+
+[[refusals]]
+code = 3
+name = "ADDRESS_LINE"
+text = "an address line is outside the bus"
+
+[[refusals]]
+code = 4
+name = "ADDRESS_DUPLICATE"
+text = "an address line appears twice"
+
+[[refusals]]
+code = 5
+name = "ADDRESS_GAP"
+text = "an address line follows an absent one"
+
+[[refusals]]
+code = 6
+name = "CONTROL_LINE"
+text = "the R/W or VPP line is outside the bus"
+
+[[refusals]]
+code = 7
+name = "STATIC_HIGH"
+text = "a static-high line is outside the bus"
+
+[[refusals]]
+code = 8
+name = "READ_TIMING"
+text = "a read timing exceeds 1000 us"
+
+[[refusals]]
+code = 9
+name = "CONFIG_FIELD"
+text = "the config frame names an unknown or unsupported value"
+
+[[refusals]]
+code = 10
+name = "MISSING_FIELD"
+text = "a memory command lacks memory-size, algorithm, pin-count or vpp_mv"
+
+[[refusals]]
+code = 11
+name = "ADDRESS_RANGE"
+text = "the start address is past the end of the device or the write region"
+
+# Golden vectors. Each one is encoded by the host and decoded by the
+# firmware's native tests. `fields` uses the host's command-dict keys.
+# A vector with `refusal` must be refused with that code; its `frame` is
+# given as hex because the host encoder would refuse to build it.
+# `reason = "frame"` is refused as a frame (MSG_ERR_BAD_FRAME), and
+# `reason = "version"` as a frame version mismatch (MSG_ERR_FRAME_VERSION).
+[[vectors]]
+name = "fw_version"
+cmd = 13
+flags = 0
+fields = {}
+
+[[vectors]]
+name = "fw_version_verbose"
+cmd = 13
+flags = 0x80
+fields = {}
+
+[[vectors]]
+name = "write_w27c512"
+cmd = 2
+flags = 0x02
+fields = { "memory-size" = 65536, "algorithm" = 7, "pin-count" = 28, "vpp_mv" = 12000, "pulse-delay" = 100, "chip-id" = 0xDA08, "region-end" = 4096, "bus-config" = { "bus" = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] } }
+
+[[vectors]]
+name = "write_w27c512_skip_final_verify"
+cmd = 2
+flags = 0x0202
+fields = { "memory-size" = 65536, "algorithm" = 7, "pin-count" = 28, "vpp_mv" = 12000, "pulse-delay" = 100, "chip-id" = 0xDA08, "bus-config" = { "bus" = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] } }
+
+[[vectors]]
+name = "read_27c801_with_timing"
+cmd = 1
+flags = 0x80
+fields = { "memory-size" = 1048576, "address" = 0x1000, "algorithm" = 8, "pin-count" = 32, "vpp_mv" = 12500, "read-settling-delay" = 5, "read-strobe-us" = 1000, "bus-config" = { "bus" = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 22, 21, 20] } }
+
+[[vectors]]
+name = "write_at28c256_sdp"
+cmd = 2
+flags = 0x0102
+fields = { "memory-size" = 32768, "algorithm" = 13, "pin-count" = 28, "vpp_mv" = 5000, "page-size" = 64, "bus-config" = { "bus" = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15], "rw-pin" = 14 } }
+
+[[vectors]]
+name = "read_2716_vpp_line"
+cmd = 1
+flags = 0
+fields = { "memory-size" = 2048, "algorithm" = 11, "pin-count" = 24, "vpp_mv" = 25000, "bus-config" = { "bus" = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "vpp-pin" = 11, "static-high" = [13] } }
+
+# A start address equal to the end is accepted: the operation is empty.
+[[vectors]]
+name = "read_address_at_device_end"
+cmd = 1
+flags = 0
+fields = { "memory-size" = 2048, "address" = 2048, "algorithm" = 7, "pin-count" = 28, "vpp_mv" = 12500 }
+
+[[vectors]]
+name = "write_address_at_region_end"
+cmd = 2
+flags = 0
+fields = { "memory-size" = 2048, "address" = 1024, "region-end" = 1024, "algorithm" = 7, "pin-count" = 28, "vpp_mv" = 12500 }
+
+[[vectors]]
+name = "config_read"
+cmd = 14
+flags = 0
+fields = {}
+
+[[vectors]]
+name = "config_set_divider"
+cmd = 14
+flags = 0
+fields = { "r1" = 270000, "r2" = 44000 }
+
+[[vectors]]
+name = "config_clear_rev"
+cmd = 14
+flags = 0
+fields = { "rev" = 0xFF }
+
+[[vectors]]
+name = "config_calibrate"
+cmd = 14
+flags = 0
+fields = { "vcc" = 5012 }
+
+[[vectors]]
+name = "config_bandgap"
+cmd = 14
+flags = 0
+fields = { "bg" = 1100 }
+
+[[vectors]]
+name = "dev_address"
+cmd = 7
+flags = 0x60
+fields = { "address" = 0x1234 }
+
+[[refused_vectors]]
+name = "bad_magic_json"
+frame = "7b2273746174"           # '{"stat' -- a JSON-era host
+reason = "frame"
+
+[[refused_vectors]]
+name = "bad_version"
+frame = "f5020d00000000"
+reason = "version"
+
+[[refused_vectors]]
+name = "truncated_header"
+frame = "f5010d0000"
+reason = "frame"
+
+[[refused_vectors]]
+name = "length_mismatch_simple"
+frame = "f5010d0000000100"
+refusal = "LENGTH"
+
+[[refused_vectors]]
+name = "length_field_lies"
+frame = "f5010d00000001"
+refusal = "LENGTH"
+
+[[refused_vectors]]
+name = "memory_short"
+frame = "f501010000000100"
+refusal = "LENGTH"
+
+[[refused_vectors]]
+name = "retired_flag"
+frame = "f5010d00080000"
+refusal = "FLAGS"
+
+[[refused_vectors]]
+name = "flag_above_defined"
+frame = "f5010d04000000"
+refusal = "FLAGS"
+
+# Payload refusals: `raw` sets fields by NAME with no host-side validation,
+# on top of an all-default payload for `cmd`. Lists may be shorter than the
+# field; the rest is 0xFF.
+[[refused_vectors]]
+name = "address_line_at_bus_width"
+cmd = 1
+raw = { address_lines = [0, 1, 24] }
+refusal = "ADDRESS_LINE"
+
+[[refused_vectors]]
+name = "address_line_shift_ub"
+cmd = 1
+raw = { address_lines = [32] }
+refusal = "ADDRESS_LINE"
+
+[[refused_vectors]]
+name = "address_line_duplicate"
+cmd = 2
+raw = { address_lines = [0, 1, 1] }
+refusal = "ADDRESS_DUPLICATE"
+
+[[refused_vectors]]
+name = "address_line_gap"
+cmd = 1
+raw = { address_lines = [0, 255, 2] }
+refusal = "ADDRESS_GAP"
+
+[[refused_vectors]]
+name = "rw_line_out_of_bus"
+cmd = 2
+raw = { rw_line = 24 }
+refusal = "CONTROL_LINE"
+
+[[refused_vectors]]
+name = "vpp_line_out_of_bus"
+cmd = 2
+raw = { vpp_line = 32 }
+refusal = "CONTROL_LINE"
+
+[[refused_vectors]]
+name = "static_high_out_of_bus"
+cmd = 1
+raw = { static_high_mask = 0x01000000 }
+refusal = "STATIC_HIGH"
+
+[[refused_vectors]]
+name = "read_settling_too_long"
+cmd = 1
+raw = { read_settling_us = 1001 }
+refusal = "READ_TIMING"
+
+[[refused_vectors]]
+name = "read_strobe_too_long"
+cmd = 1
+raw = { read_strobe_us = 0x00010000 }
+refusal = "READ_TIMING"
+
+[[refused_vectors]]
+name = "config_unknown_present_bit"
+cmd = 14
+raw = { present = 0x20 }
+refusal = "CONFIG_FIELD"
+
+[[refused_vectors]]
+name = "config_short"
+frame = "f5010e0000000100"
+refusal = "LENGTH"
+
+[[refused_vectors]]
+name = "memory_all_zero"
+cmd = 2
+raw = {}
+refusal = "MISSING_FIELD"
+
+[[refused_vectors]]
+name = "memory_no_vpp"
+cmd = 1
+raw = { mem_size = 2048, protocol = 7, pins = 28 }
+refusal = "MISSING_FIELD"
+
+# A start address past the end is refused before configure_memory() touches
+# the bus. A read always covers the whole device; a write ends at region-end
+# when the host sends one.
+[[refused_vectors]]
+name = "read_address_past_device"
+cmd = 1
+raw = { mem_size = 2048, address = 2049, region_end = 4096, protocol = 7, pins = 28, vpp_mv = 12500 }
+refusal = "ADDRESS_RANGE"
+
+[[refused_vectors]]
+name = "write_address_past_region"
+cmd = 2
+raw = { mem_size = 2048, address = 1025, region_end = 1024, protocol = 7, pins = 28, vpp_mv = 12500 }
+refusal = "ADDRESS_RANGE"
+
+[[refused_vectors]]
+name = "write_address_wraps"
+cmd = 2
+raw = { mem_size = 2048, address = 0xFFFFFFFF, protocol = 7, pins = 28, vpp_mv = 12500 }
+refusal = "ADDRESS_RANGE"

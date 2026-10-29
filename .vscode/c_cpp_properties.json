@@ -10,7 +10,6 @@
             "includePath": [
                 "/workspaces/firestarter_fw/include",
                 "/workspaces/firestarter_fw/src",
-                "/workspaces/firestarter_fw/lib/jsmn/src",
                 "/home/vscode/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                 "/home/vscode/.platformio/packages/framework-arduino-avr/cores/arduino",
                 "/home/vscode/.platformio/packages/framework-arduino-avr/variants/standard",
@@ -26,7 +25,6 @@
                 "path": [
                     "/workspaces/firestarter_fw/include",
                     "/workspaces/firestarter_fw/src",
-                    "/workspaces/firestarter_fw/lib/jsmn/src",
                     "/home/vscode/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                     "/home/vscode/.platformio/packages/framework-arduino-avr/cores/arduino",
                     "/home/vscode/.platformio/packages/framework-arduino-avr/variants/standard",

@@ -17,6 +17,25 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 
 ## [Unreleased]
 
+### Changed
+
+- **CLI, Firmware:** the CLI sends each command as a fixed-layout binary frame, not as JSON. The
+  COBS framing, the CRC8 and the data transfer do not change. This CLI cannot operate a board
+  with older firmware, and older CLIs cannot operate this firmware. Upgrade the CLI first, then
+  run `firestarter fw --install`. `fw` can still read the version of the older firmware so that
+  it can replace it.
+- **CLI, Firmware:** the binary command frame starts at version 3.3. The CLI refuses to install
+  firmware older than 3.3, because it cannot operate that firmware.
+- **Firmware:** the JSON parser and the jsmn library are removed. Flash goes down by about
+  2.6 KB and RAM by 388 B on `leonardo`, `uno` and `uno328pb`.
+- **Firmware:** a read timing above 1000 µs is refused. The JSON parser reduced it to 1000 µs.
+  `firestarter dev consistency-check` refuses `--read-settling` and `--read-strobe` above 1000
+  as a usage error, before it creates the output directory.
+- **CLI, Firmware:** firmware that reads another version of the binary command frame answers
+  with the version that it reads. The CLI then tells you to upgrade the CLI or the firmware,
+  whichever is older.
+- **Firmware:** an undefined flag bit and a command frame with the wrong length are refused.
+
 ## [3.2.6] - 2026-10-27 (CLI)
 
 ### Added
