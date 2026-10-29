@@ -106,8 +106,8 @@ A patch to an older line does not become "Latest" when a higher stable version e
 CLI X.Y.z does not read `/releases/latest`. It installs the highest stable firmware X.Y.y, so a
 patch to an older firmware line still reaches the CLIs on that line.
 
-Open lines: none. Firmware `main` carries the 3.2.x line. The 3.3 binary command frame waits on
-`feat/binary-command-protocol`.
+Open lines: none. Firmware `main` carries the 3.2.x line. The 3.3 work (the binary command frame and
+the firmware offload) is on `perf/fw-offload` in all three repositories.
 
 ---
 
