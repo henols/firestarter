@@ -14,12 +14,10 @@ the other.
 ## 1. What publishes
 
 Each sub-repository has one working branch, `main`. All work goes to `main` through pull requests.
-A sub-repository can also have a maintenance branch `release/X.Y` for patches to an older line `X.Y`.
-Refer to section 2.4.
 
 | Event | What occurs |
 |---|---|
-| A merge or a push to `main` or `release/X.Y` | CI only. Nothing publishes. |
+| A merge or a push to `main` | CI only. Nothing publishes. |
 | A push of a tag `X.Y.ZbN` or `X.Y.ZrcN` | A pre-release. The app: a GitHub pre-release and a PyPI pre-release. The firmware: a GitHub pre-release with dev tools in each `.hex`, and the `py32f071` image. |
 | A push of a tag `X.Y.Z` | A stable release, marked "Latest" only when it is the highest stable version. The app: also a PyPI release. The firmware: `.hex` files without dev tools. |
 | A push or a tag in the meta repository | Nothing. |
@@ -37,8 +35,7 @@ pre-release, so a development build behaves as a beta build.
 The release workflow (`.github/workflows/release.yml`) refuses a tag in these cases:
 
 - The tag does not have the shape `X.Y.Z`, `X.Y.ZbN` or `X.Y.ZrcN`.
-- The tag points at a commit that is not on `main` and not on `release/X.Y` of its own line. (Only the
-  firmware accepts `release/X.Y` at this time.)
+- The tag points at a commit that is not on `main`.
 
 **A PyPI version can never be used again.** A failed app release that reached PyPI needs a new
 version number. A test release is acceptable: use a spare `bN` number.
@@ -103,33 +100,6 @@ git push origin 3.2.0b1
 - The app reached GitHub but not PyPI: run the `Publish to PyPI.org` workflow by hand, with the
   tag as input.
 - The app reached PyPI: do not use the version again. Fix the cause and release the next number.
-
-### 2.4 A patch to an older line
-
-Use a maintenance branch when `main` has a change that must not go into the patch, for example a
-wire-protocol change for the next `X.Y`.
-
-1. Cut `release/X.Y` from the last commit of the line on `main`, before the next line merges into
-   `main`. When `main` has already moved on, cut it from the last stable tag of the line instead:
-   `git branch release/3.2 3.2.1`, then `git push origin release/3.2`.
-2. Branch from `release/X.Y` and open pull requests to `release/X.Y`.
-3. Write the CHANGELOG entry under a `## [Unreleased X.Y]` heading, directly below
-   `## [Unreleased]`. Then run the release script with `--line X.Y` and the type `pre` or
-   `regular`: `python3 $S/release.py <app|fw> <pre|regular> --line X.Y`. It tags
-   `origin/release/X.Y`, and the version continues the tags of the line. The release follows the
-   steps of section 2. The meta pull request records the CHANGELOG entry and leaves the gitlink on
-   `main`. The `release.yml` of `release/X.Y` must accept a tag on that branch; the script checks
-   it.
-4. Merge `release/X.Y` forward into `main` through a pull request, so that `main` keeps every fix.
-
-A patch to an older line does not become "Latest" when a higher stable version exists. A stable
-CLI X.Y.z does not read `/releases/latest`. It installs the highest stable firmware X.Y.y, so a
-patch to an older firmware line still reaches the CLIs on that line.
-
-Open lines: `release/3.2` in `firestarter_fw` and `firestarter_app`, cut on 2026-10-29 from `main`
-(fw `c70ce14`, app `470db9f`). `main` becomes the 3.3 line (the binary command frame and the
-firmware offload) when the `perf/fw-offload` pull requests merge. Write 3.2.x fixes to
-`release/3.2` and merge them forward into `main`.
 
 ---
 
