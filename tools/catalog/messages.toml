@@ -174,6 +174,8 @@ format      = "Number of retries: %d"
 params      = [{ type = "u8" }]
 wire_format = "id_frame"
 
+# No longer sent: MSG_INFO_REGISTERS (0x44) replaced 0x52-0x54. KEPT so the
+# ids are never reused.
 [[messages]]
 id          = 0x52
 name        = "MSG_INFO_REG_HEADER"
@@ -199,6 +201,25 @@ name        = "MSG_INFO_BIT_STR"
 severity    = "INFO"
 format      = "%s"
 params      = [{ type = "ascii_str" }]
+wire_format = "id_frame"
+
+# One frame for `dev reg` / `dev addr`: the raw register values. The host
+# draws the bit table (codec.format_message). view: 0 = `dev reg`, CTRL
+# written as given (8 bits, no remap); 1 = `dev reg --firestarter`, CTRL is
+# the 9-bit logical register and `remapped` is what the board's revision
+# writes; 2 = `dev addr`, CTRL holds the TOP address register.
+[[messages]]
+id          = 0x44
+name        = "MSG_INFO_REGISTERS"
+severity    = "INFO"
+format      = "MSB 0x%02X, LSB 0x%02X, CTRL 0x%03X, remapped 0x%02X, view %u"
+params      = [
+    { type = "u8",  render = "hex_byte" },
+    { type = "u8",  render = "hex_byte" },
+    { type = "u16", render = "hex_word" },
+    { type = "u8",  render = "hex_byte" },
+    { type = "u8",  render = "dec" },
+]
 wire_format = "id_frame"
 
 [[messages]]
@@ -351,6 +372,7 @@ format      = "Rev0 does not support reading VPP/VPE"
 params      = []
 wire_format = "id_frame"
 
+# No longer sent: MSG_WARN_VPP_LOW_MV (0x8A) replaced it. KEPT, not reused.
 [[messages]]
 id          = 0x81
 name        = "MSG_WARN_VPP_LOW"
@@ -364,6 +386,7 @@ params      = [
 ]
 wire_format = "id_frame"
 
+# No longer sent: MSG_WARN_VPP_HIGH_MV (0x8B) replaced it. KEPT, not reused.
 [[messages]]
 id          = 0x82
 name        = "MSG_WARN_VPP_HIGH"
@@ -425,6 +448,8 @@ wire_format = "id_frame"
 # supply * 1100 / bandgap_true, so an impossible figure measures how far the
 # real per-chip bandgap is from the assumed 1100 mV -- and the same error is
 # multiplicative on every VPP/VPE reading. Payload is the reported millivolts.
+# No longer sent by the firmware: the host checks the VCC band itself and
+# prints this text. KEPT, not reused.
 [[messages]]
 id          = 0x88
 name        = "MSG_WARN_VCC_IMPLAUSIBLE"
@@ -444,6 +469,30 @@ name        = "MSG_WARN_NOT_CALIBRATED"
 severity    = "WARN"
 format      = "Voltage readings are uncalibrated on this board. Run 'firestarter cal' to make them trustworthy."
 params      = []
+wire_format = "id_frame"
+
+# The firmware sends millivolts; the host formats them. These replace 0x81
+# and 0x82, which carried pre-rounded volts and tenths.
+[[messages]]
+id          = 0x8A
+name        = "MSG_WARN_VPP_LOW_MV"
+severity    = "WARN"
+format      = "VPP is low: %u mV < %u mV"
+params      = [
+    { type = "u16", render = "dec" },
+    { type = "u16", render = "dec" },
+]
+wire_format = "id_frame"
+
+[[messages]]
+id          = 0x8B
+name        = "MSG_WARN_VPP_HIGH_MV"
+severity    = "WARN"
+format      = "VPP is high: %u mV > %u mV"
+params      = [
+    { type = "u16", render = "dec" },
+    { type = "u16", render = "dec" },
+]
 wire_format = "id_frame"
 
 # ---------------------------------------------------------------------------
@@ -672,6 +721,7 @@ format      = "Operation timed out"
 params      = []
 wire_format = "id_frame"
 
+# No longer sent: MSG_ERR_VPP_HIGH_MV (0xC3) replaced it. KEPT, not reused.
 [[messages]]
 id          = 0xB8
 name        = "MSG_ERR_VPP_HIGH"
@@ -776,6 +826,18 @@ params      = [
 ]
 wire_format = "id_frame"
 
+# Replaces 0xB8: millivolts, formatted by the host.
+[[messages]]
+id          = 0xC3
+name        = "MSG_ERR_VPP_HIGH_MV"
+severity    = "ERROR"
+format      = "VPP is high: %u mV > %u mV"
+params      = [
+    { type = "u16", render = "dec" },
+    { type = "u16", render = "dec" },
+]
+wire_format = "id_frame"
+
 # ---------------------------------------------------------------------------
 # DATA (0xE0..0xEF)
 # ---------------------------------------------------------------------------
@@ -823,6 +885,8 @@ wire_format = "id_frame"
 # NEVER reaches the host on this path, so wire resolution here is a 100 mV
 # grid. Anything needing better than that -- calibration, a paired bench
 # reading -- must use MSG_DATA_ADC_RAW instead.
+# No longer sent: MSG_DATA_VPP_MV (0xE3) replaced 0xE4 and MSG_DATA_VPE_MV
+# (0xE8) replaced 0xE5. KEPT, not reused.
 [[messages]]
 id          = 0xE4
 name        = "MSG_DATA_VPP_VOLTAGE"
@@ -885,6 +949,31 @@ params      = [
     { type = "u16", render = "dec" },
     { type = "u32", render = "dec" },
     { type = "u32", render = "dec" },
+]
+wire_format = "id_frame"
+
+# CMD_READ_VPP / CMD_READ_VPE sample: the rail and the internal VCC in
+# millivolts. They replace 0xE4/0xE5, which carried pre-rounded volts and
+# tenths, so the host could never show better than 100 mV.
+[[messages]]
+id          = 0xE3
+name        = "MSG_DATA_VPP_MV"
+severity    = "DATA"
+format      = "VPP: %u mV, Internal VCC: %u mV"
+params      = [
+    { type = "u16", render = "dec" },
+    { type = "u16", render = "dec" },
+]
+wire_format = "id_frame"
+
+[[messages]]
+id          = 0xE8
+name        = "MSG_DATA_VPE_MV"
+severity    = "DATA"
+format      = "VPE: %u mV, Internal VCC: %u mV"
+params      = [
+    { type = "u16", render = "dec" },
+    { type = "u16", render = "dec" },
 ]
 wire_format = "id_frame"
 
