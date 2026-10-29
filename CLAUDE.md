@@ -25,11 +25,9 @@ Two rules that are costly to get wrong, because getting them wrong publishes som
 To make a release, use the `release` skill. `RELEASING.md` is the runbook for a person.
 
 Each sub-repo has one working branch, `main`. Branch from `main` and open pull requests to `main`.
-A fix for an older line goes to its maintenance branch `release/X.Y` instead. The 3.2.x line is on
-`release/3.2` in both sub-repos. `main` becomes the 3.3 line (the binary command frame and the
-firmware offload) when the `perf/fw-offload` pull requests merge. A merge to `main` or
-`release/X.Y` publishes nothing. The tag is the version: no file holds it. The two sub-repos
-release independently.
+`main` is the 3.3 line: the binary command frame and the firmware offload. A merge to `main`
+publishes nothing. The tag is the version: no file holds it. The two sub-repos release
+independently.
 
 ## System Overview
 

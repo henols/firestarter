@@ -22,7 +22,7 @@ tools/protocol/sync_to_subrepos.sh   # writes firestarter_fw/include/command_fra
 - Every frame version answers a version mismatch with `MSG_ERR_FRAME_VERSION` and its own `version` as the `u8` parameter. Never change this answer: it is how a host of any frame version finds the older side.
 - A command without a memory payload clears `protocol` and `pulse_delay`, so no field of an earlier chip stays in the handle.
 - The write-time columns of the 27C EPROM rows (`max_pulses`, `energy_cap_us`, the fallback pulse width) come from `tools/protocol/eprom_rows.toml`. The same sync generates `eprom_rows.h` for the firmware and `eprom_rows.py` for the host's write timeout. Never copy one of these values by hand.
-- `[frame] min_feature` is the first feature version (major.minor) that may carry the frame. `tools/release.sh` and `release.yml` in both sub-repos refuse a tag below it, and `fw_release_gate.py` refuses to install firmware below it. Raise it with every new frame `version`.
+- `[frame] min_feature` is the first feature version (major.minor) that may carry the frame. The meta release script and `release.yml` in both sub-repos refuse a tag below it, and `fw_release_gate.py` refuses to install firmware below it. Raise it with every new frame `version`.
 - The host uses the generated `command_frame.KEY_*` for command-dict keys. Never copy a key string into another module.
 - The host encoder (`command_codec.py`) refuses an unknown key and an out-of-range value before it opens a port. Keep its checks the same as the decoder's.
 - Each new refusal gets a `[[refused_vectors]]` entry, and each new field gets an accepting `[[vectors]]` entry. Both test suites run every vector.
