@@ -310,8 +310,12 @@ def plan(name, kind, root):
     else:
         say("FAIL", f"{version} does not sort above {latest}")
 
-    floor = frame_floor(run(["git", "-C", str(path), "show", f"{sha}:{r['frame']}"], check=False))
-    if floor and parse(version)[:2] < floor:
+    frame_text = run(["git", "-C", str(path), "show", f"{sha}:{r['frame']}"], check=False)
+    floor = frame_floor(frame_text)
+    if frame_text and floor is None:
+        say("FAIL", f"cannot read the binary-frame floor from {r['frame']} at {sha[:12]}; "
+                    f"release.yml would refuse the tag")
+    elif floor and parse(version)[:2] < floor:
         say("FAIL", f"{version} is below {floor[0]}.{floor[1]}, the binary-frame floor on {branch}; "
                     f"release.yml would refuse the tag. Start the line with 'minor'")
     elif floor:
@@ -508,6 +512,7 @@ def selftest():
     assert frame_floor('#define CF_VERSION 1\n#define CF_MIN_FEATURE "3.3"\n') == (3, 3)
     assert frame_floor("VERSION = 1\nMIN_FEATURE = (3, 3)\n") == (3, 3)
     assert frame_floor("") is None and frame_floor(None) is None
+    assert frame_floor("VERSION = 1\nMIN_FEATURE = (3, 3)  # floor\n") is None
     assert parse("3.2.3b3")[:2] < (3, 3) and not parse("3.3.0b1")[:2] < (3, 3)
     order = ["3.1.0b8", "3.1.0rc1", "3.1.0", "3.1.1b1", "3.1.10", "3.10.0b1"]
     assert sorted(["3.1.10", "3.1.0", "3.10.0b1", "3.1.0rc1", "3.1.1b1", "3.1.0b8"], key=sort_key) == order
