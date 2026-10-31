@@ -166,26 +166,27 @@ def _count_printf_specs(format_str):
     return n
 
 
-def _validate_entry(entry, kind, name_pattern, seen_ids, seen_names,
-                    reserved_names=None):
+def _validate_entry(entry, section, id_word, name_word, name_pattern,
+                    seen_ids, seen_names, reserved_names=None):
     """Rules shared by [[messages]] and [[debug.messages]]: id (1/D1), name
     (2/D2), format (3/D3), params (4/D4), param types (5/D5) and renders
-    (6/D6). `kind` names the entry in messages, e.g. "ID" or
-    "[[debug.messages]] id". Return (id, name, format, params)."""
+    (6/D6). `section`, `id_word` and `name_word` name the entry, its id and
+    its name in error messages ("entry", "ID", "name" for the main catalog).
+    Return (id, name, format, params)."""
     label = entry.get("name", "<no name>")
     mid = entry.get("id")
     if mid is None:
-        raise CatalogError(f"Missing 'id' field in {kind} entry: {entry!r}")
+        raise CatalogError(f"Missing 'id' field in {section}: {entry!r}")
     if not isinstance(mid, int) or isinstance(mid, bool):
         raise CatalogError(
-            f"{kind} must be an integer; got {type(mid).__name__} "
-            f"({mid!r}) in entry {label}"
+            f"Field 'id' must be an integer; got {type(mid).__name__} "
+            f"({mid!r}) in {section} {label}"
         )
     if mid < 0 or mid > 255:
         raise CatalogError(
-            f"{kind} out of range [0, 255]: 0x{mid:X} in entry {label}"
+            f"{id_word} out of range [0, 255]: 0x{mid:X} in {section} {label}"
         )
-    where = f"{kind} 0x{mid:02X}"
+    where = f"{id_word} 0x{mid:02X}"
     if mid in seen_ids:
         raise CatalogError(
             f"Duplicate {where}: '{label}' conflicts with prior "
@@ -202,12 +203,12 @@ def _validate_entry(entry, kind, name_pattern, seen_ids, seen_names,
         )
     if name in seen_names:
         raise CatalogError(
-            f"Duplicate name '{name}' at {where} "
+            f"Duplicate {name_word} '{name}' at {where} "
             f"(prior 0x{seen_names[name]:02X})"
         )
     if reserved_names and name in reserved_names:
         raise CatalogError(
-            f"Name '{name}' at {where} collides with main-catalog name at "
+            f"{name_word.capitalize()} '{name}' at {where} collides with main-catalog name at "
             f"0x{reserved_names[name]:02X}"
         )
     where = f"{where} ({name})"
@@ -284,7 +285,7 @@ def validate_catalog(catalog):
         if not isinstance(msg, dict):
             raise CatalogError("Every [[messages]] entry must be a TOML table.")
         mid, name, fmt, params = _validate_entry(
-            msg, "ID", NAME_PATTERN, seen_ids, seen_names)
+            msg, "entry", "ID", "name", NAME_PATTERN, seen_ids, seen_names)
         where = f"ID 0x{mid:02X} ({name})"
 
         # Rule 7: severity valid
@@ -320,7 +321,7 @@ def validate_catalog(catalog):
         if not isinstance(dbg, dict):
             raise CatalogError("Every [[debug.messages]] entry must be a TOML table.")
         did, dname, dfmt, dparams = _validate_entry(
-            dbg, "[[debug.messages]] id", DBG_PATTERN,
+            dbg, "[[debug.messages]] entry", "debug sub_id", "debug name", DBG_PATTERN,
             seen_dbg_ids, seen_dbg_names, reserved_names=seen_names)
         _validate_params_fit(f"[[debug.messages]] id 0x{did:02X} ({dname})",
                              dfmt, dparams, check_specs=True)
