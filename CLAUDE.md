@@ -32,10 +32,7 @@ independently.
 ## System Overview
 
 Firestarter programs EPROM, Flash and SRAM devices. It uses an Arduino and the RURP
-(Relatively-Universal-ROM-Programmer) shield. The system has two parts:
-
-1. **Python CLI** (`firestarter_app/`)
-2. **Arduino firmware** (`firestarter_fw/`)
+(Relatively-Universal-ROM-Programmer) shield.
 
 ## Writing Style (ASD-STE100)
 
