@@ -55,6 +55,18 @@ A version with a `b` and a number, for example `3.1.0b5`, is a pre-release on th
 - **CLI, Firmware:** the CLI calculates the bandgap calibration for `firestarter cal --vcc`. The
   firmware reports its raw bandgap count, and the CLI stores the result. `cal --vcc` still
   refuses a reading above 10 V, before it opens the port.
+- **CLI:** 119 parts that need a 3.0 V or 3.3 V supply are refused. The shield supplies 5 V,
+  which is above their maximum rating. FM16W08 runs at 5 V but is refused too (issue #171).
+
+### Fixed
+
+- **CLI:** SST28SF040, SST28LF040 and SST28VF040 are refused. The Intel 28F algorithm puts
+  12 V on pin 1, and on these parts pin 1 is A18 (issue #154). `info` now shows A18 on pin 1
+  and WE# on pin 31.
+- **CLI:** the Intel 28F parts (28F256 to 28F020, 37 rows) use a new pin map that drives WE#
+  on pin 31. Before, WE# stayed low for each read, status poll, program and erase. No bench
+  test has proved a 28F write or erase yet (issue #172).
+- **CLI:** `info` and `list` show a VPP only when the chip's pin map has a VPP pin.
 
 ## [3.2.6] - 2026-10-27 (CLI)
 
