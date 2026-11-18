@@ -31,11 +31,6 @@ def to_cet(moment: datetime) -> datetime:
     return moment.astimezone(_CEST if summer else _CET)
 
 
-def now_cet() -> datetime:
-    """The current time in CET or CEST."""
-    return to_cet(datetime.now(UTC))
-
-
 def parse_cet(text: str | None) -> datetime | None:
     """Parse an ISO 8601 timestamp that has an offset (`...Z` or `...+02:00`)
     and return it in CET. Returns None when `text` is empty, does not parse,
