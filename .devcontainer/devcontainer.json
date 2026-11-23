@@ -1,5 +1,6 @@
 {
   "name": "Firestarter EPROM Programmer",
+  "updateRemoteUserUID":false,
   "build": {
     "dockerfile": "Dockerfile"
   },
