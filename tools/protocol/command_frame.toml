@@ -47,7 +47,7 @@ revision_max = 5            # REVISION_2_3; config rev 0xFF clears the override
 # the empty payload, and the firmware's dispatch refuses it as before
 # (MSG_ERR_UNKNOWN_CMD). Ordinals 4 and 6 are retired: never list them.
 [commands]
-memory = [1, 2, 3, 5, 7, 8, 9, 10, 16]
+memory = [1, 2, 3, 5, 7, 8, 9, 10, 16, 18]
 config = [14]
 none = [11, 12, 13, 15, 17]
 
