@@ -45,6 +45,17 @@ pio run -t monitor -e uno   # serial monitor, 250000 baud
 
 Swap `uno` for `leonardo` or `uno328pb` for the other boards.
 
+Build the py32f071 firmware with CMake. Set `RURP_BOARD` to `py32f071` or `micropetal_uno`:
+
+```bash
+cd firestarter_fw
+cmake -S platform/py32f071 -B /tmp/py32f071 -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DRURP_BOARD=py32f071
+cmake --build /tmp/py32f071
+FIRESTARTER_PY32_COMPILE_COMMANDS=/tmp/py32f071/compile_commands.json \
+  python3 -m pytest tests -q
+```
+
 ## Talking to a board
 
 Plug it in over USB and it appears as `/dev/ttyACM*` or `/dev/ttyUSB*` inside

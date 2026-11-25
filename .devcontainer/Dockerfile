@@ -3,11 +3,18 @@ FROM mcr.microsoft.com/devcontainers/python:3.12
 # PlatformIO requires udev rules and the user in the dialout group for serial access
 # unzip is needed by the Bun installer below (it unzips its download) and is declared
 # here rather than assumed from the base image.
+# cmake, ninja-build and the arm-none-eabi packages build the py32f071 firmware.
+# CI installs the same packages in firestarter_fw/.github/actions/build-py32f071.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         udev \
         libusb-1.0-0 \
         avrdude \
         unzip \
+        cmake \
+        ninja-build \
+        gcc-arm-none-eabi \
+        binutils-arm-none-eabi \
+        libnewlib-arm-none-eabi \
     && rm -rf /var/lib/apt/lists/*
 
 # Add vscode user to dialout for serial port access
