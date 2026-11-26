@@ -101,3 +101,24 @@ No new mismatch was found beyond what `tools/datasheet_overrides.json` already r
   AT28C256 and MBM27C1001 can be machine-checked.
 - Decide whether to document flag bits `0x80`, `0x800` and `0x10000` in DECODE-NOTES §13.1. The
   change belongs in `firestarter_app`.
+
+## Generator inclusion check (addendum)
+
+Checked `firestarter/data/chip_database.json` from firestarter_app (749 rows)
+against the gates in `tools/build_db.py`.
+
+- Status counts: 618 supported, 125 protocol-not-implemented, 6 adapter-required.
+- Every supported row has a pin map with enough address lines for its size
+  (0 short rows), and a pin count of 24, 28 or 32.
+- Supported rows have VPP of 12.0, 12.5, 13.0, 18, 21 or 25 V. The ceiling
+  gate is 25 V (`RURP_VPP_CEILING_MV`), taken from a code comment, not from a
+  datasheet.
+- The gates cover pin map, address reach, VPP ceiling and the 0x10 pin-1 clash.
+  They do not check the datasheet for each part.
+
+Open risk, not verified against a datasheet (none is vendored):
+upstream merges `2732`, `2732A`, `M2732` and `M2732A` into one record, and the
+generator gives that row 25 V VPP. The 2732A is normally a 21 V part. A 25 V
+pulse could exceed its absolute maximum. The generator also cannot tell
+merged aliases apart. Check the other merged-alias rows with a 25 V or 21 V
+VPP (2716, 2516, M2732A) the same way.
