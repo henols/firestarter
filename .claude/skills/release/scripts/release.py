@@ -44,7 +44,10 @@ REPOS = {
         "suffix": "firmware",
         "pypi": None,
         "assets": [r"^firestarter_leonardo\.hex$", r"^firestarter_uno\.hex$",
-                   r"^firestarter_uno328pb\.hex$", r"^firestarter_py32f071\.hex$"],
+                   r"^firestarter_uno328pb\.hex$"],
+        # Only a pre-release builds the PY32 images.
+        "pre_assets": [r"^firestarter_py32f071\.hex$",
+                       r"^firestarter_micropetal_uno\.hex$"],
         "frame": "include/command_frame.h",
     },
 }
@@ -418,7 +421,8 @@ def verify(r, version, stable):
     if rel["isPrerelease"] == stable or rel["isDraft"]:
         print(f"  FAIL release flags: prerelease={rel['isPrerelease']} draft={rel['isDraft']}")
         ok = False
-    missing = [p for p in r["assets"] if not any(re.search(p, n) for n in names)]
+    want = r["assets"] + ([] if stable else r.get("pre_assets", []))
+    missing = [p for p in want if not any(re.search(p, n) for n in names)]
     if missing:
         print(f"  FAIL assets missing: {missing} (have {names})")
         ok = False
