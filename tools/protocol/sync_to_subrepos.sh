@@ -31,7 +31,6 @@ FS_ROOT="$SCRIPT_DIR/../../firestarter_fw"
 FA_ROOT="$SCRIPT_DIR/../../firestarter_app"
 GEN_FRAME=(python3 "$SCRIPT_DIR/codegen.py" --spec "$SCRIPT_DIR/command_frame.toml")
 GEN_ROWS=(python3 "$SCRIPT_DIR/eprom_rows.py" --spec "$SCRIPT_DIR/eprom_rows.toml")
-GEN_CAPS=(python3 "$SCRIPT_DIR/protocol_caps.py" --spec "$SCRIPT_DIR/protocol_caps.toml")
 
 VERIFY=0
 if [[ "${1:-}" == "--verify" ]]; then
@@ -40,7 +39,6 @@ fi
 
 "${GEN_FRAME[@]}" --check
 "${GEN_ROWS[@]}" --check
-"${GEN_CAPS[@]}" --check
 
 # Each artifact, as "<generator> <language> <path relative to FS_ROOT or FA_ROOT>".
 ARTIFACTS=(
@@ -50,8 +48,6 @@ ARTIFACTS=(
     "frame json-vectors app:tests/golden/command_vectors.json"
     "rows cpp fw:include/eprom_rows.h"
     "rows python app:firestarter/eprom_rows.py"
-    "caps cpp fw:include/protocol_caps.h"
-    "caps python app:firestarter/protocol_caps.py"
 )
 
 resolve() {
@@ -70,8 +66,6 @@ for entry in "${ARTIFACTS[@]}"; do
     generated="$out_dir/$(basename "${rel#*:}")"
     if [[ "$generator" == "rows" ]]; then
         "${GEN_ROWS[@]}" --language "$language" --target "$generated"
-    elif [[ "$generator" == "caps" ]]; then
-        "${GEN_CAPS[@]}" --language "$language" --target "$generated"
     else
         "${GEN_FRAME[@]}" --language "$language" --target "$generated"
     fi
