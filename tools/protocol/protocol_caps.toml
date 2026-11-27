@@ -1,0 +1,87 @@
+# Firestarter protocol capability table (canonical source — meta-repo authoritative)
+#
+# One row per protocol_id the firmware has a handler for. The firmware dispatches
+# on these ids; the database generator may mark a chip "supported" only when its
+# protocol_id has a row here. A row is blocked only for what the hardware cannot do.
+#
+# Generation happens in the meta repo only. tools/protocol/sync_to_subrepos.sh
+# writes:
+#   firestarter_fw/include/protocol_caps.h
+#   firestarter_app/firestarter/protocol_caps.py
+#
+# Edit ONLY this file. Never edit a generated artifact by hand.
+#
+# vpp_route  where the firmware puts the programming rail for this handler:
+#              "none"    no high-voltage rail
+#              "oe_vpp"  on the OE/VPP socket pin
+#              "a9"      on the A9 pin
+#              "pin1"    on socket pin 1 (a chip whose pin 1 is an address or
+#                        data line must not use a handler with this route)
+# command_set  the chip command set the handler speaks (documentation, checked
+#              for non-empty only)
+
+[[protocols]]
+protocol = 0x05
+name = "PROTO_FLASH_5V_PAGE"
+command_set = "amd_5v_page"
+vpp_route = "none"
+
+[[protocols]]
+protocol = 0x06
+name = "PROTO_FLASH_NOR_UNLOCK"
+command_set = "amd_unlock"
+vpp_route = "none"
+
+[[protocols]]
+protocol = 0x07
+name = "PROTO_EPROM_28PIN"
+command_set = "eprom_27c"
+vpp_route = "oe_vpp"
+
+[[protocols]]
+protocol = 0x08
+name = "PROTO_EPROM_32PIN"
+command_set = "eprom_27c"
+vpp_route = "oe_vpp"
+
+[[protocols]]
+protocol = 0x0B
+name = "PROTO_EPROM_24PIN"
+command_set = "eprom_27c"
+vpp_route = "oe_vpp"
+
+[[protocols]]
+protocol = 0x0D
+name = "PROTO_EEPROM_PARALLEL"
+command_set = "eeprom_poll"
+vpp_route = "none"
+
+[[protocols]]
+protocol = 0x0E
+name = "PROTO_SRAM_32PIN"
+command_set = "sram"
+vpp_route = "none"
+
+[[protocols]]
+protocol = 0x10
+name = "PROTO_FLASH_INTEL"
+command_set = "intel_28f"
+vpp_route = "pin1"
+
+[[protocols]]
+protocol = 0x27
+name = "PROTO_SRAM_24PIN"
+command_set = "sram"
+vpp_route = "none"
+
+[[protocols]]
+protocol = 0x28
+name = "PROTO_SRAM_28PIN"
+command_set = "sram"
+vpp_route = "none"
+
+[[protocols]]
+protocol = 0x29
+name = "PROTO_SRAM_32PIN_NVRAM"
+command_set = "sram"
+vpp_route = "none"
