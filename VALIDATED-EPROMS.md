@@ -82,5 +82,9 @@ To add a chip, test it and send the report. Refer to
   not evidence that the same sweep passes on a later line. From 3.1.0b1 the verify and blank-check
   steps run on the host instead of the firmware, so those two steps stay unproven on 3.1.x for
   every row except W27C512.
+- W27C512 passed again on 2026-11-27 (#193) on a MicroPetal R1 running at 3.3 V VCC. The report
+  carries no host or firmware version, so the row above is unchanged. The host warned that the
+  internal VCC read about 3.33 V and its voltage readings were untrustworthy, so this is evidence
+  the part works at 3.3 V on that board, not a 5 V validation.
 - A row records one passing sweep. It does not record a chip on which every command works.
   AE29F2008 passed its sweep, and `erase AE29F2008` still fails (gh#62).
